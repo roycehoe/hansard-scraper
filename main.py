@@ -1,12 +1,46 @@
 import json
 
-from parliament_report_parser import get_parliament_reports_without_unused_fields
+from parliament_report_parser import get_unused_fields
 
-with open("parsed_parliament_reports.json", "r") as f:
+# from parliament_report_parser import get_parliament_reports_without_unused_fields
+#
+# with open("parsed_parliament_reports.json", "r") as f:
+#     parliament_reports = json.load(f)
+#
+# with open("parsed_parliament_reports_v1.json", "w") as f:
+#     parsed_parliament_reports = get_parliament_reports_without_unused_fields(
+#         parliament_reports
+#     )
+#     json.dump(parsed_parliament_reports, f)
+
+with open("parsed_parliament_reports_v1.json", "r") as f:
     parliament_reports = json.load(f)
 
-with open("parsed_parliament_reports_v1.json", "w") as f:
-    parsed_parliament_reports = get_parliament_reports_without_unused_fields(
-        parliament_reports
-    )
-    json.dump(parsed_parliament_reports, f)
+
+from typing import Any, Optional
+
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    volume_no: str = Field(alias="volumeNo")
+    report_type: str = Field(alias="reportType")
+    report_version: str = Field(alias="reportVersion")
+    sitting_no: Optional[str] = Field(None, alias="sittingNo")
+    title: str
+    column_start: Optional[str] = Field(None, alias="columnStart")
+    parl_no: str = Field(alias="parlNo")
+    column_end: Optional[str] = Field(None, alias="columnEnd")
+    report_id: str = Field(alias="reportId")
+    max_result: str = Field(alias="maxResult")
+    sno: str
+    from_month: str = Field(alias="fromMonth")
+    from_day: str = Field(alias="fromDay")
+    from_year: str = Field(alias="fromYear")
+    subtitle: Optional[str] = None
+    sitting_date: str = Field(alias="sittingDate")
+    html_file_name: Optional[str] = Field(None, alias="htmlFileName")
+
+
+for i in parliament_reports:
+    Model(**i)
