@@ -1,46 +1,51 @@
 import json
+from datetime import date, datetime
+from typing import Annotated, Optional
 
-from parliament_report_parser import get_unused_fields
+from pydantic import BaseModel, BeforeValidator, Field, field_validator
 
-# from parliament_report_parser import get_parliament_reports_without_unused_fields
-#
-# with open("parsed_parliament_reports.json", "r") as f:
-#     parliament_reports = json.load(f)
-#
-# with open("parsed_parliament_reports_v1.json", "w") as f:
-#     parsed_parliament_reports = get_parliament_reports_without_unused_fields(
-#         parliament_reports
-#     )
-#     json.dump(parsed_parliament_reports, f)
+import parliament_report
+from parliament_report_parser import parse_parliament_report
 
-with open("parsed_parliament_reports_v1.json", "r") as f:
+with open("parliament_reports.json", "r") as f:
     parliament_reports = json.load(f)
 
+parsed_report = parse_parliament_report(parliament_reports)
 
-from typing import Any, Optional
+with open("parsed_parliament_reports.json", "w") as f:
+    json.dump(parsed_report, f, default=str)
 
-from pydantic import BaseModel, Field
+
+EmptyStrNoneInt = Annotated[
+    Optional[int],
+    BeforeValidator(lambda v: None if isinstance(v, str) and v.strip() == "" else v),
+]
 
 
-class Model(BaseModel):
-    volume_no: str = Field(alias="volumeNo")
-    report_type: str = Field(alias="reportType")
-    report_version: str = Field(alias="reportVersion")
-    sitting_no: Optional[str] = Field(None, alias="sittingNo")
+class Report(BaseModel):
+    volume_number: int = Field(alias="volumeNo")
+    parliament_number: int = Field(alias="parlNo")
+    sitting_number: EmptyStrNoneInt = Field(None, alias="sittingNo")
+    sitting_date: datetime = Field(alias="sittingDate")
+    speech_number: int = Field(alias="sno")
+
     title: str
-    column_start: Optional[str] = Field(None, alias="columnStart")
-    parl_no: str = Field(alias="parlNo")
-    column_end: Optional[str] = Field(None, alias="columnEnd")
-    report_id: str = Field(alias="reportId")
-    max_result: str = Field(alias="maxResult")
-    sno: str
-    from_month: str = Field(alias="fromMonth")
-    from_day: str = Field(alias="fromDay")
-    from_year: str = Field(alias="fromYear")
     subtitle: Optional[str] = None
-    sitting_date: str = Field(alias="sittingDate")
+    # Can be used to obtain raw report via request params
+    report_id: str = Field(alias="reportId")
+    report_type: str = Field(alias="reportType")
+
+    column_start: Optional[str] = Field(None, alias="columnStart")
+    column_end: Optional[str] = Field(None, alias="columnEnd")
     html_file_name: Optional[str] = Field(None, alias="htmlFileName")
 
+    report_version: str = Field(alias="reportVersion")
 
-for i in parliament_reports:
-    Model(**i)
+
+with open("parsed_parliament_reports.json", "r") as f:
+    parliament_reports = json.load(f)
+
+# [Report(**i) for i in parliament_reports]
+
+
+print([Report(**i).speech_number for i in parliament_reports])
