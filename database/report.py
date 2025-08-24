@@ -1,28 +1,9 @@
-import json
+from typing import Optional
 
-from parliament_report_parser import get_unused_fields
-
-# from parliament_report_parser import get_parliament_reports_without_unused_fields
-#
-# with open("parsed_parliament_reports.json", "r") as f:
-#     parliament_reports = json.load(f)
-#
-# with open("parsed_parliament_reports_v1.json", "w") as f:
-#     parsed_parliament_reports = get_parliament_reports_without_unused_fields(
-#         parliament_reports
-#     )
-#     json.dump(parsed_parliament_reports, f)
-
-with open("parsed_parliament_reports_v1.json", "r") as f:
-    parliament_reports = json.load(f)
+from sqlmodel import Field, SQLModel
 
 
-from typing import Any, Optional
-
-from pydantic import BaseModel, Field
-
-
-class Model(BaseModel):
+class Report(SQLModel, table=True):
     volume_no: str = Field(alias="volumeNo")
     report_type: str = Field(alias="reportType")
     report_version: str = Field(alias="reportVersion")
@@ -40,7 +21,3 @@ class Model(BaseModel):
     subtitle: Optional[str] = None
     sitting_date: str = Field(alias="sittingDate")
     html_file_name: Optional[str] = Field(None, alias="htmlFileName")
-
-
-for i in parliament_reports:
-    Model(**i)

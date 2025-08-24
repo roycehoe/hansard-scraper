@@ -1,5 +1,3 @@
-import json
-
 UNUSED_FIELDS = {
     "questionCount",
     "fullContentFlag",
@@ -29,6 +27,7 @@ UNUSED_FIELDS = {
     "pdfNodes",
     "portfolio",
     "atbpList",
+    "reportContent",
 }
 
 
@@ -73,13 +72,3 @@ def get_unused_fields(parliament_reports: list[dict]):
         for field, value in parliament_reports_key_usage_count.items()
         if value == 0
     }
-
-
-with open("parsed_parliament_reports.json", "r") as f:
-    parliament_reports = json.load(f)
-
-with open("parsed_parliament_reports_v1.json", "w") as f:
-    parsed_parliament_reports = get_parliament_reports_without_unused_fields(
-        parliament_reports
-    )
-    json.dump(parsed_parliament_reports, f)
