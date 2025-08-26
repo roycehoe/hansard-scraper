@@ -1,7 +1,7 @@
 from enum import StrEnum
 
 
-class ParliamentEntryType(StrEnum):
+class ReportType(StrEnum):
     ORAL_ANSWER = "oral-answer"
     WRITTEN_ANSWER = "written-answer"
     WRITTEN_ANSWER_NOT_AVAILABLE = "written-answer-na"
