@@ -1,13 +1,11 @@
-import json
-
 import requests
 
-PARLIAMENT_DEBATES_SEARCH_URL = "https://sprs.parl.gov.sg/search/searchResult"
+HANDSARD_SEARCH_URL = "https://sprs.parl.gov.sg/search/searchResult"
 
 
-def get_parliament_reports_search_results(
-    start_index: int, end_index: int, url: str = PARLIAMENT_DEBATES_SEARCH_URL
-):
+def get_handsard_search_results(
+    start_index: int, end_index: int, url: str = HANDSARD_SEARCH_URL
+) -> dict:
     query_dict = {
         "keyword": "undefined",
         "fromday": "24",
@@ -37,30 +35,29 @@ def get_parliament_reports_search_results(
     return response.json()
 
 
-def _has_results(parliament_debates_search_results: dict | list) -> bool:
-    if isinstance(parliament_debates_search_results, list):
+def _has_results(handsard_search_results: dict | list) -> bool:
+    if isinstance(handsard_search_results, list):
         return True
     return False
 
 
-def get_all_parliament_reports_search_results():
-    all_parliament_reports_search_results = []
+def get_all_handsard_search_results() -> list[dict]:
+    all_handsard_search_results = []
     start_index = 0
     end_index = 19
     counter = 0
 
     while True:
-        response = get_parliament_reports_search_results(start_index, end_index)
-        print(response)
+        response = get_handsard_search_results(start_index, end_index)
         if not _has_results(response):
             break
-        all_parliament_reports_search_results = [
-            *all_parliament_reports_search_results,
+        all_handsard_search_results = [
+            *all_handsard_search_results,
             *response,
         ]
         start_index += 20
         end_index += 20
         counter += 1
-        print(f"{counter}/{41837/20}")
+        print(f"{counter}/{41837 / 20}")
 
-    return all_parliament_reports_search_results
+    return all_handsard_search_results
