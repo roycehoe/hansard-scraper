@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from typing import Optional
 
@@ -18,11 +19,11 @@ def get_db_report_in(handsard_search_result: HandsardSearchResult) -> Report:
         ),
         sittingDate=sitting_date,
         sno=int(handsard_search_result.sno),
-        title=handsard_search_result.title,
+        title=re.sub("\n", " ", handsard_search_result.title),
         subtitle=(
             handsard_search_result.subtitle
             if handsard_search_result.subtitle is None
-            else handsard_search_result.subtitle
+            else re.sub("\n", " ", handsard_search_result.subtitle)
         ),
         reportId=handsard_search_result.reportId,
         reportType=handsard_search_result.reportType,
@@ -41,7 +42,6 @@ def get_db_report_in(handsard_search_result: HandsardSearchResult) -> Report:
             if handsard_search_result.htmlFileName is None
             else handsard_search_result.htmlFileName
         ),
-        content=None,
         reportVersion=handsard_search_result.reportVersion,
     )
 

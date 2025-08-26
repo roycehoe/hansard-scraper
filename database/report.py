@@ -29,5 +29,6 @@ class Report(SQLModel, table=True):
     column_end: Optional[str] = Field(None, alias="columnEnd")
     html_file_name: Optional[str] = Field(None, alias="htmlFileName")
     content: Optional[str] = None
+    markdown_content: Optional[str] = None
 
     report_version: str = Field(alias="reportVersion")
