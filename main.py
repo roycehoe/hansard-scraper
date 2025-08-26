@@ -1,45 +1,27 @@
-import json
-import re
 from datetime import datetime
 
-import html2text
 from sqlmodel import select
 
-from database.init import get_session
+from database.init import create_db_and_tables, get_session
 from database.report import Report
-from services import get_db_report_content_in
+from markdown_parser import get_cleaned_handsard_markdown
+
+create_db_and_tables()
+session = next(get_session())
+all_reports = session.exec(
+    select(Report)
+    .where(Report.sitting_date < datetime(2012, 9, 10, 0, 0, 0, 0))
+    .where(Report.content != None)
+).all()
 
 
-def remove_html_spaces(original_text: str) -> str:
-    return original_text.replace("&nbsp;", "")
-
-
-def remove_spaces(original_text: str) -> str:
-    return original_text.strip()
-
-
-def remove_column_text(original_text: str) -> str:
-    column_pattern = r"Column:\s*\d+"
-    return re.sub(f"{column_pattern}", "", original_text)
-
-
-def remove_page_text(original_text: str) -> str:
-    page_text_pattern = r"Page:\s*\d+"
-    return re.sub(f"{page_text_pattern}", "", original_text)
-
-
-def remove_line_breaks(original_text: str) -> str:
-    page_text_pattern = r"   \n  \n\*\*\*\*  \n  \n"
-    return re.sub(page_text_pattern, " ", original_text)
-
-
-def get_cleaned_handsard_markdown(parliament_data: str) -> str:
-    h = html2text.HTML2Text(bodywidth=0)
-
-    parliament_data = remove_html_spaces(parliament_data)
-    parliament_data = remove_column_text(parliament_data)
-    parliament_data = remove_page_text(parliament_data)
-
-    md_file = h.handle(parliament_data)
-    md_file = remove_line_breaks(md_file)
-    return md_file
+for report in all_reports:
+    try:
+        if report.content is None:
+            continue
+        markdown_content = get_cleaned_handsard_markdown(report.content)
+        report.markdown_content = markdown_content
+        session.add(report)
+        session.commit()
+    except Exception as e:
+        print(e)
