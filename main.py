@@ -4,7 +4,7 @@ from sqlmodel import select
 
 from database.init import get_session
 from database.report import Report
-from parliament_topic import get_handsard_topic_response
+from services import get_db_report_content_in
 
 session = next(get_session())
 all_reports = session.exec(
@@ -17,13 +17,7 @@ all_reports = session.exec(
 
 for report in all_reports:
     try:
-        response = get_handsard_topic_response(
-            report.html_file_name
-            if report.html_file_name is not None
-            else report.report_id
-        )
-        html_content = response.get("htmlContent")
-        report.content = html_content.replace("\x00", "\ufffd")
+        get_db_report_content_in(report)
         session.add(report)
         session.commit()
     except Exception as e:
