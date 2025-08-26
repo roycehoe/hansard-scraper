@@ -34,7 +34,6 @@ UNUSED_FIELDS = {
     "fromDay",
     "fromYear",
     "maxResult",
-    # "columnEnd"
 }
 
 

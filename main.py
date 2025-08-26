@@ -2,50 +2,55 @@ import json
 from datetime import date, datetime
 from typing import Annotated, Optional
 
-from pydantic import BaseModel, BeforeValidator, Field, field_validator
+import requests
+from pydantic import BaseModel, BeforeValidator, Field
+from sqlmodel import select
 
-import parliament_report
-from parliament_report_parser import parse_parliament_report
-
-with open("parliament_reports.json", "r") as f:
-    parliament_reports = json.load(f)
-
-parsed_report = parse_parliament_report(parliament_reports)
-
-with open("parsed_parliament_reports.json", "w") as f:
-    json.dump(parsed_report, f, default=str)
-
-
-EmptyStrNoneInt = Annotated[
-    Optional[int],
-    BeforeValidator(lambda v: None if isinstance(v, str) and v.strip() == "" else v),
-]
-
-
-class Report(BaseModel):
-    volume_number: int = Field(alias="volumeNo")
-    parliament_number: int = Field(alias="parlNo")
-    sitting_number: EmptyStrNoneInt = Field(None, alias="sittingNo")
-    sitting_date: datetime = Field(alias="sittingDate")
-    speech_number: int = Field(alias="sno")
-
-    title: str
-    subtitle: Optional[str] = None
-    # Can be used to obtain raw report via request params
-    report_id: str = Field(alias="reportId")
-    report_type: str = Field(alias="reportType")
-
-    column_start: Optional[str] = Field(None, alias="columnStart")
-    column_end: Optional[str] = Field(None, alias="columnEnd")
-    html_file_name: Optional[str] = Field(None, alias="htmlFileName")
-
-    report_version: str = Field(alias="reportVersion")
-
+from database.init import create_db_and_tables, get_session
+from database.report import Report
 
 with open("parsed_parliament_reports.json", "r") as f:
     parliament_reports = json.load(f)
 
-# [Report(**i) for i in parliament_reports]
+URL = "https://sprs.parl.gov.sg/search/getHansardTopic/?id="
 
 
-print([Report(**i).speech_number for i in parliament_reports])
+def get_topic_html_content(report_id: str) -> dict:
+    response = requests.post(url=f"{URL}{report_id}")
+    return response.json()
+
+
+session = next(get_session())
+
+all_reports = session.exec(
+    select(Report)
+    .where(Report.sitting_date < datetime(2012, 9, 10, 0, 0, 0, 0))
+    .where(Report.content == None)
+).all()
+
+for report in all_reports:
+    print(report.id)
+    response = get_topic_html_content(
+        report.html_file_name if report.html_file_name is not None else report.report_id
+    )
+    print(response)
+    # html_content = response.get("htmlContent")
+    # print(html_content)
+    # report.content = html_content.replace("\x00", "\uFFFD")
+    # session.add(report)
+    # session.commit()
+
+# for report in all_reports:
+#     try:
+#         response = get_topic_html_content(
+#             report.html_file_name
+#             if report.html_file_name is not None
+#             else report.report_id
+#         )
+#         html_content = response.get("htmlContent")
+#         print(html_content)
+#         report.content = html_content.replace("\x00", "\uFFFD")
+#         session.add(report)
+#         session.commit()
+#     except Exception as e:
+#         print(e)
