@@ -1,6 +1,8 @@
 from datetime import datetime
+from typing import Optional
 
 from database.report import Report
+from handsard_topic import get_handsard_topic_response
 from schemas import HandsardSearchResult
 
 
@@ -42,3 +44,13 @@ def get_db_report_in(handsard_search_result: HandsardSearchResult) -> Report:
         content=None,
         reportVersion=handsard_search_result.reportVersion,
     )
+
+
+def get_db_report_content_in(report: Report) -> Optional[str]:
+    response = get_handsard_topic_response(
+        report.html_file_name if report.html_file_name is not None else report.report_id
+    )
+    html_content = response.get("htmlContent")
+    if html_content is None:
+        return None
+    return html_content.replace("\x00", "\ufffd")
