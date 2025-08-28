@@ -1,7 +1,7 @@
 from database.init import create_db_and_tables, get_session
 from gateway.handsard_search import get_all_handsard_search_results
 from schemas import HandsardSearchResult
-from services import get_db_report_in
+from services.report import get_db_report_in
 
 create_db_and_tables()
 
