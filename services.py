@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import Optional
 
 from database.report import Report
-from handsard_topic import get_handsard_topic_response
-from markdown_parser import get_cleaned_handsard_markdown
+from gateway.handsard_topic import get_handsard_topic_response
 from schemas import HandsardSearchResult
+from utils.markdown_parser import get_cleaned_handsard_markdown
 
 
 @dataclass
@@ -19,7 +19,7 @@ def _has_no_subtitle(raw_title: str) -> bool:
     return raw_title[-1] != ")"
 
 
-def get_db_report_in(handsard_search_result: HandsardSearchResult) -> Report:
+def _get_raw_db_report_in(handsard_search_result: HandsardSearchResult) -> Report:
     sitting_date = datetime.strptime(handsard_search_result.sittingDate, "%d-%m-%Y")
     return Report(
         volumeNo=int(handsard_search_result.volumeNo),
@@ -58,7 +58,7 @@ def get_db_report_in(handsard_search_result: HandsardSearchResult) -> Report:
     )
 
 
-def _get_db_report_content_in(report: Report) -> Optional[str]:
+def _get_db_report_content(report: Report) -> Optional[str]:
     try:
         response = get_handsard_topic_response(
             report.html_file_name
@@ -105,9 +105,10 @@ def _get_db_report_header(raw_title: str) -> ReportHeader:
     return ReportHeader(title=title, subtitle=subtitle)
 
 
-def get_cleaned_db_report_in(report: Report) -> Report:
-    report.content = _get_db_report_content_in(report)
+def get_db_report_in(handsard_search_result: HandsardSearchResult) -> Report:
+    report = _get_raw_db_report_in(handsard_search_result)
 
+    report.content = _get_db_report_content(report)
     if report.content is not None:
         report.markdown_content = get_cleaned_handsard_markdown(report.content)
 
@@ -117,4 +118,5 @@ def get_cleaned_db_report_in(report: Report) -> Report:
     db_report_header = _get_db_report_header(report.title)
     report.title = db_report_header.title
     report.subtitle = db_report_header.subtitle
+
     return report
