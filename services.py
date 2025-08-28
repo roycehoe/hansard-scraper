@@ -1,10 +1,22 @@
 import re
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
 from database.report import Report
 from handsard_topic import get_handsard_topic_response
+from markdown_parser import get_cleaned_handsard_markdown
 from schemas import HandsardSearchResult
+
+
+@dataclass
+class ReportHeader:
+    title: str
+    subtitle: Optional[str] = None
+
+
+def _has_no_subtitle(raw_title: str) -> bool:
+    return raw_title[-1] != ")"
 
 
 def get_db_report_in(handsard_search_result: HandsardSearchResult) -> Report:
@@ -46,11 +58,63 @@ def get_db_report_in(handsard_search_result: HandsardSearchResult) -> Report:
     )
 
 
-def get_db_report_content_in(report: Report) -> Optional[str]:
-    response = get_handsard_topic_response(
-        report.html_file_name if report.html_file_name is not None else report.report_id
-    )
+def _get_db_report_content_in(report: Report) -> Optional[str]:
+    try:
+        response = get_handsard_topic_response(
+            report.html_file_name
+            if report.html_file_name is not None
+            else report.report_id
+        )
+    except Exception:  # 2 topics return no response
+        return None
     html_content = response.get("htmlContent")
     if html_content is None:
         return None
     return html_content.replace("\x00", "\ufffd")
+
+
+def _get_db_report_header(raw_title: str) -> ReportHeader:
+    if _has_no_subtitle(raw_title):
+        return ReportHeader(title=raw_title)
+
+    title = ""
+    subtitle = None
+    in_brackets_content = ""
+    is_in_brackets = False
+
+    for letter in raw_title:
+        if letter == "(":
+            is_in_brackets = True
+            continue
+
+        if is_in_brackets:
+            if letter != ")":
+                in_brackets_content += letter
+                continue
+            if not in_brackets_content.isupper():
+                subtitle = f"({in_brackets_content})"
+            else:
+                title += f"({in_brackets_content})"
+
+            in_brackets_content = ""
+            is_in_brackets = False
+            continue
+
+        title += letter
+
+    return ReportHeader(title=title, subtitle=subtitle)
+
+
+def get_cleaned_db_report_in(report: Report) -> Report:
+    report.content = _get_db_report_content_in(report)
+
+    if report.content is not None:
+        report.markdown_content = get_cleaned_handsard_markdown(report.content)
+
+    if report.subtitle is not None:
+        return report
+
+    db_report_header = _get_db_report_header(report.title)
+    report.title = db_report_header.title
+    report.subtitle = db_report_header.subtitle
+    return report

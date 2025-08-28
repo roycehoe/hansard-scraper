@@ -11,6 +11,8 @@ EmptyStrNoneInt = Annotated[
 
 
 class Report(SQLModel, table=True):
+    __tablename__ = "test"
+
     id: int | None = Field(default=None, primary_key=True)
 
     volume_number: int = Field(alias="volumeNo")

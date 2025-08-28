@@ -149,19 +149,21 @@ def get_title_and_subtitle(raw_title: str):
     is_in_brackets = False
 
     for letter in raw_title:
-        if is_in_brackets:
-            if letter == ")":
-                is_in_brackets = False
-                if not in_brackets_content.isupper():
-                    subtitle = f"({in_brackets_content})"
-                    in_brackets_content = ""
-                else:
-                    title += f"({in_brackets_content})"
-                    in_brackets_content = ""
-            in_brackets_content += letter
-            continue
         if letter == "(":
             is_in_brackets = True
+            continue
+
+        if is_in_brackets:
+            if letter != ")":
+                in_brackets_content += letter
+                continue
+            if not in_brackets_content.isupper():
+                subtitle = f"({in_brackets_content})"
+            else:
+                title += f"({in_brackets_content})"
+
+            in_brackets_content = ""
+            is_in_brackets = False
             continue
 
         title += letter
@@ -169,5 +171,6 @@ def get_title_and_subtitle(raw_title: str):
     return ReportHeader(title=title, subtitle=subtitle)
 
 
-sample = "MOTORCYCLISTS RIDING AND PARKING ON PEDESTRIAN PAVEMENTS (Action by police)"
-print(get_title_and_subtitle(sample))
+test = [get_title_and_subtitle(i) for i in SAMPLE_TITLES]
+for i in test:
+    print(i)
