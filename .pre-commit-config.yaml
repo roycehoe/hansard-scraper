@@ -4,12 +4,11 @@ default_install_hook_types:
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.8
+    rev: v0.12.9
     hooks:
-      - id: ruff
+      - id: ruff-check
         files: ^api/
-        args: ["check", "--select", "I", "--fix"]
-      - id: ruff-format
+        args: [--fix]
 
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.0.0

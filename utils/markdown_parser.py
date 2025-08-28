@@ -1,10 +1,6 @@
 import re
 
 import html2text
-from sqlmodel import select
-
-from database.init import get_session
-from database.report import Report
 
 
 def _remove_spaces(html: str) -> str:

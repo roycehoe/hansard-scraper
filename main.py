@@ -1,21 +1,12 @@
-import json
-import random
-import re
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Optional
 
 from bs4 import BeautifulSoup
-from sqlmodel import select
 
-from database.init import create_db_and_tables, get_session
 from database.report import Report
-from enums import ReportType
-from markdown_parser import get_cleaned_handsard_markdown
 
 
 def get_mps_speaking(report: Report) -> Optional[str]:
-    flag = False
     if report.markdown_content is None:
         return None
     if report.content is None:
