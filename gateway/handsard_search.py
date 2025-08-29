@@ -58,6 +58,6 @@ def get_all_handsard_search_results() -> list[dict]:
         start_index += 20
         end_index += 20
         counter += 1
-        print(f"{counter}/{41837 / 20}")
+        print(f"Handsard search results: {counter}/{41837 / 20}")
 
     return all_handsard_search_results
