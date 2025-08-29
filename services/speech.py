@@ -1,26 +1,64 @@
 import json
+from dataclasses import dataclass
 from typing import Optional
 
 from database.report import Report
-from utils.sample import get_strata_sample
+
+
+@dataclass
+class Speech:
+    speaker: Optional[str]
+    transcript: str
 
 
 def get_start_of_speech_line(
-    markdown_content: str, title: str, subtitle: Optional[str], id: int
+    markdown_content: str, title: str, subtitle: Optional[str]
 ) -> Optional[int]:
+    start = [0]
     for line_index, line in enumerate(markdown_content.splitlines()):
-        if subtitle and subtitle in line:
-            return line_index
-        if title in line:
-            return line_index
-    print(id)
-    return None
+        if subtitle and f"# {subtitle}" in line:
+            start.append(line_index)
+        if f"# {title}" in line:
+            start.append(line_index)
+
+    for line_index, line in enumerate(markdown_content.splitlines()):
+        if subtitle and f"*{subtitle}" in line:
+            start.append(line_index)
+        if f"*{title}" in line:
+            start.append(line_index)
+
+    return max(start)
 
 
-# sample = get_strata_sample()
-#
-# with open("sample.json", "w") as json_data:
-#     data = json.dump([i.model_dump() for i in sample], json_data, default=str)
+def contains_speaker_name(line: str):
+    return "**" in line
+
+
+def get_speeches(markdown: str, start_of_speech_line: int):
+    current_speaker = None
+    speeches = []
+    for line in markdown.splitlines()[start_of_speech_line + 1 :]:
+        parsed_line = line.strip()
+        if parsed_line == "":
+            continue
+        if parsed_line == "**":
+            continue
+        if not contains_speaker_name(parsed_line):
+            speeches.append(Speech(speaker=current_speaker, transcript=line.strip()))
+            continue
+        # TODO: 20890 causing problems
+        _, name, transcript = parsed_line.split("**")
+        current_speaker = name[:-1] if name.endswith(":") else name
+        transcript = transcript[3:] if transcript.startswith(" : ") else transcript
+
+        speeches.append(
+            Speech(
+                speaker=current_speaker,
+                transcript=transcript.strip(),
+            )
+        )
+    return speeches
+
 
 with open("sample.json") as json_data:
     data = json.load(json_data)
@@ -28,11 +66,9 @@ with open("sample.json") as json_data:
 reports = [Report(**i) for i in data]
 for report in reports:
     if report.markdown_content:
-        get_start_of_speech_line(
-            report.markdown_content, report.title, report.subtitle, report.id
+        start_of_speech_line = get_start_of_speech_line(
+            report.markdown_content, report.title, report.subtitle
         )
-
-# report = [Report(**i) for i in data if i["id"] == 24854][0]
-# get_start_of_speech_line(
-#     report.markdown_content, report.title, report.subtitle, report.id
-# )
+        speeches = get_speeches(report.markdown_content, start_of_speech_line)
+        print(report.id)
+        print(speeches)
