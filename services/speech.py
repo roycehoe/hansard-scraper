@@ -14,20 +14,24 @@ class Speech:
 def get_start_of_speech_line(
     markdown_content: str, title: str, subtitle: Optional[str]
 ) -> Optional[int]:
-    start = [0]
+    possible_start_of_speech_lines = []
+
     for line_index, line in enumerate(markdown_content.splitlines()):
         if subtitle and f"# {subtitle}" in line:
-            start.append(line_index)
+            possible_start_of_speech_lines.append(line_index)
         if f"# {title}" in line:
-            start.append(line_index)
+            possible_start_of_speech_lines.append(line_index)
 
     for line_index, line in enumerate(markdown_content.splitlines()):
         if subtitle and f"*{subtitle}" in line:
-            start.append(line_index)
+            possible_start_of_speech_lines.append(line_index)
         if f"*{title}" in line:
-            start.append(line_index)
+            possible_start_of_speech_lines.append(line_index)
 
-    return max(start)
+    if len(possible_start_of_speech_lines) == 0:
+        return None
+
+    return max(possible_start_of_speech_lines)
 
 
 def contains_speaker_name(line: str):
@@ -46,6 +50,7 @@ def get_speeches(markdown: str, start_of_speech_line: int):
         if not contains_speaker_name(parsed_line):
             speeches.append(Speech(speaker=current_speaker, transcript=line.strip()))
             continue
+
         # TODO: 20890 causing problems
         _, name, transcript = parsed_line.split("**")
         current_speaker = name[:-1] if name.endswith(":") else name
@@ -69,6 +74,6 @@ for report in reports:
         start_of_speech_line = get_start_of_speech_line(
             report.markdown_content, report.title, report.subtitle
         )
+        if start_of_speech_line is None:
+            raise Exception("No start of speech line found!")
         speeches = get_speeches(report.markdown_content, start_of_speech_line)
-        print(report.id)
-        print(speeches)
