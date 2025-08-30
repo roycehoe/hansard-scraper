@@ -31,11 +31,11 @@ def _get_raw_db_report_in(handsard_search_result: HandsardSearchResult) -> Repor
         ),
         sittingDate=sitting_date,
         sno=int(handsard_search_result.sno),
-        title=re.sub("\r\n", "", handsard_search_result.title),
+        title=re.sub(r"[\r\n]+", " ", handsard_search_result.title).strip(),
         subtitle=(
             handsard_search_result.subtitle
             if handsard_search_result.subtitle is None
-            else re.sub("\r\n", "", handsard_search_result.subtitle)
+            else re.sub(r"[\r\n]+", " ", handsard_search_result.subtitle).strip()
         ),
         reportId=handsard_search_result.reportId,
         reportType=handsard_search_result.reportType,

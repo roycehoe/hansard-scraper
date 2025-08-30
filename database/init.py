@@ -6,7 +6,7 @@ DATABASE_URL = (
     or "postgresql://user:password@localhost:5432/postgres"
 )
 
-engine = create_engine(url=DATABASE_URL, echo=True)
+engine = create_engine(url=DATABASE_URL)
 
 
 def create_db_and_tables():
