@@ -2,6 +2,9 @@ import json
 from dataclasses import dataclass
 from typing import Optional
 
+from sqlmodel import select
+
+from database.init import get_session
 from database.report import Report
 
 
@@ -65,15 +68,25 @@ def get_speeches(markdown: str, start_of_speech_line: int):
     return speeches
 
 
-with open("sample.json") as json_data:
-    data = json.load(json_data)
+session = next(get_session())
+reports = session.exec(
+    select(Report)
+    .where(Report.subtitle is not None)
+    .where(Report.id >= 70000)
+    .where(Report.id <= 70100)
+)
 
-reports = [Report(**i) for i in data]
+# with open("sample.json") as json_data:
+#     data = json.load(json_data)
+
+# reports = [Report(**i) for i in data]
 for report in reports:
     if report.markdown_content:
         start_of_speech_line = get_start_of_speech_line(
             report.markdown_content, report.title, report.subtitle
         )
         if start_of_speech_line is None:
-            raise Exception("No start of speech line found!")
+            print("No:", report.report_type, report.id)
+            continue
         speeches = get_speeches(report.markdown_content, start_of_speech_line)
+        print("yes:", report.report_type)
