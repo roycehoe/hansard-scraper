@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-from database.report import Report
+from database.report import HandsardWebsiteResponse, Report
 from gateway.handsard_topic import get_handsard_topic_response
 from schemas import HandsardSearchResult
 from utils.markdown_parser import get_cleaned_handsard_markdown
@@ -39,16 +39,6 @@ def _get_raw_db_report_in(handsard_search_result: HandsardSearchResult) -> Repor
         ),
         reportId=handsard_search_result.reportId,
         reportType=handsard_search_result.reportType,
-        columnStart=(
-            handsard_search_result.columnStart
-            if handsard_search_result.columnStart is None
-            else handsard_search_result.columnStart
-        ),
-        columnEnd=(
-            handsard_search_result.columnEnd
-            if handsard_search_result.columnEnd is None
-            else handsard_search_result.columnEnd
-        ),
         htmlFileName=(
             handsard_search_result.htmlFileName
             if handsard_search_result.htmlFileName is None
@@ -56,21 +46,6 @@ def _get_raw_db_report_in(handsard_search_result: HandsardSearchResult) -> Repor
         ),
         reportVersion=handsard_search_result.reportVersion,
     )
-
-
-def _get_db_report_content(report: Report) -> Optional[str]:
-    try:
-        response = get_handsard_topic_response(
-            report.html_file_name
-            if report.html_file_name is not None
-            else report.report_id
-        )
-    except Exception:  # 2 topics return no response
-        return None
-    html_content = response.get("htmlContent")
-    if html_content is None:
-        return None
-    return html_content.replace("\x00", "\ufffd")
 
 
 def _get_db_report_header(raw_title: str) -> ReportHeader:
@@ -107,18 +82,33 @@ def _get_db_report_header(raw_title: str) -> ReportHeader:
     return ReportHeader(title=title.strip(), subtitle=subtitle.strip())
 
 
-def get_db_report_in(handsard_search_result: HandsardSearchResult) -> Report:
-    report = _get_raw_db_report_in(handsard_search_result)
+def get_db_report_in(handsard_website_response: HandsardWebsiteResponse) -> Report:
+    sitting_date = datetime.strptime(handsard_website_response.sitting_date, "%d-%m-%Y")
+    db_report_header = _get_db_report_header(handsard_website_response.title)
 
-    report.content = _get_db_report_content(report)
-    if report.content is not None:
-        report.markdown_content = get_cleaned_handsard_markdown(report.content)
-
-    if report.subtitle is not None:
-        return report
-
-    db_report_header = _get_db_report_header(report.title)
-    report.title = db_report_header.title
-    report.subtitle = db_report_header.subtitle
-
-    return report
+    return Report(
+        volumeNo=int(handsard_website_response.volume_number),
+        parlNo=int(handsard_website_response.parliament_number),
+        sittingNo=(
+            handsard_website_response.sitting_number
+            if handsard_website_response.sitting_number is None
+            else int(handsard_website_response.sitting_number)
+        ),
+        sittingDate=sitting_date,
+        sno=int(handsard_website_response.speech_number),
+        title=db_report_header.title,
+        subtitle=db_report_header.subtitle,
+        reportId=handsard_website_response.report_id,
+        reportType=handsard_website_response.report_type,
+        markdown_content=(
+            get_cleaned_handsard_markdown(handsard_website_response.content)
+            if handsard_website_response.content is not None
+            else None
+        ),
+        htmlFileName=(
+            handsard_website_response.html_file_name
+            if handsard_website_response.html_file_name is None
+            else handsard_website_response.html_file_name
+        ),
+        reportVersion=handsard_website_response.report_version,
+    )
