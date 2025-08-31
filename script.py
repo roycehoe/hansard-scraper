@@ -129,29 +129,30 @@ def write_statistics_to_db(session: Session):
     session.commit()
 
 
-handsard_website_responses = list(session.exec(select(HandsardWebsiteResponse)).all())
-all_statistics = [get_statistics(i) for i in handsard_website_responses]
-session.bulk_insert_mappings(
-    ParsingStatistics,
-    all_statistics,
-)
-session.commit()
+# handsard_website_responses = list(session.exec(select(HandsardWebsiteResponse)).all())
+# all_statistics = [get_statistics(i) for i in handsard_website_responses]
+# session.bulk_insert_mappings(
+#     ParsingStatistics,
+#     all_statistics,
+# )
+# session.commit()
 
-fieldnames = list(all_statistics[0].model_dump().keys())
-with open("statistics.csv", "w", newline="") as csvfile:
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-    writer.writeheader()
-    for item in all_statistics:
-        writer.writerow(item.model_dump())
+# fieldnames = list(all_statistics[0].model_dump().keys())
+# with open("statistics.csv", "w", newline="") as csvfile:
+#     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+#     writer.writeheader()
+#     for item in all_statistics:
+#         writer.writerow(item.model_dump())
 
 
-PROBLEMATIC_IDS = [29595, 36855, 27734, 25962, 26989]
-# test = session.exec(
-#     select(HandsardWebsiteResponse).where(
-#         HandsardWebsiteResponse.id == PROBLEMATIC_IDS[1]
-#     )
-# ).first()
-# statistics = get_statistics(test)
+PROBLEMATIC_IDS = [29595, 36855, 27734, 25962, 26989, 32155, 31239, 40779, 27442]
+test = session.exec(
+    select(HandsardWebsiteResponse).where(
+        HandsardWebsiteResponse.id == PROBLEMATIC_IDS[-1]
+    )
+).first()
+statistics = get_statistics(test)
 # print(statistics.can_get_speeches)
+# print(statistics)
 # db_report_in = get_db_report_in(test)
 # print(db_report_in.markdown_content)

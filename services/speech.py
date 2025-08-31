@@ -28,6 +28,12 @@ def get_start_of_speech_line(
                 return line_index
         if f"{title}**" in line:
             return line_index
+        if f"{original_title.lower()}**" in line.lower():
+            return line_index
+        if f"{original_title.lower().replace(' ','')}**" in line.lower().replace(
+            " ", ""
+        ):
+            return line_index
     return None
 
 
