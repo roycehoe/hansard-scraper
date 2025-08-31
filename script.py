@@ -99,7 +99,8 @@ def get_statistics(response: HandsardWebsiteResponse) -> ParsingStatistics:
 
     try:
         get_speeches(data.markdown_content, start_of_speech_line)
-    except Exception:
+    except Exception as e:
+        print("oh no")
         statistics.has_markdown = True
         statistics.has_start_line = True
         statistics.can_get_speeches = False
@@ -136,13 +137,8 @@ def write_statistics_to_db(session: Session):
 #     all_statistics,
 # )
 # session.commit()
-# all_statistics = list(session.exec(select(ParsingStatistics)).all())
 
-PROBLEMATIC_IDS = [29595, 36855]
-# Get field names from the first model instance for CSV header
-# all_statistics = list(session.exec(select(ParsingStatistics)).all())
 # fieldnames = list(all_statistics[0].model_dump().keys())
-
 # with open("statistics.csv", "w", newline="") as csvfile:
 #     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 #     writer.writeheader()
@@ -150,10 +146,11 @@ PROBLEMATIC_IDS = [29595, 36855]
 #         writer.writerow(item.model_dump())
 
 
+PROBLEMATIC_IDS = [29595, 36855, 27734, 25962, 26989]
 test = session.exec(
-    select(HandsardWebsiteResponse).where(HandsardWebsiteResponse.id == 29595)
+    select(HandsardWebsiteResponse).where(HandsardWebsiteResponse.id == 26989)
 ).first()
 statistics = get_statistics(test)
-# print(statistics)
-db_report_in = get_db_report_in(test)
-print(db_report_in.markdown_content)
+print(statistics)
+# db_report_in = get_db_report_in(test)
+# print(db_report_in.markdown_content)

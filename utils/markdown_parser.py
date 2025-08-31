@@ -63,7 +63,7 @@ def get_cleaned_handsard_markdown(html: str) -> str:
 
     md_file = h.handle(html)
     md_file = _remove_line_breaks(md_file)
-    # md_file = _remove_new_lines(md_file)
+    md_file = _remove_new_lines(md_file)
     md_file = _merge_consecutive_bold_only_lines(md_file)
 
     return md_file

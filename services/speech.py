@@ -17,29 +17,17 @@ class Speech:
 def get_start_of_speech_line(
     markdown_content: str, title: str, subtitle: Optional[str], original_title: str
 ) -> Optional[int]:
-    possible_start_of_speech_lines = []
-
     for line_index, line in enumerate(markdown_content.splitlines()):
-        if subtitle and f"# {subtitle}" in line:
-            possible_start_of_speech_lines.append(line_index)
-        if f"# {title}" in line:
-            possible_start_of_speech_lines.append(line_index)
-
-    for line_index, line in enumerate(markdown_content.splitlines()):
-        if subtitle and f"*{subtitle}" in line:
-            possible_start_of_speech_lines.append(line_index)
-        if f"*{title}" in line:
-            possible_start_of_speech_lines.append(line_index)
-
-    for line_index, line in enumerate(markdown_content.splitlines()):
-        parsed_title = original_title.split("\n")[-1]
-        if f"*{parsed_title}" in line:
-            possible_start_of_speech_lines.append(line_index)
-
-    if len(possible_start_of_speech_lines) == 0:
-        return None
-
-    return max(possible_start_of_speech_lines)
+        if subtitle:
+            if f"{title} {subtitle}**" in line:
+                return line_index
+            if line.endswith(f"{subtitle}**"):
+                return line_index
+            if f"{subtitle}**" in line:
+                return line_index
+        if f"{title}**" in line:
+            return line_index
+    return None
 
 
 def contains_speaker_name(line: str):
@@ -71,27 +59,3 @@ def get_speeches(markdown: str, start_of_speech_line: int):
             )
         )
     return speeches
-
-
-# session = next(get_session())
-# reports = session.exec(
-#     select(Report)
-#     .where(Report.subtitle is not None)
-#     .where(Report.id >= 70000)
-#     .where(Report.id <= 70100)
-# )
-
-# with open("sample.json") as json_data:
-#     data = json.load(json_data)
-
-# reports = [Report(**i) for i in data]
-# for report in reports:
-#     if report.markdown_content:
-#         start_of_speech_line = get_start_of_speech_line(
-#             report.markdown_content, report.title, report.subtitle
-#         )
-#         if start_of_speech_line is None:
-#             print("No:", report.report_type, report.id)
-#             continue
-#         speeches = get_speeches(report.markdown_content, start_of_speech_line)
-#         print("yes:", report.report_type)
