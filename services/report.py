@@ -100,6 +100,7 @@ def get_db_report_in(handsard_website_response: HandsardWebsiteResponse) -> Repo
         subtitle=db_report_header.subtitle,
         reportId=handsard_website_response.report_id,
         reportType=handsard_website_response.report_type,
+        content=handsard_website_response.content,
         markdown_content=(
             get_cleaned_handsard_markdown(handsard_website_response.content)
             if handsard_website_response.content is not None
