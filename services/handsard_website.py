@@ -9,7 +9,7 @@ from schemas import HandsardSearchResult
 from utils.markdown_parser import get_cleaned_handsard_markdown
 
 
-def get_handsard_website_report_content(
+def _get_handsard_website_report_content(
     handsard_search_result: HandsardSearchResult,
 ) -> Optional[str]:
     try:
@@ -40,6 +40,6 @@ def get_handsard_website_result_in(
         reportId=handsard_search_result.reportId,
         reportType=handsard_search_result.reportType,
         htmlFileName=handsard_search_result.htmlFileName,
-        content=get_handsard_website_report_content(handsard_search_result),
+        content=_get_handsard_website_report_content(handsard_search_result),
         reportVersion=handsard_search_result.reportVersion,
     )
