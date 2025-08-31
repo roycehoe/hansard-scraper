@@ -1,5 +1,6 @@
 import json
 from dataclasses import dataclass
+import re
 from typing import Optional
 
 from sqlmodel import select
@@ -48,9 +49,10 @@ def get_speeches(markdown: str, start_of_speech_line: int):
             continue
 
         # TODO: 20890 causing problems
-        _, name, transcript = parsed_line.split("**")
-        current_speaker = name[:-1] if name.endswith(":") else name
-        transcript = transcript[3:] if transcript.startswith(" : ") else transcript
+        name = re.search(r"((?:\*\*[^*]+?\*\*\s*)+)", parsed_line)
+        if name:
+            transcript = parsed_line.split(str(name))[0]
+            current_speaker = str(name).replace("*", "").replace(":", "")
 
         speeches.append(
             Speech(
