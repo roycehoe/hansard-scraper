@@ -15,7 +15,7 @@ class Speech:
 
 
 def get_start_of_speech_line(
-    markdown_content: str, title: str, subtitle: Optional[str]
+    markdown_content: str, title: str, subtitle: Optional[str], original_title: str
 ) -> Optional[int]:
     possible_start_of_speech_lines = []
 
@@ -29,6 +29,11 @@ def get_start_of_speech_line(
         if subtitle and f"*{subtitle}" in line:
             possible_start_of_speech_lines.append(line_index)
         if f"*{title}" in line:
+            possible_start_of_speech_lines.append(line_index)
+
+    for line_index, line in enumerate(markdown_content.splitlines()):
+        parsed_title = original_title.split("\n")[-1]
+        if f"*{parsed_title}" in line:
             possible_start_of_speech_lines.append(line_index)
 
     if len(possible_start_of_speech_lines) == 0:

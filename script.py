@@ -89,7 +89,7 @@ def get_statistics(response: HandsardWebsiteResponse) -> ParsingStatistics:
         return statistics
 
     start_of_speech_line = get_start_of_speech_line(
-        data.markdown_content, data.title, data.subtitle
+        data.markdown_content, data.title, data.subtitle, data.original_title
     )
     if start_of_speech_line is None:
         statistics.has_markdown = True
@@ -129,21 +129,31 @@ def write_statistics_to_db(session: Session):
     session.commit()
 
 
-handsard_website_responses = list(session.exec(select(HandsardWebsiteResponse)).all())
-all_statistics = [get_statistics(i) for i in handsard_website_responses]
-session.bulk_insert_mappings(
-    ParsingStatistics,
-    all_statistics,
-)
-session.commit()
+# handsard_website_responses = list(session.exec(select(HandsardWebsiteResponse)).all())
+# all_statistics = [get_statistics(i) for i in handsard_website_responses]
+# session.bulk_insert_mappings(
+#     ParsingStatistics,
+#     all_statistics,
+# )
+# session.commit()
 # all_statistics = list(session.exec(select(ParsingStatistics)).all())
 
-
+PROBLEMATIC_IDS = [29595, 36855]
 # Get field names from the first model instance for CSV header
-fieldnames = list(all_statistics[0].model_dump().keys())
+# all_statistics = list(session.exec(select(ParsingStatistics)).all())
+# fieldnames = list(all_statistics[0].model_dump().keys())
 
-with open("statistics.csv", "w", newline="") as csvfile:
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-    writer.writeheader()
-    for item in all_statistics:
-        writer.writerow(item.model_dump())
+# with open("statistics.csv", "w", newline="") as csvfile:
+#     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+#     writer.writeheader()
+#     for item in all_statistics:
+#         writer.writerow(item.model_dump())
+
+
+test = session.exec(
+    select(HandsardWebsiteResponse).where(HandsardWebsiteResponse.id == 29595)
+).first()
+statistics = get_statistics(test)
+# print(statistics)
+db_report_in = get_db_report_in(test)
+print(db_report_in.markdown_content)
