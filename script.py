@@ -3,7 +3,7 @@ from sqlalchemy import insert
 from sqlmodel import Session, select
 
 from database.init import create_db_and_tables, get_session
-from database.report import HandsardWebsiteResponse, ParsingStatistics, Report
+from database.report import HandsardWebsiteResponse, ParsingStatistics, Report, Speech
 from gateway.handsard_search import get_all_handsard_search_results
 from schemas import HandsardSearchResult
 from services.handsard_website import get_handsard_website_result_in
@@ -145,14 +145,67 @@ def write_statistics_to_db(session: Session):
 #         writer.writerow(item.model_dump())
 
 
-PROBLEMATIC_IDS = [29595, 36855, 27734, 25962, 26989, 32155, 31239, 40779, 27442]
-test = session.exec(
-    select(HandsardWebsiteResponse).where(
-        HandsardWebsiteResponse.id == PROBLEMATIC_IDS[-1]
-    )
-).first()
-statistics = get_statistics(test)
-# print(statistics.can_get_speeches)
-# print(statistics)
-# db_report_in = get_db_report_in(test)
-# print(db_report_in.markdown_content)
+# handsard_website_responses = list(session.exec(select(HandsardWebsiteResponse)).all())
+
+# db_reports_in = []
+# iterator = 1
+# for response in handsard_website_responses:
+#     print(f"{iterator}/{len(db_reports_in)}")
+#     db_reports_in.append(get_db_report_in(response))
+# session.bulk_insert_mappings(
+#     Report,
+#     db_reports_in,
+# )
+# session.commit()
+
+# db_report_in = session.exec(select(Report).where(Report.id == 21108)).first()
+# start_of_speech_line = get_start_of_speech_line(
+#     db_report_in.markdown_content,
+#     db_report_in.title,
+#     db_report_in.subtitle,
+#     db_report_in.original_title,
+# )
+# speeches_in = get_speeches(db_report_in.markdown_content, start_of_speech_line)
+# for i in speeches_in:
+#     print(i)
+
+# db_reports_in = list(session.exec(select(Report)).all())
+# all_speeches_in: list[Speech] = []
+# iterator = 1
+# for db_report_in in db_reports_in:
+#     print(f"{iterator}/{len(db_reports_in)}")
+#     iterator += 1
+#     if db_report_in.markdown_content is None:
+#         continue
+#     start_of_speech_line = get_start_of_speech_line(
+#         db_report_in.markdown_content,
+#         db_report_in.title,
+#         db_report_in.subtitle,
+#         db_report_in.original_title,
+#     )
+#     if start_of_speech_line is None:
+#         continue
+#     speeches_in = get_speeches(db_report_in.markdown_content, start_of_speech_line)
+#     for ordinal, speech in enumerate(speeches_in):
+#         all_speeches_in.append(
+#             Speech(
+#                 ordinal=ordinal + 1,
+#                 speaker=speech.speaker,
+#                 transcript=speech.transcript,
+#                 report_id=db_report_in.id,
+#             )
+#         )
+
+
+# def chunks(lst, n):
+#     """Yield successive n-sized chunks from lst."""
+#     for i in range(0, len(lst), n):
+#         yield lst[i : i + n]
+
+
+# for chunked_speeches in chunks(all_speeches_in, 1000):
+#     session.bulk_insert_mappings(Speech, chunked_speeches)
+
+# session.commit()
+
+handsard_website_responses = list(session.exec(select(HandsardWebsiteResponse)).all())

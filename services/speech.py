@@ -41,9 +41,9 @@ def contains_speaker_name(line: str):
     return "**" in line
 
 
-def get_speeches(markdown: str, start_of_speech_line: int):
+def get_speeches(markdown: str, start_of_speech_line: int) -> list[Speech]:
     current_speaker = None
-    speeches = []
+    speeches: list[Speech] = []
     for line in markdown.splitlines()[start_of_speech_line + 1 :]:
         parsed_line = line.strip()
         if parsed_line == "":
@@ -57,13 +57,20 @@ def get_speeches(markdown: str, start_of_speech_line: int):
         # TODO: 20890 causing problems
         name = re.search(r"((?:\*\*[^*]+?\*\*\s*)+)", parsed_line)
         if name:
-            transcript = parsed_line.split(str(name))[0]
-            current_speaker = str(name).replace("*", "").replace(":", "")
+            transcript = parsed_line.split(name.group(0))[-1]
+            current_speaker = name.group(0).replace("*", "").replace(":", "").strip()
+            speeches.append(
+                Speech(
+                    speaker=current_speaker,
+                    transcript=transcript.strip(),
+                )
+            )
+            continue
 
         speeches.append(
             Speech(
                 speaker=current_speaker,
-                transcript=transcript.strip(),
+                transcript=line.strip(),
             )
         )
     return speeches
