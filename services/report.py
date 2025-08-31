@@ -19,36 +19,8 @@ def _has_no_subtitle(raw_title: str) -> bool:
     return raw_title[-1] != ")"
 
 
-def _get_raw_db_report_in(handsard_search_result: HandsardSearchResult) -> Report:
-    sitting_date = datetime.strptime(handsard_search_result.sittingDate, "%d-%m-%Y")
-    return Report(
-        volumeNo=int(handsard_search_result.volumeNo),
-        parlNo=int(handsard_search_result.parlNo),
-        sittingNo=(
-            handsard_search_result.sittingNo
-            if handsard_search_result.sittingNo is None
-            else int(handsard_search_result.sittingNo)
-        ),
-        sittingDate=sitting_date,
-        sno=int(handsard_search_result.sno),
-        title=re.sub(r"[\r\n]+", " ", handsard_search_result.title).strip(),
-        subtitle=(
-            handsard_search_result.subtitle
-            if handsard_search_result.subtitle is None
-            else re.sub(r"[\r\n]+", " ", handsard_search_result.subtitle).strip()
-        ),
-        reportId=handsard_search_result.reportId,
-        reportType=handsard_search_result.reportType,
-        htmlFileName=(
-            handsard_search_result.htmlFileName
-            if handsard_search_result.htmlFileName is None
-            else handsard_search_result.htmlFileName
-        ),
-        reportVersion=handsard_search_result.reportVersion,
-    )
-
-
 def _get_db_report_header(raw_title: str) -> ReportHeader:
+    raw_title = raw_title.replace("\n", " ")
     if _has_no_subtitle(raw_title):
         return ReportHeader(title=raw_title)
 
@@ -96,6 +68,7 @@ def get_db_report_in(handsard_website_response: HandsardWebsiteResponse) -> Repo
         ),
         sittingDate=sitting_date,
         sno=int(handsard_website_response.speech_number),
+        original_title=handsard_website_response.title,
         title=db_report_header.title,
         subtitle=db_report_header.subtitle,
         reportId=handsard_website_response.report_id,

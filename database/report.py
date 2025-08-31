@@ -21,6 +21,7 @@ class Report(SQLModel, table=True):
     sitting_date: datetime = Field(alias="sittingDate")
     speech_number: int = Field(alias="sno")
 
+    original_title: str
     title: str
     subtitle: Optional[str] = None
     # Can be used to obtain raw report via request params

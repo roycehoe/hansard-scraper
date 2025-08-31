@@ -22,9 +22,35 @@ def _remove_page_text(html: str) -> str:
     return re.sub(f"{page_text_pattern}", "", html)
 
 
-def _remove_line_breaks(html: str) -> str:
+def _remove_line_breaks(md_file: str) -> str:
     page_text_pattern = r"   \n  \n\*\*\*\*  \n  \n"
-    return re.sub(page_text_pattern, " ", html)
+    return re.sub(page_text_pattern, " ", md_file)
+
+
+def _remove_new_lines(md_file: str) -> str:
+    lines = []
+    for line in md_file.splitlines():
+        if line == "":
+            continue
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def _merge_consecutive_bold_only_lines(md: str) -> str:
+    lines = []
+    buff = []
+    for line in md.splitlines():
+        if re.fullmatch(r"\*\*[^\n*].*\*\*", line.strip()):
+            buff.append(line.strip()[2:-2])  # strip ** … **
+            continue
+        if buff:
+            lines.append(f"**{' '.join(buff)}**")
+            buff = []
+        lines.append(line)
+    if buff:
+        lines.append(f"**{' '.join(buff)}**")
+
+    return "\n".join(lines)
 
 
 def get_cleaned_handsard_markdown(html: str) -> str:
@@ -37,5 +63,7 @@ def get_cleaned_handsard_markdown(html: str) -> str:
 
     md_file = h.handle(html)
     md_file = _remove_line_breaks(md_file)
+    # md_file = _remove_new_lines(md_file)
+    md_file = _merge_consecutive_bold_only_lines(md_file)
 
     return md_file
