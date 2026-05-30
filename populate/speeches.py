@@ -3,6 +3,7 @@ from sqlmodel import Session
 from crud.report import CRUDReport
 from crud.speech import CRUDSpeech
 from database.speech import Speech
+from logs import logger
 from services.speech import get_speeches, get_start_of_speech_line
 
 
@@ -10,7 +11,7 @@ def populate_speeches(session: Session):
     db_reports = CRUDReport(session).get_all()
     crud = CRUDSpeech(session)
     for i, db_report in enumerate(db_reports, start=1):
-        print(f"{i}/{len(db_reports)}")
+        logger.info(f"{i}/{len(db_reports)}")
         if db_report.markdown_content is None:
             continue
         start_of_speech_line = get_start_of_speech_line(

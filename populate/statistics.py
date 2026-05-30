@@ -6,6 +6,7 @@ from crud.handsard_website_response import CRUDHandsardWebsiteResponse
 from crud.parsing_statistics import CRUDParsingStatistics
 from database.handsard_website_response import HandsardWebsiteResponse
 from database.parsing_statistics import ParsingStatistics
+from logs import logger
 from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
@@ -41,7 +42,7 @@ def populate_statistics(session: Session):
     responses = CRUDHandsardWebsiteResponse(session).get_all()
     crud = CRUDParsingStatistics(session)
     for i, response in enumerate(responses, start=1):
-        print(f"{i}/{len(responses)}")
+        logger.info(f"{i}/{len(responses)}")
         crud.create(_get_statistics(response))
 
 
