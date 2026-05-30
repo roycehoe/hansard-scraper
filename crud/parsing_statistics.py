@@ -1,4 +1,4 @@
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from database.parsing_statistics import ParsingStatistics
 
@@ -10,3 +10,6 @@ class CRUDParsingStatistics:
     def create(self, statistics: ParsingStatistics) -> None:
         self.session.add(statistics)
         self.session.commit()
+
+    def get_all(self) -> list[ParsingStatistics]:
+        return list(self.session.exec(select(ParsingStatistics)).all())

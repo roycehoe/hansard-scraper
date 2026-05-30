@@ -40,15 +40,17 @@ def _get_statistics(response: HandsardWebsiteResponse) -> ParsingStatistics:
 def populate_statistics(session: Session):
     responses = CRUDHandsardWebsiteResponse(session).get_all()
     crud = CRUDParsingStatistics(session)
-    all_statistics = []
     for i, response in enumerate(responses, start=1):
         print(f"{i}/{len(responses)}")
-        stats = _get_statistics(response)
-        crud.create(stats)
-        all_statistics.append(stats)
+        crud.create(_get_statistics(response))
 
+
+def export_statistics_csv(session: Session, path: str = "statistics.csv"):
+    all_statistics = CRUDParsingStatistics(session).get_all()
+    if not all_statistics:
+        return
     fieldnames = list(all_statistics[0].model_dump().keys())
-    with open("statistics.csv", "w", newline="") as csvfile:
+    with open(path, "w", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for item in all_statistics:

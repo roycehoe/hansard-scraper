@@ -3,7 +3,7 @@ from populate.handsard_responses import populate_handsard_responses
 from populate.reports import populate_reports
 from populate.sitting_dates import populate_sitting_dates
 from populate.speeches import populate_speeches
-from populate.statistics import populate_statistics
+from populate.statistics import export_statistics_csv, populate_statistics
 
 if __name__ == "__main__":
     create_db_and_tables()
@@ -11,5 +11,6 @@ if __name__ == "__main__":
     populate_handsard_responses(session)
     populate_reports(session)
     populate_statistics(session)
+    export_statistics_csv(session)
     populate_speeches(session)
     populate_sitting_dates(session)
