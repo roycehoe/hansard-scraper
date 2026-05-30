@@ -1,5 +1,6 @@
 import requests
 
+from logs import logger
 from settings import settings
 
 
@@ -39,7 +40,7 @@ def get_all_handsard_search_results() -> list[dict]:
         try:
             response = get_handsard_search_results(start_index, end_index)
         except Exception as e:
-            print(f"Failed to fetch page {start_index // 20 + 1}: {e}, skipping")
+            logger.error(f"Failed to fetch page {start_index // 20 + 1}: {e}, skipping")
             start_index += 20
             end_index += 20
             continue
@@ -48,6 +49,6 @@ def get_all_handsard_search_results() -> list[dict]:
         all_handsard_search_results.extend(response)
         start_index += 20
         end_index += 20
-        print(f"Fetched page {start_index // 20}")
+        logger.info(f"Fetched page {start_index // 20}")
 
     return all_handsard_search_results
