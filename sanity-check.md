@@ -231,6 +231,7 @@ _Record each run here. Do not delete old entries._
 Date        | Sample size | Pipeline-break | Data-loss | Cosmetic | Notes
 ------------|-------------|----------------|-----------|----------|------
 2026-05-30  | 125         | 0              | 0         | 0        | 13 NO_SPEECHES — all correct behaviour (see below)
+2026-05-30  | 58 (no-speech validation) | 0 | 0 | 0 | 57/58 confirmed no bold speaker; 1 false-positive flag (see below)
 ```
 
 ### 2026-05-30 — Run details
@@ -248,3 +249,40 @@ Pass rate: 112/125 = 89.6%. All failures are `NO_SPEECHES` — start line was fo
 | 1     | `speaker`   | Appendix document, no speeches |
 
 Title extraction: 0 mismatches. Subtitle extraction: 0 mismatches. Markdown generation: 0 failures. Invalid speeches (None speaker / empty transcript): 0.
+
+---
+
+### 2026-05-30 — No-speech doc validation (`run_no_speech_validation.py`)
+
+**Goal:** Confirm the 1,449 docs excluded from the speaker/transcript criterion target genuinely have no bold speaker markup after the start line.
+
+**Sample:** K=5 per `report_type`, stratified across all 13 types with no-speech docs. 58 docs checked.
+
+**No-speech breakdown (full population):**
+
+| Count | report_type |
+|-------|-------------|
+| 349   | `motion` |
+| 345   | `bill` |
+| 287   | `budget` |
+| 145   | `atbp` |
+| 84    | `oral-answer` |
+| 64    | `speaker` |
+| 48    | `president-address` |
+| 48    | `written-answer` |
+| 43    | `ministerial-statement` |
+| 26    | `bill-intro` |
+| 7     | `misc` |
+| 2     | `written-answer-na` |
+| 1     | `yang-di-message` |
+
+**Results:** 57/58 confirmed no bold speaker markup. 1 flagged as suspicious.
+
+**Suspicious doc — confirmed correct exclusion:**
+
+- `id=24706`, `budget`, parliament 10 — *ESTIMATES OF EXPENDITURE FOR THE FINANCIAL YEAR 1ST APRIL 2004*
+- Bold pattern found: `**[Mr Speaker in the Chair]**` (line 17, last line of doc)
+- This is a procedural chairperson annotation, not a speech. It produces no transcript (empty string after the bold marker), which is correctly filtered by the empty-transcript guard in `get_speeches`.
+- Verdict: correctly excluded. The validation regex (`**...**`) is too broad and flags stage-direction annotations; the parsing code handles this correctly.
+
+**Conclusion:** The exclusion of 1,449 no-speech docs from the target set is validated. All sampled docs are procedural records (First Reading bills, adjournment resolutions, appendix/attendance tables, budget procedural headers) with no speaker utterances.
