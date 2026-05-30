@@ -57,7 +57,6 @@ def _get_db_report_header(raw_title: str) -> ReportHeader:
 def get_db_report_in(handsard_website_response: HandsardWebsiteResponse) -> Report:
     sitting_date = datetime.strptime(handsard_website_response.sitting_date, "%d-%m-%Y")
     db_report_header = _get_db_report_header(handsard_website_response.title)
-    print(db_report_header)
 
     return Report(
         volumeNo=int(handsard_website_response.volume_number),

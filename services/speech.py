@@ -15,10 +15,20 @@ class Speech:
     transcript: str
 
 
+def _strip_md(text: str) -> str:
+    return re.sub(r"[_*]", "", text)
+
+
 def get_start_of_speech_line(
-    markdown_content: str, title: str, subtitle: Optional[str], original_title: str
+    markdown_content: str,
+    title: str,
+    subtitle: Optional[str],
+    original_title: str,
+    report_type: str = "",
 ) -> Optional[int]:
+    original_title_clean = original_title.replace("\n", " ").strip()
     for line_index, line in enumerate(markdown_content.splitlines()):
+        # Old format: title appears in bold (**Title**)
         if subtitle:
             if f"{title} {subtitle}**" in line:
                 return line_index
@@ -34,6 +44,17 @@ def get_start_of_speech_line(
             " ", ""
         ):
             return line_index
+
+        # New format (Parliament 12+): title appears as a markdown heading (# Title)
+        if line.startswith("#"):
+            heading = _strip_md(line.lstrip("#").strip()).lower()
+            if heading == _strip_md(title).lower():
+                return line_index
+            if subtitle and heading == _strip_md(f"{title} {subtitle}").lower():
+                return line_index
+            if heading == _strip_md(original_title_clean).lower():
+                return line_index
+
     return None
 
 
