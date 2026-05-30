@@ -7,9 +7,8 @@ class CRUDHandsardSittingDateResponse:
     def __init__(self, session: Session):
         self.session = session
 
-    def create_many(self, results: list[HandsardSittingDateResponse]) -> None:
-        for result in results:
-            self.session.add(result)
+    def create(self, response: HandsardSittingDateResponse) -> None:
+        self.session.add(response)
         self.session.commit()
 
     def get_all_sitting_dates(self) -> set[str]:

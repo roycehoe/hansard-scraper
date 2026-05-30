@@ -7,6 +7,6 @@ class CRUDParsingStatistics:
     def __init__(self, session: Session):
         self.session = session
 
-    def create_many(self, statistics: list[ParsingStatistics]) -> None:
-        self.session.bulk_insert_mappings(ParsingStatistics, statistics)
+    def create(self, statistics: ParsingStatistics) -> None:
+        self.session.add(statistics)
         self.session.commit()

@@ -7,5 +7,7 @@ from services.report import get_db_report_in
 
 def populate_reports(session: Session):
     responses = CRUDHandsardWebsiteResponse(session).get_all()
-    reports = [get_db_report_in(response) for response in responses]
-    CRUDReport(session).create_many(reports)
+    crud = CRUDReport(session)
+    for i, response in enumerate(responses, start=1):
+        print(f"{i}/{len(responses)}")
+        crud.create(get_db_report_in(response))

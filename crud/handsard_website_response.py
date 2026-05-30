@@ -7,9 +7,8 @@ class CRUDHandsardWebsiteResponse:
     def __init__(self, session: Session):
         self.session = session
 
-    def create_many(self, responses: list[HandsardWebsiteResponse]) -> None:
-        for response in responses:
-            self.session.add(response)
+    def create(self, response: HandsardWebsiteResponse) -> None:
+        self.session.add(response)
         self.session.commit()
 
     def get_all(self) -> list[HandsardWebsiteResponse]:
