@@ -1,5 +1,7 @@
 #CUSTOM
 *.json
+!sample.json
+plans/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
