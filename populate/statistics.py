@@ -1,7 +1,9 @@
 import csv
 
-from sqlmodel import Session, select
+from sqlmodel import Session
 
+from crud.handsard_website_response import CRUDHandsardWebsiteResponse
+from crud.parsing_statistics import CRUDParsingStatistics
 from database.report import HandsardWebsiteResponse, ParsingStatistics
 from services.report import get_db_report_in
 from services.speech import get_speeches, get_start_of_speech_line
@@ -35,13 +37,12 @@ def _get_statistics(response: HandsardWebsiteResponse) -> ParsingStatistics:
 
 
 def populate_statistics(session: Session):
-    responses = list(session.exec(select(HandsardWebsiteResponse)).all())
+    responses = CRUDHandsardWebsiteResponse(session).get_all()
     all_statistics = []
     for i, response in enumerate(responses, start=1):
         print(f"{i}/{len(responses)}")
         all_statistics.append(_get_statistics(response))
-    session.bulk_insert_mappings(ParsingStatistics, all_statistics)
-    session.commit()
+    CRUDParsingStatistics(session).create_many(all_statistics)
 
     fieldnames = list(all_statistics[0].model_dump().keys())
     with open("statistics.csv", "w", newline="") as csvfile:
