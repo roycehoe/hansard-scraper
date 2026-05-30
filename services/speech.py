@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 
 
@@ -7,6 +8,41 @@ from typing import Optional
 class Speech:
     speaker: Optional[str]
     transcript: str
+
+
+class SpeechType(Enum):
+    PARSED = "parsed"
+    SINGLE_SPEAKER = "single_speaker"
+    MULTI_SPEAKER = "multi_speaker"
+    NO_SPEAKER = "no_speaker"
+
+
+_MP_SPEAK_RE = re.compile(r"MPs? Speaking:\|\s*([^\n|]+)", re.IGNORECASE)
+
+
+def _extract_mps_speaking(markdown: str) -> list[str]:
+    m = _MP_SPEAK_RE.search(markdown)
+    if not m:
+        return []
+    return [n.strip() for n in m.group(1).split(";") if n.strip()]
+
+
+def _classify_speech_type(parsed: list[Speech], speaker_count: int) -> SpeechType:
+    if parsed:
+        return SpeechType.PARSED
+    if speaker_count == 1:
+        return SpeechType.SINGLE_SPEAKER
+    if speaker_count > 1:
+        return SpeechType.MULTI_SPEAKER
+    return SpeechType.NO_SPEAKER
+
+
+def _single_speaker_transcript(markdown: str, start_of_speech_line: int) -> str:
+    return " ".join(
+        line.strip()
+        for line in markdown.splitlines()[start_of_speech_line + 1:]
+        if line.strip() and line.strip().strip("* ")
+    )
 
 
 def _strip_md(text: str) -> str:
@@ -99,7 +135,7 @@ def get_start_of_speech_line(
     return None
 
 
-def get_speeches(markdown: str, start_of_speech_line: int) -> list[Speech]:
+def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[Speech]:
     current_speaker = None
     speeches: list[Speech] = []
     for line in markdown.splitlines()[start_of_speech_line + 1 :]:
@@ -128,3 +164,16 @@ def get_speeches(markdown: str, start_of_speech_line: int) -> list[Speech]:
             speeches.append(Speech(speaker=current_speaker, transcript=parsed_line))
 
     return [sp for sp in speeches if sp.transcript.strip() != ""]
+
+
+def get_speeches(markdown: str, start_of_speech_line: int) -> list[Speech]:
+    parsed = _parse_speeches(markdown, start_of_speech_line)
+    speakers = _extract_mps_speaking(markdown)
+    speech_type = _classify_speech_type(parsed, len(speakers))
+
+    if speech_type == SpeechType.PARSED:
+        return parsed
+    if speech_type == SpeechType.SINGLE_SPEAKER:
+        body = _single_speaker_transcript(markdown, start_of_speech_line)
+        return [Speech(speaker=speakers[0], transcript=body)] if body else []
+    return []
