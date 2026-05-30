@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 
@@ -45,7 +45,7 @@ class HandsardSearchResult(BaseModel):
     atbp_list: Optional[List] = None
     ptba_list: Optional[List] = None
     attendance_list: Optional[List] = None
-    online_pdf_file_name: Optional[Any] = None
+    online_pdf_file_name: Optional[Any] = Field(default=None, alias="onlinePDFFileName")
     pdf_nodes: Optional[Any] = None
     clarification_text: Optional[Any] = None
     clarification_title: Optional[Any] = None
