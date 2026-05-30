@@ -24,7 +24,7 @@ def _extract_mps_speaking(markdown: str) -> list[str]:
     m = _MP_SPEAK_RE.search(markdown)
     if not m:
         return []
-    return [n.strip() for n in m.group(1).split(";") if n.strip()]
+    return [n.strip() for n in m.group(1).split(";") if n.strip().strip("* ")]
 
 
 def _classify_speech_type(parsed: list[Speech], speaker_count: int) -> SpeechType:
@@ -99,6 +99,15 @@ def _line_matches_title(line: str, candidate: str) -> bool:
         or (ref_norm.endswith(sc_norm) and len(sc_norm) >= 10)
         or (sc_norm.endswith(ref_norm) and len(ref_norm) >= 10)
     ):
+        return True
+
+    # Strategy 5: strip chair-annotation prefix [X in the Chair] and trailing
+    # parenthetical suffix before comparing — handles lines like
+    # "**[Mr Speaker in the Chair] TITLE (Announcement by Mr Speaker)**"
+    no_chair = re.sub(r"^\[.*?\]\s*", "", stripped).strip()
+    no_suffix = re.sub(r"\s*\([^)]*\)\s*$", "", no_chair).strip()
+    sc_norm5 = re.sub(r"\s+", "", no_suffix.lower())
+    if sc_norm5 and sc_norm5 == ref_norm:
         return True
 
     return False
