@@ -73,7 +73,7 @@ def run():
             total_checked += 1
             lines_after = report.markdown_content.splitlines()[start_line + 1 :]
 
-            bold_lines = [l for l in lines_after if BOLD_SPEAKER_RE.search(l.strip())]
+            bold_lines = [line for line in lines_after if BOLD_SPEAKER_RE.search(line.strip())]
             status = "SUSPICIOUS" if bold_lines else "OK"
             if bold_lines:
                 suspicious.append((report, start_line, bold_lines))
