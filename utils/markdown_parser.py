@@ -3,7 +3,7 @@ import re
 import html2text
 
 
-def _remove_spaces(html: str) -> str:
+def _strip_nbsp(html: str) -> str:
     return html.replace("&nbsp;", "")
 
 
@@ -22,12 +22,12 @@ def _remove_page_text(html: str) -> str:
     return re.sub(page_text_pattern, "", html)
 
 
-def _remove_line_breaks(md_file: str) -> str:
+def _strip_page_break_artifacts(md_file: str) -> str:
     page_text_pattern = r"   \n  \n\*\*\*\*  \n  \n"
     return re.sub(page_text_pattern, " ", md_file)
 
 
-def _remove_new_lines(md_file: str) -> str:
+def _remove_empty_lines(md_file: str) -> str:
     return "\n".join(line for line in md_file.splitlines() if line)
 
 
@@ -51,14 +51,14 @@ def _merge_consecutive_bold_only_lines(md: str) -> str:
 def get_cleaned_handsard_markdown(html: str) -> str:
     h = html2text.HTML2Text(bodywidth=0)
 
-    html = _remove_spaces(html)
+    html = _strip_nbsp(html)
     html = _remove_column_text(html)
     html = _remove_column_no_text(html)
     html = _remove_page_text(html)
 
     md_file = h.handle(html)
-    md_file = _remove_line_breaks(md_file)
-    md_file = _remove_new_lines(md_file)
+    md_file = _strip_page_break_artifacts(md_file)
+    md_file = _remove_empty_lines(md_file)
     md_file = _merge_consecutive_bold_only_lines(md_file)
 
     return md_file

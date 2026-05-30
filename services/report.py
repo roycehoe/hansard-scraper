@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
@@ -25,34 +26,18 @@ def _get_db_report_header(raw_title: str) -> ReportHeader:
     if raw_title[-1] != ")":
         return ReportHeader(title=raw_title)
 
-    title = ""
     subtitle = None
-    in_brackets_content = ""
-    is_in_brackets = False
 
-    for letter in raw_title:
-        if letter == "(":
-            is_in_brackets = True
-            continue
+    def _handle_bracket(m: re.Match) -> str:
+        nonlocal subtitle
+        content = m.group(1)
+        if content.isupper():
+            return m.group(0)
+        subtitle = f"({content})"
+        return ""
 
-        if is_in_brackets:
-            if letter != ")":
-                in_brackets_content += letter
-                continue
-            if not in_brackets_content.isupper():
-                subtitle = f"({in_brackets_content})"
-            else:
-                title += f"({in_brackets_content})"
-
-            in_brackets_content = ""
-            is_in_brackets = False
-            continue
-
-        title += letter
-
-    if subtitle is None:
-        return ReportHeader(title=title.strip())
-    return ReportHeader(title=title.strip(), subtitle=subtitle.strip())
+    title = re.sub(r"\(([^)]*)\)", _handle_bracket, raw_title).strip()
+    return ReportHeader(title=title, subtitle=subtitle)
 
 
 def get_db_report_in(handsard_website_response: HandsardWebsiteResponse) -> Report:
@@ -64,9 +49,9 @@ def get_db_report_in(handsard_website_response: HandsardWebsiteResponse) -> Repo
         volumeNo=int(handsard_website_response.volume_number),
         parlNo=int(handsard_website_response.parliament_number),
         sittingNo=(
-            handsard_website_response.sitting_number
-            if handsard_website_response.sitting_number is None
-            else int(handsard_website_response.sitting_number)
+            int(handsard_website_response.sitting_number)
+            if handsard_website_response.sitting_number is not None
+            else None
         ),
         sittingDate=sitting_date,
         sno=int(handsard_website_response.speech_number),
