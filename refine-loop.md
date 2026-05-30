@@ -1,3 +1,15 @@
+# Before Starting — Resume Check
+
+Before beginning Setup or any loop iteration, scan the working directory for existing artifacts and load them:
+
+- `diagnose.py` — runs `_get_statistics` across a set of report IDs and prints a pass/fail table; read it to understand its CLI interface before calling it.
+- `inspect_failures.py` — opens raw markdown for a given report ID; read it to understand its interface before calling it.
+- `sample.json` — the fixed sample drawn at Setup Step 5; if present, use it as-is. If absent and `progress.txt` exists (loop has already started), flag the integrity issue — re-sampling would draw from a different population.
+- `progress.txt` — iteration log; if present, read it to determine which iteration the loop is on and what was last attempted.
+- `parsing-patterns.md` — accumulated structural knowledge about markdown format and report types; if present, read it before investigating any failures.
+
+**Do not regenerate any of the above files if they already exist.** If all artifacts are present, skip Setup and resume the loop from the last incomplete step recorded in `progress.txt`.
+
 # Goal
 
 Target Dataset: All Report rows where `markdown_content` is not None, restricted to report types validated as speech-bearing (determined during setup).
