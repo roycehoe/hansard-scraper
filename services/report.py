@@ -6,14 +6,7 @@ from typing import Optional
 from database.handsard_website_response import HandsardWebsiteResponse
 from database.report import Report
 from utils.markdown_parser import get_cleaned_handsard_markdown
-
-
-def _fix_mojibake(s: str) -> str:
-    """Fix Windows-1252 mojibake in stored titles (e.g. â€™ → ', âˆ' → −)."""
-    try:
-        return s.encode("cp1252").decode("utf-8")
-    except (UnicodeDecodeError, UnicodeEncodeError):
-        return s
+from utils.text import fix_mojibake
 
 
 @dataclass
@@ -43,7 +36,7 @@ def _get_db_report_header(raw_title: str) -> ReportHeader:
 
 def get_db_report_in(handsard_website_response: HandsardWebsiteResponse) -> Report:
     sitting_date = datetime.strptime(handsard_website_response.sitting_date, "%d-%m-%Y")
-    raw_title = _fix_mojibake(handsard_website_response.title)
+    raw_title = fix_mojibake(handsard_website_response.title)
     db_report_header = _get_db_report_header(raw_title)
 
     return Report(
