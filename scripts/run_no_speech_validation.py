@@ -7,8 +7,8 @@ inspects the markdown after start_line, and flags any doc where a bold
 speaker pattern (**Name:**) is present.
 """
 
-import re
 import random
+import re
 from collections import defaultdict
 
 from sqlmodel import Session, select

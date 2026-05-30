@@ -8,7 +8,11 @@ from sqlmodel import Session, select
 
 from database.init import engine
 from database.report import Report
-from services.speech import _extract_mps_speaking, get_speeches, get_start_of_speech_line
+from services.speech import (
+    _extract_mps_speaking,
+    get_speeches,
+    get_start_of_speech_line,
+)
 
 
 def run():
