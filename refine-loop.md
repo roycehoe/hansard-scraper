@@ -12,9 +12,13 @@ Before beginning Setup or any loop iteration, scan the working directory for exi
 
 # Goal
 
-Target Dataset: All Report rows where `markdown_content` is not None, restricted to report types validated as speech-bearing (determined during setup).
+Target Dataset: All Report rows where `markdown_content` is not None, **excluding** only documents where zero speeches is genuinely correct:
+- `MPs Speaking` header is absent or empty (0 speakers), OR
+- `MPs Speaking` lists 2+ speakers **and** `get_speeches` returns `[]` — these are annex/appendix index documents (PDF link tables), not attributable prose.
 
-Success: ≥95% of reports in the validated speech-bearing set yield at least one speech, where every speech has a non-None, non-empty `speaker` and `transcript`.
+Documents with exactly 1 name in `MPs Speaking` are **always in the target** — the Hansard records who authored them and the pipeline must attribute the body text to that person.
+
+Success: ≥95% of reports in the target set yield at least one speech, where every speech has a non-None, non-empty `speaker` and `transcript`.
 
 # Method
 
@@ -35,10 +39,18 @@ If this inspection reveals that zero speeches is correct behaviour for a signifi
 **Step 3 — Add `report_type` to parsing function signatures.**
 `get_start_of_speech_line` currently takes `(markdown_content, title, subtitle, original_title)` — it does not receive `report_type`. Before any condition-gated patch can work, update the signature to include `report_type` and update all call sites in `script.py` (`_get_statistics`, `parse_speeches`). This is a prerequisite for the entire iterative loop.
 
-**Step 4 — Record the baseline.**
+**Step 4 — Implement the single-speaker fallback attribution.**
+Before recording the baseline, apply the fallback documented in `docs/no-speech-attribution.md` to `get_speeches`: when the main loop produces `[]`, check the `MPs Speaking` header for exactly one name; if found, return a single `Speech` covering all non-empty, non-decorative body lines joined. This is a known fix backed by full-population analysis (1,193 attributable docs) — apply it unconditionally before any iterative work begins so the baseline reflects the correct post-fallback state.
+
+After applying, verify:
+- Multi-speaker docs (2+ names in `MPs Speaking`) still return `[]`.
+- Zero-speaker docs still return `[]`.
+- The regression set (30 passing docs drawn later in Step 6) still passes once drawn.
+
+**Step 5 — Record the baseline.**
 Run parsing against the full validated set (excluding no-speech types from step 1) and record the starting success rate. Write it to `progress.txt` under a `## Setup — Baseline` heading. This is the reference point for all future progress and the denominator for the 95% target.
 
-**Step 5 — Draw the pilot sample.**
+**Step 6 — Draw the pilot sample.**
 Sample from failing documents, grouped by `(failure_stage, report_type)`, up to K=3 per group. Exclude `has_markdown=False` rows.
 
 Also draw a **held-out improvement set**: K=3 additional failing documents per group, not shown during diagnosis, used only for post-patch validation.
@@ -120,7 +132,7 @@ When proposing a fix:
 **Step 5 — Validate the patch**
 Run `_get_statistics` on three sets:
 
-1. **Held-out improvement set** — failing documents not shown during diagnosis, from the same `(failure_stage, report_type)` groups. The patch must produce a net improvement here (more documents passing than before) to be accepted. Minimum bar: ≥2 documents must flip from failing to passing, or >50% of the held-out group if the group has fewer than 4 documents. Groups with no held-out set (flagged at Setup Step 5) are exempt from this check.
+1. **Held-out improvement set** — failing documents not shown during diagnosis, from the same `(failure_stage, report_type)` groups. The patch must produce a net improvement here (more documents passing than before) to be accepted. Minimum bar: ≥2 documents must flip from failing to passing, or >50% of the held-out group if the group has fewer than 4 documents. Groups with no held-out set (flagged at Setup Step 6) are exempt from this check.
 2. **Full diagnosis sample** — the Step 1 documents, to measure net change on the training set.
 3. **Passing-document regression set** — the ~30 passing documents drawn at setup. Any regression here (a previously-passing document now failing) is a signal to investigate before accepting.
 
