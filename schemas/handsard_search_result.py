@@ -1,52 +1,55 @@
 from typing import Any, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
 
 
 class HandsardSearchResult(BaseModel):
-    memberId: Optional[Any] = None
-    volumeNo: str
-    reportType: str
-    sessionNo: Optional[Any] = None
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    member_id: Optional[Any] = None
+    volume_no: str
+    report_type: str
+    session_no: Optional[Any] = None
     portfolio: Optional[Any] = None
-    memberName: Optional[Any] = None
-    reportVersion: str
-    reportStartCol: Optional[Any] = None
-    sittingNo: Optional[str] = None
-    reportEndCol: Optional[Any] = None
+    member_name: Optional[Any] = None
+    report_version: str
+    report_start_col: Optional[Any] = None
+    sitting_no: Optional[str] = None
+    report_end_col: Optional[Any] = None
     title: str
-    columnStart: str
-    parlNo: str
-    reportContent: Optional[Any] = None
-    columnEnd: str
-    reportId: str
+    column_start: str
+    parl_no: str
+    report_content: Optional[Any] = None
+    column_end: str
+    report_id: str
     score: Optional[Any] = None
-    maxResult: Optional[str] = None
+    max_result: Optional[str] = None
     sno: str
-    fullContentFlag: Optional[Any] = None
-    fromMonth: Optional[str] = None
-    fromDay: Optional[str] = None
-    fromYear: Optional[str] = None
-    htmlFullContent: Optional[Any] = None
-    htmlContent: Optional[Any] = None
+    full_content_flag: Optional[Any] = None
+    from_month: Optional[str] = None
+    from_day: Optional[str] = None
+    from_year: Optional[str] = None
+    html_full_content: Optional[Any] = None
+    html_content: Optional[Any] = None
     subtitle: Optional[Any] = None
-    sittingDate: str
+    sitting_date: str
     content: Optional[str] = None
-    mpNames: Optional[Any] = None
-    htmlFileName: Optional[str] = None
-    verPdf: Optional[Any] = None
-    footNotes: Optional[Any] = None
-    footNoteQuestion: Optional[Any] = None
-    footNoteQuestions: Optional[Any] = None
-    footNote: Optional[List] = None
-    atbpList: Optional[List] = None
-    ptbaList: Optional[List] = None
-    attendanceList: Optional[List] = None
-    onlinePDFFileName: Optional[Any] = None
-    pdfNodes: Optional[Any] = None
-    clarificationText: Optional[Any] = None
-    clarificationTitle: Optional[Any] = None
-    clarificationSubTitle: Optional[Any] = None
-    ptbaFrom: Optional[Any] = None
-    ptbaTo: Optional[Any] = None
-    questionCount: Optional[Any] = None
+    mp_names: Optional[Any] = None
+    html_file_name: Optional[str] = None
+    ver_pdf: Optional[Any] = None
+    foot_notes: Optional[Any] = None
+    foot_note_question: Optional[Any] = None
+    foot_note_questions: Optional[Any] = None
+    foot_note: Optional[List] = None
+    atbp_list: Optional[List] = None
+    ptba_list: Optional[List] = None
+    attendance_list: Optional[List] = None
+    online_pdf_file_name: Optional[Any] = None
+    pdf_nodes: Optional[Any] = None
+    clarification_text: Optional[Any] = None
+    clarification_title: Optional[Any] = None
+    clarification_sub_title: Optional[Any] = None
+    ptba_from: Optional[Any] = None
+    ptba_to: Optional[Any] = None
+    question_count: Optional[Any] = None
