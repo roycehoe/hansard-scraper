@@ -6,11 +6,9 @@ regenerates objects, and compares against the control (raw HTML content).
 
 import json
 
-from sqlmodel import select
-
-from database.handsard_website_response import HandsardWebsiteResponse
+from crud.handsard_website_response import CRUDHandsardWebsiteResponse
+from crud.report import CRUDReport
 from database.init import get_session
-from database.report import Report
 from services.report import get_db_report_in
 from services.speech import get_speeches, get_start_of_speech_line
 
@@ -27,17 +25,10 @@ def run():
 
     session = next(get_session())
 
-    # Get stored Report records to look up report_id strings
-    stored_reports = session.exec(
-        select(Report).where(Report.id.in_(report_ids))
-    ).all()
+    stored_reports = CRUDReport(session).get_by_ids(report_ids)
     report_id_strings = {r.report_id for r in stored_reports}
 
-    # Get matching HandsardWebsiteResponses
-    hwrs = session.exec(
-        select(HandsardWebsiteResponse)
-        .where(HandsardWebsiteResponse.report_id.in_(report_id_strings))
-    ).all()
+    hwrs = CRUDHandsardWebsiteResponse(session).get_all_by_report_ids(report_id_strings)
     hwr_by_report_id = {h.report_id: h for h in hwrs}
 
     print(f"Sample Report IDs:       {len(report_ids)}")

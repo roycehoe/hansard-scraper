@@ -11,8 +11,9 @@ import random
 import re
 from collections import defaultdict
 
-from sqlmodel import Session, select
+from sqlmodel import Session
 
+from crud.report import CRUDReport
 from database.init import engine
 from database.report import Report
 from services.speech import get_speeches, get_start_of_speech_line
@@ -26,9 +27,7 @@ def run():
     random.seed(SEED)
 
     with Session(engine) as session:
-        reports = session.exec(
-            select(Report).where(Report.markdown_content.is_not(None))
-        ).all()
+        reports = CRUDReport(session).get_all_with_markdown()
 
     print(f"Reports with markdown: {len(reports)}")
 

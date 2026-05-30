@@ -3,9 +3,9 @@
 import random
 from collections import defaultdict
 
-from sqlmodel import Session, select
+from sqlmodel import Session
 
-from database.handsard_website_response import HandsardWebsiteResponse
+from crud.handsard_website_response import CRUDHandsardWebsiteResponse
 from database.init import engine
 from services.report import get_db_report_in
 from services.speech import get_speeches, get_start_of_speech_line
@@ -13,7 +13,7 @@ from services.speech import get_speeches, get_start_of_speech_line
 
 def get_report_type_speech_stats(session: Session) -> dict:
     """For each report_type, count how many responses have markdown and how many yield speeches."""
-    responses = list(session.exec(select(HandsardWebsiteResponse)).all())
+    responses = CRUDHandsardWebsiteResponse(session).get_all()
     stats = defaultdict(lambda: {"total": 0, "has_markdown": 0, "has_start_line": 0, "can_get_speeches": 0})
 
     for resp in responses:
@@ -41,7 +41,7 @@ def get_report_type_speech_stats(session: Session) -> dict:
 
 def get_failing_sample(session: Session, no_speech_types: set[str], k: int = 3) -> dict:
     """Sample up to k failing documents per (failure_stage, report_type) group."""
-    responses = list(session.exec(select(HandsardWebsiteResponse)).all())
+    responses = CRUDHandsardWebsiteResponse(session).get_all()
     groups = defaultdict(list)
 
     for resp in responses:
@@ -71,7 +71,7 @@ def get_failing_sample(session: Session, no_speech_types: set[str], k: int = 3) 
 
 def get_passing_sample(session: Session, no_speech_types: set[str], n: int = 30) -> list:
     """Sample n currently-passing documents for regression testing."""
-    responses = list(session.exec(select(HandsardWebsiteResponse)).all())
+    responses = CRUDHandsardWebsiteResponse(session).get_all()
     passing = []
 
     for resp in responses:
@@ -120,6 +120,7 @@ def run_stats_on(responses: list, label: str = "") -> dict:
 
 if __name__ == "__main__":
     with Session(engine) as session:
+        crud = CRUDHandsardWebsiteResponse(session)
         print("=== Setup: report_type speech stats ===")
         stats = get_report_type_speech_stats(session)
         no_speech_types = set()
@@ -136,16 +137,12 @@ if __name__ == "__main__":
 
         print(f"\nNo-speech report types (excluded from target): {no_speech_types}")
 
-        # Baseline: all docs with markdown, excluding no-speech types
         print("\n=== Baseline (excluding no-speech types) ===")
-        all_responses = list(session.exec(select(HandsardWebsiteResponse)).all())
-        target = [r for r in all_responses if r.report_type not in no_speech_types]
-        target_with_md = []
-        for r in target:
-            rpt = get_db_report_in(r)
-            if rpt.markdown_content is not None:
-                target_with_md.append(r)
-
+        all_responses = crud.get_all()
+        target_with_md = [
+            r for r in all_responses
+            if r.report_type not in no_speech_types and get_db_report_in(r).markdown_content is not None
+        ]
         baseline = run_stats_on(target_with_md, "baseline")
         total = len(baseline["pass"]) + len(baseline["fail_start_line"]) + len(baseline["fail_speeches"])
         pct = 100 * len(baseline["pass"]) / total if total else 0

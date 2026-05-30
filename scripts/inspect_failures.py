@@ -2,9 +2,9 @@
 
 import sys
 
-from sqlmodel import Session, select
+from sqlmodel import Session
 
-from database.handsard_website_response import HandsardWebsiteResponse
+from crud.handsard_website_response import CRUDHandsardWebsiteResponse
 from database.init import engine
 from services.report import get_db_report_in
 from services.speech import get_start_of_speech_line
@@ -26,15 +26,8 @@ def show_doc(resp, rpt, max_lines=60):
     print()
 
 
-def inspect_type(session, report_type, max_failing=3, max_passing=2):
-    # Filter at SQL level — don't load all rows
-    responses = list(
-        session.exec(
-            select(HandsardWebsiteResponse).where(
-                HandsardWebsiteResponse.report_type == report_type
-            )
-        ).all()
-    )
+def inspect_type(session: Session, report_type: str, max_failing: int = 3, max_passing: int = 2):
+    responses = CRUDHandsardWebsiteResponse(session).get_all_by_report_type(report_type)
 
     failing, passing = [], []
     for resp in responses:

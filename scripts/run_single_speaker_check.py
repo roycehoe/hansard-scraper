@@ -4,10 +4,10 @@ and report how many now yield a speech vs still return [].
 """
 from collections import defaultdict
 
-from sqlmodel import Session, select
+from sqlmodel import Session
 
+from crud.report import CRUDReport
 from database.init import engine
-from database.report import Report
 from services.speech import (
     _extract_mps_speaking,
     get_speeches,
@@ -17,9 +17,7 @@ from services.speech import (
 
 def run():
     with Session(engine) as session:
-        reports = session.exec(
-            select(Report).where(Report.markdown_content.is_not(None))
-        ).all()
+        reports = CRUDReport(session).get_all_with_markdown()
 
     single_speaker = [
         r for r in reports
