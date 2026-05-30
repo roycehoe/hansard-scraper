@@ -15,56 +15,43 @@ def fetch_handsard_responses(session: Session):
     all_search_results = [
         HandsardSearchResult(**r) for r in get_all_handsard_search_results()
     ]
-    for i, result in enumerate(all_search_results):
-        print(f"reports in: {i}/{len(all_search_results)}")
+    for i, result in enumerate(all_search_results, start=1):
+        print(f"{i}/{len(all_search_results)}")
         session.add(get_handsard_website_result_in(result))
     session.commit()
 
 
 def parse_reports(session: Session):
     responses = list(session.exec(select(HandsardWebsiteResponse)).all())
-    for report in [get_db_report_in(r) for r in responses]:
-        session.add(report)
+    for response in responses:
+        session.add(get_db_report_in(response))
     session.commit()
 
 
 def _get_statistics(response: HandsardWebsiteResponse) -> ParsingStatistics:
-    data = get_db_report_in(response)
-    statistics = ParsingStatistics(**data.model_dump())
+    report = get_db_report_in(response)
 
-    if data.markdown_content is None:
-        statistics.has_markdown = False
-        statistics.has_start_line = False
-        statistics.can_get_speeches = False
-        return statistics
+    if report.markdown_content is None:
+        return ParsingStatistics(**report.model_dump(), has_markdown=False, has_start_line=False, can_get_speeches=False)
 
     start_of_speech_line = get_start_of_speech_line(
-        data.markdown_content, data.title, data.subtitle, data.original_title
+        report.markdown_content, report.title, report.subtitle, report.original_title
     )
     if start_of_speech_line is None:
-        statistics.has_markdown = True
-        statistics.has_start_line = False
-        statistics.can_get_speeches = False
-        return statistics
+        return ParsingStatistics(**report.model_dump(), has_markdown=True, has_start_line=False, can_get_speeches=False)
 
     try:
-        get_speeches(data.markdown_content, start_of_speech_line)
+        get_speeches(report.markdown_content, start_of_speech_line)
     except Exception:
-        statistics.has_markdown = True
-        statistics.has_start_line = True
-        statistics.can_get_speeches = False
-        return statistics
+        return ParsingStatistics(**report.model_dump(), has_markdown=True, has_start_line=True, can_get_speeches=False)
 
-    statistics.has_markdown = True
-    statistics.has_start_line = True
-    statistics.can_get_speeches = True
-    return statistics
+    return ParsingStatistics(**report.model_dump(), has_markdown=True, has_start_line=True, can_get_speeches=True)
 
 
 def compute_statistics(session: Session):
     responses = list(session.exec(select(HandsardWebsiteResponse)).all())
     all_statistics = []
-    for i, response in enumerate(responses):
+    for i, response in enumerate(responses, start=1):
         print(f"{i}/{len(responses)}")
         all_statistics.append(_get_statistics(response))
     session.bulk_insert_mappings(ParsingStatistics, all_statistics)
@@ -78,9 +65,9 @@ def compute_statistics(session: Session):
             writer.writerow(item.model_dump())
 
 
-def _chunks(lst, n):
-    for i in range(0, len(lst), n):
-        yield lst[i : i + n]
+def _chunks(items, size):
+    for i in range(0, len(items), size):
+        yield items[i : i + size]
 
 
 def parse_speeches(session: Session):
