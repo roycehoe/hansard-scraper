@@ -8,7 +8,7 @@ from services.speech import get_speeches, get_start_of_speech_line
 
 def populate_speeches(session: Session):
     db_reports = CRUDReport(session).get_all()
-    all_speeches: list[Speech] = []
+    crud = CRUDSpeech(session)
     for i, db_report in enumerate(db_reports, start=1):
         print(f"{i}/{len(db_reports)}")
         if db_report.markdown_content is None:
@@ -25,7 +25,7 @@ def populate_speeches(session: Session):
         for ordinal, speech in enumerate(
             get_speeches(db_report.markdown_content, start_of_speech_line)
         ):
-            all_speeches.append(
+            crud.create(
                 Speech(
                     ordinal=ordinal + 1,
                     speaker=speech.speaker,
@@ -33,4 +33,3 @@ def populate_speeches(session: Session):
                     report_id=db_report.id,
                 )
             )
-    CRUDSpeech(session).create_many(all_speeches)

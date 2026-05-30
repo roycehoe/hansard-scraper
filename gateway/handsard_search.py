@@ -41,7 +41,13 @@ def get_all_handsard_search_results() -> list[dict]:
     end_index = 19
 
     while True:
-        response = get_handsard_search_results(start_index, end_index)
+        try:
+            response = get_handsard_search_results(start_index, end_index)
+        except Exception as e:
+            print(f"Failed to fetch page {start_index // 20 + 1}: {e}, skipping")
+            start_index += 20
+            end_index += 20
+            continue
         if not isinstance(response, list):
             break
         all_handsard_search_results.extend(response)

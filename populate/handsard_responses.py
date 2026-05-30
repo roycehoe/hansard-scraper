@@ -8,8 +8,7 @@ from services.handsard_website import get_handsard_website_result_in
 
 def populate_handsard_responses(session: Session):
     all_search_results = [HandsardSearchResult(**r) for r in get_all_handsard_search_results()]
-    responses = []
+    crud = CRUDHandsardWebsiteResponse(session)
     for i, result in enumerate(all_search_results, start=1):
         print(f"{i}/{len(all_search_results)}")
-        responses.append(get_handsard_website_result_in(result))
-    CRUDHandsardWebsiteResponse(session).create_many(responses)
+        crud.create(get_handsard_website_result_in(result))

@@ -7,9 +7,8 @@ class CRUDReport:
     def __init__(self, session: Session):
         self.session = session
 
-    def create_many(self, reports: list[Report]) -> None:
-        for report in reports:
-            self.session.add(report)
+    def create(self, report: Report) -> None:
+        self.session.add(report)
         self.session.commit()
 
     def get_all(self) -> list[Report]:
