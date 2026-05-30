@@ -2,7 +2,6 @@ import json
 
 from sqlmodel import Session, select
 
-from database.init import create_db_and_tables, get_session
 from database.report import HandsardSittingDateResult, HandsardWebsiteResponse
 from gateway.handsard_report import get_handsard_report_response
 
@@ -26,9 +25,3 @@ def populate_sitting_dates(session: Session):
         session.add(HandsardSittingDateResult(**_serialize_lists(result)))
 
     session.commit()
-
-
-if __name__ == "__main__":
-    create_db_and_tables()
-    session = next(get_session())
-    populate_sitting_dates(session)
