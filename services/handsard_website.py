@@ -10,9 +10,7 @@ def _get_handsard_website_report_content(
 ) -> Optional[str]:
     try:
         response = get_handsard_topic_response(
-            handsard_search_result.htmlFileName
-            if handsard_search_result.htmlFileName is not None
-            else handsard_search_result.reportId
+            handsard_search_result.htmlFileName or handsard_search_result.reportId
         )
     except Exception:  # 2 topics return no response
         return None
