@@ -1,7 +1,9 @@
 from typing import Optional
 
 from database.handsard_website_response import HandsardWebsiteResponse
+from exceptions import HansardGatewayError
 from gateway.handsard_topic import get_handsard_topic_response
+from logs import logger
 from schemas.handsard_search_result import HandsardSearchResult
 
 
@@ -12,7 +14,8 @@ def _get_handsard_website_report_content(
         response = get_handsard_topic_response(
             handsard_search_result.htmlFileName or handsard_search_result.reportId
         )
-    except Exception:  # 2 topics return no response
+    except HansardGatewayError as e:
+        logger.warning(f"No content for {handsard_search_result.reportId}: {e}")
         return None
     html_content = response.get("htmlContent")
     if html_content is None:
