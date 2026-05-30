@@ -129,7 +129,7 @@ def run():
         check_str = "  ".join(checks)
         print(f"{stored.report_id:<14} {stored.report_type:<22} {md_flag:>2} {sl_display:>2} {sp_count:>4} {valid_flag:>2}  {check_str}")
 
-        if failed and stored.report_type:
+        if failed:
             issues.append({
                 "report_id": stored.report_id,
                 "report_type": stored.report_type,
