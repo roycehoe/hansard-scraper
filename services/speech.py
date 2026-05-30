@@ -108,31 +108,27 @@ def get_speeches(markdown: str, start_of_speech_line: int) -> list[Speech]:
     speeches: list[Speech] = []
     for line in markdown.splitlines()[start_of_speech_line + 1 :]:
         parsed_line = line.strip()
-        if parsed_line == "":
+        if not parsed_line:
             continue
-        if parsed_line == "**":
+        if not parsed_line.strip("* "):  # skip artifact lines: **, ****, ** **, etc.
             continue
         if not contains_speaker_name(parsed_line):
-            speeches.append(Speech(speaker=current_speaker, transcript=line.strip()))
+            if current_speaker is None:  # skip preamble before first speaker
+                continue
+            speeches.append(Speech(speaker=current_speaker, transcript=parsed_line))
             continue
 
-        # TODO: 20890 causing problems
         name = re.search(r"((?:\*\*[^*]+?\*\*\s*)+)", parsed_line)
         if name:
-            transcript = parsed_line.split(name.group(0))[-1]
-            current_speaker = name.group(0).replace("*", "").replace(":", "").strip()
-            speeches.append(
-                Speech(
-                    speaker=current_speaker,
-                    transcript=transcript.strip(),
-                )
-            )
+            transcript = parsed_line.split(name.group(0))[-1].strip()
+            new_speaker = name.group(0).replace("*", "").replace(":", "").strip()
+            if new_speaker:  # guard: don't overwrite speaker with empty string
+                current_speaker = new_speaker
+            if current_speaker is not None:
+                speeches.append(Speech(speaker=current_speaker, transcript=transcript))
             continue
 
-        speeches.append(
-            Speech(
-                speaker=current_speaker,
-                transcript=line.strip(),
-            )
-        )
-    return speeches
+        if current_speaker is not None:
+            speeches.append(Speech(speaker=current_speaker, transcript=parsed_line))
+
+    return [sp for sp in speeches if sp.transcript.strip() != ""]
