@@ -68,32 +68,27 @@ def run():
             print(f"{stored.report_id:<14} {stored.report_type:<22} {'-':>2} {'-':>2} {'-':>4} {'-':>2}  no content (expected for some types)")
             continue
 
-        # Regenerate from scratch
         regen = get_db_report_in(hwr)
 
         checks = []
         failed = False
 
-        # markdown
         if regen.markdown_content is None:
             stats["no_markdown"] += 1
             checks.append("NO_MARKDOWN")
             failed = True
         md_flag = "Y" if regen.markdown_content else "N"
 
-        # title comparison
         if regen.title != stored.title:
             stats["title_mismatch"] += 1
             checks.append(f"TITLE_MISMATCH(stored={stored.title!r} regen={regen.title!r})")
             failed = True
 
-        # subtitle comparison
         if regen.subtitle != stored.subtitle:
             stats["subtitle_mismatch"] += 1
             checks.append(f"SUBTITLE_MISMATCH(stored={stored.subtitle!r} regen={regen.subtitle!r})")
             failed = True
 
-        # start line
         start_line = None
         if regen.markdown_content:
             start_line = get_start_of_speech_line(
@@ -108,7 +103,6 @@ def run():
             checks.append("NO_START_LINE")
             failed = True
 
-        # speeches
         speeches = []
         sp_count = "-"
         valid_flag = "-"
@@ -168,7 +162,6 @@ def run():
         pass_rate = stats["pass"] / content_records * 100
         print(f"Pass rate (content records): {stats['pass']}/{content_records} = {pass_rate:.1f}%")
 
-    # Detailed issue dump
     if issues:
         print()
         print("=== ISSUE DETAILS ===")
