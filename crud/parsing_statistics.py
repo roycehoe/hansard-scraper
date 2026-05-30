@@ -1,6 +1,6 @@
 from sqlmodel import Session
 
-from database.report import ParsingStatistics
+from database.parsing_statistics import ParsingStatistics
 
 
 class CRUDParsingStatistics:

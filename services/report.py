@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-from database.report import HandsardWebsiteResponse, Report
+from database.handsard_website_response import HandsardWebsiteResponse
+from database.report import Report
 from utils.markdown_parser import get_cleaned_handsard_markdown
 
 

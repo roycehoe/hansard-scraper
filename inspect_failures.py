@@ -4,8 +4,8 @@ import sys
 
 from sqlmodel import Session, select
 
+from database.handsard_website_response import HandsardWebsiteResponse
 from database.init import engine
-from database.report import HandsardWebsiteResponse
 from services.report import get_db_report_in
 from services.speech import get_start_of_speech_line
 

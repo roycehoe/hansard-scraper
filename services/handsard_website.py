@@ -1,6 +1,6 @@
 from typing import Optional
 
-from database.report import HandsardWebsiteResponse
+from database.handsard_website_response import HandsardWebsiteResponse
 from gateway.handsard_topic import get_handsard_topic_response
 from schemas import HandsardSearchResult
 

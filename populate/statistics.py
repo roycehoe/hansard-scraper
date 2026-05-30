@@ -4,7 +4,8 @@ from sqlmodel import Session
 
 from crud.handsard_website_response import CRUDHandsardWebsiteResponse
 from crud.parsing_statistics import CRUDParsingStatistics
-from database.report import HandsardWebsiteResponse, ParsingStatistics
+from database.handsard_website_response import HandsardWebsiteResponse
+from database.parsing_statistics import ParsingStatistics
 from services.report import get_db_report_in
 from services.speech import get_speeches, get_start_of_speech_line
 

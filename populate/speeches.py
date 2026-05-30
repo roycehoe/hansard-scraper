@@ -2,7 +2,7 @@ from sqlmodel import Session
 
 from crud.report import CRUDReport
 from crud.speech import CRUDSpeech
-from database.report import Speech
+from database.speech import Speech
 from services.speech import get_speeches, get_start_of_speech_line
 
 
