@@ -57,8 +57,8 @@ For each root-cause group:
 - Open 1–2 currently-passing documents from the **same `report_type`**. Understanding what the passing case looks like is required for writing a correct conditional branch.
 - Determine why parsing fails for this group. Do not assume the current parsing approach is correct — if a fundamentally different strategy would work better, note it.
 
-**Step 3 — Log findings to `learnings.md`**
-Append one entry per root-cause group (not per document) using this structure:
+**Step 3 — Log findings**
+Append one entry per root-cause group (not per document) to `progress.txt`. If the investigation reveals a generalizable structural pattern about the markdown format or a `report_type`'s document shape, also record it in `parsing-patterns.md` (reusable knowledge, not iteration-specific). Use this structure:
 
 ```
 ## <failure_stage> — <report_type> — <short description of root cause>
@@ -77,10 +77,13 @@ Append one entry per root-cause group (not per document) using this structure:
 
 **Proposed fix / approach:**
 <the pattern or logic change that would handle this group>
+
+**Outcome:** (filled in after Step 5–6)
+<kept / reverted — net change on held-out set, regression count>
 ```
 
 **Step 4 — Modify the parsing logic**
-Apply the fix with the highest coverage across root-cause groups.
+Apply one fix per iteration — the single change with the highest coverage across root-cause groups. Do not apply multiple fixes in one iteration even if several are ready; validate one before attempting the next.
 
 When proposing a fix:
 - **Prefer adding a condition-gated branch** over modifying the general-case logic. If a fix only applies to a subset of documents (e.g. a specific `report_type`, a title pattern, a structural signal in the markdown), gate it with a condition rather than changing the default path. This limits regression risk almost by construction.
@@ -91,7 +94,7 @@ When proposing a fix:
 **Step 5 — Validate the patch**
 Run `_get_statistics` on three sets:
 
-1. **Held-out improvement set** — failing documents not shown during diagnosis, from the same `(failure_stage, report_type)` groups. The patch must improve at least one document here to be accepted.
+1. **Held-out improvement set** — failing documents not shown during diagnosis, from the same `(failure_stage, report_type)` groups. The patch must produce a net improvement here (more documents passing than before) to be accepted. A single document improving is not sufficient.
 2. **Full diagnosis sample** — the Step 1 documents, to measure net change on the training set.
 3. **Passing-document regression set** — the ~30 passing documents drawn at setup. Any regression here (a previously-passing document now failing) is a signal to investigate before accepting.
 
@@ -106,16 +109,22 @@ can_get_speeches | ministerial-stmt   | 2/3    | 2/3  (no change)
 Passing set regressions: 0/30
 ```
 
-- If **new passes > new failures** and **no regressions in the passing set**: keep the change. Log the net outcome to `learnings.md`.
-- If **new failures ≥ new passes** or **regressions detected**: revert the change. Log why it regressed and what to try instead.
+- If **new passes > new failures** and **no regressions in the passing set**: keep the change. Log the net outcome to `progress.txt`.
+- If **new failures ≥ new passes** or **regressions detected**: revert the change. Log why it regressed and what to try instead in `progress.txt`.
 
 **Step 7 — Widen the sample (every 3 iterations)**
 Add more documents to the sample from `(failure_stage, report_type)` groups that are underrepresented or not yet in the pilot. K=3 per group still applies to new groups. Draw a fresh held-out set for the new groups. Expand the passing-document regression set proportionally.
 
-**Step 8 — Go to Step 1**
+**Step 8 — Check completion and iteration budget**
+After updating stats, check two conditions:
+
+- If the full validated set is at ≥95% success rate, stop and report success. Do not continue iterating.
+- If this is iteration 10 (or a multiple of 10), stop and go to Step 9 regardless of current rate. This is a mandatory review checkpoint to prevent runaway loops with diminishing returns.
+
+Otherwise, go to Step 1.
 
 **Step 9 — Ask for approval to continue**
-After completing a full pass (all current failures investigated and either fixed or logged as blocked), present:
+After completing a full pass (all current failures investigated and either fixed or logged as blocked), or hitting the iteration budget, present:
 - Current success rate vs. the 95% target and vs. baseline
 - The progress table across all `(failure_stage, report_type)` groups
 - Marginal gain this iteration (how many new passes were added)
