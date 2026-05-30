@@ -30,42 +30,28 @@ def parse_reports(session: Session):
 
 def _get_statistics(response: HandsardWebsiteResponse) -> ParsingStatistics:
     report = get_db_report_in(response)
+    has_markdown = report.markdown_content is not None
+    has_start_line = False
+    can_get_speeches = False
 
-    if report.markdown_content is None:
-        return ParsingStatistics(
-            **report.model_dump(),
-            has_markdown=False,
-            has_start_line=False,
-            can_get_speeches=False,
+    if has_markdown:
+        start_of_speech_line = get_start_of_speech_line(
+            report.markdown_content, report.title, report.subtitle, report.original_title,
+            report.report_type,
         )
-
-    start_of_speech_line = get_start_of_speech_line(
-        report.markdown_content, report.title, report.subtitle, report.original_title,
-        report.report_type,
-    )
-    if start_of_speech_line is None:
-        return ParsingStatistics(
-            **report.model_dump(),
-            has_markdown=True,
-            has_start_line=False,
-            can_get_speeches=False,
-        )
-
-    try:
-        get_speeches(report.markdown_content, start_of_speech_line)
-    except Exception:
-        return ParsingStatistics(
-            **report.model_dump(),
-            has_markdown=True,
-            has_start_line=True,
-            can_get_speeches=False,
-        )
+        has_start_line = start_of_speech_line is not None
+        if has_start_line:
+            try:
+                get_speeches(report.markdown_content, start_of_speech_line)
+                can_get_speeches = True
+            except Exception:
+                pass
 
     return ParsingStatistics(
         **report.model_dump(),
-        has_markdown=True,
-        has_start_line=True,
-        can_get_speeches=True,
+        has_markdown=has_markdown,
+        has_start_line=has_start_line,
+        can_get_speeches=can_get_speeches,
     )
 
 

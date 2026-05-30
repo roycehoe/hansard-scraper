@@ -1,12 +1,8 @@
-import re
-from dataclasses import dataclass
-from datetime import datetime
 from typing import Optional
 
-from database.report import HandsardWebsiteResponse, Report
+from database.report import HandsardWebsiteResponse
 from gateway.handsard_topic import get_handsard_topic_response
 from schemas import HandsardSearchResult
-from utils.markdown_parser import get_cleaned_handsard_markdown
 
 
 def _get_handsard_website_report_content(
