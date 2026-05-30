@@ -1,19 +1,17 @@
 import requests
 
-HANDSARD_SEARCH_URL = "https://sprs.parl.gov.sg/search/searchResult"
+from settings import settings
 
 
-def get_handsard_search_results(
-    start_index: int, end_index: int, url: str = HANDSARD_SEARCH_URL
-) -> dict:
+def get_handsard_search_results(start_index: int, end_index: int) -> dict:
     query_dict = {
         "keyword": "undefined",
-        "fromday": "24",
-        "frommonth": "08",
-        "fromyear": "2025",
-        "today": "24",
-        "tomonth": "08",
-        "toyear": "2025",
+        "fromday": settings.search_from_day,
+        "frommonth": settings.search_from_month,
+        "fromyear": settings.search_from_year,
+        "today": settings.search_to_day,
+        "tomonth": settings.search_to_month,
+        "toyear": settings.search_to_year,
         "dateRange": "* TO NOW",
         "reportContent": "with all the words",
         "parliamentNo": "",
@@ -28,10 +26,7 @@ def get_handsard_search_results(
         "footNoteChecked": "false",
         "ministrySelected": [],
     }
-    response = requests.post(
-        url=url,
-        json=query_dict,
-    )
+    response = requests.post(url=settings.handsard_search_url, json=query_dict)
     return response.json()
 
 

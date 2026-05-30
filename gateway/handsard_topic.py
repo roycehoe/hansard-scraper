@@ -1,8 +1,8 @@
 import requests
 
-HANDSARD_TOPIC_URL = "https://sprs.parl.gov.sg/search/getHansardTopic"
+from settings import settings
 
 
 def get_handsard_topic_response(report_id: str) -> dict:
-    response = requests.post(url=f"{HANDSARD_TOPIC_URL}/?id={report_id}")
+    response = requests.post(url=f"{settings.handsard_topic_url}/?id={report_id}")
     return response.json()
