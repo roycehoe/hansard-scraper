@@ -14,7 +14,7 @@ Before beginning Setup or any loop iteration, scan the working directory for exi
 
 Target Dataset: All Report rows where `markdown_content` is not None, restricted to report types validated as speech-bearing (determined during setup).
 
-Success: ≥95% of reports in the validated speech-bearing set yield at least one speech.
+Success: ≥95% of reports in the validated speech-bearing set yield at least one speech, where every speech has a non-None, non-empty `speaker` and `transcript`.
 
 # Method
 
