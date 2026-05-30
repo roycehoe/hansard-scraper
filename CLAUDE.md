@@ -8,6 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Install dependencies
 poetry install
 
+# Start local Postgres (matches default DATABASE_URL)
+docker-compose up -d
+
 # Run linting
 ruff check .
 ruff check --fix .
@@ -32,10 +35,18 @@ This is a scraper for Singapore Parliament Hansard records (sprs.parl.gov.sg). T
 
 4. **Parse into Speeches** (`services/speech.py`) — walks the markdown line-by-line to find where speeches begin (by matching the report title in bold), then splits the transcript into `Speech` records by detecting bold speaker names (`**Name:**`).
 
-### Database models (`database/report.py`)
+### Database models
+
+Two-tier design: every data source has a **raw response table** and an **entity table**.
+
+**Raw response tables** store API responses exactly as received. No type casting, no field dropping. The only transformation allowed is what storage requires (e.g. serialising list fields to JSON strings so they fit in a column).
+
+**Entity tables** are pure extensions of their raw counterparts — every field from the raw response is preserved with the same value and structure. They exist to provide a stable, first-class DB schema ready for relationships and future enrichment, not to transform or interpret the source data.
 
 - `HandsardWebsiteResponse` — raw API response, one row per Hansard entry
-- `Report` — cleaned/typed version with `markdown_content`; has a one-to-many to `Speech`
+- `Report` — entity table extending `HandsardWebsiteResponse`; has a one-to-many to `Speech`
+- `HandsardSittingDateResponse` — raw API response, one row per sitting date entry
+- `Sitting` — entity table extending `HandsardSittingDateResponse`
 - `Speech` — individual utterance with `speaker`, `transcript`, and `ordinal` within the report
 - `ParsingStatistics` — diagnostic table tracking whether each report has markdown, a detected start line, and parseable speeches
 
