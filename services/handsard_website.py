@@ -12,10 +12,10 @@ def _get_handsard_website_report_content(
 ) -> Optional[str]:
     try:
         response = get_handsard_topic_response(
-            handsard_search_result.htmlFileName or handsard_search_result.reportId
+            handsard_search_result.html_file_name or handsard_search_result.report_id
         )
     except HansardGatewayError as e:
-        logger.warning(f"No content for {handsard_search_result.reportId}: {e}")
+        logger.warning(f"No content for {handsard_search_result.report_id}: {e}")
         return None
     html_content = response.get("htmlContent")
     if html_content is None:
@@ -27,16 +27,16 @@ def build_handsard_website_response(
     handsard_search_result: HandsardSearchResult,
 ) -> HandsardWebsiteResponse:
     return HandsardWebsiteResponse(
-        volumeNo=handsard_search_result.volumeNo,
-        parlNo=handsard_search_result.parlNo,
-        sittingNo=handsard_search_result.sittingNo,
-        sittingDate=handsard_search_result.sittingDate,
+        volumeNo=handsard_search_result.volume_no,
+        parlNo=handsard_search_result.parl_no,
+        sittingNo=handsard_search_result.sitting_no,
+        sittingDate=handsard_search_result.sitting_date,
         sno=handsard_search_result.sno,
         title=handsard_search_result.title,
         subtitle=handsard_search_result.subtitle,
-        reportId=handsard_search_result.reportId,
-        reportType=handsard_search_result.reportType,
-        htmlFileName=handsard_search_result.htmlFileName,
+        reportId=handsard_search_result.report_id,
+        reportType=handsard_search_result.report_type,
+        htmlFileName=handsard_search_result.html_file_name,
         content=_get_handsard_website_report_content(handsard_search_result),
-        reportVersion=handsard_search_result.reportVersion,
+        reportVersion=handsard_search_result.report_version,
     )
