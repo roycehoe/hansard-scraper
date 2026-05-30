@@ -33,6 +33,16 @@ Also draw a **held-out improvement set**: K=3 additional failing documents per g
 
 Also draw a **passing-document regression set**: a sample of ~30 currently-passing documents across report types, used to detect regressions after each patch.
 
+Write all three sets to `sample.json` immediately after drawing them, keyed by set name and storing report IDs only. Do not re-sample in later iterations — the failing population shrinks as patches are applied, so re-running the query would draw from a different population. The same documents must be tracked throughout the loop for before/after comparisons to be meaningful.
+
+```json
+{
+  "pilot": [123, 456, ...],
+  "held_out": [789, 101, ...],
+  "regression": [202, 303, ...]
+}
+```
+
 Note: K=3 diagnosis samples is a pilot size. Coverage estimates from this sample are unreliable until the sample is widened in later iterations.
 
 Failure stages, in triage order:
