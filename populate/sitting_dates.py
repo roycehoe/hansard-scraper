@@ -4,7 +4,7 @@ from sqlmodel import Session
 
 from crud.handsard_sitting_date_response import CRUDHandsardSittingDateResponse
 from crud.handsard_website_response import CRUDHandsardWebsiteResponse
-from database.report import HandsardSittingDateResponse
+from database.handsard_sitting_date_response import HandsardSittingDateResponse
 from gateway.handsard_report import get_handsard_report_response
 
 _LIST_FIELDS = {"footNote", "atbpList", "ptbaList", "attendanceList"}

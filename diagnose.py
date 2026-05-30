@@ -5,8 +5,8 @@ from collections import defaultdict
 
 from sqlmodel import Session, select
 
+from database.handsard_website_response import HandsardWebsiteResponse
 from database.init import engine
-from database.report import HandsardWebsiteResponse
 from services.report import get_db_report_in
 from services.speech import get_speeches, get_start_of_speech_line
 

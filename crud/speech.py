@@ -1,6 +1,6 @@
 from sqlmodel import Session
 
-from database.report import Speech
+from database.speech import Speech
 
 
 class CRUDSpeech:

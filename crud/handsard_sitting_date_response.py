@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 
-from database.report import HandsardSittingDateResponse
+from database.handsard_sitting_date_response import HandsardSittingDateResponse
 
 
 class CRUDHandsardSittingDateResponse:

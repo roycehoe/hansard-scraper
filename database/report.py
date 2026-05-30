@@ -1,5 +1,10 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Annotated, Optional
+from typing import TYPE_CHECKING, Annotated, Optional
+
+if TYPE_CHECKING:
+    from database.speech import Speech
 
 from pydantic import BeforeValidator
 from sqlmodel import Field, Relationship, SQLModel
@@ -8,27 +13,6 @@ EmptyStrNoneInt = Annotated[
     Optional[int],
     BeforeValidator(lambda v: None if isinstance(v, str) and v.strip() == "" else v),
 ]
-
-
-class HandsardWebsiteResponse(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-
-    volume_number: str = Field(alias="volumeNo")
-    parliament_number: str = Field(alias="parlNo")
-    sitting_number: Optional[str] = Field(None, alias="sittingNo")
-    sitting_date: str = Field(alias="sittingDate")
-    speech_number: str = Field(alias="sno")
-
-    title: str
-    subtitle: Optional[str] = None
-    # Can be used to obtain raw report via request params
-    report_id: str = Field(alias="reportId")
-    report_type: str = Field(alias="reportType")
-
-    html_file_name: Optional[str] = Field(None, alias="htmlFileName")
-    content: Optional[str] = None
-
-    report_version: str = Field(alias="reportVersion")
 
 
 class Report(SQLModel, table=True):
@@ -43,7 +27,6 @@ class Report(SQLModel, table=True):
     original_title: str
     title: str
     subtitle: Optional[str] = None
-    # Can be used to obtain raw report via request params
     report_id: str = Field(alias="reportId")
     report_type: str = Field(alias="reportType")
 
@@ -54,85 +37,3 @@ class Report(SQLModel, table=True):
     report_version: str = Field(alias="reportVersion")
 
     speeches: list["Speech"] = Relationship(back_populates="report")
-
-
-class Speech(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-
-    ordinal: int
-    speaker: str | None
-    transcript: str
-
-    report_id: int | None = Field(default=None, foreign_key="report.id")
-    report: Report = Relationship(back_populates="speeches")
-
-
-class HandsardSittingDateResponse(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-
-    member_id: Optional[str] = Field(default=None, alias="memberId")
-    volume_no: Optional[str] = Field(default=None, alias="volumeNo")
-    report_type: Optional[str] = Field(default=None, alias="reportType")
-    session_no: Optional[str] = Field(default=None, alias="sessionNo")
-    portfolio: Optional[str] = None
-    member_name: Optional[str] = Field(default=None, alias="memberName")
-    report_version: Optional[str] = Field(default=None, alias="reportVersion")
-    report_start_col: Optional[str] = Field(default=None, alias="reportStartCol")
-    sitting_no: Optional[str] = Field(default=None, alias="sittingNo")
-    report_end_col: Optional[str] = Field(default=None, alias="reportEndCol")
-    title: Optional[str] = None
-    column_start: Optional[str] = Field(default=None, alias="columnStart")
-    parl_no: Optional[str] = Field(default=None, alias="parlNo")
-    report_content: Optional[str] = Field(default=None, alias="reportContent")
-    column_end: Optional[str] = Field(default=None, alias="columnEnd")
-    report_id: Optional[str] = Field(default=None, alias="reportId")
-    score: Optional[str] = None
-    max_result: Optional[str] = Field(default=None, alias="maxResult")
-    sno: Optional[str] = None
-    full_content_flag: Optional[str] = Field(default=None, alias="fullContentFlag")
-    from_month: Optional[str] = Field(default=None, alias="fromMonth")
-    from_day: Optional[str] = Field(default=None, alias="fromDay")
-    from_year: Optional[str] = Field(default=None, alias="fromYear")
-    html_full_content: Optional[str] = Field(default=None, alias="htmlFullContent")
-    html_content: Optional[str] = Field(default=None, alias="htmlContent")
-    subtitle: Optional[str] = None
-    sitting_date: Optional[str] = Field(default=None, alias="sittingDate")
-    content: Optional[str] = None
-    mp_names: Optional[str] = Field(default=None, alias="mpNames")
-    html_file_name: Optional[str] = Field(default=None, alias="htmlFileName")
-    ver_pdf: Optional[str] = Field(default=None, alias="verPdf")
-    foot_notes: Optional[str] = Field(default=None, alias="footNotes")
-    foot_note_question: Optional[str] = Field(default=None, alias="footNoteQuestion")
-    foot_note_questions: Optional[str] = Field(default=None, alias="footNoteQuestions")
-    foot_note: Optional[str] = Field(default=None, alias="footNote")
-    atbp_list: Optional[str] = Field(default=None, alias="atbpList")
-    ptba_list: Optional[str] = Field(default=None, alias="ptbaList")
-    attendance_list: Optional[str] = Field(default=None, alias="attendanceList")
-    online_pdf_file_name: Optional[str] = Field(default=None, alias="onlinePDFFileName")
-    pdf_nodes: Optional[str] = Field(default=None, alias="pdfNodes")
-    clarification_text: Optional[str] = Field(default=None, alias="clarificationText")
-    clarification_title: Optional[str] = Field(default=None, alias="clarificationTitle")
-    clarification_sub_title: Optional[str] = Field(default=None, alias="clarificationSubTitle")
-    ptba_from: Optional[str] = Field(default=None, alias="ptbaFrom")
-    ptba_to: Optional[str] = Field(default=None, alias="ptbaTo")
-    question_count: Optional[str] = Field(default=None, alias="questionCount")
-
-
-class ParsingStatistics(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-
-    volume_number: int = Field(alias="volumeNo")
-    parliament_number: int = Field(alias="parlNo")
-    sitting_number: EmptyStrNoneInt = Field(None, alias="sittingNo")
-    sitting_date: datetime = Field(alias="sittingDate")
-    speech_number: int = Field(alias="sno")
-
-    title: str
-    subtitle: Optional[str] = None
-    # Can be used to obtain raw report via request params
-    has_markdown: bool
-    has_start_line: bool
-    can_get_speeches: bool
-    report_type: str = Field(alias="reportType")
-
-    report_version: str = Field(alias="reportVersion")

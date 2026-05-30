@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 
-from database.report import HandsardWebsiteResponse
+from database.handsard_website_response import HandsardWebsiteResponse
 
 
 class CRUDHandsardWebsiteResponse:
