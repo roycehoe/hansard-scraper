@@ -7,7 +7,7 @@ from sqlmodel import Session
 
 from crud.handsard_website_response import CRUDHandsardWebsiteResponse
 from database.init import engine
-from services.report import get_db_report_in
+from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
 
@@ -19,7 +19,7 @@ def get_report_type_speech_stats(session: Session) -> dict:
     for resp in responses:
         rt = resp.report_type
         stats[rt]["total"] += 1
-        report = get_db_report_in(resp)
+        report = build_report(resp)
         if report.markdown_content is None:
             continue
         stats[rt]["has_markdown"] += 1
@@ -47,7 +47,7 @@ def get_failing_sample(session: Session, no_speech_types: set[str], k: int = 3) 
     for resp in responses:
         if resp.report_type in no_speech_types:
             continue
-        report = get_db_report_in(resp)
+        report = build_report(resp)
         if report.markdown_content is None:
             continue
         start = get_start_of_speech_line(
@@ -77,7 +77,7 @@ def get_passing_sample(session: Session, no_speech_types: set[str], n: int = 30)
     for resp in responses:
         if resp.report_type in no_speech_types:
             continue
-        report = get_db_report_in(resp)
+        report = build_report(resp)
         if report.markdown_content is None:
             continue
         start = get_start_of_speech_line(
@@ -100,7 +100,7 @@ def run_stats_on(responses: list, label: str = "") -> dict:
     """Run _get_statistics equivalent on a list of responses, return counts."""
     results = {"pass": [], "fail_start_line": [], "fail_speeches": []}
     for resp in responses:
-        report = get_db_report_in(resp)
+        report = build_report(resp)
         if report.markdown_content is None:
             continue
         start = get_start_of_speech_line(
@@ -141,7 +141,7 @@ if __name__ == "__main__":
         all_responses = crud.get_all()
         target_with_md = [
             r for r in all_responses
-            if r.report_type not in no_speech_types and get_db_report_in(r).markdown_content is not None
+            if r.report_type not in no_speech_types and build_report(r).markdown_content is not None
         ]
         baseline = run_stats_on(target_with_md, "baseline")
         total = len(baseline["pass"]) + len(baseline["fail_start_line"]) + len(baseline["fail_speeches"])

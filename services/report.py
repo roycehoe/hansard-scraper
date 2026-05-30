@@ -34,7 +34,7 @@ def _get_db_report_header(raw_title: str) -> ReportHeader:
     return ReportHeader(title=title, subtitle=subtitle)
 
 
-def get_db_report_in(handsard_website_response: HandsardWebsiteResponse) -> Report:
+def build_report(handsard_website_response: HandsardWebsiteResponse) -> Report:
     sitting_date = datetime.strptime(handsard_website_response.sitting_date, "%d-%m-%Y")
     raw_title = fix_mojibake(handsard_website_response.title)
     db_report_header = _get_db_report_header(raw_title)
