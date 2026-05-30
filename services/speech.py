@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
+from utils.text import fix_mojibake
+
 
 @dataclass
 class ParsedSpeech:
@@ -47,17 +49,6 @@ def _single_speaker_transcript(markdown: str, start_of_speech_line: int) -> str:
 
 def _strip_md(text: str) -> str:
     return re.sub(r"[_*]", "", text)
-
-
-# TODO: remove once the pipeline has been rerun — mojibake is now fixed upstream in
-# services/report.py at Report creation time, so titles stored in the DB will already
-# be clean and these call sites will be dead.
-def _fix_mojibake(s: str) -> str:
-    """Fix Windows-1252 mojibake in stored titles (e.g. â€™ → ', âˆ' → −)."""
-    try:
-        return s.encode("cp1252").decode("utf-8")
-    except (UnicodeDecodeError, UnicodeEncodeError):
-        return s
 
 
 def _extract_md_title(markdown_content: str) -> Optional[str]:
@@ -120,14 +111,14 @@ def get_start_of_speech_line(
     original_title: str,
     report_type: str = "",
 ) -> Optional[int]:
-    title = _fix_mojibake(title)
-    subtitle = _fix_mojibake(subtitle) if subtitle else subtitle
-    original_title = _fix_mojibake(original_title)
+    title = fix_mojibake(title)
+    subtitle = fix_mojibake(subtitle) if subtitle else subtitle
+    original_title = fix_mojibake(original_title)
     original_title_clean = original_title.replace("\n", " ").strip()
 
     # Extract the title as written in the markdown header — may differ from the DB
     # title due to HTML entity artifacts, OCR noise, or data entry errors.
-    md_title = _fix_mojibake(_extract_md_title(markdown_content) or "")
+    md_title = fix_mojibake(_extract_md_title(markdown_content) or "")
 
     candidates = [c for c in [
         title,
