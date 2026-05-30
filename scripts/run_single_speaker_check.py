@@ -28,7 +28,6 @@ def run():
     passed_by_type: dict[str, int] = defaultdict(int)
     failed_by_type: dict[str, int] = defaultdict(int)
     no_start_by_type: dict[str, int] = defaultdict(int)
-    empty_body: int = 0
 
     for report in single_speaker:
         start_line = get_start_of_speech_line(
@@ -46,7 +45,6 @@ def run():
             passed_by_type[report.report_type] += 1
         else:
             failed_by_type[report.report_type] += 1
-            empty_body += 1
 
     all_types = sorted(
         set(list(passed_by_type) + list(failed_by_type) + list(no_start_by_type))
