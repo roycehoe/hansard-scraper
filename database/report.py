@@ -67,7 +67,7 @@ class Speech(SQLModel, table=True):
     report: Report = Relationship(back_populates="speeches")
 
 
-class HandsardSittingDateResult(SQLModel, table=True):
+class HandsardSittingDateResponse(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
     member_id: Optional[str] = Field(default=None, alias="memberId")

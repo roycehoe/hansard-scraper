@@ -2,9 +2,9 @@ import json
 
 from sqlmodel import Session
 
-from crud.handsard_sitting_date_result import CRUDHandsardSittingDateResult
+from crud.handsard_sitting_date_response import CRUDHandsardSittingDateResponse
 from crud.handsard_website_response import CRUDHandsardWebsiteResponse
-from database.report import HandsardSittingDateResult
+from database.report import HandsardSittingDateResponse
 from gateway.handsard_report import get_handsard_report_response
 
 _LIST_FIELDS = {"footNote", "atbpList", "ptbaList", "attendanceList"}
@@ -16,7 +16,7 @@ def _serialize_lists(result: dict) -> dict:
 
 def populate_sitting_dates(session: Session):
     all_sitting_dates = CRUDHandsardWebsiteResponse(session).get_all_sitting_dates()
-    existing_sitting_dates = CRUDHandsardSittingDateResult(session).get_all_sitting_dates()
+    existing_sitting_dates = CRUDHandsardSittingDateResponse(session).get_all_sitting_dates()
 
     dates_to_fetch = list(all_sitting_dates - existing_sitting_dates)
     results = []
@@ -25,5 +25,5 @@ def populate_sitting_dates(session: Session):
         result = get_handsard_report_response(sitting_date)
         if not result:
             continue
-        results.append(HandsardSittingDateResult(**_serialize_lists(result)))
-    CRUDHandsardSittingDateResult(session).create_many(results)
+        results.append(HandsardSittingDateResponse(**_serialize_lists(result)))
+    CRUDHandsardSittingDateResponse(session).create_many(results)
