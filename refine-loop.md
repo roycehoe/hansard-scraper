@@ -4,7 +4,7 @@ Before beginning Setup or any loop iteration, scan the working directory for exi
 
 - `diagnose.py` — runs `_get_statistics` across a set of report IDs and prints a pass/fail table; read it to understand its CLI interface before calling it.
 - `inspect_failures.py` — opens raw markdown for a given report ID; read it to understand its interface before calling it.
-- `sample.json` — the fixed sample drawn at Setup Step 5; if present, use it as-is. If absent and `progress.txt` exists (loop has already started), flag the integrity issue — re-sampling would draw from a different population.
+- `sample.json` — the fixed sample drawn at Setup Step 5; if present, use it as-is. If absent and `progress.txt` exists (loop has already started), flag the integrity issue — re-sampling would draw from a different population. If present and `progress.txt` is absent, treat as iteration 0 and proceed to Loop Step 1 without re-running Setup.
 - `progress.txt` — iteration log; if present, read it to determine which iteration the loop is on and what was last attempted.
 - `parsing-patterns.md` — accumulated structural knowledge about markdown format and report types; if present, read it before investigating any failures.
 
@@ -25,7 +25,7 @@ Iteratively refine the speech parsing logic until the success threshold is met.
 The setup is not bookkeeping. Its outputs determine whether the goal as written is correct before any iteration begins.
 
 **Step 1 — Identify no-speech report types.**
-Query the DB for `report_type` values where no document has ever yielded speeches. Exclude these from the sampling pool. Log the excluded types.
+Query the DB for `report_type` values where no document has ever yielded speeches. Exclude these from the sampling pool. Write the excluded types to `progress.txt` under a `## Setup — Excluded report types` heading.
 
 **Step 2 — Validate "zero speech" cases empirically.**
 Manually inspect 5–10 reports with `markdown_content` that currently yield zero speeches, drawn across different `report_type` values. For each, determine: is this a parsing failure, or is zero speeches the correct result for this document type?
@@ -36,7 +36,7 @@ If this inspection reveals that zero speeches is correct behaviour for a signifi
 `get_start_of_speech_line` currently takes `(markdown_content, title, subtitle, original_title)` — it does not receive `report_type`. Before any condition-gated patch can work, update the signature to include `report_type` and update all call sites in `script.py` (`_get_statistics`, `parse_speeches`). This is a prerequisite for the entire iterative loop.
 
 **Step 4 — Record the baseline.**
-Run parsing against the full validated set (excluding no-speech types from step 1) and record the starting success rate. This is the reference point for all future progress and the denominator for the 95% target.
+Run parsing against the full validated set (excluding no-speech types from step 1) and record the starting success rate. Write it to `progress.txt` under a `## Setup — Baseline` heading. This is the reference point for all future progress and the denominator for the 95% target.
 
 **Step 5 — Draw the pilot sample.**
 Sample from failing documents, grouped by `(failure_stage, report_type)`, up to K=3 per group. Exclude `has_markdown=False` rows.
@@ -56,6 +56,8 @@ Write all three sets to `sample.json` immediately after drawing them, keyed by s
 ```
 
 Note: K=3 diagnosis samples is a pilot size. Coverage estimates from this sample are unreliable until the sample is widened in later iterations.
+
+If a `(failure_stage, report_type)` group has fewer than 6 failing documents total, draw all of them into the pilot and record the group as having no held-out set. In Loop Step 5, skip held-out validation for that group and rely on the pilot before/after comparison alone.
 
 Failure stages, in triage order:
 - `has_start_line=False` — blocked from all downstream parsing (highest priority)
@@ -80,10 +82,12 @@ For each root-cause group:
 - Determine why parsing fails for this group. Do not assume the current parsing approach is correct — if a fundamentally different strategy would work better, note it.
 
 **Step 3 — Log findings**
-Append one entry per root-cause group (not per document) to `progress.txt`. If the investigation reveals a generalizable structural pattern about the markdown format or a `report_type`'s document shape, also record it in `parsing-patterns.md` (reusable knowledge, not iteration-specific). Use this structure:
+Append one entry per root-cause group (not per document) to `progress.txt`. Begin each iteration with a `## Iteration N — YYYY-MM-DD` heading (where N is the iteration count, starting at 1), then append root-cause entries beneath it. This heading is the authoritative iteration counter — Step 8's multiple-of-10 check counts these headings. If the investigation reveals a generalizable structural pattern about the markdown format or a `report_type`'s document shape, also record it in `parsing-patterns.md` (reusable knowledge, not iteration-specific). Use this structure:
 
 ```
-## <failure_stage> — <report_type> — <short description of root cause>
+## Iteration N — YYYY-MM-DD
+
+### <failure_stage> — <report_type> — <short description of root cause>
 
 **Affected report IDs:**
 <list of IDs sharing this root cause>
@@ -116,7 +120,7 @@ When proposing a fix:
 **Step 5 — Validate the patch**
 Run `_get_statistics` on three sets:
 
-1. **Held-out improvement set** — failing documents not shown during diagnosis, from the same `(failure_stage, report_type)` groups. The patch must produce a net improvement here (more documents passing than before) to be accepted. A single document improving is not sufficient.
+1. **Held-out improvement set** — failing documents not shown during diagnosis, from the same `(failure_stage, report_type)` groups. The patch must produce a net improvement here (more documents passing than before) to be accepted. Minimum bar: ≥2 documents must flip from failing to passing, or >50% of the held-out group if the group has fewer than 4 documents. Groups with no held-out set (flagged at Setup Step 5) are exempt from this check.
 2. **Full diagnosis sample** — the Step 1 documents, to measure net change on the training set.
 3. **Passing-document regression set** — the ~30 passing documents drawn at setup. Any regression here (a previously-passing document now failing) is a signal to investigate before accepting.
 
@@ -138,7 +142,9 @@ Passing set regressions: 0/30
 Add more documents to the sample from `(failure_stage, report_type)` groups that are underrepresented or not yet in the pilot. K=3 per group still applies to new groups. Draw a fresh held-out set for the new groups. Expand the passing-document regression set proportionally.
 
 **Step 8 — Check completion and iteration budget**
-After updating stats, check two conditions:
+After updating stats, first check: if the current iteration count (number of `## Iteration N` headings in `progress.txt`) is a multiple of 3, go to Step 7 before continuing.
+
+Then check two conditions:
 
 - If the full validated set is at ≥95% success rate, stop and report success. Do not continue iterating.
 - If this is iteration 10 (or a multiple of 10), stop and go to Step 9 regardless of current rate. This is a mandatory review checkpoint to prevent runaway loops with diminishing returns.
