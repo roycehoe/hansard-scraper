@@ -2,7 +2,7 @@ from typing import Optional
 
 from database.handsard_website_response import HandsardWebsiteResponse
 from gateway.handsard_topic import get_handsard_topic_response
-from schemas import HandsardSearchResult
+from schemas.handsard_search_result import HandsardSearchResult
 
 
 def _get_handsard_website_report_content(
