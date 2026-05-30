@@ -9,6 +9,14 @@ from schemas import HandsardSearchResult
 from utils.markdown_parser import get_cleaned_handsard_markdown
 
 
+def _fix_mojibake(s: str) -> str:
+    """Fix Windows-1252 mojibake in stored titles (e.g. â€™ → ', âˆ' → −)."""
+    try:
+        return s.encode("cp1252").decode("utf-8")
+    except (UnicodeDecodeError, UnicodeEncodeError):
+        return s
+
+
 @dataclass
 class ReportHeader:
     title: str
@@ -56,7 +64,8 @@ def _get_db_report_header(raw_title: str) -> ReportHeader:
 
 def get_db_report_in(handsard_website_response: HandsardWebsiteResponse) -> Report:
     sitting_date = datetime.strptime(handsard_website_response.sitting_date, "%d-%m-%Y")
-    db_report_header = _get_db_report_header(handsard_website_response.title)
+    raw_title = _fix_mojibake(handsard_website_response.title)
+    db_report_header = _get_db_report_header(raw_title)
 
     return Report(
         volumeNo=int(handsard_website_response.volume_number),
@@ -68,7 +77,7 @@ def get_db_report_in(handsard_website_response: HandsardWebsiteResponse) -> Repo
         ),
         sittingDate=sitting_date,
         sno=int(handsard_website_response.speech_number),
-        original_title=handsard_website_response.title,
+        original_title=raw_title,
         title=db_report_header.title,
         subtitle=db_report_header.subtitle,
         reportId=handsard_website_response.report_id,

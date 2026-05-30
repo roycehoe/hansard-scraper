@@ -13,6 +13,9 @@ def _strip_md(text: str) -> str:
     return re.sub(r"[_*]", "", text)
 
 
+# TODO: remove once the pipeline has been rerun — mojibake is now fixed upstream in
+# services/report.py at Report creation time, so titles stored in the DB will already
+# be clean and these call sites will be dead.
 def _fix_mojibake(s: str) -> str:
     """Fix Windows-1252 mojibake in stored titles (e.g. â€™ → ', âˆ' → −)."""
     try:
