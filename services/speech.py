@@ -89,15 +89,15 @@ def _line_matches_title(line: str, candidate: str) -> bool:
         return True
 
     # Strategy 4: whitespace-normalized — OCR-damaged spacing, continuation markers
-    # (sc startswith ref), addenda/prefix mismatches (ref endswith sc), and lines with
-    # a context prefix before the title (sc endswith ref, e.g. "[Chair] HEAD X").
-    sc_norm = re.sub(r"\s+", "", stripped)
-    ref_norm = re.sub(r"\s+", "", _strip_md(candidate).lower())
-    if sc_norm and ref_norm and (
-        sc_norm == ref_norm
-        or (sc_norm.startswith(ref_norm) and len(ref_norm) > 8)
-        or (ref_norm.endswith(sc_norm) and len(sc_norm) >= 10)
-        or (sc_norm.endswith(ref_norm) and len(ref_norm) >= 10)
+    # (line startswith candidate), addenda/prefix mismatches (candidate endswith line), and lines with
+    # a context prefix before the title (line endswith candidate, e.g. "[Chair] HEAD X").
+    line_norm = re.sub(r"\s+", "", stripped)
+    candidate_norm = re.sub(r"\s+", "", _strip_md(candidate).lower())
+    if line_norm and candidate_norm and (
+        line_norm == candidate_norm
+        or (line_norm.startswith(candidate_norm) and len(candidate_norm) > 8)
+        or (candidate_norm.endswith(line_norm) and len(line_norm) >= 10)
+        or (line_norm.endswith(candidate_norm) and len(candidate_norm) >= 10)
     ):
         return True
 
@@ -106,8 +106,8 @@ def _line_matches_title(line: str, candidate: str) -> bool:
     # "**[Mr Speaker in the Chair] TITLE (Announcement by Mr Speaker)**"
     no_chair = re.sub(r"^\[.*?\]\s*", "", stripped).strip()
     no_suffix = re.sub(r"\s*\([^)]*\)\s*$", "", no_chair).strip()
-    sc_norm5 = re.sub(r"\s+", "", no_suffix.lower())
-    if sc_norm5 and sc_norm5 == ref_norm:
+    line_norm_no_chair = re.sub(r"\s+", "", no_suffix.lower())
+    if line_norm_no_chair and line_norm_no_chair == candidate_norm:
         return True
 
     return False
