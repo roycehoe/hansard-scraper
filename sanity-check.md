@@ -230,5 +230,21 @@ _Record each run here. Do not delete old entries._
 ```
 Date        | Sample size | Pipeline-break | Data-loss | Cosmetic | Notes
 ------------|-------------|----------------|-----------|----------|------
-(no runs yet)
+2026-05-30  | 125         | 0              | 0         | 0        | 13 NO_SPEECHES — all correct behaviour (see below)
 ```
+
+### 2026-05-30 — Run details
+
+Sample: `sample.json` (pilot + held_out + regression from refine-loop). 125 Report IDs → 141 HWRs matched (some `report_id` strings map to multiple HWR rows — duplicate output lines, not a parsing failure, but worth investigating as a data quality issue).
+
+Pass rate: 112/125 = 89.6%. All failures are `NO_SPEECHES` — start line was found in every case. None represent a parsing regression; all are documents that genuinely contain no speeches:
+
+| Count | report_type | Root cause |
+|-------|-------------|------------|
+| 6     | `bill`      | First Reading bills — procedural text only ("presented by X; read the First time…"), no debate |
+| 3     | `budget`    | Very old records (1955–1961) with no content after title, or `MPs Speaking:` empty |
+| 1     | `budget`    | Budget estimates document (`MPs Speaking:` empty, no speaker lines in markdown) |
+| 2     | `motion`    | "ADJOURNMENT" procedural resolutions — content is just "Resolved," with no speaker lines |
+| 1     | `speaker`   | Appendix document, no speeches |
+
+Title extraction: 0 mismatches. Subtitle extraction: 0 mismatches. Markdown generation: 0 failures. Invalid speeches (None speaker / empty transcript): 0.

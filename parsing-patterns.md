@@ -46,6 +46,49 @@ Affected patterns:
 - budget: "Committee of Supply âˆ' Head X" titles (~2153 docs)
 - president-address: "Debate on Presidentâ€™s Address" titles (~382 docs)
 
+## Speech Segmentation: Document Structure
+
+### Start-line position
+
+`get_start_of_speech_line` returns the index of the title match, which for new-format docs is the `Title:| ...` metadata row (row 7–8 of the markdown). `get_speeches` starts at `start_of_speech_line + 1`, so the lines immediately following are:
+- `MPs Speaking:| ...` (metadata)
+- Blank lines
+- `# Title` (markdown heading)
+- `## (Subtitle)` (markdown subheading)
+- Time marker: `4.28 pm`
+- Procedural text: `Order for Second Reading read.`
+
+All of these precede the first real speaker and must be skipped. Guard: skip non-speaker lines when `current_speaker is None`.
+
+### Artifact lines in old-format docs
+
+Old-format docs use open-bold for section headers and separators:
+- `**` — standalone asterisks (page break / separator)
+- `** **` — two asterisk pairs with a space (formatting artifact)
+- `****` — four asterisks
+- `**(Subtitle Text)  ` — open bold with content (subtitle, not a speaker)
+
+The `** **` pattern is dangerous: the speaker regex `((?:\*\*[^*]+?\*\*\s*)+)` matches it (content = single space), producing `speaker = ""`. Subsequent lines then get attributed to this empty speaker.
+
+Guard: skip any line where `parsed_line.strip("* ")` is empty (all characters are `*` or space).
+
+### Empty-transcript speeches
+
+When a speaker is introduced on a line with no trailing text (`**Mr Smith:**\n`), or mid-sentence (`"The question stood in the name of **Mr Smith:**"`), the speaker-change Speech gets `transcript = ""`. These are not content — filter them out at the return.
+
+### Structurally no-speech documents (excluded from target)
+
+~1,449 docs across all report types yield no valid speeches even after fixing segmentation. These are structurally no-speech procedural records with no bold speaker markup:
+- **Adjournment motions** (`motion`): "Resolved, That Parliament do now adjourn..."
+- **Bill first/third readings** (`bill`): procedural passing records with no debate
+- **Budget procedural entries** (`budget`): "Order read for consideration in Committee of Supply [7th Allotted Day]"
+- **Assent to Bills Passed** (`atbp`): lists of bills the President assented to
+- **ANNEX records** (`oral-answer`): charts/tables referenced during oral answers
+- **Bill introductions** (`bill-intro`): "presented by X; read the First time..."
+- **Speaker announcements** (`speaker`): Speaker procedural statements with no speaker markup
+
+These are excluded from the speech-bearing target set. Zero speeches is correct for them.
+
 ## HTML Entity Artifacts
 
 Some titles have `&WORD;` where html2text preserves the `;` from unrecognized HTML entities:
