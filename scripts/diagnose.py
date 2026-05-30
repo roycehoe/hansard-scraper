@@ -96,7 +96,7 @@ def get_passing_sample(session: Session, no_speech_types: set[str], n: int = 30)
     return passing[:n]
 
 
-def run_stats_on(responses: list, label: str = "") -> dict:
+def run_stats_on(responses: list) -> dict:
     """Run _get_statistics equivalent on a list of responses, return counts."""
     results = {"pass": [], "fail_start_line": [], "fail_speeches": []}
     for response in responses:
@@ -143,7 +143,7 @@ if __name__ == "__main__":
             response for response in all_responses
             if response.report_type not in no_speech_types and build_report(response).markdown_content is not None
         ]
-        baseline = run_stats_on(target_with_md, "baseline")
+        baseline = run_stats_on(target_with_md)
         total = len(baseline["pass"]) + len(baseline["fail_start_line"]) + len(baseline["fail_speeches"])
         pct = 100 * len(baseline["pass"]) / total if total else 0
         print(f"  Pass: {len(baseline['pass'])}/{total} ({pct:.1f}%)")
