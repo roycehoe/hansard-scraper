@@ -1,17 +1,9 @@
-import json
-
 from sqlmodel import Session
 
 from crud.handsard_sitting_date_response import CRUDHandsardSittingDateResponse
 from crud.handsard_website_response import CRUDHandsardWebsiteResponse
-from database.handsard_sitting_date_response import HandsardSittingDateResponse
 from gateway.handsard_report import get_handsard_report_response
-
-_LIST_FIELDS = {"footNote", "atbpList", "ptbaList", "attendanceList"}
-
-
-def _serialize_lists(result: dict) -> dict:
-    return {k: (json.dumps(v) if k in _LIST_FIELDS and isinstance(v, list) else v) for k, v in result.items()}
+from services.handsard_sitting_date_response import build_handsard_sitting_date_response
 
 
 def populate_sitting_dates(session: Session):
@@ -25,4 +17,4 @@ def populate_sitting_dates(session: Session):
         result = get_handsard_report_response(sitting_date)
         if not result:
             continue
-        crud.create(HandsardSittingDateResponse(**_serialize_lists(result)))
+        crud.create(build_handsard_sitting_date_response(result))
