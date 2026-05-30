@@ -5,12 +5,12 @@ from typing import Optional
 
 
 @dataclass
-class Speech:
+class ParsedSpeech:
     speaker: Optional[str]
     transcript: str
 
 
-class SpeechType(Enum):
+class ParsedSpeechType(Enum):
     PARSED = "parsed"
     SINGLE_SPEAKER = "single_speaker"
     MULTI_SPEAKER = "multi_speaker"
@@ -27,14 +27,14 @@ def _extract_mps_speaking(markdown: str) -> list[str]:
     return [n.strip() for n in m.group(1).split(";") if n.strip().strip("* ")]
 
 
-def _classify_speech_type(parsed: list[Speech], speaker_count: int) -> SpeechType:
+def _classify_speech_type(parsed: list[ParsedSpeech], speaker_count: int) -> ParsedSpeechType:
     if parsed:
-        return SpeechType.PARSED
+        return ParsedSpeechType.PARSED
     if speaker_count == 1:
-        return SpeechType.SINGLE_SPEAKER
+        return ParsedSpeechType.SINGLE_SPEAKER
     if speaker_count > 1:
-        return SpeechType.MULTI_SPEAKER
-    return SpeechType.NO_SPEAKER
+        return ParsedSpeechType.MULTI_SPEAKER
+    return ParsedSpeechType.NO_SPEAKER
 
 
 def _single_speaker_transcript(markdown: str, start_of_speech_line: int) -> str:
@@ -144,9 +144,9 @@ def get_start_of_speech_line(
     return None
 
 
-def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[Speech]:
+def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpeech]:
     current_speaker = None
-    speeches: list[Speech] = []
+    speeches: list[ParsedSpeech] = []
     for line in markdown.splitlines()[start_of_speech_line + 1 :]:
         parsed_line = line.strip()
         if not parsed_line:
@@ -156,7 +156,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[Speech]:
         if "**" not in parsed_line:
             if current_speaker is None:  # skip preamble before first speaker
                 continue
-            speeches.append(Speech(speaker=current_speaker, transcript=parsed_line))
+            speeches.append(ParsedSpeech(speaker=current_speaker, transcript=parsed_line))
             continue
 
         name = re.search(r"((?:\*\*[^*]+?\*\*\s*)+)", parsed_line)
@@ -166,23 +166,23 @@ def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[Speech]:
             if new_speaker:  # guard: don't overwrite speaker with empty string
                 current_speaker = new_speaker
             if current_speaker is not None:
-                speeches.append(Speech(speaker=current_speaker, transcript=transcript))
+                speeches.append(ParsedSpeech(speaker=current_speaker, transcript=transcript))
             continue
 
         if current_speaker is not None:
-            speeches.append(Speech(speaker=current_speaker, transcript=parsed_line))
+            speeches.append(ParsedSpeech(speaker=current_speaker, transcript=parsed_line))
 
     return [sp for sp in speeches if sp.transcript.strip() != ""]
 
 
-def get_speeches(markdown: str, start_of_speech_line: int) -> list[Speech]:
+def get_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpeech]:
     parsed = _parse_speeches(markdown, start_of_speech_line)
     speakers = _extract_mps_speaking(markdown)
     speech_type = _classify_speech_type(parsed, len(speakers))
 
-    if speech_type == SpeechType.PARSED:
+    if speech_type == ParsedSpeechType.PARSED:
         return parsed
-    if speech_type == SpeechType.SINGLE_SPEAKER:
+    if speech_type == ParsedSpeechType.SINGLE_SPEAKER:
         body = _single_speaker_transcript(markdown, start_of_speech_line)
-        return [Speech(speaker=speakers[0], transcript=body)] if body else []
+        return [ParsedSpeech(speaker=speakers[0], transcript=body)] if body else []
     return []
