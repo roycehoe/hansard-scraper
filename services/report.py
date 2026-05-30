@@ -1,11 +1,8 @@
-import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
 from database.report import HandsardWebsiteResponse, Report
-from gateway.handsard_topic import get_handsard_topic_response
-from schemas import HandsardSearchResult
 from utils.markdown_parser import get_cleaned_handsard_markdown
 
 
@@ -23,13 +20,9 @@ class ReportHeader:
     subtitle: Optional[str] = None
 
 
-def _has_no_subtitle(raw_title: str) -> bool:
-    return raw_title[-1] != ")"
-
-
 def _get_db_report_header(raw_title: str) -> ReportHeader:
     raw_title = raw_title.replace("\n", " ")
-    if _has_no_subtitle(raw_title):
+    if raw_title[-1] != ")":
         return ReportHeader(title=raw_title)
 
     title = ""
@@ -88,10 +81,6 @@ def get_db_report_in(handsard_website_response: HandsardWebsiteResponse) -> Repo
             if handsard_website_response.content is not None
             else None
         ),
-        htmlFileName=(
-            handsard_website_response.html_file_name
-            if handsard_website_response.html_file_name is None
-            else handsard_website_response.html_file_name
-        ),
+        htmlFileName=handsard_website_response.html_file_name,
         reportVersion=handsard_website_response.report_version,
     )

@@ -9,17 +9,17 @@ def _remove_spaces(html: str) -> str:
 
 def _remove_column_text(html: str) -> str:
     column_pattern = r"Column:\s*\d+"
-    return re.sub(f"{column_pattern}", "", html)
+    return re.sub(column_pattern, "", html)
 
 
 def _remove_column_no_text(html: str) -> str:
     column_pattern = r"Column No :\s*\d+"
-    return re.sub(f"{column_pattern}", "", html)
+    return re.sub(column_pattern, "", html)
 
 
 def _remove_page_text(html: str) -> str:
     page_text_pattern = r"Page:\s*\d+"
-    return re.sub(f"{page_text_pattern}", "", html)
+    return re.sub(page_text_pattern, "", html)
 
 
 def _remove_line_breaks(md_file: str) -> str:
@@ -28,12 +28,7 @@ def _remove_line_breaks(md_file: str) -> str:
 
 
 def _remove_new_lines(md_file: str) -> str:
-    lines = []
-    for line in md_file.splitlines():
-        if line == "":
-            continue
-        lines.append(line)
-    return "\n".join(lines)
+    return "\n".join(line for line in md_file.splitlines() if line)
 
 
 def _merge_consecutive_bold_only_lines(md: str) -> str:

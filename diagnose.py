@@ -1,20 +1,14 @@
 """Diagnostic script for the speech parsing refine loop."""
 
-import os
 import random
 from collections import defaultdict
 
-from dotenv import load_dotenv
-from sqlmodel import Session, create_engine, func, select
+from sqlmodel import Session, select
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
-
-from database.report import HandsardWebsiteResponse, Report
+from database.init import engine
+from database.report import HandsardWebsiteResponse
 from services.report import get_db_report_in
 from services.speech import get_speeches, get_start_of_speech_line
-
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/postgres")
-engine = create_engine(DATABASE_URL)
 
 
 def get_report_type_speech_stats(session: Session) -> dict:

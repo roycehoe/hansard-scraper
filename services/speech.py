@@ -99,10 +99,6 @@ def get_start_of_speech_line(
     return None
 
 
-def contains_speaker_name(line: str):
-    return "**" in line
-
-
 def get_speeches(markdown: str, start_of_speech_line: int) -> list[Speech]:
     current_speaker = None
     speeches: list[Speech] = []
@@ -112,7 +108,7 @@ def get_speeches(markdown: str, start_of_speech_line: int) -> list[Speech]:
             continue
         if not parsed_line.strip("* "):  # skip artifact lines: **, ****, ** **, etc.
             continue
-        if not contains_speaker_name(parsed_line):
+        if "**" not in parsed_line:
             if current_speaker is None:  # skip preamble before first speaker
                 continue
             speeches.append(Speech(speaker=current_speaker, transcript=parsed_line))

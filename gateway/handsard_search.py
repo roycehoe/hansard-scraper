@@ -35,29 +35,18 @@ def get_handsard_search_results(
     return response.json()
 
 
-def _has_results(handsard_search_results: dict | list) -> bool:
-    if isinstance(handsard_search_results, list):
-        return True
-    return False
-
-
 def get_all_handsard_search_results() -> list[dict]:
     all_handsard_search_results = []
     start_index = 0
     end_index = 19
-    counter = 0
 
     while True:
         response = get_handsard_search_results(start_index, end_index)
-        if not _has_results(response):
+        if not isinstance(response, list):
             break
-        all_handsard_search_results = [
-            *all_handsard_search_results,
-            *response,
-        ]
+        all_handsard_search_results.extend(response)
         start_index += 20
         end_index += 20
-        counter += 1
-        print(f"Handsard search results: {counter}/{41837 / 20}")
+        print(f"Fetched page {start_index // 20}")
 
     return all_handsard_search_results

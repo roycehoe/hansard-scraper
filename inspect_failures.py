@@ -1,22 +1,16 @@
 """Manual inspection of failing documents for the refine loop."""
 
-import os
 import sys
 
-from dotenv import load_dotenv
-from sqlmodel import Session, create_engine, select
+from sqlmodel import Session, select
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
-
+from database.init import engine
 from database.report import HandsardWebsiteResponse
 from services.report import get_db_report_in
-from services.speech import get_speeches, get_start_of_speech_line
-
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/postgres")
-engine = create_engine(DATABASE_URL)
+from services.speech import get_start_of_speech_line
 
 
-def show_doc(resp, rpt, lines=60):
+def show_doc(resp, rpt, max_lines=60):
     start = get_start_of_speech_line(
         rpt.markdown_content, rpt.title, rpt.subtitle, rpt.original_title,
         resp.report_type,
@@ -27,7 +21,7 @@ def show_doc(resp, rpt, lines=60):
     print(f"  original_title={rpt.original_title!r}")
     print(f"  has_start_line={start is not None} (line {start})")
     print(f"  markdown ({len(rpt.markdown_content)} chars):")
-    for i, line in enumerate(rpt.markdown_content.splitlines()[:lines]):
+    for i, line in enumerate(rpt.markdown_content.splitlines()[:max_lines]):
         print(f"    {i:3d}: {line}")
     print()
 
