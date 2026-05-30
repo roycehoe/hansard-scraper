@@ -2,7 +2,7 @@ from sqlmodel import Session
 
 from crud.handsard_website_response import CRUDHandsardWebsiteResponse
 from gateway.handsard_search import get_all_handsard_search_results
-from schemas import HandsardSearchResult
+from schemas.handsard_search_result import HandsardSearchResult
 from services.handsard_website import get_handsard_website_result_in
 
 
