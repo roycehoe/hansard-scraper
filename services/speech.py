@@ -1,12 +1,6 @@
-import json
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 from typing import Optional
-
-from sqlmodel import select
-
-from database.init import get_session
-from database.report import Report
 
 
 @dataclass
@@ -19,6 +13,58 @@ def _strip_md(text: str) -> str:
     return re.sub(r"[_*]", "", text)
 
 
+def _fix_mojibake(s: str) -> str:
+    """Fix Windows-1252 mojibake in stored titles (e.g. â€™ → ', âˆ' → −)."""
+    try:
+        return s.encode("cp1252").decode("utf-8")
+    except (UnicodeDecodeError, UnicodeEncodeError):
+        return s
+
+
+def _extract_md_title(markdown_content: str) -> Optional[str]:
+    """Extract the Title field from the markdown header row, if present."""
+    for line in markdown_content.splitlines()[:12]:
+        m = re.search(r"Title:\|\s*([^|\n]+)", line, re.IGNORECASE)
+        if m:
+            candidate = m.group(1).strip()
+            if candidate:
+                return candidate
+    return None
+
+
+def _line_matches_title(line: str, candidate: str) -> bool:
+    """Return True if the line matches the candidate title via any strategy."""
+    # Strategy 1: closed bold (**title**) — old format with proper closing
+    if f"{candidate}**" in line:
+        return True
+
+    # Strategy 2: markdown heading (# title) — new format (Parliament 12+)
+    if line.startswith("#"):
+        heading = _strip_md(line.lstrip("#").strip()).lower()
+        if heading == _strip_md(candidate).lower():
+            return True
+
+    # Strategy 3: stripped content — italic, open bold, plain text (old format)
+    stripped = _strip_md(line).strip().lower()
+    if stripped and stripped == _strip_md(candidate).lower():
+        return True
+
+    # Strategy 4: whitespace-normalized — OCR-damaged spacing, continuation markers
+    # (sc startswith ref), addenda/prefix mismatches (ref endswith sc), and lines with
+    # a context prefix before the title (sc endswith ref, e.g. "[Chair] HEAD X").
+    sc_norm = re.sub(r"\s+", "", stripped)
+    ref_norm = re.sub(r"\s+", "", _strip_md(candidate).lower())
+    if sc_norm and ref_norm and (
+        sc_norm == ref_norm
+        or (sc_norm.startswith(ref_norm) and len(ref_norm) > 8)
+        or (ref_norm.endswith(sc_norm) and len(sc_norm) >= 10)
+        or (sc_norm.endswith(ref_norm) and len(ref_norm) >= 10)
+    ):
+        return True
+
+    return False
+
+
 def get_start_of_speech_line(
     markdown_content: str,
     title: str,
@@ -26,33 +72,25 @@ def get_start_of_speech_line(
     original_title: str,
     report_type: str = "",
 ) -> Optional[int]:
+    title = _fix_mojibake(title)
+    subtitle = _fix_mojibake(subtitle) if subtitle else subtitle
+    original_title = _fix_mojibake(original_title)
     original_title_clean = original_title.replace("\n", " ").strip()
-    for line_index, line in enumerate(markdown_content.splitlines()):
-        # Old format: title appears in bold (**Title**)
-        if subtitle:
-            if f"{title} {subtitle}**" in line:
-                return line_index
-            if line.endswith(f"{subtitle}**"):
-                return line_index
-            if f"{subtitle}**" in line:
-                return line_index
-        if f"{title}**" in line:
-            return line_index
-        if f"{original_title.lower()}**" in line.lower():
-            return line_index
-        if f"{original_title.lower().replace(' ','')}**" in line.lower().replace(
-            " ", ""
-        ):
-            return line_index
 
-        # New format (Parliament 12+): title appears as a markdown heading (# Title)
-        if line.startswith("#"):
-            heading = _strip_md(line.lstrip("#").strip()).lower()
-            if heading == _strip_md(title).lower():
-                return line_index
-            if subtitle and heading == _strip_md(f"{title} {subtitle}").lower():
-                return line_index
-            if heading == _strip_md(original_title_clean).lower():
+    # Extract the title as written in the markdown header — may differ from the DB
+    # title due to HTML entity artifacts, OCR noise, or data entry errors.
+    md_title = _fix_mojibake(_extract_md_title(markdown_content) or "")
+
+    candidates = [c for c in [
+        title,
+        original_title_clean,
+        f"{title} {subtitle}" if subtitle else None,
+        md_title or None,
+    ] if c]
+
+    for line_index, line in enumerate(markdown_content.splitlines()):
+        for candidate in candidates:
+            if _line_matches_title(line, candidate):
                 return line_index
 
     return None

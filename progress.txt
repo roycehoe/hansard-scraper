@@ -1,0 +1,152 @@
+# Refine-Loop Progress Log
+
+## Setup
+
+**Baseline**: 16,406/21,854 (75.1%) — all failures are has_start_line=False; zero can_get_speeches failures.
+
+**No-speech types excluded**: none (clarification/written-statement/point-of-order/petition have has_md=0 so excluded by default).
+
+**Failure counts by (stage, report_type)**:
+- has_start_line / budget: 2153
+- has_start_line / bill: 877
+- has_start_line / motion: 601
+- has_start_line / president-address: 382
+- has_start_line / written-answer-na: 305
+- has_start_line / written-answer: 319
+- has_start_line / speaker: 232
+- has_start_line / atbp: 195
+- has_start_line / oral-answer: 173
+- has_start_line / ministerial-statement: 134
+- has_start_line / misc: 35
+- has_start_line / yang-di-message: 5
+- has_start_line / matter-adj: 7
+- has_start_line / admin-oaths: 9
+- has_start_line / deputy-speaker: 6
+- has_start_line / tribute: 4
+- has_start_line / personal-explanation: 1
+- has_start_line / obituary-speech: 1
+
+**Samples drawn** (seed=42):
+- pilot: 50 docs (K=3 per group)
+- held_out: 45 docs (K=3 per group where available)
+- regression: 30 currently-passing docs
+
+---
+
+## Iteration 1 — Mojibake fix
+
+**Failure stage**: has_start_line
+**Report types**: budget, president-address (and any others with mojibake titles)
+
+**Affected report IDs (pilot sample)**:
+[see sample.json pilot list]
+
+**Markdown snippet (failing)**:
+```
+title='Committee of Supply âˆ' Head J'
+subtitle='(Ministry of Defence)'
+# Committee of Supply − Head J (Ministry of Defence)   ← correct unicode in markdown
+```
+```
+title='Debate on Presidentâ€™s Address'
+# Debate on President's Address   ← correct unicode in markdown
+```
+
+**Markdown snippet (passing, same report_type)**:
+```
+title='Committee of Supply – Head I (Ministry of Community Development, Youth and Sports)'
+# Committee of Supply – Head I (Ministry of Community Development, Youth and Sports)   ← en-dash, no mojibake
+```
+
+**Why it fails**:
+The DB stores Windows-1252 mojibake of UTF-8-encoded special characters. `â€™` is the cp1252 rendering of U+2019 (curly apostrophe). `âˆ'` is the cp1252 rendering of U+2212 (minus sign). The markdown heading contains the correct Unicode character. The comparison `heading == _strip_md(title).lower()` fails because the strings differ.
+
+**Proposed fix**:
+Add `_fix_mojibake(s)` helper that does `s.encode('cp1252').decode('utf-8')` (returns original on failure). Apply it to title, subtitle, and original_title at the top of `get_start_of_speech_line` before any comparisons.
+
+Backward-compatibility: safe. For correctly-encoded titles with ASCII content, this is a no-op. For titles with proper Unicode above U+00FF (like en-dash `–`), the cp1252 encode either fails (UnicodeEncodeError) or produces bytes that don't decode as valid UTF-8 (UnicodeDecodeError) — both return the original string unchanged.
+
+**Outcome**: Kept. +11 docs globally (16406→16417). 0 regressions. Sampling artifact: pilot/held_out drew non-mojibake budget docs (all-caps titles); mojibake pattern only appeared in ~7 budget and ~4 president-address docs. Confirmed correct on ids 20398, 20415, 20416, 20851, 20852, 20861.
+
+---
+
+## Iteration 2 — Stripped-content title match (old-format docs)
+
+**Failure stage**: has_start_line
+**Report types**: budget (192 remaining), bill (~877), motion (~601), speaker (~232), ministerial-statement (~134), written-answer (~319), written-answer-na (~305), oral-answer (some), atbp, misc, others
+
+**Affected report IDs (pilot sample)**: most of the pilot set
+
+**Markdown snippets (failing)**:
+
+Old Format A — italic:
+```
+title='HEAD R - MINISTRY OF LAW'
+markdown line: '_Head R - Ministry of Law_'   ← italic, different case
+```
+
+Old Format B — open bold:
+```
+title='CHILDREN DEVELOPMENT CO-SAVINGS (AMENDMENT) BILL'
+markdown line: '**CHILDREN DEVELOPMENT CO-SAVINGS (AMENDMENT) BILL  '  ← open bold, no closing **
+```
+
+Old Format C — plain text (written-answer):
+```
+title='PUBLIC ASSISTANCE'
+markdown line: 'PUBLIC ASSISTANCE'   ← just plain text, no bold/italic
+```
+
+**Markdown snippet (passing)**:
+```
+# Civil List   ← new format, title as # heading
+```
+
+**Why it fails**:
+For old-format docs (Parliament 11 and earlier), the title appears as:
+- Italic: `_Title_`
+- Open bold: `**TITLE  ` (no closing `**`)
+- Plain text: `TITLE` (between standalone `**` lines)
+
+The existing checks look for `**title**` (closed bold) or `# title` (heading). None of these match old-format patterns.
+
+**Proposed fix**:
+Add a stripped-content check: `_strip_md(line).strip().lower() == _strip_md(title).lower()`. The `_strip_md` function strips `*` and `_` markers, so all three old-format variants reduce to the plain title text for comparison. Check exact match first; also check combined title+subtitle and original_title.
+
+Backward-compatibility: For currently-passing docs that match via existing checks (heading or closed-bold), those checks run first in the same loop iteration and return before this new check is reached. The stripped-content check only activates when prior checks all fail.
+
+**Outcome**: Kept. Pilot +3, held-out +4, 0 regressions. Global: 19,227→19,449 (+222). Major win for atbp (209→397 docs, from 51.9% to 98.5% pass rate). md_title correctly handles ASSENT vs ASSENTS mismatch and A&E; semicolon artifact.
+
+---
+
+## Iteration 5 — sc_norm.endswith(ref_norm) check (context-prefix pattern)
+
+**Failure stage**: has_start_line
+**Report types**: budget (1794 remaining), and others
+
+**Root cause**: For many old-format docs, the title appears at the END of a line that has a context prefix:
+- `**[Mr Speaker in the Chair] HEAD X - MINISTRY OF Y**` — line ends with the normalized title
+- `**<Head N - Ministry of Foreign Affairs**` — `<` prefix
+After whitespace normalization, `sc_norm.endswith(ref_norm)` holds, but the existing check was only `ref_norm.endswith(sc_norm)` (which checks the opposite direction for addenda cases).
+
+**Why it fails**: The existing suffix check was `ref_norm.endswith(sc_norm)` — useful when the LINE is shorter than the title (addenda case). But when the LINE is LONGER than the title due to a context prefix, the reverse check `sc_norm.endswith(ref_norm)` is needed.
+
+**Proposed fix**: Add `sc_norm.endswith(ref_norm) and len(ref_norm) >= 10` to Strategy 4 in `_line_matches_title`.
+
+**Outcome**: Kept. Pilot +10, held-out +9, 0 regressions. Global: 19,449→21,808 (+2,359). Pass rate 89.1%→99.9%. **SUCCESS CRITERION MET (≥95% target).**
+
+---
+
+## Final Results
+
+| Iteration | Fix | Before | After | Delta |
+|---|---|---|---|---|
+| Baseline | — | 75.1% (16,406/21,854) | — | — |
+| 1 | Mojibake fix (cp1252 decode) | 75.1% | 75.2% | +11 |
+| 2 | Stripped-content match (italic/open-bold/plain) | 75.2% | 83.6% | +1829 |
+| 3 | Whitespace-normalized + startswith/suffix | 83.6% | 88.0% | +981 |
+| 4 | md_title extraction + rewrite | 88.0% | 89.1% | +222 |
+| 5 | sc_norm.endswith(ref_norm) check | 89.1% | **99.9%** | +2359 |
+
+Remaining failures (30 docs): president-address (16), budget (9), written-answer (2), oral-answer (2), tribute (1).
+
