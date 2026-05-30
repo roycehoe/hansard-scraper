@@ -1,8 +1,10 @@
 import json
 
-from sqlmodel import Session, select
+from sqlmodel import Session
 
-from database.report import HandsardSittingDateResult, HandsardWebsiteResponse
+from crud.handsard_sitting_date_result import CRUDHandsardSittingDateResult
+from crud.handsard_website_response import CRUDHandsardWebsiteResponse
+from database.report import HandsardSittingDateResult
 from gateway.handsard_report import get_handsard_report_response
 
 _LIST_FIELDS = {"footNote", "atbpList", "ptbaList", "attendanceList"}
@@ -13,15 +15,15 @@ def _serialize_lists(result: dict) -> dict:
 
 
 def populate_sitting_dates(session: Session):
-    all_sitting_dates = {r.sitting_date for r in session.exec(select(HandsardWebsiteResponse)).all()}
-    existing_sitting_dates = {r.sitting_date for r in session.exec(select(HandsardSittingDateResult)).all()}
+    all_sitting_dates = CRUDHandsardWebsiteResponse(session).get_all_sitting_dates()
+    existing_sitting_dates = CRUDHandsardSittingDateResult(session).get_all_sitting_dates()
 
     dates_to_fetch = list(all_sitting_dates - existing_sitting_dates)
+    results = []
     for i, sitting_date in enumerate(dates_to_fetch, start=1):
         print(f"{i}/{len(dates_to_fetch)}: {sitting_date}")
         result = get_handsard_report_response(sitting_date)
         if not result:
             continue
-        session.add(HandsardSittingDateResult(**_serialize_lists(result)))
-
-    session.commit()
+        results.append(HandsardSittingDateResult(**_serialize_lists(result)))
+    CRUDHandsardSittingDateResult(session).create_many(results)

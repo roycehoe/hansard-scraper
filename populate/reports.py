@@ -1,11 +1,11 @@
-from sqlmodel import Session, select
+from sqlmodel import Session
 
-from database.report import HandsardWebsiteResponse
+from crud.handsard_website_response import CRUDHandsardWebsiteResponse
+from crud.report import CRUDReport
 from services.report import get_db_report_in
 
 
 def populate_reports(session: Session):
-    responses = list(session.exec(select(HandsardWebsiteResponse)).all())
-    for response in responses:
-        session.add(get_db_report_in(response))
-    session.commit()
+    responses = CRUDHandsardWebsiteResponse(session).get_all()
+    reports = [get_db_report_in(response) for response in responses]
+    CRUDReport(session).create_many(reports)

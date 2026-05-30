@@ -1,16 +1,13 @@
-from sqlmodel import Session, select
+from sqlmodel import Session
 
-from database.report import Report, Speech
+from crud.report import CRUDReport
+from crud.speech import CRUDSpeech
+from database.report import Speech
 from services.speech import get_speeches, get_start_of_speech_line
 
 
-def _chunks(items, size):
-    for i in range(0, len(items), size):
-        yield items[i : i + size]
-
-
 def populate_speeches(session: Session):
-    db_reports = list(session.exec(select(Report)).all())
+    db_reports = CRUDReport(session).get_all()
     all_speeches: list[Speech] = []
     for i, db_report in enumerate(db_reports, start=1):
         print(f"{i}/{len(db_reports)}")
@@ -36,6 +33,4 @@ def populate_speeches(session: Session):
                     report_id=db_report.id,
                 )
             )
-    for chunk in _chunks(all_speeches, 1000):
-        session.bulk_insert_mappings(Speech, chunk)
-    session.commit()
+    CRUDSpeech(session).create_many(all_speeches)
