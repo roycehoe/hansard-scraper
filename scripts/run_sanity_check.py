@@ -9,7 +9,7 @@ import json
 from crud.handsard_website_response import CRUDHandsardWebsiteResponse
 from crud.report import CRUDReport
 from database.init import get_session
-from services.report import get_db_report_in
+from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
 
@@ -68,7 +68,7 @@ def run():
             print(f"{stored.report_id:<14} {stored.report_type:<22} {'-':>2} {'-':>2} {'-':>4} {'-':>2}  no content (expected for some types)")
             continue
 
-        regen = get_db_report_in(hwr)
+        regen = build_report(hwr)
 
         checks = []
         failed = False

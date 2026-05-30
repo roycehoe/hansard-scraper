@@ -6,7 +6,7 @@ from sqlmodel import Session
 
 from crud.handsard_website_response import CRUDHandsardWebsiteResponse
 from database.init import engine
-from services.report import get_db_report_in
+from services.report import build_report
 from services.speech import get_start_of_speech_line
 
 
@@ -31,7 +31,7 @@ def inspect_type(session: Session, report_type: str, max_failing: int = 3, max_p
 
     failing, passing = [], []
     for resp in responses:
-        rpt = get_db_report_in(resp)
+        rpt = build_report(resp)
         if rpt.markdown_content is None:
             continue
         start = get_start_of_speech_line(

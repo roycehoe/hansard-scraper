@@ -20,7 +20,7 @@ def _get_handsard_website_report_content(
     return html_content.replace("\x00", "\ufffd")
 
 
-def get_handsard_website_result_in(
+def build_handsard_website_response(
     handsard_search_result: HandsardSearchResult,
 ) -> HandsardWebsiteResponse:
     return HandsardWebsiteResponse(

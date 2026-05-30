@@ -6,12 +6,12 @@ from crud.handsard_website_response import CRUDHandsardWebsiteResponse
 from crud.parsing_statistics import CRUDParsingStatistics
 from database.handsard_website_response import HandsardWebsiteResponse
 from database.parsing_statistics import ParsingStatistics
-from services.report import get_db_report_in
+from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
 
 def _get_statistics(response: HandsardWebsiteResponse) -> ParsingStatistics:
-    report = get_db_report_in(response)
+    report = build_report(response)
     has_markdown = report.markdown_content is not None
     has_start_line = False
     can_get_speeches = False
