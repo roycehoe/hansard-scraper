@@ -71,7 +71,7 @@ class HandsardSittingDateResponse(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
     member_id: Optional[str] = Field(default=None, alias="memberId")
-    volume_no: str = Field(alias="volumeNo")
+    volume_no: Optional[str] = Field(default=None, alias="volumeNo")
     report_type: Optional[str] = Field(default=None, alias="reportType")
     session_no: Optional[str] = Field(default=None, alias="sessionNo")
     portfolio: Optional[str] = None
