@@ -14,6 +14,10 @@ class CRUDReport:
         self.session.add(report)
         self.session.commit()
 
+    def create_many(self, reports: list[Report]) -> None:
+        self.session.add_all(reports)
+        self.session.commit()
+
     def get_all(self) -> list[Report]:
         return list(self.session.exec(select(Report)).all())
 

@@ -9,6 +9,8 @@ from database.report import Report
 from logs import logger
 from services.speech import get_speeches, get_start_of_speech_line
 
+_BATCH_SIZE = 500
+
 
 def _get_statistics(report: Report) -> ParsingStatistics:
     has_markdown = report.markdown_content is not None
@@ -39,9 +41,16 @@ def populate_statistics(session: Session):
     existing_ids = crud.get_all_report_ids()
     to_process = [r for r in reports if r.report_id not in existing_ids]
     logger.info(f"Computing statistics for {len(to_process)}/{len(reports)} ({len(existing_ids)} already done)")
+
+    batch = []
     for i, report in enumerate(to_process, start=1):
         logger.info(f"{i}/{len(to_process)}")
-        crud.create(_get_statistics(report))
+        batch.append(_get_statistics(report))
+        if len(batch) >= _BATCH_SIZE:
+            crud.create_many(batch)
+            batch.clear()
+    if batch:
+        crud.create_many(batch)
 
 
 def export_statistics_csv(session: Session, path: str = "statistics.csv"):
