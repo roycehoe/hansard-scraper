@@ -1,3 +1,11 @@
+# Environment Note
+
+All Python scripts in this project must be run via `poetry run python3` (not bare `python3`).
+The project uses a remote PostgreSQL database; the `DATABASE_URL` is loaded from `.env` automatically
+when the script is invoked from the project root inside the poetry environment.
+
+---
+
 # Before Starting — Resume Check
 
 Before beginning Setup or any loop iteration, scan the working directory for existing artifacts and load them:
