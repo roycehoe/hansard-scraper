@@ -25,8 +25,8 @@ Run `refine-loop.md` Setup Steps 1–5 first. The workflow assumes these artifac
 - `sample.json` — pilot, held_out, and regression report ID sets
 - `diagnose.py` — runs `_get_statistics` on a list of report IDs
 - `inspect_failures.py` — opens raw markdown for a report ID
-- `docs/progress.txt` — iteration log (may be empty on first run)
-- `docs/parsing-patterns.md` — accumulated structural knowledge (may be empty on first run)
+- `docs/report/progress.txt` — iteration log (may be empty on first run)
+- `docs/report/parsing-patterns.md` — accumulated structural knowledge (may be empty on first run)
 
 Do not start the workflow without `sample.json`. Re-sampling mid-run invalidates before/after comparisons.
 
@@ -38,7 +38,7 @@ Save the script below to `.claude/workflows/refine-loop-multi.js`. Then in a Cla
 Run the refine-loop-multi workflow.
 ```
 
-Each invocation runs one iteration. Run it again to continue to the next iteration. The resume check at the start reads `docs/progress.txt` to determine where the loop is.
+Each invocation runs one iteration. Run it again to continue to the next iteration. The resume check at the start reads `docs/report/progress.txt` to determine where the loop is.
 
 To run multiple iterations back-to-back without manual re-invocation, wrap in a loop in a parent workflow or use `/loop`.
 
@@ -158,12 +158,12 @@ phase('Resume')
 const resume = await agent(`
 Read the following files in the working directory and return structured state.
 
-- docs/progress.txt: parse to find the current iteration number (count "## Iteration" headings) and
+- docs/report/progress.txt: parse to find the current iteration number (count "## Iteration" headings) and
   summarise the last patch outcome in lastPatchSummary. If the file is empty or absent, return
   iteration=0 and lastPatchSummary="none".
 - sample.json: parse the JSON and extract the "pilot", "held_out", and "regression" arrays of
   report IDs. If absent, return empty arrays and flag in lastPatchSummary.
-- docs/parsing-patterns.md: read for context. Do not return its contents — just internalize it so
+- docs/report/parsing-patterns.md: read for context. Do not return its contents — just internalize it so
   you can brief downstream agents accurately if asked.
 
 Return the structured state.
@@ -191,7 +191,7 @@ You are one of two investigation agents running in parallel. Your lane is report
 speech start line cannot be detected (has_start_line=False).
 
 Context files to read before investigating:
-- docs/parsing-patterns.md — accumulated structural knowledge; read this first
+- docs/report/parsing-patterns.md — accumulated structural knowledge; read this first
 - services/speech.py — the current parsing logic, specifically get_start_of_speech_line
 
 Steps:
@@ -217,7 +217,7 @@ You are one of two investigation agents running in parallel. Your lane is report
 start line is found but speech segmentation fails (can_get_speeches=False).
 
 Context files to read before investigating:
-- docs/parsing-patterns.md — accumulated structural knowledge; read this first
+- docs/report/parsing-patterns.md — accumulated structural knowledge; read this first
 - services/speech.py — the current parsing logic, specifically parse_speeches
 
 Steps:
@@ -356,7 +356,7 @@ Decision rules:
 - If reverting, revert services/speech.py now (use git checkout services/speech.py or undo the change).
 
 After deciding:
-1. Append one entry to docs/progress.txt using this structure:
+1. Append one entry to docs/report/progress.txt using this structure:
 
    ## Iteration ${nextIteration} — <failure_stage> — <report_type> — <short description>
 
@@ -368,7 +368,7 @@ After deciding:
    **Outcome:** <kept / reverted — net change on held-out set, regression count>
 
 2. If investigation revealed a new generalizable structural pattern about the markdown format or
-   a report_type's document shape, also append it to docs/parsing-patterns.md.
+   a report_type's document shape, also append it to docs/report/parsing-patterns.md.
 
 Return the evaluation result.
 `, { schema: EVAL_SCHEMA, label: 'evaluate' })

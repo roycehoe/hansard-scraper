@@ -4,11 +4,11 @@ Before beginning Setup or any loop iteration, scan the working directory for exi
 
 - `diagnose.py` — runs `_get_statistics` across a set of report IDs and prints a pass/fail table; read it to understand its CLI interface before calling it.
 - `inspect_failures.py` — opens raw markdown for a given report ID; read it to understand its interface before calling it.
-- `sample.json` — the fixed sample drawn at Setup Step 5; if present, use it as-is. If absent and `docs/progress.txt` exists (loop has already started), flag the integrity issue — re-sampling would draw from a different population. If present and `docs/progress.txt` is absent, treat as iteration 0 and proceed to Loop Step 1 without re-running Setup.
-- `docs/progress.txt` — iteration log; if present, read it to determine which iteration the loop is on and what was last attempted.
-- `docs/parsing-patterns.md` — accumulated structural knowledge about markdown format and report types; if present, read it before investigating any failures.
+- `sample.json` — the fixed sample drawn at Setup Step 5; if present, use it as-is. If absent and `docs/report/progress.txt` exists (loop has already started), flag the integrity issue — re-sampling would draw from a different population. If present and `docs/report/progress.txt` is absent, treat as iteration 0 and proceed to Loop Step 1 without re-running Setup.
+- `docs/report/progress.txt` — iteration log; if present, read it to determine which iteration the loop is on and what was last attempted.
+- `docs/report/parsing-patterns.md` — accumulated structural knowledge about markdown format and report types; if present, read it before investigating any failures.
 
-**Do not regenerate any of the above files if they already exist.** If all artifacts are present, skip Setup and resume the loop from the last incomplete step recorded in `docs/progress.txt`.
+**Do not regenerate any of the above files if they already exist.** If all artifacts are present, skip Setup and resume the loop from the last incomplete step recorded in `docs/report/progress.txt`.
 
 # Goal
 
@@ -29,7 +29,7 @@ Iteratively refine the speech parsing logic until the success threshold is met.
 The setup is not bookkeeping. Its outputs determine whether the goal as written is correct before any iteration begins.
 
 **Step 1 — Identify no-speech report types.**
-Query the DB for `report_type` values where no document has ever yielded speeches. Exclude these from the sampling pool. Write the excluded types to `docs/progress.txt` under a `## Setup — Excluded report types` heading.
+Query the DB for `report_type` values where no document has ever yielded speeches. Exclude these from the sampling pool. Write the excluded types to `docs/report/progress.txt` under a `## Setup — Excluded report types` heading.
 
 **Step 2 — Validate "zero speech" cases empirically.**
 Manually inspect 5–10 reports with `markdown_content` that currently yield zero speeches, drawn across different `report_type` values. For each, determine: is this a parsing failure, or is zero speeches the correct result for this document type?
@@ -48,7 +48,7 @@ After applying, verify:
 - The regression set (30 passing docs drawn later in Step 6) still passes once drawn.
 
 **Step 5 — Record the baseline.**
-Run parsing against the full validated set (excluding no-speech types from step 1) and record the starting success rate. Write it to `docs/progress.txt` under a `## Setup — Baseline` heading. This is the reference point for all future progress and the denominator for the 95% target.
+Run parsing against the full validated set (excluding no-speech types from step 1) and record the starting success rate. Write it to `docs/report/progress.txt` under a `## Setup — Baseline` heading. This is the reference point for all future progress and the denominator for the 95% target.
 
 **Step 6 — Draw the pilot sample.**
 Sample from failing documents, grouped by `(failure_stage, report_type)`, up to K=3 per group. Exclude `has_markdown=False` rows.
@@ -94,7 +94,7 @@ For each root-cause group:
 - Determine why parsing fails for this group. Do not assume the current parsing approach is correct — if a fundamentally different strategy would work better, note it.
 
 **Step 3 — Log findings**
-Append one entry per root-cause group (not per document) to `docs/progress.txt`. Begin each iteration with a `## Iteration N — YYYY-MM-DD` heading (where N is the iteration count, starting at 1), then append root-cause entries beneath it. This heading is the authoritative iteration counter — Step 8's multiple-of-10 check counts these headings. If the investigation reveals a generalizable structural pattern about the markdown format or a `report_type`'s document shape, also record it in `docs/parsing-patterns.md` (reusable knowledge, not iteration-specific). Use this structure:
+Append one entry per root-cause group (not per document) to `docs/report/progress.txt`. Begin each iteration with a `## Iteration N — YYYY-MM-DD` heading (where N is the iteration count, starting at 1), then append root-cause entries beneath it. This heading is the authoritative iteration counter — Step 8's multiple-of-10 check counts these headings. If the investigation reveals a generalizable structural pattern about the markdown format or a `report_type`'s document shape, also record it in `docs/report/parsing-patterns.md` (reusable knowledge, not iteration-specific). Use this structure:
 
 ```
 ## Iteration N — YYYY-MM-DD
@@ -147,14 +147,14 @@ can_get_speeches | ministerial-stmt   | 2/3    | 2/3  (no change)
 Passing set regressions: 0/30
 ```
 
-- If **new passes > new failures** and **no regressions in the passing set**: keep the change. Log the net outcome to `docs/progress.txt`.
-- If **new failures ≥ new passes** or **regressions detected**: revert the change. Log why it regressed and what to try instead in `docs/progress.txt`.
+- If **new passes > new failures** and **no regressions in the passing set**: keep the change. Log the net outcome to `docs/report/progress.txt`.
+- If **new failures ≥ new passes** or **regressions detected**: revert the change. Log why it regressed and what to try instead in `docs/report/progress.txt`.
 
 **Step 7 — Widen the sample (every 3 iterations)**
 Add more documents to the sample from `(failure_stage, report_type)` groups that are underrepresented or not yet in the pilot. K=3 per group still applies to new groups. Draw a fresh held-out set for the new groups. Expand the passing-document regression set proportionally.
 
 **Step 8 — Check completion and iteration budget**
-After updating stats, first check: if the current iteration count (number of `## Iteration N` headings in `docs/progress.txt`) is a multiple of 3, go to Step 7 before continuing.
+After updating stats, first check: if the current iteration count (number of `## Iteration N` headings in `docs/report/progress.txt`) is a multiple of 3, go to Step 7 before continuing.
 
 Then check two conditions:
 

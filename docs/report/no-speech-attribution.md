@@ -4,7 +4,7 @@
 
 The speech parsing pipeline (`services/speech.py::get_speeches`) identifies 1,449 docs as
 "no-speech" — docs where a start line was found but `get_speeches` returns an empty list.
-These were excluded from the speaker/transcript quality target (see `docs/progress.txt` Iteration 6).
+These were excluded from the speaker/transcript quality target (see `docs/report/progress.txt` Iteration 6).
 
 The refine-loop exclusion rationale was: "zero speeches is correct for these — they have no
 speaker markup." This is technically true but misses the point: **every entry in the Hansard
