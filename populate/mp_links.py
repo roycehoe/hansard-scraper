@@ -1,3 +1,5 @@
+import re
+
 from sqlmodel import Session, select
 
 from database.mp import Mp
@@ -54,17 +56,53 @@ def _populate_speech_mp_ids(session: Session, mp_id_lookup: dict[tuple[str, int]
         .where(Speech.mp_id == None)  # noqa: E711
     ).all()
 
+    # Collective references, presiding-officer announcements, and markdown artifacts
+    # that are never in the Mp table. Skip before expensive resolution.
+    _NON_SPEAKERS = {
+        "An hon. Member", "Some hon. Members", "Non-Residents",
+        "Tributes by Leader of the House and Opposition Leaders",
+    }
+
     updated = 0
     for speech, report in rows:
         if not speech.speaker:
             continue
+        spk = speech.speaker
+        if spk in _NON_SPEAKERS:
+            continue
+        if spk.startswith("(") or spk.startswith("_"):
+            continue
         parliament = report.parliament_number
-        # Strip trailing colon (artifact of bold-speaker markup "**Name:**") and title prefix.
-        name = strip_title(speech.speaker.rstrip(":").strip())
+        # Strip trailing colon, then handle parenthetical in speaker string:
+        # - role+name "The Minister (Mr Name)" → use the inner name directly
+        # - constituency suffix "Dr Tan (Ayer Rajah)" → strip the parenthetical
+        _INNER_TITLE = re.compile(
+            r"^(?:Mr|Mrs|Dr|Miss|Ms|Mdm|Prof|Madam|Inche|Encik|Tuan Haji|Haji)\b"
+        )
+        raw = speech.speaker.rstrip(":").strip()
+        m = re.search(r"\s*\(([^)]+)\)\s*$", raw)
+        if m:
+            inner = m.group(1).strip()
+            if _INNER_TITLE.match(inner):
+                raw = inner  # role+name: resolve the person named inside parens
+            else:
+                raw = raw[: m.start()]  # constituency/descriptor: strip it
+        # Normalize "Mr." / "Dr." / "Mrs." OCR artifacts after any parens extraction.
+        raw = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", raw)
+        name = strip_title(raw)
         name = normalize_name(name)
         if not name:
             continue
         canonical = resolve_canonical_name(name, parliament)
+        # parliament_number=0 means the report's volume wasn't mapped to a parliament.
+        # These speeches are from the colonial/LA era; MPs are stored at parliaments 1-3.
+        if canonical is None and parliament == 0:
+            for fallback in [1, 2, 3]:
+                c = resolve_canonical_name(name, fallback)
+                if c and (c, fallback) in mp_id_lookup:
+                    canonical = c
+                    parliament = fallback
+                    break
         if canonical is None:
             continue
         mp_id = mp_id_lookup.get((canonical, parliament))

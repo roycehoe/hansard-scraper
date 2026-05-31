@@ -42,6 +42,47 @@ _MANUAL_OVERRIDES: dict[tuple[str, int], str] = {
     # One-letter spelling difference in Mp.name
     ("abdul nasser bin kamaruddin", 7): "Abdul Nasser Bin Kamarudin",
     ("seet ai mee", 7): "Seet Ai Mei, Dr",
+    # Surname-only references: "Mr Jeyaretnam", "Prof. Jayakumar", etc.
+    ("jeyaretnam", 5): "J B Jeyaretnam",
+    ("jeyaretnam", 6): "J B Jeyaretnam",
+    ("jeyaretnam", 9): "J B Jeyaretnam",
+    ("jayakumar", 5): "S Jayakumar",
+    ("jayakumar", 6): "S Jayakumar",
+    ("jayakumar", 7): "S Jayakumar",
+    ("jayakumar", 8): "S Jayakumar",
+    ("jayakumar", 9): "S Jayakumar",
+    ("jayakumar", 10): "S Jayakumar",
+    ("jayakumar", 11): "S Jayakumar",
+    ("dhanabalan", 4): "S. Dhanabalan",
+    ("dhanabalan", 5): "S. Dhanabalan",
+    ("dhanabalan", 6): "S. Dhanabalan",
+    ("dhanabalan", 7): "S. Dhanabalan",
+    ("dhanabalan", 8): "S. Dhanabalan",
+    # Barker, E.W. stored in inverted format; last word of canonical is "E.W." not "Barker"
+    ("barker", 1): "Barker, E.W.",
+    ("barker", 2): "Barker, E.W.",
+    ("barker", 3): "Barker, E.W.",
+    ("barker", 4): "Barker, E.W.",
+    ("barker", 5): "Barker, E.W.",
+    ("barker", 6): "Barker, E.W.",
+    # Bani, S.T. stored in inverted format; resolved after parl=0 fallback to parl=1
+    ("bani", 1): "Bani, S.T.",
+    # Full-name variant: "Joshua Benjamin Jeyaretnam" for J B Jeyaretnam
+    ("joshua benjamin jeyaretnam", 5): "J B Jeyaretnam",
+    ("joshua benjamin jeyaretnam", 6): "J B Jeyaretnam",
+    # Apostrophe variant: "Ya'acob" vs "Yaacob" in Mp table
+    ("ya'acob bin mohamed", 1): "Yaacob Bin Mohamed",
+    ("ya'acob bin mohamed", 2): "Yaacob Bin Mohamed",
+    ("ya'acob bin mohamed", 3): "Yaacob Bin Mohamed",
+    ("ya'acob bin mohamed", 4): "Yaacob Bin Mohamed",
+    # S. Rajaratnam stored inverted as "Rajaratnam, S"; "Mr. S. Rajaratnam" leaves "Mr."
+    # after strip_title which doesn't handle the period-after-title form
+    ("s rajaratnam", 1): "Rajaratnam, S",
+    ("s rajaratnam", 2): "Rajaratnam, S",
+    ("s rajaratnam", 3): "Rajaratnam, S",
+    ("s rajaratnam", 4): "Rajaratnam, S",
+    ("s rajaratnam", 5): "Rajaratnam, S",
+    ("s rajaratnam", 6): "Rajaratnam, S",
 }
 
 
