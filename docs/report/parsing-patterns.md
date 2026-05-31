@@ -87,11 +87,24 @@ When a speaker is introduced on a line with no trailing text (`**Mr Smith:**\n`)
 - **Bill introductions** (`bill-intro`): "presented by X; read the First time..."
 - **Speaker announcements** (`speaker`): Speaker procedural statements with no speaker markup
 
-**Requirement: every speech must have a speaker.** `get_speeches` applies a fallback when `_parse_speeches` returns `[]`: if `MPs Speaking` contains exactly one name, the entire body text is attributed to that person as a single `ParsedSpeech`. This covers the 1,193 single-speaker docs in this group.
+**Requirement: every speech must have a speaker.** `get_speeches` applies fallback attribution in two stages:
 
-True exclusions (zero speeches is genuinely correct, ~256 docs total):
-- `MPs Speaking` absent or empty (3 docs) — nothing to attribute
-- `MPs Speaking` lists 2+ speakers and body is a PDF/table link index (253 docs) — attribution would be fabrication
+1. **`MPs Speaking` header**: if exactly one name is present and `_parse_speeches` returns `[]`, the body is attributed to that name. Covers the 1,193 single-speaker docs in this group.
+2. **Body-content patterns** (for zero-speaker docs where `MPs Speaking` is absent or empty):
+
+| `report_type` | Pattern | Where author appears |
+|---|---|---|
+| `atbp` | Speaker signature at foot of notice | `\| FULL NAME\n---|---\n\| _Speaker_` |
+| `president-address` (addendum) | Ministry heading + plain-text name | `**MINISTRY OF X**\nMR NAME\nMinister for...` |
+| `president-address` (actual speech) | No ministry heading present | Returns `"The President"` — the President is not an MP |
+| `motion` (adjournment) | Mover named in resolved clause | `- [Dr Name]` or `− [Mr Name]` |
+| `bill` (First Reading) | Presenter named in bill text | `presented by ... (Mrs Name)` |
+
+Additionally: old-format president-address docs (Parliament 10 and earlier) use bold section headers (`**EXTERNAL ENVIRONMENT**`, `**HOUSING**`, etc.) which `_parse_speeches` misidentifies as speakers. When `MPs Speaking` is empty and `parsed[0].speaker` looks like a section header (all-caps, no honorific), `get_speeches` collapses everything to a single correctly-attributed speech.
+
+True exclusions (~490 docs total):
+- `MPs Speaking` absent or empty AND no body-content pattern matched (~237 docs) — genuinely no attributable author (e.g. budget procedural orders, annex appendices with empty `MPs Speaking`)
+- `MPs Speaking` lists 2+ speakers and body is a PDF/table link index (~253 docs) — attribution would be fabrication
 
 ## HTML Entity Artifacts
 

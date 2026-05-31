@@ -83,7 +83,7 @@ def _get_statistics(response):
         )
         has_start_line = start_of_speech_line is not None
         if has_start_line:
-            get_speeches(report.markdown_content, start_of_speech_line)
+            get_speeches(report.markdown_content, start_of_speech_line, report.report_type)
             can_get_speeches = True
     return ParsingStatistics(
         **report.model_dump(),
@@ -127,7 +127,7 @@ def populate_speeches(session: Session):
         if start_of_speech_line is None:
             continue
         for ordinal, speech in enumerate(
-            get_speeches(db_report.markdown_content, start_of_speech_line)
+            get_speeches(db_report.markdown_content, start_of_speech_line, db_report.report_type)
         ):
             crud.create(Speech(
                 ordinal=ordinal + 1,
@@ -137,7 +137,7 @@ def populate_speeches(session: Session):
             ))
 
 
-def populate_sitting_dates(session: Session):
+def populate_handsard_sitting_dates(session: Session):
     all_sitting_dates = CRUDHandsardWebsiteResponse(session).get_all_sitting_dates()
     existing_sitting_dates = CRUDHandsardSittingDateResponse(session).get_all_sitting_dates()
     dates_to_fetch = list(all_sitting_dates - existing_sitting_dates)
@@ -210,5 +210,5 @@ if __name__ == "__main__":
         populate_statistics(session)
         export_statistics_csv(session)
         populate_speeches(session)
-        populate_sitting_dates(session)
+        populate_handsard_sitting_dates(session)
         populate_sittings(session)

@@ -21,6 +21,45 @@ class ParsedSpeechType(Enum):
 
 _MP_SPEAK_RE = re.compile(r"MPs? Speaking:\|\s*([^\n|]+)", re.IGNORECASE)
 
+# atbp — Speaker signature at the end of Assents to Bills Passed notices:
+# | FULL NAME
+# ---|---
+# | _Speaker_
+_ATBP_SPEAKER_RE = re.compile(
+    r"\|\s+([A-Z][A-Z '.-]+?)\s*\n-+\|-+\s*\n\|[^\n]*[Ss]peaker",
+    re.MULTILINE,
+)
+
+# president-address addenda (old format, Parliament 11 and earlier):
+# **MINISTRY OF ...** or **PRIME MINISTER'S OFFICE...**
+# MR / DR / ... NAME
+# Minister for ... / Deputy / etc.
+_ADDENDA_MINISTER_RE = re.compile(
+    r"\*\*[^\n*]*(?:MINISTRY|PRIME MINISTER)[^\n*]*\*\*\n"
+    r"((?:Mr|Mrs|Ms|Dr|Prof|Mdm|MR|DR|MDM|PROF|Assoc)\s+[A-Z][A-Za-z '.()\-]+)\n"
+    r"(?:Minister|Deputy|Senior|Acting|Second|Secretary|Permanent|Political|Director)",
+    re.MULTILINE | re.IGNORECASE,
+)
+
+# Used to detect whether a president-address doc contains a ministry heading at all
+# (addendum) vs. not (actual presidential speech).
+_MINISTRY_HEADING_RE = re.compile(
+    r"\*\*[^\n*]*(?:MINISTRY|PRIME MINISTER)[^\n*]*\*\*",
+    re.IGNORECASE,
+)
+
+# motion adjournment mover: "- [Dr Ng Eng Hen]" or "− [Mr Mah Bow Tan]"
+_ADJOURNMENT_MOVER_RE = re.compile(
+    r"[−\-]\s*\[((?:Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc\s+Prof)[^]]+)\]",
+    re.IGNORECASE,
+)
+
+# bill First Reading presenter: "presented by ... (Mrs Lim Hwee Hua)"
+_BILL_PRESENTER_RE = re.compile(
+    r"presented\s+by[^(]*\(([^)]+)\)",
+    re.IGNORECASE,
+)
+
 
 def _extract_mps_speaking(markdown: str) -> list[str]:
     m = _MP_SPEAK_RE.search(markdown)
@@ -45,6 +84,59 @@ def _single_speaker_transcript(markdown: str, start_of_speech_line: int) -> str:
         for line in markdown.splitlines()[start_of_speech_line + 1:]
         if line.strip() and line.strip().strip("* ")
     )
+
+
+def _is_section_header_speaker(name: str) -> bool:
+    """True if the name looks like a topic/section header, not a person."""
+    stripped = name.strip()
+    if not stripped:
+        return False
+    if re.search(r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc)\b", stripped):
+        return False
+    if re.search(r"\b(President|Speaker|Minister|Secretary|Deputy|Senior|Acting)\b", stripped, re.IGNORECASE):
+        return False
+    return stripped == stripped.upper()
+
+
+def _extract_addenda_minister(markdown: str) -> Optional[str]:
+    m = _ADDENDA_MINISTER_RE.search(markdown)
+    return m.group(1).strip() if m else None
+
+
+def _extract_body_attribution(markdown: str, report_type: str) -> Optional[str]:
+    """
+    For docs where MPs Speaking is absent or empty, return the single author
+    inferred from body content. Returns None if no attribution can be determined.
+
+    Patterns handled:
+      atbp            — Speaker signature block at the foot of the notice
+      president-address — minister name after bold ministry heading (addenda), or
+                          "The President" for the actual presidential speech
+      motion          — mover named in square brackets in the adjournment clause
+      bill            — presenter named in the "presented by (Name)" clause
+    """
+    if report_type == "atbp":
+        m = _ATBP_SPEAKER_RE.search(markdown)
+        return m.group(1).strip() if m else None
+
+    if report_type == "president-address":
+        minister = _extract_addenda_minister(markdown)
+        if minister:
+            return minister
+        # No ministry heading → actual presidential speech, not an addendum
+        if not _MINISTRY_HEADING_RE.search(markdown):
+            return "The President"
+        return None
+
+    if report_type == "motion":
+        m = _ADJOURNMENT_MOVER_RE.search(markdown)
+        return m.group(1).strip() if m else None
+
+    if report_type == "bill":
+        m = _BILL_PRESENTER_RE.search(markdown)
+        return m.group(1).strip() if m else None
+
+    return None
 
 
 def _strip_md(text: str) -> str:
@@ -166,14 +258,34 @@ def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpee
     return [sp for sp in speeches if sp.transcript.strip() != ""]
 
 
-def get_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpeech]:
+def get_speeches(markdown: str, start_of_speech_line: int, report_type: str) -> list[ParsedSpeech]:
     parsed = _parse_speeches(markdown, start_of_speech_line)
     speakers = _extract_mps_speaking(markdown)
     speech_type = _classify_speech_type(parsed, len(speakers))
 
     if speech_type == ParsedSpeechType.PARSED:
+        # Old-format president-address docs use bold section headers (e.g.
+        # **EXTERNAL ENVIRONMENT**) that _parse_speeches misidentifies as speakers.
+        # When MPs Speaking is empty and the first parsed speaker looks like a
+        # section header, collapse everything to a single correctly-attributed speech.
+        if (report_type == "president-address"
+                and not speakers
+                and parsed
+                and _is_section_header_speaker(parsed[0].speaker)):
+            speaker = _extract_body_attribution(markdown, report_type)
+            if speaker:
+                body = _single_speaker_transcript(markdown, start_of_speech_line)
+                return [ParsedSpeech(speaker=speaker, transcript=body)] if body else []
         return parsed
+
     if speech_type == ParsedSpeechType.SINGLE_SPEAKER:
         body = _single_speaker_transcript(markdown, start_of_speech_line)
         return [ParsedSpeech(speaker=speakers[0], transcript=body)] if body else []
+
+    if speech_type == ParsedSpeechType.NO_SPEAKER:
+        speaker = _extract_body_attribution(markdown, report_type)
+        if speaker:
+            body = _single_speaker_transcript(markdown, start_of_speech_line)
+            return [ParsedSpeech(speaker=speaker, transcript=body)] if body else []
+
     return []

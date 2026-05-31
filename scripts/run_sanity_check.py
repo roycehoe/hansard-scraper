@@ -107,7 +107,7 @@ def run():
         sp_count = "-"
         valid_flag = "-"
         if start_line is not None:
-            speeches = get_speeches(regen.markdown_content, start_line)
+            speeches = get_speeches(regen.markdown_content, start_line, regen.report_type)
             sp_count = str(len(speeches))
             if len(speeches) == 0:
                 stats["no_speeches"] += 1

@@ -24,7 +24,7 @@ def populate_speeches(session: Session):
         if start_of_speech_line is None:
             continue
         for ordinal, speech in enumerate(
-            get_speeches(db_report.markdown_content, start_of_speech_line)
+            get_speeches(db_report.markdown_content, start_of_speech_line, db_report.report_type)
         ):
             crud.create(
                 Speech(

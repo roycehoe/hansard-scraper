@@ -67,7 +67,7 @@ def run():
         )
         if start_line is None:
             continue
-        speeches = get_speeches(report.markdown_content, start_line)
+        speeches = get_speeches(report.markdown_content, start_line, report.report_type)
         if speeches:
             continue
 
