@@ -320,3 +320,62 @@ At 89.1%, below 95% target. Remaining unmatched mid-era names include:
 - `K. Shanmugam` → `K Shanmugam` (period inconsistency)
 
 These are acknowledged but not targeted per the spec ("secondary concern").
+
+---
+
+## Random Regression Sample — 2026-05-31
+
+30 sittings drawn at random (seed=42) from the 1729 eligible sittings not already in pilot/held-out/regression.
+Added to `sample.json` under `"random_regression"` key as a broad regression guard.
+
+Era breakdown of the 30 drawn:
+  colonial (vol 1–37): 11
+  mid-era  (vol 38–75): 14
+  modern   (vol 76+):    5
+
+Excluded from denominator (vol 1–11 or parliament 0):
+  id=263  (vol=4,  parl=1, colonial assembly)
+  id=384  (vol=17, parl=0)
+  id=763  (vol=22, parl=0)
+  id=1157 (vol=13, parl=0)
+  id=1495 (vol=6,  parl=1, colonial assembly)
+  id=1768 (vol=12, parl=0)
+  → 6 excluded, 24 in denominator
+
+Results (get_sitting_attendance at iteration 7 state):
+
+  id=  71 vol=71  era=mid      parl=9   PASS  77/92  = 83.7%
+  id=  74 vol=34  era=colonial parl=3   PASS  60/63  = 95.2%
+  id=  81 vol=75  era=mid      parl=10  PASS  83/94  = 88.3%
+  id=  87 vol=68  era=mid      parl=9   PASS  79/93  = 84.9%
+  id= 248 vol=83  era=modern   parl=11  PASS  89/94  = 94.7%
+  id= 263 vol=4   era=colonial parl=1   EXCL   1/33  =  3.0%
+  id= 284 vol=80  era=modern   parl=10  PASS  88/94  = 93.6%
+  id= 306 vol=77  era=modern   parl=10  PASS  87/94  = 92.6%
+  id= 384 vol=17  era=colonial parl=0   EXCL   0/52  =  0.0%
+  id= 556 vol=48  era=mid      parl=6   PASS  70/79  = 88.6%
+  id= 601 vol=59  era=mid      parl=8   PASS  68/80  = 85.0%
+  id= 618 vol=48  era=mid      parl=6   PASS  70/79  = 88.6%
+  id= 651 vol=48  era=mid      parl=6   PASS  70/79  = 88.6%
+  id= 686 vol=53  era=mid      parl=7   PASS  69/82  = 84.1%
+  id= 763 vol=22  era=colonial parl=0   EXCL   0/50  =  0.0%
+  id=1157 vol=13  era=colonial parl=0   EXCL   0/52  =  0.0%
+  id=1164 vol=83  era=modern   parl=11  PASS  89/94  = 94.7%
+  id=1391 vol=41  era=mid      parl=5   PASS  71/75  = 94.7%
+  id=1495 vol=6   era=colonial parl=1   EXCL   1/33  =  3.0%
+  id=1536 vol=24  era=colonial parl=1   PASS  47/51  = 92.2%
+  id=1616 vol=62  era=mid      parl=8   PASS  73/85  = 85.9%
+  id=1644 vol=45  era=mid      parl=6   PASS  68/77  = 88.3%
+  id=1740 vol=77  era=modern   parl=10  PASS  87/94  = 92.6%
+  id=1768 vol=12  era=colonial parl=0   EXCL   0/51  =  0.0%
+  id=1839 vol=75  era=mid      parl=10  PASS  83/94  = 88.3%
+  id=1942 vol=28  era=colonial parl=2   PASS  58/59  = 98.3%
+  id=1945 vol=42  era=mid      parl=5   PASS  69/75  = 92.0%
+  id=1998 vol=29  era=colonial parl=2   PASS  55/58  = 94.8%
+  id=2008 vol=34  era=colonial parl=3   PASS  62/64  = 96.9%
+  id=2010 vol=42  era=mid      parl=5   PASS  67/73  = 91.8%
+
+Summary:
+  Passing sittings (≥80%): 24/24 = 100%
+  Secondary metric: 1739/1922 = 90.5%
+  Zero regressions detected.
