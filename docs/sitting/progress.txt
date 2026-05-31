@@ -252,3 +252,86 @@ source data has no final period), 0/20 (regression). Not a rendering artifact.
   missing-space-before-time |  1/20 |   2/12   |    7/20    | CLOSED (source quality, unfixable)
 
 All fixable artifact categories resolved. Loop complete.
+
+
+## Run A — 2026-05-31
+
+50 new old-format sittings fetched (parl 2 vol 31, parl 3 vol 35, parl 4 vol 39, parl 5
+vol 44 [NEW], parl 6 vol 51 [NEW], parl 7 vol 57/58 [NEW], parl 8 vol 66, parl 9 vol 73,
+parl 10 vol 81, parl 11 vol 87). DB now has 102 rows with html_full_content.
+
+Sample extended: pilot=40, held_out=24, regression=38 (all 102 rows covered).
+Retained all prior IDs; added IDs 54–103 proportionally across sets.
+
+Previous fixes (iterations 1–5) held perfectly across all 102 docs:
+  broken-table-metadata, broken-italic-lines, extended empty-bold, adj-split all 0/40 pilot.
+
+New artifact catalogue for doubled sample:
+
+A. **1-col-table-separator** — `---  ` lines (3 dashes + optional trailing spaces)
+   Cause: html2text renders 1-column <table> rows with a `---  ` separator (same mechanism
+   as `---|---` for 2-column tables). Appears after `**PART X OF Y SESSION**` header line
+   and sporadically at other single-cell table locations.
+   Note: html2text renders `<hr>` as `* * *` — so `---  ` lines exclusively come from tables.
+   Affects: 18/40 pilot, 11/24 held-out, 18/38 regression.
+
+B. **appendix-links** — markdown links to PDF/GIF appendix files (DEFERRED — product decision)
+
+Baseline (doubled sample):
+
+  Artifact               | Pilot | Held-out | Regression
+  -----------------------|-------|----------|------------
+  1-col-table-separator  | 18/40 |   11/24  |    18/38
+  appendix-links         | 11/40 |    5/24  |     7/38
+
+
+## Iteration 6 — 2026-05-31
+
+### Artifact: 1-col-table-separator
+
+**Affected IDs (pilot):**
+64, 65, 69, 70, 74, 75, 79, 80, 84, 85 (new vols 39,44,51,58,66) +
+51, 50, 5, 7, 11, 18, 9, 20 (old vols 39,50,57,66)
+
+**HTML snippet (exhibiting artifact):**
+```html
+<table width="100%" border="0">
+  <tr><td><b>PART V OF FIRST SESSION</b></td></tr>
+</table>
+```
+
+**Markdown output (before fix):**
+```
+**PART V OF FIRST SESSION**
+---
+```
+The `---  ` immediately follows the bold line. CommonMark parsers may treat this as a
+Setext h2 heading underline, silently promoting the preceding line to a heading.
+
+**Root cause:**
+html2text renders 1-column `<table>` rows the same way as 2-column tables but the
+separator is `---  ` (3 dashes + trailing spaces) instead of `---|---`.
+`_remove_sitting_table_separators` only matched `---|---`, missing this variant.
+
+**Proposed fix:**
+Extend `_remove_sitting_table_separators` to also strip lines matching `re.fullmatch(r'-{3}\s*', line)`.
+Safe: html2text renders `<hr>` as `* * *` — so `---` lines in these docs are always table artefacts.
+
+**Outcome:**
+KEPT. 1-col-table-separator: 18/40 → 0/40 (pilot), 0/24 (held-out), 0/38 (regression).
+No new artifacts introduced. All prior fixes still hold.
+
+
+## Run A — Completion — 2026-05-31
+
+  Artifact                  | Baseline | After | Status
+  --------------------------|----------|-------|--------
+  broken-table-metadata     |  0/40    |  0/40 | FIXED (iter 1)
+  broken-italic-lines       |  0/40    |  0/40 | FIXED (iter 2)
+  extended empty-bold       |  0/40    |  0/40 | FIXED (iters 3+4)
+  adj-split                 |  0/40    |  0/40 | FIXED (iter 5)
+  1-col-table-separator     | 18/40    |  0/40 | FIXED (iter 6) — new in Run A
+  appendix-links            | 11/40    | 11/40 | DEFERRED (product decision)
+  missing-space-before-time |  0/40    |  0/40 | CLOSED (source quality)
+
+Zero unresolved fixable artifact categories. Run A loop complete.

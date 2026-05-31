@@ -60,6 +60,17 @@ html2text renders only the first row with `|` prefix and adds a `---|---` separa
 The `---|---` separator appears again for every other 2-column table: speaker-signature tables (end of agenda blocks), part/volume info tables (modern era), and bills/dates tables.
 Fix: strip all lines matching `---|---` exactly.
 
+## 1-column table separator
+
+Source: Some sittings (vol 39+, 44, 51, 57, 58, 66) place the `PART X OF Y SESSION` header
+in a single-cell `<table>` element. html2text renders this the same way as 2-column tables
+but the separator is `---  ` (3 dashes + trailing spaces) instead of `---|---`.
+Also appears at other single-cell table locations throughout the document.
+Note: html2text renders `<hr>` as `* * *`, so any standalone `---` line in these docs is
+always a table artefact, never an intentional horizontal rule.
+Affects: vol 39, 44, 50, 51, 57, 58, 66 (mid-era and early modern documents).
+Fix: strip lines matching `re.fullmatch(r'-{3}\s*', line)` in `_remove_sitting_table_separators`.
+
 ## Speaker-signature tables
 
 Source: Appear multiple times per document, at end of each day's order-paper block.
