@@ -24,6 +24,11 @@ class CRUDHandsardWebsiteResponse:
             select(HandsardWebsiteResponse).where(col(HandsardWebsiteResponse.report_id).in_(report_ids))
         ).all())
 
+    def get_all_report_ids(self) -> set[str]:
+        return set(self.session.exec(
+            select(HandsardWebsiteResponse.report_id)
+        ).all())
+
     def get_all_sitting_dates(self) -> set[str]:
         return set(self.session.exec(
             select(HandsardWebsiteResponse.sitting_date).distinct()
