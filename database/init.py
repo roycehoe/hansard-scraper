@@ -4,6 +4,7 @@ import database.handsard_sitting_date_response  # noqa: F401
 import database.handsard_website_response  # noqa: F401
 import database.parsing_statistics  # noqa: F401
 import database.report  # noqa: F401
+import database.sitting  # noqa: F401
 import database.speech  # noqa: F401
 from settings import settings
 
