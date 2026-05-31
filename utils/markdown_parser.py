@@ -120,7 +120,12 @@ def _fix_sitting_split_bold(md: str) -> str:
 
 
 def _remove_sitting_table_separators(md: str) -> str:
-    return "\n".join(line for line in md.splitlines() if line.strip() != "---|---")
+    # Strip 2-column table separator (---|---) and 1-column table separator (--- with optional trailing spaces).
+    # html2text renders <hr> as "* * *", so standalone "---" lines are always 1-column table artefacts.
+    return "\n".join(
+        line for line in md.splitlines()
+        if line.strip() != "---|---" and not re.fullmatch(r"-{3}\s*", line)
+    )
 
 
 def _remove_sitting_orphan_italic_markers(md: str) -> str:
