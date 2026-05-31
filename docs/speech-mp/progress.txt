@@ -1,0 +1,20 @@
+# Speech → MP Link Refine-Loop Progress Log
+
+## Baseline — 2026-05-31
+
+Sample: K=10 per report_type, seed=42, 170 total speeches across 17 types.
+Script: `scripts/speech_speaker_match_rate.py`
+
+Overall match rate: 45/170 = 26.5%
+
+Failure catalogue (from sample):
+- Mr Speaker ×31 — structural non-MP
+- Mr Deputy Speaker ×4 — structural non-MP
+- Hon. Members ×3 — collective reference
+- Constituency-suffixed names ×~15 — e.g. "Dr Tan Cheng Bock (Ayer Rajah)"
+- Role+name patterns ×~10 — e.g. "The Prime Minister (Mr Lee Kuan Yew)"
+- Section headers ×~5 — e.g. "PART I INTRODUCTION"
+- Short names ×~5 — e.g. "Mr Jeyaretnam"
+- Role-only ×~3 — e.g. "The Prime Minister"
+
+Target set denominator not yet established (Setup Step 1 not run).
