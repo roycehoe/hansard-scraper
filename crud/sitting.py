@@ -11,10 +11,9 @@ class CRUDSitting:
         self.session.add(sitting)
         self.session.commit()
 
-    def exists_by_sitting_date(self, sitting_date: str) -> bool:
-        return self.session.exec(
-            select(Sitting).where(Sitting.sitting_date == sitting_date)
-        ).first() is not None
-
     def get_all(self) -> list[Sitting]:
         return list(self.session.exec(select(Sitting)).all())
+
+    def get_all_sitting_dates(self) -> set[str]:
+        rows = self.session.exec(select(Sitting.sitting_date)).all()
+        return {r for r in rows if r is not None}
