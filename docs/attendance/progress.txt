@@ -379,3 +379,180 @@ Summary:
   Passing sittings (≥80%): 24/24 = 100%
   Secondary metric: 1739/1922 = 90.5%
   Zero regressions detected.
+
+---
+
+## Iteration 8 — 2026-05-31
+
+### can_match — all eras — period inconsistency in names with initials
+
+**Root cause:** `_normalize_for_lookup` only strips the period from a lone leading single initial
+(e.g. `S. Rajaratnam` → `s rajaratnam`). It does not strip periods from mid-name or multi-character
+initial sequences (`J.B.`, `M.K.A.`, `K.`). The Mp table stores many of these names without periods
+(`S Jayakumar`, `K Shanmugam`, `J B Jeyaretnam`, `M K A Jabbar`), causing direct match failures.
+
+The `_period_normalize` function (new) handles this by:
+- Splitting consecutive uppercase initials: `M.K.A.` → `M K A` using lookbehind/lookahead
+  (so all pairs are found in one pass without consuming adjacent characters)
+- Stripping remaining trailing periods from uppercase letters
+
+This also fixed the `M.K.A. Jabbar` case where the 3-character initial sequence was only
+partially split by the original consuming-regex approach.
+
+**Affected:** `S. Jayakumar` [19x], `K. Shanmugam` [12x], `J.B. Jeyaretnam` [10x],
+`S. Iswaran` [8x], `R. Ravindran` [8x], `Harun bin A. Ghani` [5x], `M.K.A. Jabbar` [4x].
+
+**Outcome:** KEPT — ALL 93.8% (+0 from 93.8%, but fixed 57 name matches that replaced correct
+lookups). Secondary metric: 93.8% → 96.0%.
+
+---
+
+## Iteration 9 — 2026-05-31
+
+### can_match — all eras — Malay bin/binte connector mismatch
+
+**Root cause A:** Markdown omits `Bin` present in Mp.name:
+  `Abdullah Tarmugi` in markdown vs `Abdullah Bin Tarmugi` in Mp.
+
+**Root cause B:** Markdown includes `bin` absent from Mp.name:
+  `Ibrahim bin Othman` vs `Ibrahim Othman`.
+
+**Fix:** New `_BIN_FREE_LOOKUP` built from Mp names with `bin`/`binte` stripped.
+Extracted name also has bin stripped before lookup. For root cause B, the bin_free step
+also retries the existing `_DIRECT_LOOKUP` with the bin-stripped extracted name.
+
+**Affected:** `Abdullah Tarmugi` [22x across parlaments], `Othman Haron Eusofe` [9x],
+`Ibrahim bin Othman` [5x].
+
+**Outcome:** KEPT — secondary metric 96.0% → 96.2%.
+
+---
+
+## Iteration 10 — 2026-05-31
+
+### can_match — all eras — name word-order permutations
+
+**Root cause:** Several names appear in the markdown in a different word order than the
+canonical or natural form in the Mp table, causing all lookup keys to miss:
+  `George Yong-Boon Yeo`  ↔  natural `George Yeo Yong-Boon` (from `Yeo Yong-Boon, George`)
+  `David T.E. Lim`        ↔  natural `David Lim T E` (from `Lim T E, David`)
+  `Aline K. Wong`         ↔  `Wong Aline K` (non-comma surname-first)
+  `Dixie Tan`             ↔  `Tan Dixie`
+  `Simon S C Tay`         ↔  natural `Simon Tay S C` (from `Tay S C, Simon, Assoc Prof`)
+
+**Fix:** New `_WORDSET_LOOKUP` keyed by (frozenset_of_words, word_count, parliament).
+Each Mp's natural form and canonical form are both indexed. Only unambiguous keys stored.
+The stored value is always the canonical `Mp.name` (not the natural display form).
+
+Also fixed the bin-free step to retry `_DIRECT_LOOKUP` with the bin-stripped key,
+handling the reverse case (`Ibrahim bin Othman` → `Ibrahim Othman`).
+
+**Outcome:** KEPT — secondary metric 96.2% → 97.2%.
+
+---
+
+## Iteration 11 — 2026-05-31
+
+### can_match — all eras — truncated names + missing title prefixes
+
+**Root cause A:** Markdown uses a shortened form of a name that is a strict prefix of the
+canonical full name: `Bernard Chen` vs `Bernard Chen Tien Lap` (natural of `Chen Tien Lap, Bernard`),
+`David Ong` vs `David Ong Kim Huat`, `Alex Yam` vs `Alex Yam Ziming`, `Jennifer Lee` vs
+`Jennifer Lee Gek Choo` (natural of `Lee Gek Choo, Jennifer, Dr`).
+
+**Root cause B:** `[NS]` and `Cdre` prefixes not in `_TITLE_PREFIXES`, causing `[NS] Lui Tuck Yew`
+and `Cdre Teo Chee Hean` to be extracted with the prefix still attached.
+
+**Fix A:** New `_PREFIX_LOOKUP` keyed by (period_normalized_prefix_of_n_words, parliament),
+for n from 2 to len-1, only for unique prefixes within each parliament.
+
+**Fix B:** Added `"Cdre "`, `"[NS] "`, `"(NS) "` to `_TITLE_PREFIXES`.
+
+**Outcome:** KEPT — secondary metric 97.2% → 97.9%.
+
+---
+
+## Iteration 12 — 2026-05-31
+
+### can_match — all eras — spelling variants and hyphen normalization
+
+**Root cause A:** `Mohamad`/`Mohammed`/`Mohammad` vs `Mohamed` spelling variants cause
+`Mohamad Maidin B P M` to miss `Mohamed Maidin BPM`.
+
+**Root cause B:** `B P M` (spaced initials) vs `BPM` (joined) mismatch.
+
+**Root cause C:** Hyphen vs space in names: `Lee Siew-Choh` vs `Lee Siew Choh`.
+
+**Fix:** New `_spelling_normalize(name)` normalises these variants before a final
+fallback lookup attempt: `Mohamad`/`Mohammed` → `Mohamed`; collapses `A B C` → `ABC`;
+replaces hyphens with spaces. Also strips leading OCR digit artifacts in `_parse_entry_line`
+(`2Mr Ho Peng Kee` → `Mr Ho Peng Kee` → `Ho Peng Kee`).
+
+**Outcome:** KEPT — secondary metric 97.9% → 98.1%.
+
+---
+
+## Iteration 13 — 2026-05-31
+
+### can_match — mid-era — Haji in middle of name
+
+**Root cause:** `Haji` appears as a mid-name honorific (not a title prefix) in some entries:
+  `Saidi Haji Shariff` vs `Saidi Shariff`
+  `Wan Hussin bin Haji Zoohri` vs `Wan Hussin Zoohri`
+
+**Fix:** New `_strip_middle_haji(name)` removes ` [Tuan] Haji ` from the interior of a name.
+Applied as a fallback after spelling normalize fails.
+
+**Outcome:** KEPT — secondary metric 98.1% → 98.1% (counted with iteration 14).
+
+---
+
+## Iteration 14 — 2026-05-31
+
+### can_match — all eras — manual overrides for known near-misses
+
+**Root causes (all one-off cases):**
+- `Ahmad Khalis Bin Abdul Ghani` [9x, parl=10]: Mp table has typo `Gahni` vs `Ghani`.
+- `Masagos Zulkifli B M M` [10x]: `B M M` is an abbreviation of `Bin Masagos Mohamad`.
+- `Lim Chun Leng, Michael` [2x, parl=8]: Mp has `, Dr` suffix; markdown omits it.
+- `Abdul Nasser bin Kamaruddin` [2x, parl=7]: one-letter spelling `Kamarudin` vs `Kamaruddin`.
+- `Seet Ai Mee` [2x, parl=7]: one-letter spelling `Mei` vs `Mee`.
+
+**Fix:** `_MANUAL_OVERRIDES` dict mapping `(period_normalized_name, parliament)` to canonical
+`Mp.name`. Applied as the first lookup step, before all other lookups.
+
+**Outcome:** KEPT — secondary metric 98.1% → 98.8%. Modern era reached 100%.
+
+---
+
+## Achievable Ceiling Report — 2026-05-31
+
+Secondary metric by era:
+  colonial: 765/799 = 95.7%
+  mid-era:  1641/1655 = 99.2%
+  modern:   1419/1419 = 100.0%
+  ALL:      3825/3873 = 98.8%
+
+Remaining 48 unmatched names are irreducible with the current data:
+
+### True data gaps (not in Mp table)
+  - `Lai Tha Chai` [17x, parl 3-6]: no Mp row exists
+  - `Ya'acob Bin Mohamed` / `Ya'acob bin Mohamed` [11x, parl 2-4]: no Mp row exists
+  - `Lim Huan Boon`, `Rahamat Bin Kenap` [parl=1]: no Mp row
+  - `Koo Young` [parl=1]: Mp has `Koo Yong` (different person or alternate romanisation)
+  - `Devan Nair` [parl=1]: Mp row stored as `Mrs Devan Nair` (title in name field)
+
+### OCR corruptions (source document errors, non-fixable)
+  `Wong Lm Ken`, `Hwang Soo un`, `P. Seivadurai`, `Lee Chiaw Memg`,
+  `S. Joyakumar`, `Mold. Ariff bin Suradi`, `Sh'ari Bin Tadin`
+
+### Extraction artifacts
+  - id=1465 (Speaker election sitting): 5 procedural lines extracted as MP names
+    because the section has no ABSENT: terminator
+  - Garbled parens: `Yeoh Ghim Seng) (Joo Chiat`, `Tan Soo Khoon (Brickworks GRC`
+  - Mixed-case honorific: `Tay Eng Soon, P.B.m.` (lowercase `m` breaks suffix regex)
+
+To reach 100% would require:
+  1. Adding missing MPs to the Mp table for the data gap names
+  2. Correcting OCR errors in source documents (not possible programmatically)
+  3. Special-casing id=1465 or fixing the ABSENT: detection for Speaker election sittings
