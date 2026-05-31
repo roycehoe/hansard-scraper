@@ -119,8 +119,25 @@ def _fix_sitting_split_bold(md: str) -> str:
     return "\n".join(result)
 
 
+def _remove_sitting_table_separators(md: str) -> str:
+    return "\n".join(line for line in md.splitlines() if line.strip() != "---|---")
+
+
+def _remove_sitting_orphan_italic_markers(md: str) -> str:
+    return "\n".join(line for line in md.splitlines() if line.strip() != "_")
+
+
 def _remove_sitting_empty_bold(md: str) -> str:
-    return "\n".join(line for line in md.splitlines() if line.strip() != "****")
+    result = []
+    for line in md.splitlines():
+        # Drop lines that are entirely asterisks (e.g. ****, ********, etc.)
+        if re.fullmatch(r'\*+\s*', line):
+            continue
+        # Strip leading/trailing **** empty-bold markers from content lines
+        line = re.sub(r'^\*{4}', '', line)
+        line = re.sub(r'\*{4}$', '', line)
+        result.append(line)
+    return "\n".join(result)
 
 
 def _merge_sitting_adjournment_lines(md: str) -> str:
@@ -163,6 +180,8 @@ def get_cleaned_sitting_markdown(html: str) -> str:
     md_file = _fix_sitting_split_bold(md_file)
     md_file = _remove_sitting_orphan_bold_markers(md_file)
     md_file = _remove_sitting_empty_bold(md_file)
+    md_file = _remove_sitting_table_separators(md_file)
+    md_file = _remove_sitting_orphan_italic_markers(md_file)
     md_file = _remove_sitting_empty_italic(md_file)
     md_file = _merge_sitting_adjournment_lines(md_file)
 
