@@ -75,7 +75,7 @@ _ISLAMIC_SUFFIX_RE = re.compile(r"\s+[Aa]l-[Hh]aj[jh]?\s*$")
 _INVERTED_TITLE_SUFFIXES = {"Dr", "Mdm", "Mr", "Mrs", "Ms", "Prof", "Assoc Prof", "RAdm", "BG"}
 
 
-def _normalize_name(name: str) -> str:
+def normalize_name(name: str) -> str:
     """
     Normalise a name string for storage and lookup:
     1. Collapse spaces between consecutive initials: "E. W. Barker" -> "E.W. Barker"
@@ -89,7 +89,7 @@ def _normalize_name(name: str) -> str:
 
 
 def _normalize_for_lookup(name: str) -> str:
-    n = _normalize_name(name)
+    n = normalize_name(name)
     # Additional normalization for inverted-lookup key only:
     # strip period from a lone leading initial ("S. Name" -> "S Name") so that
     # "S. Rajaratnam" matches the lookup key for "Rajaratnam, S" (stored without period).
@@ -220,7 +220,7 @@ def _get_wordset_lookup() -> dict[tuple[frozenset, int, int], str]:
                 rest = " ".join(parts[1:-1])
             else:
                 rest = ", ".join(parts[1:])
-            natural = _strip_title(f"{rest} {parts[0]}").strip()
+            natural = strip_title(f"{rest} {parts[0]}").strip()
             triples.append((natural, mp.name, mp.parliament_number))
         triples.append((mp.name, mp.name, mp.parliament_number))
     counts: dict[tuple[frozenset, int, int], int] = {}
@@ -263,7 +263,7 @@ def _get_prefix_lookup() -> dict[tuple[str, int], str]:
                 rest = " ".join(parts[1:-1])
             else:
                 rest = ", ".join(parts[1:])
-            natural = _strip_title(f"{rest} {parts[0]}").strip()
+            natural = strip_title(f"{rest} {parts[0]}").strip()
             forms.append((natural, mp.name, mp.parliament_number))
         forms.append((mp.name, mp.name, mp.parliament_number))
     counts: dict[tuple[str, int], int] = {}
@@ -306,7 +306,7 @@ def _get_inverted_lookup() -> dict[tuple[str, int], str]:
                 surname = parts[0]
                 rest = ", ".join(parts[1:])
             natural = f"{rest} {surname}"
-            natural_stripped = _strip_title(natural).strip()
+            natural_stripped = strip_title(natural).strip()
             key = (_normalize_for_lookup(natural_stripped), parl)
             _INVERTED_LOOKUP[key] = mp.name
 
@@ -324,7 +324,7 @@ def _get_inverted_lookup() -> dict[tuple[str, int], str]:
             if len(words) >= 3:
                 rearranged = f"{words[-1]} {' '.join(words[1:-1])} {words[0]}"
                 if rearranged != mp.name:
-                    rearranged_stripped = _strip_title(rearranged).strip()
+                    rearranged_stripped = strip_title(rearranged).strip()
                     rk = (_normalize_for_lookup(rearranged_stripped), parl)
                     if rk not in _INVERTED_LOOKUP:
                         _INVERTED_LOOKUP[rk] = mp.name
@@ -343,7 +343,7 @@ def infer_parliament(sitting: Sitting) -> int | None:
     return VOLUME_TO_PARLIAMENT.get(sitting.volume_no)  # type: ignore[arg-type]
 
 
-def _strip_title(text: str) -> str:
+def strip_title(text: str) -> str:
     for prefix in _TITLE_PREFIXES:
         if text.startswith(prefix):
             return text[len(prefix):]
@@ -386,7 +386,7 @@ def _parse_name_and_location(text: str) -> tuple[str, str | None]:
         constituency = None
         name_part = text
 
-    name = _strip_title(name_part.strip())
+    name = strip_title(name_part.strip())
     name = _HONORIFIC_SUFFIX_RE.sub("", name).rstrip(", ").strip()
     # Strip trailing Islamic honorific suffix: "Rahmat Bin Kenap Al-Haj" -> "Rahmat Bin Kenap"
     name = _ISLAMIC_SUFFIX_RE.sub("", name).strip()
@@ -404,7 +404,7 @@ def _parse_speaker_line(line: str) -> tuple[str, str | None]:
     if not m:
         return "SPEAKER", None
     inner = m.group(1).strip()
-    inner_stripped = _strip_title(inner)
+    inner_stripped = strip_title(inner)
     return _parse_name_and_location(inner_stripped)
 
 
@@ -423,7 +423,7 @@ def _parse_entry_line(line: str) -> tuple[str, str | None] | None:
     if "SPEAKER" in line:
         return _parse_speaker_line(line)
 
-    return _parse_name_and_location(_strip_title(line))
+    return _parse_name_and_location(strip_title(line))
 
 
 def _extract_section_lines(content: str, section: str) -> list[str]:
@@ -522,10 +522,10 @@ def resolve_canonical_name(name: str, parliament: int) -> str | None:
 
     # CamelCase split fallback for source markdown that concatenated names without
     # spaces ("AbdullahTarmugi"). Re-strip title after splitting in case the missing
-    # space prevented _strip_title from matching at extraction time.
+    # space prevented strip_title from matching at extraction time.
     split = re.sub(r"([a-z\.])([A-Z])", r"\1 \2", name)
     if split != name:
-        split_stripped = _strip_title(split).strip()
+        split_stripped = strip_title(split).strip()
         sp2 = _period_normalize(split_stripped)
         sp2_bin = _period_normalize(_strip_bin(split_stripped))
         canonical = (
@@ -555,7 +555,7 @@ def get_sitting_attendance(sitting: Sitting) -> list[SittingAttendance]:
             name, location = parsed
             if not name:
                 continue
-            name = _normalize_name(name)
+            name = normalize_name(name)
             if parliament is not None:
                 canonical = resolve_canonical_name(name, parliament)
                 if canonical:

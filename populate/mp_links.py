@@ -7,10 +7,10 @@ from database.sitting_attendance import SittingAttendance
 from database.speech import Speech
 from logs import logger
 from services.sitting_attendance import (
-    _normalize_name,
-    _strip_title,
     infer_parliament,
+    normalize_name,
     resolve_canonical_name,
+    strip_title,
 )
 
 
@@ -60,8 +60,8 @@ def _populate_speech_mp_ids(session: Session, mp_id_lookup: dict[tuple[str, int]
             continue
         parliament = report.parliament_number
         # Strip trailing colon (artifact of bold-speaker markup "**Name:**") and title prefix.
-        name = _strip_title(speech.speaker.rstrip(":").strip())
-        name = _normalize_name(name)
+        name = strip_title(speech.speaker.rstrip(":").strip())
+        name = normalize_name(name)
         if not name:
             continue
         canonical = resolve_canonical_name(name, parliament)
