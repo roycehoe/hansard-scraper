@@ -14,11 +14,14 @@ The project uses a remote PostgreSQL database; `DATABASE_URL` is loaded from `.e
 
 Before beginning Setup or any loop iteration, load existing artifacts:
 
-- `docs/speech-mp/sample.json` — the fixed sample drawn at Setup Step 2; if present, use it as-is.
+- `docs/speech-mp/sample.json` — the fixed sample drawn at Setup Step 3; if present, use it as-is.
 - `docs/speech-mp/progress.txt` — iteration log; read it to determine which iteration the loop is on and what was last attempted.
 - `docs/speech-mp/matching-patterns.md` — accumulated knowledge about speaker string formats and failure modes; read before investigating any failures.
 
-**Do not regenerate any of the above files if they already exist.** If all artifacts are present, skip Setup and resume from the last incomplete step in `progress.txt`.
+**Do not regenerate any of the above files if they already exist.** Handle partial artifact states as follows:
+- All three present → skip Setup entirely; resume from the last incomplete step in `progress.txt`.
+- `sample.json` present but `progress.txt` absent → treat as iteration 0; go directly to Loop Step 1 without re-running Setup.
+- `progress.txt` present but `sample.json` absent → flag as an integrity issue before proceeding. Re-sampling at this point would draw from a smaller failing population and break before/after comparability. Investigate why `sample.json` is missing before continuing.
 
 ---
 
@@ -157,6 +160,8 @@ Write all three sets of Speech IDs to `docs/speech-mp/sample.json`:
 ```
 
 Do not re-sample in later iterations. The same IDs must be tracked throughout so before/after comparisons are valid.
+
+Note: K=5 pilot sizes are too small for reliable coverage estimates of the full corpus. Early pass rates should be treated as directional, not precise — estimates stabilise as the sample is widened in later iterations.
 
 **Step 4 — Record the baseline.**
 Run `scripts/speech_speaker_match_rate.py` restricted to the pilot IDs. Record per-type match rates under `## Setup — Baseline` in `docs/speech-mp/progress.txt`. This is the reference point for all iterations.
