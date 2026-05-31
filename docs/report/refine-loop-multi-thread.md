@@ -30,6 +30,16 @@ Run `refine-loop.md` Setup Steps 1–5 first. The workflow assumes these artifac
 
 Do not start the workflow without `sample.json`. Re-sampling mid-run invalidates before/after comparisons.
 
+## Before Invoking
+
+Check these conditions before each invocation. The workflow script does not enforce them.
+
+1. **Sample exists.** `sample.json` must be present. If absent, run `refine-loop.md` Setup Steps 1–5 first.
+2. **Sample widening.** Count the `## Iteration N` headings in `docs/report/progress.txt`. If the count is a multiple of 3 (i.e. 3, 6, 9, …), run `refine-loop.md` Loop Step 7 manually to widen the pilot sample before invoking. Update `sample.json` with the new IDs, then invoke.
+3. **10-iteration checkpoint.** If the count is 10 (or a multiple of 10), review the current full-corpus success rate against the 95% target before continuing. If the rate is plateaued and marginal gain per iteration is small, consider stopping rather than invoking again.
+
+---
+
 ## Invoking the workflow
 
 Save the script below to `.claude/workflows/refine-loop-multi.js`. Then in a Claude Code session:

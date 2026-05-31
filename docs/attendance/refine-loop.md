@@ -16,6 +16,8 @@ Before beginning Setup or any loop iteration, scan the working directory for exi
 
 **Do not regenerate any of the above files if they already exist.** If all artifacts are present, skip Setup and resume from the last incomplete step recorded in `docs/attendance/progress.txt`.
 
+**Prerequisite: sitting loop completion.** The attendance loop reads `Sitting.markdown_content`, which is produced by `get_cleaned_sitting_markdown` from the sitting loop. Do not start this loop until the sitting loop has reached its completion criterion (≥95% of sitting documents artifact-free). Running attendance against unsettled sitting markdown means some extraction failures are actually cleaning failures — they will be misdiagnosed and won't be fixable here.
+
 # Goal
 
 Produce a `get_sitting_attendance` function that takes a `Sitting` row and returns a list of `SittingAttendance` records — one per MP entry in the `PRESENT` and `ABSENT` sections of `markdown_content` — with:
@@ -246,7 +248,11 @@ Log the outcome in `docs/attendance/progress.txt`.
 Add more sittings to the sample from `(era, failure_stage)` groups that are underrepresented or not yet in the pilot. K=5 colonial, K=3 mid/modern per group still applies to new groups. Draw a fresh held-out set for the new groups only. Expand the regression set proportionally, maintaining the era distribution floor (≥5 colonial, ≥3 mid-era, ≥3 modern).
 
 **Step 7 — Check completion.**
-If all colonial-era failure groups show zero occurrences (or only excluded sittings remain), stop and report final success rate. Otherwise continue.
+Compute the current colonial-era match rate across the full pilot sample (sittings with resolvable parliament numbers only). If ≥95% of those sittings pass (≥80% of their extracted names matched), stop and report success.
+
+If the rate has plateaued below 95% and the only remaining failures are sittings with known data gaps (parliament numbers that cannot be resolved, MPs not in the `Mp` table due to data coverage), also stop — record the ceiling and the reason. Do not iterate against permanently unresolvable cases; see `docs/attendance/matching-patterns.md` → Known Correct Exclusions.
+
+Otherwise continue.
 
 If this is iteration 10 (or a multiple of 10), stop and go to Step 8.
 

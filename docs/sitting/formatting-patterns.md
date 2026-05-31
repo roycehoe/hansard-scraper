@@ -103,6 +103,15 @@ html2text renders each as a separate `_phrase_` line. The merged result ends wit
 The adjournment merge stop condition must check `endswith('._')` in addition to `endswith('.')`.
 Without this, the merge continues into the following section (e.g. "WRITTEN ANSWERS TO QUESTIONS").
 
+## Known Correct Exclusions
+
+Artifact types confirmed as either correct output or permanently unresolvable. Do not spend iterations on these.
+
+| Artifact | Scope | Reason excluded |
+|---|---|---|
+| Appendix links (`[Annex title (Cols. X-Y)](url)`) | vol 41+, document tail | Real PDF/GIF links; whether to strip is a product decision, not a cleaning failure |
+| Speaker-signature table rows (`\| SPEAKER NAME`, `\| _Speaker,_`) | All eras, end of each day's order-paper block | Structural noise from html2text table rendering; low impact on attendance/speech parsing |
+
 ## Appendix links
 
 Source: `<a href="/search/search/download?value=PDFs/...">Annex title (Cols. X-Y)</a>` elements.

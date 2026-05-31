@@ -115,6 +115,20 @@ The service handles 3-word names by trying the rearrangement
 
 ---
 
+## Known Correct Exclusions
+
+Cases confirmed as permanently unresolvable — excluded from the match-rate denominator or accepted as unfixable. Do not spend loop iterations on these.
+
+**Parliament/volume coverage gaps** (excluded from denominator):
+- Vol 1–11 (parliament 1 colonial assembly, 1955–1959): MPs not in `Mp` table. The `Mp` table's parliament 1 starts at vol 24–26 (post-independence). These sittings are excluded from the match-rate denominator.
+- Vol 12–23 (parliament 0, State of Singapore Assembly, ~1960–1963): no `Mp` rows for parliament 0. Excluded from denominator.
+
+**Procedural noise** (accepted, do not fix):
+- Sitting id=1465 (vol 27, parliament 2): Speaker election sitting — procedural text after the MP list is extracted as spurious "names." The sitting still passes the 80% threshold (89.1%). Do not attempt to fix this one-off case.
+
+**OCR errors in source** (unresolvable without source correction):
+- `Hwang Soo un` (should be `Hwang Soo Jin`), `Wong Lm Ken` (OCR corruption), `P. Seivadurai` (variant of `P. Selvadurai`). These mismatches are in the source HTML, not in the extraction logic.
+
 ## Known data gaps
 
 Names that appear in the markdown but have NO corresponding Mp row:
