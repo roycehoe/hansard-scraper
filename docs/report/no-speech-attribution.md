@@ -110,59 +110,20 @@ Attributing these to any individual would be fabrication.
 
 ---
 
-## Recommendation
+## Requirement
 
-Add a fallback path to `get_speeches` in `services/speech.py`:
+Every record in the target set must produce at least one speech with a non-None, non-empty speaker. Records with exactly one name in `MPs Speaking` are **always in the target** — the pipeline must attribute the body text to that person.
 
-> When `get_speeches` would return `[]`, check the markdown header for a single name in
-> `MPs Speaking:`. If exactly one name is present, return
-> `[Speech(speaker=that_name, transcript=<body lines joined>)]`.
+Exclusions (zero speeches is genuinely correct):
+- `MPs Speaking` absent or empty (0 speakers)
+- `MPs Speaking` lists 2+ speakers **and** no bold speaker markup — these are annex/appendix index documents
 
-This covers the 1,193 single-speaker docs cleanly. The 253 multi-speaker docs and 3
-zero-speaker docs are left as-is (no speeches) — their body content is not attributable
-prose.
+## Status: Implemented (`51cdd99`)
 
-### Expected outcome
+`services/speech.py::get_speeches` applies the fallback: when `_parse_speeches` returns `[]`, it checks `MPs Speaking` for exactly one name and, if found, returns a single `ParsedSpeech` covering all non-empty, non-decorative body lines joined.
 
-- No-speech docs drop from 1,449 to ~256 (253 multi + 3 zero).
-- 1,193 previously-unattributed records gain a correct speaker attribution.
-- No fabricated attributions.
-
-### Implementation sketch
-
-In `services/speech.py`, extract the helper:
-
-```python
-_MP_SPEAK_RE = re.compile(r"MPs? Speaking:\|\s*([^\n|]+)", re.IGNORECASE)
-
-def _extract_single_speaker(markdown: str) -> Optional[str]:
-    """Return the single MP name from the MPs Speaking header, or None."""
-    m = _MP_SPEAK_RE.search(markdown)
-    if not m:
-        return None
-    names = [n.strip() for n in m.group(1).split(";") if n.strip()]
-    return names[0] if len(names) == 1 else None
-```
-
-Then in `get_speeches`, after the main loop produces an empty list:
-
-```python
-if not speeches:
-    speaker = _extract_single_speaker(markdown)
-    if speaker:
-        body = " ".join(
-            line.strip()
-            for line in markdown.splitlines()[start_of_speech_line + 1:]
-            if line.strip() and line.strip().strip("* ")
-        )
-        if body:
-            return [Speech(speaker=speaker, transcript=body)]
-```
-
-### What to verify after implementing
-
-- Regression set (30 docs, all currently passing) still passes.
-- A sample of the 1,193 newly-attributed docs shows correct speaker names and
-  non-empty, plausible transcripts.
-- Multi-speaker docs still return `[]` (fallback does not fire for them).
+**Actual outcome:**
+- No-speech docs dropped from 1,449 to ~256 (253 multi-speaker annex + 3 zero-speaker).
+- 1,193 previously-unattributed records now produce a correct speaker attribution.
+- Multi-speaker docs (2+ names) still return `[]`.
 - Zero-speaker docs still return `[]`.

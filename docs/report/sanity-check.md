@@ -169,6 +169,8 @@ Check each item against the list below. Mark pass (✓) or fail (✗) with a not
 | No speech has `speaker=None` when a named speaker is visible | |
 | Speech boundaries align with bold name lines | Each new bold name starts a new `Speech` |
 | Speech count is plausible for document length | 0 speeches on a multi-page document is suspicious |
+| Procedural/no-bold-speaker docs with 1 name in `MPs Speaking` produce exactly 1 speech | Speaker is the MP from the header; transcript is the joined body text |
+| `[]` only when `MPs Speaking` is empty or lists 2+ speakers | No other case should return zero speeches |
 
 ### 3d — Report-type-specific checks
 
@@ -177,11 +179,11 @@ Consult `docs/report/parsing-patterns.md` for per-type structural notes. Quick r
 | report_type | Expected behaviour |
 |-------------|-------------------|
 | `oral-answer` | Q&A pairs; both questioner and answerer appear as distinct speakers |
-| `written-answer` | No speeches expected; answer is tabular — `speeches` empty is correct |
+| `written-answer` | Tabular answers — no bold speaker markup. Single-MP docs produce one `ParsedSpeech` via the MPs Speaking fallback; multi-MP docs return `[]` |
 | `written-answer-na` | Minimal content; `start_line` may be None — expected |
-| `bill` | Long debate; many speakers (`Speech` count > 1) |
+| `bill` | Long debate: many speakers (`Speech` count > 1). First/Third Reading bills have no debate — single-MP docs produce one `ParsedSpeech` via fallback |
 | `ministerial-statement` | First speaker matches the minister named in HTML |
-| `budget` | Very long; high speech count; no truncation |
+| `budget` | Very long; high speech count; no truncation. Procedural budget entries (no bold speakers) produce one `ParsedSpeech` via fallback if single MP |
 
 ---
 

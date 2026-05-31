@@ -169,7 +169,7 @@ Empirical inspection of all 1,449 docs that still yield no valid speeches after 
 - 139 docs have open-bold formatting (`**(Motion)`, `**BILL TITLE`) but no closed-bold speaker names
 All 1,449 are procedural records (adjournment motions, bill first/third readings, budget procedural headers, ANNEX chart entries, "Assent to Bills Passed") — zero speeches is correct for these.
 
-**Target re-definition:** Exclude the 1,449 no-speech docs from the target (zero speeches is correct for them; they have no speaker markup, analogous to `has_markdown=False` exclusions). New target set: 21,854 − 1,449 = **20,405 docs**.
+**Target re-definition:** Of the 1,449 structurally no-speech docs, 1,193 have exactly one name in `MPs Speaking` and are **in the target** — the single-speaker fallback in `get_speeches` attributes the body text to that MP. Only ~256 docs are excluded: 253 multi-speaker annex/index docs (body is not attributable prose) and 3 zero-speaker docs. New target set: 21,854 − 256 = **21,598 docs**.
 
 **New sample.json note:** Old sample.json was drawn for `has_start_line` failures; it is now obsolete. Regression set (30 docs) remains valid — all 30 pass the new criterion after the fix.
 
