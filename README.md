@@ -89,14 +89,23 @@ The scraper handles various parliamentary record types:
 
 ## Database Models
 
+Database models follow a two-tier design: every data source has a **raw response table** and an **entity table**.
+
+**Raw response tables** store API responses exactly as received — no type casting, no field dropping. The only transformations applied are those required by the storage format (e.g. serialising list fields to JSON strings so they fit in a column).
+
+**Entity tables** are pure extensions of their raw counterparts. Every field from the raw response is preserved with the same value and structure. They exist to provide a stable, first-class schema ready for relationships and future enrichment — not to transform or interpret the source data.
+
 ### HandsardWebsiteResponse
-Raw data fetched from the SPRS website.
+Raw data fetched from the SPRS website, stored exactly as received.
 
 ### Report
-Processed parliamentary report with:
-- Metadata (parliament number, sitting date, volume, etc.)
-- Original and cleaned titles
-- HTML and markdown content
+Entity table extending `HandsardWebsiteResponse`.
+
+### HandsardSittingDateResponse
+Raw sitting date data fetched from the SPRS report API, stored exactly as received.
+
+### Sitting
+Entity table extending `HandsardSittingDateResponse`.
 
 ### Speech
 Individual speeches extracted from reports:

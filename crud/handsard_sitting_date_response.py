@@ -11,5 +11,8 @@ class CRUDHandsardSittingDateResponse:
         self.session.add(response)
         self.session.commit()
 
+    def get_all(self) -> list[HandsardSittingDateResponse]:
+        return list(self.session.exec(select(HandsardSittingDateResponse)).all())
+
     def get_all_sitting_dates(self) -> set[str]:
         return {r.sitting_date for r in self.session.exec(select(HandsardSittingDateResponse)).all()}
