@@ -44,7 +44,11 @@ This is a scraper for Singapore Parliament Hansard records (sprs.parl.gov.sg). T
 
 7. **Parse into Sittings** (`services/sitting.py` + `populate/sittings.py`) — converts `HandsardSittingDateResponse` → `Sitting`, adding a `markdown_content` field parsed from `html_full_content`.
 
-**Out-of-band:** `scripts/scrape_mps_by_parliament.py` scrapes `parliament.gov.sg` for the full list of MPs per parliament and stores them in the `Mp` table. This is run separately and is not part of `script.py`.
+8. **Extract sitting attendance** (`services/sitting_attendance.py` + `populate/sitting_attendances.py`) — for each `Sitting`, parses the PRESENT/ABSENT sections from `markdown_content` and writes one `SittingAttendance` row per MP name found. Skips sittings already processed.
+
+9. **Wire MP foreign keys** (`populate/mp_links.py`) — resolves speaker/attendee names against the `Mp` table and sets `mp_id` on `SittingAttendance` and `Speech` rows. Depends on the `Mp` table being populated first (see out-of-band step below).
+
+**Out-of-band:** `scripts/scrape_mps_by_parliament.py` scrapes `parliament.gov.sg` for the full list of MPs per parliament and stores them in the `Mp` table. This must be run before step 9; it is not part of `script.py`.
 
 ### Sitting date API — two formats
 
@@ -65,10 +69,10 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 
 - `HandsardWebsiteResponse` — raw API response, one row per Hansard entry
 - `Report` — entity table extending `HandsardWebsiteResponse`; has a one-to-many to `Speech`
-- `Speech` — individual utterance with `speaker`, `transcript`, and `ordinal` within the report
+- `Speech` — individual utterance with `speaker`, `transcript`, and `ordinal` within the report; has an `mp_id` FK to `Mp` (populated in stage 9)
 - `ParsingStatistics` — diagnostic table tracking whether each report has markdown, a detected start line, and parseable speeches
 - `HandsardSittingDateResponse` — raw API response, one row per sitting date; handles both old and new API formats with all fields `Optional`
-- `SittingAttendance` — child of `HandsardSittingDateResponse`; one row per MP per sitting
+- `SittingAttendance` — child of `HandsardSittingDateResponse`; one row per MP per sitting (raw API record); also written by stage 8 from markdown parsing, with an `mp_id` FK to `Mp` (set in stage 9)
 - `SittingPtba` — child; Permission To Be Absent records per sitting
 - `SittingSection` — child; debate sections/questions from `takesSectionVOList`
 - `SittingAnnexure` — child; annexure file references
@@ -83,6 +87,8 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 
 `services/speech.py::get_start_of_speech_line` — locates the line in the markdown that marks where speeches begin (the report's own title appears in bold as the first "heading" before actual speeches). Returns `None` if the title can't be matched, which is tracked as a parsing failure.
 
+`services/sitting_attendance.py` — extracts and resolves MP names from sitting markdown. Name resolution uses a cascade of strategies: manual overrides (for known typos/abbreviations), inverted-name lookup, direct lookup, bin-free lookup, word-set lookup, prefix lookup, spelling normalisation, and Haji-prefix stripping. `strip_title()` removes 25+ title prefixes (Dr, BG, RAdm, Tuan Haji, etc.) before matching. `infer_parliament()` derives parliament number from `volume_no` or `parlement_no` using `VOLUME_TO_PARLIAMENT`.
+
 ### Environment
 
 Requires a `DATABASE_URL` env var (or `.env` file). Falls back to `postgresql://user:password@localhost:5432/postgres`.
@@ -96,4 +102,6 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `diagnose.py` — inspect parsing failures across the corpus
 - `inspect_failures.py` — drill into specific failure cases
 - `run_sanity_check.py`, `run_no_speech_validation.py`, `run_single_speaker_check.py` — targeted validation runs
+- `run_exclusion_sanity_check.py` — analyses zero-speech (excluded) documents by checking HTML bold tags vs markdown speaker patterns
+- `speech_speaker_match_rate.py` — baseline assessment of `Speech.speaker` → `Mp` resolution rate, using a stratified sample of 200 speeches by report type
 - `scrape_mps_by_parliament.py` — populates the `Mp` table from parliament.gov.sg
