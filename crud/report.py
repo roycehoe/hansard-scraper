@@ -23,6 +23,9 @@ class CRUDReport:
     def get_by_ids(self, ids: list[int]) -> list[Report]:
         return list(self.session.exec(select(Report).where(col(Report.id).in_(ids))).all())
 
+    def get_all_report_ids(self) -> set[str]:
+        return set(self.session.exec(select(Report.report_id)).all())
+
     def get_first_filtered(
         self,
         *,

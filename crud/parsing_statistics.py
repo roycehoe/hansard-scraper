@@ -13,3 +13,6 @@ class CRUDParsingStatistics:
 
     def get_all(self) -> list[ParsingStatistics]:
         return list(self.session.exec(select(ParsingStatistics)).all())
+
+    def get_all_report_ids(self) -> set[str]:
+        return set(self.session.exec(select(ParsingStatistics.report_id)).all()) - {None}

@@ -19,3 +19,8 @@ class CRUDHandsardSittingDateResponse:
             r.sitting_date
             for r in self.session.exec(select(HandsardSittingDateResponse)).all()
         }
+
+    def get_by_sitting_date(self, sitting_date: str) -> HandsardSittingDateResponse | None:
+        return self.session.exec(
+            select(HandsardSittingDateResponse).where(HandsardSittingDateResponse.sitting_date == sitting_date)
+        ).first()
