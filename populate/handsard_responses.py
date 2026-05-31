@@ -37,5 +37,4 @@ def populate_handsard_responses(session: Session):
     logger.info(f"Fetching {len(to_fetch)}/{len(all_search_results)} ({len(existing_ids)} already in DB)")
 
     responses = asyncio.run(_fetch_all(to_fetch))
-    for response in responses:
-        crud.create(response)
+    crud.create_many(responses)

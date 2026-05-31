@@ -11,6 +11,10 @@ class CRUDHandsardWebsiteResponse:
         self.session.add(response)
         self.session.commit()
 
+    def create_many(self, responses: list[HandsardWebsiteResponse]) -> None:
+        self.session.add_all(responses)
+        self.session.commit()
+
     def get_all(self) -> list[HandsardWebsiteResponse]:
         return list(self.session.exec(select(HandsardWebsiteResponse)).all())
 

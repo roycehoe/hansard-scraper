@@ -11,6 +11,10 @@ class CRUDParsingStatistics:
         self.session.add(statistics)
         self.session.commit()
 
+    def create_many(self, statistics: list[ParsingStatistics]) -> None:
+        self.session.add_all(statistics)
+        self.session.commit()
+
     def get_all(self) -> list[ParsingStatistics]:
         return list(self.session.exec(select(ParsingStatistics)).all())
 
