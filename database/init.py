@@ -2,6 +2,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 import database.handsard_sitting_date_response  # noqa: F401
 import database.handsard_website_response  # noqa: F401
+import database.mp  # noqa: F401
 import database.parsing_statistics  # noqa: F401
 import database.report  # noqa: F401
 import database.sitting  # noqa: F401
