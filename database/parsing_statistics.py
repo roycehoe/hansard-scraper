@@ -15,6 +15,7 @@ class ParsingStatistics(SQLModel, table=True):
     sitting_date: datetime = Field(alias="sittingDate")
     speech_number: int = Field(alias="sno")
 
+    report_id: Optional[str] = None
     title: str
     subtitle: Optional[str] = None
     has_markdown: bool

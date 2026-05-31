@@ -2,17 +2,15 @@ import csv
 
 from sqlmodel import Session
 
-from crud.handsard_website_response import CRUDHandsardWebsiteResponse
 from crud.parsing_statistics import CRUDParsingStatistics
-from database.handsard_website_response import HandsardWebsiteResponse
+from crud.report import CRUDReport
 from database.parsing_statistics import ParsingStatistics
+from database.report import Report
 from logs import logger
-from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
 
-def _get_statistics(response: HandsardWebsiteResponse) -> ParsingStatistics:
-    report = build_report(response)
+def _get_statistics(report: Report) -> ParsingStatistics:
     has_markdown = report.markdown_content is not None
     has_start_line = False
     can_get_speeches = False
@@ -28,7 +26,7 @@ def _get_statistics(response: HandsardWebsiteResponse) -> ParsingStatistics:
             can_get_speeches = True
 
     return ParsingStatistics(
-        **report.model_dump(),
+        **report.model_dump(exclude={"id", "speeches"}),
         has_markdown=has_markdown,
         has_start_line=has_start_line,
         can_get_speeches=can_get_speeches,
@@ -36,11 +34,14 @@ def _get_statistics(response: HandsardWebsiteResponse) -> ParsingStatistics:
 
 
 def populate_statistics(session: Session):
-    responses = CRUDHandsardWebsiteResponse(session).get_all()
+    reports = CRUDReport(session).get_all()
     crud = CRUDParsingStatistics(session)
-    for i, response in enumerate(responses, start=1):
-        logger.info(f"{i}/{len(responses)}")
-        crud.create(_get_statistics(response))
+    existing_ids = crud.get_all_report_ids()
+    to_process = [r for r in reports if r.report_id not in existing_ids]
+    logger.info(f"Computing statistics for {len(to_process)}/{len(reports)} ({len(existing_ids)} already done)")
+    for i, report in enumerate(to_process, start=1):
+        logger.info(f"{i}/{len(to_process)}")
+        crud.create(_get_statistics(report))
 
 
 def export_statistics_csv(session: Session, path: str = "statistics.csv"):

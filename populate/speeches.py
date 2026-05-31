@@ -10,8 +10,11 @@ from services.speech import get_speeches, get_start_of_speech_line
 def populate_speeches(session: Session):
     db_reports = CRUDReport(session).get_all()
     crud = CRUDSpeech(session)
-    for i, db_report in enumerate(db_reports, start=1):
-        logger.info(f"{i}/{len(db_reports)}")
+    existing_report_ids = crud.get_report_ids_with_speeches()
+    to_process = [r for r in db_reports if r.id not in existing_report_ids]
+    logger.info(f"Parsing speeches for {len(to_process)}/{len(db_reports)} reports ({len(existing_report_ids)} already done)")
+    for i, db_report in enumerate(to_process, start=1):
+        logger.info(f"{i}/{len(to_process)}")
         if db_report.markdown_content is None:
             continue
         start_of_speech_line = get_start_of_speech_line(
