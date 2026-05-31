@@ -19,4 +19,5 @@ def populate_sittings(session: Session):
         except HansardGatewayError as e:
             logger.warning(f"Skipping {sitting_date}: {e}")
             continue
-        crud.create(build_sitting(build_handsard_sitting_date_response(result)))
+        data = build_handsard_sitting_date_response(result)
+        crud.create(build_sitting(data.response))

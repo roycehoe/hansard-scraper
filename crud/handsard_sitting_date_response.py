@@ -15,4 +15,8 @@ class CRUDHandsardSittingDateResponse:
         return list(self.session.exec(select(HandsardSittingDateResponse)).all())
 
     def get_all_sitting_dates(self) -> set[str]:
-        return {r.sitting_date for r in self.session.exec(select(HandsardSittingDateResponse)).all()}
+        return {
+            r.sitting_date
+            for r in self.session.exec(select(HandsardSittingDateResponse)).all()
+            if r.sitting_date
+        }
