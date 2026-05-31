@@ -76,9 +76,9 @@ Guard: skip any line where `parsed_line.strip("* ")` is empty (all characters ar
 
 When a speaker is introduced on a line with no trailing text (`**Mr Smith:**\n`), or mid-sentence (`"The question stood in the name of **Mr Smith:**"`), the speaker-change Speech gets `transcript = ""`. These are not content — filter them out at the return.
 
-### Structurally no-speech documents (excluded from target)
+### Structurally no-speech documents
 
-~1,449 docs across all report types yield no valid speeches even after fixing segmentation. These are structurally no-speech procedural records with no bold speaker markup:
+~1,449 docs have no bold speaker markup after the start line. These are procedural records:
 - **Adjournment motions** (`motion`): "Resolved, That Parliament do now adjourn..."
 - **Bill first/third readings** (`bill`): procedural passing records with no debate
 - **Budget procedural entries** (`budget`): "Order read for consideration in Committee of Supply [7th Allotted Day]"
@@ -87,7 +87,11 @@ When a speaker is introduced on a line with no trailing text (`**Mr Smith:**\n`)
 - **Bill introductions** (`bill-intro`): "presented by X; read the First time..."
 - **Speaker announcements** (`speaker`): Speaker procedural statements with no speaker markup
 
-These are excluded from the speech-bearing target set. Zero speeches is correct for them.
+**Requirement: every speech must have a speaker.** `get_speeches` applies a fallback when `_parse_speeches` returns `[]`: if `MPs Speaking` contains exactly one name, the entire body text is attributed to that person as a single `ParsedSpeech`. This covers the 1,193 single-speaker docs in this group.
+
+True exclusions (zero speeches is genuinely correct, ~256 docs total):
+- `MPs Speaking` absent or empty (3 docs) — nothing to attribute
+- `MPs Speaking` lists 2+ speakers and body is a PDF/table link index (253 docs) — attribution would be fabrication
 
 ## HTML Entity Artifacts
 
