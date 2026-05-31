@@ -72,6 +72,13 @@ def _fix_sitting_concat_headers(html: str) -> str:
     return html
 
 
+def _remove_sitting_orphan_bold_markers(md: str) -> str:
+    # After _fix_sitting_split_bold has merged all fixable patterns, any remaining
+    # standalone ** lines are orphaned opening/closing markers (from </span></div>
+    # boundaries in the HTML). Strip them.
+    return "\n".join(line for line in md.splitlines() if line.strip() != "**")
+
+
 def _remove_sitting_empty_italic(md: str) -> str:
     # <i></i> or <em></em> empty italic tags render as __ (html2text).
     # These appear in vol 38-70 docs inside <div id="adjTime"> between the date and meeting-time lines.
@@ -154,6 +161,7 @@ def get_cleaned_sitting_markdown(html: str) -> str:
     md_file = _remove_empty_lines(md_file)
     md_file = _merge_consecutive_bold_only_lines(md_file)
     md_file = _fix_sitting_split_bold(md_file)
+    md_file = _remove_sitting_orphan_bold_markers(md_file)
     md_file = _remove_sitting_empty_bold(md_file)
     md_file = _remove_sitting_empty_italic(md_file)
     md_file = _merge_sitting_adjournment_lines(md_file)
