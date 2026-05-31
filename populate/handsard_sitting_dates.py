@@ -1,5 +1,7 @@
+import asyncio
 from datetime import datetime
 
+import httpx
 from sqlmodel import Session
 
 from crud.handsard_sitting_date_response import CRUDHandsardSittingDateResponse
@@ -11,7 +13,7 @@ from crud.sitting_ptba import CRUDSittingPtba
 from crud.sitting_section import CRUDSittingSection
 from crud.sitting_vernacular import CRUDSittingVernacular
 from exceptions import HansardGatewayError
-from gateway.handsard_report import get_handsard_report_response
+from gateway.handsard_report import get_handsard_report_response_async
 from logs import logger
 from services.handsard_sitting_date_response import (
     build_new_handsard_sitting_date_response,
@@ -19,15 +21,35 @@ from services.handsard_sitting_date_response import (
 )
 from settings import settings
 
+_CONCURRENCY = 20
+
 
 def _parse_sitting_date(sitting_date: str) -> datetime:
     return datetime.strptime(sitting_date, "%d-%m-%Y")
 
 
-def populate_sitting_dates(session: Session):
+async def _fetch_all_sitting_dates(dates: list[str]) -> list[tuple[str, dict | None]]:
+    semaphore = asyncio.Semaphore(_CONCURRENCY)
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        async def fetch_one(sitting_date):
+            async with semaphore:
+                try:
+                    result = await get_handsard_report_response_async(sitting_date, client)
+                    return sitting_date, result
+                except HansardGatewayError as e:
+                    logger.warning(f"Skipping {sitting_date}: {e}")
+                    return sitting_date, None
+
+        return await asyncio.gather(*[fetch_one(d) for d in dates])
+
+
+def populate_handsard_sitting_dates(session: Session):
     all_sitting_dates = CRUDHandsardWebsiteResponse(session).get_all_sitting_dates()
     existing_sitting_dates = CRUDHandsardSittingDateResponse(session).get_all_sitting_dates()
     dates_to_fetch = list(all_sitting_dates - existing_sitting_dates)
+
+    fetched = asyncio.run(_fetch_all_sitting_dates(dates_to_fetch))
 
     sitting_crud = CRUDHandsardSittingDateResponse(session)
     attendance_crud = CRUDSittingAttendance(session)
@@ -37,13 +59,10 @@ def populate_sitting_dates(session: Session):
     vernacular_crud = CRUDSittingVernacular(session)
     a2b_crud = CRUDSittingA2b(session)
 
-    for i, sitting_date in enumerate(dates_to_fetch, start=1):
-        logger.info(f"{i}/{len(dates_to_fetch)}: {sitting_date}")
-        try:
-            result = get_handsard_report_response(sitting_date)
-        except HansardGatewayError as e:
-            logger.warning(f"Skipping {sitting_date}: {e}")
+    for i, (sitting_date, result) in enumerate(fetched, start=1):
+        if result is None:
             continue
+        logger.info(f"{i}/{len(dates_to_fetch)}: {sitting_date}")
 
         if _parse_sitting_date(sitting_date) >= settings.sitting_date_format_change:
             data = build_new_handsard_sitting_date_response(result, sitting_date)
