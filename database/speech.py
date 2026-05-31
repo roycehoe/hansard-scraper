@@ -12,3 +12,4 @@ class Speech(SQLModel, table=True):
 
     report_id: int | None = Field(default=None, foreign_key="report.id")
     report: Report = Relationship(back_populates="speeches")
+    mp_id: int | None = Field(default=None, foreign_key="mp.id")

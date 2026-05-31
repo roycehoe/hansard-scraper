@@ -1,4 +1,4 @@
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from database.sitting_attendance import SittingAttendance
 
@@ -10,3 +10,7 @@ class CRUDSittingAttendance:
     def create(self, record: SittingAttendance) -> None:
         self.session.add(record)
         self.session.commit()
+
+    def get_sitting_ids_with_attendance(self) -> set[int]:
+        rows = self.session.exec(select(SittingAttendance.sitting_id).distinct()).all()
+        return {r for r in rows if r is not None}

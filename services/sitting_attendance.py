@@ -460,16 +460,90 @@ def _extract_section_lines(content: str, section: str) -> list[str]:
     return result
 
 
+def resolve_canonical_name(name: str, parliament: int) -> str | None:
+    """
+    Try to match a name string to canonical Mp.name using the full lookup cascade.
+    Returns canonical Mp.name if found, None if no match.
+    Reusable by any module that needs MP name resolution.
+    """
+    inverted = _get_inverted_lookup()
+    direct = _get_direct_lookup()
+    bin_free = _get_bin_free_lookup()
+    wordset = _get_wordset_lookup()
+    prefix = _get_prefix_lookup()
+
+    canonical = _MANUAL_OVERRIDES.get((_period_normalize(name), parliament))
+    if canonical:
+        return canonical
+    canonical = inverted.get((_normalize_for_lookup(name), parliament))
+    if canonical:
+        return canonical
+    canonical = direct.get((_period_normalize(name), parliament))
+    if canonical:
+        return canonical
+    bin_key = (_period_normalize(_strip_bin(name)), parliament)
+    canonical = bin_free.get(bin_key) or direct.get(bin_key)
+    if canonical:
+        return canonical
+    ws, wc = _wordset_key(name)
+    canonical = wordset.get((ws, wc, parliament))
+    if canonical:
+        return canonical
+    canonical = prefix.get((_period_normalize(name), parliament))
+    if canonical:
+        return canonical
+
+    spell = _spelling_normalize(name)
+    if spell != name:
+        sp = _period_normalize(spell)
+        sp_bin = _period_normalize(_strip_bin(spell))
+        canonical = (
+            direct.get((sp, parliament))
+            or bin_free.get((sp_bin, parliament))
+            or direct.get((sp_bin, parliament))
+            or wordset.get((*_wordset_key(spell), parliament))
+            or prefix.get((sp, parliament))
+        )
+    if canonical:
+        return canonical
+
+    no_haji = _strip_middle_haji(name)
+    if no_haji != name:
+        nh = _period_normalize(no_haji)
+        nh_bin = _period_normalize(_strip_bin(no_haji))
+        canonical = (
+            direct.get((nh, parliament))
+            or bin_free.get((nh_bin, parliament))
+            or direct.get((nh_bin, parliament))
+            or prefix.get((nh, parliament))
+        )
+    if canonical:
+        return canonical
+
+    # CamelCase split fallback for source markdown that concatenated names without
+    # spaces ("AbdullahTarmugi"). Re-strip title after splitting in case the missing
+    # space prevented _strip_title from matching at extraction time.
+    split = re.sub(r"([a-z\.])([A-Z])", r"\1 \2", name)
+    if split != name:
+        split_stripped = _strip_title(split).strip()
+        sp2 = _period_normalize(split_stripped)
+        sp2_bin = _period_normalize(_strip_bin(split_stripped))
+        canonical = (
+            _MANUAL_OVERRIDES.get((sp2, parliament))
+            or direct.get((sp2, parliament))
+            or bin_free.get((sp2_bin, parliament))
+            or direct.get((sp2_bin, parliament))
+            or wordset.get((*_wordset_key(split_stripped), parliament))
+            or prefix.get((sp2, parliament))
+        )
+    return canonical
+
+
 def get_sitting_attendance(sitting: Sitting) -> list[SittingAttendance]:
     if not sitting.markdown_content:
         return []
 
     parliament = infer_parliament(sitting)
-    inverted = _get_inverted_lookup() if parliament is not None else {}
-    direct = _get_direct_lookup() if parliament is not None else {}
-    bin_free = _get_bin_free_lookup() if parliament is not None else {}
-    wordset = _get_wordset_lookup() if parliament is not None else {}
-    prefix = _get_prefix_lookup() if parliament is not None else {}
     content = sitting.markdown_content
     records = []
 
@@ -481,83 +555,11 @@ def get_sitting_attendance(sitting: Sitting) -> list[SittingAttendance]:
             name, location = parsed
             if not name:
                 continue
-            # Normalise initials and Malay abbreviation before lookup and storage.
             name = _normalize_name(name)
-            # Map to canonical Mp.name form. Order: manual overrides, inverted lookup,
-            # period-stripped direct, bin-free, word-set, prefix, spelling variants.
             if parliament is not None:
-                canonical = _MANUAL_OVERRIDES.get((_period_normalize(name), parliament))
+                canonical = resolve_canonical_name(name, parliament)
                 if canonical:
                     name = canonical
-                else:
-                    canonical = inverted.get((_normalize_for_lookup(name), parliament))
-                if canonical:
-                    name = canonical
-                else:
-                    canonical = direct.get((_period_normalize(name), parliament))
-                    if canonical:
-                        name = canonical
-                    else:
-                        bin_key = (_period_normalize(_strip_bin(name)), parliament)
-                        canonical = bin_free.get(bin_key) or direct.get(bin_key)
-                        if canonical:
-                            name = canonical
-                        else:
-                            ws, wc = _wordset_key(name)
-                            canonical = wordset.get((ws, wc, parliament))
-                            if canonical:
-                                name = canonical
-                            else:
-                                canonical = prefix.get((_period_normalize(name), parliament))
-                                if canonical:
-                                    name = canonical
-                                else:
-                                    # Spelling normalization fallback
-                                    # (Mohamad→Mohamed, B P M→BPM, hyphen→space).
-                                    spell = _spelling_normalize(name)
-                                    canonical = None
-                                    if spell != name:
-                                        sp = _period_normalize(spell)
-                                        sp_bin = _period_normalize(_strip_bin(spell))
-                                        canonical = (
-                                            direct.get((sp, parliament))
-                                            or bin_free.get((sp_bin, parliament))
-                                            or direct.get((sp_bin, parliament))
-                                            or wordset.get((*_wordset_key(spell), parliament))
-                                            or prefix.get((sp, parliament))
-                                        )
-                                    # Middle-Haji strip fallback.
-                                    if not canonical:
-                                        no_haji = _strip_middle_haji(name)
-                                        if no_haji != name:
-                                            nh = _period_normalize(no_haji)
-                                            nh_bin = _period_normalize(_strip_bin(no_haji))
-                                            canonical = (
-                                                direct.get((nh, parliament))
-                                                or bin_free.get((nh_bin, parliament))
-                                                or direct.get((nh_bin, parliament))
-                                                or prefix.get((nh, parliament))
-                                            )
-                                    # CamelCase split fallback for source markdown that
-                                    # concatenated names without spaces ("AbdullahTarmugi").
-                                    if not canonical:
-                                        split = re.sub(r"([a-z\.])([A-Z])", r"\1 \2", name)
-                                        if split != name:
-                                            # Re-strip title in case the missing space
-                                            # prevented _strip_title from matching at extraction.
-                                            split_stripped = _strip_title(split).strip()
-                                            sp2 = _period_normalize(split_stripped)
-                                            sp2_bin = _period_normalize(_strip_bin(split_stripped))
-                                            canonical = (
-                                                _MANUAL_OVERRIDES.get((sp2, parliament))
-                                                or direct.get((sp2, parliament))
-                                                or bin_free.get((sp2_bin, parliament))
-                                                or direct.get((sp2_bin, parliament))
-                                                or wordset.get((*_wordset_key(split_stripped), parliament))
-                                                or prefix.get((sp2, parliament))
-                                            )
-                                    if canonical:
-                                        name = canonical
             records.append(SittingAttendance(
                 sitting_id=sitting.id,
                 mp_name=name,

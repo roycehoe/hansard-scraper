@@ -9,8 +9,9 @@ class SittingAttendance(SQLModel, table=True):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     id: int | None = Field(default=None, primary_key=True)
-    sitting_id: int | None = Field(default=None, foreign_key="handsardsittingdateresponse.id")
+    sitting_id: int | None = Field(default=None, foreign_key="sitting.id")
 
     mp_name: Optional[str] = None
     attendance: Optional[bool] = None
     location_name: Optional[str] = None
+    mp_id: int | None = Field(default=None, foreign_key="mp.id")
