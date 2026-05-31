@@ -7,14 +7,8 @@ def _strip_nbsp(html: str) -> str:
     return html.replace("&nbsp;", "")
 
 
-def _remove_column_text(html: str) -> str:
-    column_pattern = r"Column:\s*\d+"
-    return re.sub(column_pattern, "", html)
-
-
-def _remove_column_no_text(html: str) -> str:
-    column_pattern = r"Column No :\s*\d+"
-    return re.sub(column_pattern, "", html)
+def _remove_column_markers(html: str) -> str:
+    return re.sub(r"Column(?:\s+No)?\s*:\s*\d+", "", html)
 
 
 def _remove_page_text(html: str) -> str:
@@ -52,8 +46,7 @@ def get_cleaned_report_markdown(html: str) -> str:
     h = html2text.HTML2Text(bodywidth=0)
 
     html = _strip_nbsp(html)
-    html = _remove_column_text(html)
-    html = _remove_column_no_text(html)
+    html = _remove_column_markers(html)
     html = _remove_page_text(html)
 
     md_file = h.handle(html)
@@ -174,8 +167,7 @@ def get_cleaned_sitting_markdown(html: str) -> str:
     h = html2text.HTML2Text(bodywidth=0)
 
     html = _strip_nbsp(html)
-    html = _remove_column_text(html)
-    html = _remove_column_no_text(html)
+    html = _remove_column_markers(html)
     html = _remove_page_text(html)
     html = _fix_sitting_concat_headers(html)
 
