@@ -9,50 +9,12 @@ This project scrapes parliamentary debates, questions, and other proceedings fro
 ## Features
 
 - **Data Collection**: Fetches search results and topic content from the SPRS API
+- **Sitting Metadata**: Fetches full sitting date records from the SPRS report API, handling two distinct API formats (pre/post August 2015)
+- **MP Scraping**: Scrapes the full list of MPs by parliament from parliament.gov.sg
 - **HTML to Markdown Conversion**: Converts raw HTML parliamentary records to clean markdown format
 - **Speech Extraction**: Parses speeches and identifies speakers from parliamentary transcripts
 - **Database Storage**: Stores raw responses, processed reports, and individual speeches in PostgreSQL
 - **Parsing Statistics**: Tracks parsing success rates across different report types
-
-## Project Structure
-
-```
-handsard-scraper/
-├── main.py                 # Main entry point (currently empty)
-├── script.py               # Primary execution script with data processing workflows
-├── enums.py                # Report type enumerations (oral answers, motions, bills, etc.)
-├── schemas.py              # Pydantic models for API responses
-├── pyproject.toml          # Poetry configuration and dependencies
-├── database/
-│   ├── init.py             # Database connection and session management
-│   └── report.py           # SQLModel database models (Report, Speech, etc.)
-├── gateway/
-│   ├── handsard_search.py  # API client for search endpoint
-│   └── handsard_topic.py   # API client for topic/content endpoint
-├── services/
-│   ├── handsard_website.py # Service for fetching and mapping website data
-│   ├── report.py           # Report processing and header parsing
-│   └── speech.py           # Speech extraction and speaker identification
-└── utils/
-    ├── markdown_parser.py  # HTML to markdown conversion utilities
-    ├── mps.py              # MP (Member of Parliament) data extraction
-    └── sample.py           # Stratified sampling utilities for testing
-```
-
-## Report Types
-
-The scraper handles various parliamentary record types:
-
-- Oral and Written Answers
-- Clarifications
-- Motions
-- Bills and Bill Introductions
-- Ministerial Statements
-- Budget debates
-- Adjournment Matters
-- Personal Explanations
-- Points of Order
-- And more...
 
 ## Installation
 
@@ -61,6 +23,7 @@ The scraper handles various parliamentary record types:
 - Python 3.11+
 - PostgreSQL database
 - Poetry (Python package manager)
+- Docker (for the local Postgres instance)
 
 ### Setup
 
@@ -70,22 +33,36 @@ The scraper handles various parliamentary record types:
    cd handsard-scraper
    ```
 
-2. Install dependencies with Poetry:
+2. Install dependencies:
    ```bash
    poetry install
    ```
 
-3. Create a `.env` file with your database connection:
+3. Start a local Postgres instance:
+   ```bash
+   docker-compose up -d
+   ```
+
+4. Create a `.env` file if you need a non-default database connection:
    ```env
    DATABASE_URL=postgresql://user:password@localhost:5432/postgres
    ```
 
-4. Initialize the database tables:
-   ```python
-   from database.init import create_db_and_tables
-   create_db_and_tables()
-   ```
+## Usage
 
+Run the main pipeline (creates tables, fetches reports, parses speeches, fetches sitting metadata):
+
+```bash
+python script.py
+```
+
+Scrape MPs by parliament from parliament.gov.sg (run separately):
+
+```bash
+python scripts/scrape_mps_by_parliament.py
+```
+
+Diagnostic and analysis scripts are in `scripts/`.
 
 ## Database Models
 
@@ -96,16 +73,10 @@ Database models follow a two-tier design: every data source has a **raw response
 **Entity tables** are pure extensions of their raw counterparts. Every field from the raw response is preserved with the same value and structure. They exist to provide a stable, first-class schema ready for relationships and future enrichment — not to transform or interpret the source data.
 
 ### HandsardWebsiteResponse
-Raw data fetched from the SPRS website, stored exactly as received.
+Raw data fetched from the SPRS topic endpoint, stored exactly as received.
 
 ### Report
-Entity table extending `HandsardWebsiteResponse`.
-
-### HandsardSittingDateResponse
-Raw sitting date data fetched from the SPRS report API, stored exactly as received.
-
-### Sitting
-Entity table extending `HandsardSittingDateResponse`.
+Entity table extending `HandsardWebsiteResponse`. Adds a cleaned `title`, `subtitle`, and `markdown_content`.
 
 ### Speech
 Individual speeches extracted from reports:
@@ -118,6 +89,22 @@ Tracks parsing success for quality monitoring:
 - Has markdown content
 - Has identifiable start line
 - Can successfully extract speeches
+
+### HandsardSittingDateResponse
+Raw sitting date data fetched from `getHansardReport/`, stored exactly as received. Handles two distinct API formats: a flat dict (Parliament 9–12, pre-August 2015) and a nested format with child lists (Parliament 13+).
+
+### SittingAttendance, SittingPtba, SittingSection, SittingAnnexure, SittingVernacular, SittingA2b
+Child tables of `HandsardSittingDateResponse`, each corresponding to a list field in the new API format (attendance, Permission To Be Absent, debate sections, annexures, vernacular speeches, and absence-to-brief records).
+
+### Sitting
+Entity table extending `HandsardSittingDateResponse`. Adds `markdown_content` parsed from `html_full_content`.
+
+### Mp
+MPs scraped from parliament.gov.sg, keyed by name, party, parliament number, and whether they are a legislative assembly member.
+
+## Report Types
+
+The `ReportType` enum in `enums.py` lists all parliamentary record categories handled by the scraper (oral answers, written answers, motions, bills, ministerial statements, budget debates, and more).
 
 ## Dependencies
 
@@ -135,9 +122,9 @@ Tracks parsing success for quality monitoring:
 
 This project uses:
 - **ruff**: For linting and import sorting
-- **pre-commit**: For automated code checks
 
 Run linting:
 ```bash
-poetry run ruff check .
+ruff check .
+ruff check --fix .
 ```
