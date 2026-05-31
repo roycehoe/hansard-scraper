@@ -1,0 +1,322 @@
+## Setup — Target set validation
+
+All 1758 sittings with non-null `markdown_content` contain PRESENT text (case-insensitive).
+Two distinct header formats observed:
+  - 1722 sittings: `PRESENT:` (plain, all-caps)
+  - 36 sittings:   `## Present:` (markdown heading with bullet-list entries) — vol 88-89
+
+No sittings are genuinely attendance-free. The target set = all 1758 sittings.
+
+Volume/era breakdown:
+  colonial (vol 1-33):     592 sittings
+  unknown (vol 34-37):      94 sittings (treated as colonial per spec)
+  mid-era (vol 38-75):     740 sittings
+  modern (vol 76+):        332 sittings
+
+## Setup — Volume→Parliament mapping
+
+Derived from `Parliament No:| N` header embedded in every sitting's markdown_content.
+
+  vol 1–11   → parliament 1   (colonial Legislative Assembly, 1955–1959)
+  vol 12–23  → parliament 0   (State of Singapore Assembly, ~1960–1963)
+  vol 24–26  → parliament 1   (post-independence Parliament 1, ~1965–1968)
+  vol 27–31  → parliament 2
+  vol 32–35  → parliament 3
+  vol 36–39  → parliament 4
+  vol 40–44  → parliament 5
+  vol 45–51  → parliament 6
+  vol 52–58  → parliament 7
+  vol 59–66  → parliament 8
+  vol 67–73  → parliament 9
+  vol 74–81  → parliament 10
+  vol 82–87  → parliament 11
+  vol 88–89  → parliament 12
+
+Excluded from match-rate denominator:
+  - vol 12–23: parliament 0, no Mp rows in table (already known)
+  - vol 1–11:  parliament 1 in markdown, but these are colonial Legislative Assembly
+               sittings (1955–1959). The Mp table's parliament 1 contains
+               post-independence MPs (1965+). These MPs are NOT in the table.
+               → Excluded from denominator (DATA GAP, not algorithm failure).
+               Count: ~130 sittings.
+
+## Setup — Baseline (before any fix)
+
+Pilot sample: 5 colonial, 3 mid, 3 modern (11 total)
+See docs/attendance/sample.json for all IDs.
+
+After baseline implementation (extraction only, no matching fixes):
+  Era       | Extract | Match≥80%
+  ----------|---------|----------
+  colonial  |   5/5   |    0/5   (vol 1-11: data gap; vol 33: just below 80%)
+  mid       |   3/3   |    0/3   (~75-78%, just below threshold)
+  modern    |   3/3   |    3/3   (~97%, already above threshold)
+
+Secondary metric (pilot): 529/744 names matched = 71.1%
+
+## Setup — Failure catalogue
+
+### EXTRACTION failures
+
+None in pilot or sample. All eras successfully locate and extract the PRESENT section.
+EXCEPTION: vol 76-87 bold `**PRESENT:**` format — when sitting id=2120 (vol=78) was in
+the regression set, it extracted 0 records. Root cause: `_extract_section_lines` regex
+only handles `PRESENT:` (plain) and `## Present:` (markdown), not `**PRESENT:**` (bold).
+This is a genuine can_extract=False failure for the regression set.
+
+### MATCHING failures — colonial vol 1-11
+
+Root cause: DATA GAP. These sittings' MPs are from the colonial Legislative Assembly
+(1955–1959). The Mp table for parliament 1 only contains post-independence MPs (1965+).
+Only MPs who served in BOTH eras (e.g. Lee Kuan Yew) match.
+Fix: Exclude vol 1-11 sittings from match-rate denominator (same as parliament 0).
+These sittings' names are still extracted correctly; they just cannot be matched.
+
+### MATCHING failures — colonial vol 24-37 and mid-era
+
+Root cause A — Extraction bug (FIXED before Iteration 1):
+  `S. Rajaratnam (Kampong Glam), Second Deputy Prime Minister (Foreign Affairs)`
+  → Code used LAST parenthetical; picked `Foreign Affairs` instead of `Kampong Glam`.
+  Fix: Changed `_parse_name_and_location` to use FIRST parenthetical.
+
+Root cause B — Missing title prefix `Maj.`:
+  `Maj. Fong Sip Chee` extracted as `Maj. Fong Sip Chee` instead of `Fong Sip Chee`.
+  Fix: Added `Maj.` and `Asst Prof` to `_TITLE_PREFIXES`.
+
+Root cause C — Inverted name format in Mp table:
+  Many MPs stored as `Surname, Initial` in Mp table but markdown uses natural order:
+    Extracted       | Mp.name
+    E.W. Barker     | Barker, E.W.
+    S. Chandra Das  | Chandra Das, S.
+    J.F. Conceicao  | Conceicao, J.F.
+    S. Jayakumar    | Jayakumar, S.
+    J.B. Jeyaretnam | Jeyaretnam, J.B.
+    P. Selvadurai   | Selvadurai, P.
+  These appear in parliament 5 (vol 40-44) and similar eras.
+  → To be addressed in Iteration 2.
+
+Root cause D — Bold PRESENT: format not recognised (can_extract=False):
+  Vol 76-87 uses `**PRESENT:**` which the current regex does not match.
+  Regression id=2120 (vol=78) extracts 0 records.
+  → To be addressed in Iteration 1 (highest-impact extraction failure).
+
+Root cause E — Honorific suffix with lowercase letters not stripped:
+  `P.B.m.` (in `Tay Eng Soon, P.B.m.`) — the lowercase `m` breaks the ALL_CAPS pattern.
+  → Low-priority; affects very few entries.
+
+---
+
+## Iteration 1 — 2026-05-31
+
+### can_extract — mid (vol 76-87) — **PRESENT:** bold format not matched
+
+**Affected sitting IDs:**
+All vol 76-87 sittings. Confirmed in regression id=2120 (vol=78).
+
+**Markdown snippet (failing):**
+```
+**PRESENT:**
+
+Mr SPEAKER (Mr Abdullah Tarmugi (East Coast)).
+
+Mr Ahmad Khalis Bin Abdul Ghani (Hong Kah).
+```
+
+**Markdown snippet (passing, same era — vol 76 id=2039):**
+```
+PRESENT:
+
+Mr SPEAKER (Mr Abdullah Tarmugi (East Coast)).
+Mr Ahmad Khalis Bin Abdul Ghani (Hong Kah).
+```
+
+**Root cause:**
+`_extract_section_lines` uses `re.match(rf"(?:#+\s*)?{section}\s*:", stripped, re.IGNORECASE)`
+which handles `PRESENT:` and `## PRESENT:` but not `**PRESENT:**` (bold with `**` prefix
+and `**` suffix). The stripped line `**PRESENT:**` does not start with `#` or plain `PRESENT`.
+
+**Proposed fix:**
+Update pattern to also handle `**SECTION:**` format:
+  `rf"^(?:\*{{2}}|#+)?\s*{section}\s*:(?:\*{{2}})?\s*$"`
+Apply same fix to the other-section terminator detection.
+
+**Backward-compatibility reasoning:**
+The existing `PRESENT:` (plain) and `## Present:` (markdown) patterns are unaffected —
+both still match the new pattern. The `**` variants only match lines that ARE `**PRESENT:**`.
+Vol 76-87 currently extracts correctly in some sittings (where the format is plain PRESENT:)
+so any regression would be immediately visible.
+
+**Outcome:** KEPT — regression id=2120 went from 0 records to 94 records. No new failures.
+
+---
+
+## Iteration 2 — 2026-05-31
+
+### can_match — all non-excluded eras — inverted name format in Mp table
+
+**Affected sitting IDs:** All non-excluded sittings in pilot, held-out, regression.
+
+**Extracted name (before fix) vs. Mp.name (expected):**
+```
+Extracted       | Mp.name
+E.W. Barker     | Barker, E.W.
+S. Chandra Das  | Chandra Das, S.
+J.F. Conceicao  | Conceicao, J.F.
+S. Jayakumar    | Jayakumar, S.
+J.B. Jeyaretnam | Jeyaretnam, J.B.
+P. Selvadurai   | Selvadurai, P.
+```
+152 total MPs stored as `Surname, Firstname` in the Mp table (inverted format).
+
+**Root cause:** Extraction produces natural-order names. Mp table stores many names inverted.
+
+**Proposed fix:** Build a lazy-loaded reverse-lookup `(natural_lower, parliament) → canonical_mp_name`
+from all inverted Mp names. Apply canonical form in `get_sitting_attendance`.
+
+**Backward-compatibility reasoning:** Only affects names where the exact natural form matches
+an inverted Mp entry. All other names pass through unchanged.
+
+**Outcome:** KEPT — pilot colonial match≥80%: 0/1 → 1/1. Pilot mid: 0/3 → 3/3.
+Secondary metric: 76.8% → 81.4%.
+
+---
+
+## Iteration 3 — 2026-05-31
+
+### can_match — multiple eras — initial spacing and multi-comma inverted names
+
+**Root cause A:** Extracted names with spaces between initials (`E. W. Barker`) didn't match
+inverted lookup keys built from compact initials (`E.W. Barker`).
+
+**Root cause B:** Inverted names with title suffix (`Chen Seow Phun, John, Dr`) generated
+wrong natural form (`John, Dr Chen Seow Phun`) — the title suffix was not stripped.
+
+**Proposed fix:**
+- `_normalize_for_lookup`: collapse spaces between consecutive initials; strip period from
+  lone leading initial.
+- `_get_inverted_lookup`: when last comma-separated part is a known title suffix, ignore it
+  when computing the natural form.
+
+**Outcome:** KEPT — all sittings now pass 80% threshold (pilot+held-out+regression).
+Secondary metric: 81.4% → 83.9%.
+
+---
+
+## Iteration 4 — 2026-05-31
+
+### can_match — colonial — Islamic honorifics
+
+**Root cause A:** `Haji ` / `Tuan Haji ` prefix not in `_TITLE_PREFIXES`.
+- `Haji Sha'ari Bin Tadin` extracted as `Haji Sha'ari Bin Tadin`, not matched.
+
+**Root cause B:** `Al-Haj` suffix not stripped.
+- `Rahmat Bin Kenap Al-Haj` → should be `Rahmat Bin Kenap`.
+
+**Root cause C:** Honorific suffix regex `(?:,\s*[A-Z][A-Z.]*)+$` didn't handle spaces within
+a token (`J. P.`), leaving `Yeoh Ghim Seng, B.B.M., J. P.` un-stripped.
+
+**Proposed fix:** Add `Haji `, `Tuan Haji `, `Hj.` to prefixes; add `_ISLAMIC_SUFFIX_RE`;
+extend `_HONORIFIC_SUFFIX_RE` to allow intra-token spaces.
+
+**Outcome:** KEPT — colonial secondary metric: 89.1% → 91.5%. No regressions.
+
+---
+
+## Iteration 5 — 2026-05-31
+
+### can_match — colonial — Mohd. period, surname-only match, rearrangement
+
+**Root cause A:** `Mohd.` (with period) in markdown vs `Mohd` (no period) in Mp.name.
+**Root cause B:** `Cheong Yuen Chee` in markdown vs `Cheong Yuen Chee, Eric` in Mp table
+  (markdown uses surname-only; inverted lookup requires full natural form).
+**Root cause C:** `Tan H.H. Augustine` in Mp table (non-inverted, surname-first format).
+  Natural order is `Augustine H.H. Tan`.
+
+**Proposed fix:** Introduce `_normalize_name`: collapse initials + `Mohd.` → `Mohd`.
+Add surname-only keys for unambiguous multi-word inverted surnames.
+Add last-word-first rearrangement for 3-word non-inverted Mp names.
+
+**Issues introduced:** Lone-initial period stripping (`S. Name` → `S Name`) broke
+`A. Rahim Ishak` (which retains period in Mp.name). Rearrangement logic was incorrect
+(`Augustine Tan H.H.` instead of `Augustine H.H. Tan`).
+
+**Outcome:** KEPT (net improvement: colonial 91.5% → 93.1%, no can_match failures)
+but regressions noted — addressed in iterations 6 & 7.
+
+---
+
+## Iteration 6 — 2026-05-31
+
+### Fix regressions from iteration 5
+
+**Fix 1:** Remove lone-initial period stripping from `_normalize_name` to restore
+`A. Rahim Ishak` matching (Mp.name retains the period).
+Note: this re-introduces the `S. Rajaratnam` mismatch — addressed in iteration 7.
+
+**Fix 2:** Correct rearrangement logic for `Tan H.H. Augustine`:
+`words[-1] + words[1:-1] + words[0]` → `Augustine H.H. Tan` ✓ (was previously wrong).
+
+**Outcome:** KEPT — colonial 93.1% → 94.2%. `Augustine H.H. Tan` now matched (+6).
+Mid-era metric dropped 90.7% → 88.3% (Rajaratnam and Iswaran period issues re-emerged).
+
+---
+
+## Iteration 7 — 2026-05-31
+
+### Restore inverted-lookup period stripping without affecting direct match
+
+**Root cause:** Removing period stripping from `_normalize_for_lookup` broke
+`S. Rajaratnam` → `Rajaratnam, S` (which has no period in the stored form `Rajaratnam, S`).
+
+**Fix:** Restore lone-initial period stripping in `_normalize_for_lookup` ONLY.
+This function is used exclusively for inverted lookup key comparison, not for the stored
+`mp_name`. Therefore:
+- `A. Rahim Ishak` stored as-is → direct match with `A. Rahim Ishak` ✓
+- `S. Rajaratnam` → lookup key `s rajaratnam` → finds `Rajaratnam, S` ✓
+
+**Backward-compatibility reasoning:** The period stripping only affects lookup key comparison.
+The stored `mp_name` is determined by `_normalize_name` (no period stripping) or the canonical
+inverted form — not by `_normalize_for_lookup`.
+
+**Outcome:** KEPT — colonial secondary metric: 94.2% → **95.8% ✓ TARGET MET**.
+Mid-era: 88.3% → 89.1% (partial improvement). Regression set: 0 failures.
+
+---
+
+## Final Report — 2026-05-31
+
+### Colonial-era target: MET ✓
+
+Primary metric (% colonial sittings with ≥80% name match):
+  8/8 non-excluded colonial sittings in the sample pass → 100%
+
+Secondary metric (% colonial names matched):
+  483/504 = **95.8%** (target: ≥95%)
+
+Secondary metric by era (sample):
+  colonial: 483/504 = 95.8% ✓
+  mid-era:  611/686 = 89.1% ✗ (secondary concern per spec)
+  modern:   737/761 = 96.8% ✓
+  ALL:      1831/1951 = 93.8%
+
+### Excluded from denominator
+
+- Vol 1–11 (parliament 1, colonial assembly): MPs not in Mp table — ~130 sittings
+- Vol 12–23 (parliament 0): 181 sittings
+
+### Remaining unmatched (colonial, data gaps and OCR errors)
+
+- `Lai Tha Chai` — NOT in Mp table (data gap)
+- `Ya'acob Bin Mohamed` — NOT in Mp table (data gap)
+- Procedural text in id=1465 (Speaker election sitting): 5 spurious extractions
+- OCR errors: `Hwang Soo un`, `Wong Lm Ken`, `P. Seivadurai`
+
+### Mid-era remaining gap
+
+At 89.1%, below 95% target. Remaining unmatched mid-era names include:
+- `S. Iswaran` → `S Iswaran` (period inconsistency in Mp.name, no fix applied)
+- `Abdullah Tarmugi` → `Abdullah Bin Tarmugi` (missing `Bin`)
+- `George Yong-Boon Yeo` → `Yeo Yong-Boon, George` (compound surname ordering)
+- `K. Shanmugam` → `K Shanmugam` (period inconsistency)
+
+These are acknowledged but not targeted per the spec ("secondary concern").
