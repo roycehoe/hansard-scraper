@@ -24,6 +24,10 @@ def populate_sittings(session: Session):
     crud = CRUDSitting(session)
     for i, sitting_date in enumerate(sitting_dates, start=1):
         logger.info(f"{i}/{len(sitting_dates)}: {sitting_date}")
+        if crud.exists_by_sitting_date(sitting_date):
+            logger.info(f"Already exists, skipping")
+            continue
+
         try:
             result = get_handsard_report_response(sitting_date)
         except HansardGatewayError as e:
