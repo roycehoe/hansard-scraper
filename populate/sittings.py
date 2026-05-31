@@ -35,8 +35,8 @@ def populate_sittings(session: Session):
             continue
 
         if _parse_sitting_date(sitting_date) >= settings.sitting_date_format_change:
-            data = build_new_handsard_sitting_date_response(result)
+            data = build_new_handsard_sitting_date_response(result, sitting_date)
         else:
-            data = build_old_handsard_sitting_date_response(result)
+            data = build_old_handsard_sitting_date_response(result, sitting_date)
 
         crud.create(build_sitting(data.response))
