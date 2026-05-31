@@ -1,6 +1,6 @@
 # Parsing Internals
 
-Hard-won knowledge about the raw API responses. Read this before touching any parsing code.
+Notes on raw API quirks and how they're handled. Most of this was learned the hard way.
 
 ---
 
@@ -16,11 +16,11 @@ The HTML structure changed between Parliament 11 and Parliament 12 (~2012):
 | Title location | Italic (`_Title_`), open bold (`**TITLE  ` with no closing `**`), or plain text between `**` lines | Markdown heading: `# Title` |
 | Subtitle | Open bold on its own line: `**(Subtitle)  ` | `## (Subtitle)` heading |
 
-The title-detection logic in `get_start_of_speech_line` must handle all three old-format variants plus the new heading format. Use `_strip_md()` (strips `*` and `_`) and compare case-insensitively to handle the variation.
+The title-detection logic in `get_start_of_speech_line` must handle all three old-format variants plus the new heading format. Use `_strip_md()` (strips `*` and `_`) and compare case-insensitively.
 
 ### Mojibake in stored titles
 
-Some titles in the database contain Windows-1252 mojibake of UTF-8 characters. The markdown content has the correct Unicode; the `title` field in the DB does not. Fix: `s.encode('cp1252').decode('utf-8')` (no-op for plain ASCII; safe to call unconditionally as it returns the original on failure).
+Some titles contain Windows-1252 mojibake of UTF-8 characters. The markdown content has correct Unicode; the `title` field in the DB does not. Fix: `s.encode('cp1252').decode('utf-8')` (no-op for plain ASCII; safe to call unconditionally).
 
 Common patterns:
 - `â€™` → `'` (curly apostrophe) — affects ~382 `president-address` titles
@@ -28,7 +28,7 @@ Common patterns:
 
 ### HTML entity artifact in markdown headings
 
-html2text treats `&WORD;` as an HTML entity and preserves the `;` even when the entity is unrecognised. Example: the title `"Government Subsidies for A&E Patients"` becomes `# Government Subsidies for A&E; Patients` in the markdown (the semicolon after `&E` is the artifact). The stored `title` field has the semicolon stripped. Strip `_strip_md()` before comparing to handle this.
+html2text treats `&WORD;` as an HTML entity and preserves the `;` even when the entity is unrecognised. Example: `"Government Subsidies for A&E Patients"` becomes `# Government Subsidies for A&E; Patients` (the semicolon after `&E` is the artifact). The stored `title` field has the semicolon stripped. Strip via `_strip_md()` before comparing.
 
 ### Context-prefix lines in old-format titles
 
@@ -40,7 +40,7 @@ After stripping markdown markers and whitespace-normalising, check `line_norm.en
 
 ### Speech segmentation — preamble and artifact lines
 
-`get_speeches` starts at the `start_of_speech_line` index. The lines immediately following in new-format docs are metadata rows, markdown headings, time markers, and procedural text — all before the first real speaker. Guard: skip lines when `current_speaker is None`.
+`get_speeches` starts at the `start_of_speech_line` index. The lines immediately following in new-format docs are metadata rows, markdown headings, time markers, and procedural text — all before the first real speaker. Skip lines when `current_speaker is None`.
 
 Artifact lines that must be filtered before speaker-regex matching:
 - `**` — standalone asterisks (visual separator)
@@ -48,7 +48,7 @@ Artifact lines that must be filtered before speaker-regex matching:
 - `****`, `********` — empty bold pairs
 - `**(Subtitle)  ` — open-bold subtitle, not a speaker
 
-Guard: skip any line where `line.strip("* ")` is empty (all characters are `*` or space).
+Skip any line where `line.strip("* ")` is empty (all characters are `*` or space).
 
 Also filter empty-transcript speeches at return — speaker-intro lines with no inline text produce `Speech(speaker=name, transcript="")`.
 
@@ -68,7 +68,7 @@ Also filter empty-transcript speeches at return — speaker-intro lines with no 
 
 ### Single-speaker attribution fallback
 
-For the 1,193 no-speech docs that have exactly one name in the `MPs Speaking:| Name` header, the entire body is attributable to that member (adjournment motions, bill first readings, procedural resolutions). The `MPs Speaking` header line is already preserved in the markdown as `MPs Speaking:| Name1; Name2; ...`.
+For the 1,193 no-speech docs that have exactly one name in the `MPs Speaking:| Name` header, the entire body is attributable to that member (adjournment motions, bill first readings, procedural resolutions). The `MPs Speaking` header line is preserved in the markdown as `MPs Speaking:| Name1; Name2; ...`.
 
 Do not apply this fallback when there are 2+ names — those are ANNEX/appendix documents where the names are session participants, not authors.
 
@@ -97,10 +97,10 @@ html2text artifacts vary by volume number:
 | Broken bold blocks | `<b>\nTITLE\n</b>` with internal newlines | Modern (vol 79+) | Merging required; use the existing `_merge_consecutive_bold_only_lines` approach |
 | Concatenated part/volume header | Adjacent table cells concatenated without separator | Modern (vol 76+) | Example: `PARTIVOF FIRST SESSION |  VOLUME85` — handle in downstream parsing, not stripping |
 
-### Known unfixable source-quality issues
+### Source defects (unfixable)
 
-- **Missing space before time** (`"The House met at3.00 pm"`) — space absent in the raw HTML. Affects ~3% of modern-era documents. Cannot be fixed without NLP or source correction.
-- **Appendix links** — `[Annex title (Cols. X-Y)](/search/...)` links in document tail (vol 41+). Whether to strip these is a product decision; currently left in the markdown.
+- `"The House met at3.00 pm"` — space missing before the time in the raw HTML. Affects ~3% of modern-era documents. Not fixable without NLP or source correction.
+- Appendix links — `[Annex title (Cols. X-Y)](/search/...)` in document tail (vol 41+). Currently left in the markdown.
 
 ### Adjournment merge edge case (vol 81+)
 
@@ -110,7 +110,7 @@ The adjournment line in vol 81+ uses multiple italic spans that must be merged. 
 
 ## Sitting Date API (`getHansardReport/`)
 
-Two completely different response formats depending on date:
+Two response formats depending on date:
 
 | Format | Parliaments | Date cutoff | Structure |
 |---|---|---|---|
@@ -119,7 +119,7 @@ Two completely different response formats depending on date:
 
 `writtenAnswersVOList` and `writtenAnsNAVOList` are always empty in new-format responses — no tables needed.
 
-Note: the API has a typo — `parlimentNO` (not `parliamentNO`). The field is mapped as `parlement_no` in the database to preserve the original faithfully.
+The API has a typo: `parlimentNO` (not `parliamentNO`). Mapped as `parlement_no` in the database to preserve it faithfully.
 
 ---
 
@@ -141,14 +141,16 @@ The `ABSENT` section follows the same format. The section ends when `#### PERMIS
 [Title] [Name] [(Constituency)][, Portfolio/role].   
 ```
 
-- **Title prefixes to strip**: `Mr`, `Mrs`, `Dr`, `Inche`, `Encik`, `Madam`, `Mdm`, `Ms`, `Prof.`, `Assoc. Prof.`, `BG`, `RAdm`, `The Honourable`. Compound titles occur (`The Honourable Mr`, `Assoc. Prof.`).
-- **Constituency**: optional parenthetical — `(Tanjong Pagar)`, `(Nominated Member)`, `(Non-Constituency Member)`, `(ex-officio)`.
-- **SPEAKER entries**: appear at the top — `Mr SPEAKER (Mr Name (Constituency)).` — include them.
+Title prefixes to strip: `Mr`, `Mrs`, `Dr`, `Inche`, `Encik`, `Madam`, `Mdm`, `Ms`, `Prof.`, `Assoc. Prof.`, `BG`, `RAdm`, `The Honourable`. Compound titles occur (`The Honourable Mr`, `Assoc. Prof.`).
+
+Constituency is an optional parenthetical: `(Tanjong Pagar)`, `(Nominated Member)`, `(Non-Constituency Member)`, `(ex-officio)`.
+
+Speaker entries appear at the top: `Mr SPEAKER (Mr Name (Constituency)).` — include them.
 
 ### Name matching against `Mp` table
 
 `Mp.name` stores names without title prefixes. Known variations:
 - Honorific suffixes in attendance not in `Mp.name` — e.g. `C.B.E.`, `J.P.`
-- Inverted name format — `Mp.name` sometimes stores `Surname, Firstname` (e.g. `Barker, E.W.`) while the attendance line uses natural order
+- `Mp.name` sometimes stores `Surname, Firstname` (e.g. `Barker, E.W.`) while the attendance line uses natural order
 - Colonial-era prefix titles (`Inche`, `The Honourable`) absent from `Mp.name`
 - Parliament number join key: `Sitting.parlement_no` (note the spelling) → `Mp.parliament_number`
