@@ -450,6 +450,9 @@ def _extract_section_lines(content: str, section: str) -> list[str]:
             break
         if stripped.startswith("####") or stripped.startswith("# ") or stripped == "* * *":
             break
+        # Numbered oral-question marker ("1\. **Mr X asked...") signals section end.
+        if re.match(r"^\d+\\\.?\s", stripped):
+            break
 
         if stripped:
             result.append(line)
@@ -534,6 +537,24 @@ def get_sitting_attendance(sitting: Sitting) -> list[SittingAttendance]:
                                                 or bin_free.get((nh_bin, parliament))
                                                 or direct.get((nh_bin, parliament))
                                                 or prefix.get((nh, parliament))
+                                            )
+                                    # CamelCase split fallback for source markdown that
+                                    # concatenated names without spaces ("AbdullahTarmugi").
+                                    if not canonical:
+                                        split = re.sub(r"([a-z\.])([A-Z])", r"\1 \2", name)
+                                        if split != name:
+                                            # Re-strip title in case the missing space
+                                            # prevented _strip_title from matching at extraction.
+                                            split_stripped = _strip_title(split).strip()
+                                            sp2 = _period_normalize(split_stripped)
+                                            sp2_bin = _period_normalize(_strip_bin(split_stripped))
+                                            canonical = (
+                                                _MANUAL_OVERRIDES.get((sp2, parliament))
+                                                or direct.get((sp2, parliament))
+                                                or bin_free.get((sp2_bin, parliament))
+                                                or direct.get((sp2_bin, parliament))
+                                                or wordset.get((*_wordset_key(split_stripped), parliament))
+                                                or prefix.get((sp2, parliament))
                                             )
                                     if canonical:
                                         name = canonical
