@@ -1,0 +1,194 @@
+## Setup — Excluded report_types
+
+`report_type` is NULL for all 1,333 rows with `html_full_content` in `handsardsittingdateresponse`.
+No report_type-based exclusions can be made. Stratification is by `volume_no` bracket (proxy for parliament era).
+
+Strata:
+  vol_1_20   → parliament era ~0-1 (1950s-early 1960s)
+  vol_21_40  → parliament era ~1-4 (mid 1960s-late 1970s)
+  vol_41_60  → parliament era ~5-7 (1980s)
+  vol_61_75  → parliament era ~8-9 (early-mid 1990s)
+  vol_76_89  → parliament era ~10-11 (2000s-2010)
+
+Assumption check: all observed anomalies appear to be genuine HTML-to-markdown rendering artifacts.
+None are correct output for any document subtype — they all represent undesirable noise.
+The `****` lines, `__` lines, and broken bold blocks are demonstrably not intended content.
+
+
+## Setup — Artifact catalogue
+
+Nine distinct artifact categories identified across 25 pilot documents.
+
+A. **standalone-bold4** — lone `****` lines throughout document body
+   Cause: empty `<b></b>` or `<strong></strong>` tags, or section-break `<p>` elements rendered as bold.
+   Affects: 24/25 pilot docs (highest priority).
+
+B. **stray-dunder** — lone `__` line between italicised date lines
+   Cause: empty `<em></em>` or `<i></i>` element between paragraphs in the "The House met at..." area.
+   Pattern: always appears between `_Date_` and `_The House met at HH:MM_` lines in vol 38-65 era docs.
+   Affects: ~3/25 pilot docs (heuristic undercount; visual inspection suggests ~10/25).
+
+C. **split-adjournment** — "Adjourned accordingly at" text split across two or more lines
+   Cause: `<br>` or soft line-wrap inside the adjournment paragraph in the source HTML.
+   Example bad output: "Adjourned accordingly at Six\nminutes to Eight o'clock p.m."
+   Affects: 18/25 pilot docs.
+
+D. **broken-bold-blocks** — `**` appearing as a lone line, fragmenting a bold header
+   Cause: Modern (vol 79+) HTML uses `<b>\nHEADER TEXT\n</b>` with newlines inside the bold tags.
+   html2text renders opening/closing `<b>` on their own lines as standalone `**`.
+   Example bad output: "**\nFOREIGN WORKERS IN CONSTRUCTION SECTOR\n**"
+   Affects: 6/25 pilot docs (all vol 79+).
+
+E. **appendix-links** — markdown links to PDF/GIF appendix files in document tail
+   Cause: `<a href="/search/...">Annex title (Cols. X-Y)</a>` in source HTML.
+   These appear interleaved with `****` clusters at document tail.
+   Affects: 8/25 pilot docs. (May be correct content — flagged for review.)
+
+F. **concat-part-text** — header part/volume info concatenated without spaces
+   Cause: Adjacent table cells in modern HTML rendered without inter-cell space by html2text.
+   Example bad output: "PARTIVOF FIRST SESSION |  VOLUME85" (should be "PART IV OF FIRST SESSION | VOLUME 85")
+   Affects: 4/25 pilot docs (vol 79-87 subset).
+
+G. **corrupt-html-tags** — raw HTML tag fragments leaking into metadata field
+   Cause: Malformed `<font>` tag in the sitting-date metadata cell not stripped by html2text.
+   Example bad output: "Sitting Date:| 20/f-28-0502ont>" (should be "28-05-2005")
+   Affects: 1/25 pilot docs (ID=1702).
+
+H. **ascii-art-tables** — HTML tables rendered as space-aligned preformatted text
+   Cause: html2text renders `<table>` as preformatted text with leading spaces.
+   Affects: ~5/25 pilot docs (visual inspection; not counted in heuristic).
+
+I. **missing-spaces-body** — missing spaces throughout body text in modern documents
+   Cause: `<font>` or `<span>` tags stripped by html2text without inserting a space between adjacent runs.
+   Affects: ~4-6/25 pilot docs (vol 79+ only; heuristic returned 0 due to detection gap).
+
+
+## Setup — Baseline
+
+Pilot sample: 25 documents across 5 volume-no strata.
+Function at baseline: get_cleaned_sitting_markdown (identical to get_cleaned_report_markdown at t=0).
+
+Artifact counts (docs affected / 25):
+
+  standalone-bold4     : 24/25
+  split-adjournment    : 18/25
+  broken-bold-blocks   :  6/25
+  appendix-links       :  8/25
+  concat-part-text     :  4/25
+  stray-dunder         :  3/25  (heuristic; visual ~10/25)
+  ascii-art-tables     :  5/25  (visual estimate)
+  missing-spaces-body  :  4/25  (visual; heuristic missed)
+  corrupt-html-tags    :  1/25
+
+Priority order for loop: standalone-bold4 → split-adjournment → broken-bold-blocks → appendix-links → stray-dunder → others.
+
+
+## Iteration 1 — 2026-05-31
+
+### Artifact: standalone-bold4
+
+**Affected IDs:**
+All 24 pilot docs that had `****` lines: 313, 834, 68, 661, 777, 1079, 298, 304, 1433, 395, 990, 1657, 1478, 23, 920, 312, 794, 988, 142, 653, 229, 1486, 881, 623
+
+**HTML snippet (exhibiting artifact):**
+`<b></b>`, `<b> </b>`, `<b>&nbsp;</b>`, `<b>\n</b>` — empty bold tags used as visual separators throughout all document eras.
+html2text renders these as `****` (adjacent `**` open+close markers with no content between them).
+
+**Markdown output (before fix):**
+```
+****
+
+## LEGISLATIVE ASSEMBLY DEBATES
+```
+(lines 1-15 of every document)
+
+**Root cause:**
+Empty or whitespace-only `<b>` tags in the HTML.
+`html2text` renders empty bold as `****`. After `_remove_empty_lines` strips blank lines, these remain as non-empty `****` lines throughout the output.
+The existing `_strip_page_break_artifacts` only catches one very specific pattern; the general `****` lines escape it.
+
+**Proposed fix:**
+Add `_remove_sitting_empty_bold` as a post-processing step that drops any line whose stripped value is exactly `****`.
+Backward-safe: `****` never appears as intentional Hansard content. `get_cleaned_report_markdown` is untouched.
+
+**Outcome:**
+KEPT. standalone-bold4: 24/25 → 0/25 (pilot), 0/15 (held-out), 0/20 (regression).
+No new artifacts introduced. Split-adjournment unchanged at 18/25.
+
+
+## Iteration 2 — 2026-05-31
+
+### Artifact: split-adjournment
+
+**Affected IDs:**
+1079, 304, 1433, 990, 1657, 1478, 23, 920, 312, 794, 988, 142, 653, 229, 1486, 1702, 881, 623 (18/25 pilot)
+
+**HTML snippet (exhibiting artifact):**
+```html
+<div align="right">Adjourned accordingly at</div>
+<div align="right">Nine minutes past Seven o'clock p.m.</div>
+```
+Or across 4+ divs:
+```html
+<div align="right">Adjourned accordingly at</div>
+<div align="right">Twenty-Nine minutes to</div>
+<div align="right">Seven o'clock pm to a</div>
+<div align="right">date to be fixed.</div>
+```
+
+**Markdown output (before fix):**
+```
+Adjourned accordingly at
+Nine minutes past Seven o'clock p.m.
+```
+
+**Root cause:**
+The adjournment time phrase is split across multiple `<div align="right">` elements in the HTML.
+html2text renders each `<div>` as a separate paragraph/line.
+
+**Proposed fix:**
+`_merge_sitting_adjournment_lines`: when a line contains "Adjourned accordingly at", merge subsequent lines into it until the sentence ends with "." or the next line looks like a new section (starts with `**`, `#`, etc.). Max 6 merges as safety limit.
+
+**Outcome:**
+KEPT. split-adjournment: 18/25 → 0/25 (pilot), 0/15 (held-out).
+Regression: 2/20 before AND after — not regressions, both were already affected at baseline.
+  ID=1462: true residual (adjournment ends "pm" without period; blocked from merging into next `**` section).
+  ID=426: false positive in detection heuristic (adjournment is on one line; "to" in next section header triggers regex).
+No new artifacts.
+
+
+## Iteration 3 — 2026-05-31
+
+### Artifact: broken-bold-blocks
+
+**Affected IDs:**
+229, 1486, 1702, 881, 623 (vol 76-89 modern era); 304 (vol 31, different mechanism).
+Baseline: 182 standalone `**` lines across 6 pilot docs.
+
+**HTML snippet (exhibiting artifact):**
+Pattern 1 — `<b>TITLE<br>\n</b>` renders as:
+```
+**TITLE
+**
+```
+Pattern 2 — `<B>` wrapping a `<P>`: `<B><!--comment--><span><P>TITLE</P></span></B>` renders as:
+```
+**
+TITLE
+**
+```
+
+**Root cause:**
+Modern (vol 79+) HTML places section titles inside `<B>` tags wrapping `<P>` elements or uses `<br>` inside `<B>`.
+html2text renders the opening/closing `<B>` on separate lines, splitting the bold markers from the title text.
+
+**Proposed fix:**
+`_fix_sitting_split_bold` (runs before `_remove_sitting_empty_bold`):
+- Pattern 1: line starts with `**`, has content, doesn't close → merge closing `**` from next line
+- Pattern 2: standalone `**`, single content line, closing `**` → `**TITLE**`
+More complex variants (2-line titles, subtitle passthrough) caused held-out regressions and were not included.
+
+**Outcome:**
+KEPT. standalone-**: 6/25 → 4/25 docs (pilot), lines 182 → 66.
+Held-out: 3 docs (unchanged), total lines 27 → 8 (70% reduction).
+Regression: 149 → 78 lines (improved). No new artifacts.

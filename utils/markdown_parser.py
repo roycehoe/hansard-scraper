@@ -48,7 +48,7 @@ def _merge_consecutive_bold_only_lines(md: str) -> str:
     return "\n".join(lines)
 
 
-def get_cleaned_handsard_markdown(html: str) -> str:
+def get_cleaned_report_markdown(html: str) -> str:
     h = html2text.HTML2Text(bodywidth=0)
 
     html = _strip_nbsp(html)
@@ -60,5 +60,86 @@ def get_cleaned_handsard_markdown(html: str) -> str:
     md_file = _strip_page_break_artifacts(md_file)
     md_file = _remove_empty_lines(md_file)
     md_file = _merge_consecutive_bold_only_lines(md_file)
+
+    return md_file
+
+
+def _fix_sitting_split_bold(md: str) -> str:
+    # Fix patterns produced by modern (vol 79+) HTML where <b> tags wrap <P> elements.
+    #
+    # Pattern 1: **TITLE  \n**   → **TITLE**  (bold opens on title line, closes on next)
+    # Pattern 2: **\nTITLE\n**  → **TITLE**  (open ** on own line, single title, close **)
+    lines = md.splitlines()
+    result = []
+    i = 0
+    while i < len(lines):
+        stripped = lines[i].strip()
+
+        # Pattern 1: starts with **, has content, doesn't close with **, next line is **
+        if (stripped.startswith("**")
+                and not stripped.endswith("**")
+                and len(stripped) > 2
+                and i + 1 < len(lines)
+                and lines[i + 1].strip() == "**"):
+            result.append(stripped + "**")
+            i += 2
+
+        # Pattern 2: standalone **, single plain content line, closing **
+        elif (stripped == "**"
+              and i + 2 < len(lines)
+              and lines[i + 1].strip()
+              and lines[i + 2].strip() == "**"):
+            result.append(f"**{lines[i + 1].strip()}**")
+            i += 3
+
+        else:
+            result.append(lines[i])
+            i += 1
+    return "\n".join(result)
+
+
+def _remove_sitting_empty_bold(md: str) -> str:
+    return "\n".join(line for line in md.splitlines() if line.strip() != "****")
+
+
+def _merge_sitting_adjournment_lines(md: str) -> str:
+    # The adjournment time is split across multiple <div align="right"> elements in the HTML,
+    # each rendering as a separate line. Merge continuations until the sentence ends with a period.
+    lines = md.splitlines()
+    result = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if re.search(r"Adjourned accordingly at", line, re.IGNORECASE):
+            merges = 0
+            while (
+                not line.rstrip().endswith(".")
+                and merges < 6
+                and i + 1 < len(lines)
+                and not re.match(r"^(\*\*|#{1,6}|\* \* \*)", lines[i + 1])
+            ):
+                i += 1
+                merges += 1
+                line = line.rstrip() + " " + lines[i].lstrip()
+        result.append(line)
+        i += 1
+    return "\n".join(result)
+
+
+def get_cleaned_sitting_markdown(html: str) -> str:
+    h = html2text.HTML2Text(bodywidth=0)
+
+    html = _strip_nbsp(html)
+    html = _remove_column_text(html)
+    html = _remove_column_no_text(html)
+    html = _remove_page_text(html)
+
+    md_file = h.handle(html)
+    md_file = _strip_page_break_artifacts(md_file)
+    md_file = _remove_empty_lines(md_file)
+    md_file = _merge_consecutive_bold_only_lines(md_file)
+    md_file = _fix_sitting_split_bold(md_file)
+    md_file = _remove_sitting_empty_bold(md_file)
+    md_file = _merge_sitting_adjournment_lines(md_file)
 
     return md_file

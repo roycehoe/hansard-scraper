@@ -5,7 +5,7 @@ from typing import Optional
 
 from database.handsard_website_response import HandsardWebsiteResponse
 from database.report import Report
-from utils.markdown_parser import get_cleaned_handsard_markdown
+from utils.markdown_parser import get_cleaned_report_markdown
 from utils.text import fix_mojibake
 
 
@@ -56,7 +56,7 @@ def build_report(handsard_website_response: HandsardWebsiteResponse) -> Report:
         reportType=handsard_website_response.report_type,
         content=handsard_website_response.content,
         markdown_content=(
-            get_cleaned_handsard_markdown(handsard_website_response.content)
+            get_cleaned_report_markdown(handsard_website_response.content)
             if handsard_website_response.content is not None
             else None
         ),
