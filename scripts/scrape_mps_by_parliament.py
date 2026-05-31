@@ -29,16 +29,23 @@ def parse_mps(html: str, parliament_number: int) -> list[dict]:
     soup = BeautifulSoup(html, "html.parser")
     results = []
     for li in soup.select("ul.list > li"):
-        name = li.select_one(".mp-sort-name.name")
+        name_el = li.select_one(".mp-sort-name.name")
         party = li.select_one(".mp-sort.party")
         leg_assembly = li.select_one(".formermp-legislative")
-        if not name or not party:
+        if not name_el or not party:
             continue
+        full_name = name_el.get_text(strip=True)
+        match = re.match(r"^(.*?)\s*\((.+)\)\s*$", full_name)
+        if match:
+            name, comments = match.group(1).strip(), match.group(2).strip()
+        else:
+            name, comments = full_name, None
         results.append({
-            "name": name.get_text(strip=True),
+            "name": name,
             "party": party.get_text(strip=True),
             "is_legislative_assembly": bool(leg_assembly and leg_assembly.get_text(strip=True)),
             "parliament_number": parliament_number,
+            "comments": comments,
         })
     return results
 
