@@ -335,3 +335,42 @@ No new artifacts introduced. All prior fixes still hold.
   missing-space-before-time |  0/40    |  0/40 | CLOSED (source quality)
 
 Zero unresolved fixable artifact categories. Run A loop complete.
+
+
+## Run B — 2026-05-31
+
+56 new old-format sittings fetched across all 10 parliament groups:
+  parl 2 vol 31 (1971–72), parl 3 vol 34 [NEW]/35 (1975–76), parl 4 vol 39 (1979–80),
+  parl 5 vol 43 [NEW]/44 (1984), parl 6 vol 51 (1988), parl 7 vol 56 [NEW]/57 (1991),
+  parl 8 vol 65 [NEW]/66 (1996), parl 9 vol 73 (2001),
+  parl 10 vol 80 [NEW dates] (2005–06), parl 11 vol 87 (2010–11).
+DB now has 158 rows with html_full_content.
+
+Sample extended: pilot=63, held_out=37, regression=58 (all 158 rows covered).
+Retained all prior IDs; added IDs 104–159 proportionally across sets.
+
+Previous fixes (iterations 1–6) held perfectly across all 158 docs.
+Zero new artifact categories found in new volumes (34, 43, 56, 65) or additional vol 80 dates.
+
+Baseline (158-doc sample):
+
+  Artifact       | Pilot | Held-out | Regression
+  ---------------|-------|----------|------------
+  appendix-links | 17/63 |    8/37  |    13/58
+
+No new fixable artifact categories. Run B loop completes without new iterations.
+
+
+## Run B — Completion — 2026-05-31
+
+  Artifact                  | Baseline | Status
+  --------------------------|----------|--------
+  broken-table-metadata     |   0/63   | FIXED (iter 1)
+  broken-italic-lines       |   0/63   | FIXED (iter 2)
+  extended empty-bold       |   0/63   | FIXED (iters 3+4)
+  adj-split                 |   0/63   | FIXED (iter 5)
+  1-col-table-separator     |   0/63   | FIXED (iter 6)
+  appendix-links            |  17/63   | DEFERRED (product decision)
+  missing-space-before-time |   0/63   | CLOSED (source quality)
+
+All fixes stable across 158 docs spanning vol 28–87 (1969–2011). Loop complete.
