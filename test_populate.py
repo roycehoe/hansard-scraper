@@ -159,9 +159,9 @@ def populate_sitting_dates(session: Session):
             continue
 
         if datetime.strptime(sitting_date, "%d-%m-%Y") >= settings.sitting_date_format_change:
-            data = build_new_handsard_sitting_date_response(result)
+            data = build_new_handsard_sitting_date_response(result, sitting_date)
         else:
-            data = build_old_handsard_sitting_date_response(result)
+            data = build_old_handsard_sitting_date_response(result, sitting_date)
         sitting_crud.create(data.response)
         sitting_id = data.response.id
 
@@ -196,9 +196,9 @@ def populate_sittings(session: Session):
             logger.warning(f"Skipping {sitting_date}: {e}")
             continue
         if datetime.strptime(sitting_date, "%d-%m-%Y") >= settings.sitting_date_format_change:
-            data = build_new_handsard_sitting_date_response(result)
+            data = build_new_handsard_sitting_date_response(result, sitting_date)
         else:
-            data = build_old_handsard_sitting_date_response(result)
+            data = build_old_handsard_sitting_date_response(result, sitting_date)
         crud.create(build_sitting(data.response))
 
 

@@ -18,5 +18,4 @@ class CRUDHandsardSittingDateResponse:
         return {
             r.sitting_date
             for r in self.session.exec(select(HandsardSittingDateResponse)).all()
-            if r.sitting_date
         }
