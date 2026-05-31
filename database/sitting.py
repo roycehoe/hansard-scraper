@@ -52,3 +52,4 @@ class Sitting(SQLModel, table=True):
     ptba_from: Optional[str] = Field(default=None, alias="ptbaFrom")
     ptba_to: Optional[str] = Field(default=None, alias="ptbaTo")
     question_count: Optional[str] = Field(default=None, alias="questionCount")
+    markdown_content: Optional[str] = None
