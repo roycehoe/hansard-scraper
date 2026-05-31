@@ -12,7 +12,7 @@ Before beginning Setup or any loop iteration, scan the working directory for exi
 
 Produce a `get_cleaned_sitting_markdown` function that converts `html_full_content` from `HandsardSittingDateResponse` into clean, artifact-free markdown — with no formatting anomalies visible in the output.
 
-Success: zero unresolved formatting artifact categories remaining in the strata sample, as tracked in `docs/sitting/progress.txt`.
+Success: ≥95% of documents in the strata sample are fully artifact-free (no formatting anomalies visible in any output field), as tracked in `docs/sitting/progress.txt`. Artifact categories are tracked per-type so you can see whether remaining failures are widespread or isolated — do not grind on categories that affect only 1–2 documents once the per-doc rate is ≥95%.
 
 # Method
 
@@ -116,6 +116,8 @@ Artifact                    | Before | After
 unreplaced entity           |   8    |   0
 bad bold merge              |   3    |   3  (no change)
 stray column marker variant |   5    |   2
+---
+Clean docs (no artifacts)   | 10/20  | 15/20  (75%)
 ```
 
 The table must cover all three sets. Decision rule:
@@ -123,15 +125,19 @@ The table must cover all three sets. Decision rule:
 - **Keep** if: the target artifact count decreased AND the regression set shows no new artifacts AND (where a held-out set exists) the held-out set shows improvement.
 - **Revert** if: new artifacts appeared, the count did not decrease, or the regression set shows any previously-clean document now producing artifacts. Log the reason in `docs/sitting/progress.txt`.
 
-**Step 6 — Check completion.**
-If all artifact categories show zero occurrences, stop and report success. Otherwise, go to Step 1.
+**Step 6 — Widen the sample (every 3 iterations).**
+After every third iteration (check the number of `## Iteration N` headings in `docs/sitting/progress.txt`), add more documents to the sample from era groups that are underrepresented or not yet in the pilot. K=5 per group still applies to new groups. Draw a fresh held-out set for new groups only. Expand the regression set proportionally, maintaining the era distribution floor (≥5 colonial, ≥3 mid-era, ≥3 modern).
 
-If this is iteration 10 (or a multiple of 10), stop regardless and go to Step 7.
+**Step 7 — Check completion.**
+Count the fraction of sample documents that are fully artifact-free. If ≥95% are clean, stop and report success. If all remaining artifact categories affect only 1–2 documents each and the per-doc rate is already ≥95%, also stop — do not grind on rare edge cases. Otherwise, go to Step 1.
 
-**Step 7 — Ask for approval to continue.**
+If this is iteration 10 (or a multiple of 10), stop regardless and go to Step 8.
+
+**Step 8 — Ask for approval to continue.**
 Present:
+- Current clean-doc rate vs. 95% target
 - Resolved artifact categories (with counts at baseline vs. now)
-- Remaining unresolved categories and their current counts
+- Remaining unresolved categories and their current counts, and how many documents each affects
 - Any artifacts that appear unfixable without changing html2text configuration
 
 Ask: "Should I continue iterating?"
