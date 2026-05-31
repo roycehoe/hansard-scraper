@@ -1,12 +1,19 @@
-from typing import Optional
+from typing import Any, Optional
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, model_validator
 from pydantic.alias_generators import to_camel
 from sqlmodel import Field, SQLModel
 
 
 class HandsardSittingDateResponse(SQLModel, table=True):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def strip_nul(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            return {k: v.replace("\x00", "") if isinstance(v, str) else v for k, v in data.items()}
+        return data
 
     id: int | None = Field(default=None, primary_key=True)
 
