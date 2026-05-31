@@ -8,7 +8,6 @@ from crud.handsard_sitting_date_response import CRUDHandsardSittingDateResponse
 from crud.handsard_website_response import CRUDHandsardWebsiteResponse
 from crud.sitting_a2b import CRUDSittingA2b
 from crud.sitting_annexure import CRUDSittingAnnexure
-from crud.sitting_attendance import CRUDSittingAttendance
 from crud.sitting_ptba import CRUDSittingPtba
 from crud.sitting_section import CRUDSittingSection
 from crud.sitting_vernacular import CRUDSittingVernacular
@@ -52,7 +51,6 @@ def populate_handsard_sitting_dates(session: Session):
     fetched = asyncio.run(_fetch_all_sitting_dates(dates_to_fetch))
 
     sitting_crud = CRUDHandsardSittingDateResponse(session)
-    attendance_crud = CRUDSittingAttendance(session)
     ptba_crud = CRUDSittingPtba(session)
     section_crud = CRUDSittingSection(session)
     annexure_crud = CRUDSittingAnnexure(session)
@@ -72,9 +70,6 @@ def populate_handsard_sitting_dates(session: Session):
         sitting_crud.create(data.response)
         sitting_id = data.response.id
 
-        for record in data.attendance:
-            record.sitting_id = sitting_id
-            attendance_crud.create(record)
         for record in data.ptba:
             record.sitting_id = sitting_id
             ptba_crud.create(record)
