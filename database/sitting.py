@@ -1,9 +1,13 @@
 from typing import Optional
 
+from pydantic import ConfigDict
+from pydantic.alias_generators import to_camel
 from sqlmodel import Field, SQLModel
 
 
 class Sitting(SQLModel, table=True):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     id: int | None = Field(default=None, primary_key=True)
 
     # Shared fields (old and new format)
@@ -12,7 +16,7 @@ class Sitting(SQLModel, table=True):
     volume_no: Optional[int] = None
     sitting_no: Optional[int] = None
     sitting_date: Optional[str] = None
-    online_pdf_file_name: Optional[str] = None
+    online_pdf_file_name: Optional[str] = Field(default=None, alias="onlinePDFFileName")
     html_full_content: Optional[str] = None
     ptba_from: Optional[str] = None
     ptba_to: Optional[str] = None
