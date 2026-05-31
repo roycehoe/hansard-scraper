@@ -17,4 +17,331 @@ Failure catalogue (from sample):
 - Short names ×~5 — e.g. "Mr Jeyaretnam"
 - Role-only ×~3 — e.g. "The Prime Minister"
 
-Target set denominator not yet established (Setup Step 1 not run).
+---
+
+## Setup — Exclusion Validation — 2026-05-31
+
+### Structural non-MPs
+
+Queried speaker values matching presiding-officer strings. Confirmed:
+- `Mr Speaker` ×18,122 — all transcripts show Speaker chair utterances, no genuine MPs
+- `Mr Deputy Speaker` ×2,132 — same; also variant forms:
+  - `Mr Deputy Speaker (Mr Mammen)` ×43
+  - `Mr Deputy Speaker (Mr Kandasamy)` ×19
+  - `Mr Deputy Speaker (Mr G. Kandasamy)` ×11
+  - `Mr Deputy Speaker (Mr John Mammen)` ×9
+  - `Mr Deputy Speaker (Dr Fong Kim Heng)` ×7
+  - `Mr Deputy Speaker (Mr R. C. H. Lim)` ×4
+  - `The Deputy Speaker (Mr John Mammen)` ×1
+  - `Mr Deputy Speakerin the Chair` ×1 (OCR artifact)
+  - `Mr Speaker;` ×1 (OCR artifact)
+- `Hon. Members` ×748 — collective reference
+- `The Clerk` ×7 — clerk of parliament
+
+Exclusion pattern: exact match on known strings + ILIKE prefix on `Mr Deputy Speaker (` and `The Deputy Speaker (`.
+
+**Verdict: definition is correct — no genuine MPs captured.**
+
+### Section headers (all-caps)
+
+Queried speaker values matching `^[A-Z][A-Z0-9 /(),.\-]+$`. All 8,204 matches are section headers, budget headings, bill titles, or procedural markers (e.g. `ADJOURNMENT` ×4,167, `EXPENDITURE POLICY` ×165, `CONCLUSION` ×118). Colonial-era sample (parl≤3) confirmed: `ADJOURNMENT`, `GENERAL ELECTIONS TO LEGISLATIVE ASSEMBLY`, `RUBBER DEALERS (AMENDMENT) BILL` — all procedural. No colonial MP names appear in all-caps.
+
+**Verdict: definition is correct — no genuine MPs captured.**
+
+---
+
+## Setup — Target Set — 2026-05-31
+
+| Count | Category |
+|-------|----------|
+| 326,960 | Total Speech rows with non-null speaker |
+| 21,105 | Structural non-MPs excluded |
+| 8,204 | Section headers excluded |
+| 0 | Overlap |
+| **297,651** | **Denominator (matchable target set)** |
+
+Note: `speech.mp_id` column does not yet exist in the DB. Matching is computed in-memory by running the resolution pipeline and checking against the `mp_id_lookup` dict.
+
+---
+
+## Setup — Baseline — 2026-05-31
+
+Stratified sample: K=5 pilot + K=3 held-out per (report_type, era) group.
+Era buckets: colonial = parl≤3, mid = 4–11, modern = 12+ (no modern-era speeches in corpus — all groups are colonial or mid).
+Groups: 32 (17 report_types × up to 2 eras; `written-answer-na` and `yang-di-message` have only one era each).
+Sample sizes: pilot=160, held_out=93, regression=30.
+
+**Pilot baseline: 24/160 = 15.0%**
+
+| report_type | matched | total | rate |
+|---|---|---|---|
+| admin-oaths | 0 | 10 | 0.0% |
+| bill | 1 | 10 | 10.0% |
+| budget | 1 | 10 | 10.0% |
+| deputy-speaker | 0 | 10 | 0.0% |
+| matter-adj | 2 | 10 | 20.0% |
+| ministerial-statement | 4 | 10 | 40.0% |
+| misc | 0 | 10 | 0.0% |
+| motion | 0 | 10 | 0.0% |
+| obituary-speech | 1 | 10 | 10.0% |
+| oral-answer | 4 | 10 | 40.0% |
+| personal-explanation | 0 | 10 | 0.0% |
+| president-address | 1 | 10 | 10.0% |
+| speaker | 0 | 10 | 0.0% |
+| tribute | 0 | 10 | 0.0% |
+| written-answer | 5 | 10 | 50.0% |
+| written-answer-na | 5 | 5 | 100.0% |
+| yang-di-message | 0 | 5 | 0.0% |
+
+---
+
+## Iteration 6 — 2026-05-31
+
+### can_match — admin-oaths — Mr. period-after-title OCR artifact
+
+**Root cause:**
+The preprocess step's `Mr.` normalization was applied BEFORE extracting the inner name
+from a role+name parenthetical. So `The Second Deputy Prime Minister (Foreign Affairs)
+(Mr. S. Rajaratnam)` → inner `Mr. S. Rajaratnam` → normalization had already fired on
+the full string and had no effect → `strip_title` couldn't strip `Mr.` (period).
+
+**Fix:** Move the `Mr./Dr./Mrs./Ms.` normalization to AFTER the parenthetical extraction,
+so it applies to the extracted inner name.
+
+**Outcome:** KEPT
+- Pilot: 140/194 → 141/194 = 72.7% (+1)
+- Held-out: 81/113 = 71.7% (unchanged)
+- Regression: 40/40 = 100.0%
+
+---
+
+## CEILING REACHED — 2026-05-31
+
+### Remaining failures: 53/194 in pilot
+
+| Category | Count | Resolvable? |
+|---|---|---|
+| parl=0, MP not in table | 39 | No — colonial LA era not on parliament.gov.sg |
+| Role-only (`The Prime Minister`, `The Chairman`) | 14 | No — no name present |
+
+All remaining failures are permanently unresolvable with current data.
+
+### Full-corpus ceiling
+
+| Metric | Value |
+|---|---|
+| Denominator (matchable) | 293,999 |
+| parl=0 matchable speeches | 86,612 (29.5%) |
+| Estimated ceiling (if ~32% of parl=0 resolve via fallback) | ~80% |
+| 95% target | **Not achievable without expanding Mp table** |
+
+**Root cause of ceiling:** 29.5% of matchable speeches (86,612) are from parliament.gov.sg
+volumes 12–23, mapped to parliament_number=0. These represent the colonial Legislative
+Assembly era (pre-independence). The `scrape_mps_by_parliament.py` script only scrapes
+elected Parliament members from parliament.gov.sg, which does not cover the LA era.
+Approximately 68% of parl=0 speeches have no matching Mp row at any parliament.
+
+**To reach 95%:** Populate the Mp table with colonial Legislative Assembly members
+(pre-1965 era), then re-run `_populate_speech_mp_ids`.
+
+---
+
+## Iteration 5 — 2026-05-31
+
+### can_match — all types — collective refs and artifacts in denominator
+
+**Root cause:**
+7 pilot failures were non-speaker strings not caught by the existing exclusion patterns:
+`An hon. Member`, `Some hon. Members`, `Non-Residents`, `Tributes by...`,
+`(Announcement by Mr Speaker)`, `(Presence in Gallery)`, `_Moving Ahead_`.
+These inflate the denominator and count as failures even though they're parsing
+artifacts or collective references, not resolvable individual MP speakers.
+
+**Fix:** Add explicit skip in `_populate_speech_mp_ids` for:
+- Strings in a `_NON_SPEAKERS` set (collective refs, paragraph titles)
+- Strings starting with `(` (parenthetical announcements)
+- Strings starting with `_` (markdown artifacts like `_Moving Ahead_`)
+
+Also update full-corpus exclusion analysis with corrected SQL (fixed `LIKE '_%'` bug).
+
+**Outcome:** KEPT
+- Pilot: 140/194 = 72.2% (denominator reduced from 202→194 by excluding 8 artifacts)
+- Held-out: 81/113 = 71.7%
+- Regression: 40/40 = 100.0%
+
+**Full-corpus ceiling analysis:**
+- Denominator: 293,999 matchable speeches (after all exclusions)
+- parl=0 matchable: 86,612 (29.5% of denominator)
+- Most parl=0 MPs are absent from the Mp table (colonial/LA era, vol 12–23, not on parliament.gov.sg)
+- Hard ceiling: ~75–80% match rate
+- **The 95% target is unachievable without expanding the Mp table to cover the colonial legislative assembly era**
+
+---
+
+## Iteration 4 — 2026-05-31
+
+### can_match — all types — surname-only short names and name variants
+
+**Root cause:**
+After Iterations 1–3, 14 pilot failures were single-word surnames (`Mr Jeyaretnam`,
+`Prof. Jayakumar`, `Mr Dhanabalan`, `Mr Barker`, `Mr Bani`) or full-name variants
+(`Joshua Benjamin Jeyaretnam` → `J B Jeyaretnam`, `Ya'acob` → `Yaacob`). The cascade
+has no suffix/inverted-surname lookup and `Barker, E.W.` (inverted format) can't be
+found by last-word. Also `Mr. S. Rajaratnam` fails because `strip_title` doesn't handle
+`Mr.` (period-after-title).
+
+**Fix:** Add 35 entries to `_MANUAL_OVERRIDES` covering: Jeyaretnam/parl 5,6,9;
+Jayakumar/parl 5–11; Dhanabalan/parl 4–8; Barker/parl 1–6; Bani/parl 1;
+Joshua Benjamin Jeyaretnam/parl 5–6; Ya'acob Bin Mohamed/parl 1–4;
+S Rajaratnam/parl 1–6.
+
+**Backward-compatibility:**
+Override keys are period-normalized single surnames or unambiguous full names.
+Regression: 40/40 = 100%.
+
+**Outcome:** KEPT (sample widened at Iter 3; comparing on new 202-speech pilot)
+- Pilot: 140/202 = 69.3%
+- Held-out: 81/114 = 71.1%
+- Regression: 40/40 = 100.0%
+- personal-explanation: 3/10 → 16/20 = 80%
+- bill: now 10/10 = 100%
+
+---
+
+## Iteration 3 — 2026-05-31
+
+### can_match — all types — parliament=0 fallback to colonial parliaments
+
+**Root cause:**
+`report.parliament_number=0` is assigned to volumes 12–23 (the mapping was indeterminate
+for those volumes). The Mp table stores all colonial/LA-era MPs at parliaments 1–3, so
+lookups keyed by parliament=0 always fail — even for well-known politicians like Lee Kuan Yew.
+
+**Proposed fix:**
+After `resolve_canonical_name` returns None and `parliament==0`, retry against parliaments
+1, 2, 3 in order. Take the first match found. Update the effective parliament for the
+mp_id_lookup step accordingly.
+
+**Backward-compatibility:**
+Only fires when parliament==0. All 30 regression speeches are at parl≥1 — no change.
+Iteration 1+2 newly-passing cases are also at parl≥1.
+
+**Outcome:** KEPT
+- Pilot: 81/160 → 98/160 (50.6% → 61.3%), +17 newly matched
+- Held-out: 48/93 → 59/93, +11 flipped
+- Regression: 30/30 → 30/30, 0 new failures
+
+Sample widened after Iteration 3 (Step 7): added 42 pilot + 21 held-out + 10 regression
+speeches from high-failure groups (tribute, motion, misc, personal-explanation, yang-di-message).
+New totals: pilot=202, held_out=114, regression=40.
+
+---
+
+## Iteration 2 — 2026-05-31
+
+### can_match — all types — role+name pattern extraction
+
+**Affected Speech IDs (pilot):** ~45 (role+name pattern)
+
+**Speaker string (failing):**
+`The Leader of the House (Mr Wong Kan Seng)`, `The Prime Minister (Mr Goh Chok Tong)`,
+`The Minister for Finance (Dr Richard Hu Tsu Tau)`,
+`The Minister of State for Education (Encik Sidek bin Saniff)`,
+`The Minister of State, Prime Minister's Office (Tuan Haji Ya'acob Bin Mohamed)`
+
+**Speaker string (passing, same report_type):**
+`Mr Lee Kuan Yew`, `Dr Goh Keng Swee`, `Mr Wong Kan Seng`
+
+**Root cause:**
+After Iteration 1's constituency-strip, the preprocess guard (`Mr|Mrs|Dr|...`) preserved
+role+name parens correctly for most titles but missed `Tuan Haji`/`Haji` Islamic honorifics,
+causing `(Tuan Haji Ya'acob Bin Mohamed)` to be incorrectly stripped. More importantly,
+preserved parens still produced `The Minister for Finance (Dr Goh Keng Swee)` which the
+cascade cannot match.
+
+**Proposed fix:**
+Extend the parenthetical handler: when the inner content starts with a known title prefix
+(including `Tuan Haji`, `Haji`), use the inner content as the speaker name entirely rather
+than the role string. Replaces the constituency-strip guard check.
+
+**Backward-compatibility:**
+Iteration 1's newly-passing constituency-strip cases all fall into the `else` branch
+(non-title inner content) — no change. Regression set: 0 failures.
+
+**Outcome:** KEPT
+- Pilot: 50/160 → 81/160 (31.2% → 50.6%), +31 newly matched
+- Held-out: 34/93 → 48/93, +14 flipped
+- Regression: 30/30 → 30/30, 0 new failures
+- obituary-speech type: 1/10 → 10/10 (complete)
+
+---
+
+## Setup — Failure Catalogue — 2026-05-31
+
+### Pattern A: plain-name-unresolved — 45 pilot failures
+
+Names that have a title stripped but still don't resolve via the cascade.
+Subcategories (to be confirmed by investigation):
+- Colonial-era MPs at parliament_number=0 (parl 0 used for vol 12–23 where parliament is indeterminate) vs Mp table entries at parl 1
+- Short names (`Mr Barker`, `Mr Jeyaretnam`, `Mr Hart`)
+- Other unresolved full names (`Dr Toh Chin Chye` at parl=0)
+
+Examples: `Dr Toh Chin Chye` (parl=0), `Mr Barker` (parl=5), `Mr Jeyaretnam` (parl=5), `Mr Hart` (parl=0)
+
+### Pattern B: role+name — 42 pilot failures
+
+`The X (Name)` format. Current logic strips the title from the full string (`The Minister for Finance (Dr Goh Keng Swee)` → `Minister for Finance (Dr Goh Keng Swee)`) but the cascade can't resolve that.
+Fix: extract the parenthetical content, strip inner title, then resolve.
+
+Examples: `The Minister for Finance (Dr Goh Keng Swee)` (parl=0), `The Minister of State for Finance (Mr Tang See Chim)` (parl=2), `The Senior Minister of State for Education (Dr Tay Eng Soon)` (parl=7), `The Minister for Health (Mr A. J. Braga)` (parl=0)
+
+### Pattern C: constituency-suffix — 39 pilot failures
+
+`Name (Constituency)` format. Current logic passes the full string to `resolve_canonical_name`; the parenthetical is not stripped before name lookup.
+Fix: strip first parenthetical before calling `resolve_canonical_name` (same as `_parse_name_and_location` in sitting_attendance.py).
+
+Examples: `Mr A. P. Rajah (Farrer Park)` (parl=0), `Dr Dixie Tan (Ulu Pandan)` (parl=7), `Mr J. F. Conceicao (Katong)` (parl=3), `Dato Abdul Hamid Bin Haji Jumat (Geylang Serai)` (parl=0)
+
+### Pattern D: role-only — 10 pilot failures
+
+---
+
+## Iteration 1 — 2026-05-31
+
+### can_match — all types — constituency suffix in speaker string
+
+**Affected Speech IDs (pilot):** ~39 (constituency-suffix pattern)
+
+**Speaker string (failing):**
+`Dr Tan Cheng Bock (Ayer Rajah)`, `Mr J. F. Conceicao (Katong)`, `Dr Dixie Tan (Ulu Pandan)`,
+`Mr Teo Ser Luck (for the Minister for Community Development, Youth and Sports)`,
+`Inche Sha'ari Bin Tadin (for the Minister for Culture)`
+
+**Speaker string (passing, same report_type):**
+`Mr Christopher de Souza`, `Mr Khaw Boon Wan`, `Dr Goh Keng Swee`
+
+**Expected Mp.name:**
+`Tan Cheng Bock`, `J.F. Conceicao` (inverted), `Dixie Tan` (or `Tan Dixie`), etc.
+
+**Root cause:**
+`_populate_speech_mp_ids` passes the raw `Speech.speaker` string (after rstrip(':')) directly
+to `strip_title` and then `resolve_canonical_name`. When the speaker string carries a trailing
+constituency or role parenthetical (`(Ayer Rajah)`, `(Nominated Member)`, `(for the Minister...)`),
+the cascade cannot match the name because the lookup keys don't include the parenthetical.
+
+**Proposed fix:**
+Pre-processing step before `strip_title`: strip the trailing parenthetical from the raw speaker
+string UNLESS its content starts with a title prefix (`Mr`, `Mrs`, `Dr`, etc.), which signals
+a role+name pattern (`The Minister (Mr Name)`) that should be handled separately.
+
+**Backward-compatibility:**
+All 24 currently-passing pilot speeches have plain names with no parenthetical — the strip is
+a no-op for them. Confirmed by simulation: 0 regressions in pilot + regression set.
+
+**Outcome:** KEPT
+- Pilot: 24/160 → 50/160 (15.0% → 31.2%), +26 newly matched
+- Held-out: 22/93 → 34/93, +12 flipped
+- Regression: 30/30 → 30/30, 0 new failures
+
+`The Chairman`, `The Chief Minister` — no name present, unresolvable without role→MP mapping.
+These are permanently unresolvable. Should be excluded from denominator if they are structural roles (not individual MPs). To be confirmed.
