@@ -1,20 +1,18 @@
 # Singapore Parliamentary Record
 
-A structured dataset of Singapore's parliamentary proceedings, from the colonial Legislative Assembly (1955) through the present Parliament. Every sitting, every report, every attributed speech — stored in PostgreSQL and queryable by MP, topic, date, or parliament.
-
-Built for researchers studying Singapore's political history, legislative behaviour, and parliamentary language.
+Pipeline and database for Singapore's parliamentary record, from the colonial Legislative Assembly (1955) to the present. Records are fetched from SPRS, parsed into individual speeches with speaker attribution, and stored in PostgreSQL.
 
 ## Coverage
 
-| Dimension | Detail |
+| | |
 |---|---|
 | Date range | 1955 – present |
-| Parliaments | 0 (colonial Legislative Assembly) through 15 |
-| Records | ~22,000 parliamentary items |
-| Report types | 21 categories — oral answers, written answers, bills, motions, ministerial statements, budget debates, and more |
-| Speaker attribution | Extracted for all records where the source material names a speaker |
-| Sitting metadata | Full attendance, permissions to be absent, and debate sections (Parliament 13+, 2015–present) |
-| MP registry | All MPs by parliament, sourced from parliament.gov.sg |
+| Parliaments | 0 (colonial) through 15 |
+| Records | ~22,000 |
+| Report types | 21 — oral answers, written answers, bills, motions, ministerial statements, budget debates, and more |
+| Speaker attribution | Where source material names a speaker |
+| Sitting metadata | Attendance, PTBA, and debate sections (Parliament 13+) |
+| MP registry | All MPs by parliament, from parliament.gov.sg |
 
 ## Quick start
 
@@ -24,11 +22,11 @@ Requires Python 3.11+, [Poetry](https://python-poetry.org), and Docker.
 git clone https://github.com/roycehoe/handsard-scraper.git
 cd handsard-scraper
 poetry install
-docker-compose up -d        # start a local PostgreSQL instance
+docker-compose up -d        # local PostgreSQL
 python script.py            # fetch and parse the full corpus
 ```
 
-To populate the MP registry (run separately before querying `mp_id` links):
+Populate the MP registry separately (needed before `mp_id` foreign keys resolve):
 
 ```bash
 python scripts/scrape_mps_by_parliament.py
@@ -36,30 +34,28 @@ python scripts/scrape_mps_by_parliament.py
 
 ## Documentation
 
-- [Data Dictionary](docs/data-dictionary.md) — entity semantics, field meanings, all report types explained, and data quality caveats. Start here if you're working with the data.
-- [Parsing Internals](docs/parsing.md) — HTML artifact details, format quirks, and edge cases. Read before touching parsing code.
+- [Data Dictionary](docs/data-dictionary.md) — entity semantics, field meanings, report types, data quality caveats.
+- [Parsing Internals](docs/parsing.md) — HTML artifact details and edge cases. Read before touching parsing code.
 - [Vision](docs/vision.md) — project goals and strategy.
 
-## Citing this work
-
-If you use this dataset in your research, please cite:
+## Citation
 
 > Royce Hoe (2026). *Singapore Parliamentary Record*. GitHub. https://github.com/roycehoe/handsard-scraper
 
 ## Known limitations
 
-- **Pre-independence records** from 1955–1965 cover the colonial Legislative Assembly and the State of Singapore — not the Republic of Singapore Parliament.
-- **~490 documents are structurally unattributable** — appendix link indexes and colonial-era procedural orders with no named author. These are intentional exclusions, not parsing failures.
-- **Some title fields contain encoding artifacts** from the source API. `markdown_content` has correct Unicode; `title` may not.
-- **MP identity linking is incomplete** for colonial-era and early-parliament records.
+- Records from 1955–1965 predate independence and cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament.
+- ~490 documents have no speaker attribution — appendix indexes and colonial-era procedural orders where no author is named in the source.
+- Some `title` fields have encoding artifacts from the source API; `markdown_content` has correct Unicode.
+- MP identity linking (`mp_id`) is incomplete for colonial-era and early-parliament records.
 
-See [docs/data-dictionary.md](docs/data-dictionary.md) for the full list.
+Full details in [docs/data-dictionary.md](docs/data-dictionary.md).
 
 ## Development
 
 ```bash
-ruff check .        # lint
-ruff check --fix .  # lint and auto-fix
+ruff check .
+ruff check --fix .
 ```
 
 ## License
