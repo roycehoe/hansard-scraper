@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime
 
 from sqlmodel import Session, SQLModel, create_engine
 
@@ -33,7 +34,11 @@ from gateway.handsard_report import get_handsard_report_response
 from gateway.handsard_search import get_handsard_search_results
 from logs import logger
 from schemas.handsard_search_result import HandsardSearchResult
-from services.handsard_sitting_date_response import build_handsard_sitting_date_response
+from services.handsard_sitting_date_response import (
+    build_new_handsard_sitting_date_response,
+    build_old_handsard_sitting_date_response,
+)
+from settings import settings
 from services.handsard_website import build_handsard_website_response
 from services.report import build_report
 from services.sitting import build_sitting
@@ -153,7 +158,10 @@ def populate_sitting_dates(session: Session):
             logger.warning(f"Skipping {sitting_date}: {e}")
             continue
 
-        data = build_handsard_sitting_date_response(result)
+        if datetime.strptime(sitting_date, "%d-%m-%Y") >= settings.sitting_date_format_change:
+            data = build_new_handsard_sitting_date_response(result)
+        else:
+            data = build_old_handsard_sitting_date_response(result)
         sitting_crud.create(data.response)
         sitting_id = data.response.id
 
@@ -187,7 +195,10 @@ def populate_sittings(session: Session):
         except HansardGatewayError as e:
             logger.warning(f"Skipping {sitting_date}: {e}")
             continue
-        data = build_handsard_sitting_date_response(result)
+        if datetime.strptime(sitting_date, "%d-%m-%Y") >= settings.sitting_date_format_change:
+            data = build_new_handsard_sitting_date_response(result)
+        else:
+            data = build_old_handsard_sitting_date_response(result)
         crud.create(build_sitting(data.response))
 
 

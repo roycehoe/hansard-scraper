@@ -20,7 +20,61 @@ class HandsardSittingDateData:
     a2b: list[SittingA2b]
 
 
-def build_handsard_sitting_date_response(result: dict) -> HandsardSittingDateData:
+def build_old_handsard_sitting_date_response(result: dict) -> HandsardSittingDateData:
+    """Handles the flat response format returned for sittings before 18 Aug 2015."""
+
+    def _to_int(value) -> int | None:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    response = HandsardSittingDateResponse(
+        parlement_no=_to_int(result.get("parlNo")),
+        session_no=_to_int(result.get("sessionNo")),
+        volume_no=_to_int(result.get("volumeNo")),
+        sitting_no=_to_int(result.get("sittingNo")),
+        sitting_date=result.get("sittingDate"),
+        online_pdf_file_name=result.get("onlinePDFFileName"),
+    )
+
+    attendance = [
+        SittingAttendance(
+            mp_name=item.get("mpName"),
+            attendance=item.get("attendance"),
+            location_name=item.get("locationName"),
+        )
+        for item in result.get("attendanceList") or []
+        if isinstance(item, dict)
+    ]
+
+    ptba = [
+        SittingPtba(
+            mp_name=item.get("mpName"),
+            from_date=item.get("from"),
+            to_date=item.get("to"),
+            start_dt_text=item.get("startDtText"),
+            end_dt_text=item.get("endDtText"),
+            start_dt_flag=item.get("startDtFlag"),
+            end_dt_flag=item.get("endDtFlag"),
+        )
+        for item in result.get("ptbaList") or []
+        if isinstance(item, dict)
+    ]
+
+    return HandsardSittingDateData(
+        response=response,
+        attendance=attendance,
+        ptba=ptba,
+        sections=[],
+        annexures=[],
+        vernaculars=[],
+        a2b=[],
+    )
+
+
+def build_new_handsard_sitting_date_response(result: dict) -> HandsardSittingDateData:
+    """Handles the nested response format returned for sittings from 18 Aug 2015 onwards."""
     metadata = result.get("metadata") or {}
 
     response = HandsardSittingDateResponse(
