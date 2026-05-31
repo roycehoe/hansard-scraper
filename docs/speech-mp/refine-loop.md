@@ -117,23 +117,35 @@ From `scripts/speech_speaker_match_rate.py` (seed=42, K=10 per report_type):
 
 # Method
 
+**The setup is not bookkeeping.** Its outputs determine whether the goal as written is correct before any iteration begins. Do not start iterating against a wrong target.
+
 ## Setup
 
-**Step 1 — Establish the target set denominator.**
-Query the DB directly (do not rely on the sampling script) to count:
+**Step 1 — Validate the exclusion definitions.**
+Before counting the denominator, verify empirically that the two exclusion categories are correctly defined. For each category, inspect 5–10 candidate excluded strings drawn from the actual DB:
+
+- *Structural non-MPs*: query for `speaker` values matching known exclusion strings (`Mr Speaker`, `Mr Deputy Speaker`, `Hon. Members`, etc.) and read the surrounding transcript for a sample of matches. Confirm none are genuine MPs whose name happens to start with a presiding-officer prefix.
+- *Section headers*: query for all-caps `speaker` values and inspect a sample. Confirm that no colonial-era speaker names are captured — all-caps formatting was common in old transcripts and some genuine MPs may appear in all-caps.
+
+If the pattern is too broad (catching real MPs) or too narrow (missing exclusions), revise the exclusion definition before proceeding. Record findings in `docs/speech-mp/progress.txt` under `## Setup — Exclusion validation`. If the definition needs changing, revise the Goal section of this document too.
+
+**Step 2 — Establish the target set denominator.**
+Query the DB directly to count:
 - Total `Speech` rows with non-null `speaker`
-- Rows matching the structural-non-MP exclusion pattern (query for known exclusion strings)
-- Rows matching the section-header pattern (all-caps `speaker` with no lowercase letters)
+- Rows matching the validated structural-non-MP exclusion pattern
+- Rows matching the validated section-header exclusion pattern
 - Denominator = total − excluded
 
 Record all counts in `docs/speech-mp/progress.txt` under `## Setup — Target set`.
 
-**Step 2 — Draw a stratified sample.**
-Query `Speech` rows with non-null, non-excluded `speaker`, stratified by `report_type`. Within each type, draw three sets:
+**Step 3 — Draw a stratified sample.**
+Query `Speech` rows with non-null, non-excluded `speaker`, stratified by **both `report_type` and parliament era**. Era derivation: colonial = `parliament_number` ≤ 3 (roughly vol 1–35), mid-era = 4–11, modern = 12+. Draw K=5 pilot and K=3 held-out per `(report_type, era)` group where enough rows exist; collapse era strata if a type has too few rows across eras to fill both.
 
-- **Pilot** (K=5 per type): used for diagnosis and inspection
-- **Held-out** (K=3 per type): not inspected during diagnosis; used only in Loop Step 5 for validation. If a type has fewer than 4 speeches total, draw all into pilot and mark as having no held-out set.
-- **Regression** (~30 total, from speeches that already resolve to a non-null `mp_id` at baseline): checked after every fix to catch regressions
+Three sets:
+
+- **Pilot** (K=5 per group): used for diagnosis and inspection
+- **Held-out** (K=3 per group): not inspected during diagnosis; used only in Loop Step 6 for validation. If a group has fewer than 4 speeches total, draw all into pilot and mark as having no held-out set.
+- **Regression** (~30 total, from speeches that already resolve to a non-null `mp_id` at baseline): checked after every fix to catch regressions. Maintain era balance: ≥5 colonial, ≥5 mid-era, ≥10 modern.
 
 Write all three sets of Speech IDs to `docs/speech-mp/sample.json`:
 ```json
@@ -146,8 +158,11 @@ Write all three sets of Speech IDs to `docs/speech-mp/sample.json`:
 
 Do not re-sample in later iterations. The same IDs must be tracked throughout so before/after comparisons are valid.
 
-**Step 3 — Record the baseline.**
+**Step 4 — Record the baseline.**
 Run `scripts/speech_speaker_match_rate.py` restricted to the pilot IDs. Record per-type match rates under `## Setup — Baseline` in `docs/speech-mp/progress.txt`. This is the reference point for all iterations.
+
+**Step 5 — Catalogue failure modes.**
+Walk through every failing pilot speech and classify its root cause. Group by shared pattern — do not write one entry per speech. For each group record: the failure pattern, representative `speaker` strings, affected `report_type` and era, and estimated count in the pilot. Write the catalogue to `docs/speech-mp/progress.txt` under `## Setup — Failure catalogue`. This catalogue is the direct input to Loop Step 2.
 
 ## Loop
 
@@ -157,15 +172,17 @@ The authoritative iteration count is the number of `## Iteration N` headings in 
 Apply the current `_populate_speech_mp_ids` logic to every Speech ID in the pilot, held-out, and regression sets. Record for each: `speech_id`, `report_type`, `speaker`, `parliament_number`, matched (`mp_id` non-null) or not.
 
 **Step 2 — Identify the highest-impact unresolved `can_match` failure.**
-From the current failure catalogue, pick the pattern affecting the most pilot speeches.
+From the current failure catalogue (Setup Step 5, or the previous iteration's updated catalogue), pick the pattern affecting the most pilot speeches.
 
-Priority order:
+Before selecting a target, first **group all current failures by root cause** — look across all failing speeches of the same `(report_type, era)` and identify shared structural patterns. A fix written against a pattern covers all instances; a fix written against one speech may not generalise.
+
+Priority order within the catalogue:
 1. Pre-processing failures (constituency suffix, role+name extraction) — fix in `_populate_speech_mp_ids` before calling `resolve_canonical_name`
 2. Cascade misses for known MPs — add to `_MANUAL_OVERRIDES` in `services/sitting_attendance.py`
 3. Structural exclusions — add to the exclusion list in `_populate_speech_mp_ids`
 
 **Step 3 — Investigate.**
-Open 2–3 failing Speech rows exhibiting the pattern. Note the exact `speaker` string, the `parliament_number`, and the expected `Mp.name`. Also open 1–2 **passing** Speech rows from the **same `report_type`** — understanding what a passing case looks like is required to write a correct fix without regressing it.
+Open 2–3 failing Speech rows exhibiting the target pattern. Note the exact `speaker` string, the `parliament_number`, and the expected `Mp.name`. Also open 1–2 **passing** Speech rows from the **same `report_type` and era** — understanding what a passing case looks like is required to write a correct fix without regressing it.
 
 **Step 4 — Log findings.**
 Append to `docs/speech-mp/progress.txt` under a `## Iteration N — YYYY-MM-DD` heading:
