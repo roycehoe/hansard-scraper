@@ -192,3 +192,36 @@ More complex variants (2-line titles, subtitle passthrough) caused held-out regr
 KEPT. standalone-**: 6/25 → 4/25 docs (pilot), lines 182 → 66.
 Held-out: 3 docs (unchanged), total lines 27 → 8 (70% reduction).
 Regression: 149 → 78 lines (improved). No new artifacts.
+
+
+## Iteration 4 — 2026-05-31
+
+### Artifact: stray-dunder
+
+**Affected IDs:**
+1079, 990 confirmed; visual inspection ~10/25 pilot docs in vol 38-70 era.
+
+**HTML snippet (exhibiting artifact):**
+```html
+<div id="adjTime" align="center"><i></i></div>
+<div align="center"><i>The House met at 02:30 PM</i></div>
+```
+
+**Markdown output (before fix):**
+```
+_Thursday, 15th March, 1979_
+__
+_The House met at 02:30 PM_
+```
+
+**Root cause:**
+Empty `<i></i>` inside `<div id="adjTime">` between date and meeting-time lines.
+html2text renders `<i></i>` as `__`.
+
+**Proposed fix:**
+`_remove_sitting_empty_italic`: strip lines whose stripped value is exactly `__`.
+Backward-safe: `__` does not appear as intentional content in Hansard text.
+
+**Outcome:**
+KEPT. stray-dunder: 3/25 → 0/25 (pilot), 2/15 → 0/15 (held-out), 3/20 → 0/20 (regression).
+No new artifacts on any set.
