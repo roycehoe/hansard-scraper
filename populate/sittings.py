@@ -9,9 +9,10 @@ from services.sitting import build_sitting
 def populate_sittings(session: Session):
     all_responses = CRUDHandsardSittingDateResponse(session).get_all()
     crud = CRUDSitting(session)
-    for i, response in enumerate(all_responses, start=1):
-        logger.info(f"{i}/{len(all_responses)}: {response.sitting_date}")
-        if crud.exists_by_sitting_date(response.sitting_date):
-            logger.info("Already exists, skipping")
-            continue
+    existing_dates = crud.get_all_sitting_dates()
+    to_process = [r for r in all_responses if r.sitting_date not in existing_dates]
+    logger.info(f"Building {len(to_process)}/{len(all_responses)} sittings ({len(existing_dates)} already in DB)")
+
+    for i, response in enumerate(to_process, start=1):
+        logger.info(f"{i}/{len(to_process)}: {response.sitting_date}")
         crud.create(build_sitting(response))
