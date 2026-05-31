@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlmodel import Session
 
 from crud.handsard_sitting_date_response import CRUDHandsardSittingDateResponse
@@ -11,7 +13,15 @@ from crud.sitting_vernacular import CRUDSittingVernacular
 from exceptions import HansardGatewayError
 from gateway.handsard_report import get_handsard_report_response
 from logs import logger
-from services.handsard_sitting_date_response import build_handsard_sitting_date_response
+from services.handsard_sitting_date_response import (
+    build_new_handsard_sitting_date_response,
+    build_old_handsard_sitting_date_response,
+)
+from settings import settings
+
+
+def _parse_sitting_date(sitting_date: str) -> datetime:
+    return datetime.strptime(sitting_date, "%d-%m-%Y")
 
 
 def populate_sitting_dates(session: Session):
@@ -35,7 +45,11 @@ def populate_sitting_dates(session: Session):
             logger.warning(f"Skipping {sitting_date}: {e}")
             continue
 
-        data = build_handsard_sitting_date_response(result)
+        if _parse_sitting_date(sitting_date) >= settings.sitting_date_format_change:
+            data = build_new_handsard_sitting_date_response(result)
+        else:
+            data = build_old_handsard_sitting_date_response(result)
+
         sitting_crud.create(data.response)
         sitting_id = data.response.id
 

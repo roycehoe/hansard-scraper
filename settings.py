@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -5,6 +7,8 @@ class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env")
 
     database_url: str = "postgresql://user:password@localhost:5432/postgres"
+
+    sitting_date_format_change: datetime = datetime(2015, 8, 18)
 
     handsard_search_url: str = "https://sprs.parl.gov.sg/search/searchResult"
     handsard_topic_url: str = "https://sprs.parl.gov.sg/search/getHansardTopic"
