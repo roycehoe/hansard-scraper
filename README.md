@@ -1,136 +1,67 @@
-# Hansard Scraper
+# Singapore Parliamentary Record
 
-A Python-based scraper for extracting and processing Singapore Parliamentary Hansard records from the official [Singapore Parliament Reports Search System (SPRS)](https://sprs.parl.gov.sg).
+A structured dataset of Singapore's parliamentary proceedings, from the colonial Legislative Assembly (1955) through the present Parliament. Every sitting, every report, every attributed speech — stored in PostgreSQL and queryable by MP, topic, date, or parliament.
 
-## Overview
+Built for researchers studying Singapore's political history, legislative behaviour, and parliamentary language.
 
-This project scrapes parliamentary debates, questions, and other proceedings from the Singapore Parliament website, parses the HTML content into structured markdown, and extracts individual speeches with speaker attribution. The data is stored in a PostgreSQL database for further analysis.
+## Coverage
 
-## Features
+| Dimension | Detail |
+|---|---|
+| Date range | 1955 – present |
+| Parliaments | 0 (colonial Legislative Assembly) through 15 |
+| Records | ~22,000 parliamentary items |
+| Report types | 21 categories — oral answers, written answers, bills, motions, ministerial statements, budget debates, and more |
+| Speaker attribution | Extracted for all records where the source material names a speaker |
+| Sitting metadata | Full attendance, permissions to be absent, and debate sections (Parliament 13+, 2015–present) |
+| MP registry | All MPs by parliament, sourced from parliament.gov.sg |
 
-- **Data Collection**: Fetches search results and topic content from the SPRS API
-- **Sitting Metadata**: Fetches full sitting date records from the SPRS report API, handling two distinct API formats (pre/post August 2015)
-- **MP Scraping**: Scrapes the full list of MPs by parliament from parliament.gov.sg
-- **HTML to Markdown Conversion**: Converts raw HTML parliamentary records to clean markdown format
-- **Speech Extraction**: Parses speeches and identifies speakers from parliamentary transcripts
-- **Database Storage**: Stores raw responses, processed reports, and individual speeches in PostgreSQL
-- **Parsing Statistics**: Tracks parsing success rates across different report types
+## Quick start
 
-## Installation
-
-### Prerequisites
-
-- Python 3.11+
-- PostgreSQL database
-- Poetry (Python package manager)
-- Docker (for the local Postgres instance)
-
-### Setup
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/roycehoe/handsard-scraper.git
-   cd handsard-scraper
-   ```
-
-2. Install dependencies:
-   ```bash
-   poetry install
-   ```
-
-3. Start a local Postgres instance:
-   ```bash
-   docker-compose up -d
-   ```
-
-4. Create a `.env` file if you need a non-default database connection:
-   ```env
-   DATABASE_URL=postgresql://user:password@localhost:5432/postgres
-   ```
-
-## Usage
-
-Run the main pipeline (creates tables, fetches reports, parses speeches, fetches sitting metadata):
+Requires Python 3.11+, [Poetry](https://python-poetry.org), and Docker.
 
 ```bash
-python script.py
+git clone https://github.com/roycehoe/handsard-scraper.git
+cd handsard-scraper
+poetry install
+docker-compose up -d        # start a local PostgreSQL instance
+python script.py            # fetch and parse the full corpus
 ```
 
-Scrape MPs by parliament from parliament.gov.sg (run separately):
+To populate the MP registry (run separately before querying `mp_id` links):
 
 ```bash
 python scripts/scrape_mps_by_parliament.py
 ```
 
-Diagnostic and analysis scripts are in `scripts/`.
-
-## Database Models
-
-Database models follow a two-tier design: every data source has a **raw response table** and an **entity table**.
-
-**Raw response tables** store API responses exactly as received — no type casting, no field dropping. The only transformations applied are those required by the storage format (e.g. serialising list fields to JSON strings so they fit in a column).
-
-**Entity tables** are pure extensions of their raw counterparts. Every field from the raw response is preserved with the same value and structure. They exist to provide a stable, first-class schema ready for relationships and future enrichment — not to transform or interpret the source data.
-
-### HandsardWebsiteResponse
-Raw data fetched from the SPRS topic endpoint, stored exactly as received.
-
-### Report
-Entity table extending `HandsardWebsiteResponse`. Adds a cleaned `title`, `subtitle`, and `markdown_content`.
-
-### Speech
-Individual speeches extracted from reports:
-- Speaker name
-- Transcript content
-- Ordinal position within the report
-
-### ParsingStatistics
-Tracks parsing success for quality monitoring:
-- Has markdown content
-- Has identifiable start line
-- Can successfully extract speeches
-
-### HandsardSittingDateResponse
-Raw sitting date data fetched from `getHansardReport/`, stored exactly as received. Handles two distinct API formats: a flat dict (Parliament 9–12, pre-August 2015) and a nested format with child lists (Parliament 13+).
-
-### SittingAttendance, SittingPtba, SittingSection, SittingAnnexure, SittingVernacular, SittingA2b
-Child tables of `HandsardSittingDateResponse`, each corresponding to a list field in the new API format (attendance, Permission To Be Absent, debate sections, annexures, vernacular speeches, and absence-to-brief records).
-
-### Sitting
-Entity table extending `HandsardSittingDateResponse`. Adds `markdown_content` parsed from `html_full_content`.
-
-### Mp
-MPs scraped from parliament.gov.sg, keyed by name, party, parliament number, and whether they are a legislative assembly member.
-
-## Report Types
-
-The `ReportType` enum in `enums.py` lists all parliamentary record categories handled by the scraper (oral answers, written answers, motions, bills, ministerial statements, budget debates, and more).
-
 ## Documentation
 
-- [Data Dictionary](docs/data-dictionary.md) — entity semantics, field meanings, report types, and known data quality caveats. Start here if you're using the data.
-- [Parsing Internals](docs/parsing.md) — HTML artifact details, format quirks, and edge cases. Read this before touching parsing code.
+- [Data Dictionary](docs/data-dictionary.md) — entity semantics, field meanings, all report types explained, and data quality caveats. Start here if you're working with the data.
+- [Parsing Internals](docs/parsing.md) — HTML artifact details, format quirks, and edge cases. Read before touching parsing code.
 - [Vision](docs/vision.md) — project goals and strategy.
 
-## Dependencies
+## Citing this work
 
-- **requests**: HTTP client for API calls
-- **sqlmodel**: SQL database ORM with Pydantic integration
-- **psycopg2**: PostgreSQL adapter
-- **python-dotenv**: Environment variable management
-- **html2text**: HTML to markdown conversion
-- **beautifulsoup4**: HTML parsing
-- **pydantic**: Data validation
+If you use this dataset in your research, please cite:
+
+> Royce Hoe (2026). *Singapore Parliamentary Record*. GitHub. https://github.com/roycehoe/handsard-scraper
+
+## Known limitations
+
+- **Pre-independence records** from 1955–1965 cover the colonial Legislative Assembly and the State of Singapore — not the Republic of Singapore Parliament.
+- **~490 documents are structurally unattributable** — appendix link indexes and colonial-era procedural orders with no named author. These are intentional exclusions, not parsing failures.
+- **Some title fields contain encoding artifacts** from the source API. `markdown_content` has correct Unicode; `title` may not.
+- **MP identity linking is incomplete** for colonial-era and early-parliament records.
+
+See [docs/data-dictionary.md](docs/data-dictionary.md) for the full list.
 
 ## Development
 
-### Code Quality
-
-This project uses:
-- **ruff**: For linting and import sorting
-
-Run linting:
 ```bash
-ruff check .
-ruff check --fix .
+ruff check .        # lint
+ruff check --fix .  # lint and auto-fix
 ```
+
+## License
+
+[MIT](LICENSE)
