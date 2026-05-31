@@ -7,7 +7,7 @@ from crud.report import CRUDReport
 from database.parsing_statistics import ParsingStatistics
 from database.report import Report
 from logs import logger
-from services.speech import get_speeches, get_start_of_speech_line
+from services.speech import get_start_of_speech_line
 
 _BATCH_SIZE = 500
 
@@ -15,17 +15,13 @@ _BATCH_SIZE = 500
 def _get_statistics(report: Report) -> ParsingStatistics:
     has_markdown = report.markdown_content is not None
     has_start_line = False
-    can_get_speeches = False
 
     if has_markdown:
-        start_of_speech_line = get_start_of_speech_line(
+        has_start_line = get_start_of_speech_line(
             report.markdown_content, report.title, report.subtitle, report.original_title,
             report.report_type,
-        )
-        has_start_line = start_of_speech_line is not None
-        if has_start_line:
-            get_speeches(report.markdown_content, start_of_speech_line, report.report_type)
-            can_get_speeches = True
+        ) is not None
+    can_get_speeches = has_start_line
 
     return ParsingStatistics(
         **report.model_dump(exclude={"id", "speeches"}),
