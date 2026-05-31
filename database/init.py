@@ -5,6 +5,12 @@ import database.handsard_website_response  # noqa: F401
 import database.parsing_statistics  # noqa: F401
 import database.report  # noqa: F401
 import database.sitting  # noqa: F401
+import database.sitting_a2b  # noqa: F401
+import database.sitting_annexure  # noqa: F401
+import database.sitting_attendance  # noqa: F401
+import database.sitting_ptba  # noqa: F401
+import database.sitting_section  # noqa: F401
+import database.sitting_vernacular  # noqa: F401
 import database.speech  # noqa: F401
 from settings import settings
 
