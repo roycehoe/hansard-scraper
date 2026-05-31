@@ -53,6 +53,37 @@ Source: Modern HTML stores `PART IV OF FIRST SESSION` and `VOLUME 85` in adjacen
 html2text concatenates adjacent cell text without a separator in some configurations.
 Result: `PARTIVOF FIRST SESSION |  VOLUME85`.
 
+## Metadata table rendering
+
+Source: Every document has a 2-column HTML `<table>` at the top with Parliament No, Session No, Volume No, Sitting No, Sitting Date.
+html2text renders only the first row with `|` prefix and adds a `---|---` separator. Subsequent rows lose the leading `|`.
+The `---|---` separator appears again for every other 2-column table: speaker-signature tables (end of agenda blocks), part/volume info tables (modern era), and bills/dates tables.
+Fix: strip all lines matching `---|---` exactly.
+
+## Speaker-signature tables
+
+Source: Appear multiple times per document, at end of each day's order-paper block.
+HTML: `<table><tr><td>SPEAKER NAME</td></tr><tr><td><i>Speaker,</i></td></tr></table>`
+After metadata-table fix (stripping `---|---`): renders as `| SPEAKER NAME` / `| _Speaker,_` / `| _Parliament of Singapore_`.
+The `|` prefix is from html2text's first-row table rendering. These are structural noise; they can be left or stripped as part of a follow-on table-content cleanup.
+
+## Broken italic date (modern era)
+
+Source: `<BR>` inside `<i>` tags in vol 81+ documents.
+HTML pattern: `<i>Tuesday, 7th March, 2006<BR></i>` — the `<BR>` causes html2text to close the italic on a new line.
+Result: `_Tuesday, 7th March, 2006  ` + `_` (orphan closing marker).
+Also appears in: suspension notices (`_Sitting accordingly suspended at  ` + `_`), bill explanations, adjournment line.
+Fix: strip standalone `_` lines.
+
+## Extended empty-bold (modern era)
+
+Source: Multiple adjacent `<b></b>` tags or `<b></b>` adjacent to content in vol 81+ documents.
+Beyond the basic `****` (single empty bold), two variants:
+- `********`: two adjacent `<b></b>` at section/appendix boundaries
+- `****Content`: `<b></b>` immediately before content text (e.g. `****Debate resumed.`)
+- `Content****`: `<b></b>` immediately after content text
+Fix: extend `_remove_sitting_empty_bold` to drop all-asterisk lines (`\*+`) and strip leading/trailing `****` from content lines.
+
 ## Appendix links
 
 Source: `<a href="/search/search/download?value=PDFs/...">Annex title (Cols. X-Y)</a>` elements.
