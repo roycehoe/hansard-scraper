@@ -256,3 +256,40 @@ No new artifacts. Header now reads "PART I OF SECOND SESSION |  VOLUME 79".
 Note on appendix-links (deferred): These are real hyperlinks to PDF appendix files, referenced
 by name in the surrounding speech text. Stripping them is a product decision, not a clear
 artifact fix. Leaving for downstream consumers to decide.
+
+
+## Iteration 6 — 2026-05-31
+
+### Artifact: broken-bold-blocks (residual orphan markers)
+
+**Affected IDs:**
+229, 1486, 881, 623 (vol 79+ tail pattern); 304 (vol 31 different pattern).
+Before this iteration: 4/25 pilot docs, 3/15 held-out, 3/20 regression.
+
+**Markdown output (before fix):**
+```
+...last paragraph of speech...
+**
+**
+**APPENDICES**
+```
+
+**Root cause:**
+Two orphaned `**` markers immediately before `**APPENDICES**`. These come from
+`</span></div>` closing tags at the end of the main content section. After
+`_fix_sitting_split_bold` merges all fixable bold patterns, any remaining standalone
+`**` lines are unresolvable orphans.
+
+**Additional closed artifacts:**
+- `ascii-art-tables` (5/25): CORRECT RENDERING — content is inside `<pre>` elements; html2text
+  correctly preserves preformatted text. Not an artifact.
+- `missing-spaces-body` (4/25): SOURCE DATA QUALITY — spaces missing in raw HTML text content,
+  not introduced by html2text. Unfixable without NLP or source correction.
+
+**Proposed fix:**
+`_remove_sitting_orphan_bold_markers`: after `_fix_sitting_split_bold`, strip any remaining
+lines whose stripped value is exactly `**`.
+
+**Outcome:**
+KEPT. standalone-**: 4/25 → 0/25 (pilot), 3/15 → 0/15 (held-out), 3/20 → 0/20 (regression).
+All other artifact counts unchanged. `**APPENDICES**` now appears without orphaned markers.
