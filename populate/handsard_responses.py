@@ -10,6 +10,9 @@ from services.handsard_website import build_handsard_website_response
 def populate_handsard_responses(session: Session):
     all_search_results = [HandsardSearchResult(**r) for r in get_all_handsard_search_results()]
     crud = CRUDHandsardWebsiteResponse(session)
-    for i, result in enumerate(all_search_results, start=1):
-        logger.info(f"{i}/{len(all_search_results)}")
+    existing_ids = crud.get_all_report_ids()
+    to_fetch = [r for r in all_search_results if r.report_id not in existing_ids]
+    logger.info(f"Fetching {len(to_fetch)}/{len(all_search_results)} ({len(existing_ids)} already in DB)")
+    for i, result in enumerate(to_fetch, start=1):
+        logger.info(f"{i}/{len(to_fetch)}")
         crud.create(build_handsard_website_response(result))
