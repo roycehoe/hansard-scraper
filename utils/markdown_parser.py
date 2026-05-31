@@ -133,9 +133,9 @@ def _remove_sitting_empty_bold(md: str) -> str:
         # Drop lines that are entirely asterisks (e.g. ****, ********, etc.)
         if re.fullmatch(r'\*+\s*', line):
             continue
-        # Strip leading/trailing **** empty-bold markers from content lines
-        line = re.sub(r'^\*{4}', '', line)
-        line = re.sub(r'\*{4}$', '', line)
+        # Strip all leading/trailing **** empty-bold marker groups from content lines
+        line = re.sub(r'^(\*{4})+', '', line)
+        line = re.sub(r'(\*{4})+$', '', line)
         result.append(line)
     return "\n".join(result)
 
@@ -152,6 +152,7 @@ def _merge_sitting_adjournment_lines(md: str) -> str:
             merges = 0
             while (
                 not line.rstrip().endswith(".")
+                and not line.rstrip().endswith("._")
                 and merges < 6
                 and i + 1 < len(lines)
                 and not re.match(r"^(\*\*|#{1,6}|\* \* \*)", lines[i + 1])

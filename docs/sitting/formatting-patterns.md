@@ -82,7 +82,15 @@ Beyond the basic `****` (single empty bold), two variants:
 - `********`: two adjacent `<b></b>` at section/appendix boundaries
 - `****Content`: `<b></b>` immediately before content text (e.g. `****Debate resumed.`)
 - `Content****`: `<b></b>` immediately after content text
-Fix: extend `_remove_sitting_empty_bold` to drop all-asterisk lines (`\*+`) and strip leading/trailing `****` from content lines.
+- `********Content`: vol 87 question lines have TWO consecutive `<b></b>` before the question number, producing `********6.**Speaker**`. `re.sub(r'^(\*{4})+', '', ...)` is needed (not `\*{4}`) to strip all groups.
+Fix: `_remove_sitting_empty_bold` drops all-asterisk lines (`\*+`) and strips leading/trailing `(\*{4})+` groups from content lines.
+
+## Italic adjournment (vol 81+)
+
+Source: vol 81+ adjournment uses multiple `<p align="right"><I>...</I></p>` elements, one per phrase.
+html2text renders each as a separate `_phrase_` line. The merged result ends with `._` (period + italic close).
+The adjournment merge stop condition must check `endswith('._')` in addition to `endswith('.')`.
+Without this, the merge continues into the following section (e.g. "WRITTEN ANSWERS TO QUESTIONS").
 
 ## Appendix links
 
