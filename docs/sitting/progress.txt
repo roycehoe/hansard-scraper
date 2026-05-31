@@ -225,3 +225,34 @@ Backward-safe: `__` does not appear as intentional content in Hansard text.
 **Outcome:**
 KEPT. stray-dunder: 3/25 → 0/25 (pilot), 2/15 → 0/15 (held-out), 3/20 → 0/20 (regression).
 No new artifacts on any set.
+
+
+## Iteration 5 — 2026-05-31
+
+### Artifact: concat-part-text
+
+**Affected IDs:**
+1702, 881, 229, 623 (vol 79-87 modern era)
+
+**Markdown output (before fix):**
+```
+PARTIOF SECOND SESSION |  VOLUME79
+```
+
+**Root cause:**
+The malformed text is in the raw HTML source — the `<span>` text content is already
+`PARTIOF SECOND SESSION` (missing spaces between "PART I" and "OF", and "VOLUME" and number).
+Not introduced by html2text.
+
+**Proposed fix:**
+`_fix_sitting_concat_headers` (HTML pre-processing step):
+- `PART([IVX]+)OF` → `PART \1 OF`
+- `VOLUME(\d+)` → `VOLUME \1`
+
+**Outcome:**
+KEPT. concat-part-text: 4/25 → 0/25 (pilot), 2/15 → 0/15 (held-out), 2/20 → 0/20 (regression).
+No new artifacts. Header now reads "PART I OF SECOND SESSION |  VOLUME 79".
+
+Note on appendix-links (deferred): These are real hyperlinks to PDF appendix files, referenced
+by name in the surrounding speech text. Stripping them is a product decision, not a clear
+artifact fix. Leaving for downstream consumers to decide.

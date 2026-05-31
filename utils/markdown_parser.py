@@ -64,6 +64,14 @@ def get_cleaned_report_markdown(html: str) -> str:
     return md_file
 
 
+def _fix_sitting_concat_headers(html: str) -> str:
+    # Modern (vol 79+) HTML stores "PARTIOF SECOND SESSION" and "VOLUME79" in span text
+    # without spaces. Fix before passing to html2text.
+    html = re.sub(r"\bPART([IVX]+)OF\b", r"PART \1 OF", html)
+    html = re.sub(r"\bVOLUME(\d+)\b", r"VOLUME \1", html)
+    return html
+
+
 def _remove_sitting_empty_italic(md: str) -> str:
     # <i></i> or <em></em> empty italic tags render as __ (html2text).
     # These appear in vol 38-70 docs inside <div id="adjTime"> between the date and meeting-time lines.
@@ -139,6 +147,7 @@ def get_cleaned_sitting_markdown(html: str) -> str:
     html = _remove_column_text(html)
     html = _remove_column_no_text(html)
     html = _remove_page_text(html)
+    html = _fix_sitting_concat_headers(html)
 
     md_file = h.handle(html)
     md_file = _strip_page_break_artifacts(md_file)
