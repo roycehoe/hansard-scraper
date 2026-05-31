@@ -27,4 +27,5 @@ class Sitting(SQLModel, table=True):
     ptba_start_pg_no: Optional[int] = None
     atbp_start_pg_no: Optional[int] = None
     online_pdf_file_name: Optional[str] = None
+    html_full_content: Optional[str] = None
     markdown_content: Optional[str] = None

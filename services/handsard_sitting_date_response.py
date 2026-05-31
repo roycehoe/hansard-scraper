@@ -36,6 +36,7 @@ def build_old_handsard_sitting_date_response(result: dict) -> HandsardSittingDat
         sitting_no=_to_int(result.get("sittingNo")),
         sitting_date=result.get("sittingDate"),
         online_pdf_file_name=result.get("onlinePDFFileName"),
+        html_full_content=result.get("htmlFullContent"),
     )
 
     attendance = [
