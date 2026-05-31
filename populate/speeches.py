@@ -6,7 +6,7 @@ from database.speech import Speech
 from logs import logger
 from services.speech import get_speeches, get_start_of_speech_line
 
-_BATCH_SIZE = 500
+_BATCH_SIZE = 50
 
 
 def populate_speeches(session: Session):
