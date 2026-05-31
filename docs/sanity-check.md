@@ -172,7 +172,7 @@ Check each item against the list below. Mark pass (✓) or fail (✗) with a not
 
 ### 3d — Report-type-specific checks
 
-Consult `parsing-patterns.md` for per-type structural notes. Quick reference:
+Consult `docs/parsing-patterns.md` for per-type structural notes. Quick reference:
 
 | report_type | Expected behaviour |
 |-------------|-------------------|
@@ -218,7 +218,7 @@ Group findings by root cause before deciding whether to open a fix iteration.
 | Outcome | Action |
 |---------|--------|
 | All checks pass | Record date and sample size in `## Results` below |
-| Only cosmetic failures | Document in `parsing-patterns.md`; no code change unless recurring |
+| Only cosmetic failures | Document in `docs/parsing-patterns.md`; no code change unless recurring |
 | Data-loss or pipeline-break failures | Open a `refine-loop.md` iteration targeting those root causes |
 
 ---
