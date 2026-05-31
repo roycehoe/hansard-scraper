@@ -24,7 +24,7 @@ def _get_statistics(response: HandsardWebsiteResponse) -> ParsingStatistics:
         )
         has_start_line = start_of_speech_line is not None
         if has_start_line:
-            get_speeches(report.markdown_content, start_of_speech_line)
+            get_speeches(report.markdown_content, start_of_speech_line, report.report_type)
             can_get_speeches = True
 
     return ParsingStatistics(

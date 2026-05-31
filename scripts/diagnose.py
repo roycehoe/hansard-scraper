@@ -30,7 +30,7 @@ def get_report_type_speech_stats(session: Session) -> dict:
         if start is None:
             continue
         stats[report_type]["has_start_line"] += 1
-        get_speeches(report.markdown_content, start)
+        get_speeches(report.markdown_content, start, response.report_type)
         stats[report_type]["can_get_speeches"] += 1
 
     return dict(stats)
@@ -54,7 +54,7 @@ def get_failing_sample(session: Session, no_speech_types: set[str], k: int = 3) 
         if start is None:
             groups[("has_start_line", response.report_type)].append(response)
             continue
-        get_speeches(report.markdown_content, start)
+        get_speeches(report.markdown_content, start, response.report_type)
 
     sample = {}
     for key, items in groups.items():
@@ -81,7 +81,7 @@ def get_passing_sample(session: Session, no_speech_types: set[str], n: int = 30)
         if start is None:
             continue
         try:
-            get_speeches(report.markdown_content, start)
+            get_speeches(report.markdown_content, start, response.report_type)
             passing.append(response)
         except Exception:
             pass
@@ -104,7 +104,7 @@ def run_stats_on(responses: list) -> dict:
         if start is None:
             results["fail_start_line"].append(response.id)
             continue
-        get_speeches(report.markdown_content, start)
+        get_speeches(report.markdown_content, start, response.report_type)
         results["pass"].append(response.id)
     return results
 

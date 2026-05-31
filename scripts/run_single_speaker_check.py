@@ -40,7 +40,7 @@ def run():
         if start_line is None:
             no_start_by_type[report.report_type] += 1
             continue
-        speeches = get_speeches(report.markdown_content, start_line)
+        speeches = get_speeches(report.markdown_content, start_line, report.report_type)
         if speeches:
             passed_by_type[report.report_type] += 1
         else:

@@ -118,12 +118,29 @@ Exclusions (zero speeches is genuinely correct):
 - `MPs Speaking` absent or empty (0 speakers)
 - `MPs Speaking` lists 2+ speakers **and** no bold speaker markup — these are annex/appendix index documents
 
-## Status: Implemented (`51cdd99`)
+## Status: Implemented (two stages)
 
-`services/speech.py::get_speeches` applies the fallback: when `_parse_speeches` returns `[]`, it checks `MPs Speaking` for exactly one name and, if found, returns a single `ParsedSpeech` covering all non-empty, non-decorative body lines joined.
+### Stage 1 — `MPs Speaking` fallback (`51cdd99`)
 
-**Actual outcome:**
-- No-speech docs dropped from 1,449 to ~256 (253 multi-speaker annex + 3 zero-speaker).
-- 1,193 previously-unattributed records now produce a correct speaker attribution.
-- Multi-speaker docs (2+ names) still return `[]`.
-- Zero-speaker docs still return `[]`.
+When `_parse_speeches` returns `[]` and `MPs Speaking` contains exactly one name, the body text is attributed to that name. Covered the 1,193 single-speaker no-speech docs.
+
+### Stage 2 — Body-content attribution
+
+For zero-speaker docs (where `MPs Speaking` is absent or empty), `get_speeches` calls `_extract_body_attribution(markdown, report_type)` which applies document-type-specific patterns:
+
+| Type | Pattern |
+|---|---|
+| `atbp` | Speaker signature block at the foot of the notice |
+| `president-address` addendum | Minister name after bold `**MINISTRY OF X**` heading |
+| `president-address` actual speech | `"The President"` (no ministry heading present; president is not an MP) |
+| `motion` adjournment | `- [Name]` bracket in the resolved clause |
+| `bill` First Reading | `presented by ... (Name)` clause |
+
+Old-format president-address docs also have a separate fix in the `PARSED` path: bold section headers (`**EXTERNAL ENVIRONMENT**` etc.) were being misidentified as speakers. When `MPs Speaking` is empty and `parsed[0].speaker` looks like a section header (all-caps, no honorific), the speeches are discarded and body-content attribution is applied instead.
+
+**Net outcome:**
+- Stage 1: 1,449 → ~671 zero-speech docs (1,193 single-speaker docs fixed).
+- Stage 2: ~671 → ~490 zero-speech docs (181 additional docs fixed: 118 `atbp`, 37 `president-address`, 7 `motion`, 4 `bill`, ~15 others).
+- Remaining ~490: budget procedural orders (~262), multi-speaker annex docs (~253, of which oral-answer 76, written-answer 46, etc.), and miscellaneous unattributable procedural records. See `parsing-patterns.md` for the current exclusion breakdown.
+
+**Note on zero-speaker count:** The original population breakdown showed 3 zero-speaker docs. The correct count is 418. The discrepancy is because the original analysis only covered the 1,449 docs that already had a start-line; ~415 additional docs (mostly `budget`, `atbp`, `president-address`) lacked start-lines at the time and were only reached after title-matching improvements. All 418 are confirmed genuine: HTML inspection found 0 cases of parser-dropped speaker markup (`scripts/run_exclusion_sanity_check.py`).
