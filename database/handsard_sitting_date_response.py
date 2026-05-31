@@ -22,7 +22,7 @@ class HandsardSittingDateResponse(SQLModel, table=True):
     session_no: Optional[int] = None
     volume_no: Optional[int] = None
     sitting_no: Optional[int] = None
-    sitting_date: Optional[str] = None
+    sitting_date: str
     online_pdf_file_name: Optional[str] = Field(default=None, alias="onlinePDFFileName")
     html_full_content: Optional[str] = None
     ptba_from: Optional[str] = None

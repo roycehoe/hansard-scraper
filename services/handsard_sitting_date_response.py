@@ -20,7 +20,7 @@ class HandsardSittingDateData:
     a2b: list[SittingA2b]
 
 
-def build_old_handsard_sitting_date_response(result: dict) -> HandsardSittingDateData:
+def build_old_handsard_sitting_date_response(result: dict, sitting_date: str) -> HandsardSittingDateData:
     """Handles the flat response format returned for sittings before 18 Aug 2015."""
     import json
 
@@ -40,7 +40,7 @@ def build_old_handsard_sitting_date_response(result: dict) -> HandsardSittingDat
         session_no=_to_int(result.get("sessionNo")),
         volume_no=_to_int(result.get("volumeNo")),
         sitting_no=_to_int(result.get("sittingNo")),
-        sitting_date=result.get("sittingDate"),
+        sitting_date=sitting_date,
         online_pdf_file_name=result.get("onlinePDFFileName"),
         html_full_content=result.get("htmlFullContent"),
         ptba_from=result.get("ptbaFrom"),
@@ -107,7 +107,7 @@ def build_old_handsard_sitting_date_response(result: dict) -> HandsardSittingDat
     )
 
 
-def build_new_handsard_sitting_date_response(result: dict) -> HandsardSittingDateData:
+def build_new_handsard_sitting_date_response(result: dict, sitting_date: str) -> HandsardSittingDateData:
     """Handles the nested response format returned for sittings from 18 Aug 2015 onwards."""
     metadata = result.get("metadata") or {}
 
@@ -116,7 +116,7 @@ def build_new_handsard_sitting_date_response(result: dict) -> HandsardSittingDat
         session_no=metadata.get("sessionNO"),
         volume_no=metadata.get("volumeNO"),
         sitting_no=metadata.get("sittingNO"),
-        sitting_date=metadata.get("sittingDate"),
+        sitting_date=sitting_date,
         part_session_str=metadata.get("partSessionStr"),
         start_time_str=metadata.get("startTimeStr"),
         speaker=metadata.get("speaker"),
