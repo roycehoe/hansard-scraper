@@ -85,25 +85,13 @@ def build_old_handsard_sitting_date_response(result: dict) -> HandsardSittingDat
     )
 
     attendance = [
-        SittingAttendance(
-            mp_name=item.get("mpName"),
-            attendance=item.get("attendance"),
-            location_name=item.get("locationName"),
-        )
+        SittingAttendance(**item)
         for item in result.get("attendanceList") or []
         if isinstance(item, dict)
     ]
 
     ptba = [
-        SittingPtba(
-            mp_name=item.get("mpName"),
-            from_date=item.get("from"),
-            to_date=item.get("to"),
-            start_dt_text=item.get("startDtText"),
-            end_dt_text=item.get("endDtText"),
-            start_dt_flag=item.get("startDtFlag"),
-            end_dt_flag=item.get("endDtFlag"),
-        )
+        SittingPtba(**item)
         for item in result.get("ptbaList") or []
         if isinstance(item, dict)
     ]
@@ -148,77 +136,32 @@ def build_new_handsard_sitting_date_response(result: dict) -> HandsardSittingDat
     )
 
     attendance = [
-        SittingAttendance(
-            mp_name=item.get("mpName"),
-            attendance=item.get("attendance"),
-            location_name=item.get("locationName"),
-        )
+        SittingAttendance(**item)
         for item in result.get("attendanceList") or []
     ]
 
     ptba = [
-        SittingPtba(
-            mp_name=item.get("mpName"),
-            from_date=item.get("from"),
-            to_date=item.get("to"),
-            start_dt_text=item.get("startDtText"),
-            end_dt_text=item.get("endDtText"),
-            start_dt_flag=item.get("startDtFlag"),
-            end_dt_flag=item.get("endDtFlag"),
-        )
+        SittingPtba(**item)
         for item in result.get("ptbaList") or []
     ]
 
     sections = [
-        SittingSection(
-            start_pg_no=item.get("startPgNo"),
-            end_pg_no=item.get("endPgNo"),
-            title=item.get("title"),
-            sub_title=item.get("subTitle"),
-            section_type=item.get("sectionType"),
-            content=item.get("content"),
-            clarification_text=item.get("clarificationText"),
-            clarification_title=item.get("clarificationTitle"),
-            clarification_sub_title=item.get("clarificationSubTitle"),
-            report_type=item.get("reportType"),
-            question_count=item.get("questionCount"),
-            foot_notes=item.get("footNotes"),
-            foot_note_questions=item.get("footNoteQuestions"),
-            question_no=item.get("questionNo"),
-        )
+        SittingSection(**item)
         for item in result.get("takesSectionVOList") or []
     ]
 
     annexures = [
-        SittingAnnexure(
-            annexure_id=item.get("annexureID"),
-            sitting_date=item.get("sittingDate"),
-            annexure_title=item.get("annexureTitle"),
-            file_path=item.get("filePath"),
-            file_name=item.get("fileName"),
-            section_type=item.get("sectionType"),
-            file=item.get("file"),
-        )
+        SittingAnnexure(**item)
         for item in result.get("annexureList") or []
     ]
 
     vernaculars = [
-        SittingVernacular(
-            vernacular_id=item.get("vernacularID"),
-            sitting_date=item.get("sittingDate"),
-            vernacular_title=item.get("vernacularTitle"),
-            file_path=item.get("filePath"),
-            file_name=item.get("fileName"),
-        )
+        SittingVernacular(**item)
         for item in result.get("vernacularList") or []
     ]
 
     a2b = [
-        SittingA2b(
-            date=item.get("date"),
-            bill=item.get("bill"),
-            atbp_preview_text=item.get("atbpPreviewText"),
-        )
+        SittingA2b(**item)
         for item in result.get("a2bList") or []
     ]
 

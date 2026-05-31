@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING, Annotated, Optional
 if TYPE_CHECKING:
     from database.speech import Speech
 
-from pydantic import BeforeValidator
+from pydantic import BeforeValidator, ConfigDict
+from pydantic.alias_generators import to_camel
 from sqlmodel import Field, Relationship, SQLModel
 
 EmptyStrNoneInt = Annotated[
@@ -14,6 +15,8 @@ EmptyStrNoneInt = Annotated[
 
 
 class Report(SQLModel, table=True):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     id: int | None = Field(default=None, primary_key=True)
 
     volume_number: int = Field(alias="volumeNo")
