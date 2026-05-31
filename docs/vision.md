@@ -1,13 +1,13 @@
 # Vision
 
-Turn the full record of Singapore's parliamentary proceedings, from colonial assembly to the present, into a clean, queryable dataset — every speech, every speaker, every sitting — giving researchers a reliable foundation for studying Singapore's political history at scale.
+A complete, queryable record of Singapore's parliamentary proceedings — from the colonial Legislative Assembly through the present — for researchers studying political history at scale.
 
 ---
 
 ## Objectives
 
 ### 1. Complete corpus coverage
-Fetch and store every Hansard entry published by SPRS, across all parliaments and all report types. No fetch gaps from rate limits, format changes, or API quirks. The raw API response for every record is preserved exactly as received.
+Fetch and store every Hansard entry published by SPRS, across all parliaments and all report types. No gaps from rate limits, format changes, or API quirks. The raw API response for every record is preserved exactly as received.
 
 ### 2. Faithful speaker attribution
 Extract individual speeches from parliamentary transcripts and attribute each one to the correct MP. Attribution should be as complete as the source material allows — documents that remain unattributed must be structurally unattributable, such as appendix link indexes or colonial-era procedural orders with no named author.
@@ -16,7 +16,13 @@ Extract individual speeches from parliamentary transcripts and attribute each on
 For every sitting date, capture full session metadata: attendance, permissions to be absent, debate sections, vernacular speeches, and annexures. Both pre- and post-August 2015 API formats are handled faithfully.
 
 ### 4. MP identity linking
-Connect every speech and attendance record to a canonical MP identity (name, party, parliament number) sourced from parliament.gov.sg. This is a future goal not yet implemented in the pipeline.
+Connect every speech and attendance record to a canonical MP identity (name, party, parliament number) sourced from parliament.gov.sg.
+
+### 5. High-fidelity markdown
+Convert raw HTML records into clean, readable markdown that downstream consumers can trust — stripping artifacts introduced by html2text across three distinct document eras (colonial, mid-era, modern) without losing any substantive content.
+
+### 6. Parsing quality
+Track parsing success rates per report type across the full corpus so regressions surface before they accumulate and improvement work is measurable.
 
 ---
 
@@ -34,7 +40,7 @@ Fetching thousands of records requires concurrent HTTP. The gateway layer uses a
 ### Iterative parsing refinement
 Parsing improvements follow a structured loop: inspect failure categories, apply a targeted fix, check per-report-type statistics, and commit. Each cycle is reviewed before merging to keep regressions visible across the ~22,000-document corpus.
 
-### HTML cleaning
+### Format-aware artifact removal
 The raw HTML spans three document eras with different artifacts. Fixes are applied as targeted transformations scoped to the artifact each addresses — stripping known separator patterns, merging bold lines split across page breaks, normalising whitespace — rather than globally, which limits blast radius when the source HTML varies.
 
 ### Principled attribution hierarchy
@@ -43,5 +49,5 @@ For documents that contain no bold speaker markup, attribution follows a deliber
 2. If the body follows a known ministerial attribution pattern (ministry heading + name + title), extract the minister from the body.
 3. If neither applies, leave unattributed — do not fabricate attribution for multi-speaker appendix documents or structurally authorless procedural orders.
 
-### Continuous parsing quality tracking
-The pipeline exports success rates per report type after every run, making failure categories visible without re-running the full corpus and keeping the improvement loop short.
+### Diagnostic tooling as a first-class concern
+Targeted validation and inspection tools live alongside the main pipeline. Parsing statistics are exported after every run. These tools make it possible to audit specific failure categories by report type without re-running the full pipeline, keeping the feedback loop short.
