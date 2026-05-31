@@ -25,4 +25,6 @@ class CRUDHandsardWebsiteResponse:
         ).all())
 
     def get_all_sitting_dates(self) -> set[str]:
-        return {r.sitting_date for r in self.session.exec(select(HandsardWebsiteResponse)).all()}
+        return set(self.session.exec(
+            select(HandsardWebsiteResponse.sitting_date).distinct()
+        ).all())
