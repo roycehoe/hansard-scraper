@@ -207,3 +207,48 @@ All fixable artifacts resolved:
   missing-space-before-time |  3/20    |  3/20 | CLOSED (source quality, unfixable)
 
 Zero unresolved fixable artifact categories. Loop complete.
+
+
+## Second strata sample — 2026-05-31
+
+DB was reset between runs; 44 new sittings fetched (vol 35, 50, 57, 66, 73, 80, 81, 87).
+Sample drawn with seed=99: pilot=20, held_out=12, regression=20.
+
+Previous fixes from iterations 1–3 held across all three sets (0/20 on every prior artifact).
+
+Two new issues found during second sample inspection:
+
+### Iteration 4 — Bug fix: multi-group leading **** strip
+
+**Artifact:** `****6.**Speaker** asked...` (question-numbered lines in vol 87)
+**Root cause:** html2text produces `********6.**...` (two empty bolds = 8 stars) before the
+question number. `_remove_sitting_empty_bold` used `re.sub(r'^\*{4}', ...)` which only
+strips the FIRST group of 4 stars, leaving a residual `****` prefix.
+**Fix:** Changed to `re.sub(r'^(\*{4})+', '', line)` and `re.sub(r'(\*{4})+$', '', line)`
+to strip ALL consecutive groups of empty-bold markers.
+**Outcome:** KEPT. ****-prefixed content: 1/20 → 0/20 (pilot), 0/12 (held-out), 0/20 (regression).
+
+### Iteration 5 — Adjournment merge stop at `._`
+
+**Artifact:** vol 87 italic adjournment: `_Adjourned accordingly at_ _Time_` merged with
+following section `WRITTEN ANSWERS TO QUESTIONS...` onto one line.
+**Root cause:** Adjournment in vol 81–87 uses multiple italic spans. The merged line ends
+with `._` (period + italic close `_`), which `endswith(".")` doesn't catch — so the merge
+continued into the next section.
+**Fix:** Added `not line.rstrip().endswith("._")` as a second stop condition in
+`_merge_sitting_adjournment_lines`.
+**Outcome:** KEPT. adj-split (true): 4/20 → 0/20 (pilot), 1/12 (held-out — ID=47 vol=31,
+source data has no final period), 0/20 (regression). Not a rendering artifact.
+
+### Second sample — Final state
+
+  Artifact                  | Pilot | Held-out | Regression | Status
+  --------------------------|-------|----------|------------|--------
+  broken-table-metadata     |  0/20 |   0/12   |    0/20    | FIXED (iter 1)
+  broken-italic-lines       |  0/20 |   0/12   |    0/20    | FIXED (iter 2)
+  extended empty-bold       |  0/20 |   0/12   |    0/20    | FIXED (iter 3 + 4)
+  adj-split                 |  0/20 |   1/12   |    0/20    | FIXED (iter 5); 1 residual = source data
+  appendix-links            | 10/20 |   3/12   |    6/20    | DEFERRED (product decision)
+  missing-space-before-time |  1/20 |   2/12   |    7/20    | CLOSED (source quality, unfixable)
+
+All fixable artifact categories resolved. Loop complete.
