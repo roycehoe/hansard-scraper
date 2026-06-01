@@ -85,9 +85,9 @@ def _classify_speech_type(parsed: list[ParsedSpeech], speaker_count: int) -> Par
 
 def _single_speaker_transcript(markdown: str, start_of_speech_line: int) -> str:
     return " ".join(
-        line.strip()
+        stripped
         for line in markdown.splitlines()[start_of_speech_line + 1:]
-        if line.strip() and line.strip().strip("* ")
+        if (stripped := line.strip()) and stripped.strip("* ")
     )
 
 
