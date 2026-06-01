@@ -113,3 +113,43 @@ Some titles have `&WORD;` where html2text preserves the `;` from unrecognized HT
 - Markdown heading: `# Government Subsidies for A&E; Patients`
 
 The `;` after `&E` is an artifact of html2text treating `&E;` as an (invalid) HTML entity name. The stored title had the semicolon stripped when originally parsed.
+
+## Transcript and Speaker Artifacts in _parse_speeches
+
+### Colon-outside-bold speaker format
+Old-format Hansard uses `**Name** : text` (colon outside the bold span). The split on the bold match leaves `: text` as the transcript. Fix: `re.sub(r"^:\s*", "", transcript)` after splitting.
+
+### Chair-annotation speaker lines
+Session transitions use `**[Mr Speaker in the Chair] BILL TITLE**` or `**[Mdm Deputy Speaker (Ms Indranee Rajah) in the Chair]**`. The full bracketed text becomes the speaker name. Fix: strip `^\[(.+?)\s+in the Chair\]` and keep the captured name.
+
+### Procedural time markers
+New-format docs include session resumption times mid-document: `4.26 pm` or `3.30 p.m.`. These appear after a speaker has been set and get attributed to them. Fix: skip lines matching `^\d{1,2}\.\d{2}\s*[ap]\.?m\.?$`.
+
+### Markdown heading lines as transcripts
+Section headings (`#### [Mr SPEAKER in the Chair]`, `## Subtitle`) appear after speakers in some docs and become spurious transcripts. Fix: skip lines matching `^#{1,6}(\s|$)`.
+
+### Bold section-title lines as speakers
+Old-format documents open sections with a bold title line (no colon, no inline text):
+- `**MINISTRY OF EDUCATION**` — all-caps, no honorific
+- `**MERGER (SINGAPORE/FEDERATION OF MALAYA) (White Paper)**` — mixed case, no honorific
+- `**Table 1: Number of Cases of Suicide involving Students**` — colon is mid-title, not at the end
+
+Fix: if `transcript` is empty AND no honorific in `raw_speaker` AND (no colon in bold match, OR colon is not the last char before `**`) → skip; don't update `current_speaker`.
+
+### Embedded images as transcripts
+Written-answer docs contain HTML `<img src="data:image/png;base64,...">` charts. html2text converts these to `![](data:...)`. Fix: skip lines starting with `![`.
+
+### Table separators as transcripts
+Some report types (atbp, written-answer) have `---|---` table separators in the document body. Fix: skip lines matching `^-{3}(\|-{2,})+\s*$`.
+
+### Table row-header bold lines
+Data tables use bold row headers: `**Gender** |   `. The bold regex captures `**Gender**` as a speaker and `|` as the transcript. Fix: if `transcript.startswith("|")` after the bold split, skip the line entirely.
+
+### _MP_SPEAK_RE crossing newlines
+`_MP_SPEAK_RE` used `\s*` before the capture group, which spans newlines. A document with `MPs Speaking:|   \n\n# Heading` incorrectly returns the heading as the speaker. Fix: use `[ \t]*` instead of `\s*`.
+
+### Question-number prefix in oral-answer speaker names
+Oral-answer questions use `****8.**Mr Viswa Sadasivan** asked...` where the question number is in a separate `****N.**` bold prefix. The regex grabs `**8.**` as the speaker. Fix: strip leading `****` groups (`re.sub(r"^(\*{4})+", "", parsed_line)`) before bold detection; also strip numbered-list prefixes from the extracted speaker name (`re.sub(r"^\d+\\?\.\s+", "", new_speaker)`).
+
+### ATBP section header as speaker
+`atbp` documents open with `**ASSENTS TO BILLS PASSED**` (all-caps bold) which `_parse_speeches` treats as a speaker. Fix: extend the `president-address` section-header-speaker collapse to also cover `atbp`, so `_extract_body_attribution` (ATBP Speaker signature regex) is used instead.
