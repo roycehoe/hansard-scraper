@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlmodel import Session, SQLModel, create_engine
 
 import database.handsard_sitting_date_response  # noqa: F401
@@ -17,11 +18,20 @@ from settings import settings
 
 engine = create_engine(url=settings.database_url)
 
+_MP_ID_MIGRATIONS = [
+    "ALTER TABLE speech ADD COLUMN IF NOT EXISTS mp_id INTEGER REFERENCES mp(id)",
+    "ALTER TABLE sittingattendance ADD COLUMN IF NOT EXISTS mp_id INTEGER REFERENCES mp(id)",
+]
+
 
 def create_db_and_tables():
-    SQLModel.metadata.create_all(
-        engine,
-    )
+    SQLModel.metadata.create_all(engine)
+    # create_all() only creates missing tables; ALTER TABLE is required for columns
+    # added after the tables were first created.
+    with Session(engine) as session:
+        for stmt in _MP_ID_MIGRATIONS:
+            session.execute(text(stmt))
+        session.commit()
 
 
 def get_session():

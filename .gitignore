@@ -1,6 +1,7 @@
 #CUSTOM
 *.json
 !sample.json
+!data/*.json
 plans/
 
 # Byte-compiled / optimized / DLL files
