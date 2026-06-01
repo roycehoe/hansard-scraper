@@ -1,0 +1,148 @@
+# Attendance → MP Link Refine-Loop Progress Log
+
+## Baseline — 2026-06-01
+
+Full-corpus run after `populate_mp_links`:
+- Total sittingattendance rows: 96,327
+- Matched (mp_id non-null): 65,695
+- Unmatched: 30,632
+- Match rate: 68.2%
+
+Known failure buckets (from docs/report/mp-match-failures.md):
+- Parliament 0 (volumes 12–23, no Mp rows): 7,751
+- Case mismatch bin vs Bin: 1,457
+- No normalisation — person in Mp, different surface form: ~12,089
+- Colonial-era MPs not scraped: ~3,945
+- Other absent names (non-MPs, etc.): ~5,390
+
+---
+
+## Setup — 2026-06-01
+
+### Denominator
+
+Total sittingattendance rows: 96,327
+Non-null mp_name: 96,327 (all rows have mp_name)
+Currently matched (mp_id non-null): 65,695
+Unmatched: 30,632
+
+Unmatched by parliament bucket:
+- colonial (parl 0 or 1–3): 13,962 (parl=0: 7,751 + parl=1–3: 6,211)
+- mid (parl 4–8): 9,245
+- modern (parl 9–15): 7,425
+
+Structurally absent (estimated from refine-loop.md known buckets):
+- Colonial-era MPs not scraped (pre-1965): ~3,945
+- Non-MP attendees: ~5,390
+- Total structurally absent: ~9,335
+
+Denominator = 30,632 − 9,335 = ~21,297 matchable rows
+Target: ≥95% of denominator → ≥20,232 matched
+
+Note: The existing 65,695 matched rows used exact dict lookup — they matched because
+mp_name was already in canonical form at ingestion time (via get_sitting_attendance).
+The 30,632 unmatched rows are attendance records that bypassed get_sitting_attendance
+resolution (e.g. previously stored rows without resolution, or rows from sittings
+where infer_parliament returned a valid parliament but the name didn't match exactly).
+
+### Baseline — Sample
+
+sample.json drawn: 30 pilot (10 per bucket), 15 held-out (5 per bucket), 30 regression.
+
+Pilot results with current logic (0/30 matched):
+- colonial bucket (10 rows): 0/10 matched
+  - MISS: "Lim Ching Siong" parl=1 — colonial-era, not in Mp
+  - MISS: "Goh Keng Swee" parl=0 — in Mp parl=1, needs parl-0 fallback
+  - MISS: "A.J. Braga" parl=1 — colonial-era, not in Mp
+  - MISS: "Mohd Ariff Bin Suradi" parl=1 — in Mp as "Mohd Ariff Bin Suradi, Haji", needs resolve
+  - MISS: "John Ede" parl=1 — colonial-era, not in Mp
+  - MISS: "Abdul Hamid Bin Haji Jumat" parl=0 — not in Mp (no fallback)
+  - MISS: "Fung Yin Ching" parl=0 — not in Mp
+  - MISS: "Hoe Puay Choo" parl=0 — not in Mp
+  - MISS: "Fung Yin Ching" parl=0 — not in Mp (duplicate)
+  - MISS: "Goh Chew Chua" parl=1 — not in Mp (non-MP?)
+- mid bucket (10 rows): 0/10 matched
+  - All resolvable via strip_title+normalize+resolve_canonical_name
+- modern bucket (10 rows): 0/10 matched
+  - All resolvable via strip_title+normalize+resolve_canonical_name
+
+After applying strip_title + normalize_name + resolve_canonical_name + parl-0 fallback:
+- colonial: ~3/10 (Goh Keng Swee, Mohd Ariff Bin Suradi + 1 more via fallback)
+- mid: ~10/10
+- modern: ~10/10
+
+Held-out: 0/15 matched currently; estimated ~12/15 after fix.
+Regression: 30/30 (all still matched).
+
+### Failure catalogue
+
+1. **No normalisation pipeline** (highest impact, ~20k rows): `_populate_attendance_mp_ids`
+   does a raw exact dict lookup without calling `strip_title`, `normalize_name`, or
+   `resolve_canonical_name`. All mid/modern failures are in this bucket.
+   Fix: apply the full resolution cascade (same as speech pipeline).
+
+2. **Parliament 0 — no Mp rows** (7,751 rows): Volumes 12–23 map to parl=0; no Mp rows
+   exist for parl=0. Fix: fallback to parliaments 1, 2, 3 (same as speech pipeline).
+
+3. **Colonial-era MPs not scraped** (~3,945 rows): Structurally absent — not fixable.
+
+4. **Non-MP attendees** (~5,390 rows): Structurally absent — not fixable.
+
+---
+
+## Iteration 1
+
+### can_match — all buckets — apply resolve_canonical_name + parl-0 fallback
+
+**Affected IDs (pilot):** all 30 (mid: 74446, 77476, 67150, 40062, 18846, 1035, 31918, 21637,
+  29387, 22408; modern: 51869, 56578, 30460, 73692, 22984, 31004, 43879, 11877, 46223, 3745;
+  colonial parl=0 fixable: 25010; colonial parl=1 fixable: 61812)
+**mp_name (failing):** "Abdullah Tarmugi" (parl=6,8), "Tony Tan Keng Yam" (parl=7),
+  "Sidek bin Saniff" (parl=8), "S. Jayakumar" (parl=9), "George Yong-Boon Yeo" (parl=9)
+**mp_name (passing, regression):** Already matched rows all used exact dict lookup at ingestion
+**Expected Mp.name:** "Abdullah Bin Tarmugi", "Tan Keng Yam, Tony", "Sidek Bin Saniff", etc.
+**Root cause:** `_populate_attendance_mp_ids` does raw exact `mp_id_lookup.get((record.mp_name, parliament))`
+  with no title-stripping, normalisation, or cascade. The speech pipeline applies the full cascade;
+  the attendance pipeline does not.
+**Proposed fix:** In `_populate_attendance_mp_ids`, after the raw lookup fails, apply:
+  1. `strip_title(record.mp_name)` → `normalize_name()` → `resolve_canonical_name(name, parliament)`
+  2. If still None and parliament == 0: try fallback parliaments 1, 2, 3
+  3. Use canonical to look up mp_id
+**Backward-compatibility:** Raw exact lookup still runs first (handles already-canonical names
+  without extra work). The cascade only runs on non-matches, so no regression risk.
+**Outcome:** KEPT
+
+| Set | Before | After |
+|---|---|---|
+| Pilot | 0/30 | 22/30 |
+| Held-out | 0/15 | 13/15 |
+| Regression | 30/30 | 30/30 |
+
+8 pilot failures and 2 held-out failures are all colonial-era MPs absent from the Mp table
+(Lim Ching Siong, A.J. Braga, John Ede, Abdul Hamid Bin Haji Jumat, Fung Yin Ching,
+Hoe Puay Choo, Goh Chew Chua). Confirmed via Mp table lookup — none exist at any parliament.
+
+---
+
+## CEILING REACHED — 2026-06-01
+
+All remaining pilot failures are permanently unresolvable.
+
+| Category | Pilot count | Reason |
+|---|---|---|
+| Colonial-era MPs not scraped | 8 | Not in Mp table at any parliament |
+
+Matchable pilot ceiling: 22/22 = 100%
+
+### Full-corpus ceiling
+
+The single fix (applying the resolution cascade + parliament-0 fallback) is the only
+actionable change. All other failures fall into:
+- Colonial-era names absent from Mp table (~3,945 rows)
+- Non-MP attendees (~5,390 rows)
+
+Actual full-corpus result after applying Iteration 1:
+- Baseline matched: 65,695 / 96,327 (68.2%)
+- New matches from cascade: 22,122
+- Final matched: 87,817 / 96,327 (91.2%)
+- Remaining unmatched: 8,510 — all structurally absent (colonial-era MPs, non-MP attendees)

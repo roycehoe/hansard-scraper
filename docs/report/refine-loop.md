@@ -20,6 +20,10 @@ Documents with exactly 1 name in `MPs Speaking` are **always in the target** —
 
 Success: ≥95% of reports in the target set yield at least one speech, where every speech has a non-None, non-empty `speaker` and `transcript`.
 
+**Speech quality criteria** (checked in addition to report-level coverage):
+- No `transcript` should begin with `: ` — this is a parsing artifact from the `**Name** : text` markdown format, where the colon falls outside the bold span and gets left in the transcript after splitting on the speaker name match.
+- No `transcript` should be a bare timestamp string (e.g. `4.26 pm`, `10.30 am`) — these are procedural Hansard notations, not speech content; they appear because a timestamp line following a speaker's bold attribution gets collected as that speaker's next utterance.
+
 # Method
 
 Iteratively refine the speech parsing logic until the success threshold is met.
