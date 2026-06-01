@@ -1,24 +1,14 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from database.attendance import Attendance
 from database.handsard_sitting_date_response import HandsardSittingDateResponse
-from database.sitting_a2b import SittingA2b
-from database.sitting_annexure import SittingAnnexure
-from database.sitting_attendance import SittingAttendance
-from database.sitting_ptba import SittingPtba
-from database.sitting_section import SittingSection
-from database.sitting_vernacular import SittingVernacular
 
 
 @dataclass
 class HandsardSittingDateData:
     response: HandsardSittingDateResponse
-    attendance: list[SittingAttendance]
-    ptba: list[SittingPtba]
-    sections: list[SittingSection]
-    annexures: list[SittingAnnexure]
-    vernaculars: list[SittingVernacular]
-    a2b: list[SittingA2b]
+    attendance: list[Attendance]
 
 
 def build_old_handsard_sitting_date_response(result: dict, sitting_date: str) -> HandsardSittingDateData:
@@ -86,26 +76,12 @@ def build_old_handsard_sitting_date_response(result: dict, sitting_date: str) ->
     )
 
     attendance = [
-        SittingAttendance(**item)
+        Attendance(**item)
         for item in result.get("attendanceList") or []
         if isinstance(item, dict)
     ]
 
-    ptba = [
-        SittingPtba(**item)
-        for item in result.get("ptbaList") or []
-        if isinstance(item, dict)
-    ]
-
-    return HandsardSittingDateData(
-        response=response,
-        attendance=attendance,
-        ptba=ptba,
-        sections=[],
-        annexures=[],
-        vernaculars=[],
-        a2b=[],
-    )
+    return HandsardSittingDateData(response=response, attendance=attendance)
 
 
 def build_new_handsard_sitting_date_response(result: dict, sitting_date: str) -> HandsardSittingDateData:
@@ -137,41 +113,8 @@ def build_new_handsard_sitting_date_response(result: dict, sitting_date: str) ->
     )
 
     attendance = [
-        SittingAttendance(**item)
+        Attendance(**item)
         for item in result.get("attendanceList") or []
     ]
 
-    ptba = [
-        SittingPtba(**item)
-        for item in result.get("ptbaList") or []
-    ]
-
-    sections = [
-        SittingSection(**item)
-        for item in result.get("takesSectionVOList") or []
-    ]
-
-    annexures = [
-        SittingAnnexure(**item)
-        for item in result.get("annexureList") or []
-    ]
-
-    vernaculars = [
-        SittingVernacular(**item)
-        for item in result.get("vernacularList") or []
-    ]
-
-    a2b = [
-        SittingA2b(**item)
-        for item in result.get("a2bList") or []
-    ]
-
-    return HandsardSittingDateData(
-        response=response,
-        attendance=attendance,
-        ptba=ptba,
-        sections=sections,
-        annexures=annexures,
-        vernaculars=vernaculars,
-        a2b=a2b,
-    )
+    return HandsardSittingDateData(response=response, attendance=attendance)

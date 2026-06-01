@@ -7,11 +7,6 @@ from sqlmodel import Session
 
 from crud.handsard_sitting_date_response import CRUDHandsardSittingDateResponse
 from crud.handsard_website_response import CRUDHandsardWebsiteResponse
-from crud.sitting_a2b import CRUDSittingA2b
-from crud.sitting_annexure import CRUDSittingAnnexure
-from crud.sitting_ptba import CRUDSittingPtba
-from crud.sitting_section import CRUDSittingSection
-from crud.sitting_vernacular import CRUDSittingVernacular
 from exceptions import HansardGatewayError
 from gateway.handsard_report import get_handsard_report_response_async
 from logs import logger
@@ -67,11 +62,6 @@ def populate_handsard_sitting_dates(session: Session):
     fetched = asyncio.run(_fetch_all_sitting_dates(dates_to_fetch))
 
     sitting_crud = CRUDHandsardSittingDateResponse(session)
-    ptba_crud = CRUDSittingPtba(session)
-    section_crud = CRUDSittingSection(session)
-    annexure_crud = CRUDSittingAnnexure(session)
-    vernacular_crud = CRUDSittingVernacular(session)
-    a2b_crud = CRUDSittingA2b(session)
 
     for i, (sitting_date, result) in enumerate(fetched, start=1):
         if result is None:
@@ -85,20 +75,3 @@ def populate_handsard_sitting_dates(session: Session):
             data = build_old_handsard_sitting_date_response(result, sitting_date)
 
         sitting_crud.create(data.response)
-        sitting_id = data.response.id
-
-        for record in data.ptba:
-            record.sitting_id = sitting_id
-            ptba_crud.create(record)
-        for record in data.sections:
-            record.sitting_id = sitting_id
-            section_crud.create(record)
-        for record in data.annexures:
-            record.sitting_id = sitting_id
-            annexure_crud.create(record)
-        for record in data.vernaculars:
-            record.sitting_id = sitting_id
-            vernacular_crud.create(record)
-        for record in data.a2b:
-            record.sitting_id = sitting_id
-            a2b_crud.create(record)
