@@ -1,8 +1,8 @@
 """
-Find attendance names with no match in the current Mp table.
+Find attendance names with no match in the current Speaker table.
 
 Iterates all Sitting records, parses attendance via get_sitting_attendance,
-and groups unresolved names by frequency.  Run this after adding new Mp rows
+and groups unresolved names by frequency.  Run this after adding new Speaker rows
 to discover remaining gaps for colonial_la_members.json.
 
 Usage:
@@ -19,7 +19,7 @@ from sqlmodel import Session, select
 
 from database.init import engine
 from database.sitting import Sitting
-from services.sitting_attendance import (
+from services.attendance import (
     get_sitting_attendance,
     infer_parliament,
     resolve_canonical_name,
@@ -137,7 +137,7 @@ def main() -> None:
     total_candidates = sum(candidates.values())
 
     print(f"\nUnmatched attendance rows: {total_unmatched}")
-    print(f"  Candidates (likely real people, no Mp entry): {total_candidates}")
+    print(f"  Candidates (likely real people, no Speaker entry): {total_candidates}")
     for cat, ctr in buckets.items():
         if cat == "candidate":
             continue

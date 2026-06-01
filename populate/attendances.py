@@ -1,16 +1,16 @@
 from sqlmodel import Session
 
-from crud.mp import CRUDMp
+from crud.attendance import CRUDAttendance
 from crud.sitting import CRUDSitting
-from crud.sitting_attendance import CRUDSittingAttendance
+from crud.speaker import CRUDSpeaker
 from logs import logger
-from services.sitting_attendance import build_mp_lookups, get_sitting_attendance
+from services.attendance import build_speaker_lookups, get_sitting_attendance
 
 
-def populate_sitting_attendances(session: Session):
-    lookups = build_mp_lookups(CRUDMp(session).get_all())
+def populate_attendances(session: Session):
+    lookups = build_speaker_lookups(CRUDSpeaker(session).get_all())
     sittings = CRUDSitting(session).get_all()
-    crud = CRUDSittingAttendance(session)
+    crud = CRUDAttendance(session)
     done = crud.get_sitting_ids_with_attendance()
     to_process = [sitting for sitting in sittings if sitting.id not in done]
     logger.info(
