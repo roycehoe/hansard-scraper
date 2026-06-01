@@ -261,6 +261,7 @@ class SpeakerLookups:
     direct: dict[tuple[str, int], str]
     bin_free: dict[tuple[str, int], str]
     wordset: dict[tuple[frozenset, int, int], str]
+    wordset_subset: dict[tuple[frozenset, int], str]
     prefix: dict[tuple[str, int], str]
     surname_fallback: dict[tuple[str, int], str]
 
@@ -340,6 +341,34 @@ def _build_wordset_lookup(speakers: list[Speaker]) -> dict[tuple[frozenset, int,
     return wordset
 
 
+def _build_wordset_subset_lookup(speakers: list[Speaker]) -> dict[tuple[frozenset, int], str]:
+    """Like _build_wordset_lookup but keyed by (frozenset(words), parliament) without word count.
+    Only emits entries for names with 3+ words (after title stripping) to avoid false positives.
+    Allows matching names where the word count differs, e.g. "Aline Wong" matching "Wong Aline K".
+    """
+    _MIN_WORDSET_SUBSET_WORDS = 3
+    triples: list[tuple[str, str, int]] = []
+    for speaker in speakers:
+        natural = _invert_to_natural(speaker.name)
+        if natural:
+            triples.append((natural, speaker.name, speaker.parliament_number))
+        triples.append((speaker.name, speaker.name, speaker.parliament_number))
+    counts: dict[tuple[frozenset, int], int] = {}
+    entries: list[tuple[tuple[frozenset, int], str]] = []
+    for display, canonical_name, parliament in triples:
+        words = _period_normalize(strip_title(display)).split()
+        if len(words) < _MIN_WORDSET_SUBSET_WORDS:
+            continue
+        key = (frozenset(words), parliament)
+        counts[key] = counts.get(key, 0) + 1
+        entries.append((key, canonical_name))
+    wordset_subset: dict[tuple[frozenset, int], str] = {}
+    for key, canonical_name in entries:
+        if counts[key] == 1 and key not in wordset_subset:
+            wordset_subset[key] = canonical_name
+    return wordset_subset
+
+
 def _build_prefix_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str]:
     forms: list[tuple[str, str, int]] = []
     for speaker in speakers:
@@ -387,6 +416,7 @@ def build_speaker_lookups(speakers: list[Speaker]) -> SpeakerLookups:
         bin_free=_build_bin_free_lookup(speakers, direct),
         inverted=_build_inverted_lookup(speakers),
         wordset=_build_wordset_lookup(speakers),
+        wordset_subset=_build_wordset_subset_lookup(speakers),
         prefix=_build_prefix_lookup(speakers),
         surname_fallback=_build_surname_fallback_lookup(speakers),
     )
@@ -520,6 +550,9 @@ def _try_name_variant(
         return result
     if include_wordset:
         result = lookups.wordset.get((*_wordset_key(name), parliament))
+        if result:
+            return result
+        result = lookups.wordset_subset.get((frozenset(_period_normalize(name).split()), parliament))
         if result:
             return result
     return lookups.prefix.get((normalized, parliament))
