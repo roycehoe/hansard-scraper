@@ -17,9 +17,11 @@ from collections import Counter
 
 from sqlmodel import Session, select
 
+from crud.speaker import CRUDSpeaker
 from database.init import engine
 from database.sitting import Sitting
 from services.attendance import (
+    build_speaker_lookups,
     get_sitting_attendance,
     infer_parliament,
     resolve_canonical_name,
@@ -61,12 +63,12 @@ def _categorise(name: str) -> str:
 
 # ── resolution ────────────────────────────────────────────────────────────────
 
-def _resolved(name: str, parliament: int) -> bool:
-    if resolve_canonical_name(name, parliament):
+def _resolved(name: str, parliament: int, lookups) -> bool:
+    if resolve_canonical_name(name, parliament, lookups):
         return True
     if parliament == 0:
         for fb in [1, 2, 3]:
-            if resolve_canonical_name(name, fb):
+            if resolve_canonical_name(name, fb, lookups):
                 return True
     return False
 
@@ -81,6 +83,9 @@ def find_unmatched(*, verbose: bool = False) -> dict[str, Counter]:
     """
     with Session(engine) as session:
         sittings = session.exec(select(Sitting)).all()
+        speakers = CRUDSpeaker(session).get_all()
+
+    lookups = build_speaker_lookups(speakers)
 
     buckets: dict[str, Counter] = {
         "candidate": Counter(),
@@ -98,10 +103,10 @@ def find_unmatched(*, verbose: bool = False) -> dict[str, Counter]:
         parliament = infer_parliament(sitting)
         if parliament is None:
             continue
-        for rec in get_sitting_attendance(sitting):
+        for rec in get_sitting_attendance(sitting, lookups):
             if not rec.speaker_name:
                 continue
-            if _resolved(rec.speaker_name, parliament):
+            if _resolved(rec.speaker_name, parliament, lookups):
                 continue
             cat = _categorise(rec.speaker_name)
             buckets[cat][rec.speaker_name] += 1
