@@ -41,6 +41,7 @@ Each folder has a strict responsibility boundary. `populate/` is the only layer 
 | `crud/` | DB read/write helpers | Business logic, HTTP |
 | `populate/` | Pipeline stages: orchestrate gateway + services + crud | — |
 | `utils/` | Shared pure functions | DB access, HTTP |
+| `scripts/` | One-off diagnostics: use Session + crud + services | Raw SQL, direct `select()`/`session.add()` bypassing crud |
 
 ### Data flow
 
@@ -86,7 +87,7 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 - `Speech` — individual utterance with `speaker`, `transcript`, and `ordinal` within the report; has an `mp_id` FK to `Mp` (populated in stage 9)
 - `ParsingStatistics` — diagnostic table tracking whether each report has markdown, a detected start line, and parseable speeches
 - `HandsardSittingDateResponse` — raw API response, one row per sitting date; handles both old and new API formats with all fields `Optional`
-- `SittingAttendance` — child of `HandsardSittingDateResponse`; one row per MP per sitting (raw API record); also written by stage 8 from markdown parsing, with an `mp_id` FK to `Mp` (set in stage 9)
+- `SittingAttendance` — child of `Sitting`; one row per MP per sitting, parsed from `Sitting.markdown_content` in stage 8; has an `mp_id` FK to `Mp` (set in stage 9)
 - `SittingPtba` — child; Permission To Be Absent records per sitting
 - `SittingSection` — child; debate sections/questions from `takesSectionVOList`
 - `SittingAnnexure` — child; annexure file references
@@ -117,7 +118,8 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `inspect_failures.py` — drill into specific failure cases
 - `run_sanity_check.py`, `run_no_speech_validation.py`, `run_single_speaker_check.py` — targeted validation runs
 - `run_exclusion_sanity_check.py` — analyses zero-speech (excluded) documents by checking HTML bold tags vs markdown speaker patterns
-- `speech_speaker_match_rate.py` — baseline assessment of `Speech.speaker` → `Mp` resolution rate, using a stratified sample of 200 speeches by report type
+- `speech_speaker_match_rate.py` — samples speeches stratified by report type, applies the full `MpLookups` name-resolution pipeline via `resolve_canonical_name`, reports match rate overall and by type
+- `load_colonial_la_members.py` — idempotent load of `data/colonial_la_members.json` into the `Mp` table; must be run before `populate_mp_links`
 - `scrape_mps_by_parliament.py` — populates the `Mp` table from parliament.gov.sg
 
 ## Module structure
@@ -159,7 +161,7 @@ handsard-scraper/
 │   ├── report.py                    # Entity: extends HandsardWebsiteResponse + markdown
 │   ├── speech.py                    # Entity: speaker + transcript + ordinal + mp_id FK
 │   ├── sitting.py                   # Entity: extends HandsardSittingDateResponse + markdown
-│   ├── sitting_attendance.py        # Child: one row per MP per sitting + mp_id FK
+│   ├── sitting_attendance.py        # Child of Sitting: one row per MP per sitting + mp_id FK
 │   ├── sitting_ptba.py              # Child: Permission To Be Absent records
 │   ├── sitting_section.py           # Child: debate sections from takesSectionVOList
 │   ├── sitting_annexure.py          # Child: annexure file references
