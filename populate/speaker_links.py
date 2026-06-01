@@ -25,6 +25,24 @@ _NON_SPEAKERS = {
     "Tributes by Leader of the House and Opposition Leaders",
 }
 
+_PRESIDING_OFFICERS: dict[tuple[str, int], str] = {
+    ("SPEAKER", 0): "George Oehlers",
+    ("SPEAKER", 1): "George Oehlers",
+    ("SPEAKER", 2): "Coomaraswamy, P.",
+    ("SPEAKER", 3): "Yeoh Ghim Seng",
+    ("SPEAKER", 4): "Yeoh Ghim Seng",
+    ("SPEAKER", 5): "Yeoh Ghim Seng",
+    ("SPEAKER", 6): "Yeoh Ghim Seng",
+    ("DEPUTY SPEAKER", 6): "Tan Soo Khoon",
+    ("SPEAKER", 7): "Tan Soo Khoon",
+    ("SPEAKER", 8): "Tan Soo Khoon",
+    ("SPEAKER", 9): "Tan Soo Khoon",
+    ("SPEAKER", 10): "Abdullah Bin Tarmugi",
+    ("DEPUTY SPEAKER", 10): "Chew Heng Ching",
+    ("SPEAKER", 11): "Abdullah Bin Tarmugi",
+    ("SPEAKER", 12): "Michael Palmer",
+}
+
 def _resolve_with_parliament_fallback(
     name: str,
     parliament: int,
@@ -108,13 +126,44 @@ def _populate_speech_speaker_ids(
                 continue
 
             raw = speaker.rstrip(":").strip()
-            paren_match = re.search(r"\s*\(([^)]+)\)\s*$", raw)
-            if paren_match:
-                inner = paren_match.group(1).strip()
-                if strip_title(inner) != inner:
-                    raw = inner
+
+            # Presiding officer strings carry no individual name — resolve by parliament lookup.
+            _po_role: str | None = None
+            if raw in ("Mr Speaker", "Mdm Speaker"):
+                _po_role = "SPEAKER"
+            elif raw.startswith("Mr Deputy Speaker") or raw.startswith("The Deputy Speaker"):
+                _po_role = "DEPUTY SPEAKER"
+            if _po_role is not None:
+                _po_parl = parliament if parliament != 0 else next(
+                    (p for p in _COLONIAL_PARLIAMENT_FALLBACKS if (_po_role, p) in _PRESIDING_OFFICERS),
+                    parliament,
+                )
+                _po_name = _PRESIDING_OFFICERS.get((_po_role, _po_parl))
+                if _po_name:
+                    _po_canonical, _po_resolved_parl = _resolve_with_parliament_fallback(
+                        _po_name, _po_parl, lookups, speaker_id_lookup
+                    )
+                    if _po_canonical:
+                        _po_sid = speaker_id_lookup.get((_po_canonical, _po_resolved_parl))
+                        if _po_sid:
+                            crud.set_speaker_id(speech_id, _po_sid)
+                            updated += 1
+                continue  # always skip cascade for presiding officers
+
+            parens = list(re.finditer(r"\(([^)]+)\)", raw))
+            if parens:
+                def _has_title(m: re.Match) -> bool:
+                    inner = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", m.group(1).strip())
+                    return strip_title(inner) != inner
+
+                title_paren = next(
+                    (m for m in reversed(parens) if _has_title(m)),
+                    None,
+                )
+                if title_paren:
+                    raw = title_paren.group(1).strip()
                 else:
-                    raw = raw[: paren_match.start()]
+                    raw = raw[: parens[0].start()].strip()
             raw = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", raw)
             name = normalize_name(strip_title(raw))
             if not name:

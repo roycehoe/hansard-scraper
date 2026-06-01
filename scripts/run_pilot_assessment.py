@@ -34,17 +34,25 @@ _NON_SPEAKERS = {
 }
 
 
+def _has_title(m: re.Match) -> bool:
+    inner = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", m.group(1).strip())
+    return strip_title(inner) != inner
+
+
 def _preprocess(speaker: str) -> str | None:
     if speaker in _NON_SPEAKERS or speaker.startswith("(") or speaker.startswith("_"):
         return None
     raw = speaker.rstrip(":").strip()
-    paren_match = re.search(r"\s*\(([^)]+)\)\s*$", raw)
-    if paren_match:
-        inner = paren_match.group(1).strip()
-        if strip_title(inner) != inner:
-            raw = inner
+    parens = list(re.finditer(r"\(([^)]+)\)", raw))
+    if parens:
+        title_paren = next(
+            (m for m in reversed(parens) if _has_title(m)),
+            None,
+        )
+        if title_paren:
+            raw = title_paren.group(1).strip()
         else:
-            raw = raw[: paren_match.start()]
+            raw = raw[: parens[0].start()].strip()
     raw = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", raw)
     name = normalize_name(strip_title(raw))
     return name or None

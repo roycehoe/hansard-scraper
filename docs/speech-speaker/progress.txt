@@ -1,5 +1,72 @@
 # Speech → MP Link Refine-Loop Progress Log
 
+## Iteration 18 — 2026-06-01
+
+### can_match — all types — double-parenthetical extraction (scan all parens right-to-left for title-bearing group)
+
+**Affected Speech IDs (pilot):** 193673 (`The Second Deputy Prime Minister (Foreign Affairs) (Mr. S. Rajaratnam)`) and similar double-paren minister strings
+
+**Speaker string (failing):**
+`The Second Deputy Prime Minister (Foreign Affairs) (Mr. S. Rajaratnam)` — two paren groups; old regex matched only the trailing `(Foreign Affairs)` which has no title prefix, so the name-bearing `(Mr. S. Rajaratnam)` was never extracted.
+Also newly resolved: `The Deputy Prime Minister (Dr Toh Chin Chye) (Rochore)` and `The Parliamentary Secretary to the Prime Minister (Inche Yaacob bin Mohamed Al-Haj) (for the Prime Minister)` pattern variants.
+
+**Speaker string (passing, same report_type):**
+`The Minister for Foreign Affairs (Mr S. Rajaratnam)` — single paren with title prefix; already handled by old logic.
+
+**Expected Speaker.name:**
+`Rajaratnam, S` (parliament 5), `Toh Chin Chye` (parliamentary), etc.
+
+**Root cause:**
+Old regex `re.search(r"\s*\(([^)]+)\)\s*$", raw)` only looked at the final paren group. For `Role (descriptor) (Mr Name)` the final group is `(Mr Name)` which does contain a title — but for `Role (Mr Name) (locality)` the final group is `(locality)` with no title, and the name-bearing paren is skipped. The fix needs to scan all parens and pick the first one (right-to-left) whose inner text has a recognisable title prefix.
+
+An additional wrinkle: `Mr.` (with period) is not recognised by `strip_title` (which only handles `Mr ` without period). The `_has_title` helper normalises `Mr.` → `Mr` before calling `strip_title` so `Mr. S. Rajaratnam` is correctly identified as title-bearing.
+
+**Proposed fix:**
+Replace single-paren regex with `re.finditer` scanning all paren groups. Added `_has_title(m)` helper that normalises `Mr./Mrs./Dr./Ms.` period forms before calling `strip_title`. Scan reversed; take first title-bearing group; if none, strip from first paren onward (unchanged constituency-strip behaviour). Updated `_preprocess` in both `scripts/run_pilot_assessment.py` and `scripts/run_regression_check.py` to mirror the new logic.
+
+**Backward-compatibility:**
+Single-paren strings whose inner text has a title prefix are handled identically — `reversed([one_match])` returns that same match and `_has_title` fires the same way. Single-paren strings with no title prefix fall through to `raw = raw[: parens[0].start()].strip()` — same constituency-strip as before. The regression set confirms: 53/53 = 100%.
+
+**Outcome:** KEPT
+- Regression: 53/53 = 100.0% (no new failures)
+- Pilot: 232/267 = 86.9% (228/267 = 85.4% before → 232/267 = 86.9% after, +4)
+- Newly resolved: `The Second Deputy Prime Minister (Foreign Affairs) (Mr. S. Rajaratnam)`, `The Deputy Prime Minister (Dr Toh Chin Chye) (Rochore)`, `The Parliamentary Secretary to the Prime Minister (Inche Yaacob bin Mohamed Al-Haj) (for the Prime Minister)`, and one further double-paren colonial-era string
+
+---
+
+## Iteration 17 — 2026-06-01
+
+### can_match — all types — resolve presiding officer strings by parliament lookup
+
+**Affected Speech IDs (pilot):** None — pilot set contains no plain `Mr Speaker` or `Mr Deputy Speaker` strings (only `(Announcement by Mr Speaker)` ×2, caught earlier by `startswith("(")` guard)
+
+**Speaker string (failing):**
+`Mr Speaker` (×18,122 corpus-wide), `Mr Deputy Speaker` (×2,132 corpus-wide) — role-only strings with no individual name; unresolvable via name cascade.
+
+**Speaker string (passing, same report_type):**
+Plain name strings like `Mr Lee Kuan Yew` — unaffected; these never trigger the presiding officer path.
+
+**Expected Speaker.name:**
+Resolved by parliament: e.g. parliament 7–9 → `Tan Soo Khoon`, parliament 10–11 → `Abdullah Bin Tarmugi`, parliament 12 → `Michael Palmer`.
+
+**Root cause:**
+`Mr Speaker` / `Mr Deputy Speaker` strings carry no individual name. The existing name cascade (normalize → strip_title → resolve_canonical_name) produces no match because there is no name to resolve. The fix requires a parliament-keyed lookup built from attendance records.
+
+**Proposed fix:**
+Added `_PRESIDING_OFFICERS: dict[tuple[str, int], str]` with 15 entries covering parliaments 0–12 (from `scripts/find_presiding_officers.py`). Added early handler inside the per-speech loop: if `raw` matches `Mr Speaker`, `Mdm Speaker`, `Mr Deputy Speaker`, or `The Deputy Speaker`, look up the name in `_PRESIDING_OFFICERS` by parliament, resolve via `_resolve_with_parliament_fallback`, and set `speaker_id` if found. `continue` fires unconditionally — presiding officer strings are never resolvable via the name cascade.
+
+**Files changed:** `populate/speaker_links.py` (reverted)
+
+**Backward-compatibility:**
+The `continue` is unconditional for presiding officer strings, so no cascade fires for them whether or not the lookup succeeds. Speeches that were already correctly skipping via the existing cascade are unaffected.
+
+**Outcome:** REVERTED
+- Regression: 53/53 = 100.0% (no new failures)
+- Pilot: 228/267 = 85.4% (no change — pilot contains no plain presiding officer strings; all `Mr Speaker` variants in pilot start with `(` and are caught by the `startswith("(")` guard before reaching this code)
+- Decision: pilot match count did not increase; rule requires increase to KEEP
+
+---
+
 ## Iteration 16 (corrected) — 2026-06-01
 
 ### can_match — all types — strip single-char initials from wordset subset key and query (corrected)
