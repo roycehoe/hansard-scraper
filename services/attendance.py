@@ -359,6 +359,7 @@ def _build_wordset_subset_lookup(speakers: list[Speaker]) -> dict[tuple[frozense
         words = _period_normalize(strip_title(display)).split()
         if len(words) < _MIN_WORDSET_SUBSET_WORDS:
             continue
+        words = [w for w in words if len(w) > 1]
         key = (frozenset(words), parliament)
         counts[key] = counts.get(key, 0) + 1
         entries.append((key, canonical_name))
@@ -552,7 +553,8 @@ def _try_name_variant(
         result = lookups.wordset.get((*_wordset_key(name), parliament))
         if result:
             return result
-        result = lookups.wordset_subset.get((frozenset(_period_normalize(name).split()), parliament))
+        _wss_words = [w for w in _period_normalize(name).split() if len(w) > 1]
+        result = lookups.wordset_subset.get((frozenset(_wss_words), parliament))
         if result:
             return result
     return lookups.prefix.get((normalized, parliament))
