@@ -27,14 +27,27 @@ def _parse_sitting_date(sitting_date: str) -> datetime:
     return datetime.strptime(sitting_date, "%d-%m-%Y")
 
 
+def _strip_nul(obj):
+    if isinstance(obj, str):
+        return obj.replace("\x00", "")
+    if isinstance(obj, dict):
+        return {k: _strip_nul(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_strip_nul(v) for v in obj]
+    return obj
+
+
 async def _fetch_all_sitting_dates(dates: list[str]) -> list[tuple[str, dict | None]]:
     semaphore = asyncio.Semaphore(_CONCURRENCY)
 
     async with httpx.AsyncClient(timeout=30) as client:
+
         async def fetch_one(sitting_date):
             async with semaphore:
                 try:
-                    result = await get_handsard_report_response_async(sitting_date, client)
+                    result = await get_handsard_report_response_async(
+                        sitting_date, client
+                    )
                     return sitting_date, result
                 except HansardGatewayError as e:
                     logger.warning(f"Skipping {sitting_date}: {e}")
@@ -45,7 +58,9 @@ async def _fetch_all_sitting_dates(dates: list[str]) -> list[tuple[str, dict | N
 
 def populate_handsard_sitting_dates(session: Session):
     all_sitting_dates = CRUDHandsardWebsiteResponse(session).get_all_sitting_dates()
-    existing_sitting_dates = CRUDHandsardSittingDateResponse(session).get_all_sitting_dates()
+    existing_sitting_dates = CRUDHandsardSittingDateResponse(
+        session
+    ).get_all_sitting_dates()
     dates_to_fetch = list(all_sitting_dates - existing_sitting_dates)
 
     fetched = asyncio.run(_fetch_all_sitting_dates(dates_to_fetch))
@@ -62,6 +77,7 @@ def populate_handsard_sitting_dates(session: Session):
             continue
         logger.info(f"{i}/{len(dates_to_fetch)}: {sitting_date}")
 
+        result = _strip_nul(result)
         if _parse_sitting_date(sitting_date) >= settings.sitting_date_format_change:
             data = build_new_handsard_sitting_date_response(result, sitting_date)
         else:
