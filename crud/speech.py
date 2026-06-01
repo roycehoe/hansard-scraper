@@ -1,4 +1,4 @@
-from sqlmodel import Session, select
+from sqlmodel import Session, select, update
 
 from database.report import Report
 from database.speech import Speech
@@ -26,3 +26,18 @@ class CRUDSpeech:
             .where(Speech.speaker.is_not(None))
         ).all()
         return list(rows)
+
+    def get_unresolved_ids(self) -> list[int]:
+        return list(self.session.exec(
+            select(Speech.id).where(Speech.mp_id == None)  # noqa: E711
+        ).all())
+
+    def get_speaker_info_by_ids(self, ids: list[int]) -> list[tuple[int, str, int]]:
+        return list(self.session.exec(
+            select(Speech.id, Speech.speaker, Report.parliament_number)
+            .join(Report)
+            .where(Speech.id.in_(ids))
+        ).all())
+
+    def set_mp_id(self, speech_id: int, mp_id: int) -> None:
+        self.session.exec(update(Speech).where(Speech.id == speech_id).values(mp_id=mp_id))
