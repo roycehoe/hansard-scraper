@@ -68,5 +68,7 @@
   {"name": "Hoffman, R.C.",     "party": "Colonial Government", "parliament_number": 1, "is_legislative_assembly": true, "comments": "Chief Secretary"},
   {"name": "Ewen Fergusson",    "party": "Colonial Government", "parliament_number": 1, "is_legislative_assembly": true, "comments": null},
   {"name": "Mason, J.M.",       "party": "Colonial Government", "parliament_number": 1, "is_legislative_assembly": true, "comments": null},
-  {"name": "Yusof bin Ishak",   "party": "Non-partisan",        "parliament_number": 1, "is_legislative_assembly": true, "comments": "Yang di-Pertuan Negara 1959–1970"}
+  {"name": "Yusof bin Ishak",   "party": "Non-partisan",        "parliament_number": 1, "is_legislative_assembly": true, "comments": "Yang di-Pertuan Negara 1959–1970"},
+  {"name": "Lim Huan Boon",    "party": "Barisan Sosialis",    "parliament_number": 1, "is_legislative_assembly": true, "comments": "3rd Legislative Assembly member (1963-1965), Bukit Merah constituency; Leader of the Opposition; arrested during Operation Coldstore (1963); resigned 31 December 1965"},
+  {"name": "Tan Siak Kew",     "party": "Unknown",             "parliament_number": 1, "is_legislative_assembly": true, "comments": "Nominated member, Legislative Assembly 1958-59. Businessman and diplomat, later first Singaporean ambassador to Thailand (1966)."}
 ]
