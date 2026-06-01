@@ -128,8 +128,7 @@ def _populate_speech_mp_ids(
                 else:
                     raw = raw[: m.start()]
             raw = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", raw)
-            name = strip_title(raw)
-            name = normalize_name(name)
+            name = normalize_name(strip_title(raw))
             if not name:
                 continue
 
