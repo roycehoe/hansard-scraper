@@ -11,7 +11,7 @@ class Attendance(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     sitting_id: Optional[int] = Field(default=None, foreign_key="sitting.id")
 
-    mp_name: Optional[str] = None
+    speaker_name: Optional[str] = None
     attendance: Optional[bool] = None
     location_name: Optional[str] = None
     speaker_id: Optional[int] = Field(default=None, foreign_key="speaker.id")

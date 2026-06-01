@@ -1,10 +1,10 @@
 # Attendance Speaker Matching Patterns
 
-Accumulated knowledge about `Attendance.mp_name` string formats and how to handle them.
+Accumulated knowledge about `Attendance.speaker_name` string formats and how to handle them.
 
 ## How attendance names originate
 
-`Attendance.mp_name` is parsed from the PRESENT/ABSENT sections of `Sitting.markdown_content` by `services/attendance.py::_parse_entry_line`. The raw name is extracted from the attendance list with minimal normalisation — titles are NOT stripped at parse time.
+`Attendance.speaker_name` is parsed from the PRESENT/ABSENT sections of `Sitting.markdown_content` by `services/attendance.py::_parse_entry_line`. The raw name is extracted from the attendance list with minimal normalisation — titles are NOT stripped at parse time.
 
 ## Name formats
 
@@ -53,7 +53,7 @@ Abbreviation form: `Mohamad Maidin B P M` = `Mohamad Maidin Bin Packer Mohamed`.
 
 ## Known top failures (from full-corpus analysis, 2026-06-01)
 
-| mp_name | Count | Root cause |
+| speaker_name | Count | Root cause |
 |---|---|---|
 | Abdullah Tarmugi | 679 | Missing Bin |
 | Tony Tan Keng Yam | 648 | Inverted format |

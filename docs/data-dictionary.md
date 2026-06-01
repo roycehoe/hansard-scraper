@@ -87,7 +87,7 @@ One row per person per sitting, parsed from the PRESENT/ABSENT sections of `Sitt
 
 | Field | Type | Meaning |
 |---|---|---|
-| `mp_name` | str | Name as it appears in the attendance list, after title stripping. |
+| `speaker_name` | str | Name as it appears in the attendance list, after title stripping. |
 | `attendance` | bool | `True` = present, `False` = absent. |
 | `location_name` | str | Constituency or location if listed in the source (e.g. remote attendance). |
 | `speaker_id` | int | FK → `Speaker.id`. `NULL` where the match has not been resolved. |

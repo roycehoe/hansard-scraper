@@ -149,8 +149,8 @@ Speaker entries appear at the top: `Mr SPEAKER (Mr Name (Constituency)).` — in
 
 ### Name matching against `Mp` table
 
-`Mp.name` stores names without title prefixes. Known variations:
-- Honorific suffixes in attendance not in `Mp.name` — e.g. `C.B.E.`, `J.P.`
-- `Mp.name` sometimes stores `Surname, Firstname` (e.g. `Barker, E.W.`) while the attendance line uses natural order
-- Colonial-era prefix titles (`Inche`, `The Honourable`) absent from `Mp.name`
-- Parliament number join key: `Sitting.parlement_no` (note the spelling) → `Mp.parliament_number`
+`Speaker.name` stores names without title prefixes. Known variations:
+- Honorific suffixes in attendance not in `Speaker.name` — e.g. `C.B.E.`, `J.P.`
+- `Speaker.name` sometimes stores `Surname, Firstname` (e.g. `Barker, E.W.`) while the attendance line uses natural order
+- Colonial-era prefix titles (`Inche`, `The Honourable`) absent from `Speaker.name`
+- Parliament number join key: `Sitting.parlement_no` (note the spelling) → `Speaker.parliament_number`

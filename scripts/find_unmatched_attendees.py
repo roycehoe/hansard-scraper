@@ -75,7 +75,7 @@ def _resolved(name: str, parliament: int) -> bool:
 
 def find_unmatched(*, verbose: bool = False) -> dict[str, Counter]:
     """
-    Returns a dict mapping category -> Counter(mp_name -> count).
+    Returns a dict mapping category -> Counter(speaker_name -> count).
     Categories: 'candidate', 'official_with_title', 'presiding',
                 'allcaps_header', 'document_noise', 'blank'.
     """
@@ -99,12 +99,12 @@ def find_unmatched(*, verbose: bool = False) -> dict[str, Counter]:
         if parliament is None:
             continue
         for rec in get_sitting_attendance(sitting):
-            if not rec.mp_name:
+            if not rec.speaker_name:
                 continue
-            if _resolved(rec.mp_name, parliament):
+            if _resolved(rec.speaker_name, parliament):
                 continue
-            cat = _categorise(rec.mp_name)
-            buckets[cat][rec.mp_name] += 1
+            cat = _categorise(rec.speaker_name)
+            buckets[cat][rec.speaker_name] += 1
 
     return buckets
 

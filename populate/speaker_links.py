@@ -59,7 +59,7 @@ def _populate_attendance_speaker_ids(
         records = crud.get_by_ids(batch_ids)
 
         for record in records:
-            if not record.mp_name or record.sitting_id is None:
+            if not record.speaker_name or record.sitting_id is None:
                 continue
             sitting = sittings_by_id.get(record.sitting_id)
             if sitting is None:
@@ -68,10 +68,10 @@ def _populate_attendance_speaker_ids(
             if parliament is None:
                 continue
 
-            speaker_id = speaker_id_lookup.get((record.mp_name, parliament))
+            speaker_id = speaker_id_lookup.get((record.speaker_name, parliament))
 
             if not speaker_id:
-                name = normalize_name(strip_title(record.mp_name))
+                name = normalize_name(strip_title(record.speaker_name))
                 canonical, parliament = _resolve_with_parliament_fallback(name, parliament, lookups, speaker_id_lookup)
                 if canonical:
                     speaker_id = speaker_id_lookup.get((canonical, parliament))

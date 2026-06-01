@@ -1,7 +1,7 @@
 """
 Regression check for the speech → speaker resolution pipeline.
 
-Loads the regression Speech IDs from docs/speech-mp/sample.json and applies
+Loads the regression Speech IDs from docs/speech-speaker/sample.json and applies
 the same preprocessing + resolution logic as _populate_speech_speaker_ids in
 populate/speaker_links.py — but in-memory only, no DB writes.
 
