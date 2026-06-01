@@ -403,12 +403,52 @@ def _get_inverted_lookup() -> dict[tuple[str, int], str]:
                     if rk not in _INVERTED_LOOKUP:
                         _INVERTED_LOOKUP[rk] = mp.name
 
-    # Add surname-only keys only where that surname is UNIQUE within the parliament
+    # Add surname-only keys (multi-word inverted surnames) where unique within parliament
     for sk, canonical in inverted_entries:
         if surname_only_counts.get(sk, 0) == 1 and sk not in _INVERTED_LOOKUP:
             _INVERTED_LOOKUP[sk] = canonical
 
     return _INVERTED_LOOKUP
+
+
+# Lazy-loaded surname fallback: (last_word_of_natural_form, parliament) -> canonical Mp.name
+# Only populated where that last word is unique within the parliament, so it never resolves
+# ambiguous surnames (Tan, Lee, Lim, …).  Handles "Mr Byrne" -> "Byrne, K.M.",
+# "Mr Rajaratnam" -> "Rajaratnam, S", etc.
+_SURNAME_FALLBACK_LOOKUP: dict[tuple[str, int], str] = {}
+
+
+def _get_surname_fallback_lookup() -> dict[tuple[str, int], str]:
+    global _SURNAME_FALLBACK_LOOKUP
+    if _SURNAME_FALLBACK_LOOKUP:
+        return _SURNAME_FALLBACK_LOOKUP
+    with Session(engine) as s:
+        mps = s.exec(select(Mp)).all()
+    counts: dict[tuple[str, int], int] = {}
+    entries: list[tuple[tuple[str, int], str]] = []
+    for mp in mps:
+        if ", " in mp.name:
+            parts = mp.name.split(", ")
+            if len(parts) >= 3 and parts[-1] in _INVERTED_TITLE_SUFFIXES:
+                rest = " ".join(parts[1:-1])
+            else:
+                rest = ", ".join(parts[1:])
+            natural = strip_title(f"{rest} {parts[0]}").strip()
+        else:
+            natural = mp.name
+        words = _period_normalize(natural).split()
+        if not words:
+            continue
+        last = words[-1]
+        if len(last) < 2:
+            continue
+        key = (last, mp.parliament_number)
+        counts[key] = counts.get(key, 0) + 1
+        entries.append((key, mp.name))
+    for key, canonical in entries:
+        if counts[key] == 1:
+            _SURNAME_FALLBACK_LOOKUP[key] = canonical
+    return _SURNAME_FALLBACK_LOOKUP
 
 
 def infer_parliament(sitting: Sitting) -> int | None:
@@ -418,10 +458,13 @@ def infer_parliament(sitting: Sitting) -> int | None:
 
 
 def strip_title(text: str) -> str:
-    for prefix in _TITLE_PREFIXES:
-        if text.startswith(prefix):
-            return text[len(prefix):]
-    return text
+    while True:
+        for prefix in _TITLE_PREFIXES:
+            if text.startswith(prefix):
+                text = text[len(prefix):]
+                break
+        else:
+            return text
 
 
 def _parse_name_and_location(text: str) -> tuple[str, str | None]:
@@ -611,6 +654,14 @@ def resolve_canonical_name(name: str, parliament: int) -> str | None:
             or wordset.get((*_wordset_key(split_stripped), parliament))
             or prefix.get((sp2, parliament))
         )
+    if canonical:
+        return canonical
+
+    # Surname-only fallback: if name reduces to a single token, try it as the unique
+    # last name in this parliament.  Only fires for unambiguous cases.
+    words_pn = _period_normalize(name).split()
+    if len(words_pn) == 1:
+        canonical = _get_surname_fallback_lookup().get((words_pn[0], parliament))
     return canonical
 
 
