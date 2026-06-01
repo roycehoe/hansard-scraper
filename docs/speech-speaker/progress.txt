@@ -1,5 +1,39 @@
 # Speech → MP Link Refine-Loop Progress Log
 
+## Iteration 16 — 2026-06-01
+
+### can_match — all types — strip single-char initials from wordset subset key and query
+
+**Affected Speech IDs (pilot):** Target: speeches with `Dr Aline Wong`, `Dr Augustine Tan`
+
+**Speaker string (failing):**
+`Dr Aline Wong` → after strip_title → `Aline Wong` (2 words); canonical `Wong Aline K` has initial `K`. Iteration 15 keyed on `{aline, wong, k}` (build) vs `{aline, wong}` (lookup) — no match.
+`Dr Augustine Tan` → `Augustine Tan` (2 words); canonical `Tan H.H. Augustine` → after period-normalise → `{tan, h, h, augustine}` (build) vs `{augustine, tan}` (lookup).
+
+**Speaker string (passing, same report_type):**
+Speakers whose canonical name has no single-char initials — unaffected by this change.
+
+**Root cause:**
+`_build_wordset_subset_lookup` builds keys from `frozenset(all_words)` including single-char initials. The query side also uses all words. Single-char initials cause the frozensets to differ when the speech string omits the initial.
+
+**Proposed fix:**
+Strip tokens of length ≤ 1 from both the build key and the lookup query: `[w for w in words if len(w) > 1]`. Applied to both `_build_wordset_subset_lookup` (build side) and the `_wss_words` lookup in `_try_name_variant`.
+
+**Root cause of failure (actual):**
+After stripping the single-char initial `K`, `Wong Aline K` filters down to 2 words (`['wong', 'aline']`). The `_MIN_WORDSET_SUBSET_WORDS = 3` minimum is checked on the *filtered* list — 2 < 3 → the entry is never emitted at build time. The build and lookup keys would match if the entry were emitted, but the guard prevents it. The fix is incomplete without also lowering the minimum to 2 (on the filtered list) or checking the minimum on the pre-filter list.
+
+**Files changed:** `services/attendance.py` (reverted)
+
+**Backward-compatibility:**
+N/A — reverted.
+
+**Outcome:** REVERTED
+- Regression: 53/53 = 100.0% (no new failures)
+- Pilot: 226/267 = 84.6% (no change — same as iteration 15; `Dr Aline Wong` and `Dr Augustine Tan` still unmatched because `_MIN_WORDSET_SUBSET_WORDS = 3` excludes the 2-word post-filter key)
+- Next candidate fix: change `_MIN_WORDSET_SUBSET_WORDS = 3` to `2` on the filtered list (or check the minimum on the pre-filter word count)
+
+---
+
 ## Sample expansion — 2026-06-01
 
 Added parliament=0 speeches (colonial LA era, newly matchable after iteration 13).
