@@ -2,6 +2,8 @@ import re
 
 import html2text
 
+_MAX_ADJOURNMENT_CONTINUATIONS = 6
+
 
 def _strip_nbsp(html: str) -> str:
     return html.replace("&nbsp;", "")
@@ -42,19 +44,21 @@ def _merge_consecutive_bold_only_lines(md: str) -> str:
     return "\n".join(lines)
 
 
-def get_cleaned_report_markdown(html: str) -> str:
-    h = html2text.HTML2Text(bodywidth=0)
-
+def _preprocess_html(html: str) -> str:
     html = _strip_nbsp(html)
     html = _remove_column_markers(html)
-    html = _remove_page_text(html)
+    return _remove_page_text(html)
 
-    md_file = h.handle(html)
-    md_file = _strip_page_break_artifacts(md_file)
-    md_file = _remove_empty_lines(md_file)
-    md_file = _merge_consecutive_bold_only_lines(md_file)
 
-    return md_file
+def _postprocess_markdown_base(md: str) -> str:
+    md = _strip_page_break_artifacts(md)
+    md = _remove_empty_lines(md)
+    return _merge_consecutive_bold_only_lines(md)
+
+
+def get_cleaned_report_markdown(html: str) -> str:
+    converter = html2text.HTML2Text(bodywidth=0)
+    return _postprocess_markdown_base(converter.handle(_preprocess_html(html)))
 
 
 def _fix_sitting_concat_headers(html: str) -> str:
@@ -85,30 +89,30 @@ def _fix_sitting_split_bold(md: str) -> str:
     # Pattern 2: **\nTITLE\n**  → **TITLE**  (open ** on own line, single title, close **)
     lines = md.splitlines()
     result = []
-    i = 0
-    while i < len(lines):
-        stripped = lines[i].strip()
+    line_index = 0
+    while line_index < len(lines):
+        stripped = lines[line_index].strip()
 
         # Pattern 1: starts with **, has content, doesn't close with **, next line is **
         if (stripped.startswith("**")
                 and not stripped.endswith("**")
                 and len(stripped) > 2
-                and i + 1 < len(lines)
-                and lines[i + 1].strip() == "**"):
+                and line_index + 1 < len(lines)
+                and lines[line_index + 1].strip() == "**"):
             result.append(stripped + "**")
-            i += 2
+            line_index += 2
 
         # Pattern 2: standalone **, single plain content line, closing **
         elif (stripped == "**"
-              and i + 2 < len(lines)
-              and lines[i + 1].strip()
-              and lines[i + 2].strip() == "**"):
-            result.append(f"**{lines[i + 1].strip()}**")
-            i += 3
+              and line_index + 2 < len(lines)
+              and lines[line_index + 1].strip()
+              and lines[line_index + 2].strip() == "**"):
+            result.append(f"**{lines[line_index + 1].strip()}**")
+            line_index += 3
 
         else:
-            result.append(lines[i])
-            i += 1
+            result.append(lines[line_index])
+            line_index += 1
     return "\n".join(result)
 
 
@@ -143,44 +147,34 @@ def _merge_sitting_adjournment_lines(md: str) -> str:
     # each rendering as a separate line. Merge continuations until the sentence ends with a period.
     lines = md.splitlines()
     result = []
-    i = 0
-    while i < len(lines):
-        line = lines[i]
+    line_index = 0
+    while line_index < len(lines):
+        line = lines[line_index]
         if re.search(r"Adjourned accordingly at", line, re.IGNORECASE):
             merges = 0
             while (
                 not line.rstrip().endswith(".")
                 and not line.rstrip().endswith("._")
-                and merges < 6
-                and i + 1 < len(lines)
-                and not re.match(r"^(\*\*|#{1,6}|\* \* \*)", lines[i + 1])
+                and merges < _MAX_ADJOURNMENT_CONTINUATIONS
+                and line_index + 1 < len(lines)
+                and not re.match(r"^(\*\*|#{1,6}|\* \* \*)", lines[line_index + 1])
             ):
-                i += 1
+                line_index += 1
                 merges += 1
-                line = line.rstrip() + " " + lines[i].lstrip()
+                line = line.rstrip() + " " + lines[line_index].lstrip()
         result.append(line)
-        i += 1
+        line_index += 1
     return "\n".join(result)
 
 
 def get_cleaned_sitting_markdown(html: str) -> str:
-    h = html2text.HTML2Text(bodywidth=0)
-
-    html = _strip_nbsp(html)
-    html = _remove_column_markers(html)
-    html = _remove_page_text(html)
-    html = _fix_sitting_concat_headers(html)
-
-    md_file = h.handle(html)
-    md_file = _strip_page_break_artifacts(md_file)
-    md_file = _remove_empty_lines(md_file)
-    md_file = _merge_consecutive_bold_only_lines(md_file)
-    md_file = _fix_sitting_split_bold(md_file)
-    md_file = _remove_sitting_orphan_bold_markers(md_file)
-    md_file = _remove_sitting_empty_bold(md_file)
-    md_file = _remove_sitting_table_separators(md_file)
-    md_file = _remove_sitting_orphan_italic_markers(md_file)
-    md_file = _remove_sitting_empty_italic(md_file)
-    md_file = _merge_sitting_adjournment_lines(md_file)
-
-    return md_file
+    converter = html2text.HTML2Text(bodywidth=0)
+    preprocessed = _fix_sitting_concat_headers(_preprocess_html(html))
+    md = _postprocess_markdown_base(converter.handle(preprocessed))
+    md = _fix_sitting_split_bold(md)
+    md = _remove_sitting_orphan_bold_markers(md)
+    md = _remove_sitting_empty_bold(md)
+    md = _remove_sitting_table_separators(md)
+    md = _remove_sitting_orphan_italic_markers(md)
+    md = _remove_sitting_empty_italic(md)
+    return _merge_sitting_adjournment_lines(md)
