@@ -67,10 +67,10 @@ _SPEAKER_HONORIFIC_RE = re.compile(
 
 
 def _extract_mps_speaking(markdown: str) -> list[str]:
-    m = _MP_SPEAK_RE.search(markdown)
-    if not m:
+    match = _MP_SPEAK_RE.search(markdown)
+    if not match:
         return []
-    return [n.strip() for n in m.group(1).split(";") if n.strip().strip("* ")]
+    return [part.strip() for part in match.group(1).split(";") if part.strip().strip("* ")]
 
 
 def _classify_speech_type(parsed: list[ParsedSpeech], speaker_count: int) -> ParsedSpeechType:
@@ -104,8 +104,8 @@ def _is_section_header_speaker(name: str) -> bool:
 
 
 def _extract_addenda_minister(markdown: str) -> Optional[str]:
-    m = _ADDENDA_MINISTER_RE.search(markdown)
-    return m.group(1).strip() if m else None
+    match = _ADDENDA_MINISTER_RE.search(markdown)
+    return match.group(1).strip() if match else None
 
 
 def _extract_body_attribution(markdown: str, report_type: str) -> Optional[str]:
@@ -121,8 +121,8 @@ def _extract_body_attribution(markdown: str, report_type: str) -> Optional[str]:
       bill            — presenter named in the "presented by (Name)" clause
     """
     if report_type == "atbp":
-        m = _ATBP_SPEAKER_RE.search(markdown)
-        return m.group(1).strip() if m else None
+        match = _ATBP_SPEAKER_RE.search(markdown)
+        return match.group(1).strip() if match else None
 
     if report_type == "president-address":
         minister = _extract_addenda_minister(markdown)
@@ -134,12 +134,12 @@ def _extract_body_attribution(markdown: str, report_type: str) -> Optional[str]:
         return None
 
     if report_type == "motion":
-        m = _ADJOURNMENT_MOVER_RE.search(markdown)
-        return m.group(1).strip() if m else None
+        match = _ADJOURNMENT_MOVER_RE.search(markdown)
+        return match.group(1).strip() if match else None
 
     if report_type == "bill":
-        m = _BILL_PRESENTER_RE.search(markdown)
-        return m.group(1).strip() if m else None
+        match = _BILL_PRESENTER_RE.search(markdown)
+        return match.group(1).strip() if match else None
 
     return None
 
@@ -151,9 +151,9 @@ def _strip_md(text: str) -> str:
 def _extract_md_title(markdown_content: str) -> Optional[str]:
     """Extract the Title field from the markdown header row, if present."""
     for line in markdown_content.splitlines()[:12]:
-        m = re.search(r"Title:\|\s*([^|\n]+)", line, re.IGNORECASE)
-        if m:
-            candidate = m.group(1).strip()
+        match = re.search(r"Title:\|\s*([^|\n]+)", line, re.IGNORECASE)
+        if match:
+            candidate = match.group(1).strip()
             if candidate:
                 return candidate
     return None
@@ -217,12 +217,12 @@ def get_start_of_speech_line(
     # title due to HTML entity artifacts, OCR noise, or data entry errors.
     md_title = fix_mojibake(_extract_md_title(markdown_content) or "")
 
-    candidates = [c for c in [
+    candidates = [candidate for candidate in [
         title,
         original_title_clean,
         f"{title} {subtitle}" if subtitle else None,
         md_title or None,
-    ] if c]
+    ] if candidate]
 
     for line_index, line in enumerate(markdown_content.splitlines()):
         for candidate in candidates:
@@ -232,22 +232,28 @@ def get_start_of_speech_line(
     return None
 
 
+def _is_artifact_line(line: str) -> bool:
+    if not line:
+        return True
+    if not line.strip("* _|"):
+        return True
+    if re.match(r"^-{3}(\|-{2,})+\s*$", line):
+        return True
+    if line.startswith("!["):
+        return True
+    if line == "﻿":
+        return True
+    return False
+
+
 def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpeech]:
     current_speaker = None
     speeches: list[ParsedSpeech] = []
     for line in markdown.splitlines()[start_of_speech_line + 1 :]:
         parsed_line = line.strip()
         parsed_line = re.sub(r"^(\*{4})+", "", parsed_line)  # strip leading **** artifacts (e.g. ****8.**Name**)
-        if not parsed_line:
+        if _is_artifact_line(parsed_line):
             continue
-        if not parsed_line.strip("* _|"):  # skip artifact lines: **, ****, _ _, |, etc.
-            continue
-        if re.match(r"^-{3}(\|-{2,})+\s*$", parsed_line):
-            continue  # skip table separator lines (---|--- artifacts)
-        if parsed_line.startswith("!["):
-            continue  # skip embedded image lines (data:image/png;base64,...)
-        if parsed_line == "﻿":
-            continue  # skip bare BOM characters
         if "**" not in parsed_line:
             if current_speaker is None:  # skip preamble before first speaker
                 continue
@@ -258,21 +264,21 @@ def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpee
             speeches.append(ParsedSpeech(speaker=current_speaker, transcript=parsed_line))
             continue
 
-        name = re.search(r"((?:\*\*[^*]+?\*\*\s*)+)", parsed_line)
-        if name:
-            transcript = re.sub(r"^:\s*", "", parsed_line.split(name.group(0))[-1].strip())
+        bold_match = re.search(r"((?:\*\*[^*]+?\*\*\s*)+)", parsed_line)
+        if bold_match:
+            transcript = re.sub(r"^:\s*", "", parsed_line.split(bold_match.group(0))[-1].strip())
             if transcript.startswith("|"):
                 continue  # table row header ("**Header** | ...") — bold is a column label, not a speaker
-            raw_speaker = name.group(0).replace("*", "").replace(":", "").strip()
+            raw_speaker = bold_match.group(0).replace("*", "").replace(":", "").strip()
             # Strip [X in the Chair] chair-annotation prefix (e.g. "**[Mr Speaker in the Chair] BILL**")
-            chair_m = re.match(r"^\[(.+?)\s+in the [Cc]hair\]", raw_speaker)
-            new_speaker = chair_m.group(1).strip() if chair_m else raw_speaker
+            chair_match = re.match(r"^\[(.+?)\s+in the [Cc]hair\]", raw_speaker)
+            new_speaker = chair_match.group(1).strip() if chair_match else raw_speaker
             # Skip bold section-title lines: no honorific AND (no colon, or colon is mid-title
             # not at the end). Catches "**MINISTRY OF EDUCATION**", "**Table 1: Description**".
-            _bold_ends_with_colon = name.group(0).rstrip().endswith(":**")
+            bold_ends_with_colon = bold_match.group(0).rstrip().endswith(":**")
             if (not transcript
                     and not _SPEAKER_HONORIFIC_RE.search(raw_speaker)
-                    and (":" not in name.group(0) or not _bold_ends_with_colon)):
+                    and (":" not in bold_match.group(0) or not bold_ends_with_colon)):
                 continue
             # Strip leading question-number prefix from oral-answer speaker names
             # e.g. "1\. Assoc. Prof. Paulin Tay Straughan" → "Assoc. Prof. Paulin Tay Straughan"
@@ -286,7 +292,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpee
         if current_speaker is not None:
             speeches.append(ParsedSpeech(speaker=current_speaker, transcript=parsed_line))
 
-    return [sp for sp in speeches if sp.transcript.strip() != ""]
+    return [speech for speech in speeches if speech.transcript.strip() != ""]
 
 
 def get_speeches(markdown: str, start_of_speech_line: int, report_type: str) -> list[ParsedSpeech]:
