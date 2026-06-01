@@ -20,7 +20,11 @@ from sqlmodel import Session
 
 from crud.report import CRUDReport
 from database.init import engine
-from services.speech import _extract_mps_speaking, get_speeches, get_start_of_speech_line
+from services.speech import (
+    _extract_mps_speaking,
+    get_speeches,
+    get_start_of_speech_line,
+)
 
 K = 5
 SEED = 42
@@ -115,7 +119,7 @@ def run():
             print(f"\n  id={report.id}  type={report.report_type}  parl={report.parliament_number}")
             print(f"  title: {report.title!r}")
             print(f"  MPs Speaking: {speakers}")
-            print(f"  HTML bold texts that look like speakers:")
+            print("  HTML bold texts that look like speakers:")
             for f in flags[:10]:
                 print(f"    {f!r}")
 
@@ -150,7 +154,7 @@ def _show_doc(report, start_line: int, speakers: list[str]) -> list[str]:
         snip_end = min(len(html), first_bold.start() + 400)
         snippet = html[snip_start:snip_end]
         snippet_clean = re.sub(r"\s+", " ", snippet)
-        print(f"  HTML snippet around first bold tag:")
+        print("  HTML snippet around first bold tag:")
         print(f"    {snippet_clean[:300]!r}")
 
     # ── Markdown snippet ──────────────────────────────────────────────────────
