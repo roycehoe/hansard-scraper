@@ -1,5 +1,60 @@
 # Speech → MP Link Refine-Loop Progress Log
 
+## Iteration 20 — 2026-06-01
+
+### can_match — all types — role-only ministerial strings resolved by parliament→person mapping
+
+**Affected Speech IDs (pilot):** 13x `The Prime Minister` (various parliaments), 1x `The Minister for Health` (parl=11) — 14 total unmatched in prior iteration.
+
+**Speaker string (failing):**
+`The Prime Minister` (×13 in pilot, spanning parl=0–11) — role-only string, no individual name present; the existing name cascade produces no match because there is nothing to resolve as a name.
+`The Minister for Health` (×1, parl=11) — same pattern.
+
+**Speaker string (passing, same report_type):**
+`The Prime Minister (Mr Goh Chok Tong)` — role+name parenthetical; inner name extracted and resolved by the existing paren-extraction logic (iteration 2/18). The failing cases are the raw role string with no parenthetical at all.
+
+**Expected Speaker.name:**
+- parl=0–3,5–6: `Lee Kuan Yew` (LA era and early parliaments)
+- parl=8: `Goh Chok Tong`
+- parl=11: `Lee Hsien Loong`
+- `The Minister for Health`, parl=11: `Khaw Boon Wan`
+
+**Root cause:**
+Role-only strings carry no individual name. The entire resolution cascade (strip_title → normalize → resolve_canonical_name) operates on name tokens and produces no match for a string like `The Prime Minister`. There is no pre-processing step that can extract a name that isn't present.
+
+**Proposed fix:**
+Added `_ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str]` with 9 entries mapping `(role_string, parliament_number)` → canonical name. Added early handler in `_populate_speech_speaker_ids` immediately after the presiding-officer block: if `raw` is a key in `_ROLE_ONLY_SPEAKERS` (with colonial parliament fallback for parl=0), resolve the mapped person name via `_resolve_with_parliament_fallback` and set `speaker_id`. `continue` fires unconditionally — role-only strings are never resolvable via the name cascade. Updated `scripts/run_pilot_assessment.py` and `scripts/run_regression_check.py` to mirror the new logic.
+
+**Dict built:**
+```python
+_ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str] = {
+    ("The Prime Minister", 0): "Lee Kuan Yew",   # LA era, vol 12–23
+    ("The Prime Minister", 1): "Lee Kuan Yew",   # Parliament 1 (1959–63)
+    ("The Prime Minister", 2): "Lee Kuan Yew",   # Parliament 2 (1963–68)
+    ("The Prime Minister", 3): "Lee Kuan Yew",   # Parliament 3 (1968–72)
+    ("The Prime Minister", 5): "Lee Kuan Yew",   # Parliament 5 (1976–80)
+    ("The Prime Minister", 6): "Lee Kuan Yew",   # Parliament 6 (1980–84)
+    ("The Prime Minister", 8): "Goh Chok Tong",  # Parliament 8 (1988–91)
+    ("The Prime Minister", 11): "Lee Hsien Loong",  # Parliament 11 (2006–11)
+    ("The Minister for Health", 11): "Khaw Boon Wan",  # Parliament 11 (2006–11)
+}
+```
+Sources: Singapore parliamentary history (Lee Kuan Yew PM 1959–1990, Goh Chok Tong PM 1990–2004, Lee Hsien Loong PM 2004–present); Khaw Boon Wan Minister for Health 2004–2011 (parliament 11).
+
+**Newly resolved (pilot):** 13 `The Prime Minister` speeches + 1 `The Minister for Health` speech = 14 total.
+
+**Files changed:** `populate/speaker_links.py`, `scripts/run_pilot_assessment.py`, `scripts/run_regression_check.py`
+
+**Backward-compatibility:**
+The handler fires only when `raw` is an exact key in `_ROLE_ONLY_SPEAKERS`. Strings already handled by the presiding-officer block (`Mr Speaker`, `Mr Deputy Speaker`) fire `continue` before reaching this handler. All other strings — name strings, constituency-stripped strings, paren-extracted strings — do not appear as keys in the dict and pass through to the existing cascade unchanged.
+
+**Outcome:** KEPT
+- Regression: 53/53 = 100.0% (no new failures)
+- Pilot: 446/497 = 89.7% (433/497 = 87.1% before → 446/497 = 89.7% after, +13)
+- Newly resolved: `The Prime Minister` (×13 in pilot, parliaments 0–11), `The Minister for Health` (×1, parl=11)
+
+---
+
 ## Iteration 19 — 2026-06-01
 
 ### can_match — all types — loop strip_title until stable for stacked titles
