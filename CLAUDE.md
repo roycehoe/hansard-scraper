@@ -28,11 +28,25 @@ There are no automated tests in this project.
 
 This is a scraper for Singapore Parliament Hansard records (sprs.parl.gov.sg). The pipeline runs in stages — each stage's output feeds the next — and `script.py` is the orchestration file that runs all stages sequentially.
 
+### Layer rules
+
+Each folder has a strict responsibility boundary. `populate/` is the only layer that may combine gateway calls, service transforms, and DB writes.
+
+| Layer | Responsibility | Forbidden |
+|---|---|---|
+| `schemas/` | Pydantic models for API response shapes | DB access, logic |
+| `gateway/` | HTTP calls; return raw dicts | Business logic, DB writes |
+| `services/` | Pure transforms: input data → output entity | HTTP calls, DB access |
+| `database/` | SQLModel table class definitions | Logic of any kind |
+| `crud/` | DB read/write helpers | Business logic, HTTP |
+| `populate/` | Pipeline stages: orchestrate gateway + services + crud | — |
+| `utils/` | Shared pure functions | DB access, HTTP |
+
 ### Data flow
 
 1. **Fetch search index** (`gateway/handsard_search.py`) — POST to the Hansard search API, paginate through all results, return raw dicts matching `HandsardSearchResult` (Pydantic model in `schemas/handsard_search_result.py`).
 
-2. **Fetch report HTML** (`gateway/handsard_topic.py` + `services/handsard_website.py`) — for each search result, POST to `getHansardTopic` to retrieve HTML content, stored as `HandsardWebsiteResponse` in the DB.
+2. **Fetch report HTML** (`populate/handsard_responses.py` + `gateway/handsard_topic.py` + `services/handsard_website.py`) — for each search result, `populate` calls `gateway` to POST to `getHansardTopic`, extracts `htmlContent` from the response, then passes it to `services/handsard_website.py::build_handsard_website_response` which constructs the `HandsardWebsiteResponse` entity stored in the DB.
 
 3. **Parse into Report** (`services/report.py`) — converts `HandsardWebsiteResponse` → `Report`. Parses the `title` field to split off a `subtitle` (parenthetical content that is not an acronym). Also converts HTML content to cleaned markdown via `utils/markdown_parser.py`.
 
@@ -87,7 +101,7 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 
 `services/speech.py::get_start_of_speech_line` — locates the line in the markdown that marks where speeches begin (the report's own title appears in bold as the first "heading" before actual speeches). Returns `None` if the title can't be matched, which is tracked as a parsing failure.
 
-`services/sitting_attendance.py` — extracts and resolves MP names from sitting markdown. Name resolution uses a cascade of strategies: manual overrides (for known typos/abbreviations), inverted-name lookup, direct lookup, bin-free lookup, word-set lookup, prefix lookup, spelling normalisation, and Haji-prefix stripping. `strip_title()` removes 25+ title prefixes (Dr, BG, RAdm, Tuan Haji, etc.) before matching. `infer_parliament()` derives parliament number from `volume_no` or `parlement_no` using `VOLUME_TO_PARLIAMENT`.
+`services/sitting_attendance.py` — extracts and resolves MP names from sitting markdown. `build_mp_lookups(mps: list[Mp]) -> MpLookups` builds all six in-memory lookup dicts from a pre-loaded MP list (no DB access). Callers must load MPs via `crud/mp.py` and pass the resulting `MpLookups` to `resolve_canonical_name` and `get_sitting_attendance`. The resolution cascade: manual overrides → inverted-name lookup → direct lookup → bin-free lookup → word-set lookup → prefix lookup → spelling normalisation → Haji-prefix stripping → surname-only fallback. `strip_title()` removes 25+ title prefixes (Dr, BG, RAdm, Tuan Haji, etc.) before matching. `infer_parliament()` derives parliament number from `volume_no` or `parlement_no` using `VOLUME_TO_PARLIAMENT`.
 
 ### Environment
 
@@ -130,12 +144,12 @@ handsard-scraper/
 │   └── mps_by_parliament.py         # Scrape MP roster from parliament.gov.sg
 │
 ├── services/                        # Business logic — transforms raw data into entities
-│   ├── handsard_website.py          # HandsardSearchResult → HandsardWebsiteResponse
+│   ├── handsard_website.py          # Pure transform: (HandsardSearchResult, html_content) → HandsardWebsiteResponse
 │   ├── handsard_sitting_date_response.py  # Build old/new-format HandsardSittingDateResponse
 │   ├── report.py                    # HandsardWebsiteResponse → Report (markdown + subtitle)
 │   ├── speech.py                    # Report markdown → Speech list (speaker detection)
 │   ├── sitting.py                   # HandsardSittingDateResponse → Sitting
-│   ├── sitting_attendance.py        # Sitting markdown → SittingAttendance (name resolution cascade)
+│   ├── sitting_attendance.py        # Sitting markdown → SittingAttendance; build_mp_lookups(list[Mp]) → MpLookups
 │   └── mp.py                        # MpResult → Mp DB entity
 │
 ├── database/                        # SQLModel table definitions
@@ -180,9 +194,8 @@ handsard-scraper/
 │   ├── mp_links.py                  # Stage 9: resolve names → set mp_id on Speech + SittingAttendance
 │   └── mps.py                       # Out-of-band: persist scraped Mp records
 │
-├── utils/                           # Shared utilities
+├── utils/                           # Shared pure utilities (no DB, no HTTP)
 │   ├── markdown_parser.py           # HTML → clean markdown; merges split bold lines
-│   ├── sample.py                    # Stratified report sample across parliaments + report types
 │   └── text.py                      # Mojibake fix (cp1252 → UTF-8)
 │
 └── scripts/                         # One-off diagnostics (not part of pipeline)
