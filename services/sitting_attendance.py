@@ -484,8 +484,10 @@ def _parse_name_and_location(text: str) -> tuple[str, str | None]:
             constituency = text[first_open + 1 : close_idx].strip()
             name_part = text[:first_open].rstrip(", ")
         else:
+            # No closing ')' — treat everything before '(' as the name and
+            # discard the partial parenthetical (incomplete constituency text).
             constituency = None
-            name_part = text
+            name_part = text[:first_open].rstrip(", ")
     else:
         constituency = None
         name_part = text
