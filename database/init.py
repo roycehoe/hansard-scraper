@@ -56,6 +56,21 @@ def _apply_schema_migrations() -> None:
             " ADD COLUMN IF NOT EXISTS mp_id INTEGER REFERENCES mp(id)"
         ))
 
+        # ── sittingattendance — fix sitting_id FK target ─────────────────────
+        # Was originally created pointing to handsardsittingdateresponse; model
+        # was changed to reference sitting(id) but the DB constraint was never updated.
+        sa_fks = {f["name"]: f["referred_table"] for f in insp.get_foreign_keys("sittingattendance")}
+        if sa_fks.get("sittingattendance_sitting_id_fkey") == "handsardsittingdateresponse":
+            session.execute(text(
+                "ALTER TABLE sittingattendance"
+                " DROP CONSTRAINT sittingattendance_sitting_id_fkey"
+            ))
+            session.execute(text(
+                "ALTER TABLE sittingattendance"
+                " ADD CONSTRAINT sittingattendance_sitting_id_fkey"
+                " FOREIGN KEY (sitting_id) REFERENCES sitting(id)"
+            ))
+
         session.commit()
 
 
