@@ -9,6 +9,8 @@ from database.sitting_attendance import SittingAttendance
 from database.speech import Speech
 from logs import logger
 from services.sitting_attendance import (
+    MpLookups,
+    build_mp_lookups,
     infer_parliament,
     normalize_name,
     resolve_canonical_name,
@@ -26,12 +28,11 @@ _INNER_TITLE = re.compile(
 )
 
 
-def _build_mp_id_lookup(session: Session) -> dict[tuple[str, int], int]:
-    mps = session.exec(select(Mp)).all()
-    return {(mp.name, mp.parliament_number): mp.id for mp in mps if mp.id is not None}
-
-
-def _populate_attendance_mp_ids(session: Session, mp_id_lookup: dict[tuple[str, int], int]) -> None:
+def _populate_attendance_mp_ids(
+    session: Session,
+    mp_id_lookup: dict[tuple[str, int], int],
+    lookups: MpLookups,
+) -> None:
     sittings_by_id: dict[int, Sitting] = {
         s.id: s for s in session.exec(select(Sitting)).all() if s.id is not None
     }
@@ -65,10 +66,10 @@ def _populate_attendance_mp_ids(session: Session, mp_id_lookup: dict[tuple[str, 
 
             if not mp_id:
                 name = normalize_name(strip_title(record.mp_name))
-                canonical = resolve_canonical_name(name, parliament)
+                canonical = resolve_canonical_name(name, parliament, lookups)
                 if canonical is None and parliament == 0:
                     for fallback in [1, 2, 3]:
-                        c = resolve_canonical_name(name, fallback)
+                        c = resolve_canonical_name(name, fallback, lookups)
                         if c and (c, fallback) in mp_id_lookup:
                             canonical = c
                             parliament = fallback
@@ -88,7 +89,11 @@ def _populate_attendance_mp_ids(session: Session, mp_id_lookup: dict[tuple[str, 
     logger.info(f"SittingAttendance: set mp_id on {updated}/{total} records")
 
 
-def _populate_speech_mp_ids(session: Session, mp_id_lookup: dict[tuple[str, int], int]) -> None:
+def _populate_speech_mp_ids(
+    session: Session,
+    mp_id_lookup: dict[tuple[str, int], int],
+    lookups: MpLookups,
+) -> None:
     unresolved_ids: list[int] = [
         row
         for row in session.exec(
@@ -101,7 +106,7 @@ def _populate_speech_mp_ids(session: Session, mp_id_lookup: dict[tuple[str, int]
     for i in range(0, total, _BATCH):
         batch_ids = unresolved_ids[i : i + _BATCH]
 
-        # Only fetch columns needed for resolution — avoids loading transcript/markdown_content.
+        # Only fetch columns needed for resolution -- avoids loading transcript/markdown_content.
         rows = session.exec(
             select(Speech.id, Speech.speaker, Report.parliament_number)
             .join(Report)
@@ -128,10 +133,10 @@ def _populate_speech_mp_ids(session: Session, mp_id_lookup: dict[tuple[str, int]
             if not name:
                 continue
 
-            canonical = resolve_canonical_name(name, parliament)
+            canonical = resolve_canonical_name(name, parliament, lookups)
             if canonical is None and parliament == 0:
                 for fallback in [1, 2, 3]:
-                    c = resolve_canonical_name(name, fallback)
+                    c = resolve_canonical_name(name, fallback, lookups)
                     if c and (c, fallback) in mp_id_lookup:
                         canonical = c
                         parliament = fallback
@@ -152,6 +157,8 @@ def _populate_speech_mp_ids(session: Session, mp_id_lookup: dict[tuple[str, int]
 
 
 def populate_mp_links(session: Session) -> None:
-    mp_id_lookup = _build_mp_id_lookup(session)
-    _populate_attendance_mp_ids(session, mp_id_lookup)
-    _populate_speech_mp_ids(session, mp_id_lookup)
+    mps = session.exec(select(Mp)).all()
+    mp_id_lookup = {(mp.name, mp.parliament_number): mp.id for mp in mps if mp.id is not None}
+    lookups = build_mp_lookups(mps)
+    _populate_attendance_mp_ids(session, mp_id_lookup, lookups)
+    _populate_speech_mp_ids(session, mp_id_lookup, lookups)

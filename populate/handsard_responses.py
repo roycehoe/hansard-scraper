@@ -1,15 +1,36 @@
 import asyncio
+from typing import Optional
 
 import httpx
 from sqlmodel import Session
 
 from crud.handsard_website_response import CRUDHandsardWebsiteResponse
+from exceptions import HansardGatewayError
 from gateway.handsard_search import get_all_handsard_search_results
+from gateway.handsard_topic import get_handsard_topic_response_async
 from logs import logger
 from schemas.handsard_search_result import HandsardSearchResult
-from services.handsard_website import build_handsard_website_response_async
+from services.handsard_website import build_handsard_website_response
 
 _CONCURRENCY = 20
+
+
+async def _fetch_html_content(
+    result: HandsardSearchResult,
+    client: httpx.AsyncClient,
+) -> Optional[str]:
+    try:
+        response = await get_handsard_topic_response_async(
+            result.html_file_name or result.report_id,
+            client,
+        )
+    except HansardGatewayError as e:
+        logger.warning(f"No content for {result.report_id}: {e}")
+        return None
+    html_content = response.get("htmlContent")
+    if html_content is None:
+        return None
+    return html_content.replace("\x00", "�")
 
 
 async def _fetch_all(results: list[HandsardSearchResult]) -> list:
@@ -21,7 +42,8 @@ async def _fetch_all(results: list[HandsardSearchResult]) -> list:
         async def fetch_one(result):
             nonlocal completed
             async with semaphore:
-                response = await build_handsard_website_response_async(result, client)
+                content = await _fetch_html_content(result, client)
+                response = build_handsard_website_response(result, content)
             completed += 1
             logger.info(f"{completed}/{total}")
             return response

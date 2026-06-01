@@ -1,12 +1,14 @@
 from sqlmodel import Session
 
+from crud.mp import CRUDMp
 from crud.sitting import CRUDSitting
 from crud.sitting_attendance import CRUDSittingAttendance
 from logs import logger
-from services.sitting_attendance import get_sitting_attendance
+from services.sitting_attendance import build_mp_lookups, get_sitting_attendance
 
 
 def populate_sitting_attendances(session: Session):
+    lookups = build_mp_lookups(CRUDMp(session).get_all())
     sittings = CRUDSitting(session).get_all()
     crud = CRUDSittingAttendance(session)
     done = crud.get_sitting_ids_with_attendance()
@@ -17,5 +19,5 @@ def populate_sitting_attendances(session: Session):
     )
     for i, sitting in enumerate(to_process, start=1):
         logger.info(f"{i}/{len(to_process)}: {sitting.sitting_date}")
-        for record in get_sitting_attendance(sitting):
+        for record in get_sitting_attendance(sitting, lookups):
             crud.create(record)
