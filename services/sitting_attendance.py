@@ -267,6 +267,19 @@ def _get_bin_free_lookup() -> dict[tuple[str, int], str]:
     return _BIN_FREE_LOOKUP
 
 
+def _invert_to_natural(mp_name: str) -> str | None:
+    """Convert 'Surname, Firstname[, TitleSuffix]' to natural 'Firstname Surname' form.
+    Returns None if the name is not in inverted format."""
+    if ", " not in mp_name:
+        return None
+    parts = mp_name.split(", ")
+    if len(parts) >= 3 and parts[-1] in _INVERTED_TITLE_SUFFIXES:
+        rest = " ".join(parts[1:-1])
+    else:
+        rest = ", ".join(parts[1:])
+    return strip_title(f"{rest} {parts[0]}").strip()
+
+
 # Lazy-loaded word-set lookup: (frozenset_of_words, word_count, parliament) -> canonical
 # Handles name permutation mismatches where markdown writes words in a different order
 # than what the Mp table or inverted lookup expects:
@@ -288,13 +301,8 @@ def _get_wordset_lookup() -> dict[tuple[frozenset, int, int], str]:
     # For inverted names ("Surname, Firstname") add the natural form alongside.
     triples: list[tuple[str, str, int]] = []
     for mp in mps:
-        if ", " in mp.name:
-            parts = mp.name.split(", ")
-            if len(parts) >= 3 and parts[-1] in _INVERTED_TITLE_SUFFIXES:
-                rest = " ".join(parts[1:-1])
-            else:
-                rest = ", ".join(parts[1:])
-            natural = strip_title(f"{rest} {parts[0]}").strip()
+        natural = _invert_to_natural(mp.name)
+        if natural:
             triples.append((natural, mp.name, mp.parliament_number))
         triples.append((mp.name, mp.name, mp.parliament_number))
     counts: dict[tuple[frozenset, int, int], int] = {}
@@ -331,13 +339,8 @@ def _get_prefix_lookup() -> dict[tuple[str, int], str]:
     # Collect (display_form, canonical_mp_name, parliament) triples.
     forms: list[tuple[str, str, int]] = []
     for mp in mps:
-        if ", " in mp.name:
-            parts = mp.name.split(", ")
-            if len(parts) >= 3 and parts[-1] in _INVERTED_TITLE_SUFFIXES:
-                rest = " ".join(parts[1:-1])
-            else:
-                rest = ", ".join(parts[1:])
-            natural = strip_title(f"{rest} {parts[0]}").strip()
+        natural = _invert_to_natural(mp.name)
+        if natural:
             forms.append((natural, mp.name, mp.parliament_number))
         forms.append((mp.name, mp.name, mp.parliament_number))
     counts: dict[tuple[str, int], int] = {}
@@ -371,20 +374,12 @@ def _get_inverted_lookup() -> dict[tuple[str, int], str]:
         parl = mp.parliament_number
 
         if ", " in mp.name:
-            # Standard inverted format: "Surname, Firstname[, TitleSuffix]"
-            parts = mp.name.split(", ")
-            if len(parts) >= 3 and parts[-1] in _INVERTED_TITLE_SUFFIXES:
-                surname = parts[0]
-                rest = " ".join(parts[1:-1])
-            else:
-                surname = parts[0]
-                rest = ", ".join(parts[1:])
-            natural = f"{rest} {surname}"
-            natural_stripped = strip_title(natural).strip()
+            natural_stripped = _invert_to_natural(mp.name)
             key = (_normalize_for_lookup(natural_stripped), parl)
             _INVERTED_LOOKUP[key] = mp.name
 
             # Track surname-only key for potential later addition (only for multi-word surnames)
+            surname = mp.name.split(", ")[0]
             surname_words = surname.split()
             if len(surname_words) >= 2:
                 sk = (_normalize_for_lookup(surname), parl)
@@ -427,15 +422,7 @@ def _get_surname_fallback_lookup() -> dict[tuple[str, int], str]:
     counts: dict[tuple[str, int], int] = {}
     entries: list[tuple[tuple[str, int], str]] = []
     for mp in mps:
-        if ", " in mp.name:
-            parts = mp.name.split(", ")
-            if len(parts) >= 3 and parts[-1] in _INVERTED_TITLE_SUFFIXES:
-                rest = " ".join(parts[1:-1])
-            else:
-                rest = ", ".join(parts[1:])
-            natural = strip_title(f"{rest} {parts[0]}").strip()
-        else:
-            natural = mp.name
+        natural = _invert_to_natural(mp.name) or mp.name
         words = _period_normalize(natural).split()
         if not words:
             continue
@@ -622,8 +609,8 @@ def resolve_canonical_name(name: str, parliament: int) -> str | None:
             or wordset.get((*_wordset_key(spell), parliament))
             or prefix.get((sp, parliament))
         )
-    if canonical:
-        return canonical
+        if canonical:
+            return canonical
 
     no_haji = _strip_middle_haji(name)
     if no_haji != name:
@@ -635,8 +622,8 @@ def resolve_canonical_name(name: str, parliament: int) -> str | None:
             or direct.get((nh_bin, parliament))
             or prefix.get((nh, parliament))
         )
-    if canonical:
-        return canonical
+        if canonical:
+            return canonical
 
     # CamelCase split fallback for source markdown that concatenated names without
     # spaces ("AbdullahTarmugi"). Re-strip title after splitting in case the missing
@@ -654,8 +641,8 @@ def resolve_canonical_name(name: str, parliament: int) -> str | None:
             or wordset.get((*_wordset_key(split_stripped), parliament))
             or prefix.get((sp2, parliament))
         )
-    if canonical:
-        return canonical
+        if canonical:
+            return canonical
 
     # Surname-only fallback: if name reduces to a single token, try it as the unique
     # last name in this parliament.  Only fires for unambiguous cases.

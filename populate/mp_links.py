@@ -17,6 +17,14 @@ from services.sitting_attendance import (
 
 _BATCH = 1000
 
+_NON_SPEAKERS = {
+    "An hon. Member", "Some hon. Members", "Non-Residents",
+    "Tributes by Leader of the House and Opposition Leaders",
+}
+_INNER_TITLE = re.compile(
+    r"^(?:Mr|Mrs|Dr|Miss|Ms|Mdm|Prof|Madam|Inche|Encik|Tuan Haji|Haji)\b"
+)
+
 
 def _build_mp_id_lookup(session: Session) -> dict[tuple[str, int], int]:
     mps = session.exec(select(Mp)).all()
@@ -81,14 +89,6 @@ def _populate_attendance_mp_ids(session: Session, mp_id_lookup: dict[tuple[str, 
 
 
 def _populate_speech_mp_ids(session: Session, mp_id_lookup: dict[tuple[str, int], int]) -> None:
-    _NON_SPEAKERS = {
-        "An hon. Member", "Some hon. Members", "Non-Residents",
-        "Tributes by Leader of the House and Opposition Leaders",
-    }
-    _INNER_TITLE = re.compile(
-        r"^(?:Mr|Mrs|Dr|Miss|Ms|Mdm|Prof|Madam|Inche|Encik|Tuan Haji|Haji)\b"
-    )
-
     unresolved_ids: list[int] = [
         row
         for row in session.exec(
