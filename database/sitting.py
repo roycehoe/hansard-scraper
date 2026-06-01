@@ -83,3 +83,9 @@ class Sitting(SQLModel, table=True):
     question_count: Optional[str] = None
 
     markdown_content: Optional[str] = None
+
+    # Child list data stored as serialised JSON (sections, annexures, vernaculars, a2b)
+    sections: Optional[str] = None
+    annexures: Optional[str] = None
+    vernaculars: Optional[str] = None
+    a2b: Optional[str] = None
