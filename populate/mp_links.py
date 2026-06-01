@@ -1,12 +1,11 @@
 import re
 
-from sqlmodel import Session, select, update
+from sqlmodel import Session
 
-from database.mp import Mp
-from database.report import Report
-from database.sitting import Sitting
-from database.sitting_attendance import SittingAttendance
-from database.speech import Speech
+from crud.mp import CRUDMp
+from crud.sitting import CRUDSitting
+from crud.sitting_attendance import CRUDSittingAttendance
+from crud.speech import CRUDSpeech
 from logs import logger
 from services.sitting_attendance import (
     MpLookups,
@@ -33,24 +32,17 @@ def _populate_attendance_mp_ids(
     mp_id_lookup: dict[tuple[str, int], int],
     lookups: MpLookups,
 ) -> None:
-    sittings_by_id: dict[int, Sitting] = {
-        s.id: s for s in session.exec(select(Sitting)).all() if s.id is not None
-    }
+    crud_sitting = CRUDSitting(session)
+    crud = CRUDSittingAttendance(session)
 
-    unresolved_ids: list[int] = [
-        row
-        for row in session.exec(
-            select(SittingAttendance.id).where(SittingAttendance.mp_id == None)  # noqa: E711
-        ).all()
-    ]
+    sittings_by_id = {s.id: s for s in crud_sitting.get_all() if s.id is not None}
+    unresolved_ids = crud.get_unresolved_ids()
     total = len(unresolved_ids)
     updated = 0
 
     for i in range(0, total, _BATCH):
         batch_ids = unresolved_ids[i : i + _BATCH]
-        records = session.exec(
-            select(SittingAttendance).where(SittingAttendance.id.in_(batch_ids))
-        ).all()
+        records = crud.get_by_ids(batch_ids)
 
         for record in records:
             if not record.mp_name or record.sitting_id is None:
@@ -78,8 +70,7 @@ def _populate_attendance_mp_ids(
                     mp_id = mp_id_lookup.get((canonical, parliament))
 
             if mp_id:
-                record.mp_id = mp_id
-                session.add(record)
+                crud.mark_mp_id(record, mp_id)
                 updated += 1
 
         session.commit()
@@ -94,12 +85,8 @@ def _populate_speech_mp_ids(
     mp_id_lookup: dict[tuple[str, int], int],
     lookups: MpLookups,
 ) -> None:
-    unresolved_ids: list[int] = [
-        row
-        for row in session.exec(
-            select(Speech.id).where(Speech.mp_id == None)  # noqa: E711
-        ).all()
-    ]
+    crud = CRUDSpeech(session)
+    unresolved_ids = crud.get_unresolved_ids()
     total = len(unresolved_ids)
     updated = 0
 
@@ -107,11 +94,7 @@ def _populate_speech_mp_ids(
         batch_ids = unresolved_ids[i : i + _BATCH]
 
         # Only fetch columns needed for resolution -- avoids loading transcript/markdown_content.
-        rows = session.exec(
-            select(Speech.id, Speech.speaker, Report.parliament_number)
-            .join(Report)
-            .where(Speech.id.in_(batch_ids))
-        ).all()
+        rows = crud.get_speaker_info_by_ids(batch_ids)
 
         for speech_id, speaker, parliament in rows:
             if not speaker:
@@ -146,7 +129,7 @@ def _populate_speech_mp_ids(
 
             mp_id = mp_id_lookup.get((canonical, parliament))
             if mp_id:
-                session.exec(update(Speech).where(Speech.id == speech_id).values(mp_id=mp_id))
+                crud.set_mp_id(speech_id, mp_id)
                 updated += 1
 
         session.commit()
@@ -156,7 +139,7 @@ def _populate_speech_mp_ids(
 
 
 def populate_mp_links(session: Session) -> None:
-    mps = session.exec(select(Mp)).all()
+    mps = CRUDMp(session).get_all()
     mp_id_lookup = {(mp.name, mp.parliament_number): mp.id for mp in mps if mp.id is not None}
     lookups = build_mp_lookups(mps)
     _populate_attendance_mp_ids(session, mp_id_lookup, lookups)

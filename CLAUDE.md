@@ -193,7 +193,7 @@ handsard-scraper/
 │   ├── handsard_sitting_dates.py    # Stage 6: fetch + store sitting metadata + child tables
 │   ├── sittings.py                  # Stage 7: HandsardSittingDateResponse → Sitting
 │   ├── sitting_attendances.py       # Stage 8: Sitting → SittingAttendance
-│   ├── mp_links.py                  # Stage 9: resolve names → set mp_id on Speech + SittingAttendance
+│   ├── mp_links.py                  # Stage 9: resolve names → set mp_id on Speech + SittingAttendance (via CRUDSpeech/CRUDSittingAttendance)
 │   └── mps.py                       # Out-of-band: persist scraped Mp records
 │
 ├── utils/                           # Shared pure utilities (no DB, no HTTP)
