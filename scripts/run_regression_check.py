@@ -52,6 +52,18 @@ _PRESIDING_OFFICERS: dict[tuple[str, int], str] = {
     ("SPEAKER", 12): "Michael Palmer",
 }
 
+_ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str] = {
+    ("The Prime Minister", 0): "Lee Kuan Yew",
+    ("The Prime Minister", 1): "Lee Kuan Yew",
+    ("The Prime Minister", 2): "Lee Kuan Yew",
+    ("The Prime Minister", 3): "Lee Kuan Yew",
+    ("The Prime Minister", 5): "Lee Kuan Yew",
+    ("The Prime Minister", 6): "Lee Kuan Yew",
+    ("The Prime Minister", 8): "Goh Chok Tong",
+    ("The Prime Minister", 11): "Lee Hsien Loong",
+    ("The Minister for Health", 11): "Khaw Boon Wan",
+}
+
 
 def _get_presiding_officer_role(raw: str) -> str | None:
     if raw in ("Mr Speaker", "Mdm Speaker"):
@@ -146,6 +158,23 @@ def main() -> None:
             else:
                 failed.append((speech_id, speaker, parliament, None))
             continue
+
+        # Role-only strings — resolve by parliament→person mapping.
+        _role_key: tuple[str, int] | None = (raw, parliament) if parliament != 0 else None
+        if _role_key is None:
+            for _fb in _COLONIAL_PARLIAMENT_FALLBACKS:
+                if (raw, _fb) in _ROLE_ONLY_SPEAKERS:
+                    _role_key = (raw, _fb)
+                    break
+        if _role_key and _role_key in _ROLE_ONLY_SPEAKERS:
+            _role_name = _ROLE_ONLY_SPEAKERS[_role_key]
+            _role_canonical, _role_parl = _resolve(_role_name, _role_key[1], lookups, speaker_id_lookup)
+            _role_sid = speaker_id_lookup.get((_role_canonical, _role_parl)) if _role_canonical else None
+            if _role_sid:
+                passed += 1
+            else:
+                failed.append((speech_id, speaker, parliament, _role_canonical))
+            continue  # role-only strings are never resolvable via the name cascade
 
         name = _preprocess(speaker)
         if not name:
