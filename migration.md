@@ -175,13 +175,13 @@ Note: `parlimentNO` is a typo in the API — preserve it faithfully in the field
 
 ### 2. `SittingAttendance`
 
-**Source:** `attendanceList` items. Each item is one MP's attendance record for the sitting.
+**Source:** `attendanceList` items. Each item is one person's attendance record for the sitting.
 
 | Python field | API key | Type |
 |---|---|---|
 | `id` | — | `int` (PK, auto) |
 | `sitting_id` | — | `int` (FK → `handsardsittingdateresponse.id`) |
-| `mp_name` | `mpName` | `Optional[str]` |
+| `speaker_name` | `mpName` | `Optional[str]` |
 | `attendance` | `attendance` | `Optional[bool]` |
 | `location_name` | `locationName` | `Optional[str]` |
 
@@ -193,7 +193,7 @@ Note: `parlimentNO` is a typo in the API — preserve it faithfully in the field
 |---|---|---|
 | `id` | — | `int` (PK, auto) |
 | `sitting_id` | — | `int` (FK → `handsardsittingdateresponse.id`) |
-| `mp_name` | `mpName` | `Optional[str]` |
+| `speaker_name` | `mpName` | `Optional[str]` |
 | `from_date` | `from` | `Optional[str]` |
 | `to_date` | `to` | `Optional[str]` |
 | `start_dt_text` | `startDtText` | `Optional[str]` |

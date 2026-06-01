@@ -171,7 +171,7 @@ def _normalize_for_lookup(name: str) -> str:
     # Additional normalization for inverted-lookup key only:
     # strip period from a lone leading initial ("S. Name" -> "S Name") so that
     # "S. Rajaratnam" matches the lookup key for "Rajaratnam, S" (stored without period).
-    # This does NOT affect the stored mp_name -- only the lookup search key.
+    # This does NOT affect the stored speaker_name -- only the lookup search key.
     normalized = re.sub(r"^([A-Z])\. (?=[A-Z])", r"\1 ", normalized)
     return normalized.lower()
 
@@ -221,12 +221,12 @@ def _spelling_normalize(name: str) -> str:
     return re.sub(r"\s+", " ", normalized).strip()
 
 
-def _invert_to_natural(mp_name: str) -> Optional[str]:
+def _invert_to_natural(speaker_name: str) -> Optional[str]:
     """Convert 'Surname, Firstname[, TitleSuffix]' to natural 'Firstname Surname' form.
     Returns None if the name is not in inverted format."""
-    if ", " not in mp_name:
+    if ", " not in speaker_name:
         return None
-    parts = mp_name.split(", ")
+    parts = speaker_name.split(", ")
     if len(parts) >= 3 and parts[-1] in _INVERTED_TITLE_SUFFIXES:
         rest = " ".join(parts[1:-1])
     else:
@@ -424,7 +424,7 @@ def build_speaker_lookups(speakers: list[Speaker]) -> SpeakerLookups:
 
 def _parse_name_and_location(text: str) -> tuple[str, Optional[str]]:
     """
-    Extract (mp_name, location_name) from text like:
+    Extract (speaker_name, location_name) from text like:
       "Name, Honorifics (Constituency), Portfolio [possibly (more)]"
       "Name (Constituency)"
       "Name, Honorifics"   (no constituency)
@@ -634,7 +634,7 @@ def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups) -> list[At
                     name = canonical
             records.append(Attendance(
                 sitting_id=sitting.id,
-                mp_name=name,
+                speaker_name=name,
                 attendance=is_present,
                 location_name=location,
             ))

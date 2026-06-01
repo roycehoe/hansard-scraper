@@ -10,7 +10,7 @@ Strip title prefix via `strip_title`, then run `resolve_canonical_name`. Works f
 
 ### Title + name + constituency
 `Dr Tan Cheng Bock (Ayer Rajah)`, `Mr Hawazi Daipi (Sembawang)`, `Dr Jennifer Lee (Nominated Member)`
-The constituency parenthetical is carried through from the bold markup. Must strip the first parenthetical before matching — same logic as `_parse_name_and_location` in `sitting_attendance.py`.
+The constituency parenthetical is carried through from the bold markup. Must strip the first parenthetical before matching — same logic as `_parse_name_and_location` in `attendance.py`.
 
 ### Role + (name)
 `The Prime Minister (Mr Lee Kuan Yew)`, `The Financial Secretary (Mr T. M. Hart)`, `The Minister for Health (Dr Toh Chin Chye)`
@@ -22,7 +22,7 @@ No name present. Cannot match without a role→MP→date mapping. Treat as unres
 
 ### Presiding officers (structural exclusions)
 `Mr Speaker`, `Mr Deputy Speaker`, `The Clerk`
-Not MPs in the `Mp` table. Exclude from the match-rate denominator.
+Not in the `Speaker` table. Exclude from the match-rate denominator.
 
 ### Collective references (structural exclusions)
 `Hon. Members`, `Several Members`, `Members`

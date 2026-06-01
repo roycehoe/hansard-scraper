@@ -26,7 +26,7 @@ from services.attendance import (
     strip_title,
 )
 
-_SAMPLE_PATH = Path(__file__).parent.parent / "docs" / "speech-mp" / "sample.json"
+_SAMPLE_PATH = Path(__file__).parent.parent / "docs" / "speech-speaker" / "sample.json"
 _COLONIAL_PARLIAMENT_FALLBACKS = [1, 2, 3]
 _NON_SPEAKERS = {
     "An hon. Member", "Some hon. Members", "Non-Residents",

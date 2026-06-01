@@ -6,7 +6,7 @@ Adds K=5 pilot + K=3 held-out per report_type for parliament=0 speeches not
 already in the sample. Expands the regression set proportionally (~1:5 ratio)
 from new pilot speeches that currently resolve.
 
-Updates docs/speech-mp/sample.json in-place.
+Updates docs/speech-speaker/sample.json in-place.
 
 Usage:
     PYTHONPATH=. poetry run python3 scripts/expand_sample.py

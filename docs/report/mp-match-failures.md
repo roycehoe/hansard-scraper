@@ -23,17 +23,17 @@ After `populate_speaker_links` ran, the following records still have `speaker_id
 
 ### Root Cause 1 — Parliament 0 (7,751 rows)
 
-`infer_parliament` looks up `sitting.volume_no` in `VOLUME_TO_PARLIAMENT`. Volumes 12–23 are mapped to parliament 0, but no `Speaker` rows exist for `parliament_number = 0`. Every attendance row tied to those volumes therefore fails the `speaker_id_lookup.get((mp_name, 0))` call unconditionally.
+`infer_parliament` looks up `sitting.volume_no` in `VOLUME_TO_PARLIAMENT`. Volumes 12–23 are mapped to parliament 0, but no `Speaker` rows exist for `parliament_number = 0`. Every attendance row tied to those volumes therefore fails the `speaker_id_lookup.get((speaker_name, 0))` call unconditionally.
 
 These volumes correspond to a transitional era (post-Legislative Assembly, pre-Parliament renumbering). The root fix is either to create `Speaker` rows for parliament 0 or to adjust the volume→parliament mapping.
 
 ### Root Cause 2 — Case mismatch (1,457 rows)
 
-The attendance lookup is a raw dict key comparison: `speaker_id_lookup.get((record.mp_name, parliament))`. No case normalisation is applied to `record.mp_name` before the lookup. MPs of Malay heritage are frequently stored in `attendance` with lowercase `bin`/`binte` while `Speaker.name` uses uppercase `Bin`/`Binte`.
+The attendance lookup is a raw dict key comparison: `speaker_id_lookup.get((record.speaker_name, parliament))`. No case normalisation is applied to `record.speaker_name` before the lookup. MPs of Malay heritage are frequently stored in `attendance` with lowercase `bin`/`binte` while `Speaker.name` uses uppercase `Bin`/`Binte`.
 
 Top offenders:
 
-| `mp_name` in attendance | `Speaker.name` | Rows |
+| `speaker_name` in attendance | `Speaker.name` | Rows |
 |---|---|---|
 | `Sidek bin Saniff` | `Sidek Bin Saniff` | 552 |
 | `Othman bin Haron Eusofe` | `Othman Bin Haron Eusofe` | 480 |
@@ -42,7 +42,7 @@ Top offenders:
 | `Rahmat bin Kenap` | `Rahmat Bin Kenap` | 92 |
 | `Sha'ari bin Tadin` | `Sha'ari Bin Tadin` | 91 |
 
-Fix: apply `LOWER()` on both sides of the attendance lookup, or normalise `Speaker.name` and `record.mp_name` to a common case before matching.
+Fix: apply `LOWER()` on both sides of the attendance lookup, or normalise `Speaker.name` and `record.speaker_name` to a common case before matching.
 
 ### Root Cause 3 — Name format mismatch or truly absent (21,424 rows)
 
@@ -57,7 +57,7 @@ The attendance name matches a real speaker but uses a different surface form tha
 - Missing `Bin`: `Abdullah Tarmugi` → `Abdullah Bin Tarmugi`; `Othman Haron Eusofe` → `Othman Bin Haron Eusofe`
 - Missing title suffix: `Ong Chit Chung` → `Ong Chit Chung, Dr`; `Mohd Ariff Bin Suradi` → `Mohd Ariff Bin Suradi, Haji`
 
-Fix: apply the same normalisation pipeline used for speech (strip_title → normalize_name → resolve_canonical_name) to attendance `mp_name` before lookup.
+Fix: apply the same normalisation pipeline used for speech (strip_title → normalize_name → resolve_canonical_name) to attendance `speaker_name` before lookup.
 
 **3b — Colonial-era speakers not scraped (~3,945 rows in volumes 1–11)**
 
@@ -67,9 +67,9 @@ Parliament 1 volumes 1–11 contain pre-1965 Legislative Assembly sitting record
 
 Names spread across all parliaments that cannot be resolved even with format normalisation. Includes officials who attended sittings in non-MP roles (ministers, civil servants, foreign dignitaries), attendees recorded under nicknames or abbreviations, and genuine scraping gaps.
 
-### Top 30 Unmatched `mp_name` Values
+### Top 30 Unmatched `speaker_name` Values
 
-| Count | mp_name |
+| Count | speaker_name |
 |---|---|
 | 679 | Abdullah Tarmugi |
 | 648 | Tony Tan Keng Yam |
@@ -236,7 +236,7 @@ These account for roughly **72,500 speech rows** (73% of unmatched speeches) and
 
 | Issue | Estimated affected rows | Fix |
 |---|---|---|
-| Attendance: no name normalisation applied | ~12,089 attendance | Apply `strip_title` + `resolve_canonical_name` to `mp_name` before attendance lookup |
+| Attendance: no name normalisation applied | ~12,089 attendance | Apply `strip_title` + `resolve_canonical_name` to `speaker_name` before attendance lookup |
 | Attendance: case sensitivity (`bin` vs `Bin`) | 1,457 attendance | Normalise case before dict lookup |
 | Attendance: parliament 0 has no `Speaker` rows | 7,751 attendance | Populate `Speaker` rows for parliament 0, or remap affected volumes |
 | Speech: `strip_title` called once — compound prefixes (`Assoc. Prof. Dr`) not fully stripped | ~2,951 speech | Loop `strip_title` until stable, or add compound entries to `_TITLE_PREFIXES` |

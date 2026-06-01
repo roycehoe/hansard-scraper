@@ -20,10 +20,10 @@ Before beginning Setup or any loop iteration, scan the working directory for exi
 
 # Goal
 
-Produce a `get_sitting_attendance` function that takes a `Sitting` row and returns a list of `SittingAttendance` records — one per MP entry in the `PRESENT` and `ABSENT` sections of `markdown_content` — with:
+Produce a `get_sitting_attendance` function that takes a `Sitting` row and returns a list of `Attendance` records — one per MP entry in the `PRESENT` and `ABSENT` sections of `markdown_content` — with:
 
 - `sitting_id` set to the `Sitting.id`
-- `mp_name` set to the normalised name string (prefix and constituency stripped)
+- `speaker_name` set to the normalised name string (prefix and constituency stripped)
 - `attendance` set to `True` for PRESENT entries, `False` for ABSENT entries
 - `location_name` set to the constituency extracted from the parenthetical
 
@@ -31,7 +31,7 @@ Produce a `get_sitting_attendance` function that takes a `Sitting` row and retur
 
 Success: ≥95% of extracted attendance entries across the colonial-era target sample are matched to an `Mp` record by name and parliament number, tracked in `docs/attendance/progress.txt`.
 
-"Matched" means a unique `Mp` row exists where `Mp.name` equals the normalised `mp_name` and `Mp.parliament_number` equals the sitting's parliament number. A sitting with no `parlement_no` (and no inferred parliament number) is excluded from the match-rate denominator. Track total excluded count separately.
+"Matched" means a unique `Speaker` row exists where `Speaker.name` equals the normalised `speaker_name` and `Speaker.parliament_number` equals the sitting's parliament number. A sitting with no `parlement_no` (and no inferred parliament number) is excluded from the match-rate denominator. Track total excluded count separately.
 
 **Secondary metric:** also track `total names matched / total names extracted` across the sample. This surface unmatched names that are hidden within "successful" sittings (a sitting counts as matched at ≥80% name-level accuracy, so up to 20% of its names may still be unmatched).
 
@@ -43,13 +43,13 @@ Success: ≥95% of extracted attendance entries across the colonial-era target s
 
 ## Target table
 
-`SittingAttendance` (already defined in `database/sitting_attendance.py`):
+`Attendance` (already defined in `database/attendance.py`):
 - `sitting_id` — FK to `sitting.id`
-- `mp_name` — normalised name (no title prefix, no constituency)
+- `speaker_name` — normalised name (no title prefix, no constituency)
 - `attendance` — `True` = present, `False` = absent
 - `location_name` — constituency extracted from the parenthetical
 
-**Note:** `SittingAttendance` does not currently have an `mp_id` FK column. Matching to `Mp` is validated during the loop but the FK column is added only once matching is stable (a separate migration step, not part of the loop).
+**Note:** `Attendance` does not currently have an `mp_id` FK column. Matching to `Mp` is validated during the loop but the FK column is added only once matching is stable (a separate migration step, not part of the loop).
 
 ## Document eras and section formats
 
@@ -67,7 +67,7 @@ The ABSENT section follows the same format as PRESENT within each era. The secti
 
 ## Parliament number — prerequisite
 
-`Mp.parliament_number` is the join key alongside name. The `Sitting` table has `parlement_no` (note the spelling) which maps to `Mp.parliament_number`.
+`Speaker.parliament_number` is the join key alongside name. The `Sitting` table has `parlement_no` (note the spelling) which maps to `Speaker.parliament_number`.
 
 When `Sitting.parlement_no` is `None`, parliament number must be inferred from `volume_no`. **Establishing this volume→parliament mapping is a prerequisite for measuring the match rate on affected sittings.** Before drawing the sample, query the DB for the set of distinct `(volume_no, parlement_no)` pairs where `parlement_no` is not None, and use that to fill in the gaps. Record the completed mapping in `docs/attendance/matching-patterns.md`. Any volume that cannot be mapped remains excluded from the match-rate denominator — log the count.
 
@@ -81,17 +81,17 @@ Each attendance line has the form:
 
 Where:
 - **Title** (optional): `Mr`, `Mrs`, `Dr`, `Inche`, `Encik`, `Madam`, `Mdm`, `Ms`, `Prof.`, `Assoc. Prof.`, `BG`, `RAdm`, `The Honourable`, etc. Compound titles occur (`The Honourable Mr`, `Assoc. Prof.`).
-- **Name**: the MP name, matching (with some variation) `Mp.name`.
+- **Name**: the MP name, matching (with some variation) `Speaker.name`.
 - **Constituency** (optional parenthetical): e.g., `(Tanjong Pagar)`, `(Nominated Member)`, `(Non-Constituency Member)`, `(ex-officio)`.
 - **Portfolio** (optional, after comma): e.g., `, Prime Minister`.
 - `SPEAKER` entries appear at the top (`Mr SPEAKER (Mr Name (Constituency)).`) — include them.
 
 ## MP table join
 
-`Mp.name` stores names without title prefixes. Variations to watch for:
-- Honorifics appended to markdown names but absent from `Mp.name` (e.g., `C.B.E.`, `J.P.`)
-- Ordering: `Mp.name` sometimes stores `Surname, Firstname` (e.g., `Bani, S.T.`, `Barker, E.W.`) while markdown uses natural order
-- Colonial-era prefix titles (`Inche`, `The Honourable`) absent from `Mp.name`
+`Speaker.name` stores names without title prefixes. Variations to watch for:
+- Honorifics appended to markdown names but absent from `Speaker.name` (e.g., `C.B.E.`, `J.P.`)
+- Ordering: `Speaker.name` sometimes stores `Surname, Firstname` (e.g., `Bani, S.T.`, `Barker, E.W.`) while markdown uses natural order
+- Colonial-era prefix titles (`Inche`, `The Honourable`) absent from `Speaker.name`
 - Modern-era name changes between parliaments (same person, different name spelling)
 
 # Method
@@ -134,27 +134,27 @@ Write all three to `docs/attendance/sample.json`:
 Do not re-sample in later iterations.
 
 **Step 3 — Implement the baseline extraction function.**
-Write `get_sitting_attendance(sitting: Sitting) -> list[SittingAttendance]` in `services/sitting_attendance.py`. The initial implementation should handle at minimum the colonial-era plain `PRESENT:` / `ABSENT:` format. Do not attempt to handle all eras at once — the loop will add coverage iteratively.
+Write `get_sitting_attendance(sitting: Sitting) -> list[Attendance]` in `services/sitting_attendance.py`. The initial implementation should handle at minimum the colonial-era plain `PRESENT:` / `ABSENT:` format. Do not attempt to handle all eras at once — the loop will add coverage iteratively.
 
 The function signature:
 
 ```python
-def get_sitting_attendance(sitting: Sitting) -> list[SittingAttendance]:
+def get_sitting_attendance(sitting: Sitting) -> list[Attendance]:
     ...
 ```
 
-Returns one `SittingAttendance` per parsed MP line. `mp_name` should be the name after stripping the title prefix and constituency parenthetical. `location_name` should be the constituency text (without parentheses). `attendance` should be `True` for PRESENT entries, `False` for ABSENT entries.
+Returns one `Attendance` per parsed MP line. `speaker_name` should be the name after stripping the title prefix and constituency parenthetical. `location_name` should be the constituency text (without parentheses). `attendance` should be `True` for PRESENT entries, `False` for ABSENT entries.
 
 **Step 4 — Define the two failure stages and run the baseline.**
 A sitting fails at:
 
 - `can_extract=False` — the PRESENT section cannot be located in `markdown_content`, or zero names are returned (when the sitting demonstrably has attendees — check for `PRESENT` text in the raw markdown). Sittings where `markdown_content` has no `PRESENT` text at all are excluded from the target set; record the count.
-- `can_match=False` — names are extracted but fewer than 80% match an `Mp` row (by `mp_name` + inferred parliament number → `Mp.name` + `Mp.parliament_number`). Sittings with no resolvable parliament number are excluded from the match-rate denominator.
+- `can_match=False` — names are extracted but fewer than 80% match an `Speaker` row (by `speaker_name` + inferred parliament number → `Speaker.name` + `Speaker.parliament_number`). Sittings with no resolvable parliament number are excluded from the match-rate denominator.
 
 Run the baseline against the pilot sample. Record:
 - Count of sittings excluded (no PRESENT text in markdown)
 - Extraction success rate: sittings where `can_extract=True`, broken down by era
-- Match success rate: of sittings with a resolvable parliament number, the fraction where ≥80% of extracted names match an `Mp` row, broken down by era
+- Match success rate: of sittings with a resolvable parliament number, the fraction where ≥80% of extracted names match an `Speaker` row, broken down by era
 - Total individual names matched vs. unmatched (the secondary metric)
 
 Write to `docs/attendance/progress.txt` under `## Setup — Baseline`.
@@ -166,7 +166,7 @@ For each failing pilot sitting, record which failure stage it falls into and why
 - Extraction: SPEAKER line parsed incorrectly (nested parentheses)
 - Matching: title prefix not fully stripped (`Inche`, `The Honourable`, compound titles)
 - Matching: honorific suffix not stripped (`, C.B.E.`)
-- Matching: inverted name format in `Mp.name` (`Barker, E.W.`)
+- Matching: inverted name format in `Speaker.name` (`Barker, E.W.`)
 - Matching: parliament number not resolvable — excluded from denominator, log
 
 If a generalizable pattern is discovered, also record it in `docs/attendance/matching-patterns.md`.
@@ -185,7 +185,7 @@ From the current catalogue in `docs/attendance/progress.txt`, pick the failure m
 Extraction must succeed before matching is meaningful.
 
 **Step 2 — Investigate.**
-Open `markdown_content` for 2–3 sittings exhibiting the failure. Compare against 1–2 sittings **from the same era** where the same stage succeeds. For matching failures, also compare the extracted name string against the actual `Mp.name` values for that parliament. Determine the root cause precisely.
+Open `markdown_content` for 2–3 sittings exhibiting the failure. Compare against 1–2 sittings **from the same era** where the same stage succeeds. For matching failures, also compare the extracted name string against the actual `Speaker.name` values for that parliament. Determine the root cause precisely.
 
 **Step 3 — Log findings.**
 Append to `docs/attendance/progress.txt` under a `## Iteration N — YYYY-MM-DD` heading:
@@ -204,7 +204,7 @@ Append to `docs/attendance/progress.txt` under a `## Iteration N — YYYY-MM-DD`
 **Markdown snippet (passing, same era):**
 <comparable lines from a passing sitting in the same era — required for can_extract failures>
 
-**Extracted name (before fix) vs. Mp.name (expected):**
+**Extracted name (before fix) vs. Speaker.name (expected):**
 <side-by-side comparison for can_match failures>
 
 **Root cause:**
