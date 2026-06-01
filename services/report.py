@@ -22,11 +22,11 @@ def _get_db_report_header(raw_title: str) -> ReportHeader:
 
     subtitle = None
 
-    def _handle_bracket(m: re.Match) -> str:
+    def _handle_bracket(bracket_match: re.Match) -> str:
         nonlocal subtitle
-        content = m.group(1)
+        content = bracket_match.group(1)
         if content.isupper():
-            return m.group(0)
+            return bracket_match.group(0)
         subtitle = f"({content})"
         return ""
 
