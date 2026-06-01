@@ -575,6 +575,10 @@ def resolve_canonical_name(name: str, parliament: int, lookups: MpLookups) -> st
     return canonical
 
 
+def resolve(name: str, parliament: int, lookups: MpLookups) -> str | None:
+    return resolve_canonical_name(normalize_name(name), parliament, lookups)
+
+
 def get_sitting_attendance(sitting: Sitting, lookups: MpLookups) -> list[SittingAttendance]:
     if not sitting.markdown_content:
         return []
