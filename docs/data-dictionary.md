@@ -2,7 +2,7 @@
 
 Covers every parliamentary record published by SPRS, from the colonial Legislative Assembly through the present Parliament, including pre-independence proceedings when Singapore was part of Malaya.
 
-Each record is one parliamentary item — a question, a debate topic, a bill reading, a ministerial statement — identified by parliament number, sitting date, and a report ID. Records are parsed into individual speeches attributed to named MPs.
+Each record is one parliamentary item — a question, a debate topic, a bill reading, a ministerial statement — identified by parliament number, sitting date, and a report ID. Records are parsed into individual speeches attributed to named speakers.
 
 For HTML artifact details and parsing edge cases, see [parsing.md](parsing.md).
 
@@ -12,20 +12,17 @@ For HTML artifact details and parsing edge cases, see [parsing.md](parsing.md).
 
 ```
 Sitting (one day's session)
-  ├── SittingAttendance  (one row per MP)
-  ├── SittingPtba        (permissions to be absent)
-  ├── SittingSection     (debate sections/questions on the agenda)
-  ├── SittingAnnexure    (linked annexure files)
-  ├── SittingVernacular  (vernacular speech files)
-  └── SittingA2b         (absence-to-brief records)
+  └── Attendance  (one row per person listed in PRESENT/ABSENT)
 
 Report (one parliamentary item within a sitting)
-  └── Speech             (one utterance by one MP)
+  └── Speech      (one utterance by one speaker)
 
-Mp (one row per MP per parliament)
+Speaker (one row per person per parliament)
 ```
 
-`Report` and `Sitting` share `sitting_date`, `parliament_number`, and `volume_number` as natural join keys. `Speech.mp_id` links to `Mp.id` where the match has been resolved.
+`Report` and `Sitting` share `sitting_date`, `parliament_number`, and `volume_number` as natural join keys. `Speech.speaker_id` links to `Speaker.id` where the match has been resolved.
+
+The sitting API also returns nested list data (PTBA, debate sections, annexures, vernacular files, absence-to-brief records). This data is stored as serialised JSON columns directly on `Sitting` (`ptba_list`, `sections`, `annexures`, `vernaculars`, `a2b`) for record purposes and is not normalised into separate tables.
 
 ---
 
@@ -60,7 +57,7 @@ One row per individual utterance within a report. Speeches are extracted from `m
 | `speaker` | str | Speaker name as it appears in the transcript, with title prefix stripped. `NULL` if attribution failed. |
 | `transcript` | str | Text of the speech in markdown. |
 | `report_id` | int | FK → `Report.id`. |
-| `mp_id` | int | FK → `Mp.id`. `NULL` where the match has not been resolved. |
+| `speaker_id` | int | FK → `Speaker.id`. `NULL` where the match has not been resolved. |
 
 ### Sitting
 
@@ -78,40 +75,26 @@ One row per sitting date. A sitting is a full day of parliamentary proceedings, 
 | `location_text` | str | Location of the sitting, e.g. `"in contemporaneous communication"` (new format only). |
 | `markdown_content` | str | Full sitting HTML converted to markdown. Used to parse attendance. |
 | `html_full_content` | str | Raw HTML of the full sitting proceedings. |
+| `ptba_list` | str (JSON) | Permissions to be absent, serialised from `ptbaList` in the API response. |
+| `sections` | str (JSON) | Debate sections from `takesSectionVOList`, serialised. New format only. |
+| `annexures` | str (JSON) | Annexure file references from `annexureList`, serialised. New format only. |
+| `vernaculars` | str (JSON) | Vernacular speech files from `vernacularList`, serialised. New format only. |
+| `a2b` | str (JSON) | Absence-to-brief records from `a2bList`, serialised. New format only. |
 
-### SittingAttendance
+### Attendance
 
-One row per MP per sitting. Sourced from the `attendanceList` in the API response (new format only).
+One row per person per sitting, parsed from the PRESENT/ABSENT sections of `Sitting.markdown_content`.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `mp_name` | str | MP name as returned by the API. |
+| `mp_name` | str | Name as it appears in the attendance list, after title stripping. |
 | `attendance` | bool | `True` = present, `False` = absent. |
-| `location_name` | str | Location if the sitting was hybrid (e.g. remote attendance). |
+| `location_name` | str | Constituency or location if listed in the source (e.g. remote attendance). |
+| `speaker_id` | int | FK → `Speaker.id`. `NULL` where the match has not been resolved. |
 
-### SittingPtba
+### Speaker
 
-Permission To Be Absent records. One row per MP per approved absence period.
-
-| Field | Type | Meaning |
-|---|---|---|
-| `mp_name` | str | MP name. |
-| `from_date` | str | Start of the approved absence. |
-| `to_date` | str | End of the approved absence. |
-
-### SittingSection
-
-Debate sections and questions listed on the sitting agenda. One row per item in `takesSectionVOList`.
-
-| Field | Type | Meaning |
-|---|---|---|
-| `title` | str | Title of the section or question. |
-| `section_type` | str | Type code, e.g. `OA` (oral answer), `WA` (written answer). |
-| `content` | str | HTML content of the section. |
-
-### Mp
-
-MP identities scraped from parliament.gov.sg. One row per MP per parliament — the same person appears multiple times across parliaments.
+Identities scraped from parliament.gov.sg. One row per person per parliament — the same person appears multiple times across parliaments. The name "Speaker" is used because the table includes colonial Legislative Assembly members who were not MPs.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -167,9 +150,9 @@ MP identities scraped from parliament.gov.sg. One row per MP per parliament — 
 
 ## Known limitations
 
-- Records from 1955–1965 cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament. `Mp.is_legislative_assembly = True` marks these members.
+- Records from 1955–1965 cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament. `Speaker.is_legislative_assembly = True` marks these members.
 - ~490 documents have no speaker attribution: multi-speaker appendix documents (body is a list of PDF links) and colonial-era procedural budget orders with no named author.
 - Some `Report.title` values contain Windows-1252 mojibake (e.g. `â€™` instead of `'`). `Report.markdown_content` has correct Unicode. Affects ~382 `president-address` titles and ~2,153 `budget` titles. `Report.original_title` is the unmodified raw value.
 - Colonial-era records from 1955–1961 (Parliament 0) have no `MPs Speaking` field, so single-speaker attribution fallback cannot apply.
-- `Speech.mp_id` is incomplete for colonial-era and early-parliament records.
+- `Speech.speaker_id` is incomplete for colonial-era and early-parliament records.
 - ~3% of modern-era sitting documents have a missing space before the time (e.g. `"The House met at3.00 pm"`). This is a defect in the raw HTML.

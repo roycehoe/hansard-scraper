@@ -12,7 +12,7 @@ Pipeline and database for Singapore's parliamentary record, from the colonial Le
 | Report types | 21 — oral answers, written answers, bills, motions, ministerial statements, budget debates, and more |
 | Speaker attribution | Where source material names a speaker |
 | Sitting metadata | Attendance, PTBA, and debate sections (Parliament 13+) |
-| MP registry | All MPs by parliament, from parliament.gov.sg |
+| Speaker registry | All speakers by parliament, from parliament.gov.sg |
 
 ## Quick start
 
@@ -26,10 +26,11 @@ docker-compose up -d        # local PostgreSQL
 python script.py            # fetch and parse the full corpus
 ```
 
-Populate the MP registry separately (needed before `mp_id` foreign keys resolve):
+Populate the Speaker registry separately (needed before `speaker_id` foreign keys resolve):
 
 ```bash
-python scripts/scrape_mps_by_parliament.py
+python scripts/scrape_speakers_by_parliament.py
+python scripts/load_colonial_la_speakers.py   # for pre-independence LA members
 ```
 
 ## Documentation
@@ -47,7 +48,7 @@ python scripts/scrape_mps_by_parliament.py
 - Records from 1955–1965 predate independence and cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament.
 - ~490 documents have no speaker attribution — appendix indexes and colonial-era procedural orders where no author is named in the source.
 - Some `title` fields have encoding artifacts from the source API; `markdown_content` has correct Unicode.
-- MP identity linking (`mp_id`) is incomplete for colonial-era and early-parliament records.
+- Speaker identity linking (`speaker_id`) is incomplete for colonial-era and early-parliament records.
 
 Full details in [docs/data-dictionary.md](docs/data-dictionary.md).
 

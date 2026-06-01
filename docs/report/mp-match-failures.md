@@ -1,39 +1,39 @@
-# MP Match Failure Analysis
+# Speaker Match Failure Analysis
 
-After `populate_mp_links` ran, the following records still have `mp_id IS NULL`:
+After `populate_speaker_links` ran, the following records still have `speaker_id IS NULL`:
 
 | Table | Unmatched | Total | Match rate |
 |---|---|---|---|
-| `sittingattendance` | 30,632 | 96,327 | 68.2% |
+| `attendance` | 30,632 | 96,327 | 68.2% |
 | `speech` | 98,534 | 484,156 | 79.6% |
 
 ---
 
-## SittingAttendance Failures
+## Attendance Failures
 
 ### Root Cause Breakdown
 
 | Root cause | Rows | Notes |
 |---|---|---|
-| Parliament 0 — no MPs in db (volumes 12–23) | 7,751 | `VOLUME_TO_PARLIAMENT` maps volumes 12–23 to parliament 0, which has no rows in the `mp` table |
-| Case mismatch (`bin` vs `Bin`) | 1,457 | Sitting attendance records store `bin` lowercase; `mp.name` uses title-cased `Bin` |
-| Name absent from `mp` table | 21,424 | Person exists in history but `mp.name` is a different format, or is genuinely not scraped |
+| Parliament 0 — no speakers in db (volumes 12–23) | 7,751 | `VOLUME_TO_PARLIAMENT` maps volumes 12–23 to parliament 0, which has no rows in the `speaker` table |
+| Case mismatch (`bin` vs `Bin`) | 1,457 | Attendance records store `bin` lowercase; `Speaker.name` uses title-cased `Bin` |
+| Name absent from `speaker` table | 21,424 | Person exists in history but `Speaker.name` is a different format, or is genuinely not scraped |
 
 **Total: 30,632**
 
 ### Root Cause 1 — Parliament 0 (7,751 rows)
 
-`infer_parliament` looks up `sitting.volume_no` in `VOLUME_TO_PARLIAMENT`. Volumes 12–23 are mapped to parliament 0, but no `Mp` rows exist for `parliament_number = 0`. Every attendance row tied to those volumes therefore fails the `mp_id_lookup.get((mp_name, 0))` call unconditionally.
+`infer_parliament` looks up `sitting.volume_no` in `VOLUME_TO_PARLIAMENT`. Volumes 12–23 are mapped to parliament 0, but no `Speaker` rows exist for `parliament_number = 0`. Every attendance row tied to those volumes therefore fails the `speaker_id_lookup.get((mp_name, 0))` call unconditionally.
 
-These volumes correspond to a transitional era (post-Legislative Assembly, pre-Parliament renumbering). The root fix is either to create `Mp` rows for parliament 0 or to adjust the volume→parliament mapping.
+These volumes correspond to a transitional era (post-Legislative Assembly, pre-Parliament renumbering). The root fix is either to create `Speaker` rows for parliament 0 or to adjust the volume→parliament mapping.
 
 ### Root Cause 2 — Case mismatch (1,457 rows)
 
-The attendance lookup is a raw dict key comparison: `mp_id_lookup.get((record.mp_name, parliament))`. No case normalisation is applied to `record.mp_name` before the lookup. MPs of Malay heritage are frequently stored in `sittingattendance` with lowercase `bin`/`binte` while `mp.name` uses uppercase `Bin`/`Binte`.
+The attendance lookup is a raw dict key comparison: `speaker_id_lookup.get((record.mp_name, parliament))`. No case normalisation is applied to `record.mp_name` before the lookup. MPs of Malay heritage are frequently stored in `attendance` with lowercase `bin`/`binte` while `Speaker.name` uses uppercase `Bin`/`Binte`.
 
 Top offenders:
 
-| `mp_name` in sittingattendance | `mp.name` | Rows |
+| `mp_name` in attendance | `Speaker.name` | Rows |
 |---|---|---|
 | `Sidek bin Saniff` | `Sidek Bin Saniff` | 552 |
 | `Othman bin Haron Eusofe` | `Othman Bin Haron Eusofe` | 480 |
@@ -42,15 +42,15 @@ Top offenders:
 | `Rahmat bin Kenap` | `Rahmat Bin Kenap` | 92 |
 | `Sha'ari bin Tadin` | `Sha'ari Bin Tadin` | 91 |
 
-Fix: apply `LOWER()` on both sides of the attendance lookup, or normalise `mp.name` and `record.mp_name` to a common case before matching.
+Fix: apply `LOWER()` on both sides of the attendance lookup, or normalise `Speaker.name` and `record.mp_name` to a common case before matching.
 
 ### Root Cause 3 — Name format mismatch or truly absent (21,424 rows)
 
 This bucket breaks into three sub-types:
 
-**3a — Format differs, person IS in `mp` table (~12,089 rows)**
+**3a — Format differs, person IS in `speaker` table (~12,089 rows)**
 
-The attendance name matches a real MP but uses a different surface form than `mp.name`. The attendance matching code performs no name normalisation at all (unlike the speech code), so these all fail. Common patterns:
+The attendance name matches a real speaker but uses a different surface form than `Speaker.name`. The attendance matching code performs no name normalisation at all (unlike the speech code), so these all fail. Common patterns:
 
 - Period vs no-period initials: `S. Jayakumar` → `S Jayakumar`; `K. Shanmugam` → `K Shanmugam`; `J.B. Jeyaretnam` → `J B Jeyaretnam`
 - Inverted format: `E.W. Barker` → `Barker, E.W.`; `Augustine H.H. Tan` → `Tan H.H. Augustine`; `Aline K. Wong` → `Wong Aline K`; `George Yong-Boon Yeo` → `Yeo Yong-Boon, George`
@@ -59,9 +59,9 @@ The attendance name matches a real MP but uses a different surface form than `mp
 
 Fix: apply the same normalisation pipeline used for speech (strip_title → normalize_name → resolve_canonical_name) to attendance `mp_name` before lookup.
 
-**3b — Colonial-era MPs not scraped (~3,945 rows in volumes 1–11)**
+**3b — Colonial-era speakers not scraped (~3,945 rows in volumes 1–11)**
 
-Parliament 1 volumes 1–11 contain pre-1965 Legislative Assembly sitting records. The names that appear (e.g. `Lim Ching Siong`, `D.S. Marshall`, `G.A.P. Sutherland`, `R. Jumabhoy`, `A.R. Lazarous`) are not in the `mp` table because `scrape_mps_by_parliament.py` only covers the post-independence parliament.gov.sg listings. These are structurally missing data.
+Parliament 1 volumes 1–11 contain pre-1965 Legislative Assembly sitting records. The names that appear (e.g. `Lim Ching Siong`, `D.S. Marshall`, `G.A.P. Sutherland`, `R. Jumabhoy`, `A.R. Lazarous`) are not in the `speaker` table because `scrape_speakers_by_parliament.py` only covers the post-independence parliament.gov.sg listings. These are structurally missing data.
 
 **3c — Other absent names (~5,390 rows)**
 
@@ -112,9 +112,9 @@ Names spread across all parliaments that cannot be resolved even with format nor
 |---|---|---|
 | Role-based "The X" speakers | 33,073 | `The Minister for…`, `The Prime Minister`, `The Chairman`, etc — not real names |
 | All-caps section headers | 18,974 | `ADJOURNMENT`, `MINISTRY OF EDUCATION`, `ASSENTS TO BILLS PASSED`, etc — document structure leaked into speaker field |
-| Presiding officers | 18,332 | `Mr Speaker`, `Mr Deputy Speaker`, `Mdm Deputy Speaker` — roles, not resolvable to individual MPs |
+| Presiding officers | 18,332 | `Mr Speaker`, `Mr Deputy Speaker`, `Mdm Deputy Speaker` — roles, not resolvable to individual speakers |
 | Unresolved real names | 13,537 | Genuine speaker names that the resolution pipeline failed to match |
-| Title + surname only | 4,970 | `Mr Shanmugam`, `Dr Vasoo`, `Mr Iswaran` — surname alone is unresolvable when multiple MPs share it |
+| Title + surname only | 4,970 | `Mr Shanmugam`, `Dr Vasoo`, `Mr Iswaran` — surname alone is unresolvable when multiple speakers share it |
 | Bracket artifacts | 3,345 | `[Mr Deputy Speaker (Mr Matthias Yao Chih) in the Chair]` — presiding-officer change notices |
 | Compound title not fully stripped | 2,951 | `Assoc. Prof. Dr Yaacob Ibrahim`, `RAdm [NS] Lui Tuck Yew` — `strip_title` removes only one prefix per call |
 | Non-speaker placeholders | 1,109 | `An hon. Member`, `Hon. Members`, etc — already in the `_NON_SPEAKERS` exclusion set but still unmatched |
@@ -146,14 +146,14 @@ Failures are concentrated in parliaments 9–11 (volumes 67–87), which are the
 
 **Category: Role-based "The X" speakers (33,073)**
 
-Speakers like `The Prime Minister (BG Lee Hsien Loong)` and `The Senior Minister of State for Law (Assoc. Prof. Ho Peng Kee)` carry role text before the parenthetical name. The current `_INNER_TITLE` regex in `mp_links.py` extracts the name from the parenthetical only when it starts with a known title prefix (`Mr`, `Mrs`, `Dr`, etc.). This works for `The Deputy Prime Minister (BG Lee Hsien Loong)` but leaves cases where the role prefix (`The Minister for…`) is itself the entire speaker string without a parenthetical.
+Speakers like `The Prime Minister (BG Lee Hsien Loong)` and `The Senior Minister of State for Law (Assoc. Prof. Ho Peng Kee)` carry role text before the parenthetical name. The current `_INNER_TITLE` regex in `speaker_links.py` extracts the name from the parenthetical only when it starts with a known title prefix (`Mr`, `Mrs`, `Dr`, etc.). This works for `The Deputy Prime Minister (BG Lee Hsien Loong)` but leaves cases where the role prefix (`The Minister for…`) is itself the entire speaker string without a parenthetical.
 
 Top examples:
 - 14,801 × `Mr Speaker`
 - 10,578 × `The Chairman`
 - 3,128 × `The Prime Minister`
 - 2,590 × `Mr Deputy Speaker`
-- 993 × `The Deputy Prime Minister (BG Lee Hsien Loong)` — parenthetical extraction should work but `BG` title resolves to `Lee Hsien Loong` who is in the mp table; the failure here suggests `BG` prefix is stripped but the resulting name `Lee Hsien Loong` doesn't match any `mp.name` exactly (stored as `Lee Hsien Loong` in the mp table — this is a parliament-range issue)
+- 993 × `The Deputy Prime Minister (BG Lee Hsien Loong)` — parenthetical extraction should work but `BG` title resolves to `Lee Hsien Loong` who is in the speaker table; the failure here suggests `BG` prefix is stripped but the resulting name `Lee Hsien Loong` doesn't match any `Speaker.name` exactly (stored as `Lee Hsien Loong` in the speaker table — this is a parliament-range issue)
 
 **Category: Compound title not fully stripped (2,951)**
 
@@ -168,7 +168,7 @@ Fix: call `strip_title` in a loop until no prefix is consumed, or add compound m
 
 **Category: Title + surname only (4,970)**
 
-Single-token surnames after title stripping: `Mr Shanmugam` → `Shanmugam`, `Dr Vasoo` → `Vasoo`. The resolution pipeline has no path for surname-only resolution unless a manual override exists (a few are in `_MANUAL_OVERRIDES`). Most are ambiguous across parliaments (multiple MPs with the same surname).
+Single-token surnames after title stripping: `Mr Shanmugam` → `Shanmugam`, `Dr Vasoo` → `Vasoo`. The resolution pipeline has no path for surname-only resolution unless a manual override exists (a few are in `_MANUAL_OVERRIDES`). Most are ambiguous across parliaments (multiple speakers with the same surname).
 
 Top: `Mr Shanmugam` (696), `Mr Conceicao` (509), `Mr Iswaran` (518), `Mr Rajaratnam` (561).
 
@@ -176,10 +176,10 @@ Top: `Mr Shanmugam` (696), `Mr Conceicao` (509), `Mr Iswaran` (518), `Mr Rajarat
 
 Names that look like genuine speakers but failed all resolution strategies. Sub-types:
 
-- **Name not in `mp` table at all** (colonial-era or missing from scrape): `Mr David Marshall`, `Mr Lim Cher Kheng`, `Mr Chew Swee Kee`, `Mr Francis Thomas`, `Tun Lim Yew Hock` — pre-independence figures
+- **Name not in `speaker` table at all** (colonial-era or missing from scrape): `Mr David Marshall`, `Mr Lim Cher Kheng`, `Mr Chew Swee Kee`, `Mr Francis Thomas`, `Tun Lim Yew Hock` — pre-independence figures
 - **Inverted-name rearrangement failure**: `Dr Augustine Tan` → `Augustine Tan` → inverted lookup key is `augustine h h tan` (from `Tan H.H. Augustine`) but the candidate key is `augustine tan` — word sets differ because the middle initial `H.H.` is absent in the speech form
-- **Word-count mismatch in wordset lookup**: `Dr Aline Wong` → `Aline Wong` (2 words) vs `mp.name = Wong Aline K` (3 words including middle initial) — wordset lookup requires exact word-count match
-- **Name with constituency appended**: `Mr Lai Tha Chai (Henderson)` — parenthetical extraction in `mp_links.py` uses `_INNER_TITLE` regex and only extracts the inner content if it starts with a title prefix; `Henderson` does not, so `raw` is trimmed to `Mr Lai Tha Chai` and then resolved — but `Lai Tha Chai` is not in the `mp` table
+- **Word-count mismatch in wordset lookup**: `Dr Aline Wong` → `Aline Wong` (2 words) vs `Speaker.name = Wong Aline K` (3 words including middle initial) — wordset lookup requires exact word-count match
+- **Name with constituency appended**: `Mr Lai Tha Chai (Henderson)` — parenthetical extraction in `speaker_links.py` uses `_INNER_TITLE` regex and only extracts the inner content if it starts with a title prefix; `Henderson` does not, so `raw` is trimmed to `Mr Lai Tha Chai` and then resolved — but `Lai Tha Chai` is not in the `speaker` table
 - **All-caps noise that looks like names**: `EXEMPTED BUSINESS (Motion)` (330), `Total` (113), `Year` (106), `Country` (34) — document table content misdetected as speakers
 
 ### Top 30 Unmatched Speaker Values
@@ -225,12 +225,12 @@ Names that look like genuine speakers but failed all resolution strategies. Sub-
 
 These account for roughly **72,500 speech rows** (73% of unmatched speeches) and are inherent to the data:
 
-- Presiding-officer roles (`Mr Speaker`, `The Chairman`) — not individual MPs
+- Presiding-officer roles (`Mr Speaker`, `The Chairman`) — not individual speakers
 - Role-only speaker strings (`The Prime Minister`, `The Minister for...`) without a name component
 - All-caps document structure headers leaked as speakers
 - Bracket/underscore parse artefacts
 - `An hon. Member` placeholders
-- Colonial-era names with no `Mp` row
+- Colonial-era names with no `Speaker` row
 
 ### Fixable bugs or gaps
 
@@ -238,7 +238,7 @@ These account for roughly **72,500 speech rows** (73% of unmatched speeches) and
 |---|---|---|
 | Attendance: no name normalisation applied | ~12,089 attendance | Apply `strip_title` + `resolve_canonical_name` to `mp_name` before attendance lookup |
 | Attendance: case sensitivity (`bin` vs `Bin`) | 1,457 attendance | Normalise case before dict lookup |
-| Attendance: parliament 0 has no `Mp` rows | 7,751 attendance | Populate `Mp` rows for parliament 0, or remap affected volumes |
+| Attendance: parliament 0 has no `Speaker` rows | 7,751 attendance | Populate `Speaker` rows for parliament 0, or remap affected volumes |
 | Speech: `strip_title` called once — compound prefixes (`Assoc. Prof. Dr`) not fully stripped | ~2,951 speech | Loop `strip_title` until stable, or add compound entries to `_TITLE_PREFIXES` |
 | Speech: word-count mismatch in wordset lookup for names with/without middle initial | ~1,000+ speech | Extend wordset lookup to allow subset matching for names with middle initials |
 | Speech: inverted rearrangement misses middle-initial forms (`Dr Augustine Tan` vs `Tan H.H. Augustine`) | ~1,482 speech | Add to `_MANUAL_OVERRIDES`, or add bin-free + initial-stripped fallback |
