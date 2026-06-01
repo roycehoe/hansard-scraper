@@ -1,0 +1,104 @@
+# Speech → Speaker Refine-Loop — Learnings Log
+
+Captures non-obvious findings, workflow lessons, and judgment calls made during the
+refine loop. Prepend new entries at top, most-recent-first.
+
+---
+
+## Session 2026-06-02 — Subagent 7: colonial LA member data collection
+
+### Multi-agent orchestration
+
+**Token cost scales with agent count, not work count.**
+Total tokens = (K agents × overhead) + (N names × research cost). The research cost
+is fixed regardless of K. More agents only buys wall-clock time. When tokens are the
+bottleneck, minimise K. For a task of ~13 genuinely uncertain names, 5 agents was
+slightly over-provisioned but acceptable. 10 would have been wasteful.
+
+**Pre-check the DB before spawning research agents.**
+Running one DB query per candidate name inline (before the workflow) eliminated 14 of
+27 candidates from the research queue. Agents that run DB checks themselves burn tokens
+on tool overhead; doing it inline is effectively free. Pattern: scout → filter → fan out.
+
+**Synthesis agents stall on long-running shell commands.**
+The synthesis agent timed out (180 s, 6 consecutive attempts) because
+`find_unmatched_attendees.py --verbose` scans 5,765 sittings and takes ~6 minutes.
+Rule: never put a slow verification script in a synthesis agent. Run it in the
+background (Bash `run_in_background`) and report when the notification arrives.
+
+**Haiku is sufficient for structured research tasks.**
+All 5 research agents completed correctly on the first attempt with no hallucinations
+caught. Haiku handled: DB lookups via Python snippets, web searches, OCR variant
+detection, and structured JSON return with schema. Reserve Sonnet for synthesis steps
+that involve file manipulation and multi-step reasoning over combined results.
+
+**Partially-completed synthesis agents leave durable side effects.**
+One synthesis attempt wrote the two confirmed entries to `colonial_la_members.json`
+and ran `load_colonial_la_speakers.py` before stalling on verification. Subsequent
+runs of the loader then reported 0 new inserts (correctly). Always check whether prior
+attempts already completed file-write steps before re-running them.
+
+---
+
+### Prompt design
+
+**parliament_number appears in two unrelated contexts — name them explicitly.**
+`Sitting.parliament_number = 0` means the colonial LA era in the Sitting/Speech/Report
+tables. `Speaker.parliament_number = 1` means the LA era in the Speaker table.
+The resolution code bridges this via `_COLONIAL_PARLIAMENT_FALLBACKS = [1, 2, 3]`.
+Agents (and humans) conflate these. Fix: always present as a named two-column table,
+never as inline prose.
+
+**"Skip names already in the JSON" must be said explicitly — agents will re-research.**
+Without the skip instruction, agents treat every candidate as new work. The filter step
+(load JSON → build a set of known names → exclude from slice) must be written into
+Phase 1, not left implicit.
+
+**The verification step must measure resolution, not insertion.**
+The original prompt's Step 4 spot-checked the last 20 inserted Speaker rows. This
+confirms the load ran, not that any unmatched attendance rows now resolve. The correct
+check is: run `find_unmatched_attendees.py` before and after, compare the `candidates`
+bucket count.
+
+---
+
+### Colonial LA member findings
+
+**`Lai Tha Chai` (1,024 occurrences) is the highest-value unresolved name.**
+DB pre-check found `Lai Tai Chai` in the Speaker table at parliament_number=3,4,5,6
+only — not 1 or 2. The 1,024 occurrences come from parliament=0 sittings (colonial era).
+Since the fallback only checks parl=1,2,3 and `Lai Tai Chai` is at parl=3, the fallback
+should find them — but the OCR form `Lai Tha Chai` (Tha ≠ Tai) fails the name match.
+Two possible fixes: (a) add `Lai Tai Chai` with parliament_number=1 to
+`colonial_la_members.json` so the canonical name is available at the right parliament
+level; (b) add an OCR alias in the name normalisation layer. Investigate before next session.
+
+**Most high-frequency unmatched candidates are OCR artifacts, not missing people.**
+Of the top 66 candidates (freq ≥ 5), only ~13 needed genuine research. The rest were:
+- Decorated variants of existing JSON entries (e.g. `Thio Chan Bee. J.P.`)
+- OCR corruptions of Speaker-table entries (e.g. `Gob Keng Swee` → `Goh Keng Swee`)
+- Role/ministry strings that slipped through noise filters (e.g. `Ministry of Labour and Government Whip`)
+- Malformed truncated names with unmatched parens (e.g. `Yeoh Ghim Seng (Joo Chiat`)
+- Post-LA era MPs whose colonial-era attendance appearances are OCR variants (e.g. `Tay Eng Soon` elected 1980)
+
+**Confirmed new entries added this session:**
+| Name | Party | Notes |
+|---|---|---|
+| Lim Huan Boon | Barisan Sosialis | Bukit Merah 1963–65; arrested Operation Coldstore |
+| Tan Siak Kew | Unknown | Nominated member 1958–59; first Singapore ambassador to Thailand |
+
+**Unconfirmable this session (do not add without further evidence):**
+- `A.V. Winslow` — no biographical records found in any source
+- `P. Govindasamy` — agent could not confirm LA-era membership despite 1963 references
+
+---
+
+### find_unmatched_attendees.py output characteristics
+
+- Scans 5,765 sittings; takes ~6 minutes; not suitable for inline synthesis steps
+- `candidates` bucket baseline (before this session): 2,663 unmatched rows, 223 distinct names
+- Most distinct names are OCR variants of already-resolved people, not genuinely missing members
+- The script's noise filters miss: ministry-role strings, truncated names with unmatched parens,
+  decorated name forms with post-nominals (e.g. `P.B.m.`, `D.U.T.`)
+
+---
