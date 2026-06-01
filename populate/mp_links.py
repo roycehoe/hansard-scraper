@@ -17,6 +17,7 @@ from services.sitting_attendance import (
 )
 
 _BATCH = 1000
+_COLONIAL_PARLIAMENT_FALLBACKS = [1, 2, 3]
 
 _NON_SPEAKERS = {
     "An hon. Member", "Some hon. Members", "Non-Residents",
@@ -27,6 +28,22 @@ _INNER_TITLE = re.compile(
 )
 
 
+def _resolve_with_parliament_fallback(
+    name: str,
+    parliament: int,
+    lookups: MpLookups,
+    mp_id_lookup: dict[tuple[str, int], int],
+) -> tuple[str | None, int]:
+    canonical = resolve_canonical_name(name, parliament, lookups)
+    if canonical is not None or parliament != 0:
+        return canonical, parliament
+    for fallback in _COLONIAL_PARLIAMENT_FALLBACKS:
+        candidate = resolve_canonical_name(name, fallback, lookups)
+        if candidate and (candidate, fallback) in mp_id_lookup:
+            return candidate, fallback
+    return None, parliament
+
+
 def _populate_attendance_mp_ids(
     session: Session,
     mp_id_lookup: dict[tuple[str, int], int],
@@ -35,13 +52,13 @@ def _populate_attendance_mp_ids(
     crud_sitting = CRUDSitting(session)
     crud = CRUDSittingAttendance(session)
 
-    sittings_by_id = {s.id: s for s in crud_sitting.get_all() if s.id is not None}
+    sittings_by_id = {sitting.id: sitting for sitting in crud_sitting.get_all() if sitting.id is not None}
     unresolved_ids = crud.get_unresolved_ids()
     total = len(unresolved_ids)
     updated = 0
 
-    for i in range(0, total, _BATCH):
-        batch_ids = unresolved_ids[i : i + _BATCH]
+    for batch_start in range(0, total, _BATCH):
+        batch_ids = unresolved_ids[batch_start : batch_start + _BATCH]
         records = crud.get_by_ids(batch_ids)
 
         for record in records:
@@ -58,14 +75,7 @@ def _populate_attendance_mp_ids(
 
             if not mp_id:
                 name = normalize_name(strip_title(record.mp_name))
-                canonical = resolve_canonical_name(name, parliament, lookups)
-                if canonical is None and parliament == 0:
-                    for fallback in [1, 2, 3]:
-                        c = resolve_canonical_name(name, fallback, lookups)
-                        if c and (c, fallback) in mp_id_lookup:
-                            canonical = c
-                            parliament = fallback
-                            break
+                canonical, parliament = _resolve_with_parliament_fallback(name, parliament, lookups, mp_id_lookup)
                 if canonical:
                     mp_id = mp_id_lookup.get((canonical, parliament))
 
@@ -75,7 +85,7 @@ def _populate_attendance_mp_ids(
 
         session.commit()
         session.expire_all()
-        logger.info(f"SittingAttendance: {min(i + _BATCH, total)}/{total} processed, {updated} resolved")
+        logger.info(f"SittingAttendance: {min(batch_start + _BATCH, total)}/{total} processed, {updated} resolved")
 
     logger.info(f"SittingAttendance: set mp_id on {updated}/{total} records")
 
@@ -90,8 +100,8 @@ def _populate_speech_mp_ids(
     total = len(unresolved_ids)
     updated = 0
 
-    for i in range(0, total, _BATCH):
-        batch_ids = unresolved_ids[i : i + _BATCH]
+    for batch_start in range(0, total, _BATCH):
+        batch_ids = unresolved_ids[batch_start : batch_start + _BATCH]
 
         # Only fetch columns needed for resolution -- avoids loading transcript/markdown_content.
         rows = crud.get_speaker_info_by_ids(batch_ids)
@@ -103,26 +113,19 @@ def _populate_speech_mp_ids(
                 continue
 
             raw = speaker.rstrip(":").strip()
-            m = re.search(r"\s*\(([^)]+)\)\s*$", raw)
-            if m:
-                inner = m.group(1).strip()
+            paren_match = re.search(r"\s*\(([^)]+)\)\s*$", raw)
+            if paren_match:
+                inner = paren_match.group(1).strip()
                 if _INNER_TITLE.match(inner):
                     raw = inner
                 else:
-                    raw = raw[: m.start()]
+                    raw = raw[: paren_match.start()]
             raw = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", raw)
             name = normalize_name(strip_title(raw))
             if not name:
                 continue
 
-            canonical = resolve_canonical_name(name, parliament, lookups)
-            if canonical is None and parliament == 0:
-                for fallback in [1, 2, 3]:
-                    c = resolve_canonical_name(name, fallback, lookups)
-                    if c and (c, fallback) in mp_id_lookup:
-                        canonical = c
-                        parliament = fallback
-                        break
+            canonical, parliament = _resolve_with_parliament_fallback(name, parliament, lookups, mp_id_lookup)
 
             if canonical is None:
                 continue
@@ -133,7 +136,7 @@ def _populate_speech_mp_ids(
                 updated += 1
 
         session.commit()
-        logger.info(f"Speech: {min(i + _BATCH, total)}/{total} processed, {updated} resolved")
+        logger.info(f"Speech: {min(batch_start + _BATCH, total)}/{total} processed, {updated} resolved")
 
     logger.info(f"Speech: set mp_id on {updated}/{total} records")
 
