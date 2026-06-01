@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from database.handsard_sitting_date_response import HandsardSittingDateResponse
 from database.sitting_a2b import SittingA2b
@@ -24,13 +25,13 @@ def build_old_handsard_sitting_date_response(result: dict, sitting_date: str) ->
     """Handles the flat response format returned for sittings before 18 Aug 2015."""
     import json
 
-    def _to_int(value) -> int | None:
+    def _to_int(value) -> Optional[int]:
         try:
             return int(value)
         except (TypeError, ValueError):
             return None
 
-    def _serialise_list(value) -> str | None:
+    def _serialise_list(value) -> Optional[str]:
         if value is None:
             return None
         return json.dumps(value) if isinstance(value, list) else value

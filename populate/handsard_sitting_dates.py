@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime
+from typing import Optional
 
 import httpx
 from sqlmodel import Session
@@ -37,7 +38,7 @@ def _strip_nul(obj):
     return obj
 
 
-async def _fetch_all_sitting_dates(dates: list[str]) -> list[tuple[str, dict | None]]:
+async def _fetch_all_sitting_dates(dates: list[str]) -> list[tuple[str, Optional[dict]]]:
     semaphore = asyncio.Semaphore(_CONCURRENCY)
 
     async with httpx.AsyncClient(timeout=30) as client:

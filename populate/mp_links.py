@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 
 from sqlmodel import Session
 
@@ -33,7 +34,7 @@ def _resolve_with_parliament_fallback(
     parliament: int,
     lookups: MpLookups,
     mp_id_lookup: dict[tuple[str, int], int],
-) -> tuple[str | None, int]:
+) -> tuple[Optional[str], int]:
     canonical = resolve_canonical_name(name, parliament, lookups)
     if canonical is not None or parliament != 0:
         return canonical, parliament
