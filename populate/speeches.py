@@ -17,9 +17,10 @@ def populate_speeches(session: Session):
     logger.info(f"Parsing speeches for {len(to_process)}/{len(db_reports)} reports ({len(existing_report_ids)} already done)")
 
     batch = []
-    for i, db_report in enumerate(to_process, start=1):
-        logger.info(f"{i}/{len(to_process)}")
+    for report_index, db_report in enumerate(to_process, start=1):
+        logger.info(f"{report_index}/{len(to_process)}")
         if db_report.markdown_content is None:
+            logger.debug(f"Skipping report {db_report.id}: no markdown content")
             continue
         start_of_speech_line = get_start_of_speech_line(
             db_report.markdown_content,
@@ -29,6 +30,7 @@ def populate_speeches(session: Session):
             db_report.report_type,
         )
         if start_of_speech_line is None:
+            logger.debug(f"Skipping report {db_report.id}: could not find start of speech line")
             continue
         for ordinal, speech in enumerate(
             get_speeches(db_report.markdown_content, start_of_speech_line, db_report.report_type)
