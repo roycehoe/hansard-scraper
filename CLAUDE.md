@@ -105,3 +105,94 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `run_exclusion_sanity_check.py` — analyses zero-speech (excluded) documents by checking HTML bold tags vs markdown speaker patterns
 - `speech_speaker_match_rate.py` — baseline assessment of `Speech.speaker` → `Mp` resolution rate, using a stratified sample of 200 speeches by report type
 - `scrape_mps_by_parliament.py` — populates the `Mp` table from parliament.gov.sg
+
+## Module structure
+
+```
+handsard-scraper/
+│
+├── script.py                        # Pipeline orchestrator — runs all populate stages in order
+├── sittings.py                      # Parliament sitting dates enum (LA 1955 → Parliament 14)
+├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
+├── enums.py                         # ReportType enum (oral/written answers, bills, etc.)
+├── exceptions.py                    # HansardError / HansardGatewayError / HansardParseError
+├── logs.py                          # Loguru logger initialisation
+│
+├── schemas/                         # Pydantic validation models (API shapes, not DB)
+│   ├── handsard_search_result.py    # HandsardSearchResult — camelCase alias support
+│   └── mp.py                        # MpResult — party and parliament metadata
+│
+├── gateway/                         # HTTP API clients
+│   ├── http.py                      # Async POST with exponential-backoff retry (handles 429)
+│   ├── handsard_search.py           # Paginated Hansard full-text search
+│   ├── handsard_topic.py            # Fetch report HTML by ID (sync + async)
+│   ├── handsard_report.py           # Fetch sitting metadata by date (sync + async)
+│   └── mps_by_parliament.py         # Scrape MP roster from parliament.gov.sg
+│
+├── services/                        # Business logic — transforms raw data into entities
+│   ├── handsard_website.py          # HandsardSearchResult → HandsardWebsiteResponse
+│   ├── handsard_sitting_date_response.py  # Build old/new-format HandsardSittingDateResponse
+│   ├── report.py                    # HandsardWebsiteResponse → Report (markdown + subtitle)
+│   ├── speech.py                    # Report markdown → Speech list (speaker detection)
+│   ├── sitting.py                   # HandsardSittingDateResponse → Sitting
+│   ├── sitting_attendance.py        # Sitting markdown → SittingAttendance (name resolution cascade)
+│   └── mp.py                        # MpResult → Mp DB entity
+│
+├── database/                        # SQLModel table definitions
+│   ├── init.py                      # Engine setup, schema creation, column migrations
+│   ├── handsard_website_response.py # Raw API response — one row per Hansard entry
+│   ├── handsard_sitting_date_response.py  # Raw sitting metadata (all fields Optional)
+│   ├── report.py                    # Entity: extends HandsardWebsiteResponse + markdown
+│   ├── speech.py                    # Entity: speaker + transcript + ordinal + mp_id FK
+│   ├── sitting.py                   # Entity: extends HandsardSittingDateResponse + markdown
+│   ├── sitting_attendance.py        # Child: one row per MP per sitting + mp_id FK
+│   ├── sitting_ptba.py              # Child: Permission To Be Absent records
+│   ├── sitting_section.py           # Child: debate sections from takesSectionVOList
+│   ├── sitting_annexure.py          # Child: annexure file references
+│   ├── sitting_vernacular.py        # Child: vernacular speech file references
+│   ├── sitting_a2b.py               # Child: absence-to-brief records
+│   ├── parsing_statistics.py        # Diagnostic: markdown/start-line/speech presence flags
+│   └── mp.py                        # Mp: name, party, parliament number, LA flag
+│
+├── crud/                            # DB read/write helpers (one file per table)
+│   ├── handsard_website_response.py
+│   ├── handsard_sitting_date_response.py
+│   ├── report.py
+│   ├── speech.py
+│   ├── sitting.py
+│   ├── sitting_attendance.py
+│   ├── sitting_ptba.py
+│   ├── sitting_section.py
+│   ├── sitting_annexure.py
+│   ├── sitting_vernacular.py
+│   ├── sitting_a2b.py
+│   ├── parsing_statistics.py
+│   └── mp.py
+│
+├── populate/                        # Pipeline stages — fetch + persist each entity type
+│   ├── handsard_responses.py        # Stage 2: async fetch + store HandsardWebsiteResponse (20 concurrent)
+│   ├── reports.py                   # Stage 3: HandsardWebsiteResponse → Report
+│   ├── speeches.py                  # Stage 4: Report → Speech (batches of 1000)
+│   ├── statistics.py                # Stage 5: compute ParsingStatistics + export statistics.csv
+│   ├── handsard_sitting_dates.py    # Stage 6: fetch + store sitting metadata + child tables
+│   ├── sittings.py                  # Stage 7: HandsardSittingDateResponse → Sitting
+│   ├── sitting_attendances.py       # Stage 8: Sitting → SittingAttendance
+│   ├── mp_links.py                  # Stage 9: resolve names → set mp_id on Speech + SittingAttendance
+│   └── mps.py                       # Out-of-band: persist scraped Mp records
+│
+├── utils/                           # Shared utilities
+│   ├── markdown_parser.py           # HTML → clean markdown; merges split bold lines
+│   ├── sample.py                    # Stratified report sample across parliaments + report types
+│   └── text.py                      # Mojibake fix (cp1252 → UTF-8)
+│
+└── scripts/                         # One-off diagnostics (not part of pipeline)
+    ├── diagnose.py
+    ├── inspect_failures.py
+    ├── load_colonial_la_members.py
+    ├── run_sanity_check.py
+    ├── run_no_speech_validation.py
+    ├── run_single_speaker_check.py
+    ├── run_exclusion_sanity_check.py
+    ├── speech_speaker_match_rate.py
+    └── scrape_mps_by_parliament.py
+```
