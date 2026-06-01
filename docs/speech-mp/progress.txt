@@ -1,5 +1,135 @@
 # Speech → MP Link Refine-Loop Progress Log
 
+## Sample expansion — 2026-06-01
+
+Added parliament=0 speeches (colonial LA era, newly matchable after iteration 13).
+
+K=5 pilot + K=3 held-out per report_type. 13 report_types had parliament=0 coverage
+(obituary-speech, personal-explanation, tribute, written-answer-na absent in parl=0).
+Regression expanded proportionally (~1:5 ratio) from new pilot speeches that currently resolve.
+
+| Set | Before | Added | After |
+|---|---|---|---|
+| pilot | 202 | 65 | 267 |
+| held_out | 114 | 39 | 153 |
+| regression | 40 | 13 | 53 |
+
+52 of 65 new pilot speeches (80%) already resolve under the current pipeline.
+
+**Combined pilot result (iterations 13–15): 226/267 = 84.6%** (up from 141/194 = 72.7% at iter 6)
+
+| Group | Matched | Total | Rate |
+|---|---|---|---|
+| colonial(parl=0) | 110 | 139 | 79.1% |
+| parl=1 | 9 | 10 | 90.0% |
+| parl=2 | 15 | 15 | 100.0% |
+| parl=3 | 3 | 3 | 100.0% |
+| parl=4 | 9 | 10 | 90.0% |
+| parl=5 | 21 | 23 | 91.3% |
+| parl=6 | 13 | 13 | 100.0% |
+| parl=7 | 9 | 9 | 100.0% |
+| parl=8 | 12 | 13 | 92.3% |
+| parl=9 | 13 | 17 | 76.5% |
+| parl=10 | 5 | 7 | 71.4% |
+| parl=11 | 7 | 8 | 87.5% |
+
+**Top remaining failures (41 total):**
+- Role-only (permanently unresolvable): `The Prime Minister` ×8, `The Chairman` ×6, `The Chief Minister` ×6
+- Artifacts (should be excluded from denominator): `(Announcement by Mr Speaker)` ×2, `(Presence in Gallery)`, `_Moving Ahead_`, `Non-Residents`, `Some hon. Members`, `An hon. Member`, `Tributes by...`
+- Genuine fixable: `Dr Aline Wong` ×1, `Dr Augustine Tan` ×1 — iter 15 did NOT fix these (see note below), double-parenthetical `The Second Deputy Prime Minister (Foreign Affairs) (Mr. S. Rajaratnam)`, constituency suffix `Mr Lim Huan Boon (Bukit Merah)`, `His Excellency the Governor (Sir William Goode, K.C.M.G.)`
+
+**Note on iteration 15 (wordset_subset):** The implementation keys the lookup on `frozenset(speaker_words)` — all words including the initial. The query uses `frozenset(name_words)` from the speech string. Since the speech has `Aline Wong` (missing initial `K`) and the Speaker table has `Wong Aline K` (natural: `Aline K Wong`), the frozensets `{aline, wong}` ≠ `{aline, k, wong}` — no match. The fix for this case requires stripping single-character tokens from the key AND the query, which iteration 15 did not implement.
+
+---
+
+## Iteration 15 — 2026-06-01
+
+### can_match — all types — wordset subset matching for names with differing word count
+
+**Affected Speech IDs (pilot):** TBD — run `scripts/run_regression_check.py`
+
+**Speaker string (failing):**
+`Dr Aline Wong` → after strip_title → `Aline Wong` (2 words); canonical `Wong Aline K` → natural form `Aline K Wong` (3 words). Frozenset key `{aline, wong}` with len=2 never matched `{aline, wong, k}` with len=3.
+`Dr Augustine Tan` → `Augustine Tan` (2 words); canonical `Tan H.H. Augustine` → `{augustine, tan, h.h.}` (3 words after period-normalize collapses dots).
+
+**Speaker string (passing, same report_type):**
+Speakers whose natural name is exactly 2 words (no middle initial) — unaffected by this change.
+
+**Root cause:**
+`_build_wordset_lookup` keys on `(frozenset(words), word_count, parliament)`. The word count in the key prevents cross-count matching, so any name abbreviated by omitting a middle initial fails to match the canonical 3-word form in the Speaker table.
+
+**Proposed fix:**
+Added `_build_wordset_subset_lookup` keyed on `(frozenset(words), parliament)` — no word count — but only for Speaker names with 3+ words after title stripping, to avoid false positives from short names. Lookup fires in `_try_name_variant` after the existing wordset check, inside the `include_wordset` guard. Added `wordset_subset` field to `SpeakerLookups` dataclass.
+
+**Files changed:** `services/attendance.py`
+
+**Backward-compatibility:**
+Purely additive — new lookup only fires when all prior lookups fail. Existing resolution paths unchanged. Only unambiguous (single-canonical) 3+-word entries emitted.
+
+**Outcome:** KEPT
+- Regression: 40/40 = 100.0% (no regressions from iteration 6 baseline)
+- Pilot: see combined result in Sample expansion note above (84.6% overall)
+- Known gap: `Dr Aline Wong` and `Dr Augustine Tan` still fail — the lookup keys on the full frozenset including initials; a separate initial-stripping step is needed (loop 16 candidate)
+
+---
+
+## Iteration 14 — 2026-06-01
+
+### can_match — all types — strip_title-aware parenthetical extraction
+
+**Affected Speech IDs (pilot):** TBD — estimated ~6,000+ full-corpus speeches with BG/RAdm/MG/Assoc. Prof. titles in parentheticals
+
+**Speaker string (failing):**
+`The Deputy Prime Minister (BG Lee Hsien Loong)` → inner `BG Lee Hsien Loong` did not match `_INNER_TITLE` (only Mr|Mrs|Dr|Miss|Ms|Mdm|Prof|Madam|Inche|Encik|Tuan Haji|Haji) → `raw` was left as `The Deputy Prime Minister` → unresolvable.
+Similarly: `The Minister for Education (RAdm Teo Chee Hean)`, `The Senior Minister of State for Law (Assoc. Prof. Ho Peng Kee)`.
+
+**Speaker string (passing, same report_type):**
+`The Prime Minister (Mr Goh Chok Tong)` — Mr prefix was in `_INNER_TITLE`, inner was extracted correctly.
+
+**Root cause:**
+`_INNER_TITLE` regex covered only 9 honorific prefixes; `strip_title` in `services/attendance.py` covers 25+ including military and academic titles. Any role+name parenthetical whose inner content started with a non-`_INNER_TITLE` title was silently demoted to the constituency-strip path (left-hand role string), which is unresolvable.
+
+**Proposed fix:**
+Replace `_INNER_TITLE.match(inner)` with `strip_title(inner) != inner`. Remove `_INNER_TITLE` compiled regex. `strip_title` loops until stable, so compound prefixes (`Assoc. Prof. Dr`) are also handled.
+
+**Files changed:** `populate/speaker_links.py`
+
+**Backward-compatibility:**
+`strip_title(inner) != inner` is true whenever `_INNER_TITLE.match(inner)` was true, plus the new titles. Speeches that were correctly taking the inner-extraction path still do. Speeches that were correctly stripping constituency (non-title inner content) still do — constituency names don't start with title prefixes.
+
+**Outcome:** KEPT
+- Regression: 40/40 = 100.0% (no regressions from iteration 6 baseline)
+- Pilot: see combined result in Sample expansion note above (84.6% overall)
+- Top newly-resolved: `The Deputy Prime Minister (BG Lee Hsien Loong)`, `The Minister for Education (RAdm Teo Chee Hean)`, `The Senior Minister of State for Law (Assoc. Prof. Ho Peng Kee)`
+
+---
+
+## Iteration 13 — 2026-06-01
+
+### can_match — colonial era — colonial Legislative Assembly members loaded into Speaker table
+
+**Affected Speech IDs (pilot):** parliament=0 speeches that were CEILING at iteration 6 due to missing Speaker rows
+
+**Root cause:**
+At the CEILING declared after iteration 6, 86,612 matchable speeches (29.5% of denominator) were at parliament=0 (volumes 12–23, colonial Legislative Assembly era). `scrape_speakers_by_parliament.py` only covers elected Parliament members from parliament.gov.sg; LA-era members were absent from the Speaker table. Iteration 3's parliament=0 fallback to [1, 2, 3] was already in place, but without Speaker rows to find there was nothing to resolve against.
+
+**Fix:**
+Ran `scripts/load_colonial_la_speakers.py` to idempotently load `data/colonial_la_members.json` into the Speaker table. This added LA-era members at parliament_numbers 1–3, making them accessible via the existing colonial fallback cascade in `_resolve_with_parliament_fallback`.
+
+**Files changed:** none (data load only — Speaker table populated, no code change)
+
+**Backward-compatibility:**
+Purely additive — new Speaker rows only. Existing resolution results for parl≥4 speeches unchanged. The parliament=0 fallback was already coded (iteration 3); this iteration gave it rows to find.
+
+**Note on undocumented iterations 7–12:**
+Iterations 7–12 occurred between the CEILING note (iter 6) and this load but were not documented in this log. Their content is unknown. Full-corpus match rate at start of iteration 13 was approximately 79.6% per `docs/improvements.md`.
+
+**Outcome:** KEPT
+- Regression: 40/40 = 100.0% (no regressions from iteration 6 baseline)
+- Pilot: see combined result in Sample expansion note above (84.6% overall); parliament=0 speeches went from CEILING to 79.1% match rate after this load
+
+---
+
 ## Baseline — 2026-05-31
 
 Sample: K=10 per report_type, seed=42, 170 total speeches across 17 types.

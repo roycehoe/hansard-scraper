@@ -39,5 +39,15 @@ class CRUDSpeech:
             .where(Speech.id.in_(ids))
         ).all())
 
+    def get_speaker_info_for_parliament(self, parliament_number: int) -> list[tuple[int, str, str, int]]:
+        return list(self.session.exec(
+            select(Speech.id, Speech.speaker, Report.report_type, Report.parliament_number)
+            .join(Report)
+            .where(
+                Speech.speaker.is_not(None),
+                Report.parliament_number == parliament_number,
+            )
+        ).all())
+
     def set_speaker_id(self, speech_id: int, speaker_id: int) -> None:
         self.session.exec(update(Speech).where(Speech.id == speech_id).values(speaker_id=speaker_id))
