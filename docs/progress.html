@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Singapore Parliamentary Record — Progress</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0d1117;color:#c9d1d9;padding:32px 20px;line-height:1.5}
+.page{max-width:960px;margin:0 auto}
+
+/* typography */
+h1{font-size:20px;font-weight:700;color:#f0f6fc;margin-bottom:2px}
+h2{font-size:14px;font-weight:600;color:#f0f6fc;margin-bottom:12px}
+h3{font-size:12px;font-weight:600;color:#8b949e;text-transform:uppercase;letter-spacing:.07em;margin:16px 0 8px}
+.sub{font-size:12px;color:#8b949e;margin-bottom:28px}
+
+/* overall banner */
+.banner{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:18px 22px;margin-bottom:28px;display:flex;align-items:center;gap:16px}
+.banner-label{font-size:12px;color:#8b949e;white-space:nowrap;width:90px}
+.banner-track{flex:1;background:#21262d;border-radius:5px;height:16px;overflow:hidden}
+.banner-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#238636,#2ea043);width:87%}
+.banner-pct{font-size:22px;font-weight:700;color:#3fb950;white-space:nowrap}
+
+/* objective cards */
+.obj{background:#161b22;border:1px solid #30363d;border-radius:8px;margin-bottom:14px;overflow:hidden}
+.obj-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;cursor:pointer;user-select:none;gap:12px}
+.obj-head:hover{background:#1c2128}
+.obj-left{display:flex;align-items:center;gap:14px;flex:1;min-width:0}
+.obj-num{font-size:11px;font-weight:600;color:#8b949e;white-space:nowrap}
+.obj-name{font-size:15px;font-weight:600;color:#f0f6fc}
+.obj-summary{font-size:12px;color:#8b949e;white-space:nowrap}
+.chevron{font-size:11px;color:#8b949e;margin-left:4px;transition:transform .2s}
+.obj.open .chevron{transform:rotate(90deg)}
+.obj-body{padding:0 20px 20px;display:none}
+.obj.open .obj-body{display:block}
+.obj-desc{font-size:12px;color:#8b949e;margin-bottom:16px;padding-top:4px;border-top:1px solid #21262d;padding-top:14px;line-height:1.6}
+
+/* badges */
+.badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0}
+.b-done  {background:#1a4423;color:#3fb950;border:1px solid #2ea043}
+.b-near  {background:#1a3a1a;color:#56d364;border:1px solid #238636}
+.b-mid   {background:#2b2008;color:#d29922;border:1px solid #9e6a03}
+.b-low   {background:#2d1b1b;color:#f85149;border:1px solid #da3633}
+.b-defer {background:#1c2128;color:#8b949e;border:1px solid #30363d}
+
+/* metric rows */
+.metrics{display:flex;flex-direction:column;gap:7px;margin-bottom:4px}
+.mrow{display:grid;grid-template-columns:220px 1fr 72px;align-items:center;gap:10px}
+.mrow-label{font-size:12px;color:#c9d1d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track{background:#21262d;border-radius:4px;height:11px;overflow:hidden;position:relative}
+.fill{height:100%;border-radius:4px;transition:width 1.3s ease}
+.fg    {background:#2ea043}
+.fy    {background:#d29922}
+.fo    {background:#bd561d}
+.fb    {background:#1f6feb}
+.fg2   {background:#3fb950}
+.fc    {background:repeating-linear-gradient(45deg,#484f58,#484f58 3px,#30363d 3px,#30363d 6px)}
+.fgray {background:#484f58}
+.mrow-pct{font-size:12px;font-weight:600;text-align:right;white-space:nowrap}
+.cg{color:#3fb950}.cy{color:#d29922}.co{color:#bd561d}.cb{color:#58a6ff}.cgr{color:#8b949e}
+
+/* note boxes */
+.note{font-size:11px;color:#8b949e;margin-top:12px;padding:10px 12px;background:#0d1117;border-radius:6px;border-left:3px solid #21262d;line-height:1.7}
+.note strong{color:#c9d1d9}
+.note .ok{color:#3fb950}
+.note .warn{color:#d29922}
+.note .bad{color:#f85149}
+
+/* section divider */
+.sdiv{height:1px;background:#21262d;margin:18px 0}
+
+/* two-column layout */
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cols3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* mini stat boxes */
+.statbox{background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:12px 14px}
+.statbox-val{font-size:22px;font-weight:700;color:#f0f6fc;margin-bottom:2px}
+.statbox-label{font-size:11px;color:#8b949e}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:4px}
+.tbl th{text-align:left;padding:5px 8px;color:#8b949e;font-weight:600;border-bottom:1px solid #30363d;white-space:nowrap}
+.tbl td{padding:5px 8px;border-bottom:1px solid #21262d;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#1c2128}
+.tbl .rt{text-align:right}
+.tbl .mono{font-family:monospace;font-size:11px}
+.tbl code{font-family:monospace;font-size:10.5px;background:#21262d;padding:1px 4px;border-radius:3px;color:#79c0ff}
+
+/* inline bar in table */
+.tbar-wrap{width:80px;background:#21262d;border-radius:3px;height:8px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:6px}
+.tbar-fill{height:100%;border-radius:3px}
+
+/* waterfall / iteration chart */
+.wf{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.wf-row{display:grid;grid-template-columns:40px 200px 1fr 60px 60px;align-items:center;gap:8px}
+.wf-iter{font-size:11px;color:#8b949e;text-align:right}
+.wf-label{font-size:11px;color:#c9d1d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wf-track{background:#21262d;border-radius:4px;height:12px;overflow:hidden;position:relative}
+.wf-fill{height:100%;border-radius:4px;background:#1f6feb;transition:width 1.3s ease}
+.wf-pct{font-size:11px;font-weight:700;text-align:right;color:#58a6ff}
+.wf-delta{font-size:10px;text-align:right;color:#8b949e}
+.wf-delta.pos{color:#3fb950}
+.wf-header{display:grid;grid-template-columns:40px 200px 1fr 60px 60px;align-items:center;gap:8px;margin-bottom:4px}
+.wf-header span{font-size:10px;font-weight:600;color:#8b949e;text-transform:uppercase;letter-spacing:.05em}
+
+/* parliament grid */
+.parl-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:4px}
+.parl-cell{background:#0d1117;border:1px solid #21262d;border-radius:5px;padding:8px 6px;text-align:center}
+.parl-cell-num{font-size:10px;color:#8b949e;margin-bottom:2px}
+.parl-cell-n{font-size:14px;font-weight:700;color:#f0f6fc}
+.parl-cell-era{font-size:9px;color:#484f58;margin-top:1px}
+
+/* structural limits */
+.limits{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.limit-row{display:grid;grid-template-columns:1fr 60px 90px;align-items:center;gap:8px;padding:6px 10px;background:#0d1117;border-radius:5px;border-left:3px solid}
+.lr-res{border-color:#21262d}
+.lr-fix{border-color:#1f6feb}
+.lr-done{border-color:#2ea043}
+.limit-label{font-size:11px;color:#c9d1d9}
+.limit-n{font-size:11px;font-weight:600;text-align:right}
+.limit-tag{font-size:10px;padding:1px 6px;border-radius:8px;text-align:center;white-space:nowrap}
+.tag-struct{background:#2d1b1b;color:#f85149}
+.tag-fix{background:#1c2a3a;color:#58a6ff}
+.tag-done{background:#1a4423;color:#3fb950}
+
+/* fix rows */
+.fix-rows{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.fix-row{display:grid;grid-template-columns:24px 1fr 80px 70px;align-items:start;gap:8px;padding:8px 10px;background:#0d1117;border-radius:5px}
+.fix-num{font-size:12px;font-weight:700;color:#58a6ff;padding-top:1px}
+.fix-text{font-size:11px;color:#c9d1d9}
+.fix-text small{color:#8b949e;display:block;margin-top:2px;font-size:10.5px}
+.fix-rows-impact{font-size:11px;font-weight:600;color:#58a6ff;text-align:right;padding-top:1px}
+.fix-pct-gain{font-size:10px;color:#8b949e;text-align:right;padding-top:4px}
+
+/* era breakdown */
+.era-rows{display:flex;flex-direction:column;gap:6px}
+.era-row{display:grid;grid-template-columns:90px 1fr 70px 70px;align-items:center;gap:10px}
+.era-label{font-size:12px;color:#c9d1d9}
+.era-pct{font-size:12px;font-weight:600;text-align:right}
+.era-pct2{font-size:12px;font-weight:600;text-align:right;color:#8b949e}
+
+/* summary table at bottom */
+.summary{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-top:20px}
+.stbl{width:100%;border-collapse:collapse;font-size:12px}
+.stbl th{text-align:left;padding:6px 10px;color:#8b949e;font-weight:600;border-bottom:1px solid #30363d}
+.stbl td{padding:7px 10px;border-bottom:1px solid #21262d;vertical-align:top}
+.stbl tr:last-child td{border-bottom:none}
+.stbl .score{font-weight:700;white-space:nowrap}
+
+footer{font-size:11px;color:#484f58;text-align:center;margin-top:28px}
+
+@media(max-width:640px){
+  .mrow{grid-template-columns:160px 1fr 60px}
+  .cols2,.cols3{grid-template-columns:1fr}
+  .parl-grid{grid-template-columns:repeat(4,1fr)}
+  .wf-row,.wf-header{grid-template-columns:32px 140px 1fr 50px 50px}
+  .fix-row{grid-template-columns:20px 1fr 70px}
+  .era-row{grid-template-columns:80px 1fr 60px 60px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Singapore Parliamentary Record</h1>
+<p class="sub">Progress against vision objectives &mdash; 2026-06-01</p>
+
+<!-- OVERALL BANNER -->
+<div class="banner">
+  <span class="banner-label">Overall</span>
+  <div class="banner-track"><div class="banner-fill"></div></div>
+  <span class="banner-pct">~87%</span>
+</div>
+
+<!-- ─── OBJ 1 ─── -->
+<div class="obj open" id="o1">
+  <div class="obj-head" onclick="toggle('o1')">
+    <div class="obj-left">
+      <span class="obj-num">OBJ 1</span>
+      <span class="obj-name">Complete Corpus Coverage</span>
+    </div>
+    <span class="obj-summary cgr">45,302 records · 16 parliaments</span>
+    <span class="badge b-done">100%</span>
+    <span class="chevron">▶</span>
+  </div>
+  <div class="obj-body">
+    <p class="obj-desc">Fetch and store every Hansard entry published by SPRS — all parliaments, all report types, no gaps from rate limits or format changes. Raw API responses preserved exactly as received.</p>
+
+    <div class="cols3">
+      <div class="statbox"><div class="statbox-val">45,302</div><div class="statbox-label">Total records in DB</div></div>
+      <div class="statbox"><div class="statbox-val">~22,000</div><div class="statbox-label">Records with parseable HTML</div></div>
+      <div class="statbox"><div class="statbox-val">24</div><div class="statbox-label">Distinct report types seen</div></div>
+    </div>
+
+    <h3 style="margin-top:18px">Records by Parliament</h3>
+    <div class="parl-grid">
+      <div class="parl-cell"><div class="parl-cell-num">Parl 0</div><div class="parl-cell-n">3,917</div><div class="parl-cell-era">State of SG</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 1</div><div class="parl-cell-n">1,008</div><div class="parl-cell-era">1965–68</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 2</div><div class="parl-cell-n">1,448</div><div class="parl-cell-era">1968–72</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 3</div><div class="parl-cell-n">913</div><div class="parl-cell-era">1972–76</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 4</div><div class="parl-cell-n">1,143</div><div class="parl-cell-era">1976–80</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 5</div><div class="parl-cell-n">1,150</div><div class="parl-cell-era">1980–84</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 6</div><div class="parl-cell-n">1,565</div><div class="parl-cell-era">1984–88</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 7</div><div class="parl-cell-n">979</div><div class="parl-cell-era">1988–91</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 8</div><div class="parl-cell-n">1,943</div><div class="parl-cell-era">1991–97</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 9</div><div class="parl-cell-n">2,140</div><div class="parl-cell-era">1997–01</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 10</div><div class="parl-cell-n">2,158</div><div class="parl-cell-era">2001–06</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 11</div><div class="parl-cell-n">2,555</div><div class="parl-cell-era">2006–11</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 12</div><div class="parl-cell-n">4,010</div><div class="parl-cell-era">2011–15</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 13</div><div class="parl-cell-n">5,608</div><div class="parl-cell-era">2015–20</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 14</div><div class="parl-cell-n">11,298</div><div class="parl-cell-era">2020–25</div></div>
+      <div class="parl-cell"><div class="parl-cell-num">Parl 15</div><div class="parl-cell-n">3,467</div><div class="parl-cell-era">2025–now</div></div>
+    </div>
+
+    <h3>Report Types — Speech Extraction Rate (current DB state)</h3>
+    <p class="note" style="margin-bottom:10px"><strong>Reading this table:</strong> <code>can_get_speeches</code> = at least one valid speech was extracted. Low rates for <code>written-answer</code>, <code>written-answer-na</code>, <code>bill-intro</code> are expected — most are sprs3 format (no HTML) or structurally speech-free. Rates for debate types (bill, oral-answer, motion, budget) reflect actual parsing success.</p>
+    <table class="tbl">
+      <thead><tr><th>Report type</th><th class="rt">Records</th><th>Has HTML</th><th>Has start-line</th><th>Can get speeches</th></tr></thead>
+      <tbody id="rt-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ─── OBJ 2 ─── -->
+<div class="obj open" id="o2">
+  <div class="obj-head" onclick="toggle('o2')">
+    <div class="obj-left">
+      <span class="obj-num">OBJ 2</span>
+      <span class="obj-name">Faithful Speaker Attribution</span>
+    </div>
+    <span class="obj-summary cgr">99.8% on target set</span>
+    <span class="badge b-done">Target Met ✓</span>
+    <span class="chevron">▶</span>
+  </div>
+  <div class="obj-body">
+    <p class="obj-desc">Extract individual speeches from transcripts and attribute each to a speaker. Documents that remain unattributed must be structurally unattributable (appendix indexes, colonial procedural orders). Target: ≥95%.</p>
+
+    <div class="cols3">
+      <div class="statbox"><div class="statbox-val cg">99.9%</div><div class="statbox-label">Start-line detection (21,808 / 21,854)</div></div>
+      <div class="statbox"><div class="statbox-val cg">99.8%</div><div class="statbox-label">Speaker quality on target set (20,359 / 20,405)</div></div>
+      <div class="statbox"><div class="statbox-val cgr">1,449</div><div class="statbox-label">Confirmed unattributable docs (correct)</div></div>
+    </div>
+
+    <h3 style="margin-top:18px">Start-line Detection — Refine Loop (5 iterations)</h3>
+    <div class="wf">
+      <div class="wf-header"><span></span><span>Fix applied</span><span></span><span style="text-align:right">Pass rate</span><span style="text-align:right">Delta</span></div>
+      <div class="wf-row"><span class="wf-iter">Base</span><span class="wf-label">Baseline</span><div class="wf-track"><div class="wf-fill" style="width:75.1%"></div></div><span class="wf-pct">75.1%</span><span class="wf-delta">16,406</span></div>
+      <div class="wf-row"><span class="wf-iter">Iter 1</span><span class="wf-label">Mojibake cp1252 fix</span><div class="wf-track"><div class="wf-fill" style="width:75.2%"></div></div><span class="wf-pct">75.2%</span><span class="wf-delta pos">+11</span></div>
+      <div class="wf-row"><span class="wf-iter">Iter 2</span><span class="wf-label">Stripped-content match (italic/open-bold)</span><div class="wf-track"><div class="wf-fill" style="width:83.6%"></div></div><span class="wf-pct">83.6%</span><span class="wf-delta pos">+1,829</span></div>
+      <div class="wf-row"><span class="wf-iter">Iter 3</span><span class="wf-label">Whitespace-normalised startswith/suffix</span><div class="wf-track"><div class="wf-fill" style="width:88.0%"></div></div><span class="wf-pct">88.0%</span><span class="wf-delta pos">+981</span></div>
+      <div class="wf-row"><span class="wf-iter">Iter 4</span><span class="wf-label">md_title extraction + rewrite</span><div class="wf-track"><div class="wf-fill" style="width:89.1%"></div></div><span class="wf-pct">89.1%</span><span class="wf-delta pos">+222</span></div>
+      <div class="wf-row"><span class="wf-iter">Iter 5</span><span class="wf-label" style="color:#3fb950;font-weight:600">Context-prefix endswith check ★</span><div class="wf-track"><div class="wf-fill" style="width:99.9%;background:#2ea043"></div></div><span class="wf-pct cg">99.9%</span><span class="wf-delta pos">+2,359</span></div>
+    </div>
+
+    <h3 style="margin-top:18px">Speech Quality Fixes (all applied)</h3>
+    <table class="tbl">
+      <thead><tr><th>Iteration</th><th>Fix</th><th class="rt">Speeches fixed</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Iter 6</td><td>Preamble skip + artifact guard + empty-transcript filter</td><td class="rt">+19,681 docs</td><td><span class="badge b-done">Done</span></td></tr>
+        <tr><td>Iter 7</td><td>Strip leading <code>: </code> from speaker-line transcripts</td><td class="rt">−3,963 colon</td><td><span class="badge b-done">Done</span></td></tr>
+        <tr><td>Iter 8</td><td>Skip <code>\d{1,2}\.\d{2}\s*(am|pm)</code> timestamp lines</td><td class="rt">−946 timestamps</td><td><span class="badge b-done">Done</span></td></tr>
+        <tr><td>Iter 9</td><td>Strip <code>[X in the Chair]</code> from speaker names</td><td class="rt">−502 mangled</td><td><span class="badge b-done">Done</span></td></tr>
+        <tr><td>Iter 10</td><td>Filter table seps / images / stray <code>_|</code> markers</td><td class="rt">−192 artifacts</td><td><span class="badge b-done">Done</span></td></tr>
+        <tr><td>Iter 11</td><td>Extend section-header collapse to <code>atbp</code></td><td class="rt">−144 bad speaker</td><td><span class="badge b-done">Done</span></td></tr>
+        <tr><td>Iter 12</td><td>Skip table-row bold headers (<code>transcript |</code>)</td><td class="rt">−6 bad speaker</td><td><span class="badge b-done">Done</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>1,449 structurally unattributable docs:</strong> 418 have zero MPs Speaking entries (no author in source), 253 are multi-speaker appendix indexes (body is not attributable prose), 778 are genuinely speech-free procedural records.<br>
+      <strong>46 residual has_start_line failures:</strong> president-address (16), budget (9), written-answer (2), oral-answer (2), tribute (1) — pre-existing edge cases.
+    </div>
+  </div>
+</div>
+
+<!-- ─── OBJ 3 ─── -->
+<div class="obj" id="o3">
+  <div class="obj-head" onclick="toggle('o3')">
+    <div class="obj-left">
+      <span class="obj-num">OBJ 3</span>
+      <span class="obj-name">Rich Sitting Metadata</span>
+    </div>
+    <span class="obj-summary cgr">1,758 sittings · 6 child tables</span>
+    <span class="badge b-near">97%</span>
+    <span class="chevron">▶</span>
+  </div>
+  <div class="obj-body">
+    <p class="obj-desc">For every sitting date: attendance, PTBA, debate sections, vernaculars, and annexures. Both pre- and post-Aug 2015 API formats handled faithfully.</p>
+
+    <div class="cols2">
+      <div>
+        <h3>Child Tables</h3>
+        <div class="metrics">
+          <div class="mrow"><span class="mrow-label">SittingAttendance</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+          <div class="mrow"><span class="mrow-label">SittingPtba</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+          <div class="mrow"><span class="mrow-label">SittingSection</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+          <div class="mrow"><span class="mrow-label">SittingAnnexure</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+          <div class="mrow"><span class="mrow-label">SittingVernacular</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+          <div class="mrow"><span class="mrow-label">SittingA2b</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+        </div>
+      </div>
+      <div>
+        <h3>API Format Coverage</h3>
+        <div class="metrics">
+          <div class="mrow"><span class="mrow-label">New format (Parl 13+, post-2015)</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+          <div class="mrow"><span class="mrow-label">Old format (Parl 9–12, pre-2015)</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+          <div class="mrow"><span class="mrow-label">Format cutoff (2015-08-18)</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:18px">Sitting Markdown — Artifact Fixes (6 iterations)</h3>
+    <table class="tbl">
+      <thead><tr><th>Artifact</th><th>Era affected</th><th>Before</th><th>After</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Table separators <code>---|---</code></td><td>All (universal)</td><td>20/20</td><td>0/20</td><td><span class="badge b-done">Fixed</span></td></tr>
+        <tr><td>Orphan italic markers <code>_</code></td><td>Vol 81–87 (modern)</td><td>5/20</td><td>0/20</td><td><span class="badge b-done">Fixed</span></td></tr>
+        <tr><td>Extended empty-bold <code>****+</code></td><td>Vol 81–87</td><td>3/20</td><td>0/20</td><td><span class="badge b-done">Fixed</span></td></tr>
+        <tr><td>Adjournment merge stop <code>._</code></td><td>Vol 87</td><td>3/20</td><td>0/20</td><td><span class="badge b-done">Fixed</span></td></tr>
+        <tr><td>1-col table separator <code>--- </code></td><td>All (Vol 39–87)</td><td>18/40</td><td>0/40</td><td><span class="badge b-done">Fixed</span></td></tr>
+        <tr><td>Multi-group <code>****</code> strip</td><td>Vol 87</td><td>1/20</td><td>0/20</td><td><span class="badge b-done">Fixed</span></td></tr>
+        <tr><td>Appendix links (PDF/GIF refs)</td><td>~27% of sittings</td><td>17/63</td><td>17/63</td><td><span class="badge b-defer">Deferred</span></td></tr>
+        <tr><td>Missing space before time</td><td>Vol 81–87 source</td><td>3/20</td><td>3/20</td><td><span class="badge b-defer">Unfixable (source)</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Sitting Coverage by Volume Era</h3>
+    <div class="era-rows">
+      <div class="era-row"><span class="era-label">Colonial (vol 1–37)</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="era-pct cg">592</span><span class="era-pct2">sittings</span></div>
+      <div class="era-row"><span class="era-label">Mid-era (vol 38–75)</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="era-pct cg">740</span><span class="era-pct2">sittings</span></div>
+      <div class="era-row"><span class="era-label">Modern (vol 76+)</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="era-pct cg">332</span><span class="era-pct2">sittings</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── OBJ 4 ─── -->
+<div class="obj open" id="o4">
+  <div class="obj-head" onclick="toggle('o4')">
+    <div class="obj-left">
+      <span class="obj-num">OBJ 4</span>
+      <span class="obj-name">MP Identity Linking</span>
+    </div>
+    <span class="obj-summary cy">Speech 79.6% · Attendance 91.2%</span>
+    <span class="badge b-mid">Partial</span>
+    <span class="chevron">▶</span>
+  </div>
+  <div class="obj-body">
+    <p class="obj-desc">Connect every speech and attendance record to a canonical MP identity (name, party, parliament) sourced from parliament.gov.sg. Target: ≥95%.</p>
+
+    <!-- 4a -->
+    <h3>4a — Speech → mp_id &nbsp;(484,156 total rows)</h3>
+    <div class="metrics">
+      <div class="mrow"><span class="mrow-label">Current DB match rate</span><div class="track"><div class="fill fy" style="width:79.6%"></div></div><span class="mrow-pct cy">79.6%</span></div>
+      <div class="mrow"><span class="mrow-label">After applying fixes 1–4 (estimated)</span><div class="track"><div class="fill fo" style="width:85%"></div></div><span class="mrow-pct co">~85%</span></div>
+      <div class="mrow"><span class="mrow-label">Ceiling with colonial Mp data added</span><div class="track"><div class="fill fc" style="width:92%"></div></div><span class="mrow-pct cgr">~90–93%</span></div>
+      <div class="mrow"><span class="mrow-label" style="color:#484f58">95% target line</span><div class="track" style="position:relative"><div class="fill fgray" style="width:0%"></div><div style="position:absolute;top:0;left:0;width:95%;height:100%;border-right:2px dashed #484f58"></div></div><span class="mrow-pct cgr">not yet reachable</span></div>
+    </div>
+
+    <h3 style="margin-top:18px">Documented Fixes (not yet applied to DB)</h3>
+    <div class="fix-rows">
+      <div class="fix-row">
+        <span class="fix-num">1</span>
+        <div class="fix-text">Loop <code>strip_title</code> until stable<small>Stacked titles like <em>Assoc. Prof. Dr Yaacob Ibrahim</em> — only first prefix stripped currently</small></div>
+        <span class="fix-rows-impact">+~2,951</span>
+        <span class="fix-pct-gain">+0.6 pp</span>
+      </div>
+      <div class="fix-row">
+        <span class="fix-num">2</span>
+        <div class="fix-text">Use <code>strip_title</code> in <code>mp_links.py</code> parenthetical extraction<small>Fixes <em>The Deputy PM (BG Lee Hsien Loong)</em> — inner title not recognised by hardcoded regex</small></div>
+        <span class="fix-rows-impact">+~3,500</span>
+        <span class="fix-pct-gain">+0.7 pp</span>
+      </div>
+      <div class="fix-row">
+        <span class="fix-num">3</span>
+        <div class="fix-text">Wordset subset matching for names with middle initials<small>Fixes <em>Dr Aline Wong</em> → <em>Aline Wong</em> (2 words) vs <em>Wong Aline K</em> (3 words)</small></div>
+        <span class="fix-rows-impact">+~1,500</span>
+        <span class="fix-pct-gain">+0.3 pp</span>
+      </div>
+      <div class="fix-row">
+        <span class="fix-num">4</span>
+        <div class="fix-text">Parliament → Speaker role mapping<small><em>Mr Speaker</em> (14,801 speeches) + <em>Mr Deputy Speaker</em> (2,590) — presiding officers with no name in string</small></div>
+        <span class="fix-rows-impact">+~17,500</span>
+        <span class="fix-pct-gain">+3.6 pp</span>
+      </div>
+    </div>
+
+    <h3 style="margin-top:18px">Structural Limits (unresolvable without new data)</h3>
+    <div class="limits">
+      <div class="limit-row lr-res"><span class="limit-label">Colonial-era MPs absent from <code>Mp</code> table (pre-1965 Legislative Assembly)</span><span class="limit-n cgr">~8,000</span><span class="limit-tag tag-struct">data gap</span></div>
+      <div class="limit-row lr-res"><span class="limit-label">Role-only strings — <em>The Prime Minister</em>, <em>The Minister for X</em> (no name)</span><span class="limit-n cgr">~3,128</span><span class="limit-tag tag-struct">structural</span></div>
+      <div class="limit-row lr-res"><span class="limit-label"><em>An hon. Member</em>, <em>Some hon. Members</em>, collective references</span><span class="limit-n cgr">~1,109</span><span class="limit-tag tag-struct">structural</span></div>
+      <div class="limit-row lr-res"><span class="limit-label"><em>The President</em> — constitutionally not an MP</span><span class="limit-n cgr">small</span><span class="limit-tag tag-struct">structural</span></div>
+      <div class="limit-row lr-fix"><span class="limit-label"><em>Mr Speaker</em> / <em>Mr Deputy Speaker</em> — resolvable via Fix 4 parliament→name mapping</span><span class="limit-n cb">~17,500</span><span class="limit-tag tag-fix">fixable</span></div>
+    </div>
+
+    <div class="sdiv"></div>
+
+    <!-- 4b -->
+    <h3>4b — Attendance → mp_id &nbsp;(96,327 total rows)</h3>
+    <div class="note" style="margin-bottom:12px"><strong class="cg">Fixed today (2026-06-01):</strong> Applied full resolution cascade (strip_title + normalize + resolve_canonical_name + parl-0 fallback) to <code>_populate_attendance_mp_ids</code>. Previously it did raw exact-string lookup only.</div>
+
+    <div class="cols2">
+      <div>
+        <div class="metrics">
+          <div class="mrow"><span class="mrow-label">Before fix</span><div class="track"><div class="fill fo" style="width:68.2%"></div></div><span class="mrow-pct co">68.2%</span></div>
+          <div class="mrow"><span class="mrow-label">After cascade fix</span><div class="track"><div class="fill fg" style="width:91.2%"></div></div><span class="mrow-pct cg">91.2%</span></div>
+          <div class="mrow"><span class="mrow-label">New matches unlocked</span><div class="track"><div class="fill fb" style="width:23%"></div></div><span class="mrow-pct cb">+22,122</span></div>
+          <div class="mrow"><span class="mrow-label">Structural ceiling</span><div class="track"><div class="fill fc" style="width:91.2%"></div></div><span class="mrow-pct cgr">~91.2%</span></div>
+        </div>
+      </div>
+      <div>
+        <h3>Unmatched bucket breakdown</h3>
+        <div class="metrics">
+          <div class="mrow"><span class="mrow-label">Colonial (parl 0–3)</span><div class="track"><div class="fill fgray" style="width:45%"></div></div><span class="mrow-pct cgr">13,962</span></div>
+          <div class="mrow"><span class="mrow-label">Mid-era (parl 4–8)</span><div class="track"><div class="fill fy" style="width:30%"></div></div><span class="mrow-pct cy">9,245 → ~0</span></div>
+          <div class="mrow"><span class="mrow-label">Modern (parl 9–15)</span><div class="track"><div class="fill fy" style="width:24%"></div></div><span class="mrow-pct cy">7,425 → ~0</span></div>
+        </div>
+        <div class="note" style="margin-top:8px">Mid and modern buckets fully resolved by cascade. Colonial residual (~8,510) is colonial-era MPs not scraped (~3,945) + non-MP attendees (~5,390) — both permanently unresolvable with current data.</div>
+      </div>
+    </div>
+
+    <div class="sdiv"></div>
+
+    <!-- 4c: sitting attendance name extraction quality -->
+    <h3>4c — Sitting Attendance Name Extraction Quality (14 iterations)</h3>
+    <p style="font-size:11px;color:#8b949e;margin-bottom:8px">This measures how accurately <code>get_sitting_attendance</code> resolves names from sitting markdown to canonical Mp names — separate from <code>mp_id</code> linking above.</p>
+    <div class="era-rows">
+      <div class="era-row">
+        <span class="era-label">Colonial</span>
+        <div class="track"><div class="fill fg" style="width:95.6%"></div></div>
+        <span class="era-pct cg">95.6%</span>
+        <span class="era-pct2">18,634 / 19,482</span>
+      </div>
+      <div class="era-row">
+        <span class="era-label">Mid-era</span>
+        <div class="track"><div class="fill fg" style="width:99.1%"></div></div>
+        <span class="era-pct cg">99.1%</span>
+        <span class="era-pct2">60,506 / 61,025</span>
+      </div>
+      <div class="era-row">
+        <span class="era-label">Modern</span>
+        <div class="track"><div class="fill fg" style="width:99.8%"></div></div>
+        <span class="era-pct cg">99.8%</span>
+        <span class="era-pct2">31,029 / 31,093</span>
+      </div>
+      <div class="era-row">
+        <span class="era-label" style="font-weight:600">Overall</span>
+        <div class="track"><div class="fill fg2" style="width:98.7%"></div></div>
+        <span class="era-pct cg">98.7%</span>
+        <span class="era-pct2">110,169 / 111,600</span>
+      </div>
+    </div>
+    <div class="note" style="margin-top:10px">1,431 unmatched names are irreducible: OCR corruptions in source docs, MPs absent from the <code>Mp</code> table (Lai Tha Chai, Ya'acob Bin Mohamed), and garbled parenthetical parses.</div>
+  </div>
+</div>
+
+<!-- ─── OBJ 5 ─── -->
+<div class="obj" id="o5">
+  <div class="obj-head" onclick="toggle('o5')">
+    <div class="obj-left">
+      <span class="obj-num">OBJ 5</span>
+      <span class="obj-name">High-Fidelity Markdown</span>
+    </div>
+    <span class="obj-summary cgr">Report 99.9% · Sitting 100% fixable</span>
+    <span class="badge b-near">~99%</span>
+    <span class="chevron">▶</span>
+  </div>
+  <div class="obj-body">
+    <p class="obj-desc">Convert raw HTML records into clean, readable markdown across three document eras — stripping artifacts without losing any substantive content. Downstream consumers can trust the output.</p>
+
+    <h3>Report Markdown — Iteration Waterfall</h3>
+    <div class="wf">
+      <div class="wf-header"><span></span><span>Fix</span><span></span><span style="text-align:right">Pass rate</span><span style="text-align:right">Delta</span></div>
+      <div class="wf-row"><span class="wf-iter">Base</span><span class="wf-label">Baseline (all eras)</span><div class="wf-track"><div class="wf-fill" style="width:75.1%"></div></div><span class="wf-pct">75.1%</span><span class="wf-delta">16,406</span></div>
+      <div class="wf-row"><span class="wf-iter">Iter 1</span><span class="wf-label">Mojibake cp1252 decode</span><div class="wf-track"><div class="wf-fill" style="width:75.2%"></div></div><span class="wf-pct">75.2%</span><span class="wf-delta pos">+11</span></div>
+      <div class="wf-row"><span class="wf-iter">Iter 2</span><span class="wf-label">Stripped-content match (italic / open-bold / plain text)</span><div class="wf-track"><div class="wf-fill" style="width:83.6%"></div></div><span class="wf-pct">83.6%</span><span class="wf-delta pos">+1,829</span></div>
+      <div class="wf-row"><span class="wf-iter">Iter 3</span><span class="wf-label">Whitespace-normalised startswith/suffix</span><div class="wf-track"><div class="wf-fill" style="width:88.0%"></div></div><span class="wf-pct">88.0%</span><span class="wf-delta pos">+981</span></div>
+      <div class="wf-row"><span class="wf-iter">Iter 4</span><span class="wf-label">md_title extraction + title/subtitle rewrite</span><div class="wf-track"><div class="wf-fill" style="width:89.1%"></div></div><span class="wf-pct">89.1%</span><span class="wf-delta pos">+222</span></div>
+      <div class="wf-row"><span class="wf-iter">Iter 5</span><span class="wf-label" style="color:#3fb950;font-weight:600">Context-prefix endswith (sc_norm.endswith) ★</span><div class="wf-track"><div class="wf-fill" style="width:99.9%;background:#2ea043"></div></div><span class="wf-pct cg">99.9%</span><span class="wf-delta pos">+2,359</span></div>
+    </div>
+    <div class="note">Remaining 30 failures: president-address (16), budget (9), written-answer (2), oral-answer (2), tribute (1). All are pre-existing edge cases without a discovered pattern.</div>
+
+    <h3 style="margin-top:18px">Sitting Markdown Artifact Resolution</h3>
+    <table class="tbl">
+      <thead><tr><th>Artifact</th><th>Root cause</th><th>Docs affected</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>2-col table separator <code>---|---</code></td><td>html2text renders every 2-col HTML table header</td><td>Universal (20/20)</td><td><span class="badge b-done">Fixed</span></td></tr>
+        <tr><td>Orphan italic marker <code>_</code></td><td><code>&lt;BR&gt;</code> inside <code>&lt;i&gt;</code> tag splits closing marker</td><td>Vol 81–87 (5/20)</td><td><span class="badge b-done">Fixed</span></td></tr>
+        <tr><td>Empty-bold <code>****+</code></td><td>Adjacent <code>&lt;b&gt;&lt;/b&gt;</code> at section boundaries</td><td>Vol 81–87 (3/20)</td><td><span class="badge b-done">Fixed</span></td></tr>
+        <tr><td>Adjournment merge stop (<code>._</code>)</td><td>Italic adjournment spans end with period+italic close</td><td>Vol 87 (3/20)</td><td><span class="badge b-done">Fixed</span></td></tr>
+        <tr><td>Multi-group <code>****</code> prefix</td><td>Double empty-bold before question numbers</td><td>Vol 87 (1/20)</td><td><span class="badge b-done">Fixed</span></td></tr>
+        <tr><td>1-col table separator <code>--- </code></td><td>html2text 1-col table rows use <code>---</code> not <code>---|---</code></td><td>18/40 (all vols)</td><td><span class="badge b-done">Fixed</span></td></tr>
+        <tr><td>Appendix links (PDF/GIF)</td><td>Hyperlinks to appendix files in document tail</td><td>~27% sittings</td><td><span class="badge b-defer">Deferred</span></td></tr>
+        <tr><td>Missing space before time</td><td>Source HTML has no space between "at" and digits</td><td>Vol 81–87 source</td><td><span class="badge b-defer">Unfixable</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px">Report Markdown Artifact Fixes (pre-sitting work)</h3>
+    <div class="metrics">
+      <div class="mrow"><span class="mrow-label">Column/page markers stripped</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+      <div class="mrow"><span class="mrow-label">Split bold lines merged across page breaks</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+      <div class="mrow"><span class="mrow-label">&amp;nbsp; / encoding artifacts stripped</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+      <div class="mrow"><span class="mrow-label">Mojibake cp1252 decode (curly quotes, dashes)</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── OBJ 6 ─── -->
+<div class="obj" id="o6">
+  <div class="obj-head" onclick="toggle('o6')">
+    <div class="obj-left">
+      <span class="obj-num">OBJ 6</span>
+      <span class="obj-name">Parsing Quality Tracking</span>
+    </div>
+    <span class="obj-summary cgr">5 refine-loops · statistics.csv every run</span>
+    <span class="badge b-done">100%</span>
+    <span class="chevron">▶</span>
+  </div>
+  <div class="obj-body">
+    <p class="obj-desc">Track parsing success rates per report type across the full corpus so regressions surface before they accumulate and improvement work is measurable.</p>
+
+    <div class="cols2">
+      <div>
+        <h3>Infrastructure</h3>
+        <div class="metrics">
+          <div class="mrow"><span class="mrow-label">statistics.csv export (per run)</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+          <div class="mrow"><span class="mrow-label">ParsingStatistics DB table</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+          <div class="mrow"><span class="mrow-label">Diagnostic scripts (7)</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+          <div class="mrow"><span class="mrow-label">Held-out regression sets</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">✓</span></div>
+        </div>
+      </div>
+      <div>
+        <h3>Refine Loops Completed</h3>
+        <div class="metrics">
+          <div class="mrow"><span class="mrow-label">Report parsing (start-line)</span><div class="track"><div class="fill fg" style="width:99.9%"></div></div><span class="mrow-pct cg">5 iters</span></div>
+          <div class="mrow"><span class="mrow-label">Speech quality (12 criteria)</span><div class="track"><div class="fill fg" style="width:99.8%"></div></div><span class="mrow-pct cg">7 iters</span></div>
+          <div class="mrow"><span class="mrow-label">Sitting markdown artifacts</span><div class="track"><div class="fill fg" style="width:100%"></div></div><span class="mrow-pct cg">6 iters</span></div>
+          <div class="mrow"><span class="mrow-label">Attendance name extraction</span><div class="track"><div class="fill fg" style="width:98.7%"></div></div><span class="mrow-pct cg">14 iters</span></div>
+          <div class="mrow"><span class="mrow-label">Speech → MP linking</span><div class="track"><div class="fill fy" style="width:72.7%"></div></div><span class="mrow-pct cy">6 iters (ceiling)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:18px">Diagnostic Scripts</h3>
+    <table class="tbl">
+      <thead><tr><th>Script</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>diagnose.py</code></td><td>Inspect parsing failures across full corpus</td></tr>
+        <tr><td><code>inspect_failures.py</code></td><td>Drill into specific failure cases by ID</td></tr>
+        <tr><td><code>run_sanity_check.py</code></td><td>Cross-validate speech extraction on sample</td></tr>
+        <tr><td><code>run_no_speech_validation.py</code></td><td>Audit zero-speech documents for correctness</td></tr>
+        <tr><td><code>run_single_speaker_check.py</code></td><td>Verify single-speaker fallback attribution</td></tr>
+        <tr><td><code>run_exclusion_sanity_check.py</code></td><td>Analyse excluded docs by HTML bold tag vs markdown</td></tr>
+        <tr><td><code>speech_speaker_match_rate.py</code></td><td>Stratified sample MP resolution rate by report type and era</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SUMMARY TABLE -->
+<div class="summary">
+  <h2>Summary</h2>
+  <table class="stbl">
+    <thead><tr><th>Objective</th><th>Current</th><th>Ceiling</th><th>Remaining gap</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1. Corpus coverage</td>
+        <td class="score cg">✓ 100%</td>
+        <td class="score cgr">—</td>
+        <td style="font-size:11px;color:#8b949e">None. Pipeline live, records current.</td>
+      </tr>
+      <tr>
+        <td>2. Speaker attribution</td>
+        <td class="score cg">✓ 99.8%</td>
+        <td class="score cg">~99.9%</td>
+        <td style="font-size:11px;color:#8b949e">46 residual edge cases (pre-existing). Pipeline re-run needed after quality fixes.</td>
+      </tr>
+      <tr>
+        <td>3. Sitting metadata</td>
+        <td class="score cg">97%</td>
+        <td class="score cy">~97%</td>
+        <td style="font-size:11px;color:#8b949e">Appendix-links explicitly deferred. Source-quality time-format unfixable.</td>
+      </tr>
+      <tr>
+        <td>4a. Speech → MP link</td>
+        <td class="score cy">79.6%</td>
+        <td class="score co">~85% (fixes 1–4)<br>~93% (+ colonial data)</td>
+        <td style="font-size:11px;color:#8b949e">4 documented fixes in <code>docs/improvements.md</code>. Colonial LA member data needed to break ceiling.</td>
+      </tr>
+      <tr>
+        <td>4b. Attendance → MP link</td>
+        <td class="score cg">91.2% ↑ today</td>
+        <td class="score cgr">~91.2%</td>
+        <td style="font-size:11px;color:#8b949e">Ceiling reached. ~8,510 colonial-era MPs + non-MP attendees — structurally unresolvable.</td>
+      </tr>
+      <tr>
+        <td>5. High-fidelity markdown</td>
+        <td class="score cg">~99%</td>
+        <td class="score cg">~99%</td>
+        <td style="font-size:11px;color:#8b949e">Appendix-links deferred. 30 residual start-line failures.</td>
+      </tr>
+      <tr>
+        <td>6. Parsing quality</td>
+        <td class="score cg">✓ 100%</td>
+        <td class="score cgr">—</td>
+        <td style="font-size:11px;color:#8b949e">None. All tracking infrastructure in place.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<footer>Generated 2026-06-01 &bull; handsard-scraper &bull; <a href="https://github.com/roycehoe/handsard-scraper" style="color:#8b949e">github.com/roycehoe/handsard-scraper</a></footer>
+</div>
+
+<script>
+// Toggle cards
+function toggle(id){
+  const el=document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+// Report-type table data
+const rtData=[
+  ['oral-answer',11124,68.2,68.1,68.1,'debate'],
+  ['written-answer',10572,19.3,19.3,19.3,'expected-low'],
+  ['written-answer-na',9014,14.4,14.4,14.4,'expected-low'],
+  ['bill',5248,86.8,86.7,86.7,'debate'],
+  ['motion',3023,68.4,68.3,68.3,'debate'],
+  ['budget',3007,78.4,78.0,78.0,'debate'],
+  ['president-address',619,71.6,68.8,68.8,'debate'],
+  ['bill-intro',579,5.5,5.5,5.5,'expected-low'],
+  ['atbp',509,77.8,77.8,77.8,'debate'],
+  ['speaker',413,77.7,77.7,77.7,'debate'],
+  ['ministerial-statement',402,77.1,77.1,77.1,'debate'],
+  ['matter-adj',262,45.4,45.4,45.4,'debate'],
+  ['misc',159,100.0,100.0,100.0,'debate'],
+  ['admin-oaths',93,88.2,88.2,88.2,'debate'],
+  ['written-statement',82,0.0,0.0,0.0,'expected-low'],
+  ['clarification',65,4.6,4.6,4.6,'expected-low'],
+  ['yang-di-message',30,100.0,100.0,100.0,'debate'],
+  ['personal-explanation',27,40.7,40.7,40.7,'debate'],
+  ['tribute',27,66.7,66.7,66.7,'debate'],
+  ['deputy-speaker',21,100.0,100.0,100.0,'debate'],
+  ['petition',8,37.5,37.5,37.5,'expected-low'],
+  ['point-of-order',7,0.0,0.0,0.0,'expected-low'],
+  ['obituary-speech',6,100.0,100.0,100.0,'debate'],
+];
+
+function barCell(pct, cls){
+  return `<div class="tbar-wrap"><div class="tbar-fill ${cls}" style="width:${pct}%"></div></div>${pct.toFixed(1)}%`;
+}
+function pctColor(pct, expected){
+  if(expected==='expected-low') return '#8b949e';
+  if(pct>=85) return '#3fb950';
+  if(pct>=65) return '#d29922';
+  if(pct>=40) return '#bd561d';
+  return '#f85149';
+}
+function barClass(pct, expected){
+  if(expected==='expected-low') return 'fgray';
+  if(pct>=85) return 'fg';
+  if(pct>=65) return 'fy';
+  if(pct>=40) return 'fo';
+  return 'fgray';
+}
+
+const tbody=document.getElementById('rt-tbody');
+rtData.forEach(([rt,n,hm,hs,sp,cat])=>{
+  const spC=barClass(sp,cat);
+  const spColor=pctColor(sp,cat);
+  const expectedNote=cat==='expected-low'?'<span style="font-size:10px;color:#484f58;margin-left:4px">expected low</span>':'';
+  tbody.innerHTML+=`<tr>
+    <td><code>${rt}</code>${expectedNote}</td>
+    <td class="rt" style="color:#8b949e">${n.toLocaleString()}</td>
+    <td><div class="tbar-wrap"><div class="tbar-fill ${barClass(hm,'x')}" style="width:${hm}%"></div></div><span style="color:${pctColor(hm,'x')}">${hm.toFixed(1)}%</span></td>
+    <td><div class="tbar-wrap"><div class="tbar-fill ${barClass(hs,cat)}" style="width:${hs}%"></div></div><span style="color:${pctColor(hs,cat)}">${hs.toFixed(1)}%</span></td>
+    <td><div class="tbar-wrap"><div class="tbar-fill ${spC}" style="width:${sp}%"></div></div><span style="color:${spColor}">${sp.toFixed(1)}%</span></td>
+  </tr>`;
+});
+</script>
+</body>
+</html>
