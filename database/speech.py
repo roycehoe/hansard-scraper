@@ -14,4 +14,4 @@ class Speech(SQLModel, table=True):
 
     report_id: Optional[int] = Field(default=None, foreign_key="report.id")
     report: Report = Relationship(back_populates="speeches")
-    mp_id: Optional[int] = Field(default=None, foreign_key="mp.id")
+    speaker_id: Optional[int] = Field(default=None, foreign_key="speaker.id")

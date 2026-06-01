@@ -1,10 +1,10 @@
 """
-Baseline assessment: what fraction of Speech.speaker values resolve to an Mp row?
+Baseline assessment: what fraction of Speech.speaker values resolve to a Speaker row?
 
 Usage:
     poetry run python3 scripts/speech_speaker_match_rate.py
 
-Samples ~200 Speech rows stratified by report_type, applies the MP name matching
+Samples ~200 Speech rows stratified by report_type, applies the speaker name matching
 pipeline, and reports the match rate overall and by report_type. Top unmatched
 speaker strings are printed to guide any follow-up curation.
 """
@@ -13,11 +13,11 @@ from collections import Counter, defaultdict
 
 from sqlmodel import Session
 
-from crud.mp import CRUDMp
+from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from database.init import engine
-from services.sitting_attendance import (
-    build_mp_lookups,
+from services.attendance import (
+    build_speaker_lookups,
     normalize_name,
     resolve_canonical_name,
     strip_title,
@@ -35,15 +35,15 @@ def main():
     random.seed(SEED)
 
     with Session(engine) as session:
-        mps = CRUDMp(session).get_all()
+        speakers = CRUDSpeaker(session).get_all()
         all_rows: list[_Row] = CRUDSpeech(session).get_speakers_with_report_type()
 
-    mp_id_lookup: dict[tuple[str, int], int] = {
-        (mp.name, mp.parliament_number): mp.id
-        for mp in mps
-        if mp.id is not None
+    speaker_id_lookup: dict[tuple[str, int], int] = {
+        (s.name, s.parliament_number): s.id
+        for s in speakers
+        if s.id is not None
     }
-    lookups = build_mp_lookups(mps)
+    lookups = build_speaker_lookups(speakers)
 
     # Stratify by report_type
     by_type: dict[str, list[_Row]] = defaultdict(list)
@@ -64,7 +64,7 @@ def main():
         name = strip_title(speaker.rstrip(":").strip())
         name = normalize_name(name)
         canonical = resolve_canonical_name(name, parliament, lookups) if name else None
-        found = canonical is not None and (canonical, parliament) in mp_id_lookup
+        found = canonical is not None and (canonical, parliament) in speaker_id_lookup
 
         type_stats[report_type]["total"] += 1
         if found:

@@ -29,7 +29,7 @@ class CRUDSpeech:
 
     def get_unresolved_ids(self) -> list[int]:
         return list(self.session.exec(
-            select(Speech.id).where(Speech.mp_id == None)  # noqa: E711
+            select(Speech.id).where(Speech.speaker_id == None)  # noqa: E711
         ).all())
 
     def get_speaker_info_by_ids(self, ids: list[int]) -> list[tuple[int, str, int]]:
@@ -39,5 +39,5 @@ class CRUDSpeech:
             .where(Speech.id.in_(ids))
         ).all())
 
-    def set_mp_id(self, speech_id: int, mp_id: int) -> None:
-        self.session.exec(update(Speech).where(Speech.id == speech_id).values(mp_id=mp_id))
+    def set_speaker_id(self, speech_id: int, speaker_id: int) -> None:
+        self.session.exec(update(Speech).where(Speech.id == speech_id).values(speaker_id=speaker_id))
