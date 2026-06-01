@@ -19,7 +19,7 @@ class ParsedSpeechType(Enum):
     NO_SPEAKER = "no_speaker"
 
 
-_MP_SPEAK_RE = re.compile(r"MPs? Speaking:\|\s*([^\n|]+)", re.IGNORECASE)
+_MP_SPEAK_RE = re.compile(r"MPs? Speaking:\|[ \t]*([^\n|]+)", re.IGNORECASE)
 
 # atbp — Speaker signature at the end of Assents to Bills Passed notices:
 # | FULL NAME
@@ -58,6 +58,11 @@ _ADJOURNMENT_MOVER_RE = re.compile(
 _BILL_PRESENTER_RE = re.compile(
     r"presented\s+by[^(]*\(([^)]+)\)",
     re.IGNORECASE,
+)
+
+# Honorific prefixes used in speaker names — absent means the bold line is a title/heading, not a speaker
+_SPEAKER_HONORIFIC_RE = re.compile(
+    r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|Inche|Tuan|Haji|The|Er)\b"
 )
 
 
@@ -232,20 +237,46 @@ def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpee
     speeches: list[ParsedSpeech] = []
     for line in markdown.splitlines()[start_of_speech_line + 1 :]:
         parsed_line = line.strip()
+        parsed_line = re.sub(r"^(\*{4})+", "", parsed_line)  # strip leading **** artifacts (e.g. ****8.**Name**)
         if not parsed_line:
             continue
-        if not parsed_line.strip("* "):  # skip artifact lines: **, ****, ** **, etc.
+        if not parsed_line.strip("* _|"):  # skip artifact lines: **, ****, _ _, |, etc.
             continue
+        if re.match(r"^-{3}(\|-{2,})+\s*$", parsed_line):
+            continue  # skip table separator lines (---|--- artifacts)
+        if parsed_line.startswith("!["):
+            continue  # skip embedded image lines (data:image/png;base64,...)
+        if parsed_line == "﻿":
+            continue  # skip bare BOM characters
         if "**" not in parsed_line:
             if current_speaker is None:  # skip preamble before first speaker
                 continue
+            if re.match(r"^\d{1,2}\.\d{2}\s*[ap]\.?m\.?$", parsed_line, re.IGNORECASE):
+                continue  # skip procedural time markers (e.g. "4.26 pm", "3.30 p.m.")
+            if re.match(r"^#{1,6}(\s|$)", parsed_line):
+                continue  # skip markdown section headings (e.g. "#### [Mr SPEAKER in the Chair]")
             speeches.append(ParsedSpeech(speaker=current_speaker, transcript=parsed_line))
             continue
 
         name = re.search(r"((?:\*\*[^*]+?\*\*\s*)+)", parsed_line)
         if name:
-            transcript = parsed_line.split(name.group(0))[-1].strip()
-            new_speaker = name.group(0).replace("*", "").replace(":", "").strip()
+            transcript = re.sub(r"^:\s*", "", parsed_line.split(name.group(0))[-1].strip())
+            if transcript.startswith("|"):
+                continue  # table row header ("**Header** | ...") — bold is a column label, not a speaker
+            raw_speaker = name.group(0).replace("*", "").replace(":", "").strip()
+            # Strip [X in the Chair] chair-annotation prefix (e.g. "**[Mr Speaker in the Chair] BILL**")
+            chair_m = re.match(r"^\[(.+?)\s+in the [Cc]hair\]", raw_speaker)
+            new_speaker = chair_m.group(1).strip() if chair_m else raw_speaker
+            # Skip bold section-title lines: no honorific AND (no colon, or colon is mid-title
+            # not at the end). Catches "**MINISTRY OF EDUCATION**", "**Table 1: Description**".
+            _bold_ends_with_colon = name.group(0).rstrip().endswith(":**")
+            if (not transcript
+                    and not _SPEAKER_HONORIFIC_RE.search(raw_speaker)
+                    and (":" not in name.group(0) or not _bold_ends_with_colon)):
+                continue
+            # Strip leading question-number prefix from oral-answer speaker names
+            # e.g. "1\. Assoc. Prof. Paulin Tay Straughan" → "Assoc. Prof. Paulin Tay Straughan"
+            new_speaker = re.sub(r"^\d+\\?\.\s+", "", new_speaker)
             if new_speaker:  # guard: don't overwrite speaker with empty string
                 current_speaker = new_speaker
             if current_speaker is not None:
@@ -264,11 +295,11 @@ def get_speeches(markdown: str, start_of_speech_line: int, report_type: str) -> 
     speech_type = _classify_speech_type(parsed, len(speakers))
 
     if speech_type == ParsedSpeechType.PARSED:
-        # Old-format president-address docs use bold section headers (e.g.
+        # Old-format docs use bold section headers (e.g. **ASSENTS TO BILLS PASSED**,
         # **EXTERNAL ENVIRONMENT**) that _parse_speeches misidentifies as speakers.
         # When MPs Speaking is empty and the first parsed speaker looks like a
         # section header, collapse everything to a single correctly-attributed speech.
-        if (report_type == "president-address"
+        if (report_type in ("president-address", "atbp")
                 and not speakers
                 and parsed
                 and _is_section_header_speaker(parsed[0].speaker)):
