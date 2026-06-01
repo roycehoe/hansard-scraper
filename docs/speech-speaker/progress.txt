@@ -1,5 +1,40 @@
 # Speech → MP Link Refine-Loop Progress Log
 
+## Iteration 16 (corrected) — 2026-06-01
+
+### can_match — all types — strip single-char initials from wordset subset key and query (corrected)
+
+**Affected Speech IDs (pilot):** Speeches with `Dr Aline Wong`, `Dr Augustine Tan`
+
+**Speaker string (failing):**
+`Dr Aline Wong` → after strip_title → `Aline Wong` (2 words); canonical `Wong Aline K` → natural `Aline K Wong` → period-normalised words `['aline', 'k', 'wong']`. Previous attempt keyed on `frozenset(['aline', 'k', 'wong'])` (build) vs `frozenset(['aline', 'wong'])` (lookup) — no match.
+`Dr Augustine Tan` → `Augustine Tan` (2 words); canonical `Tan H.H. Augustine` → `['tan', 'h', 'h', 'augustine']` (build) vs `['augustine', 'tan']` (lookup).
+
+**Speaker string (passing, same report_type):**
+Speakers whose canonical name has no single-char initials — unaffected by this change.
+
+**Root cause of previous failure (iteration 16 first attempt):**
+The `_MIN_WORDSET_SUBSET_WORDS = 3` guard was checked on the pre-filter word count (correct intent) but in practice it ran on `words` before filtering — so `Wong Aline K` had 3 words pre-filter and passed the guard. After filtering initials the key became `frozenset(['wong', 'aline'])` (2 tokens). The lookup side also strips initials to `frozenset(['aline', 'wong'])`. Build and lookup frozensets now match — but only if the guard doesn't exclude the entry. The corrected iteration checks `len(words) < 3` on the **pre-filter** count, then reassigns `words` to the filtered list and keys on that.
+
+**Root cause (corrected approach):**
+Apply the `_MIN_WORDSET_SUBSET_WORDS` guard on the pre-filter `words` list, then filter single-char tokens, then key on the filtered frozenset. Both build and lookup strip `len(w) <= 1` tokens before forming the frozenset.
+
+**Proposed fix:**
+Build side: check `len(words) < _MIN_WORDSET_SUBSET_WORDS`, then `words = [w for w in words if len(w) > 1]`, then `key = (frozenset(words), parliament)`.
+Lookup side: `_wss_words = [w for w in _period_normalize(name).split() if len(w) > 1]`, then `lookups.wordset_subset.get((frozenset(_wss_words), parliament))`.
+
+**Files changed:** `services/attendance.py`
+
+**Backward-compatibility:**
+Entries that previously had no single-char initials are unaffected — their filtered wordset equals their unfiltered wordset. Only entries with initials gain new keys. The `_MIN_WORDSET_SUBSET_WORDS = 3` pre-filter guard maintains the existing quality gate against short-name false positives.
+
+**Outcome:** KEPT
+- Regression: 53/53 = 100.0% (no new failures)
+- Pilot: 228/267 = 85.4% (226/267 = 84.6% before → 228/267 = 85.4% after, +2)
+- Newly resolved: `Dr Aline Wong`, `Dr Augustine Tan`
+
+---
+
 ## Iteration 16 — 2026-06-01
 
 ### can_match — all types — strip single-char initials from wordset subset key and query
