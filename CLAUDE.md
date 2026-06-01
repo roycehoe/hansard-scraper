@@ -18,6 +18,12 @@ ruff check --fix .
 # Run the main scraping/processing pipeline
 python script.py
 
+# Database migrations (Alembic)
+python -m alembic upgrade head          # apply all pending migrations
+python -m alembic check                 # verify DB matches models (no pending changes)
+python -m alembic revision --autogenerate -m "describe change"  # generate a new migration
+python -m alembic downgrade -1          # roll back one migration
+
 # Scrape MPs by parliament (run separately, not part of script.py)
 python scripts/scrape_mps_by_parliament.py
 ```

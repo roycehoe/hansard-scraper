@@ -38,11 +38,11 @@ from services.handsard_sitting_date_response import (
     build_new_handsard_sitting_date_response,
     build_old_handsard_sitting_date_response,
 )
-from settings import settings
 from services.handsard_website import build_handsard_website_response
 from services.report import build_report
 from services.sitting import build_sitting
 from services.speech import get_speeches, get_start_of_speech_line
+from settings import settings
 
 LOCAL_DATABASE_URL = "postgresql://user:password@localhost:5432/postgres"
 SAMPLE_SIZE = 30
