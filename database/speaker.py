@@ -3,7 +3,7 @@ from typing import Optional
 from sqlmodel import Field, SQLModel
 
 
-class Mp(SQLModel, table=True):
+class Speaker(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str
     party: str

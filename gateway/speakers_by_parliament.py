@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from exceptions import HansardGatewayError
-from schemas.mp import MpResult
+from schemas.speaker import SpeakerResult
 from settings import settings
 
 PARLIAMENT_IDS = {
@@ -27,7 +27,7 @@ def _get_antiforgery_token(session: requests.Session) -> str:
         raise HansardGatewayError("Failed to fetch antiforgery token") from e
 
 
-def _parse_mps(html: str, parliament_number: int) -> list[MpResult]:
+def _parse_speakers(html: str, parliament_number: int) -> list[SpeakerResult]:
     soup = BeautifulSoup(html, "html.parser")
     results = []
     for li in soup.select("ul.list > li"):
@@ -42,7 +42,7 @@ def _parse_mps(html: str, parliament_number: int) -> list[MpResult]:
             name, comments = match.group(1).strip(), match.group(2).strip()
         else:
             name, comments = full_name, None
-        results.append(MpResult(
+        results.append(SpeakerResult(
             name=name,
             party=party_el.get_text(strip=True),
             is_legislative_assembly=bool(leg_assembly_el and leg_assembly_el.get_text(strip=True)),
@@ -52,27 +52,27 @@ def _parse_mps(html: str, parliament_number: int) -> list[MpResult]:
     return results
 
 
-def get_all_mps() -> list[MpResult]:
+def get_all_speakers() -> list[SpeakerResult]:
     session = requests.Session()
     session.headers.update({"User-Agent": "Mozilla/5.0"})
     try:
-        session.get(settings.parliament_mps_url, timeout=15)
+        session.get(settings.parliament_speakers_url, timeout=15)
     except requests.exceptions.RequestException as e:
         raise HansardGatewayError("Failed to establish parliament session") from e
 
     token = _get_antiforgery_token(session)
-    all_mps = []
+    all_speakers = []
     for parl_num, parl_id in PARLIAMENT_IDS.items():
         try:
             resp = session.post(
-                settings.parliament_mps_url,
+                settings.parliament_speakers_url,
                 data={"Parliament": parl_id, "sf_antiforgery": token},
                 headers={"X-SF-ANTIFORGERY-REQUEST": token},
                 timeout=15,
             )
             resp.raise_for_status()
         except requests.exceptions.RequestException as e:
-            raise HansardGatewayError(f"Failed to fetch MPs for parliament {parl_num}") from e
-        all_mps.extend(_parse_mps(resp.text, parl_num))
+            raise HansardGatewayError(f"Failed to fetch speakers for parliament {parl_num}") from e
+        all_speakers.extend(_parse_speakers(resp.text, parl_num))
         time.sleep(0.5)
-    return all_mps
+    return all_speakers

@@ -5,18 +5,12 @@ import sqlmodel.sql.sqltypes
 from sqlalchemy import create_engine
 from sqlmodel import SQLModel
 
+import database.attendance  # noqa: F401
 import database.handsard_sitting_date_response  # noqa: F401
 import database.handsard_website_response  # noqa: F401
-import database.mp  # noqa: F401
-import database.parsing_statistics  # noqa: F401
 import database.report  # noqa: F401
 import database.sitting  # noqa: F401
-import database.sitting_a2b  # noqa: F401
-import database.sitting_annexure  # noqa: F401
-import database.sitting_attendance  # noqa: F401
-import database.sitting_ptba  # noqa: F401
-import database.sitting_section  # noqa: F401
-import database.sitting_vernacular  # noqa: F401
+import database.speaker  # noqa: F401
 import database.speech  # noqa: F401
 from alembic import context
 from settings import settings

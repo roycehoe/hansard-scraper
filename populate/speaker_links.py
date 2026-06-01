@@ -3,14 +3,14 @@ from typing import Optional
 
 from sqlmodel import Session
 
-from crud.mp import CRUDMp
+from crud.attendance import CRUDAttendance
 from crud.sitting import CRUDSitting
-from crud.sitting_attendance import CRUDSittingAttendance
+from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from logs import logger
-from services.sitting_attendance import (
-    MpLookups,
-    build_mp_lookups,
+from services.attendance import (
+    SpeakerLookups,
+    build_speaker_lookups,
     infer_parliament,
     normalize_name,
     resolve_canonical_name,
@@ -32,26 +32,26 @@ _INNER_TITLE = re.compile(
 def _resolve_with_parliament_fallback(
     name: str,
     parliament: int,
-    lookups: MpLookups,
-    mp_id_lookup: dict[tuple[str, int], int],
+    lookups: SpeakerLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
 ) -> tuple[Optional[str], int]:
     canonical = resolve_canonical_name(name, parliament, lookups)
     if canonical is not None or parliament != 0:
         return canonical, parliament
     for fallback in _COLONIAL_PARLIAMENT_FALLBACKS:
         candidate = resolve_canonical_name(name, fallback, lookups)
-        if candidate and (candidate, fallback) in mp_id_lookup:
+        if candidate and (candidate, fallback) in speaker_id_lookup:
             return candidate, fallback
     return None, parliament
 
 
-def _populate_attendance_mp_ids(
+def _populate_attendance_speaker_ids(
     session: Session,
-    mp_id_lookup: dict[tuple[str, int], int],
-    lookups: MpLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+    lookups: SpeakerLookups,
 ) -> None:
     crud_sitting = CRUDSitting(session)
-    crud = CRUDSittingAttendance(session)
+    crud = CRUDAttendance(session)
 
     sittings_by_id = {sitting.id: sitting for sitting in crud_sitting.get_all() if sitting.id is not None}
     unresolved_ids = crud.get_unresolved_ids()
@@ -72,29 +72,29 @@ def _populate_attendance_mp_ids(
             if parliament is None:
                 continue
 
-            mp_id = mp_id_lookup.get((record.mp_name, parliament))
+            speaker_id = speaker_id_lookup.get((record.mp_name, parliament))
 
-            if not mp_id:
+            if not speaker_id:
                 name = normalize_name(strip_title(record.mp_name))
-                canonical, parliament = _resolve_with_parliament_fallback(name, parliament, lookups, mp_id_lookup)
+                canonical, parliament = _resolve_with_parliament_fallback(name, parliament, lookups, speaker_id_lookup)
                 if canonical:
-                    mp_id = mp_id_lookup.get((canonical, parliament))
+                    speaker_id = speaker_id_lookup.get((canonical, parliament))
 
-            if mp_id:
-                crud.mark_mp_id(record, mp_id)
+            if speaker_id:
+                crud.mark_speaker_id(record, speaker_id)
                 updated += 1
 
         session.commit()
         session.expire_all()
-        logger.info(f"SittingAttendance: {min(batch_start + _BATCH, total)}/{total} processed, {updated} resolved")
+        logger.info(f"Attendance: {min(batch_start + _BATCH, total)}/{total} processed, {updated} resolved")
 
-    logger.info(f"SittingAttendance: set mp_id on {updated}/{total} records")
+    logger.info(f"Attendance: set speaker_id on {updated}/{total} records")
 
 
-def _populate_speech_mp_ids(
+def _populate_speech_speaker_ids(
     session: Session,
-    mp_id_lookup: dict[tuple[str, int], int],
-    lookups: MpLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+    lookups: SpeakerLookups,
 ) -> None:
     crud = CRUDSpeech(session)
     unresolved_ids = crud.get_unresolved_ids()
@@ -103,8 +103,6 @@ def _populate_speech_mp_ids(
 
     for batch_start in range(0, total, _BATCH):
         batch_ids = unresolved_ids[batch_start : batch_start + _BATCH]
-
-        # Only fetch columns needed for resolution -- avoids loading transcript/markdown_content.
         rows = crud.get_speaker_info_by_ids(batch_ids)
 
         for speech_id, speaker, parliament in rows:
@@ -126,25 +124,25 @@ def _populate_speech_mp_ids(
             if not name:
                 continue
 
-            canonical, parliament = _resolve_with_parliament_fallback(name, parliament, lookups, mp_id_lookup)
+            canonical, parliament = _resolve_with_parliament_fallback(name, parliament, lookups, speaker_id_lookup)
 
             if canonical is None:
                 continue
 
-            mp_id = mp_id_lookup.get((canonical, parliament))
-            if mp_id:
-                crud.set_mp_id(speech_id, mp_id)
+            speaker_id = speaker_id_lookup.get((canonical, parliament))
+            if speaker_id:
+                crud.set_speaker_id(speech_id, speaker_id)
                 updated += 1
 
         session.commit()
         logger.info(f"Speech: {min(batch_start + _BATCH, total)}/{total} processed, {updated} resolved")
 
-    logger.info(f"Speech: set mp_id on {updated}/{total} records")
+    logger.info(f"Speech: set speaker_id on {updated}/{total} records")
 
 
-def populate_mp_links(session: Session) -> None:
-    mps = CRUDMp(session).get_all()
-    mp_id_lookup = {(mp.name, mp.parliament_number): mp.id for mp in mps if mp.id is not None}
-    lookups = build_mp_lookups(mps)
-    _populate_attendance_mp_ids(session, mp_id_lookup, lookups)
-    _populate_speech_mp_ids(session, mp_id_lookup, lookups)
+def populate_speaker_links(session: Session) -> None:
+    speakers = CRUDSpeaker(session).get_all()
+    speaker_id_lookup = {(s.name, s.parliament_number): s.id for s in speakers if s.id is not None}
+    lookups = build_speaker_lookups(speakers)
+    _populate_attendance_speaker_ids(session, speaker_id_lookup, lookups)
+    _populate_speech_speaker_ids(session, speaker_id_lookup, lookups)
