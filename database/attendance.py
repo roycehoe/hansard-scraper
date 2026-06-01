@@ -5,7 +5,7 @@ from pydantic.alias_generators import to_camel
 from sqlmodel import Field, SQLModel
 
 
-class SittingAttendance(SQLModel, table=True):
+class Attendance(SQLModel, table=True):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -14,4 +14,4 @@ class SittingAttendance(SQLModel, table=True):
     mp_name: Optional[str] = None
     attendance: Optional[bool] = None
     location_name: Optional[str] = None
-    mp_id: Optional[int] = Field(default=None, foreign_key="mp.id")
+    speaker_id: Optional[int] = Field(default=None, foreign_key="speaker.id")
