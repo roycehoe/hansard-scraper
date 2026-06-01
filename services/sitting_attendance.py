@@ -1,8 +1,6 @@
 import re
+from dataclasses import dataclass
 
-from sqlmodel import Session, select
-
-from database.init import engine
 from database.mp import Mp
 from database.sitting import Sitting
 from database.sitting_attendance import SittingAttendance
@@ -42,7 +40,7 @@ _MANUAL_OVERRIDES: dict[tuple[str, int], str] = {
     ("koo young", 1): "Koo Yong",
     # "Chew Chin Han" is "Chew Chin Harn" (People's Action Party)
     ("chew chin han", 1): "Chew Chin Harn",
-    # Surname-only speech forms for colonial officials — all unique in parliament 1
+    # Surname-only speech forms for colonial officials -- all unique in parliament 1
     ("hart", 1): "Hart, T.M.",
     ("goode", 1): "Goode, W.A.C.",
     ("butterfield", 1): "Butterfield, C.H.",
@@ -136,8 +134,8 @@ _ISLAMIC_SUFFIX_RE = re.compile(r"\s+[Aa]l-[Hh]aj[jh]?\s*$")
 
 # Trailing official role suffix: ", Financial Secretary", ", Attorney-General", etc.
 # Applied before _HONORIFIC_SUFFIX_RE so that mixed-case role titles don't block
-# the all-caps honorific stripping (e.g. "Hart, C.M.G., Financial Secretary" →
-# strip role → "Hart, C.M.G." → strip honorific → "Hart").
+# the all-caps honorific stripping (e.g. "Hart, C.M.G., Financial Secretary" ->
+# strip role -> "Hart, C.M.G." -> strip honorific -> "Hart").
 _OFFICIAL_ROLE_SUFFIX_RE = re.compile(
     r",\s*(?:Acting\s+)?(?:Financial|Chief|Colonial)\s+Secretary"
     r"|,\s*Attorney[-\s]General"
@@ -167,19 +165,9 @@ def _normalize_for_lookup(name: str) -> str:
     # Additional normalization for inverted-lookup key only:
     # strip period from a lone leading initial ("S. Name" -> "S Name") so that
     # "S. Rajaratnam" matches the lookup key for "Rajaratnam, S" (stored without period).
-    # This does NOT affect the stored mp_name — only the lookup search key.
+    # This does NOT affect the stored mp_name -- only the lookup search key.
     n = re.sub(r"^([A-Z])\. (?=[A-Z])", r"\1 ", n)
     return n.lower()
-
-
-# Lazy-loaded lookup: (normalised_natural_name, parliament_number) -> canonical Mp.name
-# Built from Mp rows whose names use "Surname, X" inverted format.
-_INVERTED_LOOKUP: dict[tuple[str, int], str] = {}
-
-# Lazy-loaded fallback: (period_stripped_name, parliament_number) -> canonical Mp.name
-# Covers names like "S Jayakumar", "K Shanmugam" where the Mp table omits the period
-# that appears in the markdown ("S. Jayakumar", "K. Shanmugam").
-_DIRECT_LOOKUP: dict[tuple[str, int], str] = {}
 
 
 def _period_normalize(name: str) -> str:
@@ -196,25 +184,6 @@ def _period_normalize(name: str) -> str:
     n = re.sub(r"([A-Z])\.", r"\1", n)   # strip remaining trailing period: "K." -> "K"
     n = re.sub(r"\s+", " ", n)
     return n.strip().lower()
-
-
-def _get_direct_lookup() -> dict[tuple[str, int], str]:
-    global _DIRECT_LOOKUP
-    if _DIRECT_LOOKUP:
-        return _DIRECT_LOOKUP
-    with Session(engine) as s:
-        mps = s.exec(select(Mp)).all()
-    # Only add unambiguous keys (unique within each parliament).
-    counts: dict[tuple[str, int], int] = {}
-    entries: list[tuple[tuple[str, int], str]] = []
-    for mp in mps:
-        key = (_period_normalize(mp.name), mp.parliament_number)
-        counts[key] = counts.get(key, 0) + 1
-        entries.append((key, mp.name))
-    for key, canonical in entries:
-        if counts[key] == 1:
-            _DIRECT_LOOKUP[key] = canonical
-    return _DIRECT_LOOKUP
 
 
 def _strip_bin(name: str) -> str:
@@ -242,31 +211,6 @@ def _spelling_normalize(name: str) -> str:
     return re.sub(r"\s+", " ", n).strip()
 
 
-# Lazy-loaded bin-free fallback: (period_stripped + bin_stripped key, parliament) -> canonical
-# Handles mismatches where markdown omits 'Bin' present in Mp.name ("Abdullah Tarmugi" ->
-# "Abdullah Bin Tarmugi") and vice-versa ("Ibrahim bin Othman" -> "Ibrahim Othman").
-_BIN_FREE_LOOKUP: dict[tuple[str, int], str] = {}
-
-
-def _get_bin_free_lookup() -> dict[tuple[str, int], str]:
-    global _BIN_FREE_LOOKUP
-    if _BIN_FREE_LOOKUP:
-        return _BIN_FREE_LOOKUP
-    with Session(engine) as s:
-        mps = s.exec(select(Mp)).all()
-    counts: dict[tuple[str, int], int] = {}
-    entries: list[tuple[tuple[str, int], str]] = []
-    for mp in mps:
-        key = (_period_normalize(_strip_bin(mp.name)), mp.parliament_number)
-        counts[key] = counts.get(key, 0) + 1
-        entries.append((key, mp.name))
-    direct = _get_direct_lookup()
-    for key, canonical in entries:
-        if counts[key] == 1 and key not in direct:
-            _BIN_FREE_LOOKUP[key] = canonical
-    return _BIN_FREE_LOOKUP
-
-
 def _invert_to_natural(mp_name: str) -> str | None:
     """Convert 'Surname, Firstname[, TitleSuffix]' to natural 'Firstname Surname' form.
     Returns None if the name is not in inverted format."""
@@ -280,168 +224,9 @@ def _invert_to_natural(mp_name: str) -> str | None:
     return strip_title(f"{rest} {parts[0]}").strip()
 
 
-# Lazy-loaded word-set lookup: (frozenset_of_words, word_count, parliament) -> canonical
-# Handles name permutation mismatches where markdown writes words in a different order
-# than what the Mp table or inverted lookup expects:
-#   "George Yong-Boon Yeo"  <-> "Yeo Yong-Boon, George"
-#   "David T.E. Lim"        <-> "Lim T E, David"
-#   "Aline K. Wong"         <-> "Wong Aline K"
-#   "Dixie Tan"             <-> "Tan Dixie"
-# Only unambiguous keys (unique frozenset+count within each parliament) are stored.
-_WORDSET_LOOKUP: dict[tuple[frozenset, int, int], str] = {}
-
-
-def _get_wordset_lookup() -> dict[tuple[frozenset, int, int], str]:
-    global _WORDSET_LOOKUP
-    if _WORDSET_LOOKUP:
-        return _WORDSET_LOOKUP
-    with Session(engine) as s:
-        mps = s.exec(select(Mp)).all()
-    # Build (natural_display_form, canonical_mp_name, parliament) triples.
-    # For inverted names ("Surname, Firstname") add the natural form alongside.
-    triples: list[tuple[str, str, int]] = []
-    for mp in mps:
-        natural = _invert_to_natural(mp.name)
-        if natural:
-            triples.append((natural, mp.name, mp.parliament_number))
-        triples.append((mp.name, mp.name, mp.parliament_number))
-    counts: dict[tuple[frozenset, int, int], int] = {}
-    entries: list[tuple[tuple[frozenset, int, int], str]] = []
-    for display, canonical_mp_name, parl in triples:
-        words = _period_normalize(display).split()
-        key: tuple[frozenset, int, int] = (frozenset(words), len(words), parl)
-        counts[key] = counts.get(key, 0) + 1
-        entries.append((key, canonical_mp_name))
-    for key, canonical_mp_name in entries:
-        if counts[key] == 1 and key not in _WORDSET_LOOKUP:
-            _WORDSET_LOOKUP[key] = canonical_mp_name
-    return _WORDSET_LOOKUP
-
-
 def _wordset_key(name: str) -> tuple[frozenset, int]:
     words = _period_normalize(name).split()
     return frozenset(words), len(words)
-
-
-# Lazy-loaded prefix lookup: (period_normalized_prefix, parliament) -> canonical Mp.name
-# Handles names like "Bernard Chen" that are a strict prefix of the canonical full name
-# "Bernard Chen Tien Lap" (natural form of "Chen Tien Lap, Bernard").
-# Only unambiguous prefixes (unique within each parliament) are stored.
-_PREFIX_LOOKUP: dict[tuple[str, int], str] = {}
-
-
-def _get_prefix_lookup() -> dict[tuple[str, int], str]:
-    global _PREFIX_LOOKUP
-    if _PREFIX_LOOKUP:
-        return _PREFIX_LOOKUP
-    with Session(engine) as s:
-        mps = s.exec(select(Mp)).all()
-    # Collect (display_form, canonical_mp_name, parliament) triples.
-    forms: list[tuple[str, str, int]] = []
-    for mp in mps:
-        natural = _invert_to_natural(mp.name)
-        if natural:
-            forms.append((natural, mp.name, mp.parliament_number))
-        forms.append((mp.name, mp.name, mp.parliament_number))
-    counts: dict[tuple[str, int], int] = {}
-    entries: list[tuple[tuple[str, int], str]] = []
-    for display, canonical, parl in forms:
-        words = _period_normalize(display).split()
-        for n in range(2, len(words)):
-            prefix = " ".join(words[:n])
-            key = (prefix, parl)
-            counts[key] = counts.get(key, 0) + 1
-            entries.append((key, canonical))
-    for key, canonical in entries:
-        if counts[key] == 1 and key not in _PREFIX_LOOKUP:
-            _PREFIX_LOOKUP[key] = canonical
-    return _PREFIX_LOOKUP
-
-
-def _get_inverted_lookup() -> dict[tuple[str, int], str]:
-    global _INVERTED_LOOKUP
-    if _INVERTED_LOOKUP:
-        return _INVERTED_LOOKUP
-    with Session(engine) as s:
-        mps = s.exec(select(Mp)).all()
-
-    # Track which parliament+surname keys are already used to avoid ambiguous surname-only matches.
-    surname_only_counts: dict[tuple[str, int], int] = {}
-
-    inverted_entries = []
-
-    for mp in mps:
-        parl = mp.parliament_number
-
-        if ", " in mp.name:
-            natural_stripped = _invert_to_natural(mp.name)
-            key = (_normalize_for_lookup(natural_stripped), parl)
-            _INVERTED_LOOKUP[key] = mp.name
-
-            # Track surname-only key for potential later addition (only for multi-word surnames)
-            surname = mp.name.split(", ")[0]
-            surname_words = surname.split()
-            if len(surname_words) >= 2:
-                sk = (_normalize_for_lookup(surname), parl)
-                surname_only_counts[sk] = surname_only_counts.get(sk, 0) + 1
-                inverted_entries.append((sk, mp.name))
-        else:
-            # Non-standard "Surname Initials Firstname" format (no comma, but surname-first):
-            # e.g. "Tan H.H. Augustine" -> natural order is "Augustine H.H. Tan"
-            # = put last token first, keep middle tokens, put first token last.
-            words = mp.name.split()
-            if len(words) >= 3:
-                rearranged = f"{words[-1]} {' '.join(words[1:-1])} {words[0]}"
-                if rearranged != mp.name:
-                    rearranged_stripped = strip_title(rearranged).strip()
-                    rk = (_normalize_for_lookup(rearranged_stripped), parl)
-                    if rk not in _INVERTED_LOOKUP:
-                        _INVERTED_LOOKUP[rk] = mp.name
-
-    # Add surname-only keys (multi-word inverted surnames) where unique within parliament
-    for sk, canonical in inverted_entries:
-        if surname_only_counts.get(sk, 0) == 1 and sk not in _INVERTED_LOOKUP:
-            _INVERTED_LOOKUP[sk] = canonical
-
-    return _INVERTED_LOOKUP
-
-
-# Lazy-loaded surname fallback: (last_word_of_natural_form, parliament) -> canonical Mp.name
-# Only populated where that last word is unique within the parliament, so it never resolves
-# ambiguous surnames (Tan, Lee, Lim, …).  Handles "Mr Byrne" -> "Byrne, K.M.",
-# "Mr Rajaratnam" -> "Rajaratnam, S", etc.
-_SURNAME_FALLBACK_LOOKUP: dict[tuple[str, int], str] = {}
-
-
-def _get_surname_fallback_lookup() -> dict[tuple[str, int], str]:
-    global _SURNAME_FALLBACK_LOOKUP
-    if _SURNAME_FALLBACK_LOOKUP:
-        return _SURNAME_FALLBACK_LOOKUP
-    with Session(engine) as s:
-        mps = s.exec(select(Mp)).all()
-    counts: dict[tuple[str, int], int] = {}
-    entries: list[tuple[tuple[str, int], str]] = []
-    for mp in mps:
-        natural = _invert_to_natural(mp.name) or mp.name
-        words = _period_normalize(natural).split()
-        if not words:
-            continue
-        last = words[-1]
-        if len(last) < 2:
-            continue
-        key = (last, mp.parliament_number)
-        counts[key] = counts.get(key, 0) + 1
-        entries.append((key, mp.name))
-    for key, canonical in entries:
-        if counts[key] == 1:
-            _SURNAME_FALLBACK_LOOKUP[key] = canonical
-    return _SURNAME_FALLBACK_LOOKUP
-
-
-def infer_parliament(sitting: Sitting) -> int | None:
-    if sitting.parlement_no is not None:
-        return sitting.parlement_no
-    return VOLUME_TO_PARLIAMENT.get(sitting.volume_no)  # type: ignore[arg-type]
 
 
 def strip_title(text: str) -> str:
@@ -452,6 +237,150 @@ def strip_title(text: str) -> str:
                 break
         else:
             return text
+
+
+def infer_parliament(sitting: Sitting) -> int | None:
+    if sitting.parlement_no is not None:
+        return sitting.parlement_no
+    return VOLUME_TO_PARLIAMENT.get(sitting.volume_no)  # type: ignore[arg-type]
+
+
+@dataclass
+class MpLookups:
+    inverted: dict[tuple[str, int], str]
+    direct: dict[tuple[str, int], str]
+    bin_free: dict[tuple[str, int], str]
+    wordset: dict[tuple[frozenset, int, int], str]
+    prefix: dict[tuple[str, int], str]
+    surname_fallback: dict[tuple[str, int], str]
+
+
+def build_mp_lookups(mps: list[Mp]) -> MpLookups:
+    # Build direct: (period_normalized_name, parliament) -> canonical, only unambiguous keys.
+    direct: dict[tuple[str, int], str] = {}
+    counts: dict[tuple[str, int], int] = {}
+    entries: list[tuple[tuple[str, int], str]] = []
+    for mp in mps:
+        key = (_period_normalize(mp.name), mp.parliament_number)
+        counts[key] = counts.get(key, 0) + 1
+        entries.append((key, mp.name))
+    for key, canonical in entries:
+        if counts[key] == 1:
+            direct[key] = canonical
+
+    # Build bin_free: same as direct but with 'bin/binte' stripped.
+    # Excludes keys already covered by direct.
+    bin_free: dict[tuple[str, int], str] = {}
+    counts = {}
+    entries = []
+    for mp in mps:
+        key = (_period_normalize(_strip_bin(mp.name)), mp.parliament_number)
+        counts[key] = counts.get(key, 0) + 1
+        entries.append((key, mp.name))
+    for key, canonical in entries:
+        if counts[key] == 1 and key not in direct:
+            bin_free[key] = canonical
+
+    # Build inverted: natural form of "Surname, First" names -> canonical.
+    # Also covers multi-word surname-only keys and non-standard rearrangements.
+    inverted: dict[tuple[str, int], str] = {}
+    surname_only_counts: dict[tuple[str, int], int] = {}
+    inverted_entries: list[tuple[tuple[str, int], str]] = []
+    for mp in mps:
+        parl = mp.parliament_number
+        if ", " in mp.name:
+            natural_stripped = _invert_to_natural(mp.name)
+            key = (_normalize_for_lookup(natural_stripped), parl)
+            inverted[key] = mp.name
+            surname = mp.name.split(", ")[0]
+            surname_words = surname.split()
+            if len(surname_words) >= 2:
+                sk = (_normalize_for_lookup(surname), parl)
+                surname_only_counts[sk] = surname_only_counts.get(sk, 0) + 1
+                inverted_entries.append((sk, mp.name))
+        else:
+            words = mp.name.split()
+            if len(words) >= 3:
+                rearranged = f"{words[-1]} {' '.join(words[1:-1])} {words[0]}"
+                if rearranged != mp.name:
+                    rearranged_stripped = strip_title(rearranged).strip()
+                    rk = (_normalize_for_lookup(rearranged_stripped), parl)
+                    if rk not in inverted:
+                        inverted[rk] = mp.name
+    for sk, canonical in inverted_entries:
+        if surname_only_counts.get(sk, 0) == 1 and sk not in inverted:
+            inverted[sk] = canonical
+
+    # Build wordset: (frozenset_of_words, word_count, parliament) -> canonical.
+    # Handles name permutation mismatches. Only unambiguous keys stored.
+    wordset: dict[tuple[frozenset, int, int], str] = {}
+    triples: list[tuple[str, str, int]] = []
+    for mp in mps:
+        natural = _invert_to_natural(mp.name)
+        if natural:
+            triples.append((natural, mp.name, mp.parliament_number))
+        triples.append((mp.name, mp.name, mp.parliament_number))
+    counts_ws: dict[tuple[frozenset, int, int], int] = {}
+    entries_ws: list[tuple[tuple[frozenset, int, int], str]] = []
+    for display, canonical_mp_name, parl in triples:
+        words = _period_normalize(display).split()
+        key_ws: tuple[frozenset, int, int] = (frozenset(words), len(words), parl)
+        counts_ws[key_ws] = counts_ws.get(key_ws, 0) + 1
+        entries_ws.append((key_ws, canonical_mp_name))
+    for key_ws, canonical_mp_name in entries_ws:
+        if counts_ws[key_ws] == 1 and key_ws not in wordset:
+            wordset[key_ws] = canonical_mp_name
+
+    # Build prefix: (period_normalized_prefix, parliament) -> canonical.
+    # Handles "Bernard Chen" matching "Bernard Chen Tien Lap". Only unambiguous.
+    prefix: dict[tuple[str, int], str] = {}
+    forms: list[tuple[str, str, int]] = []
+    for mp in mps:
+        natural = _invert_to_natural(mp.name)
+        if natural:
+            forms.append((natural, mp.name, mp.parliament_number))
+        forms.append((mp.name, mp.name, mp.parliament_number))
+    counts_p: dict[tuple[str, int], int] = {}
+    entries_p: list[tuple[tuple[str, int], str]] = []
+    for display, canonical, parl in forms:
+        words = _period_normalize(display).split()
+        for n in range(2, len(words)):
+            pfx = " ".join(words[:n])
+            key_p = (pfx, parl)
+            counts_p[key_p] = counts_p.get(key_p, 0) + 1
+            entries_p.append((key_p, canonical))
+    for key_p, canonical in entries_p:
+        if counts_p[key_p] == 1 and key_p not in prefix:
+            prefix[key_p] = canonical
+
+    # Build surname_fallback: (last_word_of_natural_form, parliament) -> canonical.
+    # Only populated where that last word is unique within the parliament.
+    surname_fallback: dict[tuple[str, int], str] = {}
+    counts_sf: dict[tuple[str, int], int] = {}
+    entries_sf: list[tuple[tuple[str, int], str]] = []
+    for mp in mps:
+        natural = _invert_to_natural(mp.name) or mp.name
+        words = _period_normalize(natural).split()
+        if not words:
+            continue
+        last = words[-1]
+        if len(last) < 2:
+            continue
+        key_sf = (last, mp.parliament_number)
+        counts_sf[key_sf] = counts_sf.get(key_sf, 0) + 1
+        entries_sf.append((key_sf, mp.name))
+    for key_sf, canonical in entries_sf:
+        if counts_sf[key_sf] == 1:
+            surname_fallback[key_sf] = canonical
+
+    return MpLookups(
+        inverted=inverted,
+        direct=direct,
+        bin_free=bin_free,
+        wordset=wordset,
+        prefix=prefix,
+        surname_fallback=surname_fallback,
+    )
 
 
 def _parse_name_and_location(text: str) -> tuple[str, str | None]:
@@ -484,10 +413,8 @@ def _parse_name_and_location(text: str) -> tuple[str, str | None]:
             constituency = text[first_open + 1 : close_idx].strip()
             name_part = text[:first_open].rstrip(", ")
         else:
-            # No closing ')' — treat everything before '(' as the name and
-            # discard the partial parenthetical (incomplete constituency text).
             constituency = None
-            name_part = text[:first_open].rstrip(", ")
+            name_part = text
     else:
         constituency = None
         name_part = text
@@ -567,36 +494,30 @@ def _extract_section_lines(content: str, section: str) -> list[str]:
     return result
 
 
-def resolve_canonical_name(name: str, parliament: int) -> str | None:
+def resolve_canonical_name(name: str, parliament: int, lookups: MpLookups) -> str | None:
     """
     Try to match a name string to canonical Mp.name using the full lookup cascade.
     Returns canonical Mp.name if found, None if no match.
     Reusable by any module that needs MP name resolution.
     """
-    inverted = _get_inverted_lookup()
-    direct = _get_direct_lookup()
-    bin_free = _get_bin_free_lookup()
-    wordset = _get_wordset_lookup()
-    prefix = _get_prefix_lookup()
-
     canonical = _MANUAL_OVERRIDES.get((_period_normalize(name), parliament))
     if canonical:
         return canonical
-    canonical = inverted.get((_normalize_for_lookup(name), parliament))
+    canonical = lookups.inverted.get((_normalize_for_lookup(name), parliament))
     if canonical:
         return canonical
-    canonical = direct.get((_period_normalize(name), parliament))
+    canonical = lookups.direct.get((_period_normalize(name), parliament))
     if canonical:
         return canonical
     bin_key = (_period_normalize(_strip_bin(name)), parliament)
-    canonical = bin_free.get(bin_key) or direct.get(bin_key)
+    canonical = lookups.bin_free.get(bin_key) or lookups.direct.get(bin_key)
     if canonical:
         return canonical
     ws, wc = _wordset_key(name)
-    canonical = wordset.get((ws, wc, parliament))
+    canonical = lookups.wordset.get((ws, wc, parliament))
     if canonical:
         return canonical
-    canonical = prefix.get((_period_normalize(name), parliament))
+    canonical = lookups.prefix.get((_period_normalize(name), parliament))
     if canonical:
         return canonical
 
@@ -605,11 +526,11 @@ def resolve_canonical_name(name: str, parliament: int) -> str | None:
         sp = _period_normalize(spell)
         sp_bin = _period_normalize(_strip_bin(spell))
         canonical = (
-            direct.get((sp, parliament))
-            or bin_free.get((sp_bin, parliament))
-            or direct.get((sp_bin, parliament))
-            or wordset.get((*_wordset_key(spell), parliament))
-            or prefix.get((sp, parliament))
+            lookups.direct.get((sp, parliament))
+            or lookups.bin_free.get((sp_bin, parliament))
+            or lookups.direct.get((sp_bin, parliament))
+            or lookups.wordset.get((*_wordset_key(spell), parliament))
+            or lookups.prefix.get((sp, parliament))
         )
         if canonical:
             return canonical
@@ -619,10 +540,10 @@ def resolve_canonical_name(name: str, parliament: int) -> str | None:
         nh = _period_normalize(no_haji)
         nh_bin = _period_normalize(_strip_bin(no_haji))
         canonical = (
-            direct.get((nh, parliament))
-            or bin_free.get((nh_bin, parliament))
-            or direct.get((nh_bin, parliament))
-            or prefix.get((nh, parliament))
+            lookups.direct.get((nh, parliament))
+            or lookups.bin_free.get((nh_bin, parliament))
+            or lookups.direct.get((nh_bin, parliament))
+            or lookups.prefix.get((nh, parliament))
         )
         if canonical:
             return canonical
@@ -637,11 +558,11 @@ def resolve_canonical_name(name: str, parliament: int) -> str | None:
         sp2_bin = _period_normalize(_strip_bin(split_stripped))
         canonical = (
             _MANUAL_OVERRIDES.get((sp2, parliament))
-            or direct.get((sp2, parliament))
-            or bin_free.get((sp2_bin, parliament))
-            or direct.get((sp2_bin, parliament))
-            or wordset.get((*_wordset_key(split_stripped), parliament))
-            or prefix.get((sp2, parliament))
+            or lookups.direct.get((sp2, parliament))
+            or lookups.bin_free.get((sp2_bin, parliament))
+            or lookups.direct.get((sp2_bin, parliament))
+            or lookups.wordset.get((*_wordset_key(split_stripped), parliament))
+            or lookups.prefix.get((sp2, parliament))
         )
         if canonical:
             return canonical
@@ -650,11 +571,11 @@ def resolve_canonical_name(name: str, parliament: int) -> str | None:
     # last name in this parliament.  Only fires for unambiguous cases.
     words_pn = _period_normalize(name).split()
     if len(words_pn) == 1:
-        canonical = _get_surname_fallback_lookup().get((words_pn[0], parliament))
+        canonical = lookups.surname_fallback.get((words_pn[0], parliament))
     return canonical
 
 
-def get_sitting_attendance(sitting: Sitting) -> list[SittingAttendance]:
+def get_sitting_attendance(sitting: Sitting, lookups: MpLookups) -> list[SittingAttendance]:
     if not sitting.markdown_content:
         return []
 
@@ -672,7 +593,7 @@ def get_sitting_attendance(sitting: Sitting) -> list[SittingAttendance]:
                 continue
             name = normalize_name(name)
             if parliament is not None:
-                canonical = resolve_canonical_name(name, parliament)
+                canonical = resolve_canonical_name(name, parliament, lookups)
                 if canonical:
                     name = canonical
             records.append(SittingAttendance(
