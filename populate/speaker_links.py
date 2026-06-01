@@ -24,10 +24,6 @@ _NON_SPEAKERS = {
     "An hon. Member", "Some hon. Members", "Non-Residents",
     "Tributes by Leader of the House and Opposition Leaders",
 }
-_INNER_TITLE = re.compile(
-    r"^(?:Mr|Mrs|Dr|Miss|Ms|Mdm|Prof|Madam|Inche|Encik|Tuan Haji|Haji)\b"
-)
-
 
 def _resolve_with_parliament_fallback(
     name: str,
@@ -115,7 +111,7 @@ def _populate_speech_speaker_ids(
             paren_match = re.search(r"\s*\(([^)]+)\)\s*$", raw)
             if paren_match:
                 inner = paren_match.group(1).strip()
-                if _INNER_TITLE.match(inner):
+                if strip_title(inner) != inner:
                     raw = inner
                 else:
                     raw = raw[: paren_match.start()]
