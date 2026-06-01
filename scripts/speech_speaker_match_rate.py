@@ -11,12 +11,13 @@ speaker strings are printed to guide any follow-up curation.
 import random
 from collections import Counter, defaultdict
 
-from sqlalchemy import text
-from sqlmodel import select
+from sqlmodel import Session
 
-from database.init import engine, get_session
-from database.mp import Mp
+from crud.mp import CRUDMp
+from crud.speech import CRUDSpeech
+from database.init import engine
 from services.sitting_attendance import (
+    build_mp_lookups,
     normalize_name,
     resolve_canonical_name,
     strip_title,
@@ -32,23 +33,17 @@ _Row = tuple[str, str, int]
 
 def main():
     random.seed(SEED)
-    session = next(get_session())
 
-    # Build mp_id lookup: (canonical_name, parliament) → mp_id
+    with Session(engine) as session:
+        mps = CRUDMp(session).get_all()
+        all_rows: list[_Row] = CRUDSpeech(session).get_speakers_with_report_type()
+
     mp_id_lookup: dict[tuple[str, int], int] = {
         (mp.name, mp.parliament_number): mp.id
-        for mp in session.exec(select(Mp)).all()
+        for mp in mps
         if mp.id is not None
     }
-
-    # Query only the columns we need to avoid issues with columns not yet in DB.
-    with engine.connect() as conn:
-        result = conn.execute(text(
-            "SELECT s.speaker, r.report_type, r.parliament_number "
-            "FROM speech s JOIN report r ON r.id = s.report_id "
-            "WHERE s.speaker IS NOT NULL"
-        ))
-        all_rows: list[_Row] = [(row[0], row[1], row[2]) for row in result]
+    lookups = build_mp_lookups(mps)
 
     # Stratify by report_type
     by_type: dict[str, list[_Row]] = defaultdict(list)
@@ -68,7 +63,7 @@ def main():
     for speaker, report_type, parliament in sample:
         name = strip_title(speaker.rstrip(":").strip())
         name = normalize_name(name)
-        canonical = resolve_canonical_name(name, parliament) if name else None
+        canonical = resolve_canonical_name(name, parliament, lookups) if name else None
         found = canonical is not None and (canonical, parliament) in mp_id_lookup
 
         type_stats[report_type]["total"] += 1
