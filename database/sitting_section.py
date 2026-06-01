@@ -8,8 +8,8 @@ from sqlmodel import Field, SQLModel
 class SittingSection(SQLModel, table=True):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
-    id: int | None = Field(default=None, primary_key=True)
-    sitting_id: int | None = Field(default=None, foreign_key="handsardsittingdateresponse.id")
+    id: Optional[int] = Field(default=None, primary_key=True)
+    sitting_id: Optional[int] = Field(default=None, foreign_key="handsardsittingdateresponse.id")
 
     start_pg_no: Optional[int] = None
     end_pg_no: Optional[int] = None

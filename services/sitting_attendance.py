@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from typing import Optional
 
 from database.mp import Mp
 from database.sitting import Sitting
@@ -220,7 +221,7 @@ def _spelling_normalize(name: str) -> str:
     return re.sub(r"\s+", " ", normalized).strip()
 
 
-def _invert_to_natural(mp_name: str) -> str | None:
+def _invert_to_natural(mp_name: str) -> Optional[str]:
     """Convert 'Surname, Firstname[, TitleSuffix]' to natural 'Firstname Surname' form.
     Returns None if the name is not in inverted format."""
     if ", " not in mp_name:
@@ -248,7 +249,7 @@ def strip_title(text: str) -> str:
             return text
 
 
-def infer_parliament(sitting: Sitting) -> int | None:
+def infer_parliament(sitting: Sitting) -> Optional[int]:
     if sitting.parlement_no is not None:
         return sitting.parlement_no
     return VOLUME_TO_PARLIAMENT.get(sitting.volume_no)  # type: ignore[arg-type]
@@ -391,7 +392,7 @@ def build_mp_lookups(mps: list[Mp]) -> MpLookups:
     )
 
 
-def _parse_name_and_location(text: str) -> tuple[str, str | None]:
+def _parse_name_and_location(text: str) -> tuple[str, Optional[str]]:
     """
     Extract (mp_name, location_name) from text like:
       "Name, Honorifics (Constituency), Portfolio [possibly (more)]"
@@ -435,7 +436,7 @@ def _parse_name_and_location(text: str) -> tuple[str, str | None]:
     return name, constituency
 
 
-def _parse_speaker_line(line: str) -> tuple[str, str | None]:
+def _parse_speaker_line(line: str) -> tuple[str, Optional[str]]:
     """
     Parse SPEAKER lines: "[Title] SPEAKER ([Title] Name [(Constituency)]).".
     Extracts the name and constituency from within the outer parentheses.
@@ -450,7 +451,7 @@ def _parse_speaker_line(line: str) -> tuple[str, str | None]:
     return _parse_name_and_location(inner_stripped)
 
 
-def _parse_entry_line(line: str) -> tuple[str, str | None] | None:
+def _parse_entry_line(line: str) -> Optional[tuple[str, Optional[str]]]:
     line = line.strip()
     if not line:
         return None
@@ -507,7 +508,7 @@ def _try_name_variant(
     parliament: int,
     lookups: MpLookups,
     include_wordset: bool = True,
-) -> str | None:
+) -> Optional[str]:
     normalized = _period_normalize(name)
     bin_normalized = _period_normalize(_strip_bin(name))
     result = (
@@ -524,7 +525,7 @@ def _try_name_variant(
     return lookups.prefix.get((normalized, parliament))
 
 
-def resolve_canonical_name(name: str, parliament: int, lookups: MpLookups) -> str | None:
+def resolve_canonical_name(name: str, parliament: int, lookups: MpLookups) -> Optional[str]:
     """
     Try to match a name string to canonical Mp.name using the full lookup cascade.
     Returns canonical Mp.name if found, None if no match.
@@ -573,7 +574,7 @@ def resolve_canonical_name(name: str, parliament: int, lookups: MpLookups) -> st
     return None
 
 
-def resolve(name: str, parliament: int, lookups: MpLookups) -> str | None:
+def resolve(name: str, parliament: int, lookups: MpLookups) -> Optional[str]:
     return resolve_canonical_name(normalize_name(name), parliament, lookups)
 
 

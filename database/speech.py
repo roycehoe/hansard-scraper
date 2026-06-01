@@ -1,15 +1,17 @@
+from typing import Optional
+
 from sqlmodel import Field, Relationship, SQLModel
 
 from database.report import Report
 
 
 class Speech(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
 
     ordinal: int
-    speaker: str | None
+    speaker: Optional[str]
     transcript: str
 
-    report_id: int | None = Field(default=None, foreign_key="report.id")
+    report_id: Optional[int] = Field(default=None, foreign_key="report.id")
     report: Report = Relationship(back_populates="speeches")
-    mp_id: int | None = Field(default=None, foreign_key="mp.id")
+    mp_id: Optional[int] = Field(default=None, foreign_key="mp.id")

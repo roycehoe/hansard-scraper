@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlmodel import Session, select
 
 from database.handsard_sitting_date_response import HandsardSittingDateResponse
@@ -17,7 +19,7 @@ class CRUDHandsardSittingDateResponse:
     def get_all_sitting_dates(self) -> set[str]:
         return set(self.session.exec(select(HandsardSittingDateResponse.sitting_date)).all())
 
-    def get_by_sitting_date(self, sitting_date: str) -> HandsardSittingDateResponse | None:
+    def get_by_sitting_date(self, sitting_date: str) -> Optional[HandsardSittingDateResponse]:
         return self.session.exec(
             select(HandsardSittingDateResponse).where(HandsardSittingDateResponse.sitting_date == sitting_date)
         ).first()
