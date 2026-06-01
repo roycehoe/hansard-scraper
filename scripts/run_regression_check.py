@@ -34,6 +34,31 @@ _NON_SPEAKERS = {
     "An hon. Member", "Some hon. Members", "Non-Residents",
     "Tributes by Leader of the House and Opposition Leaders",
 }
+_PRESIDING_OFFICERS: dict[tuple[str, int], str] = {
+    ("SPEAKER", 0): "George Oehlers",
+    ("SPEAKER", 1): "George Oehlers",
+    ("SPEAKER", 2): "Coomaraswamy, P.",
+    ("SPEAKER", 3): "Yeoh Ghim Seng",
+    ("SPEAKER", 4): "Yeoh Ghim Seng",
+    ("SPEAKER", 5): "Yeoh Ghim Seng",
+    ("SPEAKER", 6): "Yeoh Ghim Seng",
+    ("DEPUTY SPEAKER", 6): "Tan Soo Khoon",
+    ("SPEAKER", 7): "Tan Soo Khoon",
+    ("SPEAKER", 8): "Tan Soo Khoon",
+    ("SPEAKER", 9): "Tan Soo Khoon",
+    ("SPEAKER", 10): "Abdullah Bin Tarmugi",
+    ("DEPUTY SPEAKER", 10): "Chew Heng Ching",
+    ("SPEAKER", 11): "Abdullah Bin Tarmugi",
+    ("SPEAKER", 12): "Michael Palmer",
+}
+
+
+def _get_presiding_officer_role(raw: str) -> str | None:
+    if raw in ("Mr Speaker", "Mdm Speaker"):
+        return "SPEAKER"
+    if raw.startswith("Mr Deputy Speaker") or raw.startswith("The Deputy Speaker"):
+        return "DEPUTY SPEAKER"
+    return None
 
 
 def _resolve(
@@ -101,6 +126,25 @@ def main() -> None:
         speaker, parliament = rows_by_id[speech_id]
         if not speaker:
             failed.append((speech_id, "<null speaker>", parliament, None))
+            continue
+
+        raw = speaker.rstrip(":").strip()
+        po_role = _get_presiding_officer_role(raw)
+        if po_role is not None:
+            po_parl = parliament if parliament != 0 else next(
+                (p for p in _COLONIAL_PARLIAMENT_FALLBACKS if (po_role, p) in _PRESIDING_OFFICERS),
+                parliament,
+            )
+            po_name = _PRESIDING_OFFICERS.get((po_role, po_parl))
+            if po_name:
+                po_canonical, po_resolved_parl = _resolve(po_name, po_parl, lookups, speaker_id_lookup)
+                po_sid = speaker_id_lookup.get((po_canonical, po_resolved_parl)) if po_canonical else None
+                if po_sid:
+                    passed += 1
+                else:
+                    failed.append((speech_id, speaker, parliament, po_canonical))
+            else:
+                failed.append((speech_id, speaker, parliament, None))
             continue
 
         name = _preprocess(speaker)
