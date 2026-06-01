@@ -30,6 +30,28 @@ VOLUME_TO_PARLIAMENT: dict[int, int] = {
 # Key: (period_normalized_extracted_name, parliament_number)
 # Value: canonical Mp.name
 _MANUAL_OVERRIDES: dict[tuple[str, int], str] = {
+    # Colonial-era variant spellings
+    # "D.S. Marshall" is David Marshall (Labour Front Chief Minister)
+    ("d s marshall", 1): "David Marshall",
+    # "G.E.N. Oehlers" is George E.N. Oehlers (Labour Front)
+    ("g e n oehlers", 1): "George Oehlers",
+    # "Rahamat" is a spelling variant of "Rahmat" (already in Mp table)
+    ("rahamat bin kenap", 1): "Rahmat Bin Kenap",
+    # OCR spelling variants of existing parliament-1 MPs
+    # "Koo Young" is "Koo Yong" (Barisan Sosialis)
+    ("koo young", 1): "Koo Yong",
+    # "Chew Chin Han" is "Chew Chin Harn" (People's Action Party)
+    ("chew chin han", 1): "Chew Chin Harn",
+    # Surname-only speech forms for colonial officials — all unique in parliament 1
+    ("hart", 1): "Hart, T.M.",
+    ("goode", 1): "Goode, W.A.C.",
+    ("butterfield", 1): "Butterfield, C.H.",
+    ("shanks", 1): "Shanks, E.P.",
+    ("david", 1): "David, E.B.",
+    ("sutherland", 1): "Sutherland, G.A.P.",
+    ("stewart", 1): "Stewart, S.T.",
+    ("davies", 1): "Davies, E.J.",
+    ("higham", 1): "Higham, J.D.",
     # Mp table has typo "Gahni" instead of "Ghani"
     ("ahmad khalis bin abdul ghani", 10): "Ahmad Khalis bin Abdul Gahni",
     # "B M M" is an abbreviation of "Bin Masagos Mohamad"
@@ -99,7 +121,7 @@ _TITLE_PREFIXES = [
     "Prof. ", "Prof ",
     "Maj. ", "Maj ",
     "Dr ", "Mr ", "Mrs ", "Miss ", "Ms ", "Mdm ", "Madam ",
-    "Inche ", "Encik ", "Sir ", "Dato ",
+    "Inche ", "Encik ", "Sir ", "Dato ", "Tun Dato ", "Tun ",
     "Asst Prof ", "Asst. Prof. ",
     "Tuan Haji ", "Haji ", "Hj. ", "Hj ",
     "Cdre ", "[NS] ", "(NS) ",
@@ -111,6 +133,17 @@ _HONORIFIC_SUFFIX_RE = re.compile(r"(?:,\s*[A-Z][A-Z.]*(?:\s+[A-Z][A-Z.]*)*)+$")
 
 # Islamic suffix like "Al-Haj", "Al-Hajj" that can follow the name after a space.
 _ISLAMIC_SUFFIX_RE = re.compile(r"\s+[Aa]l-[Hh]aj[jh]?\s*$")
+
+# Trailing official role suffix: ", Financial Secretary", ", Attorney-General", etc.
+# Applied before _HONORIFIC_SUFFIX_RE so that mixed-case role titles don't block
+# the all-caps honorific stripping (e.g. "Hart, C.M.G., Financial Secretary" →
+# strip role → "Hart, C.M.G." → strip honorific → "Hart").
+_OFFICIAL_ROLE_SUFFIX_RE = re.compile(
+    r",\s*(?:Acting\s+)?(?:Financial|Chief|Colonial)\s+Secretary"
+    r"|,\s*Attorney[-\s]General"
+    r"|,\s*(?:Acting\s+)?Governor\b",
+    re.I,
+)
 
 # Title suffixes that can appear at the end of inverted names: "Surname, Firstname, Dr".
 _INVERTED_TITLE_SUFFIXES = {"Dr", "Mdm", "Mr", "Mrs", "Ms", "Prof", "Assoc Prof", "RAdm", "BG"}
@@ -428,6 +461,7 @@ def _parse_name_and_location(text: str) -> tuple[str, str | None]:
         name_part = text
 
     name = strip_title(name_part.strip())
+    name = _OFFICIAL_ROLE_SUFFIX_RE.sub("", name).rstrip(", ").strip()
     name = _HONORIFIC_SUFFIX_RE.sub("", name).rstrip(", ").strip()
     # Strip trailing Islamic honorific suffix: "Rahmat Bin Kenap Al-Haj" -> "Rahmat Bin Kenap"
     name = _ISLAMIC_SUFFIX_RE.sub("", name).strip()
