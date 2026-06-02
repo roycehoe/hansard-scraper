@@ -226,6 +226,42 @@ in post-colonial Hansard volumes mapping to parl=3–6, where the fallback does 
 
 **Files changed:** `services/attendance.py`
 
-**Outcome:** PENDING — will launch after iter 5 scan completes
-- Candidates before: TBD (iter 5 after-count)
-- Candidates after: TBD
+**Outcome:** ADDED (via refactor — see architecture note below)
+- Candidates before: 194 distinct / 1,095 rows (iter 5 after-count)
+- Candidates after: 173 distinct / 977 rows
+- Rows resolved: 118 | Distinct names removed: 21
+
+Note: Iter 6 entries were committed as part of the _OCR_CORRECTIONS refactor rather
+than as a separate parliament-scoped iteration. The refactor also correctly resolved
+entries from iter 4/5 that had parliament gaps (since _OCR_CORRECTIONS fires at any
+parliament, not just the manually enumerated ones).
+
+---
+
+## Architecture Refactor — 2026-06-02
+
+### Replace parliament-scoped OCR entries with _OCR_CORRECTIONS dict
+
+**Change:** All OCR character-substitution overrides moved from parliament-scoped
+`_MANUAL_OVERRIDES` entries to a new parliament-agnostic `_OCR_CORRECTIONS` dict.
+Applied as a preprocessing step in `resolve_canonical_name` before the cascade.
+
+**Why:** OCR errors are scanner artifacts independent of parliament. Scoping them to
+specific parliament numbers encodes parliamentary history rather than the OCR error,
+and required manually enumerating every parliament a person served in.
+
+**Result:**
+- ~64 parliament-scoped entries → ~52 entries in `_OCR_CORRECTIONS`
+- `_MANUAL_OVERRIDES` now reserved for: surname disambiguation, inverted canonicals
+- Architecture documented in `docs/speech-speaker/pipeline-fix-loop.md`
+
+**Cumulative progress:**
+| After | Distinct | Rows | Resolved this step |
+|---|---|---|---|
+| Baseline (post-research-loop) | 221 | ~2,439 | — |
+| Iter 1 (Lai Tha Chai) | 219 | 1,412 | ~1,027 |
+| Iter 2 (Gob→Goh) | 217 | 1,394 | 18 |
+| Iter 3 (7 colonial OCR) | 209 | 1,173 | 221 |
+| Iter 4 (14 colonial parl=1) | 203 | 1,145 | 28 |
+| Iter 5 (supplementary parls) | 194 | 1,095 | 50 |
+| Refactor + iter 6 | **173** | **977** | **118** |
