@@ -95,6 +95,10 @@ _OCR_CORRECTIONS: dict[str, str] = {
     "lee yiok song": "Lee Yiok Seng",    # o→e
     "lee chiaw memg": "Lee Chiaw Meng",  # g→ng (truncated)
     "mg nam piau": "Ang Nam Piau",       # Mg→Ang
+    # parl=4–6 era OCR variants
+    "lou teik soon": "Lau Teik Soon",    # o→a (vol 39, parl=4)
+    "eugune yap giau cheng": "Eugene Yap Giau Cheng",  # u→e; cascade → inverted "Yap Giau Cheng, Eugene"
+    "yeo n ing hong": "Yeo Ning Hong",   # space-split 'Ning' (vol 45, parl=6)
 }
 
 # Manual overrides for names that cannot be resolved by general normalisation rules.
