@@ -58,6 +58,34 @@ _MANUAL_OVERRIDES: dict[tuple[str, int], str] = {
     ("haii rahmat bin kenap", 4): "Rahmat Bin Kenap",
     # "Rahmat bin Kensp" — "Kensp" for "Kenap"; vol 38 → parl=4
     ("rahmat bin kensp", 4): "Rahmat Bin Kenap",
+    # Colonial-era OCR single-char variants — all resolved at parl=1 (direct or via parl=0 fallback)
+    # "A. Rahim lshak" — lowercase 'l' for capital 'I' in "Ishak"
+    ("a rahim lshak", 1): "A. Rahim Ishak",
+    # "Jek Youn/Yuen Thong" — 'ou'/'ue' for 'eu' in "Yeun"
+    ("jek youn thong", 1): "Jek Yeun Thong",
+    ("jek yuen thong", 1): "Jek Yeun Thong",
+    # "Wee loon Boon" — lowercase 'l' for 'T' in "Toon"
+    ("wee loon boon", 1): "Wee Toon Boon",
+    # "Yaacoh Bin Mohamed" — 'h' for 'b' in "Yaacob"
+    ("yaacoh bin mohamed", 1): "Yaacob Bin Mohamed",
+    # "Toh Chih Chye" — 'h' for 'n' in "Chin"
+    ("toh chih chye", 1): "Toh Chin Chye",
+    # "Ng Kah Tins" — 's' for nothing / 'n' dropped in "Ting"
+    ("ng kah tins", 1): "Ng Kah Ting",
+    # "Ho Chong Choon" — 'o' for 'e' in "Cheng"
+    ("ho chong choon", 1): "Ho Cheng Choon",
+    # "Ho Kah Loong" — 'oo' for 'eo' in "Leong"
+    ("ho kah loong", 1): "Ho Kah Leong",
+    # "Lob Miaw Gong" — 'b' for 'h' in "Loh"
+    ("lob miaw gong", 1): "Loh Miaw Gong",
+    # "Sia Kat Hui" — 't' for 'h' in "Kah"
+    ("sia kat hui", 1): "Sia Kah Hui",
+    # "Buang Bin Omar Junied" — 'ie' for 'i' at end of "Junid"
+    ("buang bin omar junied", 1): "Buang Bin Omar Junid",
+    # "Wang Soon Fong" — 'a' for 'o' in "Wong"
+    ("wang soon fong", 1): "Wong Soon Fong",
+    # "Urn Cheng Lock" — 'U' for 'Li' in "Lim" (OCR of inverted letterform)
+    ("urn cheng lock", 1): "Lim Cheng Lock",
     # "Gob" → "Goh": OCR confusion of 'b' for 'h' in two colonial-era names
     # Goh Keng Swee: vols 13(parl=0→fb1), 25(parl=1), 27/30/31(parl=2), 33(parl=3)
     ("gob keng swee", 1): "Goh Keng Swee",

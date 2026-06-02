@@ -115,6 +115,41 @@ only, not attendance sections; skipped from this loop.
 
 **Files changed:** `services/attendance.py`
 
-**Outcome:** PENDING — verification scan running
+**Outcome:** ADDED
 - Candidates before: 217 distinct / 1,394 rows
+- Candidates after: 209 distinct / 1,173 rows
+- Rows resolved: 221 | Distinct names removed: 8
+
+---
+
+## Iteration 4 — 2026-06-02
+
+### Colonial-era OCR variants — all resolved at parl=1 via fallback
+
+**Fix type:** Manual override entries in `_MANUAL_OVERRIDES`
+
+**Candidates targeted (all appear in parl=0 sittings; parl=1 override fires via fallback):**
+| OCR form | Canonical | OCR error |
+|---|---|---|
+| `A. Rahim lshak` | `A. Rahim Ishak` | lowercase 'l' for 'I' |
+| `Jek Youn Thong` | `Jek Yeun Thong` | 'ou' for 'eu' |
+| `Jek Yuen Thong` | `Jek Yeun Thong` | 'ue' for 'eu' |
+| `Wee loon Boon` | `Wee Toon Boon` | lowercase 'l' for 'T' |
+| `Yaacoh Bin Mohamed` | `Yaacob Bin Mohamed` | 'h' for 'b' |
+| `Toh Chih Chye` | `Toh Chin Chye` | 'h' for 'n' |
+| `Ng Kah Tins` | `Ng Kah Ting` | 's' spurious suffix |
+| `Ho Chong Choon` | `Ho Cheng Choon` | 'o' for 'e' |
+| `Ho Kah Loong` | `Ho Kah Leong` | 'oo' for 'eo' |
+| `Lob Miaw Gong` | `Loh Miaw Gong` | 'b' for 'h' |
+| `Sia Kat Hui` | `Sia Kah Hui` | 't' for 'h' |
+| `Buang Bin Omar Junied` | `Buang Bin Omar Junid` | spurious 'e' |
+| `Wang Soon Fong` | `Wong Soon Fong` | 'a' for 'o' |
+| `Urn Cheng Lock` | `Lim Cheng Lock` | 'Urn' for 'Lim' |
+
+All canonicals confirmed in Speaker table at parl=1.
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** PENDING — verification scan running
+- Candidates before: 209 distinct / 1,173 rows
 - Candidates after: TBD
