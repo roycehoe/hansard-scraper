@@ -103,6 +103,26 @@ _OCR_CORRECTIONS: dict[str, str] = {
     "koh kam son": "Koh Lam Son",        # m→l (vol 50, parl=6)
     "rohan'bin kamis": "Rohan Bin Kamis",  # apostrophe for space (vols 38-44, parl=4-5)
     "p govindasamy": "P. Govindaswamy",  # amy→awamy; cascade → inverted "Govindaswamy, P." (parl=1-4)
+    "p govindaswarny": "P. Govindaswamy",  # rny→my variant
+    "n govindaswamy": "N. Govindasamy",  # extra 'w'; cascade → inverted "Govindasamy, N." (parl=2-4)
+    # Post-nominal P.B.m. with lowercase 'm' (parl=5-8)
+    "wong kwei cheong, p bm.": "Wong Kwei Cheong",
+    "tay eng soon, p bm.": "Tay Eng Soon",
+    # Character substitutions — colonial and early parliament era
+    "mohd ali bin aiwi": "Mohd Ali Bin Alwi",  # i→l in "Alwi" (parl=1)
+    "chiang hal ding": "Chiang Hai Ding",       # l→i (vols 30-32, parl=2-3)
+    "yeo loon chia": "Yeo Toon Chia",           # l→T (vols 34-36, parl=3-4)
+    "scab mui kok": "Seah Mui Kok",             # c→e, b→h (vols 32-33, parl=3)
+    "mg kok peng": "Ang Kok Peng",              # Mg→Ang (vol 33, parl=3)
+    "sidek bin sa niff": "Sidek Bin Saniff",    # space inserted in 'Saniff' (vols 42-45, parl=5-6)
+    # Space-split 'Ning' at a different position than iter 9
+    "yeo ni ng hong": "Yeo Ning Hong",          # 'Ni ng' split (cf. 'N ing' in iter 9)
+    # Trailing period on name (no post-nominal)
+    "francis thomas.": "Francis Thomas",
+    "john mammen.": "John Mammen",
+    # Ahmad Jabri prefix OCR variants not caught by existing "inche. ..." entry
+    "lnche ahmad jabri bin mohammad akib": "Ahmad Jabri Bin Mohammad Akib",  # l→I in 'Inche'
+    "inche, ahmad jabri bin mohammad akib": "Ahmad Jabri Bin Mohammad Akib",  # comma for period
 }
 
 # Manual overrides for names that cannot be resolved by general normalisation rules.
