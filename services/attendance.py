@@ -138,6 +138,33 @@ _OCR_CORRECTIONS: dict[str, str] = {
     "lau telk soon": "Lau Teik Soon",                # transposed l/k in 'Teik'
     # Post-nominal B.B.m. comma separator variant (cf. "ho see beng. b b m" with period)
     "ho see beng, b bm.": "Ho See Beng",
+    # Trailing paren from malformed constituency stripping
+    "r jumabhoy)": "Jumabhoy, R.",  # cascade → direct lookup "Jumabhoy, R." at parl=1
+    # Post-nominal B.B.M. with period separator on Yeoh Ghim Seng
+    "yeoh ghim seng. b b m": "Yeoh Ghim Seng",
+    "yeoh ghim seng, b b m, .j p": "Yeoh Ghim Seng",   # B.B.M., .J.P.
+    "yeoh ghim seng, b b m,. j p": "Yeoh Ghim Seng",   # B B M,. J.P. variant
+    # Character substitutions and space-inserted forms
+    "p selvedurai": "P. Selvadurai",     # e→a; cascade → inverted "Selvadurai, P."
+    "mold. ariff bin suradi": "Mohd Ariff Bin Suradi, Haji",  # Mold→Mohd
+    "ow chin. hock": "Ow Chin Hock",    # spurious period in name (parl=4-9)
+    "m k a jabba.r": "M K A Jabbar",    # period inserted in 'Jabbar' (parl=5)
+    "mah bow t2an": "Mah Bow Tan",      # '2' spuriously inserted (parl=7-8)
+    # Saidi Shariff OCR variants — cascade uses _strip_middle_haji to find "Saidi Shariff"
+    "said! haji shariff": "Saidi Haji Shariff",   # ! for 'i'
+    "saidi haii shariff": "Saidi Haji Shariff",   # Haii→Haji
+    # Role-appended name forms
+    "jek yeun thong minister for culture": "Jek Yeun Thong",
+    "goh keng swee minister of defence": "Goh Keng Swee",
+    "ahmad bin ibrahim (sembawang. minister for labour": "Ahmad Bin Ibrahim",
+    "lee kuan yew (tanjong pagan. prime minister": "Lee Kuan Yew",
+    # Post-nominal decorated forms for colonial officials
+    "george oehlers. o b e": "George Oehlers",
+    "george oehlers, (o b e": "George Oehlers",
+    "w a c goode. c m g": "W.A.C. Goode",  # cascade → inverted "Goode, W.A.C."
+    # Sha'ari Bin Tadin OCR variants
+    "sha'ari bin tedin": "Sha'ari Bin Tadin",  # e→a in 'Tadin'
+    "sh'ari bin tadin": "Sha'ari Bin Tadin",   # missing 'a' after Sh'
 }
 
 # Manual overrides for names that cannot be resolved by general normalisation rules.
