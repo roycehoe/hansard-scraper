@@ -598,8 +598,9 @@ def _parse_name_and_location(text: str) -> tuple[str, Optional[str]]:
             constituency = text[first_open + 1 : close_idx].strip()
             name_part = text[:first_open].rstrip(", ")
         else:
+            # No matching close paren — constituency is truncated; use text before "("
             constituency = None
-            name_part = text
+            name_part = text[:first_open].rstrip(", )")
     else:
         constituency = None
         name_part = text
