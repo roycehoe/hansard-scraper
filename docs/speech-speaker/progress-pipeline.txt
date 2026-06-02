@@ -185,6 +185,47 @@ in post-colonial Hansard volumes mapping to parl=3–6, where the fallback does 
 
 **Files changed:** `services/attendance.py`
 
-**Outcome:** PENDING — verification scan running after iter 4 scan completes
-- Candidates before: TBD (iter 4 after-count)
+**Outcome:** ADDED
+- Candidates before: 203 distinct / 1,145 rows
+- Candidates after: 194 distinct / 1,095 rows
+- Rows resolved: 50 | Distinct names removed: 9
+
+---
+
+## Iteration 6 — 2026-06-02
+
+### Remaining colonial-era OCR body variants and decorated name forms
+
+**Fix type:** Manual override entries in `_MANUAL_OVERRIDES`
+
+**Body OCR variants (JSON entries at parl=1):**
+| OCR form | Canonical | Error |
+|---|---|---|
+| `Sahorah Binte Ahmad` | `Sahorah Binte Ahmat` | 'd' for 't' |
+| `He Puay Choc.` | `Hoe Puay Choo` | 'He'→'Hoe', 'Choc'→'Choo' |
+| `Scow Peck Leng` | `Seow Peck Leng` | 'c' for 'e' |
+| `Tan Kb Gan` | `Tan Kia Gan` | 'Kb' for 'Kia' |
+| `Ahmed Bin Ibrahim` | `Ahmad Bin Ibrahim` | 'e' for 'a' |
+| `Sob Ghee Soon` | `Soh Ghee Soon` | 'b' for 'h' |
+| `Low For Tuck` | `Low Por Tuck` | 'F' for 'P' |
+| `Lim Yew Yock` | `Lim Yew Hock` | 'Y' for 'H' |
+| `Inche. Ahmad Jabri...` | `Ahmad Jabri Bin Mohammad Akib` | "Inche." prefix |
+| `S. Rajaratnarn/Rajaratam/Raiaratnam` | `Rajaratnam, S` | vowel/n OCR (parl=1-5) |
+
+**Decorated name forms (post-nominals; period after lowercase survives _period_normalize):**
+| Normalized key | Canonical |
+|---|---|
+| `lim kim san. d u t` | `Lim Kim San` |
+| `ho see beng. b b m` | `Ho See Beng` |
+| `lim yew hock. s m n` | `Lim Yew Hock` |
+| `thio chan bee. j p` | `Thio Chan Bee` |
+| `thio chan bee, j p` | `Thio Chan Bee` (comma variants) |
+| `r jumabhoy. c b e` | `Jumabhoy, R.` |
+| `abdul hamid bin haji jumat. p m n` | `Abdul Hamid Bin Haji Jumat` |
+| `ong piah teng. o b e` | `Ong Piah Teng` |
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** PENDING — will launch after iter 5 scan completes
+- Candidates before: TBD (iter 5 after-count)
 - Candidates after: TBD

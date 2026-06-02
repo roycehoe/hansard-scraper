@@ -25,91 +25,76 @@ VOLUME_TO_PARLIAMENT: dict[int, int] = {
     88: 12, 89: 12,
 }
 
+# Parliament-agnostic OCR corrections applied before the cascade.
+# Key: _period_normalize(ocr_form) → corrected name fed into the cascade.
+# Use this for character-substitution errors and post-nominal decorations — errors that
+# the same OCR scanner makes regardless of which parliament the sitting belongs to.
+# For genuinely parliament-specific fixes (surname disambiguation, inverted canonicals)
+# use _MANUAL_OVERRIDES below.
+_OCR_CORRECTIONS: dict[str, str] = {
+    # Character-substitution errors
+    "lai tha chai": "Lai Tai Chai",       # Tha→Tai (vols 32-51, parl=3-6)
+    "lai tha chia": "Lai Tai Chai",
+    "chin ham tong": "Chin Harn Tong",    # Ham→Harn
+    "lbrahim othman": "Ibrahim Othman",   # l→I (lowercase for capital)
+    "yong nyuk lm": "Yong Nyuk Lin",      # Lm→Lin (truncated)
+    "leong keng sung": "Leong Keng Seng", # u→e
+    "gob keng swee": "Goh Keng Swee",     # b→h
+    "gob chew chua": "Goh Chew Chua",
+    "a rahim lshak": "A. Rahim Ishak",    # l→I in "Ishak"
+    "jek youn thong": "Jek Yeun Thong",   # ou→eu
+    "jek yuen thong": "Jek Yeun Thong",   # ue→eu
+    "wee loon boon": "Wee Toon Boon",     # l→T (lowercase for uppercase)
+    "wee toon. boon": "Wee Toon Boon",    # spurious period after "Toon"
+    "yaacoh bin mohamed": "Yaacob Bin Mohamed",  # h→b
+    "toh chih chye": "Toh Chin Chye",     # h→n
+    "ng kah tins": "Ng Kah Ting",         # s→g (spurious suffix)
+    "ho chong choon": "Ho Cheng Choon",   # o→e
+    "ho kah loong": "Ho Kah Leong",       # oo→eo
+    "lob miaw gong": "Loh Miaw Gong",     # b→h
+    "sia kat hui": "Sia Kah Hui",         # t→h
+    "buang bin omar junied": "Buang Bin Omar Junid",  # spurious 'e'
+    "wang soon fong": "Wong Soon Fong",   # a→o
+    "urn cheng lock": "Lim Cheng Lock",   # Urn→Lim
+    "sahorah binte ahmad": "Sahorah Binte Ahmat",  # d→t
+    "he puay choc.": "Hoe Puay Choo",    # He→Hoe, Choc→Choo
+    "scow peck leng": "Seow Peck Leng",  # c→e
+    "tan kb gan": "Tan Kia Gan",          # Kb→Kia
+    "ahmed bin ibrahim": "Ahmad Bin Ibrahim",  # e→a
+    "sob ghee soon": "Soh Ghee Soon",    # b→h
+    "low for tuck": "Low Por Tuck",      # F→P
+    "lim yew yock": "Lim Yew Hock",     # Y→H
+    # Rahmat Bin Kenap: suffix/prefix OCR corruption
+    "rahmat bin kenap a1-haj": "Rahmat Bin Kenap",  # A1→Al (digit 1 for l)
+    "haii rahmat bin kenap": "Rahmat Bin Kenap",    # Haii prefix = OCR of "Haji"
+    "rahmat bin kensp": "Rahmat Bin Kenap",          # Kensp→Kenap
+    # S. Rajaratnam OCR variants → corrected form hits the ("s rajaratnam", p) override
+    "s rajaratnarn": "S. Rajaratnam",
+    "s rajaratam": "S. Rajaratnam",
+    "s raiaratnam": "S. Rajaratnam",
+    # OCR-corrupted prefix not caught by strip_title (period after lowercase letter)
+    "inche. ahmad jabri bin mohammad akib": "Ahmad Jabri Bin Mohammad Akib",
+    # Post-nominal decorations: _period_normalize expands uppercase initials (D.U.T.→d u t)
+    # and preserves trailing periods after lowercase letters (San.→san.)
+    "lim kim san. d u t": "Lim Kim San",
+    "ho see beng. b b m": "Ho See Beng",
+    "lim yew hock. s m n": "Lim Yew Hock",
+    "thio chan bee. j p": "Thio Chan Bee",
+    "thio chan bee, .j p": "Thio Chan Bee",
+    "thio chan bee, j p": "Thio Chan Bee",
+    "thio chan bee, j.p.": "Thio Chan Bee",  # lowercase j.p. survives as-is
+    "r jumabhoy. c b e": "Jumabhoy, R.",
+    "abdul hamid bin haji jumat. p m n": "Abdul Hamid Bin Haji Jumat",
+    "ong piah teng. o b e": "Ong Piah Teng",
+}
+
 # Manual overrides for names that cannot be resolved by general normalisation rules.
 # Key: (period_normalized_extracted_name, parliament_number)
 # Value: canonical Speaker.name
+# Use for: (a) surname-only forms where parliament is needed for disambiguation,
+# (b) inverted-format canonicals the cascade can't reach without explicit mapping.
+# Do NOT use for OCR character substitutions — those belong in _OCR_CORRECTIONS above.
 _MANUAL_OVERRIDES: dict[tuple[str, int], str] = {
-    # Post-independence OCR variants (parl=3-6, volumes 32-51)
-    # "Lai Tha Chai" / "Lai Tha Chia" are OCR of "Lai Tai Chai" (Henderson, elected 1972);
-    # confirmed in volumes 32-51 which map to parl=3-6 exactly.
-    ("lai tha chai", 3): "Lai Tai Chai",
-    ("lai tha chai", 4): "Lai Tai Chai",
-    ("lai tha chai", 5): "Lai Tai Chai",
-    ("lai tha chai", 6): "Lai Tai Chai",
-    ("lai tha chia", 3): "Lai Tai Chai",
-    ("lai tha chia", 4): "Lai Tai Chai",
-    ("lai tha chia", 5): "Lai Tai Chai",
-    ("lai tha chia", 6): "Lai Tai Chai",
-    # OCR single-character corruption: post-colonial and colonial name variants
-    # "Chin Ham Tong" is "Chin Harn Tong" (PAP); vols 32-39 → parl=3,4
-    ("chin ham tong", 3): "Chin Harn Tong",
-    ("chin ham tong", 4): "Chin Harn Tong",
-    # "lbrahim Othman" — lowercase 'l' for capital 'I'; vols 45-46 → parl=6
-    ("lbrahim othman", 6): "Ibrahim Othman",
-    # "Yong Nyuk Lm" — truncated "Lin"; vol 14 → parl=0(fb1), vol 32 → parl=3
-    ("yong nyuk lm", 1): "Yong Nyuk Lin",
-    ("yong nyuk lm", 3): "Yong Nyuk Lin",
-    # "Leong Keng Sung" — 'u' for 'e'; vols 15,19 → parl=0(fb1)
-    ("leong keng sung", 1): "Leong Keng Seng",
-    # Rahmat Bin Kenap variants: OCR suffix corruption and prefix confusion
-    # "A1-Haj" is OCR of "Al-Haj" (digit 1 for letter l); vols 32-34 → parl=3
-    ("rahmat bin kenap a1-haj", 3): "Rahmat Bin Kenap",
-    # "Haii Rahmat bin Kenap" — "Haii" prefix is OCR of "Haji"; vols 36,39 → parl=4
-    ("haii rahmat bin kenap", 4): "Rahmat Bin Kenap",
-    # "Rahmat bin Kensp" — "Kensp" for "Kenap"; vol 38 → parl=4
-    ("rahmat bin kensp", 4): "Rahmat Bin Kenap",
-    # Colonial-era OCR single-char variants — parl=1 covers colonial (direct + parl=0 fallback);
-    # additional parliament entries cover the same OCR form in post-colonial volumes.
-    # "A. Rahim lshak" — lowercase 'l' for capital 'I' in "Ishak"; vols 36(p4), 41-44(p5)
-    ("a rahim lshak", 1): "A. Rahim Ishak",
-    ("a rahim lshak", 4): "A. Rahim Ishak",
-    ("a rahim lshak", 5): "A. Rahim Ishak",
-    # "Jek Youn Thong" — vols 38(p4), 40(p5)
-    ("jek youn thong", 1): "Jek Yeun Thong",
-    ("jek youn thong", 4): "Jek Yeun Thong",
-    ("jek youn thong", 5): "Jek Yeun Thong",
-    # "Jek Yuen Thong" — vols 6/13-25(p0-1), 32(p3), 39(p4), 47(p6)
-    ("jek yuen thong", 1): "Jek Yeun Thong",
-    ("jek yuen thong", 3): "Jek Yeun Thong",
-    ("jek yuen thong", 4): "Jek Yeun Thong",
-    ("jek yuen thong", 6): "Jek Yeun Thong",
-    # "Wee loon Boon" — vol 34(p3)
-    ("wee loon boon", 1): "Wee Toon Boon",
-    ("wee loon boon", 3): "Wee Toon Boon",
-    # "Wee Toon. Boon" — vol 28(p2); period after lowercase 'n' survives _period_normalize
-    ("wee toon. boon", 2): "Wee Toon Boon",
-    # "Yaacoh Bin Mohamed" — vols 13/17(p0), 25(p1)
-    ("yaacoh bin mohamed", 1): "Yaacob Bin Mohamed",
-    # "Toh Chih Chye" — vol 44(p5)
-    ("toh chih chye", 1): "Toh Chin Chye",
-    ("toh chih chye", 5): "Toh Chin Chye",
-    # "Ng Kah Tins" — vol 23(p0 → fb1)
-    ("ng kah tins", 1): "Ng Kah Ting",
-    # "Ho Chong Choon" — vol 37(p4)
-    ("ho chong choon", 1): "Ho Cheng Choon",
-    ("ho chong choon", 4): "Ho Cheng Choon",
-    # "Ho Kah Loong" — vols 39(p4), 41/44(p5)
-    ("ho kah loong", 1): "Ho Kah Leong",
-    ("ho kah loong", 4): "Ho Kah Leong",
-    ("ho kah loong", 5): "Ho Kah Leong",
-    # "Lob Miaw Gong" — vol 22(p0 → fb1)
-    ("lob miaw gong", 1): "Loh Miaw Gong",
-    # "Sia Kat Hui" — vol 33(p3)
-    ("sia kat hui", 1): "Sia Kah Hui",
-    ("sia kat hui", 3): "Sia Kah Hui",
-    # "Buang Bin Omar Junied" — vol 26(p1)
-    ("buang bin omar junied", 1): "Buang Bin Omar Junid",
-    # "Wang Soon Fong" — vols 19/21(p0 → fb1), 25(p1)
-    ("wang soon fong", 1): "Wong Soon Fong",
-    # "Urn Cheng Lock" — vol 17(p0 → fb1)
-    ("urn cheng lock", 1): "Lim Cheng Lock",
-    # "Gob" → "Goh": OCR confusion of 'b' for 'h' in two colonial-era names
-    # Goh Keng Swee: vols 13(parl=0→fb1), 25(parl=1), 27/30/31(parl=2), 33(parl=3)
-    ("gob keng swee", 1): "Goh Keng Swee",
-    ("gob keng swee", 2): "Goh Keng Swee",
-    ("gob keng swee", 3): "Goh Keng Swee",
-    # Goh Chew Chua: vols 2/4(parl=1), 12/16(parl=0→fb1)
-    ("gob chew chua", 1): "Goh Chew Chua",
     # Colonial-era variant spellings
     # "D.S. Marshall" is David Marshall (Labour Front Chief Minister)
     ("d s marshall", 1): "David Marshall",
@@ -647,6 +632,10 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
     Returns canonical Speaker.name if found, None if no match.
     Reusable by any module that needs MP name resolution.
     """
+    # Apply parliament-agnostic OCR corrections before any parliament-scoped lookup.
+    corrected = _OCR_CORRECTIONS.get(_period_normalize(name))
+    if corrected:
+        name = corrected
     canonical = _MANUAL_OVERRIDES.get((_period_normalize(name), parliament))
     if canonical:
         return canonical
