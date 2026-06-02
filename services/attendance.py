@@ -86,6 +86,15 @@ _OCR_CORRECTIONS: dict[str, str] = {
     "r jumabhoy. c b e": "Jumabhoy, R.",
     "abdul hamid bin haji jumat. p m n": "Abdul Hamid Bin Haji Jumat",
     "ong piah teng. o b e": "Ong Piah Teng",
+    "tan eng liang. b b m": "Tan Eng Liang",  # B.B.M. post-nominal
+    # Character-substitution errors — parl=3–5 era names
+    "yeo choc kok": "Yeo Choo Kok",      # c→o
+    "yoo choo kok": "Yeo Choo Kok",      # oo→eo in first syllable
+    "chai chong vii": "Chai Chong Yii",  # V→Y
+    "ivan batist": "Ivan Baptist",        # truncated 'Baptist'
+    "lee yiok song": "Lee Yiok Seng",    # o→e
+    "lee chiaw memg": "Lee Chiaw Meng",  # g→ng (truncated)
+    "mg nam piau": "Ang Nam Piau",       # Mg→Ang
 }
 
 # Manual overrides for names that cannot be resolved by general normalisation rules.
