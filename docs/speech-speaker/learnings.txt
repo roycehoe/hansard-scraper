@@ -2,6 +2,38 @@
 
 ---
 
+## Session 2026-06-02 — Pipeline fix loop architecture
+
+### OCR corrections should be parliament-agnostic, not parliament-scoped
+
+**Rule:** When the same OCR scanner misreads a character (e.g. 'b' for 'h', 'l' for 'I'),
+that error occurs regardless of which parliament the sitting belongs to. Scoping the fix
+to specific parliament numbers (e.g. `("jek yuen thong", 1)`, `("jek yuen thong", 3)`,
+`("jek yuen thong", 4)`) is wrong: it encodes the person's parliamentary history instead
+of the OCR error, and requires manual enumeration of every parliament they served in.
+
+**Why it matters:** The existing `_MANUAL_OVERRIDES` keyed by `(name, parliament)` is
+correct for genuinely parliament-specific fixes (disambiguation of surname-only forms
+where the same surname appears in multiple parliaments). It is wrong for OCR character
+substitutions where the error is independent of parliament.
+
+**Correct architecture:** A separate `_OCR_CORRECTIONS: dict[str, str]` dict keyed by
+`_period_normalize(ocr_form)` → corrected name. Applied as a preprocessing step in
+`resolve_canonical_name` BEFORE the parliament-scoped cascade. The corrected form then
+passes through the cascade normally, which handles parliament-specific lookup.
+
+**What stays parliament-scoped in `_MANUAL_OVERRIDES`:**
+- Surname-only forms: `("barker", 1): "Barker, E.W."` — parliament needed to disambiguate
+- Inverted-format canonicals the cascade can't reach: `("s rajaratnam", 1): "Rajaratnam, S"`
+- Specific structural overrides that are inherently parliament-tied
+
+**What moves to `_OCR_CORRECTIONS`:**
+- Any single-character substitution error (b↔h, l↔I, Yuen↔Yeun, etc.)
+- Post-nominal decorations (J.P., D.U.T.) appended to an otherwise-correct name
+- OCR-corrupted prefix forms (Inche., Haii, A1-Haj)
+
+---
+
 ## Session 2026-06-02 — Research loop Setup: ceiling reached
 
 ### Research loop findings
