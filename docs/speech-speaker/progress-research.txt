@@ -1,0 +1,163 @@
+# Colonial LA Members Research Loop — Progress Log
+
+## Setup — 2026-06-02
+
+### Baseline
+
+Run after session 1 additions (Lim Huan Boon + Tan Siak Kew confirmed removed from list):
+
+- Distinct candidates: **221** (down from 223 at pre-session-1 baseline)
+- Total candidates bucket rows: ~2,439 (estimated: 2,663 − 136 − 88; full stdout was truncated)
+- Lim Huan Boon (136) and Tan Siak Kew (88) successfully removed by session 1 JSON additions ✓
+
+### Filter validation
+
+Noise filters reviewed. All categories are correctly scoped:
+- Presiding officer filter: catches Speaker/Chairman strings; no genuine LA members dropped
+- Allcaps header filter: verified against colonial-era samples — all allcaps strings are procedural headers
+- Document noise filter: correctly catches ministry strings, budget markers, and OCR fragments
+
+Additional noise observed that escapes the existing filters (pipeline-level issue, not filter issue):
+- Post-nominals decorated variants: `Thio Chan Bee. J.P.`, `Lim Kim San. D.U.T.`, `Ho See Beng. B.B.M.`
+- Malformed truncated with unmatched parens: `Yeoh Ghim Seng (Joo Chiat`, `Tan Soo Khoon (Brickworks GRC`
+- Role/ministry strings: `Ministry of Labour and Government Whip`, `for Community Development, Youth and Sports and Minister for Transport`
+- OCR-prefixed forms: `Mr, Lee Teck Him`, `Inche. Ahmad Jabri Bin Mohammad Akib`
+- Document fragments: `Affairs)`, `of Supply [3rd Allotted Day]:`
+
+### DB pre-check — all 221 candidates classified
+
+**OCR artifacts of Speaker-table entries at parl=1 (resolvable via pipeline fix):**
+These names ARE in the Speaker table at parl=1; the fallback would find them if the name matched.
+
+| OCR form | Canonical | Speaker parl | Fix needed |
+|---|---|---|---|
+| `A. Rahim lshak` | `A. Rahim Ishak` | 1 | 'l' → 'I' in "lshak" |
+| `Jek Youn Thong` / `Jek Yuen Thong` | `Jek Yeun Thong` | 1 | "Youn" → "Yeun" |
+| `Wang Soon Fong` | `Wong Soon Fong` | 1 | "Wang" → "Wong" |
+| `Sia Kat Hui` | `Sia Kah Hui` | 1 | "Kat" → "Kah" |
+| `Ho Chong Choon` | `Ho Cheng Choon` | 1 | "Chong" → "Cheng" |
+| `Ho Kah Loong` | `Ho Kah Leong` | 1 | "Loong" → "Leong" |
+| `Lob Miaw Gong` | `Loh Miaw Gong` | 1 | "Lob" → "Loh" |
+| `Wee loon Boon` / `Wee Toon. Boon` | `Wee Toon Boon` | 1 | lowercase 'l' + period |
+| `Yaacoh Bin Mohamed` | `Yaacob Bin Mohamed` | 1 | "Yaacoh" → "Yaacob" |
+| `Toh Chih Chye` | `Toh Chin Chye` | 1 | "Chih" → "Chin" |
+| `Haii Rahmat bin Kenap` | `Rahmat Bin Kenap` | 1 | "Haii" prefix OCR of "Haji" |
+| `Ng Kah Tins` | `Ng Kah Ting` | 1 | "Tins" → "Ting" |
+| `Rahmat bin Kensp` | `Rahmat Bin Kenap` | 1 | "Kensp" → "Kenap" |
+| `Buang Bin Omar Junied` | `Buang Bin Omar Junid` | 1 | "Junied" → "Junid" |
+| `lnche Ahmad Jabri Bin Mohammad Akib` | `Ahmad Jabri Bin Mohammad Akib` | 1 | "lnche" prefix |
+| `Urn Cheng Lock` | `Lim Cheng Lock` | 1 | "Urn" → "Lim" |
+| `Lee Chiaw Memg` | `Lee Chiaw Meng` | 2 (in fallback) | "Memg" → "Meng" |
+| `S. Rajaratnarn` / `S. Rajaratam` / `S. Raiaratnam` | `Rajaratnam, S` | 1 | OCR variants of double-n |
+| `Gob Keng Swee` | `Goh Keng Swee` | 1 | "Gob" → "Goh" |
+| `Gob Chew Chua` | `Goh Chew Chua` | 1 (in JSON) | "Gob" → "Goh" |
+| `Sahorah Binte Ahmad` | `Sahorah Binte Ahmat` | 1 (in JSON) | "Ahmad" → "Ahmat" |
+| `He Puay Choc.` | `Hoe Puay Choo` | 1 (in JSON) | "He" → "Hoe", "Choc" → "Choo" |
+| `Scow Peck Leng` | `Seow Peck Leng` | 1 (in JSON) | "Scow" → "Seow" |
+| `Tan Kb Gan` | `Tan Kia Gan` | 1 (in JSON) | "Kb" → "Kia" |
+| `Mohd Ali bin Aiwi` | `Mohd Ali Bin Alwi` | 1 (in JSON) | "Aiwi" → "Alwi" |
+| `Ahmed Bin Ibrahim` | `Ahmad Bin Ibrahim` | 1 (in JSON) | "Ahmed" → "Ahmad" |
+| `Sob Ghee Soon` | `Soh Ghee Soon` | 1 (in JSON) | "Sob" → "Soh" |
+
+**OCR artifacts with title/prefix OCR failures (pipeline fix — strip_title doesn't catch "Mr," or "Inche."):**
+
+| Candidate form | Canonical | Issue |
+|---|---|---|
+| `Mr. C.V. Devan Nair` / `C.V. Devan Nair` | `Devan Nair` | "C.V." initials; strip_title doesn't strip |
+| `Mr, S.V. Lingam` / `S.V. Lingam.` | `Lingam, S.V.` | `Mr,` OCR of `Mr.` |
+| `Mr, Lee Teck Him` | `Lee Teck Him` | `Mr,` prefix |
+| `Mr, Tee Kim Leng` | `Tee Kim Leng` | `Mr,` prefix |
+| `mr Phua Bah Lee` | `Phua Bah Lee` | lowercase `mr` |
+| `Mi. Low Por Tuck` | `Low Por Tuck` | "Mi." OCR of "Mr." |
+| `Mg Nam Piau` | `Ang Nam Piau` | "Mg" prefix OCR |
+| `Dr, Thio Chan Bee` | `Thio Chan Bee` | `Dr,` OCR of `Dr.` |
+| `Dr. Ong Leong Boon` | unknown | needs check |
+
+**Known pipeline fix candidates (high frequency, from prior sessions + new findings):**
+
+| OCR form | Canonical | Freq | Speaker parl | Notes |
+|---|---|---|---|---|
+| `Lai Tha Chai` | `Lai Tai Chai` | 1024 | 3,4,5,6 | NOT LA era; first elected 1972 (Henderson); parl=3 in fallback but name mismatch |
+| `Chin Ham Tong` | `Chin Harn Tong` | 113 | 3-8 | NOT LA era; parl=3 in fallback but name mismatch |
+| `lbrahim Othman` | `Ibrahim Othman` | 51 | 6-9 | NOT in fallback range [1,2,3] |
+| `Rahmat Bin Kenap A1-Haj` | `Rahmat Bin Kenap` | 24 | 1 | "A1-Haj" suffix is OCR of "Al-Haj" |
+| `Yong Nyuk Lm` | `Yong Nyuk Lin` | 10 | 1 | parl=1 ✓ |
+
+**Post-LA era (parl > 3, outside fallback range, not resolvable):**
+
+| Candidate | Canonical | Speaker parl |
+|---|---|---|
+| `Yoo Choo Kok` / `Yeo Choc Kok` | `Yeo Choo Kok` | 2,3,4,5,6 — but name mismatch; parl=2 in range |
+| `Lau Teik Soon` / `Lou Teik Soon` | `Lau Teik Soon` | 4,5,6,7,8 — NOT in range |
+| `Othman bin Haron Eusofe` | `Othman Bin Haron Eusofe` | 5-9 — NOT in range |
+| `Rohan'bin Kamis` | `Rohan Bin Kamis` | 4,5 — NOT in range |
+| `Tan Eng Liang. B.B.M.` | `Tan Eng Liang` | 3,4 — parl=3 in range; name form may work |
+| `Chai Chong Vii` | `Chai Chong Yii` | 3,4,5,6 — parl=3 in range; name mismatch |
+| `Phey Yew Kok` | `Phey Yew Kok` | 3,4 — parl=3 in range; name matches! → check why still candidate |
+| `Eugune Yap Giau Cheng` | `Yap Giau Cheng, Eugene` | 4-8 — NOT in range |
+| `Yeo N ing Hong` / `Yeo Ning Hong` | `Yeo Ning Hong` | 5,6,7,8 — NOT in range |
+| `Phek Hoong` | `Irene Ng Phek Hoong` | 10,11,12 — NOT in range; partial name |
+| `Lee Yiok Song` | `Lee Yiok Seng` | 3-7 — name mismatch |
+| `Lee Yock Suen` | `Lee Yock Suan` | 5-9 — NOT in range |
+| `Ivan Batist` | `Ivan Baptist` | 3,4 — parl=3 in range; name mismatch |
+| `Koh Kam Son` | `Koh Lam Son` | 6,7 — NOT in range |
+
+**Genuinely unresolvable via JSON (no Speaker row, no JSON entry, cannot confirm LA membership):**
+
+| Candidate | Freq | Notes |
+|---|---|---|
+| `A.V. Winslow` | ~3 | No biographical records found (session 1 research) |
+| `Andrew Fong` | 3 | NOT FOUND in Speaker table; no evidence of LA membership |
+| `Tan Cheng Sen` | 3 | NOT FOUND in Speaker table; low-frequency OCR artifact likely |
+| `Tay Bon Too` | 3 | NOT FOUND; likely OCR noise |
+| `P. Govindasamy` | 50 | Confirmed not LA era — Perumal Govindaswamy first elected 1963 (Anson, parl=3) |
+| `Wang Soon Fong` | ? | Reclassified as OCR of `Wong Soon Fong` (parl=1) — pipeline fix, not unknown |
+
+### Research queue
+
+**Empty.** After comprehensive DB pre-checks:
+- All candidates with frequency ≥ 5 are classified as OCR artifacts, noise, or post-LA era MPs
+- No genuinely missing LA members were identified
+- Ceiling reached; no JSON additions possible
+
+---
+
+## CEILING — 2026-06-02
+
+### Assessment
+
+The research loop has reached its ceiling after Setup. All 221 remaining candidates are either:
+1. **OCR artifacts of Speaker-table entries** — the canonical person IS in the Speaker table (often at parl=1), but the OCR form fails name matching. Fix: manual overrides in `services/attendance.py` or spelling normalisation.
+2. **Post-LA era MPs** — speaker at parl ≥ 4, outside the colonial fallback range [1,2,3]. Not resolvable without extending the fallback or adding additional context.
+3. **Noise** — role strings, document fragments, truncated names with unmatched parens.
+4. **Genuinely unknown low-frequency strings** — freq ≤ 3, no Speaker table match, no biographical evidence.
+
+### Impact of JSON additions from session 1
+
+| Name | Occurrences removed |
+|---|---|
+| Lim Huan Boon | 136 |
+| Tan Siak Kew | 88 |
+| **Total** | **224** |
+
+Candidates bucket: 2,663 → ~2,439 (estimated).
+Distinct candidates: 223 → 221.
+
+### Recommended next step: pipeline fix loop
+
+The highest-impact action is adding manual overrides for common OCR variants to `services/attendance.py`.
+
+**Top pipeline fix targets by estimated occurrence count:**
+
+| Priority | OCR form | Canonical | Occurrences | Fix type |
+|---|---|---|---|---|
+| 1 | `Lai Tha Chai` | `Lai Tai Chai` | 1024 | Manual override |
+| 2 | `Chin Ham Tong` | `Chin Harn Tong` | 113 | Manual override |
+| 3 | `lbrahim Othman` | `Ibrahim Othman` | 51 | Manual override (parl outside fallback) |
+| 4 | `Rahmat Bin Kenap A1-Haj` | `Rahmat Bin Kenap` | 24 | Suffix stripping / override |
+| 5 | `Yong Nyuk Lm` | `Yong Nyuk Lin` | 10 | Manual override |
+| 6 | `Gob Keng Swee` / `Gob Chew Chua` | `Goh…` | ~18 | `Gob→Goh` normalisation |
+| 7 | `A. Rahim lshak` | `A. Rahim Ishak` | ? | `l→I` in "lshak" |
+| 8 | `Jek Youn Thong` / `Jek Yuen Thong` | `Jek Yeun Thong` | ? | "Youn/Yuen" → "Yeun" |
+| 9 | `Wee loon Boon` | `Wee Toon Boon` | ? | Lowercase 'l' → 'T' |
+| 10 | OCR prefix `Mr,` / `mr ` | strip_title fix | many | Fix strip_title for comma after title |

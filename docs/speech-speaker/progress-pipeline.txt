@@ -1,0 +1,44 @@
+# Colonial LA Attendance — Pipeline Fix Loop Progress Log
+
+Fixes OCR artifacts in sitting attendance names that block resolution against existing
+Speaker table entries. Each iteration targets one fix type. Tracked against
+`find_unmatched_attendees.py --verbose` candidates bucket.
+
+Baseline (after research loop session 1, before any pipeline fixes):
+- Distinct candidates: 221
+- Total candidate rows: ~2,439 (estimated; stdout truncated — exact count pending)
+
+---
+
+## Iteration 1 — 2026-06-02
+
+### OCR variant "Tha"/"Chia" for "Tai"/"Chai" in Lai Tai Chai
+
+**Fix type:** Manual override entries in `_MANUAL_OVERRIDES`
+
+**Candidates targeted:**
+- `Lai Tha Chai` — volumes 32–51, total ~1,033 sitting-markdown occurrences, parl=3–6
+- `Lai Tha Chia` — volume 50 only, 3 occurrences, parl=6
+
+**Evidence:** `Lai Tai Chai` (PAP, Henderson) is in Speaker table at parliament_number=3,4,5,6.
+Confirmed first elected 1972. Volume range 32–51 maps exactly to parl=3–6 in VOLUME_TO_PARLIAMENT.
+No occurrences in volumes 12–23 (colonial era). Override is a correct attribution.
+
+**Overrides added to `services/attendance.py`:**
+```python
+("lai tha chai", 3): "Lai Tai Chai",
+("lai tha chai", 4): "Lai Tai Chai",
+("lai tha chai", 5): "Lai Tai Chai",
+("lai tha chai", 6): "Lai Tai Chai",
+("lai tha chia", 3): "Lai Tai Chai",
+("lai tha chia", 4): "Lai Tai Chai",
+("lai tha chia", 5): "Lai Tai Chai",
+("lai tha chia", 6): "Lai Tai Chai",
+```
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** ADDED
+- Candidates before: 221 distinct / ~2,439 rows (estimated; baseline stdout was truncated)
+- Candidates after: 219 distinct / 1,412 rows
+- Rows resolved: ~1,027 (Lai Tha Chai ×~1,024 + Lai Tha Chia ×3)

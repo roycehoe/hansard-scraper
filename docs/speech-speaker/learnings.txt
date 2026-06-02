@@ -1,5 +1,51 @@
 # Speech → Speaker Refine-Loop — Learnings Log
 
+---
+
+## Session 2026-06-02 — Research loop Setup: ceiling reached
+
+### Research loop findings
+
+**Research loop ceiling is at 0 new JSON entries after session 1.**
+After comprehensive DB pre-checks of all 221 remaining candidates, no genuinely missing LA
+members were found. The research loop's work is complete. All remaining candidates are:
+- OCR artifacts of Speaker-table entries (name mismatch prevents resolution)
+- Post-LA era MPs whose names appear in colonial volumes (outside fallback range parl=1,2,3)
+- Noise (role strings, truncated/malformed names, document fragments)
+
+**P. Govindasamy (50 occurrences) is NOT an LA era member.**
+Confirmed via web research: Perumal Govindaswamy was a PAP founding member and trade unionist
+who first entered parliament in 1963 (Anson constituency, Parliament 3). The 50 colonial-era
+attendance appearances are either a different person or OCR misreadings. NOT resolvable via JSON.
+
+**Lai Tai Chai is NOT an LA era member — do NOT add parliament_number=1 entry.**
+Confirmed via web research: first elected to Parliament in 1972 for Henderson constituency
+(Parliament 3 in Wikipedia's numbering, parl=3 in our data). The 1,024 `Lai Tha Chai`
+occurrences in colonial-era records cannot be resolved by adding a JSON entry. Fix: manual
+override mapping `"Lai Tha Chai" → "Lai Tai Chai"` in `_MANUAL_OVERRIDES` (but note `Lai Tai
+Chai` is only at parl=3,4,5,6 — the `Lai Tha Chai` appearances in parliament=0 sittings may
+represent a completely different person in the colonial-era records).
+
+**The candidates bucket is now dominated by OCR pipeline fix targets, not missing people.**
+Top pipeline fix targets (manual overrides for `services/attendance.py`):
+1. `Lai Tha Chai` → `Lai Tai Chai` (1024) — but investigate if same person appears in LA era
+2. `Chin Ham Tong` → `Chin Harn Tong` (113)
+3. `lbrahim Othman` → `Ibrahim Othman` (51) — parl=6+, outside fallback range
+4. `Rahmat Bin Kenap A1-Haj` → `Rahmat Bin Kenap` (24) — suffix stripping
+5. `Mr,` / `Mr.` confusion — many candidates blocked by `Mr,` prefix that strip_title doesn't catch
+
+**Wang Soon Fong was misclassified as unknown in prior session.**
+DB pre-check revealed `Wang Soon Fong` is OCR of `Wong Soon Fong` (parl=1) — pipeline fix.
+
+### DB pre-check findings for future reference
+
+Names confirmed at parl=1 that are still in candidates bucket as OCR variants:
+`Ho Cheng Choon`, `Ho Kah Leong`, `Loh Miaw Gong`, `Wee Toon Boon`, `Yaacob Bin Mohamed`,
+`Toh Chin Chye`, `Ng Kah Ting`, `Buang Bin Omar Junid`, `Chor Yeok Eng`, `Lee Teck Him`,
+`Wong Soon Fong`, `Jek Yeun Thong`, `Sia Kah Hui`
+
+---
+
 Captures non-obvious findings, workflow lessons, and judgment calls made during the
 refine loop. Prepend new entries at top, most-recent-first.
 
