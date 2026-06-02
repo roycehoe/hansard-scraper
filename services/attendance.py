@@ -29,6 +29,17 @@ VOLUME_TO_PARLIAMENT: dict[int, int] = {
 # Key: (period_normalized_extracted_name, parliament_number)
 # Value: canonical Speaker.name
 _MANUAL_OVERRIDES: dict[tuple[str, int], str] = {
+    # Post-independence OCR variants (parl=3-6, volumes 32-51)
+    # "Lai Tha Chai" / "Lai Tha Chia" are OCR of "Lai Tai Chai" (Henderson, elected 1972);
+    # confirmed in volumes 32-51 which map to parl=3-6 exactly.
+    ("lai tha chai", 3): "Lai Tai Chai",
+    ("lai tha chai", 4): "Lai Tai Chai",
+    ("lai tha chai", 5): "Lai Tai Chai",
+    ("lai tha chai", 6): "Lai Tai Chai",
+    ("lai tha chia", 3): "Lai Tai Chai",
+    ("lai tha chia", 4): "Lai Tai Chai",
+    ("lai tha chia", 5): "Lai Tai Chai",
+    ("lai tha chia", 6): "Lai Tai Chai",
     # Colonial-era variant spellings
     # "D.S. Marshall" is David Marshall (Labour Front Chief Minister)
     ("d s marshall", 1): "David Marshall",
