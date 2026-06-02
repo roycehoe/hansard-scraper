@@ -40,6 +40,24 @@ _MANUAL_OVERRIDES: dict[tuple[str, int], str] = {
     ("lai tha chia", 4): "Lai Tai Chai",
     ("lai tha chia", 5): "Lai Tai Chai",
     ("lai tha chia", 6): "Lai Tai Chai",
+    # OCR single-character corruption: post-colonial and colonial name variants
+    # "Chin Ham Tong" is "Chin Harn Tong" (PAP); vols 32-39 → parl=3,4
+    ("chin ham tong", 3): "Chin Harn Tong",
+    ("chin ham tong", 4): "Chin Harn Tong",
+    # "lbrahim Othman" — lowercase 'l' for capital 'I'; vols 45-46 → parl=6
+    ("lbrahim othman", 6): "Ibrahim Othman",
+    # "Yong Nyuk Lm" — truncated "Lin"; vol 14 → parl=0(fb1), vol 32 → parl=3
+    ("yong nyuk lm", 1): "Yong Nyuk Lin",
+    ("yong nyuk lm", 3): "Yong Nyuk Lin",
+    # "Leong Keng Sung" — 'u' for 'e'; vols 15,19 → parl=0(fb1)
+    ("leong keng sung", 1): "Leong Keng Seng",
+    # Rahmat Bin Kenap variants: OCR suffix corruption and prefix confusion
+    # "A1-Haj" is OCR of "Al-Haj" (digit 1 for letter l); vols 32-34 → parl=3
+    ("rahmat bin kenap a1-haj", 3): "Rahmat Bin Kenap",
+    # "Haii Rahmat bin Kenap" — "Haii" prefix is OCR of "Haji"; vols 36,39 → parl=4
+    ("haii rahmat bin kenap", 4): "Rahmat Bin Kenap",
+    # "Rahmat bin Kensp" — "Kensp" for "Kenap"; vol 38 → parl=4
+    ("rahmat bin kensp", 4): "Rahmat Bin Kenap",
     # "Gob" → "Goh": OCR confusion of 'b' for 'h' in two colonial-era names
     # Goh Keng Swee: vols 13(parl=0→fb1), 25(parl=1), 27/30/31(parl=2), 33(parl=3)
     ("gob keng swee", 1): "Goh Keng Swee",
