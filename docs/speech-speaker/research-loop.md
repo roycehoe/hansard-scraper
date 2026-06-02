@@ -19,6 +19,11 @@ The project uses a remote PostgreSQL database; `DATABASE_URL` is loaded from `.e
 `find_unmatched_attendees.py --verbose` scans all sittings and takes ~6 minutes.
 Run it in the background; do not block a synthesis agent on it.
 
+When fanning out research to sub-agents, use **3 agents** (Haiku model). Run the DB
+pre-check inline before spawning — it eliminates most candidates cheaply and avoids
+burning agent overhead on names that already resolve. Use Sonnet only for the synthesis
+step (combining results, writing files, running the loader).
+
 ---
 
 # Before Starting — Resume Check
@@ -29,8 +34,11 @@ Before beginning Setup or any loop iteration, load existing artifacts:
 - `docs/speech-speaker/progress-research.txt` — iteration log; read to determine which iteration the loop is on and what was last attempted.
 - `docs/speech-speaker/learnings.txt` — session notes capturing non-obvious findings and workflow lessons; read before investigating any failures.
 
-**Do not re-run Setup if `progress-research.txt` exists.** Resume from the last
-incomplete step. If the file is absent, treat as iteration 0.
+Handle partial artifact states as follows:
+- All three present (`progress-research.txt`, `colonial_la_members.json`, and the candidate JSON from `--json`) → skip Setup entirely; resume from the last incomplete step in `progress-research.txt`.
+- `progress-research.txt` absent → treat as iteration 0; run Setup from Step 1.
+- `progress-research.txt` present but `colonial_la_members.json` missing → flag as an integrity issue before proceeding. A missing JSON means all prior Speaker inserts may be absent from the DB. Check the Speaker table directly before re-running the loader.
+- `progress-research.txt` present but the candidate JSON stale or missing → re-run `find_unmatched_attendees.py` to regenerate it; do not re-run full Setup.
 
 ---
 
@@ -122,16 +130,26 @@ PYTHONPATH=. poetry run python3 scripts/find_unmatched_attendees.py \
 Record the `candidates` bucket count and distinct name count in
 `docs/speech-speaker/progress-research.txt` under `## Setup — Baseline`.
 
-**Step 2 — Filter and classify.**
+**Step 2 — Validate the noise filters.**
+
+Before classifying candidates, verify that `find_unmatched_attendees.py`'s built-in noise filters are correctly scoped for this corpus. For each category, inspect 3–5 candidates that were *excluded* and confirm they are genuinely noise:
+
+- **Presiding officer filter**: check that no genuine LA members are dropped because their name begins with a presiding-officer prefix.
+- **Allcaps header filter**: colonial-era OCR frequently renders names in allcaps — confirm that 3–5 allcaps-excluded strings are headers, not member names.
+- **Document noise filter**: confirm that 3–5 excluded strings are not role or ministry strings that double as legitimate attendance entries.
+
+If any filter is too broad or too narrow, adjust it in `find_unmatched_attendees.py`, regenerate the candidate list, and record findings in `progress-research.txt` under `## Setup — Filter validation` before proceeding.
+
+**Step 3 — Filter and classify.**
 
 Load `/tmp/la_candidates.json`. Remove:
 1. Names already in `data/colonial_la_members.json` (exact match)
-2. OCR variants of existing JSON entries (compare first token or Levenshtein distance ≤ 2)
+2. OCR variants of existing JSON entries: if the first whitespace-delimited token of the candidate name matches the first token of any existing JSON entry (case-insensitive), flag as a likely OCR variant and confirm manually before researching further
 3. Role/ministry strings (contain no plausible person name tokens)
 4. Malformed truncated names (unmatched parentheses)
 5. Decorated variants of existing JSON entries (post-nominals: `.J.P.`, `.B.B.M.`, `.S.M.N.`)
 
-**Step 3 — DB pre-check.**
+**Step 4 — DB pre-check.**
 
 For each remaining candidate, run a targeted Speaker table lookup:
 
@@ -149,7 +167,7 @@ EOF
 A match at `parliament_number` 1, 2, or 3 means the fallback will find this person.
 Mark as `already_resolved` — no JSON entry needed. Record in `progress-research.txt`.
 
-**Step 4 — Rank the research queue.**
+**Step 5 — Rank the research queue.**
 Sort remaining candidates by frequency (descending). These are the only names worth
 researching. Write the ranked list to `progress-research.txt` under `## Setup — Research queue`.
 
@@ -170,7 +188,12 @@ For each name:
 
 1. **Web-search:** `"<name>" Singapore Legislative Assembly` and `"<name>" Singapore Infopedia`
 2. **Confirm:** was this person an elected or nominated LA member (not a visitor, clerk,
-   or official without a seat)?
+   or official without a seat)? Minimum evidence: explicit identification as an LA member
+   in at least one of — Singapore Infopedia, parliament.gov.sg, or a published academic
+   or government source on the LA. Appearing in a news article, being mentioned in a
+   Hansard debate, or being associated with a government ministry is not sufficient. If
+   the only source is ambiguous ("attended a session", "associated with the Assembly"),
+   log as unconfirmable.
 3. **If confirmed:** produce a JSON entry. Use the name form that matches how the person
    appears in Hansard (check Attendance table if unsure):
    ```python
@@ -237,9 +260,14 @@ Run the scout in the background and wait for the notification:
 PYTHONPATH=. poetry run python3 scripts/find_unmatched_attendees.py --verbose
 ```
 
-Record the new `candidates` bucket count in the iteration log. If the count did not
-decrease (e.g. all candidates this iteration were unconfirmable), that is expected —
-log it as `SKIPPED` and continue to the next iteration.
+Record the new `candidates` bucket count in the iteration log.
+
+If the count did not decrease after adding confirmed entries (not merely unconfirmable ones), do not log as complete and move on — investigate first:
+1. Query the `Attendance` table for the candidate name to confirm the exact `speaker_name` form used in the DB.
+2. Compare it against the `name` field in `colonial_la_members.json` (case, spelling, ordering).
+3. Correct the JSON entry if the form doesn't match, re-run the loader, and re-check the bucket before closing the iteration.
+
+If the count did not decrease because all candidates this iteration were unconfirmable, that is expected — log it as `SKIPPED` and continue.
 
 **Step 6 — Check completion.**
 Stop and report when any of the following is true:
