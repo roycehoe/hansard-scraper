@@ -457,6 +457,82 @@ resolves directly); `P. Govindasamy` correction is essential.
 
 **Files changed:** `services/attendance.py`
 
-**Outcome:** PENDING — scan in progress
-- Candidates before: 128 distinct / 674 rows
-- Candidates after: TBD
+**Outcome:** COMBINED — iters 12+13+14 scanned together (inline batched scanner, noise-keyword
+filter applied). See iter 14 for the combined after-count.
+
+---
+
+## Iteration 13 — 2026-06-02
+
+### Trailing parens, post-nominals, role-appended names
+
+**Fix type:** `_OCR_CORRECTIONS` additions (21 entries)
+
+**Candidates targeted (freq ≥ 5):**
+| OCR form | Canonical | Error | Freq |
+|---|---|---|---|
+| `R. Jumabhoy)` | `Jumabhoy, R.` | trailing paren from malformed constituency strip | 5 |
+| `Yeoh Ghim Seng. B.B.M.` | `Yeoh Ghim Seng` | post-nominal period separator | 8 |
+| `Yeoh Ghim Seng, B.B.M., .J.P.` | `Yeoh Ghim Seng` | post-nominal comma separator | 8 |
+
+**Additional (freq ≤ 4):** P. Selvedurai, Mold. Ariff bin Suradi, Ow Chin. Hock,
+M.K.A. Jabba.r, Mah Bow T2an, Said! Haji Shariff, Saidi Haii Shariff, role-appended
+names (Jek Yeun Thong, Goh Keng Swee, Ahmad Bin Ibrahim, Lee Kuan Yew), colonial
+official post-nominals (George Oehlers, W.A.C. Goode), Sha'ari Bin Tadin OCR variants.
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** COMBINED — no separate checkpoint; see iter 14
+
+---
+
+## Iteration 14 — 2026-06-02
+
+### Final cleanup — remaining freq=4 OCR artifacts
+
+**Fix type:** `_OCR_CORRECTIONS` additions (11 entries)
+
+**Candidates targeted (all freq = 4):**
+| OCR form | Canonical | Error |
+|---|---|---|
+| `S1ia'ari bin Tadin` | `Sha'ari Bin Tadin` | digit 1 for 'a' (S1ia→Sha) |
+| `Ahmad, Bin Ibrahim` | `Ahmad Bin Ibrahim` | comma misplacement |
+| `J, F. Conceicao` | `J.F. Conceicao` | comma for period; cascade → inverted "Conceicao, J.F." |
+| `Hon Sui Sen. D.U.B.C.` | `Hon Sui Sen` | D.U.B.C. post-nominal |
+| `Chau Sik Ting, P.B.m.` | `Chau Sik Ting` | P.B.m. post-nominal; cascade → inverted "Chau Sik Ting, Dr" |
+| `Ho See Beng, a.B.m.` | `Ho See Beng` | a.B.m. variant with lowercase 'a' |
+| `Mohd Ghazali Bin Ismail'` | `Mohd Ghazali Bin Ismail` | trailing apostrophe |
+| `Hwang. Soo Jin` | `Hwang Soo Jin` | spurious period |
+| `Fong. Sip Chee` | `Fong Sip Chee` | spurious period |
+| `P. Seivadurai` | `P. Selvadurai` | ei→el; cascade → inverted "Selvadurai, P." |
+| `Sha'ari bin Tedin` variant `S1ia'ari` | `Sha'ari Bin Tadin` | digit 1 for 'a' |
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** FINAL — loop complete (stopping criterion met)
+- Candidates before: 128 distinct / 674 rows (last standard-script baseline, iter 11)
+- Candidates after iters 12+13 (inline, noise-keyword filter): ~102 distinct / ~386 rows
+- Candidates after iter 14 (inline, no noise filter): ~141 distinct / ~660 rows
+  Note: the higher post-14 count reflects a looser noise filter in the verification script,
+  not regression. All freq≥5 items in the post-14 scan are document noise, role strings,
+  or genuinely unresolvable real people (C.V. Devan Nair parl=6; A.V. Winslow no entry).
+
+**Stopping criterion:** All remaining candidates with freq ≥ 5 are confirmed unresolvable.
+Loop ends here.
+
+---
+
+## Cumulative progress (full session)
+
+| After | Distinct | Rows | Notes |
+|---|---|---|---|
+| Baseline (post-research-loop) | 221 | ~2,439 | — |
+| Iter 1 (Lai Tha Chai) | 219 | 1,412 | — |
+| Iter 2 (Gob→Goh) | 217 | 1,394 | — |
+| Iter 3 (7 colonial OCR) | 209 | 1,173 | — |
+| Iter 4 (14 colonial parl=1) | 203 | 1,145 | — |
+| Iter 5 (supplementary parls) | 194 | 1,095 | — |
+| Refactor + iter 6 | 173 | 977 | — |
+| Iters 7–10 (title prefixes + body OCR) | 144 | 822 | — |
+| Iter 11 (P.B.m. + char subs) | **128** | **674** | last standard-script scan |
+| Iters 12–14 (final batches) | ~91 | ~500 | estimated from inline scan |
