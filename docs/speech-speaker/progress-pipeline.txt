@@ -75,3 +75,46 @@ No occurrences in volumes 12–23 (colonial era). Override is a correct attribut
 - Candidates after: 217 distinct / 1,394 rows
 - Rows resolved: 18 (lower than markdown-scan estimate of ~32; many occurrences are in
   speech text rather than attendance sections, so they don't appear in the attendance scan)
+
+---
+
+## Iteration 3 — 2026-06-02
+
+### OCR single-character corruption: remaining high-frequency name variants
+
+**Fix type:** Manual override entries in `_MANUAL_OVERRIDES`
+
+**Candidates targeted:**
+| OCR form | Canonical | Volumes → parl | Markdown occurrences |
+|---|---|---|---|
+| `Chin Ham Tong` | `Chin Harn Tong` | 32-39 → 3,4 | ~128 |
+| `lbrahim Othman` | `Ibrahim Othman` | 45-46 → 6 | ~55 |
+| `Yong Nyuk Lm` | `Yong Nyuk Lin` | 14→0(fb1), 32→3 | ~10 |
+| `Leong Keng Sung` | `Leong Keng Seng` | 15,19 → 0(fb1) | ~7 |
+| `Rahmat Bin Kenap A1-Haj` | `Rahmat Bin Kenap` | 32-34 → 3 | ~28 |
+| `Haii Rahmat bin Kenap` | `Rahmat Bin Kenap` | 36,39 → 4 | ~10 |
+| `Rahmat bin Kensp` | `Rahmat Bin Kenap` | 38 → 4 | ~5 |
+
+Note: `Mohd Ali Bin Aiwi` has 0 sitting-markdown occurrences — appears in speech records
+only, not attendance sections; skipped from this loop.
+
+**Evidence:** All canonicals confirmed in Speaker table at stated parliament numbers.
+
+**Overrides added to `services/attendance.py`:**
+```python
+("chin ham tong", 3): "Chin Harn Tong",
+("chin ham tong", 4): "Chin Harn Tong",
+("lbrahim othman", 6): "Ibrahim Othman",
+("yong nyuk lm", 1): "Yong Nyuk Lin",
+("yong nyuk lm", 3): "Yong Nyuk Lin",
+("leong keng sung", 1): "Leong Keng Seng",
+("rahmat bin kenap a1-haj", 3): "Rahmat Bin Kenap",
+("haii rahmat bin kenap", 4): "Rahmat Bin Kenap",
+("rahmat bin kensp", 4): "Rahmat Bin Kenap",
+```
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** PENDING — verification scan running
+- Candidates before: 217 distinct / 1,394 rows
+- Candidates after: TBD
