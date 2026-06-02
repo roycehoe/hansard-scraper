@@ -1,4 +1,4 @@
-from sqlmodel import Session, select, update
+from sqlmodel import Session, delete, select, update
 
 from database.report import Report
 from database.speech import Speech
@@ -48,6 +48,11 @@ class CRUDSpeech:
                 Report.parliament_number == parliament_number,
             )
         ).all())
+
+    def delete_by_report_id(self, report_id: int) -> int:
+        result = self.session.exec(delete(Speech).where(Speech.report_id == report_id))
+        self.session.commit()
+        return result.rowcount
 
     def set_speaker_id(self, speech_id: int, speaker_id: int) -> None:
         self.session.exec(update(Speech).where(Speech.id == speech_id).values(speaker_id=speaker_id))
