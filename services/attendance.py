@@ -123,6 +123,21 @@ _OCR_CORRECTIONS: dict[str, str] = {
     # Ahmad Jabri prefix OCR variants not caught by existing "inche. ..." entry
     "lnche ahmad jabri bin mohammad akib": "Ahmad Jabri Bin Mohammad Akib",  # l→I in 'Inche'
     "inche, ahmad jabri bin mohammad akib": "Ahmad Jabri Bin Mohammad Akib",  # comma for period
+    # Role-appended colonial official names (parl=0/1 era)
+    "oon khye kiang. financial secretary": "Oon Khye Kiang",
+    "t m hart, c m g financial secretary": "T.M. Hart",  # cascade → inverted "Hart, T.M."
+    # Character substitutions — parl=2–6 era
+    "sidek bin siniff": "Sidek Bin Saniff",          # i→a (cf. iter 11 'Sa niff' form)
+    "yea choo kok": "Yeo Choo Kok",                  # a→e
+    "goh ghok tong": "Goh Chok Tong",                # Gh→Ch
+    "hwang soo tin": "Hwang Soo Jin",                # t→j
+    "othmah bin haron eusofe": "Othman Bin Haron Eusofe",  # h→n
+    "s joyakumar": "S Jayakumar",                    # o→a
+    "tsy eng soon": "Tay Eng Soon",                  # Ts→Ta
+    "lea kuan yew": "Lee Kuan Yew",                  # a→e
+    "lau telk soon": "Lau Teik Soon",                # transposed l/k in 'Teik'
+    # Post-nominal B.B.m. comma separator variant (cf. "ho see beng. b b m" with period)
+    "ho see beng, b bm.": "Ho See Beng",
 }
 
 # Manual overrides for names that cannot be resolved by general normalisation rules.
