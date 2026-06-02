@@ -185,7 +185,7 @@ _TITLE_PREFIXES = [
     "BG ", "MG ",
     "Prof. ", "Prof ",
     "Maj. ", "Maj ",
-    "Dr ", "Mr ", "Mrs ", "Miss ", "Ms ", "Mdm ", "Madam ",
+    "Dr. ", "Dr, ", "Mr. ", "Mr, ", "Mi. ", "mr ", "Dr ", "Mr ", "Mrs ", "Miss ", "Ms ", "Mdm ", "Madam ",
     "Inche ", "Encik ", "Sir ", "Dato ", "Tun Dato ", "Tun ",
     "Asst Prof ", "Asst. Prof. ",
     "Tuan Haji ", "Haji ", "Hj. ", "Hj ",
