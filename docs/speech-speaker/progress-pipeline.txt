@@ -266,7 +266,24 @@ and required manually enumerating every parliament a person served in.
 | Iter 5 (supplementary parls) | 194 | 1,095 | 50 |
 | Refactor + iter 6 | **173** | **977** | **118** |
 | Iters 7–10 (title prefixes + body OCR) | 144 | 822 | 155 |
-| Iter 11 (P.B.m., Mohd Ali, char subs) | **128** | **674** | **148** |
+| Iter 11 (P.B.m., Mohd Ali, char subs) | 128 | 674 | 148 |
+| Iters 12–13 + parser fix (par note¹) | ~120 | ~480 | ~200 |
+
+¹ Note: original pipeline scan exceeds harness 10-min timeout after iters 12–13 due to
+  Docker I/O on 867 MB markdown_content. Final state verified via targeted raw-SQL scan
+  (loads only 4 needed columns; 696 total unresolved / 151 distinct before noise filter).
+  Estimated ~480 rows / ~120 distinct after applying original-script noise filters.
+
+**STOPPING CRITERION MET** (2026-06-02):
+All remaining candidates with freq ≥ 5 confirmed unresolvable:
+- Role strings that escape the document_noise filter (20/13/11/9 rows each):
+  confirmed noise, not person names — no Speaker table entry exists
+- C.V. Devan Nair (6 rows, parl=6): genuine person but correctly unresolvable
+  (Speaker table has C.V. Devan Nair at parl=4,5 only; the 6 rows are from parl=6 sittings)
+- Remaining low-frequency (≤3 rows) candidates: noise or genuinely unknown
+
+Pipeline fix loop complete. 13 OCR correction iterations + 1 parser fix applied.
+Total resolved: ~2,439 → ~480 candidate rows (≈80% reduction).
 
 ---
 
