@@ -42,3 +42,36 @@ No occurrences in volumes 12–23 (colonial era). Override is a correct attribut
 - Candidates before: 221 distinct / ~2,439 rows (estimated; baseline stdout was truncated)
 - Candidates after: 219 distinct / 1,412 rows
 - Rows resolved: ~1,027 (Lai Tha Chai ×~1,024 + Lai Tha Chia ×3)
+
+---
+
+## Iteration 2 — 2026-06-02
+
+### OCR "Gob" → "Goh": 'b' confused for 'h' in two colonial names
+
+**Fix type:** Manual override entries in `_MANUAL_OVERRIDES`
+
+**Candidates targeted:**
+- `Gob Keng Swee` — volumes 13,25,27,30,31,33 → parl=0(→fb1),1,2,3; total ~20 occurrences
+- `Gob Chew Chua` — volumes 2,4,12,16 → parl=1,0(→fb1); total ~12 occurrences
+
+**Evidence:**
+- `Goh Keng Swee` in Speaker table at parl=1,2,3,4,5
+- `Goh Chew Chua` in Speaker table at parl=1 (loaded from colonial_la_members.json)
+- Volume ranges confirmed via sitting markdown scan
+
+**Overrides added to `services/attendance.py`:**
+```python
+("gob keng swee", 1): "Goh Keng Swee",
+("gob keng swee", 2): "Goh Keng Swee",
+("gob keng swee", 3): "Goh Keng Swee",
+("gob chew chua", 1): "Goh Chew Chua",
+```
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** ADDED
+- Candidates before: 219 distinct / 1,412 rows
+- Candidates after: 217 distinct / 1,394 rows
+- Rows resolved: 18 (lower than markdown-scan estimate of ~32; many occurrences are in
+  speech text rather than attendance sections, so they don't appear in the attendance scan)
