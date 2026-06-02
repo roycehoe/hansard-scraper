@@ -165,6 +165,20 @@ _OCR_CORRECTIONS: dict[str, str] = {
     # Sha'ari Bin Tadin OCR variants
     "sha'ari bin tedin": "Sha'ari Bin Tadin",  # e→a in 'Tadin'
     "sh'ari bin tadin": "Sha'ari Bin Tadin",   # missing 'a' after Sh'
+    "s1ia'ari bin tadin": "Sha'ari Bin Tadin",  # digit 1 for 'a' (S1ia→Sha)
+    # Comma/punctuation misplacements
+    "ahmad, bin ibrahim": "Ahmad Bin Ibrahim",   # comma misplacement
+    "j, f conceicao": "J.F. Conceicao",         # J, F → J.F.; cascade → inverted "Conceicao, J.F."
+    # Post-nominal variants not yet caught
+    "hon sui sen. d u b c": "Hon Sui Sen",       # D.U.B.C. honour
+    "chau sik ting, p bm.": "Chau Sik Ting",    # P.B.m.; cascade → inverted "Chau Sik Ting, Dr"
+    "ho see beng, a.bm.": "Ho See Beng",        # a.B.m. variant (lowercase 'a')
+    # Trailing apostrophe / spurious period in name
+    "mohd ghazali bin ismail'": "Mohd Ghazali Bin Ismail",
+    "hwang. soo jin": "Hwang Soo Jin",
+    "fong. sip chee": "Fong Sip Chee",
+    # Inverted-initial variant
+    "p seivadurai": "P. Selvadurai",             # ei→el; cascade → inverted "Selvadurai, P."
 }
 
 # Manual overrides for names that cannot be resolved by general normalisation rules.
