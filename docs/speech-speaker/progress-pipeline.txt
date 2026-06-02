@@ -265,7 +265,8 @@ and required manually enumerating every parliament a person served in.
 | Iter 4 (14 colonial parl=1) | 203 | 1,145 | 28 |
 | Iter 5 (supplementary parls) | 194 | 1,095 | 50 |
 | Refactor + iter 6 | **173** | **977** | **118** |
-| Iters 7–10 (title prefixes + body OCR) | **144** | **822** | **155** |
+| Iters 7–10 (title prefixes + body OCR) | 144 | 822 | 155 |
+| Iter 11 (P.B.m., Mohd Ali, char subs) | **128** | **674** | **148** |
 
 ---
 
@@ -404,6 +405,41 @@ resolves directly); `P. Govindasamy` correction is essential.
 
 **Files changed:** `services/attendance.py`
 
-**Outcome:** PENDING — scan in progress
+**Outcome:** ADDED
 - Candidates before: 144 distinct / 822 rows
+- Candidates after: **128 distinct / 674 rows**
+- Rows resolved: 148 | Distinct names removed: 16
+
+---
+
+## Iteration 12 — 2026-06-02
+
+### Role-appended colonial names and additional char substitutions
+
+**Fix type:** `_OCR_CORRECTIONS` additions
+
+**Candidates targeted (freq ≥ 5):**
+| OCR form | Canonical | Error | Freq |
+|---|---|---|---|
+| `Oon Khye Kiang. Financial Secretary` | `Oon Khye Kiang` | role string appended after period | 6 |
+| `T.M. Hart, C.M.G. Financial Secretary` | `T.M. Hart` | role appended; cascade → inverted "Hart, T.M." | 6 |
+
+**Additional (freq ≤ 4):**
+| OCR form | Canonical | Error |
+|---|---|---|
+| `Sidek bin Siniff` | `Sidek Bin Saniff` | i→a (cf. iter 11 'Sa niff' form) |
+| `Yea Choo Kok` | `Yeo Choo Kok` | a→e |
+| `Goh Ghok Tong` | `Goh Chok Tong` | Gh→Ch |
+| `Hwang Soo Tin` | `Hwang Soo Jin` | t→j |
+| `Othmah bin Haron Eusofe` | `Othman Bin Haron Eusofe` | h→n in 'Othman' |
+| `S. Joyakumar` | `S Jayakumar` | o→a |
+| `Tsy Eng Soon` | `Tay Eng Soon` | Ts→Ta |
+| `Lea Kuan Yew` | `Lee Kuan Yew` | a→e |
+| `Lau Telk Soon` | `Lau Teik Soon` | transposed l/k |
+| `Ho See Beng, B.B.m.` | `Ho See Beng` | comma separator variant of existing B.B.m. entry |
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** PENDING — scan in progress
+- Candidates before: 128 distinct / 674 rows
 - Candidates after: TBD
