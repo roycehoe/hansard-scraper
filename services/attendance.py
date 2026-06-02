@@ -40,6 +40,13 @@ _MANUAL_OVERRIDES: dict[tuple[str, int], str] = {
     ("lai tha chia", 4): "Lai Tai Chai",
     ("lai tha chia", 5): "Lai Tai Chai",
     ("lai tha chia", 6): "Lai Tai Chai",
+    # "Gob" → "Goh": OCR confusion of 'b' for 'h' in two colonial-era names
+    # Goh Keng Swee: vols 13(parl=0→fb1), 25(parl=1), 27/30/31(parl=2), 33(parl=3)
+    ("gob keng swee", 1): "Goh Keng Swee",
+    ("gob keng swee", 2): "Goh Keng Swee",
+    ("gob keng swee", 3): "Goh Keng Swee",
+    # Goh Chew Chua: vols 2/4(parl=1), 12/16(parl=0→fb1)
+    ("gob chew chua", 1): "Goh Chew Chua",
     # Colonial-era variant spellings
     # "D.S. Marshall" is David Marshall (Labour Front Chief Minister)
     ("d s marshall", 1): "David Marshall",
