@@ -99,6 +99,10 @@ _OCR_CORRECTIONS: dict[str, str] = {
     "lou teik soon": "Lau Teik Soon",    # o→a (vol 39, parl=4)
     "eugune yap giau cheng": "Eugene Yap Giau Cheng",  # u→e; cascade → inverted "Yap Giau Cheng, Eugene"
     "yeo n ing hong": "Yeo Ning Hong",   # space-split 'Ning' (vol 45, parl=6)
+    # Mixed-era OCR variants
+    "koh kam son": "Koh Lam Son",        # m→l (vol 50, parl=6)
+    "rohan'bin kamis": "Rohan Bin Kamis",  # apostrophe for space (vols 38-44, parl=4-5)
+    "p govindasamy": "P. Govindaswamy",  # amy→awamy; cascade → inverted "Govindaswamy, P." (parl=1-4)
 }
 
 # Manual overrides for names that cannot be resolved by general normalisation rules.
