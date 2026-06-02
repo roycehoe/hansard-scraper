@@ -2,6 +2,34 @@
 
 ---
 
+## Session 2026-06-02 — OCR error pattern catalog
+
+### Known OCR error patterns in colonial-era Hansard scans
+
+Use these patterns to triage the candidates bucket quickly: scan for names that match
+a known pattern before researching them individually.
+
+| Pattern | Example (OCR → canonical) | Notes |
+|---|---|---|
+| Capital `I` → lowercase `l` | `lbrahim` → `Ibrahim` | I and l are identical in many scan fonts |
+| `b` ↔ `h` | `Gob Keng Swee` → `Goh Keng Swee` | Letterform confusion |
+| `rn` → `m` | `Chin Ham Tong` → `Chin Harn Tong` | Classic ligature collapse |
+| `in` → `m` | `Yong Nyuk Lm` → `Yong Nyuk Lin` | Same ligature problem |
+| Vowel swap (`u` ↔ `e`) | `Leong Keng Sung` → `Leong Keng Seng` | Low-contrast vowel confusion |
+| Vowel cluster corruption | `Lai Tha Chai` → `Lai Tai Chai` | `ai` sequence misread |
+
+**Triage rule:** when a candidate appears in the unmatched bucket, check its tokens
+against these patterns before doing any web research. If a token matches a known OCR
+substitution and the corrected form is already in the Speaker table, it is a pipeline
+fix target — add to `_OCR_CORRECTIONS` in `services/attendance.py`, not to
+`colonial_la_members.json`.
+
+**Fix location:** `_OCR_CORRECTIONS: dict[str, str]` in `services/attendance.py`,
+keyed by the normalised OCR form. See the "OCR corrections should be parliament-agnostic"
+entry below for the correct architecture.
+
+---
+
 ## Session 2026-06-02 — Pipeline fix loop architecture
 
 ### OCR corrections should be parliament-agnostic, not parliament-scoped
