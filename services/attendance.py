@@ -58,33 +58,50 @@ _MANUAL_OVERRIDES: dict[tuple[str, int], str] = {
     ("haii rahmat bin kenap", 4): "Rahmat Bin Kenap",
     # "Rahmat bin Kensp" — "Kensp" for "Kenap"; vol 38 → parl=4
     ("rahmat bin kensp", 4): "Rahmat Bin Kenap",
-    # Colonial-era OCR single-char variants — all resolved at parl=1 (direct or via parl=0 fallback)
-    # "A. Rahim lshak" — lowercase 'l' for capital 'I' in "Ishak"
+    # Colonial-era OCR single-char variants — parl=1 covers colonial (direct + parl=0 fallback);
+    # additional parliament entries cover the same OCR form in post-colonial volumes.
+    # "A. Rahim lshak" — lowercase 'l' for capital 'I' in "Ishak"; vols 36(p4), 41-44(p5)
     ("a rahim lshak", 1): "A. Rahim Ishak",
-    # "Jek Youn/Yuen Thong" — 'ou'/'ue' for 'eu' in "Yeun"
+    ("a rahim lshak", 4): "A. Rahim Ishak",
+    ("a rahim lshak", 5): "A. Rahim Ishak",
+    # "Jek Youn Thong" — vols 38(p4), 40(p5)
     ("jek youn thong", 1): "Jek Yeun Thong",
+    ("jek youn thong", 4): "Jek Yeun Thong",
+    ("jek youn thong", 5): "Jek Yeun Thong",
+    # "Jek Yuen Thong" — vols 6/13-25(p0-1), 32(p3), 39(p4), 47(p6)
     ("jek yuen thong", 1): "Jek Yeun Thong",
-    # "Wee loon Boon" — lowercase 'l' for 'T' in "Toon"
+    ("jek yuen thong", 3): "Jek Yeun Thong",
+    ("jek yuen thong", 4): "Jek Yeun Thong",
+    ("jek yuen thong", 6): "Jek Yeun Thong",
+    # "Wee loon Boon" — vol 34(p3)
     ("wee loon boon", 1): "Wee Toon Boon",
-    # "Yaacoh Bin Mohamed" — 'h' for 'b' in "Yaacob"
+    ("wee loon boon", 3): "Wee Toon Boon",
+    # "Wee Toon. Boon" — vol 28(p2); period after lowercase 'n' survives _period_normalize
+    ("wee toon. boon", 2): "Wee Toon Boon",
+    # "Yaacoh Bin Mohamed" — vols 13/17(p0), 25(p1)
     ("yaacoh bin mohamed", 1): "Yaacob Bin Mohamed",
-    # "Toh Chih Chye" — 'h' for 'n' in "Chin"
+    # "Toh Chih Chye" — vol 44(p5)
     ("toh chih chye", 1): "Toh Chin Chye",
-    # "Ng Kah Tins" — 's' for nothing / 'n' dropped in "Ting"
+    ("toh chih chye", 5): "Toh Chin Chye",
+    # "Ng Kah Tins" — vol 23(p0 → fb1)
     ("ng kah tins", 1): "Ng Kah Ting",
-    # "Ho Chong Choon" — 'o' for 'e' in "Cheng"
+    # "Ho Chong Choon" — vol 37(p4)
     ("ho chong choon", 1): "Ho Cheng Choon",
-    # "Ho Kah Loong" — 'oo' for 'eo' in "Leong"
+    ("ho chong choon", 4): "Ho Cheng Choon",
+    # "Ho Kah Loong" — vols 39(p4), 41/44(p5)
     ("ho kah loong", 1): "Ho Kah Leong",
-    # "Lob Miaw Gong" — 'b' for 'h' in "Loh"
+    ("ho kah loong", 4): "Ho Kah Leong",
+    ("ho kah loong", 5): "Ho Kah Leong",
+    # "Lob Miaw Gong" — vol 22(p0 → fb1)
     ("lob miaw gong", 1): "Loh Miaw Gong",
-    # "Sia Kat Hui" — 't' for 'h' in "Kah"
+    # "Sia Kat Hui" — vol 33(p3)
     ("sia kat hui", 1): "Sia Kah Hui",
-    # "Buang Bin Omar Junied" — 'ie' for 'i' at end of "Junid"
+    ("sia kat hui", 3): "Sia Kah Hui",
+    # "Buang Bin Omar Junied" — vol 26(p1)
     ("buang bin omar junied", 1): "Buang Bin Omar Junid",
-    # "Wang Soon Fong" — 'a' for 'o' in "Wong"
+    # "Wang Soon Fong" — vols 19/21(p0 → fb1), 25(p1)
     ("wang soon fong", 1): "Wong Soon Fong",
-    # "Urn Cheng Lock" — 'U' for 'Li' in "Lim" (OCR of inverted letterform)
+    # "Urn Cheng Lock" — vol 17(p0 → fb1)
     ("urn cheng lock", 1): "Lim Cheng Lock",
     # "Gob" → "Goh": OCR confusion of 'b' for 'h' in two colonial-era names
     # Goh Keng Swee: vols 13(parl=0→fb1), 25(parl=1), 27/30/31(parl=2), 33(parl=3)

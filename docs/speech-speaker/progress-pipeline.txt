@@ -150,6 +150,41 @@ All canonicals confirmed in Speaker table at parl=1.
 
 **Files changed:** `services/attendance.py`
 
-**Outcome:** PENDING — verification scan running
+**Outcome:** PARTIAL — volume scan revealed additional parliament entries needed
 - Candidates before: 209 distinct / 1,173 rows
+- Candidates after: 203 distinct / 1,145 rows (parl=1-only version)
+- Rows resolved: 28 | Distinct names removed: 6
+- Gap: prep scan showed several names appear in parl=3–6 volumes (post-colonial);
+  parl=1 override does not cover those. Supplementary entries added in iteration 5.
+
+---
+
+## Iteration 5 — 2026-06-02
+
+### Supplementary parliament entries for iteration 4 gaps
+
+**Fix type:** Additional `_MANUAL_OVERRIDES` entries at parl=3–6 for names confirmed
+in post-colonial volumes by the volume scan.
+
+**Root cause:** Iter 4 added overrides only at parl=1 (covers colonial-era parl=0 via
+fallback). The volume scan (bk5x9sndw) revealed that the same OCR forms also appear
+in post-colonial Hansard volumes mapping to parl=3–6, where the fallback does not fire.
+
+**Additional entries added:**
+| OCR form | Extra parls added | Volumes confirmed |
+|---|---|---|
+| `A. Rahim lshak` | 4, 5 | 36(p4), 41-44(p5) |
+| `Jek Youn Thong` | 4, 5 | 38(p4), 40(p5) |
+| `Jek Yuen Thong` | 3, 4, 6 | 32(p3), 39(p4), 47(p6) |
+| `Wee loon Boon` | 3 | 34(p3) |
+| `Wee Toon. Boon` | 2 | 28(p2) — new form also added |
+| `Toh Chih Chye` | 5 | 44(p5) |
+| `Ho Chong Choon` | 4 | 37(p4) |
+| `Ho Kah Loong` | 4, 5 | 39(p4), 41/44(p5) |
+| `Sia Kat Hui` | 3 | 33(p3) |
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** PENDING — verification scan running after iter 4 scan completes
+- Candidates before: TBD (iter 4 after-count)
 - Candidates after: TBD
