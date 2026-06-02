@@ -248,6 +248,7 @@ def _is_artifact_line(line: str) -> bool:
 
 def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpeech]:
     current_speaker = None
+    in_preamble = True  # True until the first real bold speaker name is seen
     speeches: list[ParsedSpeech] = []
     for line in markdown.splitlines()[start_of_speech_line + 1 :]:
         parsed_line = line.strip()
@@ -255,7 +256,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpee
         if _is_artifact_line(parsed_line):
             continue
         if "**" not in parsed_line:
-            if current_speaker is None:  # skip preamble before first speaker
+            if in_preamble:  # skip text before the first real speaker
                 continue
             if re.match(r"^\d{1,2}\.\d{2}\s*[ap]\.?m\.?$", parsed_line, re.IGNORECASE):
                 continue  # skip procedural time markers (e.g. "4.26 pm", "3.30 p.m.")
@@ -273,23 +274,38 @@ def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpee
             # Strip [X in the Chair] chair-annotation prefix (e.g. "**[Mr Speaker in the Chair] BILL**")
             chair_match = re.match(r"^\[(.+?)\s+in the [Cc]hair\]", raw_speaker)
             new_speaker = chair_match.group(1).strip() if chair_match else raw_speaker
-            # Skip bold section-title lines: no honorific AND (no colon, or colon is mid-title
-            # not at the end). Catches "**MINISTRY OF EDUCATION**", "**Table 1: Description**".
             bold_ends_with_colon = bold_match.group(0).rstrip().endswith(":**")
+            # Strip leading question-number prefix from oral-answer speaker names
+            # e.g. "1\. Assoc. Prof. Paulin Tay Straughan" → "Assoc. Prof. Paulin Tay Straughan"
+            new_speaker = re.sub(r"^\d+\\?\.\s+", "", new_speaker)
+            # Paren-only annotations (e.g. "(Accidents and violations):") and italic
+            # sub-section dividers (e.g. "_HDB Policy Changes_") are procedural cues,
+            # not speaker changes. Reset current_speaker so following lines get speaker=None
+            # until a real bold speaker name appears. Must run before the generic section-title
+            # skip so that italic headings with no colon are also caught and reset.
+            is_section_annotation = (
+                bool(re.match(r"^\(.*\)$", new_speaker) or re.match(r"^_[^_].*_$", new_speaker))
+                and not _SPEAKER_HONORIFIC_RE.search(new_speaker)
+            )
+            if is_section_annotation:
+                current_speaker = None
+                if transcript:
+                    speeches.append(ParsedSpeech(speaker=None, transcript=transcript))
+                continue
+            # Skip generic section-title lines: no honorific AND (no colon, or colon is mid-title
+            # not at the end). Catches "**MINISTRY OF EDUCATION**", "**Table 1: Description**".
             if (not transcript
                     and not _SPEAKER_HONORIFIC_RE.search(raw_speaker)
                     and (":" not in bold_match.group(0) or not bold_ends_with_colon)):
                 continue
-            # Strip leading question-number prefix from oral-answer speaker names
-            # e.g. "1\. Assoc. Prof. Paulin Tay Straughan" → "Assoc. Prof. Paulin Tay Straughan"
-            new_speaker = re.sub(r"^\d+\\?\.\s+", "", new_speaker)
-            if new_speaker:  # guard: don't overwrite speaker with empty string
+            if new_speaker:
                 current_speaker = new_speaker
+                in_preamble = False
             if current_speaker is not None:
                 speeches.append(ParsedSpeech(speaker=current_speaker, transcript=transcript))
             continue
 
-        if current_speaker is not None:
+        if not in_preamble:
             speeches.append(ParsedSpeech(speaker=current_speaker, transcript=parsed_line))
 
     return [speech for speech in speeches if speech.transcript.strip() != ""]
