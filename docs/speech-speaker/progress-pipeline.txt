@@ -265,3 +265,145 @@ and required manually enumerating every parliament a person served in.
 | Iter 4 (14 colonial parl=1) | 203 | 1,145 | 28 |
 | Iter 5 (supplementary parls) | 194 | 1,095 | 50 |
 | Refactor + iter 6 | **173** | **977** | **118** |
+| Iters 7–10 (title prefixes + body OCR) | **144** | **822** | **155** |
+
+---
+
+## Iteration 7 — 2026-06-02
+
+### OCR title-prefix variants: Mr,/Dr,/Mr./Dr./Mi./mr
+
+**Fix type:** `_TITLE_PREFIXES` additions — parliament-agnostic prefix stripping
+
+**Candidates targeted:**
+| OCR form | After stripping | Canonical | Sitting occurrences | Vol→parl |
+|---|---|---|---|---|
+| `mr Phua Bah Lee` | `Phua Bah Lee` | `Phua Bah Lee` | 1,300 | 27-51→parl=2-6 |
+| `Mr, Lee Teck Him` | `Lee Teck Him` | `Lee Teck Him` | 3 | 17→parl=0(fb1) |
+| `Mr, Tee Kim Leng` | `Tee Kim Leng` | `Tee Kim Leng` | 3 | 16→parl=0(fb1) |
+| `Mi. Low Por Tuck` | `Low Por Tuck` | `Low Por Tuck` | 3 | 20→parl=0(fb1) |
+| `Dr, Thio Chan Bee` | `Thio Chan Bee` | `Thio Chan Bee` | 3 | 15→parl=0(fb1) |
+| `Dr. Ong Leong Boon` | `Ong Leong Boon` | `Ong Leong Boon` | 3 | 32→parl=3 |
+| `Mr. C.V. Devan Nair` | `C.V. Devan Nair` | `C.V. Devan Nair` | 7 | 40→parl=5 |
+
+All canonicals confirmed in Speaker table at stated parliament numbers.
+
+**Change:** Added to `_TITLE_PREFIXES` (before existing "Dr " and "Mr " entries):
+```python
+"Dr. ", "Dr, ", "Mr. ", "Mr, ", "Mi. ", "mr "
+```
+
+Stripping happens at extraction time (strip_title) before the parliament cascade — no attribution risk.
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** COMBINED — iters 7–10 scanned together (no intermediate checkpoints)
+- Candidates before: 173 distinct / 977 rows
+- Candidates after: see iter 10 for combined result
+
+---
+
+## Iteration 8 — 2026-06-02
+
+### Body OCR character substitutions — parl=3-5 era names
+
+**Fix type:** `_OCR_CORRECTIONS` additions — character-substitution errors
+
+**Candidates targeted:**
+| OCR form | Canonical | Error | Sitting occurrences | Vol→parl |
+|---|---|---|---|---|
+| `Yeo Choc Kok` | `Yeo Choo Kok` | c→o | 4 | 34→parl=3 |
+| `Yoo Choo Kok` | `Yeo Choo Kok` | oo→eo | 7 | 43/44→parl=5 |
+| `Chai Chong Vii` | `Chai Chong Yii` | V→Y | 7 | 36→parl=4 |
+| `Ivan Batist` | `Ivan Baptist` | truncated | 6 | 32/34→parl=3 |
+| `Lee Yiok Song` | `Lee Yiok Seng` | o→e | 9 | 32/36→parl=3/4 |
+| `Lee Chiaw Memg` | `Lee Chiaw Meng` | g→ng | 3 | 42→parl=5 |
+| `Mg Nam Piau` | `Ang Nam Piau` | Mg→Ang | 3 | 32→parl=3 |
+| `Tan Eng Liang. B.B.M.` | `Tan Eng Liang` | B.B.M. post-nominal | 7 | 32/35→parl=3 |
+
+All canonicals confirmed in Speaker table at stated parliament numbers.
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** COMBINED — no intermediate checkpoint; see iter 10 for cumulative result
+
+---
+
+## Iteration 9 — 2026-06-02
+
+### parl=4–6 era OCR variants: Lou/Eugune/Yeo N ing
+
+**Fix type:** `_OCR_CORRECTIONS` additions
+
+**Candidates targeted:**
+| OCR form | Canonical | Error | Vol→parl |
+|---|---|---|---|
+| `Lou Teik Soon` | `Lau Teik Soon` | o→a | 39→parl=4 |
+| `Eugune Yap Giau Cheng` | `Eugene Yap Giau Cheng` | u→e; cascade → inverted "Yap Giau Cheng, Eugene" | parl=4-8 |
+| `Yeo N ing Hong` | `Yeo Ning Hong` | space-split 'Ning' | 45→parl=6 |
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** COMBINED — no intermediate checkpoint; see iter 10
+
+---
+
+## Iteration 10 — 2026-06-02
+
+### Mixed-era OCR variants: Koh/Rohan/Govindasamy
+
+**Fix type:** `_OCR_CORRECTIONS` additions
+
+**Candidates targeted:**
+| OCR form | Canonical | Error | Vol→parl |
+|---|---|---|---|
+| `Koh Kam Son` | `Koh Lam Son` | m→l | 50→parl=6 |
+| `Rohan'bin Kamis` | `Rohan Bin Kamis` | apostrophe for space | vols 38-44→parl=4-5 |
+| `P. Govindasamy` | `P. Govindaswamy` | amy→awamy spelling; cascade → inverted "Govindaswamy, P." | vol=22→parl=0(fb1) |
+
+Note: `Rohan'bin Kamis` form is likely a no-op (the actual markdown form "Mr Rohan bin Kamis"
+resolves directly); `P. Govindasamy` correction is essential.
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** ADDED
+- Candidates before: 173 distinct / 977 rows (combined baseline for iters 7–10)
+- Candidates after: **144 distinct / 822 rows**
+- Rows resolved: 155 | Distinct names removed: 29
+
+---
+
+## Iteration 11 — 2026-06-02
+
+### Post-nominal P.B.m., character substitutions, space-inserted names
+
+**Fix type:** `_OCR_CORRECTIONS` additions
+
+**Candidates targeted (freq ≥ 5):**
+| OCR form | Canonical | Error | Freq | Vol→parl |
+|---|---|---|---|---|
+| `Wong Kwei Cheong, P.B.m.` | `Wong Kwei Cheong` | lowercase 'm' post-nominal | 31 | 40-47→parl=5-6 |
+| `Mohd Ali Bin Aiwi` | `Mohd Ali Bin Alwi` | i→l in 'Alwi' | 25 | parl=1 |
+| `Tay Eng Soon, P.B.m.` | `Tay Eng Soon` | lowercase 'm' post-nominal | 24 | 40-47→parl=5-6 |
+| `Chiang Hal Ding` | `Chiang Hai Ding` | l→i | 7 | 30-32→parl=2-3 |
+| `Yeo loon Chia` | `Yeo Toon Chia` | l→T (lowercase l for uppercase T) | 7 | 34-36→parl=3-4 |
+| `Sidek bin Sa niff` | `Sidek Bin Saniff` | space inserted in 'Saniff' | 7 | 42-45→parl=5-6 |
+| `Scab Mui Kok` | `Seah Mui Kok` | c→e, b→h | 6 | 32-33→parl=3 |
+| `Mg Kok Peng` | `Ang Kok Peng` | Mg→Ang (same prefix as 'Mg Nam Piau') | 6 | 33→parl=3 |
+| `N. Govindaswamy` | `N. Govindasamy` | extra 'w'; cascade → inverted "Govindasamy, N." | 6 | 34→parl=3 |
+| `Francis Thomas.` | `Francis Thomas` | trailing period | 5 | parl=1 |
+| `John Mammen.` | `John Mammen` | trailing period | 5 | parl=1 |
+
+**Additional (freq = 4):**
+| OCR form | Canonical | Error |
+|---|---|---|
+| `P. Govindaswarny` | `P. Govindaswamy` | rny→my variant |
+| `Yeo Ni ng Hong` | `Yeo Ning Hong` | space in 'Ning' at different position (cf. iter 9 'N ing') |
+| `lnche Ahmad Jabri Bin Mohammad Akib` | `Ahmad Jabri Bin Mohammad Akib` | lowercase l for I in 'Inche' |
+| `Inche, Ahmad Jabri Bin Mohammad Akib` | `Ahmad Jabri Bin Mohammad Akib` | comma for period in 'Inche,' |
+
+**Files changed:** `services/attendance.py`
+
+**Outcome:** PENDING — scan in progress
+- Candidates before: 144 distinct / 822 rows
+- Candidates after: TBD
