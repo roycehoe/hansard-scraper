@@ -28,9 +28,9 @@ Not in the `Speaker` table. Exclude from the match-rate denominator.
 `Hon. Members`, `Several Members`, `Members`
 Not individual MPs. Exclude from denominator.
 
-### Section headers (parsing failures)
-All-caps strings with no name structure: `PART I INTRODUCTION`, `CONCLUSION`, `LIQUEFIED PETROLEUM GAS (Conditions of a Licence)`
-These are speech parsing failures — `_parse_speeches` misidentified a section header as a bold speaker. Do not attempt to match; exclude from denominator. The underlying fix belongs in `services/speech.py`, not here.
+### Section headers (`can_extract` failures)
+All-caps strings with no name structure: `PART I INTRODUCTION`, `CONCLUSION`, `ADJOURNMENT`, `COMMITTEE OF SELECTION`
+These are speech parsing failures — `_parse_speeches` misidentified a bold section header line as a speaker. These are now `can_extract` failures: they stay in the denominator until fixed in `services/speech.py`. Do not attempt to match them in `speaker_links.py`.
 
 ## Known Correct Exclusions
 

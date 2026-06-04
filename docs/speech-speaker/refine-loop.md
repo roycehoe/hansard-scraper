@@ -31,12 +31,16 @@ Improve `_populate_speech_speaker_ids` in `populate/speaker_links.py` so that �
 
 **Target set definition** — exclude from the denominator:
 1. **Structural non-MPs**: `Mr Speaker`, `Mr Deputy Speaker`, `The Clerk`, `Hon. Members`, and similar presiding officers or collective references. These are never in the `Speaker` table by design.
-2. **Section headers misidentified as speakers**: all-caps strings with no name structure (e.g. `LIQUEFIED PETROLEUM GAS (Conditions of a Licence)`, `PART I INTRODUCTION`). These are speech parsing failures — do not fix them here.
-3. **Speeches where `speaker` is None**: already excluded.
+2. **Speeches where `speaker` is None**: already excluded.
 
-A Speech row is in the **`can_match` failure stage** when its `speaker` is non-null, is not excluded by the above, and `speaker_id` remains null after `_populate_speech_speaker_ids` runs. This is the only failure stage in this loop.
+Two failure stages:
+
+- **`can_extract`**: `speaker` is non-null but does not look like a name. Diagnostic heuristic — looks like a name: mixed case, 1–4 words, optional title prefix, optional constituency parenthetical. Does not look like a name: all-caps with no lowercase, sentence-length text, starts with a numeral, contains a colon mid-string. Fix location: `services/speech.py`. After applying a fix, repopulate Speech rows for affected reports, then re-run `_populate_speech_speaker_ids`, then measure.
+- **`can_match`**: `speaker` looks like a name, is not a structural non-MP, and `speaker_id` remains null after `_populate_speech_speaker_ids` runs. Fix location: `populate/speaker_links.py` (or `services/attendance.py` for `_MANUAL_OVERRIDES`).
 
 "Matched" means `Speech.speaker_id` is non-null. Track the match rate as `matched / denominator`.
+
+**Note on baseline**: Section headers were previously excluded from the denominator. They are now `can_extract` failures and remain in the denominator. Recompute the denominator and baseline before starting the first iteration under this definition.
 
 **Secondary metric**: also track `matched / total non-null-speaker speeches` (including excluded) to make the exclusion count visible.
 
@@ -58,11 +62,17 @@ Several speaker string formats appear in the corpus:
 | Role only | `The Prime Minister` | Unresolvable without a role→MP mapping |
 | Short name | `Mr Jeyaretnam` | Falls through to prefix lookup in some cases |
 | Presiding officer | `Mr Speaker`, `Mr Deputy Speaker` | Exclude from denominator |
-| Section header | `PART I INTRODUCTION` | Exclude from denominator (parsing failure) |
+| Section header | `PART I INTRODUCTION` | `can_extract` — fix in `services/speech.py` |
 
 ## Where fixes go
 
-All matching logic lives in `_populate_speech_speaker_ids` in `populate/speaker_links.py`. The helper `resolve_canonical_name` (in `services/attendance.py`) handles the existing cascade and should not be modified here — add pre-processing steps before calling it.
+| Failure stage | Fix location | Notes |
+|---|---|---|
+| `can_extract` | `services/speech.py` (`_parse_speeches`) | Prevents junk strings from being written to `Speech.speaker`; requires repopulating Speech rows after fix |
+| `can_match` | `populate/speaker_links.py` (`_populate_speech_speaker_ids`) | Add pre-processing before calling `resolve_canonical_name`; do not modify the cascade itself |
+| `can_match` (known MPs) | `services/attendance.py` (`_MANUAL_OVERRIDES`) | For names the cascade cannot reach |
+
+Do not compensate for extraction failures in `speaker_links.py` — fix at the source.
 
 ## How parliament is derived
 
@@ -107,14 +117,16 @@ From `scripts/speech_speaker_match_rate.py` (seed=42, K=10 per report_type):
 - `The Minister for Health (Dr Toh Chin Chye)` ×2 → role+name, extract inner name
 - `Mr Jeyaretnam` ×5 → short name, may fall through to prefix lookup
 - `Mr Lee Kuan Yew` ×5 → full name not matching (parliament scope issue?)
-- Section headers (×5 total) → parsing failures, exclude
+- Section headers (×5 total) → `can_extract` failure, fix in `services/speech.py`
 
 **Known failure categories ranked by estimated global impact:**
-1. Constituency suffix in speaker string — affects most eras, all report types
-2. Role+name pattern (`The X (Name)`) — common in older parliamentary records
+1. Constituency suffix in speaker string — affects most eras, all report types (`can_match`)
+2. Role+name pattern (`The X (Name)`) — common in older parliamentary records (`can_match`)
 3. Structural non-MPs (`Mr Speaker`, `Hon. Members`) — exclude from denominator
-4. Section headers — exclude from denominator
-5. Short names / parliament scoping for known MPs
+4. Section headers misidentified as speakers — `can_extract`, fix in `services/speech.py`
+5. Short names / parliament scoping for known MPs (`can_match`)
+
+**Note**: The baseline above was computed under the old denominator (section headers excluded). Recompute before starting iterations.
 
 ---
 
@@ -125,19 +137,22 @@ From `scripts/speech_speaker_match_rate.py` (seed=42, K=10 per report_type):
 ## Setup
 
 **Step 1 — Validate the exclusion definitions.**
-Before counting the denominator, verify empirically that the two exclusion categories are correctly defined. For each category, inspect 5–10 candidate excluded strings drawn from the actual DB:
+Before counting the denominator, verify empirically that the exclusion category is correctly defined. Inspect 5–10 candidate excluded strings drawn from the actual DB:
 
 - *Structural non-MPs*: query for `speaker` values matching known exclusion strings (`Mr Speaker`, `Mr Deputy Speaker`, `Hon. Members`, etc.) and read the surrounding transcript for a sample of matches. Confirm none are genuine MPs whose name happens to start with a presiding-officer prefix.
-- *Section headers*: query for all-caps `speaker` values and inspect a sample. Confirm that no colonial-era speaker names are captured — all-caps formatting was common in old transcripts and some genuine MPs may appear in all-caps.
 
-If the pattern is too broad (catching real MPs) or too narrow (missing exclusions), revise the exclusion definition before proceeding. Record findings in `docs/speech-speaker/progress.txt` under `## Setup — Exclusion validation`. If the definition needs changing, revise the Goal section of this document too.
+Also validate the `can_extract` boundary: query for all-caps `speaker` values and inspect a sample. Confirm that no colonial-era speaker names are misclassified — all-caps formatting was common in old transcripts and some genuine MPs may appear in all-caps. Record which patterns are confirmed `can_extract` failures vs. which need manual review.
+
+If an exclusion pattern is too broad or too narrow, revise before proceeding. Record findings in `docs/speech-speaker/progress.txt` under `## Setup — Exclusion validation`. If the definition needs changing, revise the Goal section of this document too.
 
 **Step 2 — Establish the target set denominator.**
 Query the DB directly to count:
 - Total `Speech` rows with non-null `speaker`
 - Rows matching the validated structural-non-MP exclusion pattern
-- Rows matching the validated section-header exclusion pattern
-- Denominator = total − excluded
+- Rows matching the `can_extract` pattern (all-caps section headers; these remain in the denominator as a fixable failure)
+- Denominator = total − structural-non-MP exclusions
+
+Also record: `can_extract` count and `can_match` count (denominator − `can_extract`). These are the two pools of fixable failures.
 
 Record all counts in `docs/speech-speaker/progress.txt` under `## Setup — Target set`.
 
@@ -167,7 +182,12 @@ Note: K=5 pilot sizes are too small for reliable coverage estimates of the full 
 Run `scripts/speech_speaker_match_rate.py` restricted to the pilot IDs. Record per-type match rates under `## Setup — Baseline` in `docs/speech-speaker/progress.txt`. This is the reference point for all iterations.
 
 **Step 5 — Catalogue failure modes.**
-Walk through every failing pilot speech and classify its root cause. Group by shared pattern — do not write one entry per speech. For each group record: the failure pattern, representative `speaker` strings, affected `report_type` and era, and estimated count in the pilot. Write the catalogue to `docs/speech-speaker/progress.txt` under `## Setup — Failure catalogue`. This catalogue is the direct input to Loop Step 2.
+Walk through every failing pilot speech and classify its root cause into one of two stages:
+
+- **`can_extract`**: `speaker` does not look like a name (use the heuristic in the Goal section). Record the exact string, which bold line in the markdown produced it, and what `_parse_speeches` did wrong.
+- **`can_match`**: `speaker` looks like a name but `speaker_id` is null. Record the exact string, the expected `Speaker.name`, and why the cascade missed it.
+
+Group by shared pattern — do not write one entry per speech. For each group record: the failure stage, the failure pattern, representative `speaker` strings, affected `report_type` and era, and estimated count in the pilot. Write the catalogue to `docs/speech-speaker/progress.txt` under `## Setup — Failure catalogue`. This catalogue is the direct input to Loop Step 2.
 
 ## Loop
 
@@ -176,22 +196,52 @@ The authoritative iteration count is the number of `## Iteration N` headings in 
 **Step 1 — Run the sample.**
 Apply the current `_populate_speech_speaker_ids` logic to every Speech ID in the pilot, held-out, and regression sets. Record for each: `speech_id`, `report_type`, `speaker`, `parliament_number`, matched (`speaker_id` non-null) or not.
 
-**Step 2 — Identify the highest-impact unresolved `can_match` failure.**
+**Step 2 — Identify the highest-impact unresolved failure.**
 From the current failure catalogue (Setup Step 5, or the previous iteration's updated catalogue), pick the pattern affecting the most pilot speeches.
 
 Before selecting a target, first **group all current failures by root cause** — look across all failing speeches of the same `(report_type, era)` and identify shared structural patterns. A fix written against a pattern covers all instances; a fix written against one speech may not generalise.
 
 Priority order within the catalogue:
-1. Pre-processing failures (constituency suffix, role+name extraction) — fix in `_populate_speech_speaker_ids` before calling `resolve_canonical_name`
-2. Cascade misses for known MPs — add to `_MANUAL_OVERRIDES` in `services/attendance.py`
-3. Structural exclusions — add to the exclusion list in `_populate_speech_speaker_ids`
+0. **`can_extract` failures** — fix first, in `services/speech.py`. The resolution cascade cannot compensate for a wrong input value. After applying the fix, repopulate Speech rows for affected reports, then re-run `_populate_speech_speaker_ids`, then measure (see Step 6).
+1. `can_match`: Pre-processing failures (constituency suffix, role+name extraction) — fix in `_populate_speech_speaker_ids` before calling `resolve_canonical_name`
+2. `can_match`: Cascade misses for known MPs — add to `_MANUAL_OVERRIDES` in `services/attendance.py`
+3. `can_match`: Structural exclusions — add to the exclusion list in `_populate_speech_speaker_ids`
 
 **Step 3 — Investigate.**
 Open 2–3 failing Speech rows exhibiting the target pattern. Note the exact `speaker` string, the `parliament_number`, and the expected `Speaker.name`. Also open 1–2 **passing** Speech rows from the **same `report_type` and era** — understanding what a passing case looks like is required to write a correct fix without regressing it.
 
 **Step 4 — Log findings.**
-Append to `docs/speech-speaker/progress.txt` under a `## Iteration N — YYYY-MM-DD` heading:
+Append to `docs/speech-speaker/progress.txt` under a `## Iteration N — YYYY-MM-DD` heading. Use the appropriate template for the failure stage.
 
+**For `can_extract` failures:**
+```
+## Iteration N — YYYY-MM-DD
+
+### can_extract — <report_type> — <short description of root cause>
+
+**Affected Speech IDs (pilot):**
+<list>
+
+**Speaker string (bad extraction):**
+<exact string from Speech.speaker>
+
+**Source bold line in markdown:**
+<the line in Report.markdown_content that produced it>
+
+**Root cause:**
+<what _parse_speeches did wrong>
+
+**Proposed fix:**
+<the code change in services/speech.py>
+
+**Backward-compatibility:**
+<which currently-passing speeches could be affected and why they won't be>
+
+**Outcome:** (filled in after Step 5)
+<kept / reverted — net change on pilot after repopulate + re-run speaker_links>
+```
+
+**For `can_match` failures:**
 ```
 ## Iteration N — YYYY-MM-DD
 
@@ -207,7 +257,7 @@ Append to `docs/speech-speaker/progress.txt` under a `## Iteration N — YYYY-MM
 <a passing example for contrast>
 
 **Expected Speaker.name:**
-<canonical form from Mp table>
+<canonical form from Speaker table>
 
 **Root cause:**
 <what the current logic does wrong>
@@ -225,20 +275,26 @@ Append to `docs/speech-speaker/progress.txt` under a `## Iteration N — YYYY-MM
 If the finding reveals a generalizable pattern, also record it in `docs/speech-speaker/matching-patterns.md`.
 
 **Step 5 — Apply one fix.**
-Modify `populate/speaker_links.py` only (or `services/attendance.py` for `_MANUAL_OVERRIDES`). One fix per iteration — do not batch multiple changes even if several are ready.
+One fix per iteration — do not batch multiple changes even if several are ready.
 
-Prefer a **pre-processing step before calling `resolve_canonical_name`** over modifying the cascade itself. State your backward-compatibility reasoning before applying.
+- For `can_extract` failures: modify `services/speech.py` (`_parse_speeches`). After applying, repopulate Speech rows for affected reports by re-running the speeches pipeline stage, then proceed to Step 6.
+- For `can_match` failures: modify `populate/speaker_links.py` (or `services/attendance.py` for `_MANUAL_OVERRIDES`). Prefer a **pre-processing step before calling `resolve_canonical_name`** over modifying the cascade itself.
+
+In both cases, state backward-compatibility reasoning before applying.
 
 **Step 6 — Validate.**
-Re-run the matching logic across all three sets. Print a table:
+For `can_extract` fixes: repopulate Speech rows for affected reports, then re-run `_populate_speech_speaker_ids`, then check `speaker_id`.
+For `can_match` fixes: re-run `_populate_speech_speaker_ids` only.
+
+Run across all three sets. Print a table:
 
 ```
-can_match        | report_type          | Before | After
------------------|----------------------|--------|------
-constituency     | oral-answer          |  3/5   |  5/5
-role+name        | ministerial-statement|  2/5   |  4/5
+stage        | report_type          | Before | After
+-------------|----------------------|--------|------
+can_extract  | budget               |  3/5   |  5/5
+can_match    | oral-answer          |  3/5   |  5/5
 ---
-Held-out improvement: N sittings flipped
+Held-out improvement: N speeches flipped
 Regression set failures: 0/30
 Secondary metric (incl. excluded): X/total
 ```
