@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlmodel import Session, delete, select, update
 
 from database.report import Report
@@ -54,5 +55,14 @@ class CRUDSpeech:
         self.session.commit()
         return result.rowcount
 
-    def set_speaker_id(self, speech_id: int, speaker_id: int) -> None:
-        self.session.exec(update(Speech).where(Speech.id == speech_id).values(speaker_id=speaker_id))
+    def set_speaker_ids_bulk(self, updates: dict[int, int]) -> None:
+        if not updates:
+            return
+        self.session.execute(
+            text(
+                "UPDATE speech SET speaker_id = v.speaker_id "
+                "FROM UNNEST(:ids, :speaker_ids) AS v(id, speaker_id) "
+                "WHERE speech.id = v.id"
+            ),
+            {"ids": list(updates.keys()), "speaker_ids": list(updates.values())},
+        )

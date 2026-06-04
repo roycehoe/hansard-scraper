@@ -9,9 +9,9 @@ from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from logs import logger
 from services.attendance import (
+    VOLUME_TO_PARLIAMENT,
     SpeakerLookups,
     build_speaker_lookups,
-    infer_parliament,
     normalize_name,
     resolve_canonical_name,
     strip_title,
@@ -104,7 +104,13 @@ def _populate_attendance_speaker_ids(
     crud_sitting = CRUDSitting(session)
     crud = CRUDAttendance(session)
 
-    sittings_by_id = {sitting.id: sitting for sitting in crud_sitting.get_all() if sitting.id is not None}
+    parliament_by_sitting_id: dict[int, int] = {}
+    for sitting_id, parlement_no, volume_no in crud_sitting.get_parliament_columns():
+        if parlement_no is not None:
+            parliament_by_sitting_id[sitting_id] = parlement_no
+        elif volume_no is not None and volume_no in VOLUME_TO_PARLIAMENT:
+            parliament_by_sitting_id[sitting_id] = VOLUME_TO_PARLIAMENT[volume_no]
+
     unresolved_ids = crud.get_unresolved_ids()
     total = len(unresolved_ids)
     updated = 0
@@ -113,13 +119,11 @@ def _populate_attendance_speaker_ids(
         batch_ids = unresolved_ids[batch_start : batch_start + _BATCH]
         records = crud.get_by_ids(batch_ids)
 
+        batch_updates: dict[int, int] = {}
         for record in records:
             if not record.speaker_name or record.sitting_id is None:
                 continue
-            sitting = sittings_by_id.get(record.sitting_id)
-            if sitting is None:
-                continue
-            parliament = infer_parliament(sitting)
+            parliament = parliament_by_sitting_id.get(record.sitting_id)
             if parliament is None:
                 continue
 
@@ -131,12 +135,12 @@ def _populate_attendance_speaker_ids(
                 if canonical:
                     speaker_id = speaker_id_lookup.get((canonical, parliament))
 
-            if speaker_id:
-                crud.mark_speaker_id(record, speaker_id)
+            if speaker_id and record.id is not None:
+                batch_updates[record.id] = speaker_id
                 updated += 1
 
+        crud.set_speaker_ids_bulk(batch_updates)
         session.commit()
-        session.expire_all()
         logger.info(f"Attendance: {min(batch_start + _BATCH, total)}/{total} processed, {updated} resolved")
 
     logger.info(f"Attendance: set speaker_id on {updated}/{total} records")
@@ -156,6 +160,7 @@ def _populate_speech_speaker_ids(
         batch_ids = unresolved_ids[batch_start : batch_start + _BATCH]
         rows = crud.get_speaker_info_by_ids(batch_ids)
 
+        batch_updates: dict[int, int] = {}
         for speech_id, speaker, parliament in rows:
             if not speaker:
                 continue
@@ -166,7 +171,7 @@ def _populate_speech_speaker_ids(
 
             po_sid = _resolve_presiding_officer(raw, parliament, lookups, speaker_id_lookup)
             if po_sid is not None:
-                crud.set_speaker_id(speech_id, po_sid)
+                batch_updates[speech_id] = po_sid
                 updated += 1
             if raw in ("Mr Speaker", "Mdm Speaker") or raw.startswith(("Mr Deputy Speaker", "The Deputy Speaker")):
                 continue  # always skip cascade for presiding officers
@@ -185,7 +190,7 @@ def _populate_speech_speaker_ids(
                 if role_canonical:
                     role_sid = speaker_id_lookup.get((role_canonical, role_parl))
                     if role_sid:
-                        crud.set_speaker_id(speech_id, role_sid)
+                        batch_updates[speech_id] = role_sid
                         updated += 1
                 continue  # role-only strings are never resolvable via the name cascade
 
@@ -215,9 +220,10 @@ def _populate_speech_speaker_ids(
 
             speaker_id = speaker_id_lookup.get((canonical, parliament))
             if speaker_id:
-                crud.set_speaker_id(speech_id, speaker_id)
+                batch_updates[speech_id] = speaker_id
                 updated += 1
 
+        crud.set_speaker_ids_bulk(batch_updates)
         session.commit()
         logger.info(f"Speech: {min(batch_start + _BATCH, total)}/{total} processed, {updated} resolved")
 
