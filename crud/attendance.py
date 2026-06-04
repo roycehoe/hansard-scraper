@@ -12,6 +12,10 @@ class CRUDAttendance:
         self.session.add(record)
         self.session.commit()
 
+    def create_many(self, records: list[Attendance]) -> None:
+        self.session.add_all(records)
+        self.session.commit()
+
     def get_sitting_ids_with_attendance(self) -> set[int]:
         rows = self.session.exec(select(Attendance.sitting_id).distinct()).all()
         return {r for r in rows if r is not None}
