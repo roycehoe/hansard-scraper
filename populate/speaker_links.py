@@ -56,6 +56,30 @@ _ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str] = {
 }
 
 
+def _resolve_presiding_officer(
+    raw: str,
+    parliament: int,
+    lookups: SpeakerLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+) -> Optional[int]:
+    if raw in ("Mr Speaker", "Mdm Speaker"):
+        role = "SPEAKER"
+    elif raw.startswith("Mr Deputy Speaker") or raw.startswith("The Deputy Speaker"):
+        role = "DEPUTY SPEAKER"
+    else:
+        return None
+    parl = parliament if parliament != 0 else next(
+        (p for p in _COLONIAL_PARLIAMENT_FALLBACKS if (role, p) in _PRESIDING_OFFICERS),
+        parliament,
+    )
+    name = _PRESIDING_OFFICERS.get((role, parl))
+    if not name:
+        return None
+    canonical, resolved_parl = _resolve_with_parliament_fallback(name, parl, lookups, speaker_id_lookup)
+    return speaker_id_lookup.get((canonical, resolved_parl)) if canonical else None
+
+
+
 def _resolve_with_parliament_fallback(
     name: str,
     parliament: int,
@@ -140,45 +164,28 @@ def _populate_speech_speaker_ids(
 
             raw = speaker.rstrip(":").strip()
 
-            # Presiding officer strings carry no individual name — resolve by parliament lookup.
-            _po_role: str | None = None
-            if raw in ("Mr Speaker", "Mdm Speaker"):
-                _po_role = "SPEAKER"
-            elif raw.startswith("Mr Deputy Speaker") or raw.startswith("The Deputy Speaker"):
-                _po_role = "DEPUTY SPEAKER"
-            if _po_role is not None:
-                _po_parl = parliament if parliament != 0 else next(
-                    (p for p in _COLONIAL_PARLIAMENT_FALLBACKS if (_po_role, p) in _PRESIDING_OFFICERS),
-                    parliament,
-                )
-                _po_name = _PRESIDING_OFFICERS.get((_po_role, _po_parl))
-                if _po_name:
-                    _po_canonical, _po_resolved_parl = _resolve_with_parliament_fallback(
-                        _po_name, _po_parl, lookups, speaker_id_lookup
-                    )
-                    if _po_canonical:
-                        _po_sid = speaker_id_lookup.get((_po_canonical, _po_resolved_parl))
-                        if _po_sid:
-                            crud.set_speaker_id(speech_id, _po_sid)
-                            updated += 1
+            po_sid = _resolve_presiding_officer(raw, parliament, lookups, speaker_id_lookup)
+            if po_sid is not None:
+                crud.set_speaker_id(speech_id, po_sid)
+                updated += 1
+            if raw in ("Mr Speaker", "Mdm Speaker") or raw.startswith(("Mr Deputy Speaker", "The Deputy Speaker")):
                 continue  # always skip cascade for presiding officers
 
-            # Role-only strings — resolve by parliament→person mapping.
-            _role_key: tuple[str, int] | None = (raw, parliament) if parliament != 0 else None
-            if _role_key is None:
-                for _fb in _COLONIAL_PARLIAMENT_FALLBACKS:
-                    if (raw, _fb) in _ROLE_ONLY_SPEAKERS:
-                        _role_key = (raw, _fb)
+            role_key: tuple[str, int] | None = (raw, parliament) if parliament != 0 else None
+            if role_key is None:
+                for fb in _COLONIAL_PARLIAMENT_FALLBACKS:
+                    if (raw, fb) in _ROLE_ONLY_SPEAKERS:
+                        role_key = (raw, fb)
                         break
-            if _role_key and _role_key in _ROLE_ONLY_SPEAKERS:
-                _role_name = _ROLE_ONLY_SPEAKERS[_role_key]
-                _role_canonical, _role_parl = _resolve_with_parliament_fallback(
-                    _role_name, _role_key[1], lookups, speaker_id_lookup
+            if role_key and role_key in _ROLE_ONLY_SPEAKERS:
+                role_name = _ROLE_ONLY_SPEAKERS[role_key]
+                role_canonical, role_parl = _resolve_with_parliament_fallback(
+                    role_name, role_key[1], lookups, speaker_id_lookup
                 )
-                if _role_canonical:
-                    _role_sid = speaker_id_lookup.get((_role_canonical, _role_parl))
-                    if _role_sid:
-                        crud.set_speaker_id(speech_id, _role_sid)
+                if role_canonical:
+                    role_sid = speaker_id_lookup.get((role_canonical, role_parl))
+                    if role_sid:
+                        crud.set_speaker_id(speech_id, role_sid)
                         updated += 1
                 continue  # role-only strings are never resolvable via the name cascade
 

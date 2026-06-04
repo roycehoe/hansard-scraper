@@ -2,13 +2,29 @@
 
 import random
 from collections import defaultdict
+from typing import Optional
 
 from sqlmodel import Session
 
 from crud.handsard_website_response import CRUDHandsardWebsiteResponse
+from database.handsard_website_response import HandsardWebsiteResponse
 from database.init import engine
+from database.report import Report
 from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
+
+
+def _get_speech_start(response: HandsardWebsiteResponse) -> tuple[Report, Optional[int]]:
+    report = build_report(response)
+    start = (
+        get_start_of_speech_line(
+            report.markdown_content, report.title, report.subtitle, report.original_title,
+            response.report_type,
+        )
+        if report.markdown_content is not None
+        else None
+    )
+    return report, start
 
 
 def get_report_type_speech_stats(session: Session) -> dict:
@@ -19,14 +35,10 @@ def get_report_type_speech_stats(session: Session) -> dict:
     for response in responses:
         report_type = response.report_type
         stats[report_type]["total"] += 1
-        report = build_report(response)
+        report, start = _get_speech_start(response)
         if report.markdown_content is None:
             continue
         stats[report_type]["has_markdown"] += 1
-        start = get_start_of_speech_line(
-            report.markdown_content, report.title, report.subtitle, report.original_title,
-            response.report_type,
-        )
         if start is None:
             continue
         stats[report_type]["has_start_line"] += 1
@@ -44,13 +56,9 @@ def get_failing_sample(session: Session, no_speech_types: set[str], k: int = 3) 
     for response in responses:
         if response.report_type in no_speech_types:
             continue
-        report = build_report(response)
+        report, start = _get_speech_start(response)
         if report.markdown_content is None:
             continue
-        start = get_start_of_speech_line(
-            report.markdown_content, report.title, report.subtitle, report.original_title,
-            response.report_type,
-        )
         if start is None:
             groups[("has_start_line", response.report_type)].append(response)
             continue
@@ -71,14 +79,8 @@ def get_passing_sample(session: Session, no_speech_types: set[str], n: int = 30)
     for response in responses:
         if response.report_type in no_speech_types:
             continue
-        report = build_report(response)
-        if report.markdown_content is None:
-            continue
-        start = get_start_of_speech_line(
-            report.markdown_content, report.title, report.subtitle, report.original_title,
-            response.report_type,
-        )
-        if start is None:
+        report, start = _get_speech_start(response)
+        if report.markdown_content is None or start is None:
             continue
         try:
             get_speeches(report.markdown_content, start, response.report_type)
@@ -94,13 +96,9 @@ def run_stats_on(responses: list) -> dict:
     """Run _get_statistics equivalent on a list of responses, return counts."""
     results = {"pass": [], "fail_start_line": [], "fail_speeches": []}
     for response in responses:
-        report = build_report(response)
+        report, start = _get_speech_start(response)
         if report.markdown_content is None:
             continue
-        start = get_start_of_speech_line(
-            report.markdown_content, report.title, report.subtitle, report.original_title,
-            response.report_type,
-        )
         if start is None:
             results["fail_start_line"].append(response.id)
             continue

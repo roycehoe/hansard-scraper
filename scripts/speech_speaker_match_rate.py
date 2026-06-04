@@ -27,7 +27,6 @@ SAMPLE_PER_TYPE = 10
 SEED = 42
 TOP_UNMATCHED = 30
 
-# (speaker, report_type, parliament_number) namedtuple-like
 _Row = tuple[str, str, int]
 
 
