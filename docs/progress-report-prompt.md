@@ -6,7 +6,20 @@ Paste this prompt into Claude along with the files listed in each section. The o
 
 ## Prompt
 
-You are reviewing the refine-loop logs for a Singapore Parliament Hansard scraper. There are five refine loops, each improving a different pipeline stage. Read the files listed below and produce a structured progress report.
+You are reviewing the refine-loop logs for a Singapore Parliament Hansard scraper. There are five refine loops, each improving a different pipeline stage.
+
+**Before reading any files**, run the following two commands to get live metrics for the speech-speaker loop (the only ACTIVE loop). Use these results — not the numbers in `progress.txt` — as the current state for that loop.
+
+```bash
+PYTHONPATH=. poetry run python3 scripts/run_pilot_assessment.py
+PYTHONPATH=. poetry run python3 scripts/run_regression_check.py
+```
+
+The pilot assessment prints `Pilot (N IDs): X/N = X.X%` plus a per-group breakdown and a list of top unmatched strings. The regression check prints `Regression set: X/53 passing`. Record these numbers before reading any files.
+
+For the four other loops (attendance-speaker, attendance, sitting, report), the log files are authoritative — no scripts need to run.
+
+Then read the files listed below and produce a structured progress report.
 
 ### Files to read
 
@@ -109,7 +122,7 @@ Synthesise the key non-obvious findings from `docs/speech-speaker/learnings.txt`
 
 ### Notes for the report writer
 
-- Treat each `progress.txt` as authoritative. If a metric in the progress file differs from the refine-loop.md baseline, use the progress file value and note the discrepancy.
+- For the speech-speaker loop, use the live script output as the current metric. For all other loops, treat `progress.txt` as authoritative.
 - When an iteration was REVERTED and immediately re-attempted in the next iteration (e.g. iter 16 first attempt / iter 16 corrected), merge them into one row with outcome "REVERTED then KEPT (corrected)" and the final net gain.
 - Do not invent numbers. If a count is not stated in the source files, write "not recorded" rather than estimating.
 - The report should be scannable: a reader unfamiliar with the codebase should be able to tell which loops are done, which are active, and what the single highest-impact next action is within 30 seconds of reading the executive summary.
