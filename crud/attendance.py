@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlmodel import Session, select
 
 from database.attendance import Attendance
@@ -25,6 +26,14 @@ class CRUDAttendance:
             select(Attendance).where(Attendance.id.in_(ids))
         ).all())
 
-    def mark_speaker_id(self, record: Attendance, speaker_id: int) -> None:
-        record.speaker_id = speaker_id
-        self.session.add(record)
+    def set_speaker_ids_bulk(self, updates: dict[int, int]) -> None:
+        if not updates:
+            return
+        self.session.execute(
+            text(
+                "UPDATE attendance SET speaker_id = v.speaker_id "
+                "FROM UNNEST(:ids, :speaker_ids) AS v(id, speaker_id) "
+                "WHERE attendance.id = v.id"
+            ),
+            {"ids": list(updates.keys()), "speaker_ids": list(updates.values())},
+        )
