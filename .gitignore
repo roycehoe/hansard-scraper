@@ -2,6 +2,9 @@
 *.json
 !sample.json
 !data/*.json
+!.claude/settings.json
+.claude/worktrees/
+.claude/settings.local.json
 plans/
 
 # Byte-compiled / optimized / DLL files
