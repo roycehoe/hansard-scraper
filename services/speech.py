@@ -278,6 +278,8 @@ def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpee
             # Strip leading question-number prefix from oral-answer speaker names
             # e.g. "1\. Assoc. Prof. Paulin Tay Straughan" → "Assoc. Prof. Paulin Tay Straughan"
             new_speaker = re.sub(r"^\d+\\?\.\s+", "", new_speaker)
+            # Fix OCR artifacts where space was dropped between honorific and name
+            new_speaker = re.sub(r"^(Mr|Mrs|Ms|Dr|Prof|Mdm|The|BG|RAdm|Er)([A-Z])", r"\1 \2", new_speaker)
             # Paren-only annotations (e.g. "(Accidents and violations):") and italic
             # sub-section dividers (e.g. "_HDB Policy Changes_") are procedural cues,
             # not speaker changes. Reset current_speaker so following lines get speaker=None
