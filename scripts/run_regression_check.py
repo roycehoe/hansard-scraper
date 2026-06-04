@@ -13,6 +13,7 @@ Usage:
 """
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 
 from sqlmodel import Session
@@ -63,6 +64,8 @@ _ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str] = {
     ("The Prime Minister", 11): "Lee Hsien Loong",
     ("The Minister for Health", 11): "Khaw Boon Wan",
 }
+
+_CHIEF_MINISTER_CUTOFF = datetime(1956, 6, 7)
 
 
 def _get_presiding_officer_role(raw: str) -> str | None:
@@ -126,7 +129,10 @@ def main() -> None:
     }
     lookups = build_speaker_lookups(speakers)
 
-    rows_by_id = {speech_id: (speaker, parliament) for speech_id, speaker, parliament in rows}
+    rows_by_id = {
+        speech_id: (speaker, parliament, sitting_date)
+        for speech_id, speaker, parliament, sitting_date in rows
+    }
 
     passed = 0
     failed: list[tuple[int, str, int, str | None]] = []
@@ -135,7 +141,7 @@ def main() -> None:
         if speech_id not in rows_by_id:
             failed.append((speech_id, "<missing>", 0, None))
             continue
-        speaker, parliament = rows_by_id[speech_id]
+        speaker, parliament, sitting_date = rows_by_id[speech_id]
         if not speaker:
             failed.append((speech_id, "<null speaker>", parliament, None))
             continue
@@ -157,6 +163,21 @@ def main() -> None:
                     failed.append((speech_id, speaker, parliament, po_canonical))
             else:
                 failed.append((speech_id, speaker, parliament, None))
+            continue
+
+        # Chief Minister (colonial era): date-based dispatch between Marshall and Lim.
+        if raw == "The Chief Minister" and parliament in (0, 1, 2, 3):
+            _cm_name = (
+                "David Marshall"
+                if sitting_date and sitting_date < _CHIEF_MINISTER_CUTOFF
+                else "Lim Yew Hock"
+            )
+            _cm_canonical, _cm_parl = _resolve(_cm_name, 0, lookups, speaker_id_lookup)
+            _cm_sid = speaker_id_lookup.get((_cm_canonical, _cm_parl)) if _cm_canonical else None
+            if _cm_sid:
+                passed += 1
+            else:
+                failed.append((speech_id, speaker, parliament, _cm_canonical))
             continue
 
         # Role-only strings — resolve by parliament→person mapping.
