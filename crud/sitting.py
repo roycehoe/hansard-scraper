@@ -13,6 +13,10 @@ class CRUDSitting:
         self.session.add(sitting)
         self.session.commit()
 
+    def create_many(self, sittings: list[Sitting]) -> None:
+        self.session.add_all(sittings)
+        self.session.commit()
+
     def get_all(self) -> list[Sitting]:
         return list(self.session.exec(select(Sitting)).all())
 

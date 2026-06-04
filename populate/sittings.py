@@ -13,6 +13,9 @@ def populate_sittings(session: Session):
     to_process = [r for r in all_responses if r.sitting_date not in existing_dates]
     logger.info(f"Building {len(to_process)}/{len(all_responses)} sittings ({len(existing_dates)} already in DB)")
 
+    sittings = []
     for i, response in enumerate(to_process, start=1):
         logger.info(f"{i}/{len(to_process)}: {response.sitting_date}")
-        crud.create(build_sitting(response))
+        sittings.append(build_sitting(response))
+    if sittings:
+        crud.create_many(sittings)
