@@ -10,6 +10,7 @@ Usage:
 """
 import json
 import re
+from datetime import datetime
 from collections import defaultdict
 from pathlib import Path
 
@@ -61,6 +62,8 @@ _ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str] = {
     ("The Prime Minister", 11): "Lee Hsien Loong",
     ("The Minister for Health", 11): "Khaw Boon Wan",
 }
+
+_CHIEF_MINISTER_CUTOFF = datetime(1956, 6, 7)
 
 
 def _has_title(m: re.Match) -> bool:
@@ -122,8 +125,9 @@ def main() -> None:
     speaker_id_lookup = {(s.name, s.parliament_number): s.id for s in speakers if s.id is not None}
     lookups = build_speaker_lookups(speakers)
 
-    rows_by_id: dict[int, tuple[str, int]] = {
-        speech_id: (speaker, parliament) for speech_id, speaker, parliament in rows
+    rows_by_id: dict[int, tuple[str, int, object]] = {
+        speech_id: (speaker, parliament, sitting_date)
+        for speech_id, speaker, parliament, sitting_date in rows
     }
 
     type_stats: dict[str, dict[str, int]] = defaultdict(lambda: {"matched": 0, "total": 0})
@@ -132,7 +136,7 @@ def main() -> None:
     for speech_id in pilot_ids:
         if speech_id not in rows_by_id:
             continue
-        speaker, parliament = rows_by_id[speech_id]
+        speaker, parliament, sitting_date = rows_by_id[speech_id]
         if not speaker:
             continue
 
@@ -161,6 +165,22 @@ def main() -> None:
                 unmatched.append((speaker, parliament, "<no presiding officer mapping>"))
             continue
 
+        # Chief Minister (colonial era): date-based dispatch between Marshall and Lim.
+        if raw == "The Chief Minister" and parliament in (0, 1, 2, 3):
+            _cm_name = (
+                "David Marshall"
+                if sitting_date and sitting_date < _CHIEF_MINISTER_CUTOFF
+                else "Lim Yew Hock"
+            )
+            _cm_canonical, _cm_parl = _resolve(_cm_name, 0, lookups, speaker_id_lookup)
+            _cm_sid = speaker_id_lookup.get((_cm_canonical, _cm_parl)) if _cm_canonical else None
+            type_stats[bucket]["total"] += 1
+            if _cm_sid:
+                type_stats[bucket]["matched"] += 1
+            else:
+                unmatched.append((speaker, parliament, _cm_canonical or "<unresolved>"))
+            continue
+
         # Role-only strings — resolve by parliament→person mapping.
         _role_key: tuple[str, int] | None = (raw, parliament) if parliament != 0 else None
         if _role_key is None:
@@ -181,7 +201,7 @@ def main() -> None:
 
         name = _preprocess(speaker)
         if not name:
-            type_stats[bucket]["total"] += 1
+            # Structural exclusion: artifact or collective reference — not in denominator.
             unmatched.append((speaker, parliament, "<excluded/empty>"))
             continue
 

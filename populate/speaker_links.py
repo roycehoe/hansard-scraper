@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from typing import Optional
 
 from sqlmodel import Session
@@ -54,6 +55,9 @@ _ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str] = {
     ("The Prime Minister", 11): "Lee Hsien Loong",
     ("The Minister for Health", 11): "Khaw Boon Wan",
 }
+
+# David Marshall was CM until 1956-06-06; Lim Yew Hock from 1956-06-07.
+_CHIEF_MINISTER_CUTOFF = datetime(1956, 6, 7)
 
 
 def _resolve_presiding_officer(
@@ -161,7 +165,7 @@ def _populate_speech_speaker_ids(
         rows = crud.get_speaker_info_by_ids(batch_ids)
 
         batch_updates: dict[int, int] = {}
-        for speech_id, speaker, parliament in rows:
+        for speech_id, speaker, parliament, sitting_date in rows:
             if not speaker:
                 continue
             if speaker in _NON_SPEAKERS or speaker.startswith("(") or speaker.startswith("_"):
@@ -175,6 +179,23 @@ def _populate_speech_speaker_ids(
                 updated += 1
             if raw in ("Mr Speaker", "Mdm Speaker") or raw.startswith(("Mr Deputy Speaker", "The Deputy Speaker")):
                 continue  # always skip cascade for presiding officers
+
+            # Chief Minister (colonial era): date-based dispatch between Marshall and Lim.
+            if raw == "The Chief Minister" and parliament in (0, 1, 2, 3):
+                cm_name = (
+                    "David Marshall"
+                    if sitting_date and sitting_date < _CHIEF_MINISTER_CUTOFF
+                    else "Lim Yew Hock"
+                )
+                cm_canonical, cm_parl = _resolve_with_parliament_fallback(
+                    cm_name, 0, lookups, speaker_id_lookup
+                )
+                if cm_canonical:
+                    cm_sid = speaker_id_lookup.get((cm_canonical, cm_parl))
+                    if cm_sid:
+                        batch_updates[speech_id] = cm_sid
+                        updated += 1
+                continue
 
             role_key: tuple[str, int] | None = (raw, parliament) if parliament != 0 else None
             if role_key is None:

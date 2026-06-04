@@ -33,9 +33,9 @@ class CRUDSpeech:
             select(Speech.id).where(Speech.speaker_id == None)  # noqa: E711
         ).all())
 
-    def get_speaker_info_by_ids(self, ids: list[int]) -> list[tuple[int, str, int]]:
+    def get_speaker_info_by_ids(self, ids: list[int]) -> list[tuple[int, str, int, object]]:
         return list(self.session.exec(
-            select(Speech.id, Speech.speaker, Report.parliament_number)
+            select(Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date)
             .join(Report)
             .where(Speech.id.in_(ids))
         ).all())

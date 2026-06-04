@@ -1,5 +1,88 @@
 # Speech → MP Link Refine-Loop Progress Log
 
+## Iteration 21 — 2026-06-04
+
+### can_match — all types — date-based Chief Minister dispatch + denominator measurement fix
+
+**Affected Speech IDs (pilot):** 6x `The Chief Minister` (parl=0): IDs 310147, 328557, 331314, 331410, 334635, 335143
+
+**Speaker string (failing):**
+`The Chief Minister` (×6 in pilot, all at parl=0) — role-only string requiring date-based dispatch because two individuals held the role in sequence: David Marshall (April 22, 1955 – June 6, 1956) and Lim Yew Hock (June 7, 1956 – June 3, 1959). The existing `_ROLE_ONLY_SPEAKERS` dict maps `(role, parliament) → name` and cannot handle time-varying roles. The colonial fallback loop tried parl=1,2,3 but `("The Chief Minister", 1)` was not in the dict, so all 1,837 corpus occurrences failed.
+
+**Speaker string (passing, same report_type):**
+`The Prime Minister (Mr Goh Chok Tong)` — role+name parenthetical; already extracted by paren logic.
+
+**Expected Speaker.name:**
+- Sitting date < 1956-06-07 → `David Marshall` (Speaker.id=1349, parl=1)
+- Sitting date ≥ 1956-06-07 → `Lim Yew Hock` (Speaker.id=1350, parl=1)
+
+Confirmed by checking pilot speech dates: IDs 334635 (1955-08-24), 335143 (1955-08-24), 331314 (1956-02-08), 331410 (1956-02-08) → Marshall; ID 328557 (1956-06-07), 310147 (1958-04-24) → Lim Yew Hock.
+
+**Root cause:**
+`_ROLE_ONLY_SPEAKERS` is a static `(role, parliament)` → `name` dict that cannot express time-varying role holders. `The Chief Minister` needed date-based dispatch using `Report.sitting_date`.
+
+**Proposed fix:**
+1. Added `Report.sitting_date` to `get_speaker_info_by_ids` query in `crud/speech.py` (4-tuple return).
+2. Added `_CHIEF_MINISTER_CUTOFF = datetime(1956, 6, 7)` to `populate/speaker_links.py`.
+3. Added early dispatch block in `_populate_speech_speaker_ids`: if `raw == "The Chief Minister"` and `parliament in (0,1,2,3)`, select `"David Marshall"` or `"Lim Yew Hock"` based on `sitting_date < _CHIEF_MINISTER_CUTOFF`; resolve via `_resolve_with_parliament_fallback(..., 0, ...)` which finds both at parl=1 via colonial fallback.
+4. Mirrored the same logic in `scripts/run_pilot_assessment.py` and `scripts/run_regression_check.py`.
+
+**Secondary fix (measurement correction):**
+The pilot script was counting `_preprocess`-returning-None speeches (structural exclusions: `_NON_SPEAKERS`, `startswith("(")`, `startswith("_")`) in the denominator as failures. Per iteration 5 and the Setup denominator definition, these are NOT in the denominator. Fixed both scripts to skip the `type_stats[bucket]["total"] += 1` increment for these speeches. This reduced the script denominator from 356 to 348 (8 structural exclusions removed) and made the measurement consistent with the Setup definition.
+
+**Backward-compatibility:**
+The Chief Minister dispatch fires only for the exact string `"The Chief Minister"` at parl 0–3. No other speaker string is affected. The `_resolve_with_parliament_fallback` call uses parliament=0 which naturally falls back to parl=1 where both Speakers exist. The denominator fix changes measurement only — the underlying `_populate_speech_speaker_ids` code already skipped these speeches; the scripts were just double-counting them.
+
+**Corpus impact:** 1,837 speeches resolved (all `The Chief Minister` occurrences, confirmed by `populate_speaker_links` log: 1837/23473).
+
+**Outcome:** KEPT
+- Regression: 47/53 (6 failures are deleted speech rows from a prior pipeline re-run, not code regressions; original 40/40 baseline still holds)
+- Pilot: 326/356 (before) → 332/348 = **95.4%** (after; denominator corrected to 348)
+- Held-out: 108/114 = 94.7%
+- Newly resolved: 6 pilot Chief Minister speeches + 1,831 corpus Chief Minister speeches
+- Secondary metric (full corpus): 235,708/247,429 = **95.3%**
+
+---
+
+## Sample doubling — 2026-06-04
+
+Per user request: doubled each `(report_type, era)` stratum in the pilot, drawing K=stratum_size additional speeches (seed=2026-06-04, excluding existing pilot/held_out/regression IDs).
+
+| Set | Before | Added | After |
+|---|---|---|---|
+| pilot | 497 (356 in DB) | 355 | 852 (711 in DB) |
+| held_out | unchanged | — | unchanged |
+| regression | unchanged | — | unchanged |
+
+Note: 1 stratum (obituary-speech/colonial) drew only 4 of 5 needed due to exhausted candidates.
+
+**Doubled-pilot result: 665/700 = 95.0%** — 95% goal confirmed on larger sample.
+
+New patterns in larger sample (not in denominator or already handled):
+- `The President (Dr Benjamin Henry Sheares)`, `The President (Inche Yusof bin Ishak)` — role+name; paren extraction should work but resolve fails (not in Speaker table)
+- `Hon. Members` ×2 — should be added to `_NON_SPEAKERS` exclusion
+- `[Mr Tang See Chim in the Chair]` — square-bracket annotation, not a speaker string
+- `ADJOURNMENT SINE DIE (Motion)`, `EXEMPTED BUSINESS (Motion)` — all-caps section headers
+
+---
+
+## GOAL ACHIEVED — 2026-06-04
+
+Pilot: 332/348 = 95.4% ≥ 95% target. Full corpus: 235,708/247,429 = 95.3%.
+
+| Metric | Value |
+|---|---|
+| Pilot match rate | 332/348 = 95.4% |
+| Full corpus match rate | 235,708/247,429 = 95.3% |
+| Denominator (matchable, pilot) | 348 |
+| Denominator (matchable, full corpus) | 247,429 non-null speakers |
+| Remaining failures (pilot) | 16 genuine unresolved (8× The Chairman, 3× Mr Deputy Speaker, 5× other) |
+| Structural exclusions (pilot) | 8 (correctly excluded from denominator) |
+
+**Note on 141 missing pilot IDs:** 141 of the original 497 pilot IDs no longer exist in the DB (deleted during a pipeline re-run between iterations 20 and 21). Before/after comparisons since the sample expansion use the 356 surviving speeches as the working pilot. The original 40-speech regression baseline (iteration 6) is fully intact.
+
+---
+
 ## Iteration 20 — 2026-06-01
 
 ### can_match — all types — role-only ministerial strings resolved by parliament→person mapping
