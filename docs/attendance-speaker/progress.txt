@@ -186,3 +186,99 @@ corpus where rows had been ingested without that canonicalisation step.
 The 202 unmatched rows are the true production floor. They are all colonial parl=0
 sittings where the name has no Speaker row at parliament 1, 2, or 3. Resolvable only
 by adding confirmed LA members to data/colonial_la_members.json (see research-loop.md).
+
+---
+
+## Iteration 2 — 2026-06-05
+
+### Goal
+
+Resolve as many of the 202 unmatched rows as possible via OCR corrections, title prefix
+additions, and parser fixes. Based on gap.md analysis.
+
+### Changes made
+
+**`services/attendance.py` — `_parse_entry_line`**
+- Strip leading `**` (markdown bold prefix): `"**Mr Ng Kah Ting"` → `"Mr Ng Kah Ting"`
+- Strip leading `Absent: `/`Present: ` prefix: `"Absent: Mr Ahmad Mohd Magad"` → `"Mr Ahmad Mohd Magad"`
+- These prevent future occurrences; OCR corrections below handle existing DB rows.
+
+**`services/attendance.py` — `_TITLE_PREFIXES`**
+Added 7 colonial-era title abbreviations (longest-first, inserted after `"The Honourable "` group):
+`"The Hon. Mr "`, `"The Hon. Mrs "`, `"The Hon. Dr "`, `"The Hon. Miss "`,
+`"The Hon. Ms "`, `"The Hon. Inche "`, `"The Hon. "`
+
+**`services/attendance.py` — `_OCR_CORRECTIONS`** — 52 new entries in 7 groups:
+
+1. "Should already resolve" anomalies (existing entries had wrong key form):
+   - `"inche. buang bin omar junid"` → `"Buang Bin Omar Junid"`
+   - `"j,f conceicao"` → `"J.F. Conceicao"` (existing `"j, f conceicao"` had space)
+   - `"ong piah teng, o b e"` → `"Ong Piah Teng"` (existing used period not comma separator)
+   - `"ang nam piau."` → `"Ang Nam Piau"` (existing `"mg nam piau"` only covers Mg→Ang)
+   - `"yeoh ghim seng)"` → `"Yeoh Ghim Seng"` (trailing paren not covered)
+   - `"p selvadural"` → `"P. Selvadurai"` (`ural`→`urai` not covered)
+   - `"yaacob bin mohamed ai-haj"` → `"Yaacob Bin Mohamed"` (AI uppercase I vs al lowercase l)
+
+2. Character substitutions — new parl=0-5 era variants:
+   `hwang soo un`, `lau teik sobn`, `mohd mi bin alwi`, `othman bin haron elisofe`,
+   `adbul hamid bin haji jumat`, `dl chiang hai ding`, `dr yeoh ghim seng`,
+   `mr tan soo khoon`, `cha,u sik ting`, `lee tee long`, `ch'ng lit koon`,
+   `ong tang cheong`, `ong tong cheong`, `lee yock suen`, `sia khoon soong`,
+   `lirn choon mong`, `lim you eng`, `mt. lin you eng`, `phue bah lee`, `phua bali lee`,
+   `c v devan nair` (→ `Devan Nair`; wordset_subset doesn't cover 2-word names)
+
+3. Post-nominal decoration variants:
+   `ang kok peng, b bm.`, `ang kok peng. b b m`, `seah mui kok, b bm.`,
+   `seah mui kok, e.bm.`, `seah mui kok, ba.m.`, `thio chan bee, j p tanglin)`
+
+4. Role-appended / constituency-appended forms:
+   `goh keng swee kreta ayer) minister for finance`,
+   `lim kim san cairnhill), minister for national development`,
+   `chor yeok eng bukit timah), parliamentary secretary to the minister for health`,
+   `ngeow pack hua aboon lay)`,
+   `ya'acob bin mohamed kampong ubi), minister of state, prime minister's office`
+
+5. Trailing punctuation on real names:
+   `wong foo nam.`, `s v lingam.`, `c h koh.`, `urn kim san`
+
+6. Colonial officials with post-nominals:
+   `c h butterfield. q c` → `C.H. Butterfield` (cascade → inverted `Butterfield, C.H.`)
+   `e p shanks, q c attorney-general` → `E.P. Shanks` (cascade → inverted `Shanks, E.P.`)
+
+7. Markdown/formatting artifacts in existing DB rows:
+   `absent: mr ahmad mohd magad`, `**mr ng kah ting`
+
+### Key finding
+
+All 202 unmatched rows have `parlement_no IS NULL` — NOT just colonial-era ones. Modern
+sittings (vol 50, 70, 84-89) also have NULL `parlement_no` and appeared in the gap. These
+have real speakers at the correct parliament (inferred via VOLUME_TO_PARLIAMENT) but OCR
+or formatting artifacts prevented resolution.
+
+Category 3 "possible genuine gaps" were almost entirely Category 2 in disguise:
+- `C.V. Devan Nair` → `Devan Nair` at parl 1 (wordset_subset skips 2-word names → OCR fix needed)
+- `Ch'ng lit Koon` → `Ch'ng Jit Koon` (lit→Jit OCR)
+- `Lim/Mt. Lin You Eng` → `Lin You Eng` (Lim→Lin OCR, Mt.→Mr.)
+- `Ong Tang/Tong Cheong` → `Ong Teng Cheong` (Tang/Tong→Teng OCR)
+- `Lee Yock Suen` → `Lee Yock Suan` (Suen→Suan)
+- `Phue/Phua Bali Lee` → `Phua Bah Lee` (Phue→Phua, Bali→Bah)
+- `Wong Foo Nam.` → `Wong Foo Nam` (trailing period blocks direct lookup)
+- `Sia Khoon Soong` → `Sia Khoon Seong` (Soong→Seong)
+- `S.V. Lingam.` → inverted `Lingam, S.V.` (trailing period blocks inverted lookup key)
+- `C.H. Koh.` → inverted `Koh, C.H.` (trailing period)
+
+Genuinely absent / noise (not fixed): `A.V. Winslow`, `Andrew Fong`, `Tan Cheng Sen`,
+`Tay Bon Too`, `Too Chong Tee`, `Wong Lm Ken` (not in Speaker table).
+
+### Result
+
+| Metric | Before | After |
+|---|---|---|
+| Unmatched attendance rows | 202 | 150 |
+| Rows resolved | — | 52 |
+| Speech rows also resolved (bonus) | — | 3 |
+
+Remaining 150 are overwhelmingly Category 1 parsing failures (role strings, procedural
+text, document noise, dates) — records that should never have become Attendance rows.
+These need parser tightening in `_extract_section_lines`/`_parse_entry_line` plus
+targeted DELETEs, not OCR corrections.

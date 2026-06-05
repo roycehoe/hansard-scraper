@@ -181,6 +181,63 @@ _OCR_CORRECTIONS: dict[str, str] = {
     "fong. sip chee": "Fong Sip Chee",
     # Inverted-initial variant
     "p seivadurai": "P. Selvadurai",             # ei→el; cascade → inverted "Selvadurai, P."
+    # "Should already resolve" anomalies — existing entries cover different name or separator form
+    "inche. buang bin omar junid": "Buang Bin Omar Junid",  # existing entries only cover Ahmad Jabri
+    "j,f conceicao": "J.F. Conceicao",          # existing "j, f conceicao" has space; this has none
+    "ong piah teng, o b e": "Ong Piah Teng",    # existing "ong piah teng. o b e" uses period sep
+    "ang nam piau.": "Ang Nam Piau",             # existing "mg nam piau" handles Mg→Ang; trailing period not covered
+    "yeoh ghim seng)": "Yeoh Ghim Seng",        # trailing paren (existing entries cover post-nominal forms)
+    "p selvadural": "P. Selvadurai",             # ural→urai; cascade → inverted "Selvadurai, P."
+    "yaacob bin mohamed ai-haj": "Yaacob Bin Mohamed",  # AI-Haj (uppercase I) vs al-haj (lowercase l)
+    # Character substitutions — parl=2–5 era new variants
+    "hwang soo un": "Hwang Soo Jin",             # un→Jin (parl=2, vol=27)
+    "lau teik sobn": "Lau Teik Soon",            # Sobn→Soon (parl=5, vol=45)
+    "mohd mi bin alwi": "Mohd Ali Bin Alwi",     # Mi→Ali (parl=0, vol=20)
+    "othman bin haron elisofe": "Othman Bin Haron Eusofe",  # ELisofe→Eusofe (parl=5, vol=45)
+    "adbul hamid bin haji jumat": "Abdul Hamid Bin Haji Jumat",  # Adbul→Abdul (parl=1, vol=14)
+    "dl chiang hai ding": "Chiang Hai Ding",     # DL=OCR of Dr/Mr (parl=2, vol=32)
+    "dr yeoh ghim seng": "Yeoh Ghim Seng",       # DR=all-caps OCR not in _TITLE_PREFIXES (parl=6, vol=50)
+    "mr tan soo khoon": "Tan Soo Khoon",         # MR=all-caps OCR not in _TITLE_PREFIXES (parl=6, vol=50)
+    "cha,u sik ting": "Chau Sik Ting",           # comma inside name (parl=5, vol=42)
+    "lee tee long": "Lee Tee Tong",              # long→Tong (parl=0→1, vol=23)
+    "ch'ng lit koon": "Ch'ng Jit Koon",          # lit→Jit (parl=3, vol=32)
+    "ong tang cheong": "Ong Teng Cheong",        # Tang→Teng (parl=4, vol=39)
+    "ong tong cheong": "Ong Teng Cheong",        # Tong→Teng (parl=5, vol=43)
+    "lee yock suen": "Lee Yock Suan",            # Suen→Suan (parl=5, vol=40)
+    "sia khoon soong": "Sia Khoon Seong",        # Soong→Seong (parl=4, vol=38)
+    "lirn choon mong": "Lim Choon Mong",         # Lirn→Lim (parl=1, vol=9)
+    "lim you eng": "Lin You Eng",                # Lim→Lin (parl=1, vol=15)
+    "mt. lin you eng": "Lin You Eng",            # Mt.=OCR of Mr.; same person as Lim You Eng (parl=1, vol=14)
+    "phue bah lee": "Phua Bah Lee",              # Phue→Phua (parl=5, vol=43)
+    "phua bali lee": "Phua Bah Lee",             # Bali→Bah (parl=3, vol=31)
+    "c v devan nair": "Devan Nair",              # C.V. prefix not resolvable via wordset (parl=0→1, vol=23)
+    # Post-nominal decoration variants not yet covered
+    "ang kok peng, b bm.": "Ang Kok Peng",      # B.B.m. (lowercase m survives _period_normalize, parl=5, vol=44)
+    "ang kok peng. b b m": "Ang Kok Peng",      # B.B.M. with period separator (parl=3, vol=36)
+    "seah mui kok, b bm.": "Seah Mui Kok",      # B.B.m. (parl=5, vol=43)
+    "seah mui kok, e.bm.": "Seah Mui Kok",      # e.B.m. (lowercase e+period survives, parl=5, vol=43)
+    "seah mui kok, ba.m.": "Seah Mui Kok",      # B.a.m. (B. stripped, a. survives, parl=5, vol=44)
+    "thio chan bee, j p tanglin)": "Thio Chan Bee",  # post-nominal J.P. + constituency (parl=1, vol=15)
+    # Post-nominal for colonial officials
+    "c h butterfield. q c": "C.H. Butterfield",  # Q.C. post-nominal; cascade → inverted "Butterfield, C.H." (parl=1, vol=2)
+    "e p shanks, q c attorney-general": "E.P. Shanks",  # Q.C. + role; cascade → inverted "Shanks, E.P." (parl=1, vol=6)
+    # Constituency+role appended forms
+    "goh keng swee kreta ayer) minister for finance": "Goh Keng Swee",   # (parl=0→1, vol=23)
+    "lim kim san cairnhill), minister for national development": "Lim Kim San",  # (parl=0→1, vol=23)
+    "chor yeok eng bukit timah), parliamentary secretary to the minister for health": "Chor Yeok Eng",  # (parl=3, vol=31)
+    "ngeow pack hua aboon lay)": "Ngeow Pack Hua",   # OCR constituency (parl=4, vol=38)
+    "ya'acob bin mohamed kampong ubi), minister of state, prime minister's office": "Yaacob Bin Mohamed",  # (parl=2, vol=27)
+    # Trailing punctuation on real names
+    "wong foo nam.": "Wong Foo Nam",             # trailing period (parl=1, vol=2)
+    "s v lingam.": "S.V. Lingam",               # trailing period; cascade → inverted "Lingam, S.V." (parl=1, vol=11)
+    "c h koh.": "C.H. Koh",                     # trailing period; cascade → inverted "Koh, C.H." (parl=1, vol=15)
+    "urn kim san": "Lim Kim San",                # Urn→Lim (cf. "urn cheng lock"; parl=2, vol=30)
+    # Presiding-officer role suffix in attendance lines
+    "punch coomaraswamy, deputy speaker": "P. Coomaraswamy",  # cascade → inverted "Coomaraswamy, P." (parl=1, vol=25)
+    "p coomaraswamy, deputy speaker": "P. Coomaraswamy",      # initials-only form (parl=1, vol=25)
+    # Markdown/formatting artifacts surviving into existing DB rows (parser fix prevents future occurrences)
+    "absent: mr ahmad mohd magad": "Ahmad Mohd Magad",  # Absent: prefix not stripped (parl=9, vol=70)
+    "**mr ng kah ting": "Ng Kah Ting",          # markdown bold prefix (parl=2, vol=27)
 }
 
 # Manual overrides for names that cannot be resolved by general normalisation rules.
@@ -281,6 +338,9 @@ _TITLE_PREFIXES = [
     "The Honourable Mr ", "The Honourable Mrs ", "The Honourable Dr ",
     "The Honourable Miss ", "The Honourable Ms ", "The Honourable Inche ",
     "The Honourable Encik ", "The Honourable ",
+    "The Hon. Mr ", "The Hon. Mrs ", "The Hon. Dr ",
+    "The Hon. Miss ", "The Hon. Ms ", "The Hon. Inche ",
+    "The Hon. ",
     "Assoc. Prof. ", "Assoc Prof ",
     "Er Dr ", "Er ",
     "BG (NS) ", "BG [NS] ", "MG [NS] ", "MG (NS) ",
@@ -659,6 +719,13 @@ def _parse_entry_line(line: str) -> Optional[tuple[str, Optional[str]]]:
     # Strip bullet prefix for modern vol 88-89 (## Present: / ## Absent: format)
     if line.startswith("* "):
         line = line[2:].strip()
+    if not line:
+        return None
+    # Strip markdown bold prefix: "**Mr Ng Kah Ting" -> "Mr Ng Kah Ting"
+    if line.startswith("**"):
+        line = line[2:].strip()
+    # Strip stray section-label prefix: "Absent: Mr Ahmad Mohd Magad" -> "Mr Ahmad Mohd Magad"
+    line = re.sub(r"^(?:Absent|Present):\s*", "", line, flags=re.IGNORECASE)
     if not line:
         return None
     # Strip leading OCR digit artifacts: "2Mr" -> "Mr"
