@@ -72,6 +72,8 @@ _OCR_CORRECTIONS: dict[str, str] = {
     "s rajaratnarn": "S. Rajaratnam",
     "s rajaratam": "S. Rajaratnam",
     "s raiaratnam": "S. Rajaratnam",
+    # Yaacob Bin Mohamed with Islamic suffix appended (speech transcripts, parl=0 sittings)
+    "yaacob bin mohamed al-haj": "Yaacob Bin Mohamed",
     # OCR-corrupted prefix not caught by strip_title (period after lowercase letter)
     "inche. ahmad jabri bin mohammad akib": "Ahmad Jabri Bin Mohammad Akib",
     # Post-nominal decorations: _period_normalize expands uppercase initials (D.U.T.→d u t)
@@ -255,6 +257,14 @@ _MANUAL_OVERRIDES: dict[tuple[str, int], str] = {
     ("ya'acob bin mohamed", 2): "Yaacob Bin Mohamed",
     ("ya'acob bin mohamed", 3): "Yaacob Bin Mohamed",
     ("ya'acob bin mohamed", 4): "Yaacob Bin Mohamed",
+    # Mohd Ariff Bin Suradi — prefix lookup drops ("mohd ariff", N) because both the
+    # natural and original forms of the inverted name generate the same prefix key,
+    # causing the deduplication count to hit 2 and exclude it as ambiguous.
+    ("mohd ariff", 1): "Mohd Ariff Bin Suradi, Haji",
+    ("mohd ariff", 2): "Mohd Ariff Bin Suradi, Haji",
+    # Tuan Haji Yaacob — strip_title leaves "Yaacob" (single word); no lookup reaches
+    # "Yaacob Bin Mohamed" from a bare first name alone.
+    ("yaacob", 1): "Yaacob Bin Mohamed",
     # S. Rajaratnam stored inverted as "Rajaratnam, S"; "Mr. S. Rajaratnam" leaves "Mr."
     # after strip_title which doesn't handle the period-after-title form
     ("s rajaratnam", 1): "Rajaratnam, S",
