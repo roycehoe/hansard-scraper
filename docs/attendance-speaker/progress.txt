@@ -146,3 +146,43 @@ Actual full-corpus result after applying Iteration 1:
 - New matches from cascade: 22,122
 - Final matched: 87,817 / 96,327 (91.2%)
 - Remaining unmatched: 8,510 — all structurally absent (colonial-era MPs, non-MP attendees)
+
+---
+
+## Production verification — 2026-06-05
+
+The 91.2% figure above reflected an intermediate state of the dev corpus (older ingestion
+pass with non-canonical speaker_name values). Full production run tells a different story.
+
+### What changed
+
+Stage 7 (populate_attendances) had only processed 191/1,719 sittings in production.
+The remaining 1,528 sittings (all with PRESENT sections in markdown_content) were
+populated on 2026-06-05, bringing the attendance table from 14,000 → 96,500 rows.
+
+Stage 8 (populate_speaker_links) then resolved speaker_ids on the 82,525 new rows.
+
+### Production result
+
+| Metric | Value |
+|---|---|
+| Total attendance rows | 96,500 |
+| Matched (speaker_id non-null) | 96,298 |
+| Unmatched | 202 |
+| Match rate | **99.8%** |
+
+All 202 unmatched rows are in the parl=0 (colonial) bucket — structurally absent names
+with no Speaker row reachable via the parliament fallback chain [1, 2, 3].
+
+### Why 99.8% vs the earlier 91.2%
+
+The current get_sitting_attendance already canonicalises speaker_name at ingest time via
+resolve_canonical_name. By the time populate_speaker_links runs, most speaker_name values
+are already in canonical form and get an exact dict hit. The 91.2% figure was from a
+corpus where rows had been ingested without that canonicalisation step.
+
+### Remaining ceiling
+
+The 202 unmatched rows are the true production floor. They are all colonial parl=0
+sittings where the name has no Speaker row at parliament 1, 2, or 3. Resolvable only
+by adding confirmed LA members to data/colonial_la_members.json (see research-loop.md).
