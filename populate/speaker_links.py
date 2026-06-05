@@ -22,7 +22,9 @@ _BATCH = 1000
 _COLONIAL_PARLIAMENT_FALLBACKS = [1, 2, 3]
 
 _NON_SPEAKERS = {
-    "An hon. Member", "Some hon. Members", "Non-Residents",
+    "An hon. Member",
+    "Some hon. Members",
+    "Non-Residents",
     "Tributes by Leader of the House and Opposition Leaders",
 }
 
@@ -72,16 +74,25 @@ def _resolve_presiding_officer(
         role = "DEPUTY SPEAKER"
     else:
         return None
-    parl = parliament if parliament != 0 else next(
-        (p for p in _COLONIAL_PARLIAMENT_FALLBACKS if (role, p) in _PRESIDING_OFFICERS),
-        parliament,
+    parl = (
+        parliament
+        if parliament != 0
+        else next(
+            (
+                p
+                for p in _COLONIAL_PARLIAMENT_FALLBACKS
+                if (role, p) in _PRESIDING_OFFICERS
+            ),
+            parliament,
+        )
     )
     name = _PRESIDING_OFFICERS.get((role, parl))
     if not name:
         return None
-    canonical, resolved_parl = _resolve_with_parliament_fallback(name, parl, lookups, speaker_id_lookup)
+    canonical, resolved_parl = _resolve_with_parliament_fallback(
+        name, parl, lookups, speaker_id_lookup
+    )
     return speaker_id_lookup.get((canonical, resolved_parl)) if canonical else None
-
 
 
 def _resolve_with_parliament_fallback(
@@ -135,7 +146,9 @@ def _populate_attendance_speaker_ids(
 
             if not speaker_id:
                 name = normalize_name(strip_title(record.speaker_name))
-                canonical, parliament = _resolve_with_parliament_fallback(name, parliament, lookups, speaker_id_lookup)
+                canonical, parliament = _resolve_with_parliament_fallback(
+                    name, parliament, lookups, speaker_id_lookup
+                )
                 if canonical:
                     speaker_id = speaker_id_lookup.get((canonical, parliament))
 
@@ -145,7 +158,9 @@ def _populate_attendance_speaker_ids(
 
         crud.set_speaker_ids_bulk(batch_updates)
         session.commit()
-        logger.info(f"Attendance: {min(batch_start + _BATCH, total)}/{total} processed, {updated} resolved")
+        logger.info(
+            f"Attendance: {min(batch_start + _BATCH, total)}/{total} processed, {updated} resolved"
+        )
 
     logger.info(f"Attendance: set speaker_id on {updated}/{total} records")
 
@@ -168,16 +183,24 @@ def _populate_speech_speaker_ids(
         for speech_id, speaker, parliament, sitting_date in rows:
             if not speaker:
                 continue
-            if speaker in _NON_SPEAKERS or speaker.startswith("(") or speaker.startswith("_"):
+            if (
+                speaker in _NON_SPEAKERS
+                or speaker.startswith("(")
+                or speaker.startswith("_")
+            ):
                 continue
 
             raw = speaker.rstrip(":").strip()
 
-            po_sid = _resolve_presiding_officer(raw, parliament, lookups, speaker_id_lookup)
+            po_sid = _resolve_presiding_officer(
+                raw, parliament, lookups, speaker_id_lookup
+            )
             if po_sid is not None:
                 batch_updates[speech_id] = po_sid
                 updated += 1
-            if raw in ("Mr Speaker", "Mdm Speaker") or raw.startswith(("Mr Deputy Speaker", "The Deputy Speaker")):
+            if raw in ("Mr Speaker", "Mdm Speaker") or raw.startswith(
+                ("Mr Deputy Speaker", "The Deputy Speaker")
+            ):
                 continue  # always skip cascade for presiding officers
 
             # Chief Minister (colonial era): date-based dispatch between Marshall and Lim.
@@ -197,7 +220,9 @@ def _populate_speech_speaker_ids(
                         updated += 1
                 continue
 
-            role_key: tuple[str, int] | None = (raw, parliament) if parliament != 0 else None
+            role_key: tuple[str, int] | None = (
+                (raw, parliament) if parliament != 0 else None
+            )
             if role_key is None:
                 for fb in _COLONIAL_PARLIAMENT_FALLBACKS:
                     if (raw, fb) in _ROLE_ONLY_SPEAKERS:
@@ -217,6 +242,7 @@ def _populate_speech_speaker_ids(
 
             parens = list(re.finditer(r"\(([^)]+)\)", raw))
             if parens:
+
                 def _has_title(m: re.Match) -> bool:
                     inner = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", m.group(1).strip())
                     return strip_title(inner) != inner
@@ -229,12 +255,15 @@ def _populate_speech_speaker_ids(
                     raw = title_paren.group(1).strip()
                 else:
                     raw = raw[: parens[0].start()].strip()
+            raw = re.sub(r"^(Mr|Mrs|Dr|Ms|Mdm)([A-Z])", r"\1 \2", raw)
             raw = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", raw)
             name = normalize_name(strip_title(raw))
             if not name:
                 continue
 
-            canonical, parliament = _resolve_with_parliament_fallback(name, parliament, lookups, speaker_id_lookup)
+            canonical, parliament = _resolve_with_parliament_fallback(
+                name, parliament, lookups, speaker_id_lookup
+            )
 
             if canonical is None:
                 continue
@@ -246,14 +275,18 @@ def _populate_speech_speaker_ids(
 
         crud.set_speaker_ids_bulk(batch_updates)
         session.commit()
-        logger.info(f"Speech: {min(batch_start + _BATCH, total)}/{total} processed, {updated} resolved")
+        logger.info(
+            f"Speech: {min(batch_start + _BATCH, total)}/{total} processed, {updated} resolved"
+        )
 
     logger.info(f"Speech: set speaker_id on {updated}/{total} records")
 
 
 def populate_speaker_links(session: Session) -> None:
     speakers = CRUDSpeaker(session).get_all()
-    speaker_id_lookup = {(s.name, s.parliament_number): s.id for s in speakers if s.id is not None}
+    speaker_id_lookup = {
+        (s.name, s.parliament_number): s.id for s in speakers if s.id is not None
+    }
     lookups = build_speaker_lookups(speakers)
     _populate_attendance_speaker_ids(session, speaker_id_lookup, lookups)
     _populate_speech_speaker_ids(session, speaker_id_lookup, lookups)
