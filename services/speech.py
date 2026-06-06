@@ -96,7 +96,7 @@ def _is_section_header_speaker(name: str) -> bool:
     stripped = name.strip()
     if not stripped:
         return False
-    if re.search(r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc)\b", stripped):
+    if _SPEAKER_HONORIFIC_RE.search(stripped):
         return False
     if re.search(r"\b(President|Speaker|Minister|Secretary|Deputy|Senior|Acting)\b", stripped, re.IGNORECASE):
         return False
