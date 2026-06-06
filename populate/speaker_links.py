@@ -62,6 +62,11 @@ _ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str] = {
 _CHIEF_MINISTER_CUTOFF = datetime(1956, 6, 7)
 
 
+def _paren_contains_title(m: re.Match) -> bool:
+    inner = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", m.group(1).strip())
+    return strip_title(inner) != inner
+
+
 def _resolve_presiding_officer(
     raw: str,
     parliament: int,
@@ -242,13 +247,8 @@ def _populate_speech_speaker_ids(
 
             parens = list(re.finditer(r"\(([^)]+)\)", raw))
             if parens:
-
-                def _has_title(m: re.Match) -> bool:
-                    inner = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", m.group(1).strip())
-                    return strip_title(inner) != inner
-
                 title_paren = next(
-                    (m for m in reversed(parens) if _has_title(m)),
+                    (m for m in reversed(parens) if _paren_contains_title(m)),
                     None,
                 )
                 if title_paren:
