@@ -18,6 +18,7 @@ import random
 import re
 from collections import defaultdict
 from pathlib import Path
+from typing import Optional
 
 from sqlmodel import Session
 
@@ -57,7 +58,7 @@ def _is_excluded(speaker: str) -> bool:
     return False
 
 
-def _preprocess(speaker: str) -> str | None:
+def _preprocess(speaker: str) -> Optional[str]:
     if _is_excluded(speaker) or speaker.startswith("(") or speaker.startswith("_"):
         return None
     raw = speaker.rstrip(":").strip()

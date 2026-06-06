@@ -8,7 +8,7 @@ from sqlmodel import Field, SQLModel
 class HandsardWebsiteResponse(SQLModel, table=True):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
-    id: int | None = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
 
     volume_number: str = Field(alias="volumeNo")
     parliament_number: str = Field(alias="parlNo")

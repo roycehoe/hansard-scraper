@@ -15,7 +15,7 @@ class HandsardSittingDateResponse(SQLModel, table=True):
             return {k: v.replace("\x00", "") if isinstance(v, str) else v for k, v in data.items()}
         return data
 
-    id: int | None = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
 
     # Shared fields (old and new format)
     parlement_no: Optional[int] = None
