@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -19,12 +19,8 @@ class AppSettings(BaseSettings):
 
     search_page_size: int = 20
 
-    search_from_day: str = "24"
-    search_from_month: str = "08"
-    search_from_year: str = "2025"
-    search_to_day: str = "24"
-    search_to_month: str = "08"
-    search_to_year: str = "2025"
+    search_from_date: date = date(2025, 8, 24)
+    search_to_date: date = date(2025, 8, 24)
 
 
 settings = AppSettings()
