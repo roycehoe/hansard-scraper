@@ -1,5 +1,5 @@
 from sqlalchemy import text
-from sqlmodel import Session, delete, select, update
+from sqlmodel import Session, delete, select
 
 from database.report import Report
 from database.speech import Speech
