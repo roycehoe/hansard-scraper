@@ -8,12 +8,12 @@ from settings import settings
 def get_handsard_search_results(start_index: int, end_index: int) -> dict:
     query_dict = {
         "keyword": "undefined",
-        "fromday": settings.search_from_day,
-        "frommonth": settings.search_from_month,
-        "fromyear": settings.search_from_year,
-        "today": settings.search_to_day,
-        "tomonth": settings.search_to_month,
-        "toyear": settings.search_to_year,
+        "fromday": f"{settings.search_from_date.day:02d}",
+        "frommonth": f"{settings.search_from_date.month:02d}",
+        "fromyear": str(settings.search_from_date.year),
+        "today": f"{settings.search_to_date.day:02d}",
+        "tomonth": f"{settings.search_to_date.month:02d}",
+        "toyear": str(settings.search_to_date.year),
         "dateRange": "* TO NOW",
         "reportContent": "with all the words",
         "parliamentNo": "",
