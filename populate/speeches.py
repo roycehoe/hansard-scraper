@@ -13,7 +13,7 @@ def populate_speeches(session: Session):
     db_reports = CRUDReport(session).get_all()
     crud = CRUDSpeech(session)
     existing_report_ids = crud.get_report_ids_with_speeches()
-    to_process = [r for r in db_reports if r.id not in existing_report_ids]
+    to_process = [db_report for db_report in db_reports if db_report.id not in existing_report_ids]
     logger.info(f"Parsing speeches for {len(to_process)}/{len(db_reports)} reports ({len(existing_report_ids)} already done)")
 
     batch = []

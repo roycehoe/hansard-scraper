@@ -22,7 +22,7 @@ def _get_db_report_header(raw_title: str) -> ReportHeader:
 
     subtitle = None
 
-    def _handle_bracket(bracket_match: re.Match) -> str:
+    def _get_bracket_replacement(bracket_match: re.Match) -> str:
         nonlocal subtitle
         content = bracket_match.group(1)
         if content.isupper():
@@ -30,7 +30,7 @@ def _get_db_report_header(raw_title: str) -> ReportHeader:
         subtitle = f"({content})"
         return ""
 
-    title = re.sub(r"\(([^)]*)\)", _handle_bracket, raw_title).strip()
+    title = re.sub(r"\(([^)]*)\)", _get_bracket_replacement, raw_title).strip()
     return ReportHeader(title=title, subtitle=subtitle)
 
 
