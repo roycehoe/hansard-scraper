@@ -30,8 +30,8 @@ VOLUME_TO_PARLIAMENT: dict[int, int] = {
 # Use this for character-substitution errors and post-nominal decorations — errors that
 # the same OCR scanner makes regardless of which parliament the sitting belongs to.
 # For genuinely parliament-specific fixes (surname disambiguation, inverted canonicals)
-# use _MANUAL_OVERRIDES below.
-_OCR_CORRECTIONS: dict[str, str] = {
+# use _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER below.
+_OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
     # Character-substitution errors
     "lai tha chai": "Lai Tai Chai",       # Tha→Tai (vols 32-51, parl=3-6)
     "lai tha chia": "Lai Tai Chai",
@@ -245,8 +245,8 @@ _OCR_CORRECTIONS: dict[str, str] = {
 # Value: canonical Speaker.name
 # Use for: (a) surname-only forms where parliament is needed for disambiguation,
 # (b) inverted-format canonicals the cascade can't reach without explicit mapping.
-# Do NOT use for OCR character substitutions — those belong in _OCR_CORRECTIONS above.
-_MANUAL_OVERRIDES: dict[tuple[str, int], str] = {
+# Do NOT use for OCR character substitutions — those belong in _OCR_FORM_TO_CORRECTED_NAME above.
+_NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
     # Colonial-era variant spellings
     # "D.S. Marshall" is David Marshall (Labour Front Chief Minister)
     ("d s marshall", 1): "David Marshall",
@@ -804,10 +804,10 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
     Reusable by any module that needs MP name resolution.
     """
     # Apply parliament-agnostic OCR corrections before any parliament-scoped lookup.
-    corrected = _OCR_CORRECTIONS.get(_period_normalize(name))
+    corrected = _OCR_FORM_TO_CORRECTED_NAME.get(_period_normalize(name))
     if corrected:
         name = corrected
-    canonical = _MANUAL_OVERRIDES.get((_period_normalize(name), parliament))
+    canonical = _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get((_period_normalize(name), parliament))
     if canonical:
         return canonical
     canonical = lookups.inverted.get((_normalize_for_lookup(name), parliament))
@@ -836,7 +836,7 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
     if split != name:
         split_stripped = strip_title(split).strip()
         canonical = (
-            _MANUAL_OVERRIDES.get((_period_normalize(split_stripped), parliament))
+            _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get((_period_normalize(split_stripped), parliament))
             or _try_name_variant(split_stripped, parliament, lookups)
         )
         if canonical:
@@ -874,7 +874,7 @@ def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups) -> list[At
             records.append(Attendance(
                 sitting_id=sitting.id,
                 speaker_name=name,
-                attendance=is_present,
+                is_present=is_present,
                 location_name=location,
             ))
 
