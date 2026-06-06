@@ -12,6 +12,7 @@ import json
 import re
 from collections import defaultdict
 from pathlib import Path
+from typing import Optional
 
 from sqlmodel import Session
 
@@ -41,7 +42,7 @@ def _has_title(m: re.Match) -> bool:
     return strip_title(inner) != inner
 
 
-def _get_presiding_officer_role(raw: str) -> str | None:
+def _get_presiding_officer_role(raw: str) -> Optional[str]:
     if raw in ("Mr Speaker", "Mdm Speaker"):
         return "SPEAKER"
     if raw.startswith("Mr Deputy Speaker") or raw.startswith("The Deputy Speaker"):
@@ -49,7 +50,7 @@ def _get_presiding_officer_role(raw: str) -> str | None:
     return None
 
 
-def _preprocess(speaker: str) -> str | None:
+def _preprocess(speaker: str) -> Optional[str]:
     if speaker in NON_SPEAKERS or speaker.startswith("(") or speaker.startswith("_"):
         return None
     raw = speaker.rstrip(":").strip()
@@ -73,7 +74,7 @@ def _resolve(
     parliament: int,
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
-) -> tuple[str | None, int]:
+) -> tuple[Optional[str], int]:
     canonical = resolve_canonical_name(name, parliament, lookups)
     if canonical is not None or parliament != 0:
         return canonical, parliament
@@ -152,7 +153,7 @@ def main() -> None:
             continue
 
         # Role-only strings — resolve by parliament→person mapping.
-        _role_key: tuple[str, int] | None = (raw, parliament) if parliament != 0 else None
+        _role_key: Optional[tuple[str, int]] = (raw, parliament) if parliament != 0 else None
         if _role_key is None:
             for _fb in COLONIAL_PARLIAMENT_FALLBACKS:
                 if (raw, _fb) in ROLE_ONLY_SPEAKERS:

@@ -193,7 +193,7 @@ def _populate_speech_speaker_ids(
                         updated += 1
                 continue
 
-            role_key: tuple[str, int] | None = (
+            role_key: Optional[tuple[str, int]] = (
                 (raw, parliament) if parliament != 0 else None
             )
             if role_key is None:
