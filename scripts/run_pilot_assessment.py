@@ -10,7 +10,6 @@ Usage:
 """
 import json
 import re
-from datetime import datetime
 from collections import defaultdict
 from pathlib import Path
 
@@ -19,6 +18,13 @@ from sqlmodel import Session
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from database.init import engine
+from populate.speaker_resolution_constants import (
+    CHIEF_MINISTER_CUTOFF,
+    COLONIAL_PARLIAMENT_FALLBACKS,
+    NON_SPEAKERS,
+    PRESIDING_OFFICERS,
+    ROLE_ONLY_SPEAKERS,
+)
 from services.attendance import (
     SpeakerLookups,
     build_speaker_lookups,
@@ -28,42 +34,6 @@ from services.attendance import (
 )
 
 _SAMPLE_PATH = Path(__file__).parent.parent / "docs" / "speech-speaker" / "sample.json"
-_COLONIAL_PARLIAMENT_FALLBACKS = [1, 2, 3]
-_NON_SPEAKERS = {
-    "An hon. Member", "Some hon. Members", "Non-Residents",
-    "Tributes by Leader of the House and Opposition Leaders",
-}
-_PRESIDING_OFFICERS: dict[tuple[str, int], str] = {
-    ("SPEAKER", 0): "George Oehlers",
-    ("SPEAKER", 1): "George Oehlers",
-    ("SPEAKER", 2): "Coomaraswamy, P.",
-    ("SPEAKER", 3): "Yeoh Ghim Seng",
-    ("SPEAKER", 4): "Yeoh Ghim Seng",
-    ("SPEAKER", 5): "Yeoh Ghim Seng",
-    ("SPEAKER", 6): "Yeoh Ghim Seng",
-    ("DEPUTY SPEAKER", 6): "Tan Soo Khoon",
-    ("SPEAKER", 7): "Tan Soo Khoon",
-    ("SPEAKER", 8): "Tan Soo Khoon",
-    ("SPEAKER", 9): "Tan Soo Khoon",
-    ("SPEAKER", 10): "Abdullah Bin Tarmugi",
-    ("DEPUTY SPEAKER", 10): "Chew Heng Ching",
-    ("SPEAKER", 11): "Abdullah Bin Tarmugi",
-    ("SPEAKER", 12): "Michael Palmer",
-}
-
-_ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str] = {
-    ("The Prime Minister", 0): "Lee Kuan Yew",
-    ("The Prime Minister", 1): "Lee Kuan Yew",
-    ("The Prime Minister", 2): "Lee Kuan Yew",
-    ("The Prime Minister", 3): "Lee Kuan Yew",
-    ("The Prime Minister", 5): "Lee Kuan Yew",
-    ("The Prime Minister", 6): "Lee Kuan Yew",
-    ("The Prime Minister", 8): "Goh Chok Tong",
-    ("The Prime Minister", 11): "Lee Hsien Loong",
-    ("The Minister for Health", 11): "Khaw Boon Wan",
-}
-
-_CHIEF_MINISTER_CUTOFF = datetime(1956, 6, 7)
 
 
 def _has_title(m: re.Match) -> bool:
@@ -80,7 +50,7 @@ def _get_presiding_officer_role(raw: str) -> str | None:
 
 
 def _preprocess(speaker: str) -> str | None:
-    if speaker in _NON_SPEAKERS or speaker.startswith("(") or speaker.startswith("_"):
+    if speaker in NON_SPEAKERS or speaker.startswith("(") or speaker.startswith("_"):
         return None
     raw = speaker.rstrip(":").strip()
     parens = list(re.finditer(r"\(([^)]+)\)", raw))
@@ -107,7 +77,7 @@ def _resolve(
     canonical = resolve_canonical_name(name, parliament, lookups)
     if canonical is not None or parliament != 0:
         return canonical, parliament
-    for fallback in _COLONIAL_PARLIAMENT_FALLBACKS:
+    for fallback in COLONIAL_PARLIAMENT_FALLBACKS:
         candidate = resolve_canonical_name(name, fallback, lookups)
         if candidate and (candidate, fallback) in speaker_id_lookup:
             return candidate, fallback
@@ -149,10 +119,10 @@ def main() -> None:
         po_role = _get_presiding_officer_role(raw)
         if po_role is not None:
             po_parl = parliament if parliament != 0 else next(
-                (p for p in _COLONIAL_PARLIAMENT_FALLBACKS if (po_role, p) in _PRESIDING_OFFICERS),
+                (p for p in COLONIAL_PARLIAMENT_FALLBACKS if (po_role, p) in PRESIDING_OFFICERS),
                 parliament,
             )
-            po_name = _PRESIDING_OFFICERS.get((po_role, po_parl))
+            po_name = PRESIDING_OFFICERS.get((po_role, po_parl))
             type_stats[bucket]["total"] += 1
             if po_name:
                 po_canonical, po_resolved_parl = _resolve(po_name, po_parl, lookups, speaker_id_lookup)
@@ -169,7 +139,7 @@ def main() -> None:
         if raw == "The Chief Minister" and parliament in (0, 1, 2, 3):
             _cm_name = (
                 "David Marshall"
-                if sitting_date and sitting_date < _CHIEF_MINISTER_CUTOFF
+                if sitting_date and sitting_date < CHIEF_MINISTER_CUTOFF
                 else "Lim Yew Hock"
             )
             _cm_canonical, _cm_parl = _resolve(_cm_name, 0, lookups, speaker_id_lookup)
@@ -184,12 +154,12 @@ def main() -> None:
         # Role-only strings — resolve by parliament→person mapping.
         _role_key: tuple[str, int] | None = (raw, parliament) if parliament != 0 else None
         if _role_key is None:
-            for _fb in _COLONIAL_PARLIAMENT_FALLBACKS:
-                if (raw, _fb) in _ROLE_ONLY_SPEAKERS:
+            for _fb in COLONIAL_PARLIAMENT_FALLBACKS:
+                if (raw, _fb) in ROLE_ONLY_SPEAKERS:
                     _role_key = (raw, _fb)
                     break
-        if _role_key and _role_key in _ROLE_ONLY_SPEAKERS:
-            _role_name = _ROLE_ONLY_SPEAKERS[_role_key]
+        if _role_key and _role_key in ROLE_ONLY_SPEAKERS:
+            _role_name = ROLE_ONLY_SPEAKERS[_role_key]
             _role_canonical, _role_parl = _resolve(_role_name, _role_key[1], lookups, speaker_id_lookup)
             _role_sid = speaker_id_lookup.get((_role_canonical, _role_parl)) if _role_canonical else None
             type_stats[bucket]["total"] += 1
