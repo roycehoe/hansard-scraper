@@ -850,10 +850,6 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
     return None
 
 
-def resolve(name: str, parliament: int, lookups: SpeakerLookups) -> Optional[str]:
-    return resolve_canonical_name(normalize_name(name), parliament, lookups)
-
-
 def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups) -> list[Attendance]:
     if not sitting.markdown_content:
         return []
