@@ -1,5 +1,4 @@
 import re
-from datetime import datetime
 from typing import Optional
 
 from sqlmodel import Session
@@ -9,6 +8,13 @@ from crud.sitting import CRUDSitting
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from logs import logger
+from populate.speaker_resolution_constants import (
+    CHIEF_MINISTER_CUTOFF,
+    COLONIAL_PARLIAMENT_FALLBACKS,
+    NON_SPEAKERS,
+    PRESIDING_OFFICERS,
+    ROLE_ONLY_SPEAKERS,
+)
 from services.attendance import (
     VOLUME_TO_PARLIAMENT,
     SpeakerLookups,
@@ -19,47 +25,6 @@ from services.attendance import (
 )
 
 _BATCH = 1000
-_COLONIAL_PARLIAMENT_FALLBACKS = [1, 2, 3]
-
-_NON_SPEAKERS = {
-    "An hon. Member",
-    "Some hon. Members",
-    "Non-Residents",
-    "Tributes by Leader of the House and Opposition Leaders",
-}
-
-_PRESIDING_OFFICERS: dict[tuple[str, int], str] = {
-    ("SPEAKER", 0): "George Oehlers",
-    ("SPEAKER", 1): "George Oehlers",
-    ("SPEAKER", 2): "Coomaraswamy, P.",
-    ("SPEAKER", 3): "Yeoh Ghim Seng",
-    ("SPEAKER", 4): "Yeoh Ghim Seng",
-    ("SPEAKER", 5): "Yeoh Ghim Seng",
-    ("SPEAKER", 6): "Yeoh Ghim Seng",
-    ("DEPUTY SPEAKER", 6): "Tan Soo Khoon",
-    ("SPEAKER", 7): "Tan Soo Khoon",
-    ("SPEAKER", 8): "Tan Soo Khoon",
-    ("SPEAKER", 9): "Tan Soo Khoon",
-    ("SPEAKER", 10): "Abdullah Bin Tarmugi",
-    ("DEPUTY SPEAKER", 10): "Chew Heng Ching",
-    ("SPEAKER", 11): "Abdullah Bin Tarmugi",
-    ("SPEAKER", 12): "Michael Palmer",
-}
-
-_ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str] = {
-    ("The Prime Minister", 0): "Lee Kuan Yew",
-    ("The Prime Minister", 1): "Lee Kuan Yew",
-    ("The Prime Minister", 2): "Lee Kuan Yew",
-    ("The Prime Minister", 3): "Lee Kuan Yew",
-    ("The Prime Minister", 5): "Lee Kuan Yew",
-    ("The Prime Minister", 6): "Lee Kuan Yew",
-    ("The Prime Minister", 8): "Goh Chok Tong",
-    ("The Prime Minister", 11): "Lee Hsien Loong",
-    ("The Minister for Health", 11): "Khaw Boon Wan",
-}
-
-# David Marshall was CM until 1956-06-06; Lim Yew Hock from 1956-06-07.
-_CHIEF_MINISTER_CUTOFF = datetime(1956, 6, 7)
 
 
 def _paren_contains_title(m: re.Match) -> bool:
@@ -85,13 +50,13 @@ def _resolve_presiding_officer(
         else next(
             (
                 p
-                for p in _COLONIAL_PARLIAMENT_FALLBACKS
-                if (role, p) in _PRESIDING_OFFICERS
+                for p in COLONIAL_PARLIAMENT_FALLBACKS
+                if (role, p) in PRESIDING_OFFICERS
             ),
             parliament,
         )
     )
-    name = _PRESIDING_OFFICERS.get((role, parl))
+    name = PRESIDING_OFFICERS.get((role, parl))
     if not name:
         return None
     canonical, resolved_parl = _resolve_with_parliament_fallback(
@@ -109,7 +74,7 @@ def _resolve_with_parliament_fallback(
     canonical = resolve_canonical_name(name, parliament, lookups)
     if canonical is not None or parliament != 0:
         return canonical, parliament
-    for fallback in _COLONIAL_PARLIAMENT_FALLBACKS:
+    for fallback in COLONIAL_PARLIAMENT_FALLBACKS:
         candidate = resolve_canonical_name(name, fallback, lookups)
         if candidate and (candidate, fallback) in speaker_id_lookup:
             return candidate, fallback
@@ -189,7 +154,7 @@ def _populate_speech_speaker_ids(
             if not speaker:
                 continue
             if (
-                speaker in _NON_SPEAKERS
+                speaker in NON_SPEAKERS
                 or speaker.startswith("(")
                 or speaker.startswith("_")
             ):
@@ -212,7 +177,7 @@ def _populate_speech_speaker_ids(
             if raw == "The Chief Minister" and parliament in (0, 1, 2, 3):
                 cm_name = (
                     "David Marshall"
-                    if sitting_date and sitting_date < _CHIEF_MINISTER_CUTOFF
+                    if sitting_date and sitting_date < CHIEF_MINISTER_CUTOFF
                     else "Lim Yew Hock"
                 )
                 cm_canonical, cm_parl = _resolve_with_parliament_fallback(
@@ -229,12 +194,12 @@ def _populate_speech_speaker_ids(
                 (raw, parliament) if parliament != 0 else None
             )
             if role_key is None:
-                for fb in _COLONIAL_PARLIAMENT_FALLBACKS:
-                    if (raw, fb) in _ROLE_ONLY_SPEAKERS:
+                for fb in COLONIAL_PARLIAMENT_FALLBACKS:
+                    if (raw, fb) in ROLE_ONLY_SPEAKERS:
                         role_key = (raw, fb)
                         break
-            if role_key and role_key in _ROLE_ONLY_SPEAKERS:
-                role_name = _ROLE_ONLY_SPEAKERS[role_key]
+            if role_key and role_key in ROLE_ONLY_SPEAKERS:
+                role_name = ROLE_ONLY_SPEAKERS[role_key]
                 role_canonical, role_parl = _resolve_with_parliament_fallback(
                     role_name, role_key[1], lookups, speaker_id_lookup
                 )
