@@ -23,7 +23,11 @@ def _get_antiforgery_token(session: requests.Session) -> str:
         )
         resp.raise_for_status()
         return resp.json()["Value"]
-    except (requests.exceptions.RequestException, ValueError, KeyError) as e:
+    except requests.exceptions.RequestException as e:
+        raise HansardGatewayError("Failed to fetch antiforgery token") from e
+    except ValueError as e:
+        raise HansardGatewayError("Failed to fetch antiforgery token") from e
+    except KeyError as e:
         raise HansardGatewayError("Failed to fetch antiforgery token") from e
 
 

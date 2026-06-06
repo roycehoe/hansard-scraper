@@ -10,7 +10,9 @@ def get_handsard_report_response(sitting_date: str) -> dict:
     try:
         response = requests.post(url=f"{settings.handsard_report_url}?sittingDate={sitting_date}")
         return response.json()
-    except (requests.exceptions.RequestException, ValueError) as e:
+    except requests.exceptions.RequestException as e:
+        raise HansardGatewayError(f"Report request failed for {sitting_date}") from e
+    except ValueError as e:
         raise HansardGatewayError(f"Report request failed for {sitting_date}") from e
 
 
@@ -18,5 +20,7 @@ async def get_handsard_report_response_async(sitting_date: str, client: httpx.As
     try:
         response = await async_post_with_retry(client, f"{settings.handsard_report_url}?sittingDate={sitting_date}")
         return response.json()
-    except (httpx.RequestError, ValueError) as e:
+    except httpx.RequestError as e:
+        raise HansardGatewayError(f"Report request failed for {sitting_date}") from e
+    except ValueError as e:
         raise HansardGatewayError(f"Report request failed for {sitting_date}") from e
