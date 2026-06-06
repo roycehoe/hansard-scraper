@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from typing import Optional
 
@@ -11,21 +12,21 @@ class HandsardSittingDateData:
     attendance: list[Attendance]
 
 
+def _to_int(value) -> Optional[int]:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _serialise_list(value) -> Optional[str]:
+    if value is None:
+        return None
+    return json.dumps(value) if isinstance(value, list) else value
+
+
 def build_old_handsard_sitting_date_response(result: dict, sitting_date: str) -> HandsardSittingDateData:
     """Handles the flat response format returned for sittings before 18 Aug 2015."""
-    import json
-
-    def _to_int(value) -> Optional[int]:
-        try:
-            return int(value)
-        except (TypeError, ValueError):
-            return None
-
-    def _serialise_list(value) -> Optional[str]:
-        if value is None:
-            return None
-        return json.dumps(value) if isinstance(value, list) else value
-
     response = HandsardSittingDateResponse(
         parlement_no=_to_int(result.get("parlNo")),
         session_no=_to_int(result.get("sessionNo")),
