@@ -31,7 +31,9 @@ def get_handsard_search_results(start_index: int, end_index: int) -> dict:
     try:
         response = requests.post(url=settings.handsard_search_url, json=query_dict)
         return response.json()
-    except (requests.exceptions.RequestException, ValueError) as e:
+    except requests.exceptions.RequestException as e:
+        raise HansardGatewayError(f"Search request failed for page {start_index // 20 + 1}") from e
+    except ValueError as e:
         raise HansardGatewayError(f"Search request failed for page {start_index // 20 + 1}") from e
 
 
