@@ -44,10 +44,14 @@ def _resolve_presiding_officer(
         role = "DEPUTY SPEAKER"
     else:
         return None
-    parl = (
-        parliament
-        if parliament != 0
-        else next(
+    # Check the exact parliament first so that an explicit (role, 0) entry in
+    # PRESIDING_OFFICERS is not overridden by the colonial fallback below.
+    if (role, parliament) in PRESIDING_OFFICERS:
+        parl = parliament
+    elif parliament != 0:
+        parl = parliament
+    else:
+        parl = next(
             (
                 p
                 for p in COLONIAL_PARLIAMENT_FALLBACKS
@@ -55,7 +59,6 @@ def _resolve_presiding_officer(
             ),
             parliament,
         )
-    )
     name = PRESIDING_OFFICERS.get((role, parl))
     if not name:
         return None
