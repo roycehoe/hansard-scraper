@@ -65,6 +65,12 @@ _SPEAKER_HONORIFIC_RE = re.compile(
     r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|Inche|Tuan|Haji|The|Er)\b"
 )
 
+# Parliamentary procedural stage labels that appear bold in bills/committee reports but are not speakers
+_PROCEDURAL_STAGE_RE = re.compile(
+    r"^(First|Second|Third)\s+Reading$|^Committee$|^,$|^Year$",
+    re.IGNORECASE,
+)
+
 
 def _extract_mps_speaking(markdown: str) -> list[str]:
     match = _MP_SPEAK_RE.search(markdown)
@@ -280,6 +286,21 @@ def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpee
             new_speaker = re.sub(r"^\d+\\?\.\s+", "", new_speaker)
             # Fix OCR artifacts where space was dropped between honorific and name
             new_speaker = re.sub(r"^(Mr|Mrs|Ms|Dr|Prof|Mdm|The|BG|RAdm|Er)([A-Z])", r"\1 \2", new_speaker)
+            # Fix A: reject parliamentary procedural stage labels (e.g. "Third Reading:", "Committee:")
+            # These end with a colon so the generic section-title skip misses them.
+            if _PROCEDURAL_STAGE_RE.match(new_speaker):
+                continue
+            # Fix B: reject table/data content masquerading as a speaker name:
+            #   - contains $ or % (budget/statistics column headers)
+            #   - has no letter characters at all (punctuation-only artifacts like ",")
+            #   - longer than 80 chars with no honorific (document-fragment headings)
+            if (
+                "$" in new_speaker
+                or "%" in new_speaker
+                or not re.search(r"[A-Za-z]", new_speaker)
+                or (len(new_speaker) > 80 and not _SPEAKER_HONORIFIC_RE.search(new_speaker))
+            ):
+                continue
             # Paren-only annotations (e.g. "(Accidents and violations):") and italic
             # sub-section dividers (e.g. "_HDB Policy Changes_") are procedural cues,
             # not speaker changes. Reset current_speaker so following lines get speaker=None
