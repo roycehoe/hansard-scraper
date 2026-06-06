@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
@@ -41,10 +41,10 @@ class HandsardSearchResult(BaseModel):
     foot_notes: Optional[Any] = None
     foot_note_question: Optional[Any] = None
     foot_note_questions: Optional[Any] = None
-    foot_note: Optional[List] = None
-    atbp_list: Optional[List] = None
-    ptba_list: Optional[List] = None
-    attendance_list: Optional[List] = None
+    foot_note: Optional[list] = None
+    atbp_list: Optional[list] = None
+    ptba_list: Optional[list] = None
+    attendance_list: Optional[list] = None
     online_pdf_file_name: Optional[Any] = Field(default=None, alias="onlinePDFFileName")
     pdf_nodes: Optional[Any] = None
     clarification_text: Optional[Any] = None
