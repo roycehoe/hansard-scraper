@@ -70,12 +70,61 @@ One row per sitting date. A sitting is a full day of parliamentary proceedings, 
 | `volume_no` | int | Hansard volume number. |
 | `sitting_no` | int | Sitting number within the session. |
 | `sitting_date` | str | Date string as returned by the API. |
+| `online_pdf_file_name` | str | Filename of the online PDF for this sitting. |
+| `html_full_content` | str | Raw HTML of the full sitting proceedings. |
+| `ptba_from` | str | PTBA date range start (old format). |
+| `ptba_to` | str | PTBA date range end (old format). |
+| `part_session_str` | str | Part/session label string (new format only). |
 | `start_time_str` | str | Start time of the sitting (new format only). |
 | `speaker` | str | Speaker of the House for that sitting (new format only). |
+| `attendance_preview_text` | str | Preview text for the attendance section (new format only). |
+| `ptba_preview_text` | str | Preview text for the PTBA section (new format only). |
+| `atb_preview_text` | str | Preview text for the ATB section (new format only). |
+| `date_to_display` | str | Display-formatted date string (new format only). |
+| `pdf_notes` | str | PDF notes (new format only). |
+| `wa_text` | str | Written answers text (new format only). |
 | `location_text` | str | Location of the sitting, e.g. `"in contemporaneous communication"` (new format only). |
-| `markdown_content` | str | Full sitting HTML converted to markdown. Used to parse attendance. |
-| `html_full_content` | str | Raw HTML of the full sitting proceedings. |
+| `att_start_pg_no` | int | Attendance start page number (new format only). |
+| `ptba_start_pg_no` | int | PTBA start page number (new format only). |
+| `atbp_start_pg_no` | int | ATBP start page number (new format only). |
+| `member_id` | str | Member ID (old format only). |
+| `report_type` | str | Report type string (old format only). |
+| `portfolio` | str | Portfolio (old format only). |
+| `member_name` | str | Member name (old format only). |
+| `report_version` | str | Report version (old format only). |
+| `report_start_col` | str | Report start column (old format only). |
+| `report_end_col` | str | Report end column (old format only). |
+| `title` | str | Title (old format only). |
+| `column_start` | str | Column start (old format only). |
+| `report_content` | str | Report content (old format only). |
+| `column_end` | str | Column end (old format only). |
+| `report_id` | str | Report ID (old format only). |
+| `score` | str | Search score (old format only). |
+| `max_result` | str | Max result (old format only). |
+| `sno` | str | Sequential number (old format only). |
+| `full_content_flag` | str | Full content flag (old format only). |
+| `from_month` | str | From month (old format only). |
+| `from_day` | str | From day (old format only). |
+| `from_year` | str | From year (old format only). |
+| `html_content` | str | HTML content fragment (old format only). |
+| `subtitle` | str | Subtitle (old format only). |
+| `content` | str | Content (old format only). |
+| `mp_names` | str | MP names string (old format only). |
+| `html_file_name` | str | HTML filename (old format only). |
+| `ver_pdf` | str | Verified PDF flag (old format only). |
+| `foot_notes` | str | Footnotes (old format only). |
+| `foot_note_question` | str | Footnote question (old format only). |
+| `foot_note_questions` | str | Footnote questions (old format only). |
+| `foot_note` | str (JSON) | Footnote list, serialised (old format only). |
+| `atbp_list` | str (JSON) | Absence-to-brief-permitted records, serialised (old format only). |
 | `ptba_list` | str (JSON) | Permissions to be absent, serialised from `ptbaList` in the API response. |
+| `attendance_list` | str (JSON) | Attendance list, serialised (old format only). |
+| `pdf_nodes` | str | PDF nodes (old format only). |
+| `clarification_text` | str | Clarification text (old format only). |
+| `clarification_title` | str | Clarification title (old format only). |
+| `clarification_sub_title` | str | Clarification subtitle (old format only). |
+| `question_count` | str | Question count (old format only). |
+| `markdown_content` | str | Full sitting HTML converted to markdown. Used to parse attendance. |
 | `sections` | str (JSON) | Debate sections from `takesSectionVOList`, serialised. New format only. |
 | `annexures` | str (JSON) | Annexure file references from `annexureList`, serialised. New format only. |
 | `vernaculars` | str (JSON) | Vernacular speech files from `vernacularList`, serialised. New format only. |
@@ -88,7 +137,7 @@ One row per person per sitting, parsed from the PRESENT/ABSENT sections of `Sitt
 | Field | Type | Meaning |
 |---|---|---|
 | `speaker_name` | str | Name as it appears in the attendance list, after title stripping. |
-| `attendance` | bool | `True` = present, `False` = absent. |
+| `is_present` | bool | `True` = present, `False` = absent. |
 | `location_name` | str | Constituency or location if listed in the source (e.g. remote attendance). |
 | `speaker_id` | int | FK → `Speaker.id`. `NULL` where the match has not been resolved. |
 
