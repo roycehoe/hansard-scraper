@@ -67,9 +67,9 @@ All matching logic lives in `_populate_attendance_speaker_ids` in `populate/spea
 
 | Root cause | Rows | Fix |
 |---|---|---|
-| Parliament 0 — no Mp rows for those volumes | 7,751 | Add fallback to parliaments 1, 2, 3 (same as speech pipeline) |
+| Parliament 0 — no Speaker rows for those volumes | 7,751 | Add fallback to parliaments 1, 2, 3 (same as speech pipeline) |
 | Case mismatch (`bin` vs `Bin`) | 1,457 | Normalise case before lookup, or run through resolve_canonical_name |
-| No name normalisation — person IS in Mp but surface form differs | ~12,089 | Apply strip_title + normalize_name + resolve_canonical_name before lookup |
+| No name normalisation — person IS in Speaker but surface form differs | ~12,089 | Apply strip_title + normalize_name + resolve_canonical_name before lookup |
 | Colonial-era MPs not scraped | ~3,945 | Structurally absent — not fixable |
 | Other absent names (non-MP attendees, etc.) | ~5,390 | Structurally absent — not fixable |
 
@@ -77,11 +77,11 @@ All matching logic lives in `_populate_attendance_speaker_ids` in `populate/spea
 
 # Baseline
 
-From full-corpus run after `populate_mp_links` (2026-06-01):
+From full-corpus run after `populate_speaker_links` (2026-06-01):
 
 | Table | Matched | Total | Rate |
 |---|---|---|---|
-| `sittingattendance` | 65,695 | 96,327 | 68.2% |
+| `attendance` | 65,695 | 96,327 | 68.2% |
 
 Top unmatched `speaker_name` values (full corpus):
 - `Abdullah Tarmugi` ×679 — missing Bin
@@ -98,7 +98,7 @@ Top unmatched `speaker_name` values (full corpus):
 
 **Step 1 — Define the denominator.**
 Query the DB to count:
-- Total `sittingattendance` rows with non-null `speaker_name`
+- Total `attendance` rows with non-null `speaker_name`
 - Rows where `speaker_name` is from a known non-MP / colonial-era bucket (investigate empirically)
 - Denominator = total − structurally absent
 

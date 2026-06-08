@@ -1,7 +1,7 @@
 # Attendance Name Matching Patterns
 
 Accumulated knowledge about how MP names appear in `markdown_content` vs how they are
-stored in the `Mp` table. Used by `services/sitting_attendance.py`.
+stored in the `Speaker` table. Used by `services/attendance.py`.
 
 ---
 
@@ -11,8 +11,8 @@ Derived from the `Parliament No:| N` header embedded in every sitting's markdown
 
 | Volume range | Parliament | Notes |
 |---|---|---|
-| 1–11 | 1 | Colonial Legislative Assembly (1955–1959). **DATA GAP: these MPs are NOT in the Mp table.** The Mp table's parliament 1 contains post-independence MPs (1965+). Exclude from match-rate denominator. |
-| 12–23 | 0 | State of Singapore Assembly (~1960–1963). No Mp rows for parliament 0. Exclude from denominator. |
+| 1–11 | 1 | Colonial Legislative Assembly (1955–1959). **DATA GAP: these MPs are NOT in the Speaker table.** The Speaker table's parliament 1 contains post-independence MPs (1965+). Exclude from match-rate denominator. |
+| 12–23 | 0 | State of Singapore Assembly (~1960–1963). No Speaker rows for parliament 0. Exclude from denominator. |
 | 24–26 | 1 | Post-independence Parliament 1 (~1965–1968). MPs ARE in table. |
 | 27–31 | 2 | |
 | 32–35 | 3 | |
@@ -72,7 +72,7 @@ Key rules:
 
 ---
 
-## Name format in Mp table
+## Name format in Speaker table
 
 ### Standard cases (no comma)
 
@@ -84,7 +84,7 @@ Most names: natural order, `Firstname Surname` or full name. Direct exact match.
 Examples: `Barker, E.W.`, `Chandra Das, S.`, `Conceicao, J.F.`, `Jayakumar, S.`.
 
 The extraction service builds a reverse-lookup from the natural markdown form back to the
-canonical inverted Mp.name.
+canonical inverted Speaker.name.
 
 **Variant: title suffix in inverted name** (`Surname, Firstname, Dr`):
 The trailing title suffix is stripped when computing the natural form.
@@ -120,8 +120,8 @@ The service handles 3-word names by trying the rearrangement
 Cases confirmed as permanently unresolvable — excluded from the match-rate denominator or accepted as unfixable. Do not spend loop iterations on these.
 
 **Parliament/volume coverage gaps** (excluded from denominator):
-- Vol 1–11 (parliament 1 colonial assembly, 1955–1959): MPs not in `Mp` table. The `Mp` table's parliament 1 starts at vol 24–26 (post-independence). These sittings are excluded from the match-rate denominator.
-- Vol 12–23 (parliament 0, State of Singapore Assembly, ~1960–1963): no `Mp` rows for parliament 0. Excluded from denominator.
+- Vol 1–11 (parliament 1 colonial assembly, 1955–1959): MPs not in `Speaker` table. The `Speaker` table's parliament 1 starts at vol 24–26 (post-independence). These sittings are excluded from the match-rate denominator.
+- Vol 12–23 (parliament 0, State of Singapore Assembly, ~1960–1963): no `Speaker` rows for parliament 0. Excluded from denominator.
 
 **Procedural noise** (accepted, do not fix):
 - Sitting id=1465 (vol 27, parliament 2): Speaker election sitting — procedural text after the MP list is extracted as spurious "names." The sitting still passes the 80% threshold (89.1%). Do not attempt to fix this one-off case.
@@ -131,12 +131,12 @@ Cases confirmed as permanently unresolvable — excluded from the match-rate den
 
 ## Known data gaps
 
-Names that appear in the markdown but have NO corresponding Mp row:
+Names that appear in the markdown but have NO corresponding Speaker row:
 
 | Name | Parliament(s) | Notes |
 |---|---|---|
-| `Lai Tha Chai` | 3 | Not in Mp table |
-| `Ya'acob Bin Mohamed` / `Tuan Haji Ya'acob Bin Mohamed` | 2, 3 | Not in Mp table |
+| `Lai Tha Chai` | 3 | Not in Speaker table |
+| `Ya'acob Bin Mohamed` / `Tuan Haji Ya'acob Bin Mohamed` | 2, 3 | Not in Speaker table |
 | `Mohd Ghazali Bin Ismail` (with period: `Mohd.`) | 2 | May appear with OCR variation |
 
 OCR errors observed (corrected in the source document but un-matchable):
