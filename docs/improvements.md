@@ -55,7 +55,7 @@ Education` instead of `RAdm Teo Chee Hean`, and resolution fails.
 Replace `_INNER_TITLE` with a call to the already-existing `strip_title`:
 
 ```python
-# Current (mp_links.py ~line 121):
+# Current (speaker_links.py ~line 121):
 if _INNER_TITLE.match(inner):
     raw = inner
 else:
@@ -181,6 +181,6 @@ These categories cannot be resolved by pipeline changes alone.
 | Category | Rows | Reason |
 |---|---|---|
 | `The Prime Minister`, `The Minister for X` (no parenthetical) | ~3,128 | No name in the string; requires a date-range→person timeline table built from external sources |
-| Colonial-era names (parliaments 0–3, pre-1965) | ~8,000 speech, ~3,945 attendance | Not in the `speaker` table; `scrape_mps_by_parliament.py` only covers post-independence records |
+| Colonial-era names (parliaments 0–3, pre-1965) | ~8,000 speech, ~3,945 attendance | Not in the `speaker` table; `scrape_speakers_by_parliament.py` only covers post-independence records |
 | `The President` | small | Constitutionally not a speaker; `speaker_id` will always be null |
 | `An hon. Member`, `Hon. Members` | ~1,109 | Anonymised by design in the Hansard source |
