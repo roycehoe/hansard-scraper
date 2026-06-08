@@ -29,7 +29,7 @@ Produce a `get_sitting_attendance` function that takes a `Sitting` row and retur
 
 **Primary focus: colonial-era sittings (volume 1–33).** Mid-era (vol 38–75) and modern (vol 76+) coverage is a secondary concern; failing to handle newer formats is acceptable if colonial sittings are well-covered.
 
-Success: ≥95% of extracted attendance entries across the colonial-era target sample are matched to an `Mp` record by name and parliament number, tracked in `docs/attendance/progress.txt`.
+Success: ≥95% of extracted attendance entries across the colonial-era target sample are matched to an `Speaker` record by name and parliament number, tracked in `docs/attendance/progress.txt`.
 
 "Matched" means a unique `Speaker` row exists where `Speaker.name` equals the normalised `speaker_name` and `Speaker.parliament_number` equals the sitting's parliament number. A sitting with no `parlement_no` (and no inferred parliament number) is excluded from the match-rate denominator. Track total excluded count separately.
 
@@ -49,7 +49,7 @@ Success: ≥95% of extracted attendance entries across the colonial-era target s
 - `attendance` — `True` = present, `False` = absent
 - `location_name` — constituency extracted from the parenthetical
 
-**Note:** `Attendance` does not currently have an `mp_id` FK column. Matching to `Mp` is validated during the loop but the FK column is added only once matching is stable (a separate migration step, not part of the loop).
+**Note:** `Attendance` does not currently have an `mp_id` FK column. Matching to `Speaker` is validated during the loop but the FK column is added only once matching is stable (a separate migration step, not part of the loop).
 
 ## Document eras and section formats
 
@@ -134,7 +134,7 @@ Write all three to `docs/attendance/sample.json`:
 Do not re-sample in later iterations.
 
 **Step 3 — Implement the baseline extraction function.**
-Write `get_sitting_attendance(sitting: Sitting) -> list[Attendance]` in `services/sitting_attendance.py`. The initial implementation should handle at minimum the colonial-era plain `PRESENT:` / `ABSENT:` format. Do not attempt to handle all eras at once — the loop will add coverage iteratively.
+Write `get_sitting_attendance(sitting: Sitting) -> list[Attendance]` in `services/attendance.py`. The initial implementation should handle at minimum the colonial-era plain `PRESENT:` / `ABSENT:` format. Do not attempt to handle all eras at once — the loop will add coverage iteratively.
 
 The function signature:
 
@@ -223,7 +223,7 @@ Append to `docs/attendance/progress.txt` under a `## Iteration N — YYYY-MM-DD`
 If the finding reveals a generalizable pattern about name formats or era attendance structure, also record it in `docs/attendance/matching-patterns.md`.
 
 **Step 4 — Apply one fix.**
-Modify `services/sitting_attendance.py` only. Apply one fix per iteration. Prefer a **condition-gated branch** — gate on era (derived from `volume_no`) or on a structural signal in the markdown — rather than modifying the general path. This limits regression blast radius by leaving the existing path untouched.
+Modify `services/attendance.py` only. Apply one fix per iteration. Prefer a **condition-gated branch** — gate on era (derived from `volume_no`) or on a structural signal in the markdown — rather than modifying the general path. This limits regression blast radius by leaving the existing path untouched.
 
 **Step 5 — Validate.**
 Re-run `get_sitting_attendance` across the full sample. Print a table covering pilot, held-out, and regression sets:
@@ -250,7 +250,7 @@ Add more sittings to the sample from `(era, failure_stage)` groups that are unde
 **Step 7 — Check completion.**
 Compute the current colonial-era match rate across the full pilot sample (sittings with resolvable parliament numbers only). If ≥95% of those sittings pass (≥80% of their extracted names matched), stop and report success.
 
-If the rate has plateaued below 95% and the only remaining failures are sittings with known data gaps (parliament numbers that cannot be resolved, MPs not in the `Mp` table due to data coverage), also stop — record the ceiling and the reason. Do not iterate against permanently unresolvable cases; see `docs/attendance/matching-patterns.md` → Known Correct Exclusions.
+If the rate has plateaued below 95% and the only remaining failures are sittings with known data gaps (parliament numbers that cannot be resolved, MPs not in the `Speaker` table due to data coverage), also stop — record the ceiling and the reason. Do not iterate against permanently unresolvable cases; see `docs/attendance/matching-patterns.md` → Known Correct Exclusions.
 
 Otherwise continue.
 
@@ -262,7 +262,7 @@ Present:
 - Marginal gain this iteration (how many sittings flipped from failing to passing)
 - Resolved failure groups (with before/after counts)
 - Remaining unresolved groups and their current counts
-- Any failure modes that appear structurally unfixable (e.g., name not present in `Mp` table at all due to data gaps)
+- Any failure modes that appear structurally unfixable (e.g., name not present in `Speaker` table at all due to data gaps)
 - Secondary metric: total names matched / total names extracted
 
 Ask: "Should I continue iterating?"

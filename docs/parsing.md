@@ -147,7 +147,7 @@ Constituency is an optional parenthetical: `(Tanjong Pagar)`, `(Nominated Member
 
 Speaker entries appear at the top: `Mr SPEAKER (Mr Name (Constituency)).` — include them.
 
-### Name matching against `Mp` table
+### Name matching against `Speaker` table
 
 `Speaker.name` stores names without title prefixes. Known variations:
 - Honorific suffixes in attendance not in `Speaker.name` — e.g. `C.B.E.`, `J.P.`
