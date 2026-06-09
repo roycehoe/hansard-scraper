@@ -21,24 +21,24 @@ This document only contains things Claude would get wrong without being told —
 
 ```python
 # Good
-for user_project in user_projects: ...
-for i, source in enumerate(sources): ...             # i: no domain meaning
-for citation_number, source in enumerate(sources):   # descriptive when index matters
+for sitting in sittings: ...
+for i, line in enumerate(lines): ...                         # i: no domain meaning
+for ordinal, speech in enumerate(speeches, start=1):         # descriptive when index matters
     ...
 
 # Bad
-for up in user_projects: ...                         # up abbreviates the domain object
+for s in sittings: ...                                       # s abbreviates the domain object
 ```
 
 ```python
 # Good
-unvalidated_user = crud_user.get_by_email(email)
-if unvalidated_user is None:
-    raise UserNotFoundException
-validated_user = unvalidated_user
+unvalidated_sitting = CRUDSitting(session).get_by_date(sitting_date)
+if unvalidated_sitting is None:
+    raise HansardParseError
+validated_sitting = unvalidated_sitting
 
 # Bad
-user = crud_user.get_by_email(email)
+sitting = CRUDSitting(session).get_by_date(sitting_date)
 ```
 
 ## Function Naming
@@ -57,14 +57,14 @@ Compound `or` guards where each condition represents a different failure mode mu
 
 ```python
 # Good
-if authorization is None:
-    raise AuthEntraTokenMissingException
-if not authorization.startswith(BEARER_PREFIX):
-    raise AuthEntraTokenMissingException
+if report.markdown_content is None:
+    raise HansardParseError
+if not report.markdown_content.strip():
+    raise HansardParseError
 
 # Bad
-if authorization is None or not authorization.startswith(BEARER_PREFIX):
-    raise AuthEntraTokenMissingException
+if report.markdown_content is None or not report.markdown_content.strip():
+    raise HansardParseError
 ```
 
 ## None Checks
@@ -73,12 +73,12 @@ Do not use falsy checks as None guards — SQLModel objects can evaluate as fals
 
 ```python
 # Good
-if user is None:
-    raise UserNotFoundException
+if report is None:
+    raise HansardParseError
 
 # Bad — ambiguous for ORM objects
-if not user:
-    raise UserNotFoundException
+if not report:
+    raise HansardParseError
 ```
 
 ## Comparisons
@@ -87,11 +87,11 @@ Always repeat the full comparison rather than using `in` / `not in` — each con
 
 ```python
 # Good
-if role != UserProjectRole.OWNER and role != UserProjectRole.ADMIN:
+if report_type != ReportType.ORAL_ANSWER and report_type != ReportType.WRITTEN_ANSWER:
     ...
 
 # Bad
-if role not in [UserProjectRole.OWNER, UserProjectRole.ADMIN]:
+if report_type not in [ReportType.ORAL_ANSWER, ReportType.WRITTEN_ANSWER]:
     ...
 ```
 
@@ -101,15 +101,15 @@ Each exception type gets its own `except` block — handlers often diverge over 
 
 ```python
 # Good
-except AuthEntraTokenMissingException:
+except HansardGatewayError:
     raise
-except AuthEntraTokenInvalidException:
+except HansardParseError:
     raise
-except SomeOtherException:
-    raise AuthEntraTokenInvalidException
+except ValueError as e:
+    raise HansardGatewayError("Unexpected response format") from e
 
 # Bad
-except (AuthEntraTokenMissingException, AuthEntraTokenInvalidException):
+except (HansardGatewayError, HansardParseError):
     raise
 ```
 
@@ -119,11 +119,13 @@ Always inline single-use transformations directly in `return` statements — avo
 
 ```python
 return [
-    ProjectMember(
-        user_id=user_project.user_id,
-        role=user_project.role,
+    Speech(
+        ordinal=ordinal + 1,
+        speaker=parsed_speech.speaker,
+        transcript=parsed_speech.transcript,
+        report_id=report.id,
     )
-    for user_project in user_projects
+    for ordinal, parsed_speech in enumerate(parsed_speeches)
 ]
 ```
 
@@ -133,25 +135,27 @@ Three or more parameters must be one per line, closing paren on its own line —
 
 ```python
 # Good
-def create_project(
-    session: Session,
-    user: User,
-    request: CreateProjectRequest,
-) -> Project:
+def get_first_filtered(
+    self,
+    *,
+    sitting_date_before: Optional[datetime] = None,
+    parliament_number: Optional[int] = None,
+    report_type: Optional[str] = None,
+    has_content: bool = False,
+) -> Optional[Report]:
     ...
 ```
 
-Must use `*` to force keyword-only arguments when a function has optional boolean flags — prevents unreadable positional boolean calls like `update(user, True, False)`:
+Must use `*` to force keyword-only arguments when a function has optional boolean flags — prevents unreadable positional boolean calls like `update(report, True, False)`:
 
 ```python
-def update_permissions(
-    self,
-    user: User,
-    role: UserRole,
+def _try_name_variant(
+    name: str,
+    parliament: int,
+    lookups: SpeakerLookups,
     *,
-    update_updated_at: bool = True,
-    revoke_previously_issued_tokens: bool = True,
-) -> User:
+    include_wordset: bool = True,
+) -> Optional[str]:
     ...
 ```
 
@@ -169,16 +173,16 @@ Functions that return multiple values use a typed `@dataclass`, never a tuple �
 ```python
 # Good
 @dataclass
-class SourceImageDimensions:
-    width: int
-    height: int
+class ReportHeader:
+    title: str
+    subtitle: Optional[str] = None
 
-def _get_source_image_dimensions(...) -> SourceImageDimensions:
-    return SourceImageDimensions(width=w, height=h)
+def _get_db_report_header(raw_title: str) -> ReportHeader:
+    return ReportHeader(title=title, subtitle=subtitle)
 
 # Bad
-def _get_source_image_dimensions(...) -> tuple:
-    return w, h
+def _get_db_report_header(raw_title: str) -> tuple:
+    return title, subtitle
 ```
 
 ## Constants
@@ -187,17 +191,17 @@ Inline string and numeric literals that represent fixed named values must be def
 
 ```python
 # Good
-BEARER_PREFIX = "Bearer "
-TOKEN_OFFSET = len(BEARER_PREFIX)
+_BATCH_SIZE = 1_000
+MAX_PARLIAMENT_NUMBER = 12
 
-if not authorization.startswith(BEARER_PREFIX):
-    ...
-token = authorization[TOKEN_OFFSET:]
+if len(batch) >= _BATCH_SIZE:
+    crud.create_many(batch)
+    batch.clear()
 
 # Bad
-if not authorization.startswith("Bearer "):
-    ...
-token = authorization[7:]
+if len(batch) >= 1000:
+    crud.create_many(batch)
+    batch.clear()
 ```
 
 Always use `_` as a thousands separator for integer literals ≥ 1000 — makes large literals scannable: `32_000`, `3_840`, `10_000`.
@@ -205,7 +209,7 @@ Always use `_` as a thousands separator for integer literals ≥ 1000 — makes 
 Always use **tuples** (not lists) for constant sequences — immutable by construction; a list invites accidental mutation:
 
 ```python
-REQUIRED_CLAIMS: tuple[str, ...] = ("aud", "exp", "iat", "iss", "oid", "tid")
+COLONIAL_PARLIAMENT_FALLBACKS: tuple[int, ...] = (0, 1, 2, 3)
 ```
 
 ## Pydantic Models
@@ -216,27 +220,28 @@ REQUIRED_CLAIMS: tuple[str, ...] = ("aud", "exp", "iat", "iss", "oid", "tid")
 
 ```python
 # Good
-prior_user_instructions: list[str] = Field(default_factory=list)
-options: OptionsIn = Field(default_factory=OptionsIn)
+foot_note: Optional[list] = Field(default_factory=list)
+atbp_list: Optional[list] = Field(default_factory=list)
 
 # Bad
-prior_user_instructions: list[str] = []
-options: OptionsIn = OptionsIn()
+foot_note: Optional[list] = []
+atbp_list: Optional[list] = []
 ```
 
 **External API responses** must be parsed through a Pydantic model before any field access — dict key access fails at access time; Pydantic validation fails at the boundary, which is where you want to discover schema changes:
 
 ```python
 # Good
-class EntraDiscoveryResponse(BaseModel):
-    jwks_uri: str
-    issuer: str
+class HandsardSearchResult(BaseModel):
+    report_id: str
+    title: str
+    sitting_date: str
 
-state = EntraDiscoveryResponse.model_validate(response.json())
+result = HandsardSearchResult.model_validate(raw_dict)
 
 # Bad
-config = response.json()
-jwks_uri = config["jwks_uri"]
+raw_dict = response.json()
+report_id = raw_dict["reportId"]
 ```
 
 Do not add `model_config = ConfigDict(extra="forbid")` unless there is a specific reason — the project default is permissive; `extra="forbid"` breaks when external APIs add new fields.
@@ -259,10 +264,10 @@ Two distinct patterns:
 **`get_validated_*`** — returns the validated object or raises. Use when the caller needs the object. Naming makes the return type predictable and the validation step visible in the call chain.
 
 ```python
-def get_validated_reset_password_token(token: str) -> PasswordResetToken:
-    result = crud_token.get_by_token(token)
+def get_validated_report(session: Session, report_id: int) -> Report:
+    result = CRUDReport(session).get_by_id(report_id)
     if result is None:
-        raise PasswordResetTokenNotFoundException
+        raise HansardParseError
     return result
 ```
 
