@@ -35,7 +35,7 @@ class HandsardSearchResult(BaseModel):
     subtitle: Optional[Any] = None
     sitting_date: str
     content: Optional[str] = None
-    mp_names: Optional[Any] = None
+    speaker_names: Optional[Any] = None
     html_file_name: Optional[str] = None
     ver_pdf: Optional[Any] = None
     foot_notes: Optional[Any] = None

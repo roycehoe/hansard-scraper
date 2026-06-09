@@ -59,7 +59,7 @@ def build_old_handsard_sitting_date_response(result: dict, sitting_date: str) ->
         html_content=result.get("htmlContent"),
         subtitle=result.get("subtitle"),
         content=result.get("content"),
-        mp_names=result.get("mpNames"),
+        speaker_names=result.get("mpNames"),
         html_file_name=result.get("htmlFileName"),
         ver_pdf=result.get("verPdf"),
         foot_notes=result.get("footNotes"),
