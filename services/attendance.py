@@ -801,7 +801,7 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
     """
     Try to match a name string to canonical Speaker.name using the full lookup cascade.
     Returns canonical Speaker.name if found, None if no match.
-    Reusable by any module that needs MP name resolution.
+    Reusable by any module that needs speaker name resolution.
     """
     # Apply parliament-agnostic OCR corrections before any parliament-scoped lookup.
     corrected = _OCR_FORM_TO_CORRECTED_NAME.get(_period_normalize(name))

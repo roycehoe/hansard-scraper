@@ -9,14 +9,16 @@ A complete, queryable record of Singapore's parliamentary proceedings — from t
 ### 1. Complete corpus coverage
 Fetch and store every Hansard entry published by SPRS, across all parliaments and all report types. No gaps from rate limits, format changes, or API quirks. The raw API response for every record is preserved exactly as received.
 
-### 2. Faithful speaker attribution
-Extract individual speeches from parliamentary transcripts and attribute each one to the correct MP. Attribution should be as complete as the source material allows — documents that remain unattributed must be structurally unattributable, such as appendix link indexes or colonial-era procedural orders with no named author.
+### 2. Per-utterance speaker index
+Extract individual speeches from parliamentary transcripts and attribute each one to the correct speaker. Each `Speech` row represents one utterance — a single content line in the debate — with an `ordinal` that preserves delivery order within the report. The speech table is a queryable, speaker-filtered index over the report content: a researcher can retrieve all speeches by a given speaker across the corpus, sorted by ordinal to read them in context. The `markdown_content` on `Report` is the source of truth; speeches are a derived index over it, not a line-for-line mirror.
+
+Attribution should be as complete as the source material allows. Documents that remain unattributed must be structurally unattributable (appendix link indexes, colonial-era procedural orders with no named author). Two structural limits apply by design: single-speaker documents are stored as one `Speech` row spanning the full body rather than per-line rows; documents with multiple speakers but no bold speaker markup produce zero `Speech` rows.
 
 ### 3. Rich sitting metadata
 For every sitting date, capture full session metadata: attendance, permissions to be absent, debate sections, vernacular speeches, and annexures. Both pre- and post-August 2015 API formats are handled faithfully.
 
-### 4. MP identity linking
-Connect every speech and attendance record to a canonical MP identity (name, party, parliament number) sourced from parliament.gov.sg.
+### 4. Speaker identity linking
+Connect every speech and attendance record to a canonical speaker identity (name, party, parliament number) sourced from parliament.gov.sg.
 
 ### 5. High-fidelity markdown
 Convert raw HTML records into clean, readable markdown that downstream consumers can trust — stripping artifacts introduced by html2text across three distinct document eras (colonial, mid-era, modern) without losing any substantive content.
@@ -45,7 +47,7 @@ The raw HTML spans three document eras with different artifacts. Fixes are appli
 
 ### Principled attribution hierarchy
 For documents that contain no bold speaker markup, attribution follows a deliberate fallback chain:
-1. If the `MPs Speaking` header lists exactly one name, attribute the entire body to that MP (adjournment motions, bill first readings, procedural resolutions).
+1. If the `MPs Speaking` header lists exactly one name, attribute the entire body to that speaker (adjournment motions, bill first readings, procedural resolutions).
 2. If the body follows a known ministerial attribution pattern (ministry heading + name + title), extract the minister from the body.
 3. If neither applies, leave unattributed — do not fabricate attribution for multi-speaker appendix documents or structurally authorless procedural orders.
 
