@@ -12,7 +12,11 @@ Fetch and store every Hansard entry published by SPRS, across all parliaments an
 ### 2. Per-utterance speaker index
 Extract individual speeches from parliamentary transcripts and attribute each one to the correct speaker. Each `Speech` row represents one utterance — a single content line in the debate — with an `ordinal` that preserves delivery order within the report. The speech table is a queryable, speaker-filtered index over the report content: a researcher can retrieve all speeches by a given speaker across the corpus, sorted by ordinal to read them in context. The `markdown_content` on `Report` is the source of truth; speeches are a derived index over it, not a line-for-line mirror.
 
-Attribution should be as complete as the source material allows. Documents that remain unattributed must be structurally unattributable (appendix link indexes, colonial-era procedural orders with no named author). Two structural limits apply by design: single-speaker documents are stored as one `Speech` row spanning the full body rather than per-line rows; documents with multiple speakers but no bold speaker markup produce zero `Speech` rows.
+Attribution should be as complete as the source material allows. Documents that remain unattributed must be structurally unattributable (appendix link indexes, colonial-era procedural orders with no named author). Structural limits that apply by design:
+- `Speech.speaker` may be `None` for utterances where no speaker attribution is possible — speakers are not guaranteed.
+- Single-speaker documents are stored as one `Speech` row spanning the full body rather than per-line rows.
+- Documents with multiple speakers but no bold speaker markup produce zero `Speech` rows.
+- Preamble content (table headers, sitting metadata lines before the first speaker) and blank lines are excluded from `Speech` rows entirely.
 
 ### 3. Rich sitting metadata
 For every sitting date, capture full session metadata: attendance, permissions to be absent, debate sections, vernacular speeches, and annexures. Both pre- and post-August 2015 API formats are handled faithfully.
