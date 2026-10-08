@@ -1,10 +1,10 @@
-from database.handsard_sitting_date_response import HandsardSittingDateResponse
+from database.hansard_sitting_date_response import HansardSittingDateResponse
 from database.sitting import Sitting
 from utils.markdown_parser import get_cleaned_sitting_markdown
 
 
-def build_sitting(response: HandsardSittingDateResponse) -> Sitting:
-    # handsardsittingdateresponse stores some Optional[int] fields as VARCHAR
+def build_sitting(response: HansardSittingDateResponse) -> Sitting:
+    # hansardsittingdateresponse stores some Optional[int] fields as VARCHAR
     # (columns pre-date the int typing in the model).  model_dump() returns them
     # as strings; empty strings must become None before Pydantic coerces to int.
     data = {

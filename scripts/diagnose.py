@@ -6,15 +6,15 @@ from typing import Optional
 
 from sqlmodel import Session
 
-from crud.handsard_website_response import CRUDHandsardWebsiteResponse
-from database.handsard_website_response import HandsardWebsiteResponse
+from crud.hansard_website_response import CRUDHansardWebsiteResponse
+from database.hansard_website_response import HansardWebsiteResponse
 from database.init import engine
 from database.report import Report
 from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
 
-def _get_speech_start(response: HandsardWebsiteResponse) -> tuple[Report, Optional[int]]:
+def _get_speech_start(response: HansardWebsiteResponse) -> tuple[Report, Optional[int]]:
     report = build_report(response)
     start = (
         get_start_of_speech_line(
@@ -29,7 +29,7 @@ def _get_speech_start(response: HandsardWebsiteResponse) -> tuple[Report, Option
 
 def get_report_type_speech_stats(session: Session) -> dict:
     """For each report_type, count how many responses have markdown and how many yield speeches."""
-    responses = CRUDHandsardWebsiteResponse(session).get_all()
+    responses = CRUDHansardWebsiteResponse(session).get_all()
     stats = defaultdict(lambda: {"total": 0, "has_markdown": 0, "has_start_line": 0, "can_get_speeches": 0})
 
     for response in responses:
@@ -50,7 +50,7 @@ def get_report_type_speech_stats(session: Session) -> dict:
 
 def get_failing_sample(session: Session, no_speech_types: set[str], k: int = 3) -> dict:
     """Sample up to k failing documents per (failure_stage, report_type) group."""
-    responses = CRUDHandsardWebsiteResponse(session).get_all()
+    responses = CRUDHansardWebsiteResponse(session).get_all()
     groups = defaultdict(list)
 
     for response in responses:
@@ -73,7 +73,7 @@ def get_failing_sample(session: Session, no_speech_types: set[str], k: int = 3) 
 
 def get_passing_sample(session: Session, no_speech_types: set[str], n: int = 30) -> list:
     """Sample n currently-passing documents for regression testing."""
-    responses = CRUDHandsardWebsiteResponse(session).get_all()
+    responses = CRUDHansardWebsiteResponse(session).get_all()
     passing = []
 
     for response in responses:
@@ -109,7 +109,7 @@ def run_stats_on(responses: list) -> dict:
 
 if __name__ == "__main__":
     with Session(engine) as session:
-        crud = CRUDHandsardWebsiteResponse(session)
+        crud = CRUDHansardWebsiteResponse(session)
         print("=== Setup: report_type speech stats ===")
         stats = get_report_type_speech_stats(session)
         no_speech_types = set()

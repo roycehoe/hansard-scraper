@@ -1,6 +1,6 @@
 from sqlmodel import Session
 
-from crud.handsard_website_response import CRUDHandsardWebsiteResponse
+from crud.hansard_website_response import CRUDHansardWebsiteResponse
 from crud.report import CRUDReport
 from logs import logger
 from services.report import build_report
@@ -9,7 +9,7 @@ _BATCH_SIZE = 500
 
 
 def populate_reports(session: Session):
-    responses = CRUDHandsardWebsiteResponse(session).get_all()
+    responses = CRUDHansardWebsiteResponse(session).get_all()
     crud = CRUDReport(session)
     existing_ids = crud.get_all_report_ids()
     to_process = [r for r in responses if r.report_id not in existing_ids]

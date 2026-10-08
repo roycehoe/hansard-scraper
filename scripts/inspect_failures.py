@@ -4,7 +4,7 @@ import sys
 
 from sqlmodel import Session
 
-from crud.handsard_website_response import CRUDHandsardWebsiteResponse
+from crud.hansard_website_response import CRUDHansardWebsiteResponse
 from database.init import engine
 from services.report import build_report
 from services.speech import get_start_of_speech_line
@@ -27,7 +27,7 @@ def show_doc(response, report, max_lines=60):
 
 
 def inspect_type(session: Session, report_type: str, max_failing: int = 3, max_passing: int = 2):
-    responses = CRUDHandsardWebsiteResponse(session).get_all_by_report_type(report_type)
+    responses = CRUDHansardWebsiteResponse(session).get_all_by_report_type(report_type)
 
     failing, passing = [], []
     for response in responses:

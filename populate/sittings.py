@@ -1,13 +1,13 @@
 from sqlmodel import Session
 
-from crud.handsard_sitting_date_response import CRUDHandsardSittingDateResponse
+from crud.hansard_sitting_date_response import CRUDHansardSittingDateResponse
 from crud.sitting import CRUDSitting
 from logs import logger
 from services.sitting import build_sitting
 
 
 def populate_sittings(session: Session):
-    all_responses = CRUDHandsardSittingDateResponse(session).get_all()
+    all_responses = CRUDHansardSittingDateResponse(session).get_all()
     crud = CRUDSitting(session)
     existing_dates = crud.get_all_sitting_dates()
     to_process = [r for r in all_responses if r.sitting_date not in existing_dates]

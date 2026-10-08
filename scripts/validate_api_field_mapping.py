@@ -14,15 +14,15 @@ import sys
 from datetime import datetime
 from typing import Any
 
-from gateway.handsard_report import get_handsard_report_response
-from gateway.handsard_search import get_handsard_search_results
-from gateway.handsard_topic import get_handsard_topic_response
-from schemas.handsard_search_result import HandsardSearchResult
-from services.handsard_sitting_date_response import (
-    build_new_handsard_sitting_date_response,
-    build_old_handsard_sitting_date_response,
+from gateway.hansard_report import get_hansard_report_response
+from gateway.hansard_search import get_hansard_search_results
+from gateway.hansard_topic import get_hansard_topic_response
+from schemas.hansard_search_result import HansardSearchResult
+from services.hansard_sitting_date_response import (
+    build_new_hansard_sitting_date_response,
+    build_old_hansard_sitting_date_response,
 )
-from services.handsard_website import build_handsard_website_response
+from services.hansard_website import build_hansard_website_response
 from settings import settings
 
 PASS = "\033[32mPASS\033[0m"
@@ -31,7 +31,7 @@ WARN = "\033[33mWARN\033[0m"
 INFO = "\033[34mINFO\033[0m"
 
 # Synthetic payload for old-format sitting dates (pre-18 Aug 2015).
-# Covers every field mapped by build_old_handsard_sitting_date_response.
+# Covers every field mapped by build_old_hansard_sitting_date_response.
 SYNTHETIC_OLD_FORMAT = {
     "parlNo": "9",
     "sessionNo": "1",
@@ -78,7 +78,7 @@ SYNTHETIC_OLD_FORMAT = {
 }
 
 # Synthetic payload for new-format sitting dates (18 Aug 2015 onwards).
-# Covers every field mapped by build_new_handsard_sitting_date_response.
+# Covers every field mapped by build_new_hansard_sitting_date_response.
 SYNTHETIC_NEW_FORMAT = {
     "metadata": {
         "parlimentNO": "13",
@@ -123,8 +123,8 @@ def _section(title: str) -> None:
 
 
 def validate_search_and_topic() -> bool:
-    _section("API 1 — searchResult  →  HandsardSearchResult  →  HandsardWebsiteResponse")
-    raw_list = get_handsard_search_results(0, 0)
+    _section("API 1 — searchResult  →  HansardSearchResult  →  HansardWebsiteResponse")
+    raw_list = get_hansard_search_results(0, 0)
     if not raw_list:
         print(f"  {WARN}  No search results returned (check settings.search_from_date).")
         return True
@@ -133,7 +133,7 @@ def validate_search_and_topic() -> bool:
     print(f"  {INFO}  report_id={raw.get('reportId')}  title={raw.get('title', '')[:55]}")
 
     # Pydantic parse: check every field that has a value in raw is non-None in parsed
-    parsed = HandsardSearchResult.model_validate(raw)
+    parsed = HansardSearchResult.model_validate(raw)
     parsed_dict = parsed.model_dump()
 
     pydantic_failures = []
@@ -145,18 +145,18 @@ def validate_search_and_topic() -> bool:
             continue
         if parsed_dict[snake] is None:
             pydantic_failures.append(
-                f"  {FAIL}  raw[{raw_key!r}]={str(raw_val)[:55]!r}  →  HandsardSearchResult.{snake}=None"
+                f"  {FAIL}  raw[{raw_key!r}]={str(raw_val)[:55]!r}  →  HansardSearchResult.{snake}=None"
             )
 
     if pydantic_failures:
-        print("\n  HandsardSearchResult field losses:")
+        print("\n  HansardSearchResult field losses:")
         for line in pydantic_failures:
             print(line)
     else:
-        print(f"  {PASS}  HandsardSearchResult — all raw fields survive Pydantic parse")
+        print(f"  {PASS}  HansardSearchResult — all raw fields survive Pydantic parse")
 
     # ORM build: check the explicitly mapped fields
-    orm = build_handsard_website_response(parsed, content=None)
+    orm = build_hansard_website_response(parsed, content=None)
     orm_dict = _orm_fields(orm)
     mapped_raw_keys = {
         "volumeNo": "volume_number",
@@ -179,33 +179,33 @@ def validate_search_and_topic() -> bool:
         orm_val = orm_dict.get(orm_field)
         if orm_val is None:
             orm_failures.append(
-                f"  {FAIL}  raw[{raw_key!r}]={str(raw_val)[:55]!r}  →  HandsardWebsiteResponse.{orm_field}=None"
+                f"  {FAIL}  raw[{raw_key!r}]={str(raw_val)[:55]!r}  →  HansardWebsiteResponse.{orm_field}=None"
             )
 
     if orm_failures:
-        print("\n  HandsardWebsiteResponse field losses:")
+        print("\n  HansardWebsiteResponse field losses:")
         for line in orm_failures:
             print(line)
     else:
-        print(f"  {PASS}  HandsardWebsiteResponse — all mapped fields present")
+        print(f"  {PASS}  HansardWebsiteResponse — all mapped fields present")
 
     return not (pydantic_failures or orm_failures)
 
 
 def validate_topic(report_id: str) -> bool:
-    _section("API 2 — getHansardTopic  →  htmlContent  →  HandsardWebsiteResponse.content")
+    _section("API 2 — getHansardTopic  →  htmlContent  →  HansardWebsiteResponse.content")
     print(f"  {INFO}  report_id={report_id!r}")
-    raw_list = get_handsard_search_results(0, 0)
+    raw_list = get_hansard_search_results(0, 0)
     if not raw_list:
         print(f"  {WARN}  No search results; skipping.")
         return True
 
     raw = next((r for r in raw_list if r.get("reportId") == report_id), raw_list[0])
-    parsed = HandsardSearchResult.model_validate(raw)
-    topic_raw = get_handsard_topic_response(report_id)
+    parsed = HansardSearchResult.model_validate(raw)
+    topic_raw = get_hansard_topic_response(report_id)
     html_content = topic_raw.get("htmlContent") if isinstance(topic_raw, dict) else None
 
-    orm = build_handsard_website_response(parsed, content=html_content)
+    orm = build_hansard_website_response(parsed, content=html_content)
     if html_content:
         if orm.content is None:
             print(f"  {FAIL}  topic.htmlContent ({len(html_content)} chars)  →  orm.content=None")
@@ -229,7 +229,7 @@ def _validate_sitting_payload(raw: dict, sitting_date: str, source: str) -> bool
         return None  # signal to caller to fall back
 
     if is_new:
-        data = build_new_handsard_sitting_date_response(raw, sitting_date)
+        data = build_new_hansard_sitting_date_response(raw, sitting_date)
         metadata = raw.get("metadata") or {}
         new_mapped = {
             "parlimentNO": "parlement_no",
@@ -270,7 +270,7 @@ def _validate_sitting_payload(raw: dict, sitting_date: str, source: str) -> bool
             if orm_dict.get(of) is None:
                 failures.append(f"  {FAIL}  raw[{rk!r}]={str(val)[:55]!r}  →  .{of}=None")
     else:
-        data = build_old_handsard_sitting_date_response(raw, sitting_date)
+        data = build_old_hansard_sitting_date_response(raw, sitting_date)
         old_mapped = {
             "parlNo": "parlement_no",
             "sessionNo": "session_no",
@@ -329,7 +329,7 @@ def _validate_sitting_payload(raw: dict, sitting_date: str, source: str) -> bool
         for line in failures:
             print(line)
         return False
-    print(f"  {PASS}  HandsardSittingDateResponse ({fmt} format, {source}) — no field losses")
+    print(f"  {PASS}  HansardSittingDateResponse ({fmt} format, {source}) — no field losses")
     return True
 
 
@@ -338,7 +338,7 @@ def validate_sitting_date(sitting_date: str, label: str, synthetic: dict) -> boo
     print(f"  {INFO}  sitting_date={sitting_date!r}")
 
     try:
-        raw = get_handsard_report_response(sitting_date)
+        raw = get_hansard_report_response(sitting_date)
     except Exception as e:
         print(f"  {WARN}  API call failed ({e}) — using synthetic payload")
         raw = {"errorCode": 500}
@@ -354,7 +354,7 @@ def validate_sitting_date(sitting_date: str, label: str, synthetic: dict) -> boo
 if __name__ == "__main__":
     all_passed = True
     all_passed &= validate_search_and_topic()
-    all_passed &= validate_topic(get_handsard_search_results(0, 0)[0].get("reportId", ""))
+    all_passed &= validate_topic(get_hansard_search_results(0, 0)[0].get("reportId", ""))
     all_passed &= validate_sitting_date(
         "2015-05-11",
         "old format, pre-2015-08-18",

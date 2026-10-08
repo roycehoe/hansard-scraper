@@ -5,14 +5,14 @@ from typing import Optional
 import httpx
 from sqlmodel import Session
 
-from crud.handsard_sitting_date_response import CRUDHandsardSittingDateResponse
-from crud.handsard_website_response import CRUDHandsardWebsiteResponse
+from crud.hansard_sitting_date_response import CRUDHansardSittingDateResponse
+from crud.hansard_website_response import CRUDHansardWebsiteResponse
 from exceptions import HansardGatewayError
-from gateway.handsard_report import get_handsard_report_response_async
+from gateway.hansard_report import get_hansard_report_response_async
 from logs import logger
-from services.handsard_sitting_date_response import (
-    build_new_handsard_sitting_date_response,
-    build_old_handsard_sitting_date_response,
+from services.hansard_sitting_date_response import (
+    build_new_hansard_sitting_date_response,
+    build_old_hansard_sitting_date_response,
 )
 from settings import settings
 
@@ -41,7 +41,7 @@ async def _fetch_all_sitting_dates(dates: list[str]) -> list[tuple[str, Optional
         async def fetch_one(sitting_date):
             async with semaphore:
                 try:
-                    result = await get_handsard_report_response_async(
+                    result = await get_hansard_report_response_async(
                         sitting_date, client
                     )
                     return sitting_date, result
@@ -52,16 +52,16 @@ async def _fetch_all_sitting_dates(dates: list[str]) -> list[tuple[str, Optional
         return await asyncio.gather(*[fetch_one(d) for d in dates])
 
 
-def populate_handsard_sitting_dates(session: Session):
-    all_sitting_dates = CRUDHandsardWebsiteResponse(session).get_all_sitting_dates()
-    existing_sitting_dates = CRUDHandsardSittingDateResponse(
+def populate_hansard_sitting_dates(session: Session):
+    all_sitting_dates = CRUDHansardWebsiteResponse(session).get_all_sitting_dates()
+    existing_sitting_dates = CRUDHansardSittingDateResponse(
         session
     ).get_all_sitting_dates()
     dates_to_fetch = list(all_sitting_dates - existing_sitting_dates)
 
     fetched = asyncio.run(_fetch_all_sitting_dates(dates_to_fetch))
 
-    sitting_crud = CRUDHandsardSittingDateResponse(session)
+    sitting_crud = CRUDHansardSittingDateResponse(session)
 
     for i, (sitting_date, result) in enumerate(fetched, start=1):
         if result is None:
@@ -70,8 +70,8 @@ def populate_handsard_sitting_dates(session: Session):
 
         result = _strip_nul(result)
         if _parse_sitting_date(sitting_date) >= settings.sitting_date_format_change:
-            data = build_new_handsard_sitting_date_response(result, sitting_date)
+            data = build_new_hansard_sitting_date_response(result, sitting_date)
         else:
-            data = build_old_handsard_sitting_date_response(result, sitting_date)
+            data = build_old_hansard_sitting_date_response(result, sitting_date)
 
         sitting_crud.create(data.response)

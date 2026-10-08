@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 from sqlmodel import SQLModel
 
 import database.attendance  # noqa: F401
-import database.handsard_sitting_date_response  # noqa: F401
-import database.handsard_website_response  # noqa: F401
+import database.hansard_sitting_date_response  # noqa: F401
+import database.hansard_website_response  # noqa: F401
 import database.report  # noqa: F401
 import database.sitting  # noqa: F401
 import database.speaker  # noqa: F401
