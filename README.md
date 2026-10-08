@@ -4,7 +4,7 @@ Pipeline and database for Singapore's parliamentary record, from the colonial Le
 
 ## Coverage
 
-Figures from the last full run, 2 to 5 June 2026. Record counts come from `statistics.csv`, the export committed on 2 June. Speech and attendance counts come from the database on 5 June (commit ccfcbb4 and [docs/attendance-speaker/progress.txt](docs/attendance-speaker/progress.txt)). The database itself is not published.
+Figures from the last full run, 2 to 5 June 2026. Record counts come from the `statistics.csv` export of 2 June, which is not published. Speech and attendance counts come from the database on 5 June (commit ccfcbb4 and [docs/attendance-speaker/progress.txt](docs/attendance-speaker/progress.txt)). The database itself is not published.
 
 | | |
 |---|---|
