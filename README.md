@@ -4,13 +4,19 @@ Pipeline and database for Singapore's parliamentary record, from the colonial Le
 
 ## Coverage
 
+Figures from the last full run, 2 to 5 June 2026. Record counts come from `statistics.csv`, the export committed on 2 June. Speech and attendance counts come from the database on 5 June (commit ccfcbb4 and [docs/attendance-speaker/progress.txt](docs/attendance-speaker/progress.txt)). The database itself is not published.
+
 | | |
 |---|---|
-| Date range | 1955 – present |
+| Date range | 22 April 1955 to 7 May 2026 |
 | Parliaments | 0 (colonial) through 15 |
-| Records | ~22,000 |
-| Report types | 21 — oral answers, written answers, bills, motions, ministerial statements, budget debates, and more |
-| Speaker attribution | Where source material names a speaker |
+| Sitting dates | 1,745 |
+| Records | 45,302 fetched, 21,854 with full text |
+| Report types | 24, of which 21 have full text: oral answers, written answers, bills, motions, ministerial statements, budget debates, and more |
+| Speech start located | 21,813 of 21,854 records with full text |
+| Records split into attributed speeches | 20,359 of 20,405 records whose source names a speaker (99.8%) |
+| Speeches linked to a registry speaker | 235,944 of 257,344 (91.7%) |
+| Attendance rows linked to a registry speaker | 96,298 of 96,500 (99.8%) |
 | Sitting metadata | Attendance, PTBA, and debate sections (Parliament 13+) |
 | Speaker registry | All speakers by parliament, from parliament.gov.sg |
 
@@ -23,8 +29,10 @@ git clone https://github.com/roycehoe/hansard-scraper.git
 cd hansard-scraper
 poetry install
 docker-compose up -d        # local PostgreSQL
-python script.py            # fetch and parse the full corpus
+python script.py            # sitting dates, sittings, attendance, speaker links
 ```
+
+`script.py` no longer calls the report stages. Fetching report HTML, parsing reports and splitting speeches live in `populate_hansard_responses`, `populate_reports` and `populate_speeches` under `populate/`.
 
 Populate the Speaker registry separately (needed before `speaker_id` foreign keys resolve):
 
@@ -39,6 +47,10 @@ python scripts/load_colonial_la_speakers.py   # for pre-independence LA members
 - [Parsing Internals](docs/parsing.md) — HTML artifact details and edge cases. Read before touching parsing code.
 - [Vision](docs/vision.md) — project goals and strategy.
 
+## Data source
+
+Records come from the Parliament of Singapore's Parliament Reports search system (SPRS) and the MP lists on parliament.gov.sg. The content belongs to Parliament. This project is not affiliated with or endorsed by Parliament. Parliament's [terms of use](https://www.parliament.gov.sg/terms-of-use) require written permission to reproduce its content, so check them before republishing anything the pipeline fetches. The fetcher caps concurrent requests and backs off on HTTP 429.
+
 ## Citation
 
 > Royce Hoe (2026). *Singapore Parliamentary Record*. GitHub. https://github.com/roycehoe/hansard-scraper
@@ -46,7 +58,7 @@ python scripts/load_colonial_la_speakers.py   # for pre-independence LA members
 ## Known limitations
 
 - Records from 1955–1965 predate independence and cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament.
-- ~490 documents have no speaker attribution — appendix indexes and colonial-era procedural orders where no author is named in the source.
+- 1,449 records with full text have no attributable speaker. 418 name no speaker in the source, 253 are multi-speaker appendix indexes, and 778 are procedural records with no speech.
 - Some `title` fields have encoding artifacts from the source API; `markdown_content` has correct Unicode.
 - Speaker identity linking (`speaker_id`) is incomplete for colonial-era and early-parliament records.
 
