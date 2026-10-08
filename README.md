@@ -14,7 +14,7 @@ Figures from the last full run, 2 to 5 June 2026. Record counts come from the `s
 | Records | 45,302 fetched, 21,854 with full text |
 | Report types | 24, of which 21 have full text: oral answers, written answers, bills, motions, ministerial statements, budget debates, and more |
 | Speech start located | 21,813 of 21,854 records with full text |
-| Records split into attributed speeches | 20,359 of 20,405 records whose source names a speaker (99.8%) |
+| Full-text records with no speeches | About 490 of 21,854 as of 31 May: about 253 multi-speaker link indexes and about 237 procedural records that name no speaker |
 | Speeches linked to a registry speaker | 235,944 of 257,344 (91.7%) |
 | Attendance rows linked to a registry speaker | 96,298 of 96,500 (99.8%) |
 | Sitting metadata | Attendance, PTBA, and debate sections (Parliament 13+) |
@@ -58,7 +58,7 @@ Records come from the Parliament of Singapore's Parliament Reports search system
 ## Known limitations
 
 - Records from 1955–1965 predate independence and cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament.
-- 1,449 records with full text have no attributable speaker. 418 name no speaker in the source, 253 are multi-speaker appendix indexes, and 778 are procedural records with no speech.
+- About 490 records with full text yield no speeches. About 253 are multi-speaker annex and index documents whose body is a list of links. About 237 are procedural records that name no speaker, mostly budget orders. See [docs/report/learnings.md](docs/report/learnings.md).
 - Some `title` fields have encoding artifacts from the source API; `markdown_content` has correct Unicode.
 - Speaker identity linking (`speaker_id`) is incomplete for colonial-era and early-parliament records.
 
