@@ -17,9 +17,9 @@ spoke or wrote it. That goal is not met for these 1,449 docs.
 
 ## Where the Attribution Lives
 
-Every `HandsardWebsiteResponse.content` HTML document contains an `MPs Speaking` / `MP_Speak`
+Every `HansardWebsiteResponse.content` HTML document contains an `MPs Speaking` / `MP_Speak`
 field — either as an HTML `<meta>` tag (old format) or as a table row (new format). This field
-is already carried through to the markdown header by `get_cleaned_handsard_markdown` as:
+is already carried through to the markdown header by `get_cleaned_hansard_markdown` as:
 
 ```
 MPs Speaking:| Name1; Name2; ...

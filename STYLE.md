@@ -232,12 +232,12 @@ atbp_list: Optional[list] = []
 
 ```python
 # Good
-class HandsardSearchResult(BaseModel):
+class HansardSearchResult(BaseModel):
     report_id: str
     title: str
     sitting_date: str
 
-result = HandsardSearchResult.model_validate(raw_dict)
+result = HansardSearchResult.model_validate(raw_dict)
 
 # Bad
 raw_dict = response.json()

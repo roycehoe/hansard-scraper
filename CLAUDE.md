@@ -51,17 +51,17 @@ Each folder has a strict responsibility boundary. `populate/` is the only layer 
 
 ### Data flow
 
-1. **Fetch search index** (`gateway/handsard_search.py`) — POST to the Hansard search API, paginate through all results, return raw dicts matching `HandsardSearchResult` (Pydantic model in `schemas/handsard_search_result.py`).
+1. **Fetch search index** (`gateway/hansard_search.py`) — POST to the Hansard search API, paginate through all results, return raw dicts matching `HansardSearchResult` (Pydantic model in `schemas/hansard_search_result.py`).
 
-2. **Fetch report HTML** (`populate/handsard_responses.py` + `gateway/handsard_topic.py` + `services/handsard_website.py`) — for each search result, `populate` calls `gateway` to POST to `getHansardTopic`, extracts `htmlContent` from the response, then passes it to `services/handsard_website.py::build_handsard_website_response` which constructs the `HandsardWebsiteResponse` entity stored in the DB.
+2. **Fetch report HTML** (`populate/hansard_responses.py` + `gateway/hansard_topic.py` + `services/hansard_website.py`) — for each search result, `populate` calls `gateway` to POST to `getHansardTopic`, extracts `htmlContent` from the response, then passes it to `services/hansard_website.py::build_hansard_website_response` which constructs the `HansardWebsiteResponse` entity stored in the DB.
 
-3. **Parse into Report** (`services/report.py`) — converts `HandsardWebsiteResponse` → `Report`. Parses the `title` field to split off a `subtitle` (parenthetical content that is not an acronym). Also converts HTML content to cleaned markdown via `utils/markdown_parser.py`.
+3. **Parse into Report** (`services/report.py`) — converts `HansardWebsiteResponse` → `Report`. Parses the `title` field to split off a `subtitle` (parenthetical content that is not an acronym). Also converts HTML content to cleaned markdown via `utils/markdown_parser.py`.
 
 4. **Parse into Speeches** (`services/speech.py`) — walks the markdown line-by-line to find where speeches begin (by matching the report title in bold), then splits the transcript into `Speech` records by detecting bold speaker names (`**Name:**`).
 
-5. **Fetch sitting dates** (`gateway/handsard_report.py` + `populate/handsard_sitting_dates.py`) — for each unique sitting date seen in the search results, POST to `getHansardReport/` to retrieve full sitting metadata. Stores the result in `HandsardSittingDateResponse` only; nested list data (attendance, PTBA, sections, etc.) is stored as raw JSON strings on that table.
+5. **Fetch sitting dates** (`gateway/hansard_report.py` + `populate/hansard_sitting_dates.py`) — for each unique sitting date seen in the search results, POST to `getHansardReport/` to retrieve full sitting metadata. Stores the result in `HansardSittingDateResponse` only; nested list data (attendance, PTBA, sections, etc.) is stored as raw JSON strings on that table.
 
-6. **Parse into Sittings** (`services/sitting.py` + `populate/sittings.py`) — converts `HandsardSittingDateResponse` → `Sitting`, adding a `markdown_content` field parsed from `html_full_content`. Also carries the nested JSON columns (sections, annexures, vernaculars, a2b) from the raw response.
+6. **Parse into Sittings** (`services/sitting.py` + `populate/sittings.py`) — converts `HansardSittingDateResponse` → `Sitting`, adding a `markdown_content` field parsed from `html_full_content`. Also carries the nested JSON columns (sections, annexures, vernaculars, a2b) from the raw response.
 
 7. **Extract attendance** (`services/attendance.py` + `populate/attendances.py`) — for each `Sitting`, parses the PRESENT/ABSENT sections from `markdown_content` and writes one `Attendance` row per name found. Skips sittings already processed.
 
@@ -76,7 +76,7 @@ The `getHansardReport/` endpoint returns two distinct formats depending on the s
 - **Old format** (Parliament 9–12, pre-18 Aug 2015): flat dict, all fields at top level.
 - **New format** (Parliament 13+, 18 Aug 2015 onwards): nested dict with a `metadata` object plus child lists (`attendanceList`, `ptbaList`, `takesSectionVOList`, `annexureList`, `vernacularList`, `a2bList`).
 
-`services/handsard_sitting_date_response.py` exposes `build_old_handsard_sitting_date_response` and `build_new_handsard_sitting_date_response`. The cutoff is `settings.sitting_date_format_change` (`datetime(2015, 8, 18)`).
+`services/hansard_sitting_date_response.py` exposes `build_old_hansard_sitting_date_response` and `build_new_hansard_sitting_date_response`. The cutoff is `settings.sitting_date_format_change` (`datetime(2015, 8, 18)`).
 
 ### Database models
 
@@ -86,11 +86,11 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 
 **Entity tables** are pure extensions of their raw counterparts — every field from the raw response is preserved with the same value and structure. They exist to provide a stable, first-class DB schema ready for relationships and future enrichment, not to transform or interpret the source data.
 
-- `HandsardWebsiteResponse` — raw API response, one row per Hansard entry
-- `Report` — entity table extending `HandsardWebsiteResponse`; has a one-to-many to `Speech`
+- `HansardWebsiteResponse` — raw API response, one row per Hansard entry
+- `Report` — entity table extending `HansardWebsiteResponse`; has a one-to-many to `Speech`
 - `Speech` — individual utterance with `speaker`, `transcript`, and `ordinal` within the report; has a `speaker_id` FK to `Speaker` (populated in stage 8)
-- `HandsardSittingDateResponse` — raw API response, one row per sitting date; handles both old and new API formats with all fields `Optional`
-- `Sitting` — entity table extending `HandsardSittingDateResponse`; adds `markdown_content` parsed from `html_full_content`, plus four JSON TEXT columns (`sections`, `annexures`, `vernaculars`, `a2b`) serialised from the API nested lists
+- `HansardSittingDateResponse` — raw API response, one row per sitting date; handles both old and new API formats with all fields `Optional`
+- `Sitting` — entity table extending `HansardSittingDateResponse`; adds `markdown_content` parsed from `html_full_content`, plus four JSON TEXT columns (`sections`, `annexures`, `vernaculars`, `a2b`) serialised from the API nested lists
 - `Attendance` — one row per name per sitting, parsed from `Sitting.markdown_content` in stage 7; has a `speaker_id` FK to `Speaker` (set in stage 8)
 - `Speaker` — everyone who appears in the Hansard record, scraped from parliament.gov.sg; keyed by name, party, parliament number, and whether they are a Legislative Assembly member (not all are MPs)
 
@@ -124,7 +124,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 ## Module structure
 
 ```
-handsard-scraper/
+hansard-scraper/
 │
 ├── script.py                        # Pipeline orchestrator — runs all populate stages in order
 ├── sittings.py                      # Parliament sitting dates enum (LA 1955 → Parliament 14)
@@ -134,38 +134,38 @@ handsard-scraper/
 ├── logs.py                          # Loguru logger initialisation
 │
 ├── schemas/                         # Pydantic validation models (API shapes, not DB)
-│   ├── handsard_search_result.py    # HandsardSearchResult — camelCase alias support
+│   ├── hansard_search_result.py    # HansardSearchResult — camelCase alias support
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata
 │
 ├── gateway/                         # HTTP API clients
 │   ├── http.py                      # Async POST with exponential-backoff retry (handles 429)
-│   ├── handsard_search.py           # Paginated Hansard full-text search
-│   ├── handsard_topic.py            # Fetch report HTML by ID (sync + async)
-│   ├── handsard_report.py           # Fetch sitting metadata by date (sync + async)
+│   ├── hansard_search.py           # Paginated Hansard full-text search
+│   ├── hansard_topic.py            # Fetch report HTML by ID (sync + async)
+│   ├── hansard_report.py           # Fetch sitting metadata by date (sync + async)
 │   └── speakers_by_parliament.py    # Scrape speaker roster from parliament.gov.sg
 │
 ├── services/                        # Business logic — transforms raw data into entities
-│   ├── handsard_website.py          # Pure transform: (HandsardSearchResult, html_content) → HandsardWebsiteResponse
-│   ├── handsard_sitting_date_response.py  # Build old/new-format HandsardSittingDateResponse
-│   ├── report.py                    # HandsardWebsiteResponse → Report (markdown + subtitle)
+│   ├── hansard_website.py          # Pure transform: (HansardSearchResult, html_content) → HansardWebsiteResponse
+│   ├── hansard_sitting_date_response.py  # Build old/new-format HansardSittingDateResponse
+│   ├── report.py                    # HansardWebsiteResponse → Report (markdown + subtitle)
 │   ├── speech.py                    # Report markdown → Speech list (speaker detection)
-│   ├── sitting.py                   # HandsardSittingDateResponse → Sitting
+│   ├── sitting.py                   # HansardSittingDateResponse → Sitting
 │   ├── attendance.py                # Sitting markdown → Attendance; build_speaker_lookups(list[Speaker]) → SpeakerLookups
 │   └── speaker.py                   # SpeakerResult → Speaker DB entity
 │
 ├── database/                        # SQLModel table definitions
 │   ├── init.py                      # Engine setup, runs Alembic migrations on startup
-│   ├── handsard_website_response.py # Raw API response — one row per Hansard entry
-│   ├── handsard_sitting_date_response.py  # Raw sitting metadata (all fields Optional)
-│   ├── report.py                    # Entity: extends HandsardWebsiteResponse + markdown
+│   ├── hansard_website_response.py # Raw API response — one row per Hansard entry
+│   ├── hansard_sitting_date_response.py  # Raw sitting metadata (all fields Optional)
+│   ├── report.py                    # Entity: extends HansardWebsiteResponse + markdown
 │   ├── speech.py                    # Entity: speaker + transcript + ordinal + speaker_id FK
-│   ├── sitting.py                   # Entity: extends HandsardSittingDateResponse + markdown + JSON columns
+│   ├── sitting.py                   # Entity: extends HansardSittingDateResponse + markdown + JSON columns
 │   ├── attendance.py                # One row per name per sitting + speaker_id FK
 │   └── speaker.py                   # Speaker: name, party, parliament number, LA flag
 │
 ├── crud/                            # DB read/write helpers (one file per table)
-│   ├── handsard_website_response.py
-│   ├── handsard_sitting_date_response.py
+│   ├── hansard_website_response.py
+│   ├── hansard_sitting_date_response.py
 │   ├── report.py
 │   ├── speech.py
 │   ├── sitting.py
@@ -173,11 +173,11 @@ handsard-scraper/
 │   └── speaker.py
 │
 ├── populate/                        # Pipeline stages — fetch + persist each entity type
-│   ├── handsard_responses.py        # Stage 2: async fetch + store HandsardWebsiteResponse (20 concurrent)
-│   ├── reports.py                   # Stage 3: HandsardWebsiteResponse → Report
+│   ├── hansard_responses.py        # Stage 2: async fetch + store HansardWebsiteResponse (20 concurrent)
+│   ├── reports.py                   # Stage 3: HansardWebsiteResponse → Report
 │   ├── speeches.py                  # Stage 4: Report → Speech (batches of 1000)
-│   ├── handsard_sitting_dates.py    # Stage 5: fetch + store HandsardSittingDateResponse
-│   ├── sittings.py                  # Stage 6: HandsardSittingDateResponse → Sitting
+│   ├── hansard_sitting_dates.py    # Stage 5: fetch + store HansardSittingDateResponse
+│   ├── sittings.py                  # Stage 6: HansardSittingDateResponse → Sitting
 │   ├── attendances.py               # Stage 7: Sitting → Attendance
 │   ├── speaker_links.py             # Stage 8: resolve names → set speaker_id on Speech + Attendance
 │   └── speakers.py                  # Out-of-band: persist scraped Speaker records

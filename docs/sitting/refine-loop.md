@@ -10,7 +10,7 @@ Before beginning Setup or any loop iteration, scan the working directory for exi
 
 # Goal
 
-Produce a `get_cleaned_sitting_markdown` function that converts `html_full_content` from `HandsardSittingDateResponse` into clean, artifact-free markdown — with no formatting anomalies visible in the output.
+Produce a `get_cleaned_sitting_markdown` function that converts `html_full_content` from `HansardSittingDateResponse` into clean, artifact-free markdown — with no formatting anomalies visible in the output.
 
 Success: ≥95% of documents in the strata sample are fully artifact-free (no formatting anomalies visible in any output field), as tracked in `docs/sitting/progress.txt`. Artifact categories are tracked per-type so you can see whether remaining failures are widespread or isolated — do not grind on categories that affect only 1–2 documents once the per-doc rate is ≥95%.
 
@@ -21,7 +21,7 @@ Iteratively refine a branched markdown-cleaning function until all identified ar
 ## Setup
 
 **Step 1 — Draw a stratified sample.**
-Query the DB for `HandsardSittingDateResponse` rows where `html_full_content is not None`. Stratify by `report_type` (or the closest available field), drawing three sets:
+Query the DB for `HansardSittingDateResponse` rows where `html_full_content is not None`. Stratify by `report_type` (or the closest available field), drawing three sets:
 
 - **Pilot** (up to K=5 per group): used for diagnosis and inspection.
 - **Held-out** (up to K=3 per group): not inspected during diagnosis; used only in Loop Step 5 to validate that fixes generalise. If a group has fewer than 4 documents total, draw all into the pilot and mark the group as having no held-out set — skip held-out validation for it in Loop Step 5.
@@ -39,8 +39,8 @@ Write all three sets to `docs/sitting/sample.json`:
 
 Do not re-sample in later iterations. The sample is fixed for the duration of the loop so before/after comparisons remain valid.
 
-**Step 2 — Run `get_cleaned_handsard_markdown` on the sample.**
-For each row in the sample, call `get_cleaned_handsard_markdown(row.html_full_content)` and collect the outputs in memory. Do not write these to the DB at this stage — this is a diagnostic run only.
+**Step 2 — Run `get_cleaned_hansard_markdown` on the sample.**
+For each row in the sample, call `get_cleaned_hansard_markdown(row.html_full_content)` and collect the outputs in memory. Do not write these to the DB at this stage — this is a diagnostic run only.
 
 **Step 3 — Inspect for odd formatting.**
 Read through the markdown outputs and catalogue every anomaly you observe. Common things to look for:
@@ -55,10 +55,10 @@ Read through the markdown outputs and catalogue every anomaly you observe. Commo
 
 Before cataloguing, check whether any observed anomaly might be **correct rendering** for a specific `report_type` — i.e. is "zero anomalies" actually the right output for some document types? If so, exclude those types from the artifact target list and note the exclusion. Iterating to fix output that is correct for its document type is wasted work.
 
-Write each distinct artifact type to `docs/sitting/progress.txt` under `## Setup — Artifact catalogue`. If **no anomalies** are found, stop here and record that `get_cleaned_handsard_markdown` is sufficient as-is; no branch is needed.
+Write each distinct artifact type to `docs/sitting/progress.txt` under `## Setup — Artifact catalogue`. If **no anomalies** are found, stop here and record that `get_cleaned_hansard_markdown` is sufficient as-is; no branch is needed.
 
 **Step 4 — Create the branched function.**
-If anomalies were found: in `utils/markdown_parser.py`, rename `get_cleaned_handsard_markdown` to `get_cleaned_report_markdown` and update its one call site in `services/report.py`. Then create `get_cleaned_sitting_markdown` as a copy of the original. Update `services/sitting.py` to call `get_cleaned_sitting_markdown`. All future refinement work touches only `get_cleaned_sitting_markdown`.
+If anomalies were found: in `utils/markdown_parser.py`, rename `get_cleaned_hansard_markdown` to `get_cleaned_report_markdown` and update its one call site in `services/report.py`. Then create `get_cleaned_sitting_markdown` as a copy of the original. Update `services/sitting.py` to call `get_cleaned_sitting_markdown`. All future refinement work touches only `get_cleaned_sitting_markdown`.
 
 **Step 5 — Record the baseline.**
 For each artifact category from Step 3, count how many sample documents exhibit it. Write to `docs/sitting/progress.txt` under `## Setup — Baseline`. This is the reference point for the loop.
