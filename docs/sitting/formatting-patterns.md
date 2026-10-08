@@ -1,6 +1,6 @@
 # Sitting HTML Formatting Patterns
 
-Structural knowledge about `html_full_content` in `HandsardSittingDateResponse`,
+Structural knowledge about `html_full_content` in `HansardSittingDateResponse`,
 accumulated during the refine-loop. Use this before investigating any new artifact.
 
 ## Document eras

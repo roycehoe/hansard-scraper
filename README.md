@@ -19,8 +19,8 @@ Pipeline and database for Singapore's parliamentary record, from the colonial Le
 Requires Python 3.11+, [Poetry](https://python-poetry.org), and Docker.
 
 ```bash
-git clone https://github.com/roycehoe/handsard-scraper.git
-cd handsard-scraper
+git clone https://github.com/roycehoe/hansard-scraper.git
+cd hansard-scraper
 poetry install
 docker-compose up -d        # local PostgreSQL
 python script.py            # fetch and parse the full corpus
@@ -41,7 +41,7 @@ python scripts/load_colonial_la_speakers.py   # for pre-independence LA members
 
 ## Citation
 
-> Royce Hoe (2026). *Singapore Parliamentary Record*. GitHub. https://github.com/roycehoe/handsard-scraper
+> Royce Hoe (2026). *Singapore Parliamentary Record*. GitHub. https://github.com/roycehoe/hansard-scraper
 
 ## Known limitations
 

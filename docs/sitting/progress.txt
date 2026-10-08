@@ -1,7 +1,7 @@
 ## Setup — Notes
 
 Fresh run with new sample (2026-05-31).
-DB was refactored: html_full_content column re-added to handsardsittingdateresponse.
+DB was refactored: html_full_content column re-added to hansardsittingdateresponse.
 60 old-format sittings fetched from live API across 5 volume strata (vol 31–87).
 Previous fixes from iterations 1–6 are already in get_cleaned_sitting_markdown.
 

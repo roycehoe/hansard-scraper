@@ -3,7 +3,7 @@
 All Python scripts in this project must be run via `poetry run python3` (not bare `python3`), with `PYTHONPATH` set to the project root:
 
 ```
-PYTHONPATH=/path/to/handsard-scraper poetry run python3 scripts/speech_speaker_match_rate.py
+PYTHONPATH=/path/to/hansard-scraper poetry run python3 scripts/speech_speaker_match_rate.py
 ```
 
 The project uses a remote PostgreSQL database; `DATABASE_URL` is loaded from `.env` automatically.

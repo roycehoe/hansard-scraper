@@ -1,11 +1,11 @@
-# Sanity Check — HandsardWebsiteResponse → Report → Speech
+# Sanity Check — HansardWebsiteResponse → Report → Speech
 
 A manual end-to-end check of the parsing pipeline. Distinct from `refine-loop.md`,
 which targets a quantitative pass rate. This check asks a qualitative question: for a
 small, representative set of records, does the pipeline produce output that is faithful
 to the source HTML?
 
-**Control:** `handsardwebsiteresponse.content` (raw HTML as fetched from the API).  
+**Control:** `hansardwebsiteresponse.content` (raw HTML as fetched from the API).  
 **Output under test:** `Report` fields and `Speech` records generated from that HTML.
 
 ---
@@ -28,7 +28,7 @@ all_ids = (
 )
 ```
 
-If `sample.json` is absent, draw a fresh stratified sample from `HandsardWebsiteResponse`
+If `sample.json` is absent, draw a fresh stratified sample from `HansardWebsiteResponse`
 using the same grouping convention as `refine-loop.md`: K=3 per
 `(failure_stage, report_type)` for failing documents, plus ~30 passing documents as a
 regression set. Write the result to `sanity-sample.json` (separate from `sample.json`
@@ -38,7 +38,7 @@ to avoid polluting the refine-loop sample).
 # Only run if sample.json does not exist.
 from sqlmodel import select
 from database.init import get_session
-from database.report import HandsardWebsiteResponse, ParsingStatistics
+from database.report import HansardWebsiteResponse, ParsingStatistics
 from enums import ReportType
 
 session = next(get_session())
@@ -86,13 +86,13 @@ For each sampled record, run the pipeline in-memory (no DB writes):
 
 ```python
 from sqlmodel import select
-from database.report import HandsardWebsiteResponse
+from database.report import HansardWebsiteResponse
 from services.report import get_db_report_in
 from services.speech import get_start_of_speech_line, get_speeches
 
 rows = session.exec(
-    select(HandsardWebsiteResponse)
-    .where(HandsardWebsiteResponse.id.in_(all_ids))
+    select(HansardWebsiteResponse)
+    .where(HansardWebsiteResponse.id.in_(all_ids))
 ).all()
 
 results = []
@@ -192,7 +192,7 @@ Consult `docs/report/parsing-patterns.md` for per-type structural notes. Quick r
 For each record with at least one failing check, record:
 
 ```
-### <report_type> — parliament <N> — HandsardWebsiteResponse.id <ID>
+### <report_type> — parliament <N> — HansardWebsiteResponse.id <ID>
 
 **Failing checks:**
 - [ ] <check name>: <what was seen vs. what was expected>

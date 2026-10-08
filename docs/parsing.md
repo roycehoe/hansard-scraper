@@ -4,7 +4,7 @@ Notes on raw API quirks and how they're handled. Most of this was learned the ha
 
 ---
 
-## Report HTML (`HandsardWebsiteResponse.content`)
+## Report HTML (`HansardWebsiteResponse.content`)
 
 ### Two document format generations
 
@@ -74,7 +74,7 @@ Do not apply this fallback when there are 2+ names — those are ANNEX/appendix 
 
 ---
 
-## Sitting HTML (`HandsardSittingDateResponse.html_full_content`)
+## Sitting HTML (`HansardSittingDateResponse.html_full_content`)
 
 ### Three document eras
 
