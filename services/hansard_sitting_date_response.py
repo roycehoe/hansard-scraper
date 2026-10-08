@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from typing import Optional
 
 from database.attendance import Attendance
-from database.handsard_sitting_date_response import HandsardSittingDateResponse
+from database.hansard_sitting_date_response import HansardSittingDateResponse
 
 
 @dataclass
-class HandsardSittingDateData:
-    response: HandsardSittingDateResponse
+class HansardSittingDateData:
+    response: HansardSittingDateResponse
     attendance: list[Attendance]
 
 
@@ -25,9 +25,9 @@ def _serialise_list(value) -> Optional[str]:
     return json.dumps(value) if isinstance(value, list) else value
 
 
-def build_old_handsard_sitting_date_response(result: dict, sitting_date: str) -> HandsardSittingDateData:
+def build_old_hansard_sitting_date_response(result: dict, sitting_date: str) -> HansardSittingDateData:
     """Handles the flat response format returned for sittings before 18 Aug 2015."""
-    response = HandsardSittingDateResponse(
+    response = HansardSittingDateResponse(
         parlement_no=_to_int(result.get("parlNo")),
         session_no=_to_int(result.get("sessionNo")),
         volume_no=_to_int(result.get("volumeNo")),
@@ -82,14 +82,14 @@ def build_old_handsard_sitting_date_response(result: dict, sitting_date: str) ->
         if isinstance(item, dict)
     ]
 
-    return HandsardSittingDateData(response=response, attendance=attendance)
+    return HansardSittingDateData(response=response, attendance=attendance)
 
 
-def build_new_handsard_sitting_date_response(result: dict, sitting_date: str) -> HandsardSittingDateData:
+def build_new_hansard_sitting_date_response(result: dict, sitting_date: str) -> HansardSittingDateData:
     """Handles the nested response format returned for sittings from 18 Aug 2015 onwards."""
     metadata = result.get("metadata") or {}
 
-    response = HandsardSittingDateResponse(
+    response = HansardSittingDateResponse(
         parlement_no=metadata.get("parlimentNO"),
         session_no=metadata.get("sessionNO"),
         volume_no=metadata.get("volumeNO"),
@@ -118,4 +118,4 @@ def build_new_handsard_sitting_date_response(result: dict, sitting_date: str) ->
         for item in result.get("attendanceList") or []
     ]
 
-    return HandsardSittingDateData(response=response, attendance=attendance)
+    return HansardSittingDateData(response=response, attendance=attendance)

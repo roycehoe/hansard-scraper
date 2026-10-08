@@ -1,12 +1,12 @@
 """
-Sanity check: HandsardWebsiteResponse -> Report -> Speech.
-Loads IDs from sample.json (Report IDs), finds matching HandsardWebsiteResponses,
+Sanity check: HansardWebsiteResponse -> Report -> Speech.
+Loads IDs from sample.json (Report IDs), finds matching HansardWebsiteResponses,
 regenerates objects, and compares against the control (raw HTML content).
 """
 
 import json
 
-from crud.handsard_website_response import CRUDHandsardWebsiteResponse
+from crud.hansard_website_response import CRUDHansardWebsiteResponse
 from crud.report import CRUDReport
 from database.init import get_session
 from services.report import build_report
@@ -28,7 +28,7 @@ def run():
     stored_reports = CRUDReport(session).get_by_ids(report_ids)
     report_id_strings = {r.report_id for r in stored_reports}
 
-    hwrs = CRUDHandsardWebsiteResponse(session).get_all_by_report_ids(report_id_strings)
+    hwrs = CRUDHansardWebsiteResponse(session).get_all_by_report_ids(report_id_strings)
     hwr_by_report_id = {h.report_id: h for h in hwrs}
 
     print(f"Sample Report IDs:       {len(report_ids)}")
@@ -60,7 +60,7 @@ def run():
         if hwr is None:
             stats["no_hwr"] += 1
             issues.append(f"[NO HWR]  report_id={stored.report_id} type={stored.report_type}")
-            print(f"{stored.report_id:<14} {stored.report_type:<22} {'?':>2} {'?':>2} {'?':>4} {'?':>2}  NO HandsardWebsiteResponse found")
+            print(f"{stored.report_id:<14} {stored.report_type:<22} {'?':>2} {'?':>2} {'?':>4} {'?':>2}  NO HansardWebsiteResponse found")
             continue
 
         if hwr.content is None:
