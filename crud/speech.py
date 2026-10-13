@@ -1,8 +1,13 @@
+from datetime import datetime
+from typing import Iterable, Optional
+
 from sqlalchemy import text
 from sqlmodel import Session, delete, select
 
 from database.report import Report
 from database.speech import Speech
+
+_STREAM_BATCH = 10_000
 
 
 class CRUDSpeech:
@@ -28,10 +33,14 @@ class CRUDSpeech:
         ).all()
         return list(rows)
 
-    def get_unresolved_ids(self) -> list[int]:
-        return list(self.session.exec(
-            select(Speech.id).where(Speech.speaker_id == None)  # noqa: E711
-        ).all())
+    def get_unresolved_speaker_info(self) -> Iterable[tuple[int, Optional[str], int, datetime]]:
+        """Stream (id, speaker, parliament_number, sitting_date) for every speech without a speaker_id."""
+        return self.session.exec(
+            select(Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date)
+            .join(Report)
+            .where(Speech.speaker_id == None)  # noqa: E711
+            .execution_options(yield_per=_STREAM_BATCH)
+        )
 
     def get_speaker_info_by_ids(self, ids: list[int]) -> list[tuple[int, str, int, object]]:
         return list(self.session.exec(
