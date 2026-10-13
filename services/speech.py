@@ -363,7 +363,7 @@ def _merge_wrapped_bold_lines(lines: list[str]) -> list[str]:
 
 def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str = "") -> list[ParsedSpeech]:
     current_speaker = None
-    in_preamble = True  # True until the first real bold speaker name is seen
+    is_in_preamble = True  # True until the first real bold speaker name is seen
     speeches: list[ParsedSpeech] = []
     for line in _merge_wrapped_bold_lines(markdown.splitlines()[start_of_speech_line + 1 :]):
         parsed_line = line.strip()
@@ -378,11 +378,11 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             label_match = _PLAIN_ROLE_LABEL_RE.match(parsed_line)
             if label_match:
                 current_speaker = _LANGUAGE_NOTE_RE.sub("", label_match.group(1)).strip()
-                in_preamble = False
+                is_in_preamble = False
                 if label_match.group(2):
                     speeches.append(ParsedSpeech(speaker=current_speaker, transcript=label_match.group(2)))
                 continue
-            if in_preamble:  # skip text before the first real speaker
+            if is_in_preamble:  # skip text before the first real speaker
                 continue
             speeches.append(ParsedSpeech(
                 speaker=None if _PROCEDURAL_LINE_RE.match(parsed_line) else current_speaker,
@@ -408,7 +408,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                     speeches.append(ParsedSpeech(speaker=current_speaker, transcript=transcript))
                 continue
             new_speaker = raw_speaker
-            bold_ends_with_colon = bold_match.group(0).rstrip().endswith(":**")
+            is_bold_ending_with_colon = bold_match.group(0).rstrip().endswith(":**")
             # Strip leading question-number prefix from oral-answer speaker names
             # e.g. "1\. Assoc. Prof. Paulin Tay Straughan" → "Assoc. Prof. Paulin Tay Straughan"
             new_speaker = re.sub(r"^\d+\\?\.\s+", "", new_speaker)
@@ -423,7 +423,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 prefix = parsed_line[: bold_match.start()]
                 bold_text = bold_match.group(0).replace("*", "").strip()
                 body = bold_text + transcript if is_drop_cap else f"{bold_text} {transcript}"
-                if not in_preamble:
+                if not is_in_preamble:
                     speeches.append(ParsedSpeech(speaker=current_speaker, transcript=(prefix + body).strip()))
                 continue
             # Fix A: reject parliamentary procedural stage labels (e.g. "Third Reading:", "Committee:")
@@ -459,18 +459,18 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             # not at the end). Catches "**MINISTRY OF EDUCATION**", "**Table 1: Description**".
             if (not transcript
                     and not _SPEAKER_HONORIFIC_RE.search(raw_speaker)
-                    and (":" not in bold_match.group(0) or not bold_ends_with_colon)):
+                    and (":" not in bold_match.group(0) or not is_bold_ending_with_colon)):
                 if raw_speaker in _SECTION_BOUNDARY_HEADINGS:
                     current_speaker = None
                 continue
             if new_speaker:
                 current_speaker = new_speaker
-                in_preamble = False
+                is_in_preamble = False
             if current_speaker is not None:
                 speeches.append(ParsedSpeech(speaker=current_speaker, transcript=transcript))
             continue
 
-        if not in_preamble:
+        if not is_in_preamble:
             speeches.append(ParsedSpeech(
                 speaker=None if _PROCEDURAL_LINE_RE.match(parsed_line) else current_speaker,
                 transcript=parsed_line,
