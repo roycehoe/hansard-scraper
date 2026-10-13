@@ -13,7 +13,7 @@ def _get_int(value: object) -> Optional[int]:
         return None
 
 
-def _serialise_list(value: object) -> Optional[str]:
+def _serialise_list(value: object) -> object:
     if value is None:
         return None
     return json.dumps(value) if isinstance(value, list) else value
