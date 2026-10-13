@@ -60,57 +60,57 @@ def main() -> None:
         speakers = CRUDSpeaker(session).get_all()
         # Keep only (id, parliament, date): each Report carries its markdown.
         reports = [
-            (r.id, r.parliament_number, r.sitting_date)
-            for r in CRUDReport(session).get_all()
-            if r.parliament_number is not None and r.parliament_number <= _MAX_PARLIAMENT
+            (report.id, report.parliament_number, report.sitting_date)
+            for report in CRUDReport(session).get_all()
+            if report.parliament_number is not None and report.parliament_number <= _MAX_PARLIAMENT
         ]
-        speaker_id_lookup = {
-            (s.name, s.parliament_number): s.id for s in speakers if s.id is not None
+        name_and_parliament_to_speaker_id = {
+            (speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None
         }
-        names = {s.id: s.name for s in speakers}
+        speaker_id_to_name = {speaker.id: speaker.name for speaker in speakers}
         lookups = build_speaker_lookups(speakers)
 
-        stored: dict[Key, Counter] = {}
+        key_to_speaker_id_counts: dict[Key, Counter] = {}
         crud_speech = CRUDSpeech(session)
         for start in range(0, len(reports), _REPORT_BATCH):
             batch = reports[start : start + _REPORT_BATCH]
-            by_id = {report_id: (parl, day) for report_id, parl, day in batch}
-            for row in crud_speech.get_rows_by_report_ids(list(by_id)):
+            report_id_to_parliament_and_date = {report_id: (parliament_number, sitting_date) for report_id, parliament_number, sitting_date in batch}
+            for row in crud_speech.get_rows_by_report_ids(list(report_id_to_parliament_and_date)):
                 if not row.speaker or row.speaker_id is None:
                     continue
-                parl, day = by_id[row.report_id]
-                date_key = day if row.speaker.startswith(_DATE_DEPENDENT_ROLES) else None
-                stored.setdefault((row.speaker, parl, date_key), Counter())[row.speaker_id] += 1
+                parliament_number, sitting_date = report_id_to_parliament_and_date[row.report_id]
+                date_key = sitting_date if row.speaker.startswith(_DATE_DEPENDENT_ROLES) else None
+                key_to_speaker_id_counts.setdefault((row.speaker, parliament_number, date_key), Counter())[row.speaker_id] += 1
 
-    total_rows = sum(sum(c.values()) for c in stored.values())
+    total_rows = sum(sum(counter.values()) for counter in key_to_speaker_id_counts.values())
     agree, context, stale = [0, 0], [0, 0], []
-    for (speaker, parl, day), counts in stored.items():
-        rows = sum(counts.values())
-        resolved = _resolve_speech_speaker_id(speaker, parl, day, lookups, speaker_id_lookup)
+    for (speaker, parliament_number, sitting_date), counts in key_to_speaker_id_counts.items():
+        key_row_count = sum(counts.values())
+        resolved = _resolve_speech_speaker_id(speaker, parliament_number, sitting_date, lookups, name_and_parliament_to_speaker_id)
         if resolved is None and _is_context_linked(speaker):
             context[0] += 1
-            context[1] += rows
+            context[1] += key_row_count
         elif set(counts) == {resolved}:
             agree[0] += 1
-            agree[1] += rows
+            agree[1] += key_row_count
         else:
-            bad_rows = sum(n for i, n in counts.items() if i != resolved)
-            stale.append((bad_rows, speaker, parl, day, counts, resolved))
+            bad_rows = sum(row_count for speaker_id, row_count in counts.items() if speaker_id != resolved)
+            stale.append((bad_rows, speaker, parliament_number, sitting_date, counts, resolved))
 
-    stale_rows = sum(s[0] for s in stale)
-    print(f"Total: {len(stored)} keys, {total_rows} rows")
+    stale_rows = sum(stale_entry[0] for stale_entry in stale)
+    print(f"Total: {len(key_to_speaker_id_counts)} keys, {total_rows} rows")
     print(f"Agree: {agree[0]} keys, {agree[1]} rows")
     print(f"Context-linked, not re-evaluated: {context[0]} keys, {context[1]} rows")
     print(f"Stale: {len(stale)} keys, {stale_rows} rows")
-    for bad_rows, speaker, parl, day, counts, resolved in sorted(
-        stale, key=lambda s: (-s[0], s[1], s[2])
+    for bad_rows, speaker, parliament_number, sitting_date, counts, resolved in sorted(
+        stale, key=lambda stale_entry: (-stale_entry[0], stale_entry[1], stale_entry[2])
     ):
         stored_text = ", ".join(
-            f"{i} {names.get(i)!r} x{n}" for i, n in sorted(counts.items())
+            f"{speaker_id} {speaker_id_to_name.get(speaker_id)!r} x{row_count}" for speaker_id, row_count in sorted(counts.items())
         )
         print(
-            f"{bad_rows:>6}  {speaker!r}  P{parl}  {day.date() if day else '-'}  "
-            f"stored [{stored_text}]  resolved {resolved} {names.get(resolved)!r}"
+            f"{bad_rows:>6}  {speaker!r}  P{parliament_number}  {sitting_date.date() if sitting_date is not None else '-'}  "
+            f"stored [{stored_text}]  resolved {resolved} {speaker_id_to_name.get(resolved)!r}"
         )
     sys.exit(1 if stale_rows else 0)
 
