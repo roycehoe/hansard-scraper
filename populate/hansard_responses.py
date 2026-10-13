@@ -13,6 +13,7 @@ from schemas.hansard_search_result import HansardSearchResult
 from services.hansard_website import build_hansard_website_response
 
 _CONCURRENCY = 20
+_HTTP_TIMEOUT_SECONDS = 30
 
 
 async def _fetch_html_content(
@@ -38,7 +39,7 @@ async def _fetch_all(results: list[HansardSearchResult]) -> list:
     completed = 0
     total = len(results)
 
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
         async def fetch_one(result):
             nonlocal completed
             async with semaphore:
