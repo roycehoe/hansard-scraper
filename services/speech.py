@@ -13,10 +13,10 @@ class ParsedSpeech:
 
 
 class ParsedSpeechType(Enum):
-    PARSED = "parsed"
-    SINGLE_SPEAKER = "single_speaker"
-    MULTI_SPEAKER = "multi_speaker"
-    NO_SPEAKER = "no_speaker"
+    PARSED = "PARSED"
+    SINGLE_SPEAKER = "SINGLE_SPEAKER"
+    MULTI_SPEAKER = "MULTI_SPEAKER"
+    NO_SPEAKER = "NO_SPEAKER"
 
 
 _MP_SPEAK_RE = re.compile(r"MPs? Speaking:\|[ \t]*([^\n|]+)", re.IGNORECASE)
@@ -193,7 +193,7 @@ def _classify_speech_type(parsed_speeches: list[ParsedSpeech], speaker_count: in
     return ParsedSpeechType.NO_SPEAKER
 
 
-def _single_speaker_transcript(markdown: str, start_of_speech_line: int) -> str:
+def _get_single_speaker_transcript(markdown: str, start_of_speech_line: int) -> str:
     return " ".join(
         stripped
         for line in markdown.splitlines()[start_of_speech_line + 1:]
@@ -269,7 +269,7 @@ def _extract_markdown_title(markdown_content: str) -> Optional[str]:
     return None
 
 
-def _line_matches_title(line: str, candidate: str) -> bool:
+def _is_line_matching_title(line: str, candidate: str) -> bool:
     """Return True if the line matches the candidate title via any strategy."""
     # Quote marks appear in the markdown title but not the API title, or the reverse.
     line = _QUOTE_MARKS_RE.sub("", line)
@@ -314,6 +314,17 @@ def _line_matches_title(line: str, candidate: str) -> bool:
     return False
 
 
+def _get_first_bold_line_start(markdown_content: str) -> Optional[int]:
+    """Fallback when no line matches the title, e.g. "DEBATE ON PRESIDENT'S ADDRESS" whose body
+    heading reads "PRESIDENT'S ADDRESS Debate on the Address (First Allotted Day)". A fully bold
+    first line is a heading and stands in for the title line; a bold label followed by text is the
+    first speech, so parsing starts on the line before it."""
+    for line_index, line in enumerate(markdown_content.splitlines()):
+        if line.startswith("**") and line.strip("* "):
+            return line_index if _WHOLE_BOLD_LINE_RE.match(line.strip()) else line_index - 1
+    return None
+
+
 def get_start_of_speech_line(
     markdown_content: str,
     title: str,
@@ -341,21 +352,10 @@ def get_start_of_speech_line(
 
     for line_index, line in enumerate(markdown_content.splitlines()):
         for candidate in candidates:
-            if _line_matches_title(line, candidate):
+            if _is_line_matching_title(line, candidate):
                 return line_index
 
-    return _first_bold_line_start(markdown_content)
-
-
-def _first_bold_line_start(markdown_content: str) -> Optional[int]:
-    """Fallback when no line matches the title, e.g. "DEBATE ON PRESIDENT'S ADDRESS" whose body
-    heading reads "PRESIDENT'S ADDRESS Debate on the Address (First Allotted Day)". A fully bold
-    first line is a heading and stands in for the title line; a bold label followed by text is the
-    first speech, so parsing starts on the line before it."""
-    for line_index, line in enumerate(markdown_content.splitlines()):
-        if line.startswith("**") and line.strip("* "):
-            return line_index if _WHOLE_BOLD_LINE_RE.match(line.strip()) else line_index - 1
-    return None
+    return _get_first_bold_line_start(markdown_content)
 
 
 def _is_artifact_line(line: str) -> bool:
@@ -533,18 +533,18 @@ def get_speeches(markdown: str, start_of_speech_line: int, report_type: str) -> 
                 and _is_section_header_speaker(parsed_speeches[0].speaker)):
             speaker = _extract_body_attribution(markdown, report_type)
             if speaker:
-                body = _single_speaker_transcript(markdown, start_of_speech_line)
+                body = _get_single_speaker_transcript(markdown, start_of_speech_line)
                 return [ParsedSpeech(speaker=speaker, transcript=body)] if body else []
         return parsed_speeches
 
     if speech_type == ParsedSpeechType.SINGLE_SPEAKER:
-        body = _single_speaker_transcript(markdown, start_of_speech_line)
+        body = _get_single_speaker_transcript(markdown, start_of_speech_line)
         return [ParsedSpeech(speaker=speakers[0], transcript=body)] if body else []
 
     if speech_type == ParsedSpeechType.NO_SPEAKER:
         speaker = _extract_body_attribution(markdown, report_type)
         if speaker:
-            body = _single_speaker_transcript(markdown, start_of_speech_line)
+            body = _get_single_speaker_transcript(markdown, start_of_speech_line)
             return [ParsedSpeech(speaker=speaker, transcript=body)] if body else []
 
     return []
