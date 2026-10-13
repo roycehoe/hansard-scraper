@@ -35,7 +35,7 @@ def main():
 
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
-        all_rows: list[SpeechReportTypeRow] = CRUDSpeech(session).get_speakers_with_report_type()
+        all_rows: list[SpeechReportTypeRow] = CRUDSpeech(session).get_speaker_rows_by_speaker_not_null()
 
     speaker_id_lookup: dict[tuple[str, int], int] = {
         (s.name, s.parliament_number): s.id

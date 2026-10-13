@@ -52,11 +52,11 @@ def _get_header_holders(markdown: str) -> dict[str, set[str]]:
     return role_to_holder_names
 
 
-def _get_positions(normalised: str, rows: list[SpeechRow]) -> list[Optional[int]]:
+def _get_positions(normalised: str, speech_rows: list[SpeechRow]) -> list[Optional[int]]:
     positions: list[Optional[int]] = []
     cursor = 0
-    for row in rows:
-        key = _normalise(row.transcript)[:_ALIGN_KEY_LENGTH]
+    for speech_row in speech_rows:
+        key = _normalise(speech_row.transcript)[:_ALIGN_KEY_LENGTH]
         found = normalised.find(key, cursor) if len(key) >= _MIN_ALIGN_KEY_LENGTH else -1
         positions.append(found if found >= 0 else None)
         if found >= 0:
@@ -86,15 +86,15 @@ def _get_bound_position(positions: list[Optional[int]], index: int, annotations:
     return low + 1
 
 
-def chairman_names(markdown: str, rows: list[SpeechRow]) -> dict[int, str]:
+def chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int, str]:
     normalised = _normalise(markdown)
     annotations = [(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalised)]
     events = [(match.start(), match.group(1).lower()) for match in _CHAIR_EVENT_RE.finditer(normalised)]
     role_to_holder_names = _get_header_holders(markdown)
-    positions = _get_positions(normalised, rows)
+    positions = _get_positions(normalised, speech_rows)
     speech_id_to_name: dict[int, str] = {}
-    for index, row in enumerate(rows):
-        if not row.speaker or not CHAIRMAN_RE.match(row.speaker):
+    for index, speech_row in enumerate(speech_rows):
+        if not speech_row.speaker or not CHAIRMAN_RE.match(speech_row.speaker):
             continue
         position = _get_bound_position(positions, index, annotations)
         if position is None:
@@ -110,11 +110,11 @@ def chairman_names(markdown: str, rows: list[SpeechRow]) -> dict[int, str]:
                 # NOTE: a chair-change line between the annotation and the row voids it.
                 if any(annotation_position < event_position < position for event_position, _ in events):
                     continue
-                speech_id_to_name[row.id] = named_deputy.group(1).strip() if named_deputy is not None else text
+                speech_id_to_name[speech_row.id] = named_deputy.group(1).strip() if named_deputy is not None else text
             elif _SPEAKER_ROLE_RE.match(text):
                 holders = role_to_holder_names.get("speaker", set())
                 if after_roles == {"speaker"} and not before_roles and len(holders) == 1:
-                    speech_id_to_name[row.id] = next(iter(holders))
+                    speech_id_to_name[speech_row.id] = next(iter(holders))
             continue
         if len(after_roles) != 1:
             continue
@@ -123,33 +123,33 @@ def chairman_names(markdown: str, rows: list[SpeechRow]) -> dict[int, str]:
             continue
         name = next(iter(holders))
         if not _is_other_name_in_annotations(annotations, name):
-            speech_id_to_name[row.id] = name
+            speech_id_to_name[speech_row.id] = name
     return speech_id_to_name
 
 
-def deputy_speaker_names(markdown: str, rows: list[SpeechRow]) -> DeputySpeakerNames:
+def deputy_speaker_names(markdown: str, speech_rows: list[SpeechRow]) -> DeputySpeakerNames:
     normalised = _normalise(markdown)
     annotations = [(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalised)]
     position_to_deputy_match = {position: _NAMED_DEPUTY_RE.search(_normalise(text)) for position, text in annotations}
     position_to_deputy_name = {position: _TITLE_RE.sub("", match.group(1).strip()) for position, match in position_to_deputy_match.items() if match is not None}
     events = [match.start() for match in _CHAIR_EVENT_RE.finditer(normalised)]
-    positions = _get_positions(normalised, rows)
+    positions = _get_positions(normalised, speech_rows)
     speech_id_to_deputy_name: dict[int, str] = {}
     labelled: set[str] = set()
-    for index, row in enumerate(rows):
-        if not row.speaker:
+    for index, speech_row in enumerate(speech_rows):
+        if not speech_row.speaker:
             continue
-        row_name = _NAMED_DEPUTY_ROW_RE.match(row.speaker.strip())
-        if row_name is not None:
-            labelled.add(_TITLE_RE.sub("", row_name.group(1).strip()))
-        if not BARE_DEPUTY_RE.match(row.speaker.strip()):
+        named_deputy_match = _NAMED_DEPUTY_ROW_RE.match(speech_row.speaker.strip())
+        if named_deputy_match is not None:
+            labelled.add(_TITLE_RE.sub("", named_deputy_match.group(1).strip()))
+        if not BARE_DEPUTY_RE.match(speech_row.speaker.strip()):
             continue
         position = _get_bound_position(positions, index, annotations)
         if position is None:
             continue
         preceding = [annotation_position for annotation_position, _ in annotations if annotation_position < position]
         if preceding and preceding[-1] in position_to_deputy_name and not any(preceding[-1] < event_position < position for event_position in events):
-            speech_id_to_deputy_name[row.id] = position_to_deputy_name[preceding[-1]]
+            speech_id_to_deputy_name[speech_row.id] = position_to_deputy_name[preceding[-1]]
     mentioned = set(position_to_deputy_name.values()) | labelled
     header = _HEADER_RE.search(markdown)
     for entry in (header.group(1).split(";") if header is not None else []):
@@ -165,16 +165,16 @@ def deputy_speaker_names_in_text(text: str) -> set[str]:
     return names
 
 
-def carried_role_names(rows: list[SpeechRow]) -> dict[int, str]:
+def carried_role_names(speech_rows: list[SpeechRow]) -> dict[int, str]:
     role_to_holder: dict[str, str] = {}
     speech_id_to_name: dict[int, str] = {}
-    for row in rows:
-        if not row.speaker:
+    for speech_row in speech_rows:
+        if not speech_row.speaker:
             continue
-        speaker = row.speaker.rstrip(":").strip()
+        speaker = speech_row.speaker.rstrip(":").strip()
         for role in CARRIED_ROLES:
             if speaker == role and role in role_to_holder:
-                speech_id_to_name[row.id] = role_to_holder[role]
+                speech_id_to_name[speech_row.id] = role_to_holder[role]
             elif speaker.startswith(role + _CARRIED_HOLDER_OPENER):
                 role_to_holder[role] = speaker[len(role + _CARRIED_HOLDER_OPENER) :].rstrip(")").strip()
     return speech_id_to_name
