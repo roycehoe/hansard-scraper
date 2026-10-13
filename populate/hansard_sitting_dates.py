@@ -82,8 +82,8 @@ def populate_hansard_sitting_dates(session: Session) -> None:
 
         hansard_report_response = _strip_nul(fetched_sitting_date.hansard_report_response)
         if _parse_sitting_date(sitting_date) >= settings.sitting_date_format_change:
-            sitting_date_data = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
+            hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
         else:
-            sitting_date_data = build_old_hansard_sitting_date_response(hansard_report_response, sitting_date)
+            hansard_sitting_date_response = build_old_hansard_sitting_date_response(hansard_report_response, sitting_date)
 
-        CRUDHansardSittingDateResponse(session).create(sitting_date_data.response)
+        CRUDHansardSittingDateResponse(session).create(hansard_sitting_date_response)
