@@ -143,6 +143,39 @@ _SECTION_BOUNDARY_HEADINGS = frozenset({
 _WHOLE_BOLD_LINE_RE = re.compile(r"^\*\*[^*].*\*\*$")
 
 
+_MARKDOWN_TITLE_SCAN_LINES = 12
+_PREFIX_TITLE_LENGTH_FLOOR = 8
+_MIN_AFFIX_TITLE_LENGTH = 10
+_MAX_SPEAKER_NAME_LENGTH = 80
+_OPENING_QUOTE_MARKS = "\"“'"
+
+_SPEAKER_ROLE_WORD_RE = re.compile(r"\b(President|Speaker|Minister|Secretary|Deputy|Senior|Acting)\b", re.IGNORECASE)
+_MARKDOWN_TITLE_RE = re.compile(r"Title:\|\s*([^|\n]+)", re.IGNORECASE)
+_MARKDOWN_MARKS_RE = re.compile(r"[_*]")
+_QUOTE_MARKS_RE = re.compile(r"[\"“”]")
+_WHITESPACE_RE = re.compile(r"\s+")
+_CHAIR_PREFIX_RE = re.compile(r"^\[.*?\]\s*")
+_TRAILING_PARENTHETICAL_RE = re.compile(r"\s*\([^)]*\)\s*$")
+_TRAILING_ACRONYM_RE = re.compile(r"\s*\([A-Z]+\)$")
+_TABLE_RULE_RE = re.compile(r"^-{3}(\|-{2,})+\s*$")
+_BOLD_ONLY_LINE_RE = re.compile(r"^\*\*([^*]+)\*\*\s*$")
+_BOLD_OPENING_RE = re.compile(r"^\*\*(?!\*)")
+_LEADING_BOLD_ARTIFACT_RE = re.compile(r"^(\*{4})+")
+_TIME_MARKER_RE = re.compile(r"^\d{1,2}\.\d{2}\s*[ap]\.?m\.?$", re.IGNORECASE)
+_MARKDOWN_HEADING_RE = re.compile(r"^#{1,6}(\s|$)")
+_BOLD_RUN_RE = re.compile(r"((?:\*\*[^*]+?\*\*\s*)+)")
+_LEADING_COLON_RE = re.compile(r"^:\s*")
+_CHAIR_ANNOTATION_FULL_RE = re.compile(r"[\[(]?\s*.+?\s*in the [Cc]hair\s*[.\])]*")
+_CHAIR_ANNOTATION_PREFIX_RE = re.compile(r"[\[(]\s*.+?\s*in the [Cc]hair\s*[.\])]")
+_ALPHANUMERIC_RE = re.compile(r"[A-Za-z0-9]")
+_LETTER_RE = re.compile(r"[A-Za-z]")
+_QUESTION_NUMBER_PREFIX_RE = re.compile(r"^\d+\\?\.\s+")
+_UNSPACED_HONORIFIC_RE = re.compile(r"^(Mr|Mrs|Ms|Dr|Prof|Mdm|The|BG|RAdm|Er)([A-Z])")
+_DROP_CAP_RE = re.compile(r"[A-Za-z]{1,2}")
+_PARENTHESISED_RE = re.compile(r"^\(.*\)$")
+_ITALIC_HEADING_RE = re.compile(r"^_[^_].*_$")
+
+
 def _extract_mps_speaking(markdown: str) -> list[str]:
     match = _MP_SPEAK_RE.search(markdown)
     if match is None:
@@ -175,7 +208,7 @@ def _is_section_header_speaker(name: str) -> bool:
         return False
     if _SPEAKER_HONORIFIC_RE.search(stripped):
         return False
-    if re.search(r"\b(President|Speaker|Minister|Secretary|Deputy|Senior|Acting)\b", stripped, re.IGNORECASE):
+    if _SPEAKER_ROLE_WORD_RE.search(stripped):
         return False
     return stripped == stripped.upper()
 
@@ -222,13 +255,13 @@ def _extract_body_attribution(markdown: str, report_type: str) -> Optional[str]:
 
 
 def _strip_markdown_marks(text: str) -> str:
-    return re.sub(r"[_*]", "", text)
+    return _MARKDOWN_MARKS_RE.sub("", text)
 
 
 def _extract_markdown_title(markdown_content: str) -> Optional[str]:
     """Extract the Title field from the markdown header row, if present."""
-    for line in markdown_content.splitlines()[:12]:
-        match = re.search(r"Title:\|\s*([^|\n]+)", line, re.IGNORECASE)
+    for line in markdown_content.splitlines()[:_MARKDOWN_TITLE_SCAN_LINES]:
+        match = _MARKDOWN_TITLE_RE.search(line)
         if match is not None:
             candidate = match.group(1).strip()
             if candidate:
@@ -239,8 +272,8 @@ def _extract_markdown_title(markdown_content: str) -> Optional[str]:
 def _line_matches_title(line: str, candidate: str) -> bool:
     """Return True if the line matches the candidate title via any strategy."""
     # Quote marks appear in the markdown title but not the API title, or the reverse.
-    line = re.sub(r"[\"“”]", "", line)
-    candidate = re.sub(r"[\"“”]", "", candidate)
+    line = _QUOTE_MARKS_RE.sub("", line)
+    candidate = _QUOTE_MARKS_RE.sub("", candidate)
     # Strategy 1: closed bold (**title**) — old format with proper closing
     if f"{candidate}**" in line:
         return True
@@ -259,22 +292,22 @@ def _line_matches_title(line: str, candidate: str) -> bool:
     # Strategy 4: whitespace-normalized — OCR-damaged spacing, continuation markers
     # (line startswith candidate), addenda/prefix mismatches (candidate endswith line), and lines with
     # a context prefix before the title (line endswith candidate, e.g. "[Chair] HEAD X").
-    normalized_line = re.sub(r"\s+", "", stripped)
-    normalized_candidate = re.sub(r"\s+", "", _strip_markdown_marks(candidate).lower())
+    normalized_line = _WHITESPACE_RE.sub("", stripped)
+    normalized_candidate = _WHITESPACE_RE.sub("", _strip_markdown_marks(candidate).lower())
     if normalized_line and normalized_candidate and (
         normalized_line == normalized_candidate
-        or (normalized_line.startswith(normalized_candidate) and len(normalized_candidate) > 8)
-        or (normalized_candidate.endswith(normalized_line) and len(normalized_line) >= 10)
-        or (normalized_line.endswith(normalized_candidate) and len(normalized_candidate) >= 10)
+        or (normalized_line.startswith(normalized_candidate) and len(normalized_candidate) > _PREFIX_TITLE_LENGTH_FLOOR)
+        or (normalized_candidate.endswith(normalized_line) and len(normalized_line) >= _MIN_AFFIX_TITLE_LENGTH)
+        or (normalized_line.endswith(normalized_candidate) and len(normalized_candidate) >= _MIN_AFFIX_TITLE_LENGTH)
     ):
         return True
 
     # Strategy 5: strip chair-annotation prefix [X in the Chair] and trailing
     # parenthetical suffix before comparing — handles lines like
     # "**[Mr Speaker in the Chair] TITLE (Announcement by Mr Speaker)**"
-    no_chair = re.sub(r"^\[.*?\]\s*", "", stripped).strip()
-    no_suffix = re.sub(r"\s*\([^)]*\)\s*$", "", no_chair).strip()
-    normalized_line_without_chair = re.sub(r"\s+", "", no_suffix.lower())
+    no_chair = _CHAIR_PREFIX_RE.sub("", stripped).strip()
+    no_suffix = _TRAILING_PARENTHETICAL_RE.sub("", no_chair).strip()
+    normalized_line_without_chair = _WHITESPACE_RE.sub("", no_suffix.lower())
     if normalized_line_without_chair and normalized_line_without_chair == normalized_candidate:
         return True
 
@@ -303,7 +336,7 @@ def get_start_of_speech_line(
         f"{title} {subtitle}" if subtitle else None,
         markdown_title or None,
         # A trailing acronym can wrap onto its own line: "... TRAINING SUBSIDIES" / "(SPUR)"
-        re.sub(r"\s*\([A-Z]+\)$", "", title) if re.search(r"\s*\([A-Z]+\)$", title) else None,
+        _TRAILING_ACRONYM_RE.sub("", title) if _TRAILING_ACRONYM_RE.search(title) else None,
     ] if candidate]
 
     for line_index, line in enumerate(markdown_content.splitlines()):
@@ -330,7 +363,7 @@ def _is_artifact_line(line: str) -> bool:
         return True
     if not line.strip("* _|"):
         return True
-    if re.match(r"^-{3}(\|-{2,})+\s*$", line):
+    if _TABLE_RULE_RE.match(line):
         return True
     if line.startswith("!["):
         return True
@@ -347,12 +380,12 @@ def _merge_wrapped_bold_lines(lines: list[str]) -> list[str]:
     index = 0
     while index < len(lines):
         line = lines[index]
-        label = re.match(r"^\*\*([^*]+)\*\*\s*$", line.strip())
+        label = _BOLD_ONLY_LINE_RE.match(line.strip())
         if label is not None and not label.group(1).rstrip().endswith(":") and label.group(1).count("(") > label.group(1).count(")"):
             following = index + 1
             while following < len(lines) and not lines[following].strip():
                 following += 1
-            if following < len(lines) and re.match(r"^\*\*(?!\*)", lines[following].lstrip()):
+            if following < len(lines) and _BOLD_OPENING_RE.match(lines[following].lstrip()):
                 merged.append(line.rstrip()[:-2] + " " + lines[following].lstrip()[2:])
                 index = following + 1
                 continue
@@ -367,13 +400,13 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
     speeches: list[ParsedSpeech] = []
     for line in _merge_wrapped_bold_lines(markdown.splitlines()[start_of_speech_line + 1 :]):
         parsed_line = line.strip()
-        parsed_line = re.sub(r"^(\*{4})+", "", parsed_line)  # strip leading **** artifacts (e.g. ****8.**Name**)
+        parsed_line = _LEADING_BOLD_ARTIFACT_RE.sub("", parsed_line)  # strip leading **** artifacts (e.g. ****8.**Name**)
         if _is_artifact_line(parsed_line):
             continue
         if "**" not in parsed_line:
-            if re.match(r"^\d{1,2}\.\d{2}\s*[ap]\.?m\.?$", parsed_line, re.IGNORECASE):
+            if _TIME_MARKER_RE.match(parsed_line):
                 continue  # skip procedural time markers (e.g. "4.26 pm", "3.30 p.m.")
-            if re.match(r"^#{1,6}(\s|$)", parsed_line):
+            if _MARKDOWN_HEADING_RE.match(parsed_line):
                 continue  # skip markdown section headings (e.g. "#### [Mr SPEAKER in the Chair]")
             label_match = _PLAIN_ROLE_LABEL_RE.match(parsed_line)
             if label_match is not None:
@@ -392,9 +425,9 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 current_speaker = None
             continue
 
-        bold_match = re.search(r"((?:\*\*[^*]+?\*\*\s*)+)", parsed_line)
+        bold_match = _BOLD_RUN_RE.search(parsed_line)
         if bold_match is not None:
-            transcript = re.sub(r"^:\s*", "", parsed_line.split(bold_match.group(0))[-1].strip())
+            transcript = _LEADING_COLON_RE.sub("", parsed_line.split(bold_match.group(0))[-1].strip())
             if transcript.startswith("|"):
                 continue  # table row header ("**Header** | ...") — bold is a column label, not a speaker
             raw_speaker = bold_match.group(0).replace("*", "").replace(":", "").strip()
@@ -402,24 +435,24 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             # A "[X in the Chair]" annotation, bare or followed by a heading in the same bold line
             # ("**[Mr Speaker in the Chair] BILL**"), records who presides; it is not a speaker, and
             # any text after it continues the current speaker. OCR can glue the words ("Speakerin the").
-            if (re.fullmatch(r"[\[(]?\s*.+?\s*in the [Cc]hair\s*[.\])]*", raw_speaker)
-                    or re.match(r"[\[(]\s*.+?\s*in the [Cc]hair\s*[.\])]", raw_speaker)):
-                if re.search(r"[A-Za-z0-9]", transcript) and current_speaker is not None:
+            if (_CHAIR_ANNOTATION_FULL_RE.fullmatch(raw_speaker)
+                    or _CHAIR_ANNOTATION_PREFIX_RE.match(raw_speaker)):
+                if _ALPHANUMERIC_RE.search(transcript) and current_speaker is not None:
                     speeches.append(ParsedSpeech(speaker=current_speaker, transcript=transcript))
                 continue
             new_speaker = raw_speaker
             is_bold_ending_with_colon = bold_match.group(0).rstrip().endswith(":**")
             # Strip leading question-number prefix from oral-answer speaker names
             # e.g. "1\. Assoc. Prof. Paulin Tay Straughan" → "Assoc. Prof. Paulin Tay Straughan"
-            new_speaker = re.sub(r"^\d+\\?\.\s+", "", new_speaker)
+            new_speaker = _QUESTION_NUMBER_PREFIX_RE.sub("", new_speaker)
             # Fix OCR artifacts where space was dropped between honorific and name
-            new_speaker = re.sub(r"^(Mr|Mrs|Ms|Dr|Prof|Mdm|The|BG|RAdm|Er)([A-Z])", r"\1 \2", new_speaker)
+            new_speaker = _UNSPACED_HONORIFIC_RE.sub(r"\1 \2", new_speaker)
             # A bold drop cap ("**E**very year ...") and, in motions, a bold line opening with a
             # quote mark (a headline or letter read into the record) continue the current speaker.
             # The whole line is speech, so the transcript keeps any list marker before the bold
             # ("(a) **C** onnected") and the bold text itself.
-            is_drop_cap = bool(re.fullmatch(r"[A-Za-z]{1,2}", new_speaker)) and new_speaker not in ("Mr", "Er", "Ms", "Dr")
-            if is_drop_cap or (report_type == "motion" and new_speaker[:1] in "\"“'"):
+            is_drop_cap = bool(_DROP_CAP_RE.fullmatch(new_speaker)) and new_speaker not in ("Mr", "Er", "Ms", "Dr")
+            if is_drop_cap or (report_type == "motion" and new_speaker[:1] in _OPENING_QUOTE_MARKS):
                 prefix = parsed_line[: bold_match.start()]
                 bold_text = bold_match.group(0).replace("*", "").strip()
                 body = bold_text + transcript if is_drop_cap else f"{bold_text} {transcript}"
@@ -437,8 +470,8 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             if (
                 "$" in new_speaker
                 or "%" in new_speaker
-                or not re.search(r"[A-Za-z]", new_speaker)
-                or (len(new_speaker) > 80 and not _SPEAKER_HONORIFIC_RE.search(new_speaker))
+                or not _LETTER_RE.search(new_speaker)
+                or (len(new_speaker) > _MAX_SPEAKER_NAME_LENGTH and not _SPEAKER_HONORIFIC_RE.search(new_speaker))
             ):
                 continue
             # Paren-only annotations (e.g. "(Accidents and violations):") and italic
@@ -447,7 +480,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             # until a real bold speaker name appears. Must run before the generic section-title
             # skip so that italic headings with no colon are also caught and reset.
             is_section_annotation = (
-                bool(re.match(r"^\(.*\)$", new_speaker) or re.match(r"^_[^_].*_$", new_speaker))
+                bool(_PARENTHESISED_RE.match(new_speaker) or _ITALIC_HEADING_RE.match(new_speaker))
                 and not _SPEAKER_HONORIFIC_RE.search(new_speaker)
             )
             if is_section_annotation:
