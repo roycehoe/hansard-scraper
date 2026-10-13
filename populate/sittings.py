@@ -6,7 +6,7 @@ from logs import logger
 from services.sitting import build_sitting
 
 
-def populate_sittings(session: Session):
+def populate_sittings(session: Session) -> None:
     all_responses = CRUDHansardSittingDateResponse(session).get_all()
     existing_dates = CRUDSitting(session).get_all_sitting_dates()
     sittings_to_process = [response for response in all_responses if response.sitting_date not in existing_dates]

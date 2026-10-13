@@ -8,7 +8,7 @@ from services.report import build_report
 _BATCH_SIZE = 500
 
 
-def populate_reports(session: Session):
+def populate_reports(session: Session) -> None:
     responses = CRUDHansardWebsiteResponse(session).get_all()
     existing_ids = CRUDReport(session).get_all_report_ids()
     # The search can return one hit twice (plans/duplicate-reports.md); build one report per report_id.

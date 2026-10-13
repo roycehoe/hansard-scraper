@@ -52,7 +52,7 @@ async def _fetch_website_response(
     return response
 
 
-async def _fetch_all(results: list[HansardSearchResult]) -> list:
+async def _fetch_all(results: list[HansardSearchResult]) -> list[HansardWebsiteResponse]:
     semaphore = asyncio.Semaphore(_CONCURRENCY)
     progress = itertools.count(1)
     total = len(results)
@@ -63,7 +63,7 @@ async def _fetch_all(results: list[HansardSearchResult]) -> list:
         )
 
 
-def populate_hansard_responses(session: Session):
+def populate_hansard_responses(session: Session) -> None:
     all_search_results = [HansardSearchResult(**result) for result in get_all_hansard_search_results()]
     existing_ids = CRUDHansardWebsiteResponse(session).get_all_report_ids()
     # The search can return one hit twice (plans/duplicate-reports.md); fetch each report_id once.
