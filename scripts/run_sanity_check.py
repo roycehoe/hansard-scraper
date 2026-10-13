@@ -71,23 +71,23 @@ def run():
         regenerated_report = build_report(website_response)
 
         checks = []
-        failed = False
+        is_failed = False
 
         if regenerated_report.markdown_content is None:
             stats["no_markdown"] += 1
             checks.append("NO_MARKDOWN")
-            failed = True
+            is_failed = True
         markdown_flag = "Y" if regenerated_report.markdown_content else "N"
 
         if regenerated_report.title != stored.title:
             stats["title_mismatch"] += 1
             checks.append(f"TITLE_MISMATCH(stored={stored.title!r} regen={regenerated_report.title!r})")
-            failed = True
+            is_failed = True
 
         if regenerated_report.subtitle != stored.subtitle:
             stats["subtitle_mismatch"] += 1
             checks.append(f"SUBTITLE_MISMATCH(stored={stored.subtitle!r} regen={regenerated_report.subtitle!r})")
-            failed = True
+            is_failed = True
 
         start_line = None
         if regenerated_report.markdown_content:
@@ -101,7 +101,7 @@ def run():
         if start_line is None and regenerated_report.markdown_content:
             stats["no_start_line"] += 1
             checks.append("NO_START_LINE")
-            failed = True
+            is_failed = True
 
         speeches = []
         speech_count = "-"
@@ -112,16 +112,16 @@ def run():
             if len(speeches) == 0:
                 stats["no_speeches"] += 1
                 checks.append("NO_SPEECHES")
-                failed = True
+                is_failed = True
             else:
                 invalid = [speech for speech in speeches if not speech.speaker or not speech.transcript.strip()]
                 if invalid:
                     stats["invalid_speeches"] += 1
                     checks.append(f"INVALID_SPEECHES({len(invalid)})")
-                    failed = True
-            valid_flag = "Y" if not failed else "N"
+                    is_failed = True
+            valid_flag = "Y" if not is_failed else "N"
 
-        if not failed:
+        if not is_failed:
             stats["pass"] += 1
             checks.append("OK")
 
@@ -129,7 +129,7 @@ def run():
         checks_text = "  ".join(checks)
         print(f"{stored.report_id:<14} {stored.report_type:<22} {markdown_flag:>2} {start_line_flag:>2} {speech_count:>4} {valid_flag:>2}  {checks_text}")
 
-        if failed:
+        if is_failed:
             issues.append({
                 "report_id": stored.report_id,
                 "report_type": stored.report_type,
