@@ -30,7 +30,7 @@ def _strip_nbsp(html: str) -> str:
 
 
 def _prepare_newer_system_html(html: str) -> str:
-    html = re.sub(_EMPTY_EMPHASIS_PATTERN, "", html)
+    html = re.sub(_EMPTY_EMPHASIS_PATTERN, " ", html)
     html = re.sub(_PROC_TEXT_PAIR_PATTERN, r"\1", html, flags=re.DOTALL)
     html = re.sub(_PROC_TEXT_LONE_PATTERN, "", html)
     html = re.sub(_DATA_IMAGE_PATTERN, "", html)
