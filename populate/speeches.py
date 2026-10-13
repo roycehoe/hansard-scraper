@@ -9,7 +9,7 @@ from services.speech import get_speeches, get_start_of_speech_line
 _BATCH_SIZE = 1_000
 
 
-def populate_speeches(session: Session):
+def populate_speeches(session: Session) -> None:
     reports = CRUDReport(session).get_all()
     existing_report_ids = CRUDSpeech(session).get_report_ids_with_speeches()
     reports_to_process = [report for report in reports if report.id not in existing_report_ids]

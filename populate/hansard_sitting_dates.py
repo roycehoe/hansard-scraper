@@ -25,7 +25,7 @@ def _parse_sitting_date(sitting_date: str) -> datetime:
     return datetime.strptime(sitting_date, "%d-%m-%Y")
 
 
-def _strip_nul(value_tree):
+def _strip_nul(value_tree: object) -> object:
     if isinstance(value_tree, str):
         return value_tree.replace("\x00", "")
     if isinstance(value_tree, dict):
@@ -64,7 +64,7 @@ async def _fetch_all_sitting_dates(dates: list[str]) -> list[FetchedSittingDate]
         )
 
 
-def populate_hansard_sitting_dates(session: Session):
+def populate_hansard_sitting_dates(session: Session) -> None:
     all_sitting_dates = CRUDHansardWebsiteResponse(session).get_all_sitting_dates()
     existing_sitting_dates = CRUDHansardSittingDateResponse(
         session
