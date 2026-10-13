@@ -62,15 +62,15 @@ def main() -> None:
         set(role_to_parliament_to_name_counts[_SPEAKER_ROLE]) | set(role_to_parliament_to_name_counts[_DEPUTY_SPEAKER_ROLE])
     )
 
-    print("_PRESIDING_OFFICERS: dict[tuple[str, int], str] = {")
+    print("_PRESIDING_OFFICERS: dict[tuple[str, int], str] = {")  # noqa: T201 stdout is the dict literal to paste into the source
     for parliament in all_parliaments:
         for role in _ROLES:
             counter = role_to_parliament_to_name_counts[role].get(parliament)
             if not counter:
                 continue
             best_name, _count = counter.most_common(1)[0]
-            print(f'    ("{role}", {parliament}): "{best_name}",')
-    print("}")
+            print(f'    ("{role}", {parliament}): "{best_name}",')  # noqa: T201 stdout is the dict literal to paste into the source
+    print("}")  # noqa: T201 stdout is the dict literal to paste into the source
 
 
 if __name__ == "__main__":
