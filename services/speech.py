@@ -48,6 +48,12 @@ _MINISTRY_HEADING_RE = re.compile(
     re.IGNORECASE,
 )
 
+# language note "(In Mandarin)" / "(_In Malay_):", with any italic or bold marks and the colon after it
+_LANGUAGE_NOTE_RE = re.compile(
+    r"[_*]*\(\s*[_*]*\s*(?:in|dalam)\s+(?:Mandar\w+|Malay|English|Tamil|Hokkien|Cantonese|Teochew|Hakka)\s*[_*]*\s*\)[_*]*\s*:?\s*",
+    re.IGNORECASE,
+)
+
 # motion adjournment mover: "- [Dr Ng Eng Hen]" or "− [Mr Mah Bow Tan]"
 _ADJOURNMENT_MOVER_RE = re.compile(
     r"[−\-]\s*\[((?:Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc\s+Prof)[^]]+)\]",
@@ -304,6 +310,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             if transcript.startswith("|"):
                 continue  # table row header ("**Header** | ...") — bold is a column label, not a speaker
             raw_speaker = bold_match.group(0).replace("*", "").replace(":", "").strip()
+            raw_speaker = _LANGUAGE_NOTE_RE.sub("", raw_speaker).strip() or raw_speaker  # a note-only bold line stays a section annotation
             # A bare "[X in the Chair]" annotation records who presides; it is not a
             # speaker, and any text after it continues the current speaker.
             if re.fullmatch(r"[\[(]?\s*.+?\s*in the [Cc]hair\s*[.\])]*", raw_speaker):
@@ -376,6 +383,9 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
         if not in_preamble:
             speeches.append(ParsedSpeech(speaker=current_speaker, transcript=parsed_line))
 
+    for speech in speeches:
+        if m := _LANGUAGE_NOTE_RE.match(speech.transcript):
+            speech.transcript = speech.transcript[m.end() :]
     return [speech for speech in speeches if speech.transcript.strip() != ""]
 
 
