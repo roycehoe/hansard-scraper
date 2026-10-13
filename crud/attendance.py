@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Optional
 
 from sqlalchemy import text
@@ -5,6 +6,14 @@ from sqlmodel import Session, col, select
 
 from database.attendance import Attendance
 from database.sitting import Sitting
+
+
+@dataclass(frozen=True)
+class AttendanceSpeakerRow:
+    id: int
+    speaker_name: Optional[str]
+    parlement_no: Optional[int]
+    volume_no: Optional[int]
 
 
 class CRUDAttendance:
@@ -24,15 +33,13 @@ class CRUDAttendance:
         sitting_ids = self.session.exec(statement).all()
         return {sitting_id for sitting_id in sitting_ids if sitting_id is not None}
 
-    def get_speaker_rows_by_speaker_id_null(
-        self,
-    ) -> list[tuple[int, Optional[str], Optional[int], Optional[int]]]:
+    def get_speaker_rows_by_speaker_id_null(self) -> list[AttendanceSpeakerRow]:
         statement = (
             select(Attendance.id, Attendance.speaker_name, Sitting.parlement_no, Sitting.volume_no)
             .join(Sitting)
             .where(col(Attendance.speaker_id).is_(None))
         )
-        return list(self.session.exec(statement).all())
+        return [AttendanceSpeakerRow(*row) for row in self.session.exec(statement).all()]
 
     def set_speaker_ids_bulk(self, updates: dict[int, int]) -> None:
         if not updates:

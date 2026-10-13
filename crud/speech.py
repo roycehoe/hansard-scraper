@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable, Optional
 
@@ -8,6 +9,39 @@ from database.report import Report
 from database.speech import Speech
 
 _STREAM_BATCH = 10_000
+
+
+@dataclass(frozen=True)
+class SpeechRow:
+    id: int
+    ordinal: int
+    speaker: Optional[str]
+    transcript: str
+    report_id: int
+    speaker_id: Optional[int]
+
+
+@dataclass(frozen=True)
+class SpeechSpeakerRow:
+    id: int
+    speaker: Optional[str]
+    parliament_number: int
+    sitting_date: datetime
+
+
+@dataclass(frozen=True)
+class SpeechReportTypeRow:
+    speaker: str
+    report_type: str
+    parliament_number: int
+
+
+@dataclass(frozen=True)
+class SpeechParliamentRow:
+    id: int
+    speaker: str
+    report_type: str
+    parliament_number: int
 
 
 class CRUDSpeech:
@@ -26,22 +60,22 @@ class CRUDSpeech:
         statement = select(Speech.report_id).distinct()
         return set(self.session.exec(statement).all()) - {None}
 
-    def get_speakers_with_report_type(self) -> list[tuple[str, str, int]]:
+    def get_speakers_with_report_type(self) -> list[SpeechReportTypeRow]:
         statement = (
             select(Speech.speaker, Report.report_type, Report.parliament_number)
             .join(Report, Report.id == Speech.report_id)
             .where(Speech.speaker.is_not(None))
         )
-        return list(self.session.exec(statement).all())
+        return [SpeechReportTypeRow(*row) for row in self.session.exec(statement).all()]
 
-    def get_speaker_rows_by_speaker_id_null(self) -> Iterable[tuple[int, Optional[str], int, datetime]]:
+    def get_speaker_rows_by_speaker_id_null(self) -> Iterable[SpeechSpeakerRow]:
         statement = (
             select(Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date)
             .join(Report)
             .where(col(Speech.speaker_id).is_(None))
             .execution_options(yield_per=_STREAM_BATCH)
         )
-        return self.session.exec(statement)
+        return (SpeechSpeakerRow(*row) for row in self.session.exec(statement))
 
     def get_report_ids_by_speaker_id_null_and_speaker_regex(self, pattern: str) -> list[int]:
         statement = (
@@ -52,32 +86,30 @@ class CRUDSpeech:
         )
         return list(self.session.exec(statement).all())
 
-    def get_rows_by_report_ids(
-        self, report_ids: list[int]
-    ) -> list[tuple[int, int, Optional[str], str, int, Optional[int]]]:
+    def get_rows_by_report_ids(self, report_ids: list[int]) -> list[SpeechRow]:
         statement = (
             select(Speech.id, Speech.ordinal, Speech.speaker, Speech.transcript, Speech.report_id, Speech.speaker_id)
             .where(col(Speech.report_id).in_(report_ids))
             .order_by(Speech.report_id, Speech.ordinal)
         )
-        return list(self.session.exec(statement).all())
+        return [SpeechRow(*row) for row in self.session.exec(statement).all()]
 
-    def get_speaker_info_by_ids(self, speech_ids: list[int]) -> list[tuple[int, str, int, object]]:
+    def get_speaker_info_by_ids(self, speech_ids: list[int]) -> list[SpeechSpeakerRow]:
         statement = (
             select(Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date)
             .join(Report)
             .where(Speech.id.in_(speech_ids))
         )
-        return list(self.session.exec(statement).all())
+        return [SpeechSpeakerRow(*row) for row in self.session.exec(statement).all()]
 
-    def get_speaker_info_for_parliament(self, parliament_number: int) -> list[tuple[int, str, str, int]]:
+    def get_speaker_info_for_parliament(self, parliament_number: int) -> list[SpeechParliamentRow]:
         statement = (
             select(Speech.id, Speech.speaker, Report.report_type, Report.parliament_number)
             .join(Report)
             .where(Speech.speaker.is_not(None))
             .where(Report.parliament_number == parliament_number)
         )
-        return list(self.session.exec(statement).all())
+        return [SpeechParliamentRow(*row) for row in self.session.exec(statement).all()]
 
     def delete_by_report_id(self, report_id: int) -> int:
         statement = delete(Speech).where(Speech.report_id == report_id)

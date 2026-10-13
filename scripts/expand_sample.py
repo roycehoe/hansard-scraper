@@ -23,7 +23,7 @@ from typing import Optional
 from sqlmodel import Session
 
 from crud.speaker import CRUDSpeaker
-from crud.speech import CRUDSpeech
+from crud.speech import CRUDSpeech, SpeechParliamentRow
 from database.init import engine
 from services.attendance import (
     SpeakerLookups,
@@ -107,22 +107,22 @@ def main() -> None:
     lookups = build_speaker_lookups(speakers)
 
     # Filter: exclude structural non-MPs, artifacts, already-sampled IDs
-    eligible: list[tuple[int, str, str, int]] = []
-    for speech_id, speaker, report_type, parliament in rows:
-        if not speaker:
+    eligible: list[SpeechParliamentRow] = []
+    for row in rows:
+        if not row.speaker:
             continue
-        if speech_id in existing_ids:
+        if row.id in existing_ids:
             continue
-        if _is_excluded(speaker) or speaker.startswith("(") or speaker.startswith("_"):
+        if _is_excluded(row.speaker) or row.speaker.startswith("(") or row.speaker.startswith("_"):
             continue
-        eligible.append((speech_id, speaker, report_type, parliament))
+        eligible.append(row)
 
-    eligible_by_id = {r[0]: r for r in eligible}
+    eligible_by_id = {r.id: r for r in eligible}
 
     # Group by report_type and sample
-    by_type: dict[str, list[tuple[int, str, str, int]]] = defaultdict(list)
+    by_type: dict[str, list[SpeechParliamentRow]] = defaultdict(list)
     for row in eligible:
-        by_type[row[2]].append(row)
+        by_type[row.report_type].append(row)
 
     new_pilot: list[int] = []
     new_held_out: list[int] = []
@@ -133,8 +133,8 @@ def main() -> None:
         random.shuffle(items)
         pilot_slice = items[:_K_PILOT]
         held_out_slice = items[_K_PILOT : _K_PILOT + _K_HELD_OUT]
-        new_pilot.extend(r[0] for r in pilot_slice)
-        new_held_out.extend(r[0] for r in held_out_slice)
+        new_pilot.extend(r.id for r in pilot_slice)
+        new_held_out.extend(r.id for r in held_out_slice)
         print(f"  {report_type:<30} {len(pilot_slice)} pilot + {len(held_out_slice)} held-out")
 
     # Regression expansion: run resolution on new pilot speeches
@@ -142,9 +142,9 @@ def main() -> None:
     for speech_id in new_pilot:
         if speech_id not in eligible_by_id:
             continue
-        _, speaker, _, parliament = eligible_by_id[speech_id]
-        name = _preprocess(speaker)
-        if name and _resolves(name, parliament, lookups, speaker_id_lookup):
+        eligible_row = eligible_by_id[speech_id]
+        name = _preprocess(eligible_row.speaker)
+        if name and _resolves(name, eligible_row.parliament_number, lookups, speaker_id_lookup):
             passing_pilot.append(speech_id)
 
     # Maintain ~1:5 regression:pilot ratio (current: 40/202 ≈ 1:5)

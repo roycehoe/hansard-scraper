@@ -102,10 +102,7 @@ def main() -> None:
     }
     lookups = build_speaker_lookups(speakers)
 
-    rows_by_id = {
-        speech_id: (speaker, parliament, sitting_date)
-        for speech_id, speaker, parliament, sitting_date in rows
-    }
+    rows_by_id = {row.id: row for row in rows}
 
     passed = 0
     failed: list[tuple[int, str, int, Optional[str]]] = []
@@ -114,7 +111,8 @@ def main() -> None:
         if speech_id not in rows_by_id:
             failed.append((speech_id, "<missing>", 0, None))
             continue
-        speaker, parliament, sitting_date = rows_by_id[speech_id]
+        row = rows_by_id[speech_id]
+        speaker, parliament, sitting_date = row.speaker, row.parliament_number, row.sitting_date
         if not speaker:
             failed.append((speech_id, "<null speaker>", parliament, None))
             continue
