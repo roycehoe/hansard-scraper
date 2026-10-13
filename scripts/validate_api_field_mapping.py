@@ -11,19 +11,21 @@ Usage:
 """
 
 import sys
-from datetime import datetime
-from typing import Any
+from typing import Any, Union
 
 from gateway.hansard_report import get_hansard_report_response
 from gateway.hansard_search import get_hansard_search_results
 from gateway.hansard_topic import get_hansard_topic_response
-from schemas.hansard_search_result import HansardSearchResult
+from schemas.hansard_report_response import (
+    HansardReportNewResponse,
+    HansardReportOldResponse,
+)
 from services.hansard_sitting_date_response import (
     build_new_hansard_sitting_date_response,
     build_old_hansard_sitting_date_response,
 )
 from services.hansard_website import build_hansard_website_response
-from settings import settings
+from utils.sitting_dates import is_new_sitting_date_format
 
 PASS = "\033[32mPASS\033[0m"
 FAIL = "\033[31mFAIL\033[0m"
@@ -129,11 +131,11 @@ def validate_search_and_topic() -> bool:
         print(f"  {WARN}  No search results returned (check settings.search_from_date).")
         return True
 
-    raw = raw_list[0]
-    print(f"  {INFO}  report_id={raw.get('reportId')}  title={raw.get('title', '')[:55]}")
+    parsed = raw_list[0]
+    raw = parsed.model_dump(by_alias=True)
+    print(f"  {INFO}  report_id={parsed.report_id}  title={parsed.title[:55]}")
 
     # Pydantic parse: check every field that has a value in raw is non-None in parsed
-    parsed = HansardSearchResult.model_validate(raw)
     parsed_dict = parsed.model_dump()
 
     pydantic_failures = []
@@ -200,10 +202,9 @@ def validate_topic(report_id: str) -> bool:
         print(f"  {WARN}  No search results; skipping.")
         return True
 
-    raw = next((r for r in raw_list if r.get("reportId") == report_id), raw_list[0])
-    parsed = HansardSearchResult.model_validate(raw)
-    topic_raw = get_hansard_topic_response(report_id)
-    html_content = topic_raw.get("htmlContent") if isinstance(topic_raw, dict) else None
+    parsed = next((r for r in raw_list if r.report_id == report_id), raw_list[0])
+    topic_response = get_hansard_topic_response(report_id)
+    html_content = topic_response.html_content
 
     orm = build_hansard_website_response(parsed, content=html_content)
     if html_content:
@@ -212,7 +213,7 @@ def validate_topic(report_id: str) -> bool:
             return False
         print(f"  {PASS}  htmlContent ({len(html_content)} chars) → orm.content ({len(orm.content)} chars)")
     else:
-        topic_keys = list(topic_raw.keys()) if isinstance(topic_raw, dict) else []
+        topic_keys = list(topic_response.model_dump(by_alias=True, exclude_none=True).keys())
         print(
             f"  {INFO}  htmlContent absent for this report type "
             f"(topic response keys: {topic_keys}) — expected for written answers"
@@ -220,17 +221,19 @@ def validate_topic(report_id: str) -> bool:
     return True
 
 
-def _validate_sitting_payload(raw: dict, sitting_date: str, source: str) -> bool:
-    cutoff = settings.sitting_date_format_change
-    is_new = datetime.strptime(sitting_date, "%Y-%m-%d") >= cutoff
+def _validate_sitting_payload(
+    response: Union[HansardReportOldResponse, HansardReportNewResponse], sitting_date: str, source: str
+) -> bool:
+    is_new = is_new_sitting_date_format(sitting_date)
+    raw = response.model_dump(by_alias=True)
 
-    if "errorCode" in raw:
-        print(f"  {WARN}  API returned error: {raw.get('description')} — using synthetic payload instead")
+    if response.error_code is not None:
+        print(f"  {WARN}  API returned error: {response.description} — using synthetic payload instead")
         return None  # signal to caller to fall back
 
     if is_new:
-        data = build_new_hansard_sitting_date_response(raw, sitting_date)
-        metadata = raw.get("metadata") or {}
+        data = build_new_hansard_sitting_date_response(response, sitting_date)
+        metadata = raw["metadata"] or {}
         new_mapped = {
             "parlimentNO": "parlement_no",
             "sessionNO": "session_no",
@@ -270,7 +273,7 @@ def _validate_sitting_payload(raw: dict, sitting_date: str, source: str) -> bool
             if orm_dict.get(of) is None:
                 failures.append(f"  {FAIL}  raw[{rk!r}]={str(val)[:55]!r}  →  .{of}=None")
     else:
-        data = build_old_hansard_sitting_date_response(raw, sitting_date)
+        data = build_old_hansard_sitting_date_response(response, sitting_date)
         old_mapped = {
             "parlNo": "parlement_no",
             "sessionNo": "session_no",
@@ -337,16 +340,19 @@ def validate_sitting_date(sitting_date: str, label: str, synthetic: dict) -> boo
     _section(f"API 3 — getHansardReport ({label})")
     print(f"  {INFO}  sitting_date={sitting_date!r}")
 
+    response_schema = HansardReportNewResponse if is_new_sitting_date_format(sitting_date) else HansardReportOldResponse
     try:
-        raw = get_hansard_report_response(sitting_date)
+        response = get_hansard_report_response(sitting_date)
     except Exception as e:
         print(f"  {WARN}  API call failed ({e}) — using synthetic payload")
-        raw = {"errorCode": 500}
+        response = response_schema(error_code=500)
 
-    result = _validate_sitting_payload(raw, sitting_date, source="live API")
+    result = _validate_sitting_payload(response, sitting_date, source="live API")
     if result is None:
         # API returned an error — fall back to synthetic
-        result = _validate_sitting_payload(synthetic, sitting_date, source="synthetic payload")
+        result = _validate_sitting_payload(
+            response_schema.model_validate(synthetic), sitting_date, source="synthetic payload"
+        )
 
     return bool(result)
 
@@ -354,14 +360,14 @@ def validate_sitting_date(sitting_date: str, label: str, synthetic: dict) -> boo
 if __name__ == "__main__":
     all_passed = True
     all_passed &= validate_search_and_topic()
-    all_passed &= validate_topic(get_hansard_search_results(0, 0)[0].get("reportId", ""))
+    all_passed &= validate_topic(get_hansard_search_results(0, 0)[0].report_id)
     all_passed &= validate_sitting_date(
-        "2015-05-11",
+        "11-05-2015",
         "old format, pre-2015-08-18",
         SYNTHETIC_OLD_FORMAT,
     )
     all_passed &= validate_sitting_date(
-        "2024-01-15",
+        "15-01-2024",
         "new format, post-2015-08-18",
         SYNTHETIC_NEW_FORMAT,
     )

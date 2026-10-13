@@ -31,7 +31,7 @@ async def _fetch_html_content(
     except HansardGatewayError as error:
         logger.warning(f"No content for {search_result.report_id}: {error}")
         return None
-    html_content = hansard_topic_response.get("htmlContent")
+    html_content = hansard_topic_response.html_content
     if html_content is None:
         return None
     return html_content.replace("\x00", "�")
@@ -64,7 +64,7 @@ async def _fetch_all(search_results: list[HansardSearchResult]) -> list[HansardW
 
 
 def populate_hansard_responses(session: Session) -> None:
-    all_search_results = [HansardSearchResult(**search_result) for search_result in get_all_hansard_search_results()]
+    all_search_results = get_all_hansard_search_results()
     existing_report_ids = CRUDHansardWebsiteResponse(session).get_all_report_ids()
     # NOTE: the search can return one hit twice, so keep the first hit per report_id.
     report_id_to_first_search_result = {}
