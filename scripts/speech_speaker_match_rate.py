@@ -37,51 +37,51 @@ def main():
         speakers = CRUDSpeaker(session).get_all()
         all_rows: list[SpeechReportTypeRow] = CRUDSpeech(session).get_speaker_rows_by_speaker_not_null()
 
-    speaker_id_lookup: dict[tuple[str, int], int] = {
-        (s.name, s.parliament_number): s.id
-        for s in speakers
-        if s.id is not None
+    name_and_parliament_to_speaker_id: dict[tuple[str, int], int] = {
+        (speaker.name, speaker.parliament_number): speaker.id
+        for speaker in speakers
+        if speaker.id is not None
     }
     lookups = build_speaker_lookups(speakers)
 
     # Stratify by report_type
-    by_type: dict[str, list[SpeechReportTypeRow]] = defaultdict(list)
+    report_type_to_rows: dict[str, list[SpeechReportTypeRow]] = defaultdict(list)
     for row in all_rows:
-        by_type[row.report_type].append(row)
+        report_type_to_rows[row.report_type].append(row)
 
     sample: list[SpeechReportTypeRow] = []
-    for report_type, items in by_type.items():
-        k = min(SAMPLE_PER_TYPE, len(items))
-        sample.extend(random.sample(items, k))
+    for report_type, items in report_type_to_rows.items():
+        sample_size = min(SAMPLE_PER_TYPE, len(items))
+        sample.extend(random.sample(items, sample_size))
 
     # Run matching
     matched = 0
-    unmatched_by_type: dict[str, list[str]] = defaultdict(list)
-    type_stats: dict[str, dict[str, int]] = defaultdict(lambda: {"matched": 0, "total": 0})
+    report_type_to_unmatched_speakers: dict[str, list[str]] = defaultdict(list)
+    report_type_to_stats: dict[str, dict[str, int]] = defaultdict(lambda: {"matched": 0, "total": 0})
 
     for row in sample:
         name = strip_title(row.speaker.rstrip(":").strip())
         name = normalize_name(name)
         canonical = resolve_canonical_name(name, row.parliament_number, lookups) if name else None
-        found = canonical is not None and (canonical, row.parliament_number) in speaker_id_lookup
+        is_found = canonical is not None and (canonical, row.parliament_number) in name_and_parliament_to_speaker_id
 
-        type_stats[row.report_type]["total"] += 1
-        if found:
+        report_type_to_stats[row.report_type]["total"] += 1
+        if is_found:
             matched += 1
-            type_stats[row.report_type]["matched"] += 1
+            report_type_to_stats[row.report_type]["matched"] += 1
         else:
-            unmatched_by_type[row.report_type].append(row.speaker)
+            report_type_to_unmatched_speakers[row.report_type].append(row.speaker)
 
     total = len(sample)
     print(f"\nOverall: {matched}/{total} = {matched/total*100:.1f}%\n")
     print(f"{'Report type':<30} {'Matched':>8} {'Total':>7} {'Rate':>7}")
     print("-" * 56)
-    for rt, stats in sorted(type_stats.items()):
-        m, t = stats["matched"], stats["total"]
-        rate = m / t * 100 if t else 0
-        print(f"{rt:<30} {m:>8} {t:>7} {rate:>6.1f}%")
+    for report_type, stats in sorted(report_type_to_stats.items()):
+        matched_count, total_count = stats["matched"], stats["total"]
+        rate = matched_count / total_count * 100 if total_count else 0
+        print(f"{report_type:<30} {matched_count:>8} {total_count:>7} {rate:>6.1f}%")
 
-    all_unmatched = [s for speakers in unmatched_by_type.values() for s in speakers]
+    all_unmatched = [unmatched_speaker for unmatched_speakers in report_type_to_unmatched_speakers.values() for unmatched_speaker in unmatched_speakers]
     top = Counter(all_unmatched).most_common(TOP_UNMATCHED)
     print(f"\nTop {TOP_UNMATCHED} unmatched speaker strings:")
     for speaker, count in top:

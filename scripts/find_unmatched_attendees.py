@@ -45,30 +45,30 @@ _DOCUMENT_NOISE_RE = re.compile(
 )
 
 
-def _categorise(name: str) -> str:
-    s = name.strip()
-    if not s:
+def _get_category(name: str) -> str:
+    stripped_name = name.strip()
+    if not stripped_name:
         return "blank"
-    if _PRESIDING_RE.search(s):
+    if _PRESIDING_RE.search(stripped_name):
         return "presiding"
-    if _OFFICIAL_TITLE_RE.search(s):
+    if _OFFICIAL_TITLE_RE.search(stripped_name):
         return "official_with_title"
-    alpha = re.sub(r"[^A-Za-z]", "", s)
+    alpha = re.sub(r"[^A-Za-z]", "", stripped_name)
     if alpha and alpha == alpha.upper() and len(alpha) >= 4:
         return "allcaps_header"
-    if _DOCUMENT_NOISE_RE.search(s):
+    if _DOCUMENT_NOISE_RE.search(stripped_name):
         return "document_noise"
     return "candidate"
 
 
 # ── resolution ────────────────────────────────────────────────────────────────
 
-def _resolved(name: str, parliament: int, lookups) -> bool:
+def _is_resolved(name: str, parliament: int, lookups) -> bool:
     if resolve_canonical_name(name, parliament, lookups):
         return True
     if parliament == 0:
-        for fb in [1, 2, 3]:
-            if resolve_canonical_name(name, fb, lookups):
+        for fallback_parliament in [1, 2, 3]:
+            if resolve_canonical_name(name, fallback_parliament, lookups):
                 return True
     return False
 
@@ -87,7 +87,7 @@ def find_unmatched(*, verbose: bool = False) -> dict[str, Counter]:
 
     lookups = build_speaker_lookups(speakers)
 
-    buckets: dict[str, Counter] = {
+    category_to_counter: dict[str, Counter] = {
         "candidate": Counter(),
         "official_with_title": Counter(),
         "presiding": Counter(),
@@ -97,24 +97,24 @@ def find_unmatched(*, verbose: bool = False) -> dict[str, Counter]:
     }
     total = len(sittings)
 
-    for i, sitting in enumerate(sittings, 1):
-        if verbose and i % 100 == 0:
-            print(f"  {i}/{total} sittings processed…", file=sys.stderr)
+    for sitting_number, sitting in enumerate(sittings, 1):
+        if verbose and sitting_number % 100 == 0:
+            print(f"  {sitting_number}/{total} sittings processed…", file=sys.stderr)
         parliament = infer_parliament(sitting.parlement_no, sitting.volume_no)
         if parliament is None:
             continue
-        for rec in get_sitting_attendance(sitting, lookups):
-            if not rec.speaker_name:
+        for attendance_record in get_sitting_attendance(sitting, lookups):
+            if not attendance_record.speaker_name:
                 continue
-            if _resolved(rec.speaker_name, parliament, lookups):
+            if _is_resolved(attendance_record.speaker_name, parliament, lookups):
                 continue
-            cat = _categorise(rec.speaker_name)
-            buckets[cat][rec.speaker_name] += 1
+            category = _get_category(attendance_record.speaker_name)
+            category_to_counter[category][attendance_record.speaker_name] += 1
 
-    return buckets
+    return category_to_counter
 
 
-def _json_template(name: str) -> dict:
+def _get_json_template(name: str) -> dict:
     return {
         "name": name,
         "party": "Unknown",
@@ -131,23 +131,23 @@ def main() -> None:
         help="Write candidate JSON template to FILE (ready to merge into colonial_la_members.json)",
     )
     parser.add_argument("--verbose", action="store_true")
-    args = parser.parse_args()
+    arguments = parser.parse_args()
 
     print("Scanning sittings…", file=sys.stderr)
-    buckets = find_unmatched(verbose=args.verbose)
+    category_to_counter = find_unmatched(verbose=arguments.verbose)
 
     # ── print report ─────────────────────────────────────────────────────────
-    candidates = buckets["candidate"]
-    total_unmatched = sum(sum(c.values()) for c in buckets.values())
+    candidates = category_to_counter["candidate"]
+    total_unmatched = sum(sum(counter.values()) for counter in category_to_counter.values())
     total_candidates = sum(candidates.values())
 
     print(f"\nUnmatched attendance rows: {total_unmatched}")
     print(f"  Candidates (likely real people, no Speaker entry): {total_candidates}")
-    for cat, ctr in buckets.items():
-        if cat == "candidate":
+    for category, counter in category_to_counter.items():
+        if category == "candidate":
             continue
-        if ctr:
-            print(f"  {cat}: {sum(ctr.values())}")
+        if counter:
+            print(f"  {category}: {sum(counter.values())}")
 
     if candidates:
         print(f"\nTop candidates ({len(candidates)} distinct names):\n")
@@ -157,11 +157,11 @@ def main() -> None:
             print(f"  {count:>6}  {name}")
 
     # ── write JSON template ───────────────────────────────────────────────────
-    if args.json:
-        template = [_json_template(name) for name, _ in candidates.most_common()]
-        path = args.json
-        with open(path, "w") as f:
-            json.dump(template, f, indent=2, ensure_ascii=False)
+    if arguments.json:
+        template = [_get_json_template(name) for name, _ in candidates.most_common()]
+        path = arguments.json
+        with open(path, "w") as file:
+            json.dump(template, file, indent=2, ensure_ascii=False)
         print(f"\nWrote {len(template)}-entry template to {path}", file=sys.stderr)
         print("Edit party/parliament_number/comments, then append to data/colonial_la_members.json", file=sys.stderr)
 
