@@ -22,6 +22,7 @@ from sqlmodel import Session
 import database.speech  # noqa: F401  (registers Speech for Report.speeches)
 from crud.report import CRUDReport
 from database.init import engine
+from database.report import Report
 from services.speech import (
     _extract_mps_speaking,
     get_speeches,
@@ -70,7 +71,7 @@ def _looks_like_speaker(text: str) -> bool:
     return False
 
 
-def _show_doc(report, start_line: int, speakers: list[str]) -> list[str]:
+def _show_doc(report: Report, start_line: int, speakers: list[str]) -> list[str]:
     """Print doc summary. Returns list of suspicious HTML bold texts (empty = clean)."""
     title_display = (report.title or "")[:_TITLE_DISPLAY_LENGTH]
     print(f"\n  id={report.id}  parl={report.parliament_number}  type={report.report_type}")
@@ -114,7 +115,7 @@ def _show_doc(report, start_line: int, speakers: list[str]) -> list[str]:
     return []
 
 
-def run():
+def run() -> None:
     random.seed(_RANDOM_SEED)
 
     with Session(engine) as session:
