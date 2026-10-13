@@ -2,7 +2,7 @@
 
 Coding idioms for this codebase: only the things a contributor would get wrong without being told. Follow them when writing or reviewing code. This file is authoritative on what the rules are.
 
-**Enforcement.** `ruff` owns import order and unused names (`I`, `F`), annotation presence (`ANN`, minus `ANN204` because `__init__` takes no return annotation), `else` after an exit (`RET505` to `RET508`), the bare variable before a `return` (`RET504`), blind `except` (`BLE001`), magic-number comparisons (`PLR2004`), `print()` (`T201`, `T203`), naive `datetime` (`DTZ003`, `DTZ005`) and module-level `global` writes (`PLW0603`). See `pyproject.toml [tool.ruff.lint]`. Everything else below is enforced by review. No Python formatter runs in this repo.
+**Enforcement.** `ruff` owns import order and unused names (`I`, `F`), annotation presence (`ANN`, minus `ANN204` because `__init__` takes no return annotation), `else` after an exit (`RET505` to `RET508`), the bare variable before a `return` (`RET504`), blind `except` (`BLE001`), magic-number comparisons (`PLR2004`), `print()` (`T201`, `T203`), naive `datetime` (`DTZ003`, `DTZ005`) and module-level `global` writes (`PLW0603`). See `pyproject.toml [tool.ruff.lint]`; `ANN204` is the one ignored code. Everything else below is enforced by review. No Python formatter runs in this repo.
 
 **Grades.** `blocking`: a reviewer blocks the change on it. `expected`: the default; deviating needs a reason stated in the commit. `expected†`: `expected`, with one recorded carve-out in the rule text. `taste`: a suggestion; the author decides. **Preference**: the default where a technical alternative exists. A rule yields only to a demonstrated technical cost, never to a style preference. Never flatten a `taste` into a "must".
 
@@ -51,11 +51,11 @@ When naming the variable that holds a call's result, strip only `get_` from the 
 - `expected`: **The caught exception is `error`.** Where the handler holds it in order to hand it to something else, it takes the `noun_to_verb` affix above: `error_to_record`, `error_to_raise`. A parameter that only reads the exception it was handed is plain `error`. Where a `BaseException` catch-all sits beside a typed handler in the same `try`, the catch-all is `unexpected_failure`, so the two blocks do not read alike. `e` and `exc` are out under *Spell the domain object out in full*.
 
   ```python
-  # gateway/hansard_topic.py:9-16
-  def get_hansard_topic_response(report_id: str) -> dict:
+  # gateway/hansard_topic.py:10-17
+  def get_hansard_topic_response(report_id: str) -> HansardTopicResponse:
       try:
           response = requests.post(url=settings.hansard_topic_url, json={"id": report_id})
-          return response.json()
+          return HansardTopicResponse(**response.json())
       except requests.exceptions.RequestException as error:
           raise HansardGatewayError(f"Topic request failed for {report_id}") from error
       except ValueError as error:
@@ -99,7 +99,7 @@ The layer table in `CLAUDE.md` says where code goes. These rules say what each l
 - `blocking`: **Attempt the operation and catch the failure.** In `services/`, `gateway/`, `crud/` and `populate/`, wrap the work in `try` and catch at the end. **No LBYL pre-check in front of the attempt, including a cheap deterministic one.**
 
   ```python
-  # utils/text.py:1-5: no `if` in front of the attempt
+  # utils/text.py:1-7: no `if` in front of the attempt
   def fix_mojibake(text: str) -> str:
       try:
           return text.encode("cp1252").decode("utf-8")
@@ -112,9 +112,9 @@ The layer table in `CLAUDE.md` says where code goes. These rules say what each l
 - `expected`: **A `None` result is a result, not a pre-check, and `is None`, never a falsy check.** Read this immediately after the EAFP rule; the two are constantly confused. Checking a value you *already hold* and acting on it is legal everywhere: the operation already ran and you are handling its result. LBYL is testing a precondition *in order to avoid attempting* the operation. Use `is None` explicitly, because a SQLModel object, a regex match or a `bs4` tag can evaluate falsy in states you did not mean to test for. An emptiness check on a `str` or a `list` (`if not stripped`) is a different question and stays a falsy check.
 
   ```python
-  # Good: populate/speeches.py:22-24: a completed lookup's result, checked
-          if db_report.markdown_content is None:
-              logger.debug(f"Skipping report {db_report.id}: no markdown content")
+  # Good: populate/speeches.py:21-23: a completed lookup's result, checked
+          if report.markdown_content is None:
+              logger.debug(f"Skipping report {report.id}: no markdown content")
               continue
 
   # Bad: falsy, not `is None`
@@ -123,17 +123,17 @@ The layer table in `CLAUDE.md` says where code goes. These rules say what each l
   ```
 
 - `expected`: **Exception handling for a fallible call lives in one wrapper beside it.** A high-level function bundles lower-level calls; it does not also handle their exceptions mid-flight or reach into their details. Handling goes in **one** dedicated wrapper next to the call. The ban is on *chains*, a helper calling a helper calling a helper, not on the single wrapper.
-- `expected`: **Inside the wrapper, handling is flat: one `except` per type**, narrowest first, ordered specific-to-general. Never group types in a tuple, even when the handler is identical; handlers diverge, and grouping lets the next person change one without splitting the block first. Never delegate the classification to a separate helper. See `gateway/hansard_topic.py:13-16` above.
+- `expected`: **Inside the wrapper, handling is flat: one `except` per type**, narrowest first, ordered specific-to-general. Never group types in a tuple, even when the handler is identical; handlers diverge, and grouping lets the next person change one without splitting the block first. Never delegate the classification to a separate helper. See `gateway/hansard_topic.py:14-17` above.
 - `expected`: **`except Exception` is not a handler, where the catch decides something.** A blind catch routes the bug it was not written for (a typo's `AttributeError`, a `KeyError` from a renamed field) into the branch built for a parse failure, so the real fault surfaces as the wrong outcome. That harm is the test: the ban reaches a catch that degrades into a silent default, and **not** one that logs and re-raises, or that contains failure in work whose collapse must not reach the caller. Where a blind catch is right, `# noqa: BLE001` carries a **reason** a reviewer can argue with (`# noqa: BLE001 a corpus survey must record every failing document, not stop at the first`). A `noqa` reason is a suppression's argument, not a comment, so the no-comments rule does not reach it.
 - `expected`: **An unexpected condition raises where it is discovered.** It never degrades into an empty list, a `None`, a silent default, or a partially-completed write.
-- `blocking`: **One failure mode, one exception, carried out of the layer that found it.** A gateway failure is a `HansardGatewayError` with a message naming the request that failed; a parse failure is a `HansardParseError`. An exception must never imply a scenario that did not happen.
+- `blocking`: **One failure mode, one exception, carried out of the layer that found it.** A gateway failure is a `HansardGatewayError` with a message naming the request that failed; a parse failure, when one is raised, is its own `Hansard` + noun + `Error` subclass of `HansardError` in `exceptions.py` (none exists today; the sweep removed an unreferenced one). An exception must never imply a scenario that did not happen.
 
 ---
 
 ## Types and data
 
 - `blocking`: **Parse at the boundary before reading a field.** Anything from outside the process (the Hansard API, parliament.gov.sg, a JSON file under `data/`) becomes a Pydantic model before any field is read, because dict access fails where the value is used while validation fails where the schema changed. `gateway/` constructs directly with `Schema(**response.json())`; a `data/` file is read through `Schema.model_validate(...)`.
-- `expected`: **The declared type admits only reachable states.** `Optional[T]` only where the value is genuinely absent or unknown; `""` and `[]` instead of nullability; **no field defaults on a schema that models a response**, because a default hides a field the caller forgot. **Standing design, not divergence:** the two raw response tables (`HansardWebsiteResponse`, `HansardSittingDateResponse`) and their entity twins declare every field `Optional`, because they store two API formats in one row shape and that is what the DB schema holds. Changing it is a migration, not a style fix.
+- `expected`: **The declared type admits only reachable states.** `Optional[T]` only where the value is genuinely absent or unknown; `""` and `[]` instead of nullability; **no field defaults on a schema that models a response**, because a default hides a field the caller forgot. One licensed exception, stated in a NOTE on the schema: an endpoint that returns several body shapes (`getHansardTopic` and `getHansardReport/` also answer with `{errorCode, description}`) gets a schema whose fields are all `Optional` with a `None` default, because the caller reads a missing field as absent, not as an error. **Standing design, not divergence:** the two raw response tables (`HansardWebsiteResponse`, `HansardSittingDateResponse`) and their entity twins declare every field `Optional`, because they store two API formats in one row shape and that is what the DB schema holds. Changing it is a migration, not a style fix.
 
   ```python
   # Good: database/report.py:29-30
@@ -143,10 +143,10 @@ The layer table in `CLAUDE.md` says where code goes. These rules say what each l
 
 - `expected`: **An id that points at a row is a foreign key, a closed set is an enum, and no string literal stands in for either.** Integer ids across layer boundaries. `report_type` compared to `"motion"` inline is the same mistake as a bare id: the `ReportType` enum exists for it.
 - `expected`: **Enum value casing follows the enum's origin, until a column persists it.** An internal lifecycle enum's values are UPPER_SNAKE (`ParsedSpeechType.PARSED = "PARSED"`); an enum mirroring the API's wire vocabulary keeps the API's casing verbatim (`ReportType.ORAL_ANSWER = "oral-answer"`), so raw payload values round-trip without a case transform. The carve-out holds only while the enum stays on the wire: the moment a SQLModel column persists it, its values go UPPER_SNAKE, because SQLAlchemy persists the member *name* and a lowercase value writes a label the Postgres type does not have.
-- `expected`: **Several values come back as one typed `@dataclass`, never a tuple, and a `@dataclass` is the fallback, not the first move.** Returning one object is first choice; where a method produces a fixed set of scalars, split it into one method per value rather than wrapping the set in a new type. A tuple makes the caller unpack positionally, so adding a field breaks every call site silently, and `row[4]` assumes the value sits where the writer left it. A CRUD method that selects columns returns a list of a dataclass declared in the same `crud/` module, never a list of tuples.
+- `expected`: **Several values come back as one typed `@dataclass`, never a tuple, and a `@dataclass` is the fallback, not the first move.** Returning one object is first choice; where a method produces a fixed set of scalars, split it into one method per value rather than wrapping the set in a new type. A tuple makes the caller unpack positionally, so adding a field breaks every call site silently, and `row[4]` assumes the value sits where the writer left it. A CRUD method that selects columns returns a list of a dataclass declared in the same `crud/` module, never a list of tuples (`SpeechRow` in `crud/speech.py:14-21`). A service that consumes such rows imports the dataclass from `crud/`; that import reaches no engine code, so the layer rule holds.
 
   ```python
-  # services/report.py:12-15: two values, one record
+  # services/report.py:15-18: two values, one record
   @dataclass
   class ReportHeader:
       title: str
@@ -160,7 +160,7 @@ The layer table in `CLAUDE.md` says where code goes. These rules say what each l
   # utils/markdown_parser.py:5
   _MAX_ADJOURNMENT_CONTINUATIONS = 6
 
-  # services/attendance.py:429-432
+  # services/attendance.py:334-335
   _MIN_SURNAME_LOOKUP_LENGTH = 2
   _MIN_PREFIX_WORD_COUNT = 2
   ```
@@ -173,23 +173,21 @@ The layer table in `CLAUDE.md` says where code goes. These rules say what each l
 - `expected`: **Filtering, sorting, limiting and batching happen in SQL.** Name the `statement` before executing it, wrap a multi-line chain in one pair of parentheses (never a `\` continuation), and chain separate `.where()` calls rather than passing several filters to one so each reads independently. Bend this only when moving the work would change the result; the populate stages that diff two id sets in Python are the licensed bend, because the sets are small and the diff is the stage's whole logic.
 
   ```python
-  # crud/speech.py:52-60
-      def get_rows_by_report_ids(
-          self, report_ids: list[int]
-      ) -> list[tuple[int, int, Optional[str], str, int, Optional[int]]]:
+  # crud/speech.py:89-95
+      def get_rows_by_report_ids(self, report_ids: list[int]) -> list[SpeechRow]:
           statement = (
               select(Speech.id, Speech.ordinal, Speech.speaker, Speech.transcript, Speech.report_id, Speech.speaker_id)
               .where(col(Speech.report_id).in_(report_ids))
               .order_by(Speech.report_id, Speech.ordinal)
           )
-          return list(self.session.exec(statement).all())
+          return [SpeechRow(*row) for row in self.session.exec(statement).all()]
   ```
 
 - `expected`: **`*` goes before a dangerous default, nothing else.** Default to no `*`; add it only where a caller accidentally overriding that default would be dangerous, whatever the parameter's type. Not an arity rule and not a boolean-parameter rule.
 - `expected`: **Every signature is annotated, parameters and return alike**, on public functions and private helpers equally, **except a class `__init__`, which takes no return annotation.** That carve-out is not a case-by-case argument: `__init__` never gets `-> None`. A value whose shape is genuinely unknown (a JSON tree of either API format) is annotated `object`, not `Any`; `ANN401` stays on and takes no `noqa`.
 
   ```python
-  # crud/speech.py:13-15
+  # crud/speech.py:47-49
   class CRUDSpeech:
       def __init__(self, session: Session):
           self.session = session
@@ -225,3 +223,24 @@ The layer table in `CLAUDE.md` says where code goes. These rules say what each l
   ```
 
 - **Preference**: **`Optional[T]`, never `T | None`.** Chosen for consistency with the existing uses across `schemas/` and `database/`; ruff's `UP007` is deliberately not enabled. Do not write new `T | None`, and do not migrate existing `Optional[T]`.
+
+---
+
+## Sweep rulings
+
+Decisions made while the guide was applied to the whole tree, kept here so the next sweep does not relitigate them.
+
+1. An inline regex predicate keeps its truthiness test (`if _RE.search(text):`). Only a match bound to a name is tested with `is None`.
+2. A `str` constant that serves `in` on single characters stays a `str`. An empty string is `in` any `str` and in no frozenset, so the change would alter a result.
+3. `_build_`, `_parse_`, `_extract_` and `_classify_` are transforming helper verbs under `_verb_noun`. `_get_` is for a value lookup only.
+4. A per-module timeout constant may repeat across modules while `AppSettings` has no timeout field.
+5. A `NOTE` starts lowercase after `NOTE:` and says why the code looks wrong, never what it does.
+6. The eight-word cap on a reference-table annotation is counted, not estimated.
+7. A `StrEnum` member is compared through the member (`report_type == ReportType.MOTION`), never through the wire literal, and `in` against a tuple of literals is written out as a chain of `!=`.
+8. A CRUD projection's dataclass is declared in the `crud/` module that returns it and is built positionally in the select's column order, so the SQL does not change.
+9. A streamed CRUD read (`yield_per`) wraps each row lazily in a generator expression, so the query still runs at call time and memory use does not change.
+10. When removing a dead field leaves a dataclass with one field, the dataclass goes too and the builder returns the inner object.
+11. Renaming a variable never changes a log line's text. Log wording changes only under the print-to-logger rule.
+12. Where the pure helpers of two `services/` peers moved to `utils/names.py`, the moved names dropped their leading underscore and no re-export stayed behind; every importer names the new home.
+13. A gateway picks the response schema by the only discriminator the API offers. For `getHansardReport/` that is the sitting date against `settings.sitting_date_format_change`, and the populate stage dispatches on the same date to pick the builder.
+14. NUL bytes are stripped from a sitting-date body in the gateway, before the schema is built, so the stored row is what the schema saw.
