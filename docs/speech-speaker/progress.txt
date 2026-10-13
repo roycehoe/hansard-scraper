@@ -1,5 +1,41 @@
 # Speech → MP Link Refine-Loop Progress Log
 
+## Stage 8 rerun — 2026-10-13
+
+### Rerun of populate_speaker_links on the DigitalOcean database
+
+The speech table had been rebuilt since the last stage 8 run: 473,257 rows, of which only 235,947 were linked, and the unlinked rows were mostly plain names in the newer half of the table. Stage 8 was rewritten to fetch every unlinked row in one streaming query, resolve each distinct (speaker string, parliament) pair once (sitting date joins the key only for The Chief Minister and the Deputy Speaker), and write in 50,000-row UNNEST batches. An equivalence gate ran the old and new resolution in memory over the same 237,310 unlinked speech rows and 150 unlinked attendance rows before any write: 0 rows differed. In-memory fetch and resolve took 19.4 s (old) and 5.8 s (new); the write took 59 s.
+
+**Result (speech):** 207,185 rows newly linked. Linked 235,947 → 443,132 of 461,558 rows with a speaker string (51.1% → 96.0%). Only null speaker_id rows were touched.
+
+**Headline rate (Parliaments 0 to 11, denominator per docs/adr/0001-attribution-denominator.md):** 425,223 of 439,986 = 96.6% (before the rerun: 220,340 = 50.1%). Parliament 12, reported separately: 17,909 of 18,215 = 98.3%.
+
+| Parliament | Linked | Denominator | Rate |
+|---|---|---|---|
+| 0 | 54,721 | 57,679 | 94.9% |
+| 1 | 8,375 | 9,200 | 91.0% |
+| 2 | 12,049 | 12,577 | 95.8% |
+| 3 | 8,285 | 8,575 | 96.6% |
+| 4 | 7,687 | 7,930 | 96.9% |
+| 5 | 11,618 | 11,894 | 97.7% |
+| 6 | 24,408 | 25,025 | 97.5% |
+| 7 | 28,350 | 29,290 | 96.8% |
+| 8 | 51,803 | 53,237 | 97.3% |
+| 9 | 62,046 | 63,516 | 97.7% |
+| 10 | 76,682 | 79,167 | 96.9% |
+| 11 | 79,199 | 81,896 | 96.7% |
+| 12 | 17,909 | 18,215 | 98.3% |
+
+By report type, Parliaments 0 to 11 (unlinked rows in brackets): budget 134,796/142,967 = 94.3% (8,171); bill 107,409/111,080 = 96.7% (3,671); president-address 8,482/9,144 = 92.8% (662); written-answer 15,570/16,141 = 96.5% (571); motion 53,057/53,592 = 99.0% (535); written-answer-na 7,504/7,922 = 94.7% (418); oral-answer 73,583/73,972 = 99.5% (389); every other type is above 98% or under 100 unlinked rows.
+
+Per sitting date, Parliaments 0 to 11 (1,239 dates with speeches): 519 fully linked, 441 at 95 to 99.9%, 155 at 90 to 94.9%, 57 at 80 to 89.9%, 25 at 50 to 79.9%, 21 below 50%, 21 with no rows in the denominator.
+
+Top unlinked strings after the rerun: `The Chairman` (10,086), empty string (690), `[Mr Tang See Chim in the Chair]` (258), `The President (Mr Wee Kim Wee)` (197), `The President (Mr S R Nathan)` (165), `Mdm Deputy Speaker` (139). These are phase 2 proposal input, not phase 1 fixes.
+
+Reports with full text and no speech rows: 3,032 of 20,903 in Parliaments 0 to 11 (budget 1,470, bill 352, motion 274, atbp 218, president-address 183, speaker 159, oral-answer 137).
+
+---
+
 ## Iteration 21 — 2026-06-04
 
 ### can_match — all types — date-based Chief Minister dispatch + denominator measurement fix

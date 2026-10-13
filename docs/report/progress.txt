@@ -443,3 +443,13 @@ if transcript.startswith("|"):
 | 12 | Skip table-row bold headers (`transcript starts with \|`) | 6 bad speaker | 0 |
 
 **All success criteria met.** Pipeline re-run required to update Speech table in DB.
+
+---
+
+## Database state — 2026-10-13
+
+The iteration figures above come from re-parsing the dev corpus at the time. On the
+DigitalOcean database on 2026-10-13: 41,829 reports, 21,838 with non-empty markdown_content,
+18,795 of those with at least one speech row, 3,043 with none (3,032 in Parliaments 0 to 11,
+of which budget 1,470, bill 352, motion 274, atbp 218, president-address 183, speaker 159,
+oral-answer 137). Speech rows: 473,257, of which 461,558 carry a speaker string.
