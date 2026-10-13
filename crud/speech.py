@@ -22,7 +22,7 @@ class CRUDSpeech:
         self.session.add_all(speeches)
         self.session.commit()
 
-    def get_report_ids_with_speeches(self) -> set[int]:
+    def get_distinct_report_ids(self) -> set[int]:
         statement = select(Speech.report_id).distinct()
         return set(self.session.exec(statement).all()) - {None}
 
@@ -34,7 +34,7 @@ class CRUDSpeech:
         )
         return list(self.session.exec(statement).all())
 
-    def get_unresolved_speaker_info(self) -> Iterable[tuple[int, Optional[str], int, datetime]]:
+    def get_speaker_rows_by_speaker_id_null(self) -> Iterable[tuple[int, Optional[str], int, datetime]]:
         statement = (
             select(Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date)
             .join(Report)
@@ -43,7 +43,7 @@ class CRUDSpeech:
         )
         return self.session.exec(statement)
 
-    def get_report_ids_with_unlinked_speaker(self, pattern: str) -> list[int]:
+    def get_report_ids_by_speaker_id_null_and_speaker_regex(self, pattern: str) -> list[int]:
         statement = (
             select(Speech.report_id)
             .distinct()

@@ -10,7 +10,7 @@ from services.attendance import build_speaker_lookups, get_sitting_attendance
 def populate_attendances(session: Session) -> None:
     lookups = build_speaker_lookups(CRUDSpeaker(session).get_all())
     sittings = CRUDSitting(session).get_all()
-    sitting_ids_done = CRUDAttendance(session).get_sitting_ids_with_attendance()
+    sitting_ids_done = CRUDAttendance(session).get_distinct_sitting_ids()
     sittings_to_process = [sitting for sitting in sittings if sitting.id not in sitting_ids_done]
     logger.info(
         f"Extracting attendance for {len(sittings_to_process)}/{len(sittings)} sittings "

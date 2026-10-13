@@ -19,12 +19,12 @@ class CRUDAttendance:
         self.session.add_all(attendances)
         self.session.commit()
 
-    def get_sitting_ids_with_attendance(self) -> set[int]:
+    def get_distinct_sitting_ids(self) -> set[int]:
         statement = select(Attendance.sitting_id).distinct()
         sitting_ids = self.session.exec(statement).all()
         return {sitting_id for sitting_id in sitting_ids if sitting_id is not None}
 
-    def get_unresolved_speaker_info(
+    def get_speaker_rows_by_speaker_id_null(
         self,
     ) -> list[tuple[int, Optional[str], Optional[int], Optional[int]]]:
         statement = (

@@ -367,7 +367,7 @@ def _populate_role_context_links(
     pattern = "|".join(
         [CHAIRMAN_RE.pattern] + [f"^{re.escape(role)}$" for role in (*CARRIED_ROLES, *HEAD_OF_STATE_TERMS)]
     )
-    report_ids = CRUDSpeech(session).get_report_ids_with_unlinked_speaker(pattern)
+    report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(pattern)
     key_to_speaker_id: dict[tuple[str, int, Optional[datetime]], Optional[int]] = {}
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
@@ -406,7 +406,7 @@ def _populate_deputy_speaker_links(
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> None:
-    report_ids = CRUDSpeech(session).get_report_ids_with_unlinked_speaker(BARE_DEPUTY_RE.pattern)
+    report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(BARE_DEPUTY_RE.pattern)
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
     text_key_to_speaker_ids: dict[object, set[int]] = {}
@@ -487,13 +487,13 @@ def populate_speaker_links(session: Session) -> None:
     lookups = build_speaker_lookups(speakers)
 
     attendance_id_to_speaker_id = resolve_attendance_rows(
-        CRUDAttendance(session).get_unresolved_speaker_info(), lookups, speaker_id_lookup
+        CRUDAttendance(session).get_speaker_rows_by_speaker_id_null(), lookups, speaker_id_lookup
     )
     _write_in_batches(CRUDAttendance(session).set_speaker_ids_bulk, attendance_id_to_speaker_id)
     session.commit()
 
     speech_id_to_speaker_id = resolve_speech_rows(
-        CRUDSpeech(session).get_unresolved_speaker_info(), lookups, speaker_id_lookup
+        CRUDSpeech(session).get_speaker_rows_by_speaker_id_null(), lookups, speaker_id_lookup
     )
     _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, speech_id_to_speaker_id)
     session.commit()

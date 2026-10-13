@@ -17,7 +17,7 @@ from services.speech import (
 
 def run():
     with Session(engine) as session:
-        reports = CRUDReport(session).get_all_with_markdown()
+        reports = CRUDReport(session).get_by_markdown_content_not_null()
 
     single_speaker = [
         r for r in reports

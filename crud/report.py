@@ -21,7 +21,7 @@ class CRUDReport:
         statement = select(Report)
         return list(self.session.exec(statement).all())
 
-    def get_all_with_markdown(self) -> list[Report]:
+    def get_by_markdown_content_not_null(self) -> list[Report]:
         statement = select(Report).where(Report.markdown_content.is_not(None))
         return list(self.session.exec(statement).all())
 
