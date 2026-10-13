@@ -1,6 +1,6 @@
 import re
 from datetime import date, datetime
-from typing import Iterable, Optional, Sequence
+from typing import Callable, Iterable, Optional, Sequence
 
 from sqlmodel import Session
 
@@ -316,13 +316,13 @@ def resolve_speech_rows(
     return speech_id_to_speaker_id
 
 
-def _write_in_batches(set_speaker_ids_bulk, id_to_speaker_id: dict[int, int]) -> None:
+def _write_in_batches(set_speaker_ids_bulk: Callable[[dict[int, int]], None], id_to_speaker_id: dict[int, int]) -> None:
     items = list(id_to_speaker_id.items())
     for start in range(0, len(items), _WRITE_BATCH):
         set_speaker_ids_bulk(dict(items[start : start + _WRITE_BATCH]))
 
 
-def _get_head_of_state_names(report: Report, rows: list) -> dict[int, str]:
+def _get_head_of_state_names(report: Report, rows: list[tuple]) -> dict[int, str]:
     """Bare "The President" or "His Excellency the Governor" rows in the Address itself name the holder
     on the sitting date. The same strings in addenda and adjournment reports are parser errors and stay
     unlinked, so the error remains visible in the attribution rate."""
@@ -396,7 +396,7 @@ def _populate_role_context_links(
     for start in range(0, len(report_ids), _REPORT_BATCH):
         batch = report_ids[start : start + _REPORT_BATCH]
         report_id_to_report = {report.id: report for report in CRUDReport(session).get_by_ids(batch)}
-        report_id_to_rows: dict[int, list] = {}
+        report_id_to_rows: dict[int, list[tuple]] = {}
         for row in CRUDSpeech(session).get_rows_by_report_ids(batch):
             report_id_to_rows.setdefault(row[4], []).append(row)
         for report_id, rows in report_id_to_rows.items():
@@ -440,7 +440,7 @@ def _populate_deputy_speaker_links(
     for start in range(0, len(report_ids), _REPORT_BATCH):
         batch = report_ids[start : start + _REPORT_BATCH]
         report_id_to_report = {report.id: report for report in CRUDReport(session).get_by_ids(batch)}
-        report_id_to_rows: dict[int, list] = {}
+        report_id_to_rows: dict[int, list[tuple]] = {}
         for row in CRUDSpeech(session).get_rows_by_report_ids(batch):
             report_id_to_rows.setdefault(row[4], []).append(row)
         pending_reports = []  # (report, two-man speech_id_to_candidate_id by speech id, holder ids)
