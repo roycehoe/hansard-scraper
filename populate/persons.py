@@ -15,7 +15,7 @@ DECISIONS_FILE = Path(__file__).parent.parent / "data" / "person_decisions.json"
 def _load_decisions() -> list[Decision]:
     return [
         Decision(
-            members=[(m["name"], m["parliament_number"]) for m in entry["members"]],
+            members=[(member["name"], member["parliament_number"]) for member in entry["members"]],
             decision=entry["decision"],
             person_name=entry.get("person_name"),
         )
@@ -35,12 +35,12 @@ def populate_persons(session: Session) -> None:
     created = 0
     updates: dict[int, int] = {}
     for cluster, name, basis in zip(result.clusters, result.names, result.bases):
-        existing = sorted({s.person_id for s in cluster if s.person_id is not None})
-        if len(existing) > 1:
-            logger.warning(f"Person: cluster {name!r} spans persons {existing}; keeping {existing[0]}")
-        person_id = existing[0] if existing else crud_person.create(Person(canonical_name=name, basis=basis))
-        created += not existing
-        updates.update({s.id: person_id for s in cluster if s.person_id != person_id})
+        existing_person_ids = sorted({speaker.person_id for speaker in cluster if speaker.person_id is not None})
+        if len(existing_person_ids) > 1:
+            logger.warning(f"Person: cluster {name!r} spans persons {existing_person_ids}; keeping {existing_person_ids[0]}")
+        person_id = existing_person_ids[0] if existing_person_ids else crud_person.create(Person(canonical_name=name, basis=basis))
+        created += not existing_person_ids
+        updates.update({speaker.id: person_id for speaker in cluster if speaker.person_id != person_id})
     crud_speaker.set_person_ids_bulk(updates)
     session.commit()
     logger.info(

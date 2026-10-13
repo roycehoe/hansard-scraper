@@ -23,14 +23,14 @@ def _parse_sitting_date(sitting_date: str) -> datetime:
     return datetime.strptime(sitting_date, "%d-%m-%Y")
 
 
-def _strip_nul(obj):
-    if isinstance(obj, str):
-        return obj.replace("\x00", "")
-    if isinstance(obj, dict):
-        return {k: _strip_nul(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_strip_nul(v) for v in obj]
-    return obj
+def _strip_nul(value_tree):
+    if isinstance(value_tree, str):
+        return value_tree.replace("\x00", "")
+    if isinstance(value_tree, dict):
+        return {key: _strip_nul(value) for key, value in value_tree.items()}
+    if isinstance(value_tree, list):
+        return [_strip_nul(value) for value in value_tree]
+    return value_tree
 
 
 async def _fetch_all_sitting_dates(dates: list[str]) -> list[tuple[str, Optional[dict]]]:
@@ -45,11 +45,11 @@ async def _fetch_all_sitting_dates(dates: list[str]) -> list[tuple[str, Optional
                         sitting_date, client
                     )
                     return sitting_date, result
-                except HansardGatewayError as e:
-                    logger.warning(f"Skipping {sitting_date}: {e}")
+                except HansardGatewayError as error:
+                    logger.warning(f"Skipping {sitting_date}: {error}")
                     return sitting_date, None
 
-        return await asyncio.gather(*[fetch_one(d) for d in dates])
+        return await asyncio.gather(*[fetch_one(sitting_date) for sitting_date in dates])
 
 
 def populate_hansard_sitting_dates(session: Session):
@@ -70,8 +70,8 @@ def populate_hansard_sitting_dates(session: Session):
 
         result = _strip_nul(result)
         if _parse_sitting_date(sitting_date) >= settings.sitting_date_format_change:
-            data = build_new_hansard_sitting_date_response(result, sitting_date)
+            sitting_date_data = build_new_hansard_sitting_date_response(result, sitting_date)
         else:
-            data = build_old_hansard_sitting_date_response(result, sitting_date)
+            sitting_date_data = build_old_hansard_sitting_date_response(result, sitting_date)
 
-        sitting_crud.create(data.response)
+        sitting_crud.create(sitting_date_data.response)
