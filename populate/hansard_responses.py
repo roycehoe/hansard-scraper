@@ -13,10 +13,14 @@ from gateway.hansard_search import get_all_hansard_search_results
 from gateway.hansard_topic import get_hansard_topic_response_async
 from logs import logger
 from schemas.hansard_search_result import HansardSearchResult
-from services.hansard_website import build_hansard_website_response
+from services.hansard_website import (
+    build_hansard_website_response,
+    get_topic_html_content,
+    get_topic_id,
+)
 
-_CONCURRENCY = 20
-_HTTP_TIMEOUT_SECONDS = 30
+_CONCURRENCY = 4
+_HTTP_TIMEOUT_SECONDS = 60
 
 
 async def _fetch_html_content(
@@ -25,16 +29,16 @@ async def _fetch_html_content(
 ) -> Optional[str]:
     try:
         hansard_topic_response = await get_hansard_topic_response_async(
-            search_result.html_file_name or search_result.report_id,
+            get_topic_id(search_result.report_id, search_result.html_file_name, search_result.report_version),
             client,
         )
     except HansardGatewayError as error:
         logger.warning(f"No content for {search_result.report_id}: {error}")
         return None
-    html_content = hansard_topic_response.html_content
+    html_content = get_topic_html_content(hansard_topic_response, search_result.report_version)
     if html_content is None:
-        return None
-    return html_content.replace("\x00", "�")
+        logger.warning(f"No content for {search_result.report_id}: the response holds no text")
+    return html_content
 
 
 async def _fetch_website_response(

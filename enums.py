@@ -25,3 +25,8 @@ class ReportType(StrEnum):
     YANG_DI_MESSAGE = "yang-di-message"
     MISCELLANEOUS = "misc"
     ATBP = "atbp"  # catch-all category
+
+
+class ReportVersion(StrEnum):
+    SPRS2 = "sprs2"  # older system, sittings before 10 September 2012
+    SPRS3 = "sprs3"  # newer system, sittings from 10 September 2012

@@ -23,5 +23,7 @@ async def get_hansard_topic_response_async(report_id: str, client: httpx.AsyncCl
         return HansardTopicResponse(**response.json())
     except httpx.RequestError as error:
         raise HansardGatewayError(f"Topic request failed for {report_id}") from error
+    except httpx.HTTPStatusError as error:
+        raise HansardGatewayError(f"Topic request failed for {report_id}") from error
     except ValueError as error:
         raise HansardGatewayError(f"Topic request failed for {report_id}") from error

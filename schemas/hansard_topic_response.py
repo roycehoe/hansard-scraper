@@ -1,9 +1,16 @@
 # NOTE: every field here is Optional with a None default, which STYLE.md forbids on a response schema.
-# This is a licensed exception: getHansardTopic returns three body shapes, and the caller reads only html_content.
+# This is a licensed exception: getHansardTopic returns three body shapes, and the caller reads only
+# html_content for the older system and result_html.content for the newer one.
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
+
+
+class HansardTopicResultHtml(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    content: Optional[str] = None
 
 
 class HansardTopicResponse(BaseModel):
@@ -56,7 +63,7 @@ class HansardTopicResponse(BaseModel):
     ptba_to: Optional[object] = None
     question_count: Optional[object] = None
     result_data: Optional[object] = None
-    result_html: Optional[object] = Field(default=None, alias="resultHTML")
+    result_html: Optional[HansardTopicResultHtml] = Field(default=None, alias="resultHTML")
     type: Optional[object] = None
     error_code: Optional[object] = None
     description: Optional[object] = None
