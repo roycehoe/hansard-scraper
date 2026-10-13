@@ -50,18 +50,18 @@ def get_hansard_search_results(
             return {"errorCode": 0, "description": "No Results Found"}
         response.raise_for_status()
         return response.json()
-    except (requests.exceptions.RequestException, ValueError) as e:
-        raise HansardGatewayError(f"Search request failed for page {page}") from e
+    except (requests.exceptions.RequestException, ValueError) as error:
+        raise HansardGatewayError(f"Search request failed for page {page}") from error
 
 
 def _get_page_with_retries(start_index: int, from_date: date, to_date: date):
     for attempt in range(_MAX_RETRIES + 1):
         try:
             return get_hansard_search_results(start_index, start_index + 19, from_date, to_date)
-        except HansardGatewayError as e:
+        except HansardGatewayError as error:
             if attempt == _MAX_RETRIES:
                 raise
-            logger.warning(f"{from_date:%Y-%m} start {start_index}: {e}, retry {attempt + 1}/{_MAX_RETRIES}")
+            logger.warning(f"{from_date:%Y-%m} start {start_index}: {error}, retry {attempt + 1}/{_MAX_RETRIES}")
             time.sleep(_BASE_DELAY * (2 ** attempt))
 
 
@@ -79,32 +79,32 @@ def get_window_hansard_search_results(from_date: date, to_date: date) -> list[di
     """Hits with equal sort keys come back in a different order on each request, so one
     pass over the pages can repeat some hits and skip others. Re-request the pages until
     the distinct report ids reach the engine total, then give up with a warning."""
-    first = _get_page_with_retries(0, from_date, to_date)
-    if not isinstance(first, list) or not first:
+    first_page = _get_page_with_retries(0, from_date, to_date)
+    if not isinstance(first_page, list) or not first_page:
         return []
-    total = int(first[0]["maxResult"])
-    got = {hit["reportId"]: hit for hit in first}
+    total = int(first_page[0]["maxResult"])
+    hit_by_report_id = {hit["reportId"]: hit for hit in first_page}
     for _ in range(_MAX_PASSES):
         for start_index in range(0, total, 20):
             page = _get_page_with_retries(start_index, from_date, to_date)
             if isinstance(page, list):
                 for hit in page:
-                    got.setdefault(hit["reportId"], hit)
-        if len(got) >= total:
+                    hit_by_report_id.setdefault(hit["reportId"], hit)
+        if len(hit_by_report_id) >= total:
             break
-    if len(got) < total:
+    if len(hit_by_report_id) < total:
         logger.warning(
             f"Window {from_date} to {to_date}: engine total {total}, "
-            f"fetched {len(got)} distinct, short by {total - len(got)}"
+            f"fetched {len(hit_by_report_id)} distinct, short by {total - len(hit_by_report_id)}"
         )
-    return list(got.values())
+    return list(hit_by_report_id.values())
 
 
 def get_all_hansard_search_results() -> list[dict]:
     all_hansard_search_results = []
     for from_date, to_date in _months(settings.search_from_date, settings.search_to_date):
-        window = get_window_hansard_search_results(from_date, to_date)
-        all_hansard_search_results.extend(window)
-        logger.info(f"Fetched {from_date:%Y-%m}: {len(window)} distinct hits")
+        window_results = get_window_hansard_search_results(from_date, to_date)
+        all_hansard_search_results.extend(window_results)
+        logger.info(f"Fetched {from_date:%Y-%m}: {len(window_results)} distinct hits")
     logger.info(f"Search done: {len(all_hansard_search_results)} distinct hits")
     return all_hansard_search_results
