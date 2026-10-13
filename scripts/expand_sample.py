@@ -28,8 +28,10 @@ from database.init import engine
 from services.attendance import (
     SpeakerLookups,
     build_speaker_lookups,
-    normalize_name,
     resolve_canonical_name,
+)
+from utils.names import (
+    normalize_name,
     strip_title,
 )
 

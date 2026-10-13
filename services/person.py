@@ -3,10 +3,10 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from database.speaker import Speaker
-from services.attendance import (
-    _invert_to_natural,
-    _period_normalize,
-    _strip_bin,
+from utils.names import (
+    invert_to_natural,
+    period_normalize,
+    strip_bin,
     strip_title,
 )
 
@@ -29,8 +29,8 @@ class ClusterResult:
 
 
 def normalised_name(name: str) -> str:
-    natural = _invert_to_natural(name) or name
-    return _period_normalize(_strip_bin(strip_title(natural)))
+    natural = invert_to_natural(name) or name
+    return period_normalize(strip_bin(strip_title(natural)))
 
 
 def _get_slot(speaker: Speaker) -> tuple[int, bool, bool]:

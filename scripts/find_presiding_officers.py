@@ -21,8 +21,10 @@ from services.attendance import (
     _parse_speaker_line,
     build_speaker_lookups,
     infer_parliament,
-    normalize_name,
     resolve_canonical_name,
+)
+from utils.names import (
+    normalize_name,
 )
 
 

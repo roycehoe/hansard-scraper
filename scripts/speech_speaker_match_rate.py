@@ -18,8 +18,10 @@ from crud.speech import CRUDSpeech
 from database.init import engine
 from services.attendance import (
     build_speaker_lookups,
-    normalize_name,
     resolve_canonical_name,
+)
+from utils.names import (
+    normalize_name,
     strip_title,
 )
 
