@@ -9,8 +9,14 @@ from database.init import engine
 from services.report import build_report
 from services.speech import get_start_of_speech_line
 
+_MAX_LINES_SHOWN = 60
+_MAX_FAILING_SHOWN = 3
+_MAX_PASSING_SHOWN = 2
+_SEPARATOR_WIDTH = 60
+_DEFAULT_REPORT_TYPES = ("bill-intro", "budget", "president-address", "atbp")
 
-def show_doc(website_response, report, max_lines=60):
+
+def show_doc(website_response, report, max_lines=_MAX_LINES_SHOWN):
     start_line = get_start_of_speech_line(
         report.markdown_content, report.title, report.subtitle, report.original_title,
         website_response.report_type,
@@ -26,7 +32,7 @@ def show_doc(website_response, report, max_lines=60):
     print()
 
 
-def inspect_type(session: Session, report_type: str, max_failing: int = 3, max_passing: int = 2):
+def inspect_type(session: Session, report_type: str, max_failing: int = _MAX_FAILING_SHOWN, max_passing: int = _MAX_PASSING_SHOWN):
     responses = CRUDHansardWebsiteResponse(session).get_all_by_report_type(report_type)
 
     failing, passing = [], []
@@ -43,7 +49,7 @@ def inspect_type(session: Session, report_type: str, max_failing: int = 3, max_p
         else:
             passing.append((website_response, report))
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * _SEPARATOR_WIDTH}")
     print(f"report_type={report_type!r}: {len(failing)} failing, {len(passing)} passing (of those with markdown)")
 
     print(f"\n--- FAILING (showing {min(max_failing, len(failing))}) ---")
@@ -56,7 +62,7 @@ def inspect_type(session: Session, report_type: str, max_failing: int = 3, max_p
 
 
 if __name__ == "__main__":
-    types = sys.argv[1:] if len(sys.argv) > 1 else ["bill-intro", "budget", "president-address", "atbp"]
+    types = sys.argv[1:] if len(sys.argv) > 1 else _DEFAULT_REPORT_TYPES
     with Session(engine) as session:
         for report_type in types:
             inspect_type(session, report_type)
