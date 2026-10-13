@@ -12,7 +12,7 @@ class HansardSittingDateData:
     attendance: list[Attendance]
 
 
-def _get_int(value) -> Optional[int]:
+def _get_int(value: object) -> Optional[int]:
     try:
         return int(value)
     except TypeError:
@@ -21,7 +21,7 @@ def _get_int(value) -> Optional[int]:
         return None
 
 
-def _serialise_list(value) -> Optional[str]:
+def _serialise_list(value: object) -> Optional[str]:
     if value is None:
         return None
     return json.dumps(value) if isinstance(value, list) else value
