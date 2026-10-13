@@ -63,7 +63,7 @@ def _body_chars(report) -> int:
 
 def main():
     with Session(engine) as session:
-        reports = [r for r in CRUDReport(session).get_all_with_markdown() if r.parliament_number <= _MAX_PARLIAMENT]
+        reports = [r for r in CRUDReport(session).get_by_markdown_content_not_null() if r.parliament_number <= _MAX_PARLIAMENT]
         speech_crud = CRUDSpeech(session)
         rows = []
         report_ids = [r.id for r in reports]

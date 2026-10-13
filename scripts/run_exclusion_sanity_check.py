@@ -57,7 +57,7 @@ def run():
     random.seed(SEED)
 
     with Session(engine) as session:
-        reports = CRUDReport(session).get_all_with_markdown()
+        reports = CRUDReport(session).get_by_markdown_content_not_null()
 
     print(f"Reports with markdown: {len(reports)}")
 
