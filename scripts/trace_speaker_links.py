@@ -10,8 +10,8 @@ Imports the underscore-private _resolve_speech_speaker_id and _DATE_DEPENDENT_RO
 from populate/speaker_links.py on purpose: the guard must run the exact resolver,
 not a copy that can drift.
 
-"The Chairman", a carried role and a bare "Mr Deputy Speaker" can be linked by the
-two report-context passes, which a per-key call does not reproduce.
+"The Chairman", a carried role, a bare head-of-state string and a bare "Mr Deputy Speaker"
+can be linked by the two report-context passes, which a per-key call does not reproduce.
 When the resolver returns None for such a key it is counted as context-linked, not
 stale. When it returns an id, the id is compared as usual.
 
@@ -37,6 +37,7 @@ from populate.speaker_links import (
     _REPORT_BATCH,
     _resolve_speech_speaker_id,
 )
+from populate.speaker_resolution_constants import HEAD_OF_STATE_TERMS
 from services.attendance import build_speaker_lookups
 from services.role_context import BARE_DEPUTY_RE, CARRIED_ROLES, CHAIRMAN_RE
 
@@ -49,6 +50,7 @@ def _is_context_linked(speaker: str) -> bool:
     return bool(
         CHAIRMAN_RE.match(speaker)
         or speaker in CARRIED_ROLES
+        or speaker in HEAD_OF_STATE_TERMS
         or BARE_DEPUTY_RE.match(speaker.strip())
     )
 

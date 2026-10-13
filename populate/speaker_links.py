@@ -16,6 +16,7 @@ from populate.speaker_resolution_constants import (
     DATED_ROLE_TERMS,
     DEPUTY_SPEAKER_TERMS,
     DEPUTY_SPEAKER_WOMEN,
+    HEAD_OF_STATE_TERMS,
     NON_SPEAKERS,
     ROLE_ONLY_SPEAKERS,
     SPEAKER_TERMS,
@@ -57,6 +58,9 @@ _DATE_DEPENDENT_ROLES = (
 _DEPUTY_SPEAKER_LABELS = ("Mr Deputy Speaker", "Mdm Deputy Speaker", "Mdm DeputySpeaker", "The Deputy Speaker")
 
 _TITLED_RE = re.compile(r"^(?:Mr|Mrs|Ms|Mdm|Dr|Miss|Inche|Encik|Assoc|Prof|Er)\b")
+
+# The Address is the only report where a bare head-of-state string is the holder speaking.
+_ADDRESS_TITLES = ("GOVERNOR'S ADDRESS", "PRESIDENT'S ADDRESS", "YANG DI-PERTUAN NEGARA'S SPEECH")
 
 
 def _preclean(raw: str) -> str:
@@ -294,10 +298,12 @@ def _populate_role_context_links(
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> None:
     """Link role-only strings that the report itself resolves: "The Chairman" from the
-    chair annotations, closing line and header, and carried roles from an earlier
-    row that names the holder."""
+    chair annotations, closing line and header, carried roles from an earlier row that
+    names the holder, and heads of state in the Address by sitting date."""
     crud_speech = CRUDSpeech(session)
-    pattern = "|".join([CHAIRMAN_RE.pattern] + [f"^{re.escape(role)}$" for role in CARRIED_ROLES])
+    pattern = "|".join(
+        [CHAIRMAN_RE.pattern] + [f"^{re.escape(role)}$" for role in (*CARRIED_ROLES, *HEAD_OF_STATE_TERMS)]
+    )
     report_ids = crud_speech.get_report_ids_with_unlinked_speaker(pattern)
     memo: dict[tuple[str, int, Optional[datetime]], Optional[int]] = {}
     updates: dict[int, int] = {}
@@ -314,6 +320,7 @@ def _populate_role_context_links(
             speech_rows = [row[:4] for row in rows]
             names = chairman_names(report.markdown_content or "", speech_rows)
             names.update(carried_role_names(speech_rows))
+            names.update(_head_of_state_names(report, speech_rows))
             for speech_id, name in names.items():
                 if speech_id not in unlinked:
                     continue
@@ -328,6 +335,21 @@ def _populate_role_context_links(
     _write_in_batches(crud_speech.set_speaker_ids_bulk, updates)
     session.commit()
     logger.info(f"Speech: set speaker_id on {len(updates)}/{total} role-context records")
+
+
+def _head_of_state_names(report: Report, rows: list) -> dict[int, str]:
+    """Bare "The President" or "His Excellency the Governor" rows in the Address itself name the holder
+    on the sitting date. The same strings in addenda and adjournment reports are parser errors and stay
+    unlinked, so the error remains visible in the attribution rate."""
+    if not report.title.upper().startswith(_ADDRESS_TITLES):
+        return {}
+    names = {}
+    for speech_id, _, speaker, _ in rows:
+        if speaker in HEAD_OF_STATE_TERMS:
+            holder = _holder_on(HEAD_OF_STATE_TERMS[speaker], report.sitting_date)
+            if holder:
+                names[speech_id] = holder
+    return names
 
 
 def _name_to_speaker_id(
