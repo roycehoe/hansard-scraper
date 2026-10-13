@@ -4,6 +4,7 @@ from typing import Optional, Union
 from gateway.hansard_report import get_hansard_report_response
 from gateway.hansard_search import get_hansard_search_results
 from gateway.hansard_topic import get_hansard_topic_response
+from logs import logger
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
     HansardReportOldResponse,
@@ -14,11 +15,6 @@ from services.hansard_sitting_date_response import (
 )
 from services.hansard_website import build_hansard_website_response
 from utils.sitting_dates import is_new_sitting_date_format
-
-PASS = "\033[32mPASS\033[0m"
-FAIL = "\033[31mFAIL\033[0m"
-WARN = "\033[33mWARN\033[0m"
-INFO = "\033[34mINFO\033[0m"
 
 _VALUE_PREVIEW_LENGTH = 55
 _HTTP_INTERNAL_SERVER_ERROR = 500
@@ -97,22 +93,16 @@ def _get_orm_field_to_value(orm_object: object) -> dict[str, object]:
     return {key: value for key, value in vars(orm_object).items() if not key.startswith("_")}
 
 
-def _section(title: str) -> None:
-    print(f"\n{'─' * 64}")
-    print(f"  {title}")
-    print("─" * 64)
-
-
 def validate_search_and_topic() -> bool:
-    _section("API 1 — searchResult  →  HansardSearchResult  →  HansardWebsiteResponse")
+    logger.info("API 1 — searchResult  →  HansardSearchResult  →  HansardWebsiteResponse")
     search_results = get_hansard_search_results(0, 0)
     if not search_results:
-        print(f"  {WARN}  No search results returned (check settings.search_from_date).")
+        logger.info("  WARN  No search results returned (check settings.search_from_date).")
         return True
 
     hansard_search_result = search_results[0]
     raw = hansard_search_result.model_dump(by_alias=True)
-    print(f"  {INFO}  report_id={hansard_search_result.report_id}  title={hansard_search_result.title[:_VALUE_PREVIEW_LENGTH]}")
+    logger.info(f"  INFO  report_id={hansard_search_result.report_id}  title={hansard_search_result.title[:_VALUE_PREVIEW_LENGTH]}")
     hansard_website_response = build_hansard_website_response(hansard_search_result, content=None)
     orm_field_to_value = _get_orm_field_to_value(hansard_website_response)
     raw_key_to_orm_field = {
@@ -136,25 +126,25 @@ def validate_search_and_topic() -> bool:
         orm_value = orm_field_to_value.get(orm_field)
         if orm_value is None:
             orm_failures.append(
-                f"  {FAIL}  raw[{raw_key!r}]={str(raw_value)[:_VALUE_PREVIEW_LENGTH]!r}  →  HansardWebsiteResponse.{orm_field}=None"
+                f"  FAIL  raw[{raw_key!r}]={str(raw_value)[:_VALUE_PREVIEW_LENGTH]!r}  →  HansardWebsiteResponse.{orm_field}=None"
             )
 
     if orm_failures:
-        print("\n  HansardWebsiteResponse field losses:")
+        logger.info("  HansardWebsiteResponse field losses:")
         for line in orm_failures:
-            print(line)
+            logger.info(line)
     else:
-        print(f"  {PASS}  HansardWebsiteResponse — all mapped fields present")
+        logger.info("  PASS  HansardWebsiteResponse — all mapped fields present")
 
     return not orm_failures
 
 
 def validate_topic(report_id: str) -> bool:
-    _section("API 2 — getHansardTopic  →  htmlContent  →  HansardWebsiteResponse.content")
-    print(f"  {INFO}  report_id={report_id!r}")
+    logger.info("API 2 — getHansardTopic  →  htmlContent  →  HansardWebsiteResponse.content")
+    logger.info(f"  INFO  report_id={report_id!r}")
     search_results = get_hansard_search_results(0, 0)
     if not search_results:
-        print(f"  {WARN}  No search results; skipping.")
+        logger.info("  WARN  No search results; skipping.")
         return True
 
     hansard_search_result = next((search_result for search_result in search_results if search_result.report_id == report_id), search_results[0])
@@ -164,13 +154,13 @@ def validate_topic(report_id: str) -> bool:
     hansard_website_response = build_hansard_website_response(hansard_search_result, content=html_content)
     if html_content:
         if hansard_website_response.content is None:
-            print(f"  {FAIL}  topic.htmlContent ({len(html_content)} chars)  →  orm.content=None")
+            logger.info(f"  FAIL  topic.htmlContent ({len(html_content)} chars)  →  orm.content=None")
             return False
-        print(f"  {PASS}  htmlContent ({len(html_content)} chars) → orm.content ({len(hansard_website_response.content)} chars)")
+        logger.info(f"  PASS  htmlContent ({len(html_content)} chars) → orm.content ({len(hansard_website_response.content)} chars)")
     else:
         topic_keys = list(hansard_topic_response.model_dump(by_alias=True, exclude_none=True).keys())
-        print(
-            f"  {INFO}  htmlContent absent for this report type "
+        logger.info(
+            f"  INFO  htmlContent absent for this report type "
             f"(topic response keys: {topic_keys}) — expected for written answers"
         )
     return True
@@ -183,7 +173,7 @@ def _validate_sitting_payload(
     raw = hansard_report_response.model_dump(by_alias=True)
 
     if hansard_report_response.error_code is not None:
-        print(f"  {WARN}  API returned error: {hansard_report_response.description} — using synthetic payload instead")
+        logger.info(f"  WARN  API returned error: {hansard_report_response.description} — using synthetic payload instead")
         return None
 
     if is_new:
@@ -220,13 +210,13 @@ def _validate_sitting_payload(
             if value is None or value == "":
                 continue
             if orm_field_to_value.get(orm_field) is None:
-                failures.append(f"  {FAIL}  metadata[{metadata_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None")
+                failures.append(f"  FAIL  metadata[{metadata_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None")
         for raw_key, orm_field in raw_key_to_orm_field.items():
             value = raw.get(raw_key)
             if value is None or value == "":
                 continue
             if orm_field_to_value.get(orm_field) is None:
-                failures.append(f"  {FAIL}  raw[{raw_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None")
+                failures.append(f"  FAIL  raw[{raw_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None")
     else:
         hansard_sitting_date_response = build_old_hansard_sitting_date_response(hansard_report_response, sitting_date)
         raw_key_to_orm_field = {
@@ -279,27 +269,27 @@ def _validate_sitting_payload(
                 continue
             if orm_field_to_value.get(orm_field) is None:
                 failures.append(
-                    f"  {FAIL}  raw[{raw_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None"
+                    f"  FAIL  raw[{raw_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None"
                 )
 
     format_label = "new" if is_new else "old"
     if failures:
         for line in failures:
-            print(line)
+            logger.info(line)
         return False
-    print(f"  {PASS}  HansardSittingDateResponse ({format_label} format, {source}) — no field losses")
+    logger.info(f"  PASS  HansardSittingDateResponse ({format_label} format, {source}) — no field losses")
     return True
 
 
 def validate_sitting_date(sitting_date: str, label: str, synthetic: dict) -> bool:
-    _section(f"API 3 — getHansardReport ({label})")
-    print(f"  {INFO}  sitting_date={sitting_date!r}")
+    logger.info(f"API 3 — getHansardReport ({label})")
+    logger.info(f"  INFO  sitting_date={sitting_date!r}")
 
     response_schema = HansardReportNewResponse if is_new_sitting_date_format(sitting_date) else HansardReportOldResponse
     try:
         hansard_report_response = get_hansard_report_response(sitting_date)
     except Exception as error:  # noqa: BLE001 the API call is probed and its failure is the finding, so fall back to the synthetic payload
-        print(f"  {WARN}  API call failed ({error}) — using synthetic payload")
+        logger.info(f"  WARN  API call failed ({error}) — using synthetic payload")
         hansard_report_response = response_schema(error_code=_HTTP_INTERNAL_SERVER_ERROR)
 
     is_passed = _validate_sitting_payload(hansard_report_response, sitting_date, source="live API")
@@ -326,9 +316,8 @@ if __name__ == "__main__":
         _SYNTHETIC_NEW_FORMAT,
     )
 
-    print(f"\n{'─' * 64}")
     if is_all_passed:
-        print(f"  {PASS}  All field mappings verified.")
+        logger.info("  PASS  All field mappings verified.")
     else:
-        print(f"  {FAIL}  One or more field losses detected — see above.")
+        logger.info("  FAIL  One or more field losses detected — see above.")
         sys.exit(1)
