@@ -20,8 +20,9 @@ _ADJOURNMENT_LINE_PATTERN = r"Adjourned accordingly at"
 _BLOCK_START_PATTERN = r"^(\*\*|#{1,6}|\* \* \*)"
 _BYTE_ORDER_MARK = "\ufeff"
 _EMPTY_EMPHASIS_PATTERN = r"<(strong|em)[^>]*>(\s|&nbsp;|\ufeff)*</\1>"
-_PROC_TEXT_OPENING_PATTERN = r"\[?\s*\(proc text\)\s*"
-_PROC_TEXT_CLOSING_PATTERN = r"\s*\(proc text\)\s*\]?"
+_PROC_TEXT_PAIR_PATTERN = r"\[\s*\(proc text\)\s*(.*?)\s*\(proc text\)\s*\]"
+_PROC_TEXT_LONE_PATTERN = r"\[?\s*\(proc text\)\s*\]?"
+_DATA_IMAGE_PATTERN = r"<img[^>]*src=\"data:[^\"]*\"[^>]*>"
 
 
 def _strip_nbsp(html: str) -> str:
@@ -30,8 +31,9 @@ def _strip_nbsp(html: str) -> str:
 
 def _prepare_newer_system_html(html: str) -> str:
     html = re.sub(_EMPTY_EMPHASIS_PATTERN, "", html)
-    html = re.sub(_PROC_TEXT_OPENING_PATTERN, "", html)
-    html = re.sub(_PROC_TEXT_CLOSING_PATTERN, "", html)
+    html = re.sub(_PROC_TEXT_PAIR_PATTERN, r"\1", html, flags=re.DOTALL)
+    html = re.sub(_PROC_TEXT_LONE_PATTERN, "", html)
+    html = re.sub(_DATA_IMAGE_PATTERN, "", html)
     return html.replace("&nbsp;", " ").replace(_BYTE_ORDER_MARK, "")
 
 
