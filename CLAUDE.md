@@ -63,17 +63,17 @@ Each folder has a strict responsibility boundary. `populate/` is the only layer 
 
 1. **Fetch search index** (`gateway/hansard_search.py`): POST to the Hansard search API, paginate through all results, return `list[HansardSearchResult]` (Pydantic model in `schemas/hansard_search_result.py`); a non-list body is an empty page.
 
-2. **Fetch report HTML** (`populate/hansard_responses.py` + `gateway/hansard_topic.py` + `services/hansard_website.py`): for each search result, `populate` calls `gateway` to POST to `getHansardTopic`, which returns a `HansardTopicResponse` (`schemas/hansard_topic_response.py`); `populate` reads its `html_content` (the API's `htmlContent`) and passes it to `services/hansard_website.py::build_hansard_website_response` which constructs the `HansardWebsiteResponse` entity stored in the DB.
+2. **Fetch report HTML** (`populate/hansard_responses.py` + `gateway/hansard_topic.py` + `services/hansard_website.py`): for each search result, `populate` calls `gateway` to POST to `getHansardTopic` with a JSON body, which returns a `HansardTopicResponse` (`schemas/hansard_topic_response.py`). The fetch picks the id and the field by system (`services/hansard_website.py::get_topic_id` and `get_topic_html_content`): an older-system hit (`report_version` sprs2, sittings before 10 September 2012) is fetched by `html_file_name` and read from `htmlContent`; a newer-system hit (sprs3) is fetched by `report_id` without its trailing `#` and read from `resultHTML.content`. Both land in `HansardWebsiteResponse.content` through `build_hansard_website_response` (see `docs/adr/0003-newer-system-raw-mapping.md`). Newer-system atbp reports return no text and keep `content` null. Hits listed in `data/excluded_report_ids.json` (a stored report returned again under another id) are never inserted. `populate/hansard_response_contents.py` and `populate/report_contents.py` fill `content` and `markdown_content` in place on rows stored without text.
 
 3. **Parse into Report** (`services/report.py`) — converts `HansardWebsiteResponse` → `Report`. Parses the `title` field to split off a `subtitle` (parenthetical content that is not an acronym). Also converts HTML content to cleaned markdown via `utils/markdown_parser.py`.
 
-4. **Parse into Speeches** (`services/speech.py`) — walks the markdown line-by-line to find where speeches begin (by matching the report title in bold), then splits the transcript into `Speech` records by detecting bold speaker names (`**Name:**`).
+4. **Parse into Speeches** (`services/speech.py`) — walks the markdown line-by-line to find where speeches begin (by matching the report title in bold), then splits the transcript into `Speech` records by detecting bold speaker names (`**Name:**`). Newer-system reports (sprs3) start at the top of the body, because their text never repeats the title; `utils/markdown_parser.py` also cleans their HTML differently (`&nbsp;` becomes a space, empty emphasis tags and `(proc text)` markers go). Every such branch is guarded by `report_version`, so older-system output is unchanged.
 
-5. **Fetch sitting dates** (`gateway/hansard_report.py` + `populate/hansard_sitting_dates.py`) — for each unique sitting date seen in the search results, POST to `getHansardReport/` to retrieve full sitting metadata. Stores the result in `HansardSittingDateResponse` only; nested list data (attendance, PTBA, sections, etc.) is stored as raw JSON strings on that table.
+5. **Fetch sitting dates** (`gateway/hansard_report.py` + `populate/hansard_sitting_dates.py`) — for each unique sitting date seen in the search results, POST to `getHansardReport/` with a JSON body (`{"sittingDate": "DD-MM-YYYY"}`, zero padded) to retrieve full sitting metadata. The gateway picks the schema by the shape of the body (a `metadata` key means the nested format) and the stage dispatches on the model type. Stores the result in `HansardSittingDateResponse`; the attendance and PTBA lists are stored as raw JSON strings on that table, and the other nested lists have columns only on `Sitting`. `populate/sitting_details.py` fills null columns in place on sittings stored without their details.
 
 6. **Parse into Sittings** (`services/sitting.py` + `populate/sittings.py`) — converts `HansardSittingDateResponse` → `Sitting`, adding a `markdown_content` field parsed from `html_full_content`. Also carries the nested JSON columns (sections, annexures, vernaculars, a2b) from the raw response.
 
-7. **Extract attendance** (`services/attendance.py` + `populate/attendances.py`) — for each `Sitting`, parses the PRESENT/ABSENT sections from `markdown_content` and writes one `Attendance` row per name found. Skips sittings already processed.
+7. **Extract attendance** (`services/attendance.py` + `populate/attendances.py`) — for each `Sitting`, parses the PRESENT/ABSENT sections from `markdown_content` and writes one `Attendance` row per name found. Sittings with no markdown (every sitting from 10 September 2012) take their rows from the structured `attendance_list` instead, with the same name cleaning and resolution. Skips sittings already processed.
 
 8. **Wire Speaker foreign keys** (`populate/speaker_links.py`) — resolves speaker/attendee names against the `Speaker` table and sets `speaker_id` on `Attendance` and `Speech` rows. Depends on the `Speaker` table being populated first (see out-of-band step below).
 
@@ -83,10 +83,10 @@ Each folder has a strict responsibility boundary. `populate/` is the only layer 
 
 The `getHansardReport/` endpoint returns two distinct formats depending on the sitting date:
 
-- **Old format** (Parliament 9–12, pre-18 Aug 2015): flat body, all fields at top level, parsed as `HansardReportOldResponse`.
-- **New format** (Parliament 13+, 18 Aug 2015 onwards): nested body with a `metadata` object plus child lists (`attendanceList`, `ptbaList`, `takesSectionVOList`, `annexureList`, `vernacularList`, `a2bList`), parsed as `HansardReportNewResponse`.
+- **Old format** (sittings before 10 September 2012): flat body, all fields at top level, parsed as `HansardReportOldResponse`.
+- **New format** (sittings from 10 September 2012): nested body with a `metadata` object plus child lists (`attendanceList`, `ptbaList`, `takesSectionVOList`, `annexureList`, `vernacularList`, `a2bList`), parsed as `HansardReportNewResponse`. It carries no full-sitting HTML.
 
-Both schemas live in `schemas/hansard_report_response.py`; every field is `Optional` because the endpoint also answers with `{errorCode, description}`. `gateway/hansard_report.py` strips NUL bytes and picks the schema with `utils/sitting_dates.py::is_new_sitting_date_format`, and `services/hansard_sitting_date_response.py` exposes `build_old_hansard_sitting_date_response` and `build_new_hansard_sitting_date_response`, which `populate/hansard_sitting_dates.py` dispatches on the same date. The cutoff is `settings.sitting_date_format_change` (`datetime(2015, 8, 18)`).
+Both schemas live in `schemas/hansard_report_response.py`; every field is `Optional` because the endpoint also answers with `{errorCode, description}`. `gateway/hansard_report.py` strips NUL bytes and picks the schema by the presence of the `metadata` key, and `services/hansard_sitting_date_response.py` exposes `build_old_hansard_sitting_date_response` and `build_new_hansard_sitting_date_response`, which `populate/hansard_sitting_dates.py` dispatches on the model type. `settings.sitting_date_format_change` (`datetime(2015, 8, 18)`) is read only by `scripts/validate_api_field_mapping.py`.
 
 ### Database models
 
@@ -147,14 +147,15 @@ hansard-scraper/
 │
 ├── script.py                        # Pipeline orchestrator — runs all populate stages in order
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
-├── enums.py                         # ReportType enum (oral/written answers, bills, etc.)
+├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system)
 ├── exceptions.py                    # HansardError / HansardGatewayError
 ├── logs.py                          # Loguru logger initialisation
 │
 ├── schemas/                         # Pydantic validation models (API shapes, not DB)
 │   ├── hansard_search_result.py    # HansardSearchResult — camelCase alias support
 │   ├── hansard_topic_response.py   # HansardTopicResponse: the getHansardTopic body (three shapes)
-│   ├── hansard_report_response.py  # HansardReportOldResponse / HansardReportNewResponse / HansardReportMetadata
+│   ├── hansard_report_response.py  # HansardReportOldResponse / HansardReportNewResponse / HansardReportMetadata / HansardReportAttendanceEntry
+│   ├── excluded_report_id.py       # ExcludedReportId: data/excluded_report_ids.json entries
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata
 │
 ├── gateway/                         # HTTP API clients
@@ -197,10 +198,13 @@ hansard-scraper/
 │   └── speaker.py
 │
 ├── populate/                        # Pipeline stages — fetch + persist each entity type
-│   ├── hansard_responses.py        # Stage 2: async fetch + store HansardWebsiteResponse (20 concurrent)
+│   ├── hansard_responses.py        # Stage 2: async fetch + store HansardWebsiteResponse (4 concurrent)
+│   ├── hansard_response_contents.py # Fill: fetch text for newer-system raw rows stored without it
+│   ├── report_contents.py           # Fill: copy raw text and markdown onto reports stored without it
 │   ├── reports.py                   # Stage 3: HansardWebsiteResponse → Report
 │   ├── speeches.py                  # Stage 4: Report → Speech (batches of 1000)
 │   ├── hansard_sitting_dates.py    # Stage 5: fetch + store HansardSittingDateResponse
+│   ├── sitting_details.py           # Fill: metadata and lists for sittings stored without them
 │   ├── sittings.py                  # Stage 6: HansardSittingDateResponse → Sitting
 │   ├── attendances.py               # Stage 7: Sitting → Attendance
 │   ├── speaker_links.py             # Stage 8: resolve names → set speaker_id on Speech + Attendance
