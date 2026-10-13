@@ -30,7 +30,7 @@ _BOLD_LINE_COUNT = 5
 _BOLD_LINE_WIDTH = 120
 
 
-def run():
+def run() -> None:
     random.seed(_SEED)
 
     with Session(engine) as session:
