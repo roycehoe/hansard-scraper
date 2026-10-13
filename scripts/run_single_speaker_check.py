@@ -1,7 +1,3 @@
-"""
-Run get_speeches against all single-speaker docs (MPs Speaking == 1 name)
-and report how many now yield a speech vs still return [].
-"""
 from collections import defaultdict
 
 from sqlmodel import Session

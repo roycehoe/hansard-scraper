@@ -1,5 +1,3 @@
-"""Diagnostic script for the speech parsing refine loop."""
-
 import random
 from collections import defaultdict
 from typing import Optional
@@ -31,7 +29,6 @@ def _get_speech_start(response: HansardWebsiteResponse) -> tuple[Report, Optiona
 
 
 def get_report_type_speech_stats(session: Session) -> dict:
-    """For each report_type, count how many responses have markdown and how many yield speeches."""
     responses = CRUDHansardWebsiteResponse(session).get_all()
     report_type_to_counts = defaultdict(lambda: {"total": 0, "has_markdown": 0, "has_start_line": 0, "can_get_speeches": 0})
 
@@ -52,7 +49,6 @@ def get_report_type_speech_stats(session: Session) -> dict:
 
 
 def get_failing_sample(session: Session, no_speech_types: set[str], sample_size: int = _DEFAULT_FAILING_SAMPLE_SIZE) -> dict:
-    """Sample up to sample_size failing documents per (failure_stage, report_type) group."""
     responses = CRUDHansardWebsiteResponse(session).get_all()
     stage_and_report_type_to_responses = defaultdict(list)
 
@@ -75,7 +71,6 @@ def get_failing_sample(session: Session, no_speech_types: set[str], sample_size:
 
 
 def get_passing_sample(session: Session, no_speech_types: set[str], sample_size: int = _DEFAULT_PASSING_SAMPLE_SIZE) -> list:
-    """Sample sample_size currently-passing documents for regression testing."""
     responses = CRUDHansardWebsiteResponse(session).get_all()
     passing = []
 
@@ -96,7 +91,6 @@ def get_passing_sample(session: Session, no_speech_types: set[str], sample_size:
 
 
 def run_stats_on(responses: list) -> dict:
-    """Run _get_statistics equivalent on a list of responses, return counts."""
     results = {"pass": [], "fail_start_line": [], "fail_speeches": []}
     for response in responses:
         report, start = _get_speech_start(response)

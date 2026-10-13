@@ -1,19 +1,10 @@
-"""
-Validate the no-speech docs: confirm that docs where get_speeches returns []
-genuinely have no bold speaker markup after the start line.
-
-Draws a stratified sample (K=5 per report_type) from the Report table,
-inspects the markdown after start_line, and flags any doc where a bold
-speaker pattern (**Name:**) is present.
-"""
-
 import random
 import re
 from collections import defaultdict
 
 from sqlmodel import Session
 
-import database.speech  # noqa: F401  (registers Speech for Report.speeches)
+import database.speech  # noqa: F401 registers Speech for Report.speeches
 from crud.report import CRUDReport
 from database.init import engine
 from database.report import Report
@@ -103,8 +94,6 @@ def run() -> None:
     print(f"Checked:                   {total_checked}")
     print(f"Suspicious (bold found):   {len(suspicious)}")
     print(f"Confirmed no-speaker:      {total_checked - len(suspicious)}")
-
-    # A report with no start line is never parsed, so it must not drop out of the check unseen.
     print()
     print("=== NO START LINE (never parsed; bold speaker lines counted over the whole doc) ===")
     for report in no_start_line:
