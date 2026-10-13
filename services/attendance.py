@@ -793,17 +793,17 @@ def _extract_section_lines(content: str, section: str) -> list[str]:
     Handles both standard ("PRESENT:") and modern ("## Present:") headers.
     """
     lines = content.split("\n")
-    in_section = False
+    is_in_section = False
     other_section = "ABSENT" if section == "PRESENT" else "PRESENT"
     entry_lines = []
 
     for line in lines:
         stripped = line.strip()
 
-        if not in_section:
+        if not is_in_section:
             # Detect section header: "PRESENT:", "**PRESENT:**", or "## Present:"
             if re.match(rf"^(?:\*{{2}}|#+)?\s*{section}\s*:(?:\*{{2}})?\s*$", stripped, re.IGNORECASE):
-                in_section = True
+                is_in_section = True
             continue
 
         # End-of-section markers
@@ -825,7 +825,7 @@ def _try_name_variant(
     name: str,
     parliament: int,
     lookups: SpeakerLookups,
-    include_wordset: bool = True,
+    is_using_wordset: bool = True,
 ) -> Optional[str]:
     normalized = _period_normalize(name)
     bin_normalized = _period_normalize(_strip_bin(name))
@@ -836,7 +836,7 @@ def _try_name_variant(
     )
     if result:
         return result
-    if include_wordset:
+    if is_using_wordset:
         result = lookups.wordset.get((*_get_wordset_key(name), parliament))
         if result:
             return result
@@ -875,7 +875,7 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
 
     name_without_haji = _strip_middle_haji(name)
     if name_without_haji != name:
-        canonical = _try_name_variant(name_without_haji, parliament, lookups, include_wordset=False)
+        canonical = _try_name_variant(name_without_haji, parliament, lookups, is_using_wordset=False)
         if canonical:
             return canonical
 
