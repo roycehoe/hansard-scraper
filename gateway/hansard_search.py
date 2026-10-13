@@ -1,6 +1,7 @@
 import calendar
 import time
 from datetime import date
+from typing import Optional, Union
 
 import requests
 
@@ -11,14 +12,17 @@ from settings import settings
 _MAX_RETRIES = 3
 _BASE_DELAY = 1.0
 _MAX_PASSES = 25
+_HTTP_BAD_REQUEST = 400
+_HTTP_INTERNAL_SERVER_ERROR = 500
+_DECEMBER = 12
 
 
 def get_hansard_search_results(
     start_index: int,
     end_index: int,
-    from_date: date | None = None,
-    to_date: date | None = None,
-) -> dict | list:
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
+) -> Union[dict, list]:
     from_date = settings.search_from_date if from_date is None else from_date
     to_date = settings.search_to_date if to_date is None else to_date
     query_dict = {
@@ -43,10 +47,12 @@ def get_hansard_search_results(
         "footNoteChecked": "false",
         "ministrySelected": [],
     }
-    page = start_index // 20 + 1
+    page = start_index // settings.search_page_size + 1
     try:
         response = requests.post(url=settings.hansard_search_url, json=query_dict)
-        if response.status_code in (400, 500) and "No Results Found" in response.text:
+        if (
+            response.status_code == _HTTP_BAD_REQUEST or response.status_code == _HTTP_INTERNAL_SERVER_ERROR
+        ) and "No Results Found" in response.text:
             return {"errorCode": 0, "description": "No Results Found"}
         response.raise_for_status()
         return response.json()
@@ -59,7 +65,7 @@ def get_hansard_search_results(
 def _get_page_with_retries(start_index: int, from_date: date, to_date: date):
     for attempt in range(_MAX_RETRIES + 1):
         try:
-            return get_hansard_search_results(start_index, start_index + 19, from_date, to_date)
+            return get_hansard_search_results(start_index, start_index + settings.search_page_size - 1, from_date, to_date)
         except HansardGatewayError as error:
             if attempt == _MAX_RETRIES:
                 raise
@@ -74,7 +80,7 @@ def _months(first: date, last: date):
             max(first, date(year, month, 1)),
             min(last, date(year, month, calendar.monthrange(year, month)[1])),
         )
-        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+        year, month = (year + 1, 1) if month == _DECEMBER else (year, month + 1)
 
 
 def get_window_hansard_search_results(from_date: date, to_date: date) -> list[dict]:
@@ -87,7 +93,7 @@ def get_window_hansard_search_results(from_date: date, to_date: date) -> list[di
     total = int(first_page[0]["maxResult"])
     hit_by_report_id = {hit["reportId"]: hit for hit in first_page}
     for _ in range(_MAX_PASSES):
-        for start_index in range(0, total, 20):
+        for start_index in range(0, total, settings.search_page_size):
             page = _get_page_with_retries(start_index, from_date, to_date)
             if isinstance(page, list):
                 for hit in page:
