@@ -44,8 +44,7 @@ _REPORT_BATCH = 200
 _DEPUTY_SPEAKER_PAIR_SIZE = 2
 _SPEAKER_LABELS = ("Mr Speaker", "Mdm Speaker")
 
-# Only these roles resolve by sitting date; every other string resolves the same
-# way for every sitting in a parliament, so it is memoised on (string, parliament).
+# NOTE: only these roles resolve by sitting date; every other string is memoised on (string, parliament).
 _DATE_DEPENDENT_ROLES = (
     "The Chief Minister",
     "The Prime Minister",
@@ -71,15 +70,10 @@ _TITLE_DOT_PREFIX_RE = re.compile(r"^(Mr|Mrs|Dr|Ms)\.\s+")
 _GLUED_TITLE_RE = re.compile(r"^(Mr|Mrs|Dr|Ms|Mdm)([A-Z])")
 _TITLED_RE = re.compile(r"^(?:Mr|Mrs|Ms|Mdm|Dr|Miss|Inche|Encik|Assoc|Prof|Er)\b")
 
-# The Address is the only report where a bare head-of-state string is the holder speaking.
 _ADDRESS_TITLES = ("GOVERNOR'S ADDRESS", "PRESIDENT'S ADDRESS", "YANG DI-PERTUAN NEGARA'S SPEECH")
 
 
 def _preclean(raw: str) -> str:
-    """Remove parse debris from a speaker string before resolution: list numbers and
-    stray punctuation, rank qualifiers such as "(NS)", a trailing "Mr Speaker," that
-    belongs to the transcript, an unclosed parenthesis, an inverted two-part name and
-    a label printed twice."""
     raw = raw.replace("\ufeff", "").strip()
     raw = _LEADING_LIST_NUMBER_RE.sub("", raw)
     raw = _LEADING_DOT_RE.sub("", raw)
@@ -106,8 +100,6 @@ def _is_title_in_parentheses(match: re.Match) -> bool:
 def _get_holder_on(
     terms: Sequence[tuple[date, date, str]], sitting_date: Optional[datetime]
 ) -> Optional[str]:
-    """The single person holding the office on the sitting day, or None when there
-    was none, more than one, or the day is unknown."""
     if sitting_date is None:
         return None
     day = sitting_date.date()
@@ -157,10 +149,6 @@ def _resolve_presiding_officer(
             _get_holder_on(SPEAKER_TERMS, sitting_date), parliament, lookups, speaker_id_lookup
         )
     if raw.startswith(_DEPUTY_SPEAKER_LABELS):
-        # "Mr Deputy Speaker (Mr Matthias Yao Chih)" names the person; a bare string
-        # falls back to the one holder in office that day.
-        # "Mdm" names the only woman holding the office in her window; a bare "Mr" on a
-        # two-holder day is settled from the report by `_populate_deputy_speaker_links`.
         named_match = _PARENTHESIS_RE.search(raw)
         terms = (
             [term for term in DEPUTY_SPEAKER_TERMS if term[2] in DEPUTY_SPEAKER_WOMEN]
@@ -214,12 +202,10 @@ def _resolve_speech_speaker_id(
     raw = _preclean(speaker.rstrip(":").strip())
 
     if raw in _SPEAKER_LABELS or raw.startswith(_DEPUTY_SPEAKER_LABELS):
-        # Presiding officers never go through the name cascade.
         return _resolve_presiding_officer(
             raw, parliament, sitting_date, lookups, speaker_id_lookup
         )
 
-    # Roles whose holder changed within a parliament resolve by sitting date.
     if raw in DATED_ROLE_TERMS:
         holder = _get_holder_on(DATED_ROLE_TERMS[raw], sitting_date)
         if not holder:
@@ -231,7 +217,6 @@ def _resolve_speech_speaker_id(
 
     role_key = _get_role_key(raw, parliament)
     if role_key is not None and role_key in ROLE_ONLY_SPEAKERS:
-        # Role-only strings are never resolvable via the name cascade.
         role_name = ROLE_ONLY_SPEAKERS[role_key]
         role_canonical, role_parliament = _resolve_with_parliament_fallback(
             role_name, role_key[1], lookups, speaker_id_lookup
@@ -265,8 +250,6 @@ def resolve_attendance_rows(
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> dict[int, int]:
-    """Map attendance id -> speaker id for every row the cascade can resolve.
-    Rows are (id, speaker_name, sitting.parlement_no, sitting.volume_no)."""
     key_to_speaker_id: dict[tuple[str, int], Optional[int]] = {}
     attendance_id_to_speaker_id: dict[int, int] = {}
     total = 0
@@ -295,8 +278,6 @@ def resolve_speech_rows(
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> dict[int, int]:
-    """Map speech id -> speaker id for every row the cascade can resolve.
-    Rows are (id, speaker, report.parliament_number, report.sitting_date)."""
     key_to_speaker_id: dict[tuple[str, int, Optional[datetime]], Optional[int]] = {}
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
@@ -322,10 +303,8 @@ def _write_in_batches(set_speaker_ids_bulk: Callable[[dict[int, int]], None], id
         set_speaker_ids_bulk(dict(items[start : start + _WRITE_BATCH]))
 
 
+# NOTE: a bare head-of-state string is the holder only in the Address itself; the same strings in addenda and adjournment reports are parser errors and stay unlinked.
 def _get_head_of_state_names(report: Report, rows: list[tuple]) -> dict[int, str]:
-    """Bare "The President" or "His Excellency the Governor" rows in the Address itself name the holder
-    on the sitting date. The same strings in addenda and adjournment reports are parser errors and stay
-    unlinked, so the error remains visible in the attribution rate."""
     if not report.title.upper().startswith(_ADDRESS_TITLES):
         return {}
     speech_id_to_name = {}
@@ -383,9 +362,6 @@ def _populate_role_context_links(
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> None:
-    """Link role-only strings that the report itself resolves: "The Chairman" from the
-    chair annotations, closing line and header, carried roles from an earlier row that
-    speech_id_to_name the holder, and heads of state in the Address by sitting date."""
     pattern = "|".join(
         [CHAIRMAN_RE.pattern] + [f"^{re.escape(role)}$" for role in (*CARRIED_ROLES, *HEAD_OF_STATE_TERMS)]
     )
@@ -422,20 +398,16 @@ def _populate_role_context_links(
     logger.info(f"Speech: set speaker_id on {len(speech_id_to_speaker_id)}/{total} role-context records")
 
 
+# NOTE: with one man and one woman in office the "Mr" row goes to the man unless the report shows the woman taking part. With two men the row links only when the report names one of them and nothing else printed that day names the other.
 def _populate_deputy_speaker_links(
     session: Session,
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> None:
-    """Link bare "Mr Deputy Speaker" rows on days with two Deputies in office, from the report.
-    With one man and one woman in office the printed "Mr" leaves the man, unless the report
-    shows the woman taking part. With two men the row links only when the chair annotation
-    before it, or a "Mr Deputy Speaker (Name)" speaker row in the report, names one of them
-    and nothing else printed that day (other report_id_to_report, the sitting text) names the other."""
     report_ids = CRUDSpeech(session).get_report_ids_with_unlinked_speaker(BARE_DEPUTY_RE.pattern)
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
-    text_key_to_speaker_ids: dict[object, set[int]] = {}  # holder ids named by a sitting or report text; a date has one parliament
+    text_key_to_speaker_ids: dict[object, set[int]] = {}
 
     for start in range(0, len(report_ids), _REPORT_BATCH):
         batch = report_ids[start : start + _REPORT_BATCH]
@@ -443,7 +415,7 @@ def _populate_deputy_speaker_links(
         report_id_to_rows: dict[int, list[tuple]] = {}
         for row in CRUDSpeech(session).get_rows_by_report_ids(batch):
             report_id_to_rows.setdefault(row[4], []).append(row)
-        pending_reports = []  # (report, two-man speech_id_to_candidate_id by speech id, holder ids)
+        pending_reports = []
         for report_id, rows in report_id_to_rows.items():
             report = report_id_to_report[report_id]
             bare_deputy_rows = [row for row in rows if row[5] is None and BARE_DEPUTY_RE.match(row[2] or "")]
