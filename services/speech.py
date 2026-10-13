@@ -349,15 +349,15 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 continue  # table row header ("**Header** | ...") — bold is a column label, not a speaker
             raw_speaker = bold_match.group(0).replace("*", "").replace(":", "").strip()
             raw_speaker = _LANGUAGE_NOTE_RE.sub("", raw_speaker).strip() or raw_speaker  # a note-only bold line stays a section annotation
-            # A bare "[X in the Chair]" annotation records who presides; it is not a
-            # speaker, and any text after it continues the current speaker.
-            if re.fullmatch(r"[\[(]?\s*.+?\s*in the [Cc]hair\s*[.\])]*", raw_speaker):
+            # A "[X in the Chair]" annotation, bare or followed by a heading in the same bold line
+            # ("**[Mr Speaker in the Chair] BILL**"), records who presides; it is not a speaker, and
+            # any text after it continues the current speaker. OCR can glue the words ("Speakerin the").
+            if (re.fullmatch(r"[\[(]?\s*.+?\s*in the [Cc]hair\s*[.\])]*", raw_speaker)
+                    or re.match(r"[\[(]\s*.+?\s*in the [Cc]hair\s*[.\])]", raw_speaker)):
                 if re.search(r"[A-Za-z0-9]", transcript) and current_speaker is not None:
                     speeches.append(ParsedSpeech(speaker=current_speaker, transcript=transcript))
                 continue
-            # Strip [X in the Chair] chair-annotation prefix (e.g. "**[Mr Speaker in the Chair] BILL**")
-            chair_match = re.match(r"^\[(.+?)\s+in the [Cc]hair\]", raw_speaker)
-            new_speaker = chair_match.group(1).strip() if chair_match else raw_speaker
+            new_speaker = raw_speaker
             bold_ends_with_colon = bold_match.group(0).rstrip().endswith(":**")
             # Strip leading question-number prefix from oral-answer speaker names
             # e.g. "1\. Assoc. Prof. Paulin Tay Straughan" → "Assoc. Prof. Paulin Tay Straughan"
