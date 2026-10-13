@@ -39,7 +39,7 @@ One row per parliamentary item. A report is the smallest unit of parliamentary b
 | `volume_number` | int | Hansard volume number. Volumes span multiple sessions. |
 | `sitting_number` | int | Which sitting within the session. |
 | `sitting_date` | datetime | Date of the sitting. |
-| `speech_number` | int | Sequential number of this item within the sitting (the `sno` field from the API). |
+| `speech_number` | int | Sequential number of this item within the sitting (the `sno` field from the API). The 1,691 rows added on 13 October 2026 (refetch) store `sno` as the position within their monthly search window, not the global position, so `sno` is not comparable across those rows and the earlier ones. |
 | `report_id` | str | The SPRS identifier for this report. Unique in `Report`; the raw `HansardWebsiteResponse` table keeps every search hit, so it can hold the same id twice. |
 | `report_type` | str | Category of parliamentary business. See [Report types](#report-types) below. |
 | `title` | str | Cleaned title. Mojibake corrected; HTML entity artifacts stripped. |
