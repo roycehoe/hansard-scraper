@@ -56,11 +56,11 @@ def main() -> None:
             else:
                 role = "SPEAKER"
 
-            name, _location = _parse_speaker_line(stripped)
-            if not name or name == "SPEAKER":
+            parsed_speaker = _parse_speaker_line(stripped)
+            if not parsed_speaker.name or parsed_speaker.name == "SPEAKER":
                 continue
 
-            name = normalize_name(name)
+            name = normalize_name(parsed_speaker.name)
             canonical = resolve_canonical_name(name, parliament, lookups) or name
             tallies[role][parliament][canonical] += 1
 

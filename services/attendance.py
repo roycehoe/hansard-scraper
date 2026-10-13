@@ -501,6 +501,16 @@ def _spelling_normalize(name: str) -> str:
     return re.sub(r"\s+", " ", normalized).strip()
 
 
+def strip_title(text: str) -> str:
+    while True:
+        for prefix in _TITLE_PREFIXES:
+            if text.startswith(prefix):
+                text = text[len(prefix):]
+                break
+        else:
+            return text
+
+
 def _invert_to_natural(speaker_name: str) -> Optional[str]:
     """Convert 'Surname, Firstname[, TitleSuffix]' to natural 'Firstname Surname' form.
     Returns None if the name is not in inverted format."""
@@ -515,16 +525,6 @@ def _invert_to_natural(speaker_name: str) -> Optional[str]:
 def _get_wordset_key(name: str) -> tuple[frozenset, int]:
     words = _period_normalize(name).split()
     return frozenset(words), len(words)
-
-
-def strip_title(text: str) -> str:
-    while True:
-        for prefix in _TITLE_PREFIXES:
-            if text.startswith(prefix):
-                text = text[len(prefix):]
-                break
-        else:
-            return text
 
 
 def infer_parliament(sitting: Sitting) -> Optional[int]:
@@ -700,6 +700,12 @@ def build_speaker_lookups(speakers: list[Speaker]) -> SpeakerLookups:
     )
 
 
+@dataclass(frozen=True)
+class ParsedAttendee:
+    name: str
+    constituency: Optional[str]
+
+
 def _get_closing_parenthesis_index(text: str, open_index: int) -> Optional[int]:
     depth = 0
     for char_index in range(open_index, len(text)):
@@ -719,7 +725,7 @@ def _strip_name_decorations(name_part: str) -> str:
     return _ISLAMIC_SUFFIX_RE.sub("", name).strip()
 
 
-def _parse_name_and_location(text: str) -> tuple[str, Optional[str]]:
+def _parse_name_and_location(text: str) -> ParsedAttendee:
     """
     Extract (speaker_name, location_name) from text like:
       "Name, Honorifics (Constituency), Portfolio [possibly (more)]"
@@ -734,15 +740,15 @@ def _parse_name_and_location(text: str) -> tuple[str, Optional[str]]:
 
     first_open = text.find("(")
     if first_open == -1:
-        return _strip_name_decorations(text), None
+        return ParsedAttendee(_strip_name_decorations(text), None)
     close_index = _get_closing_parenthesis_index(text, first_open)
     if close_index is None:
-        return _strip_name_decorations(text[:first_open].rstrip(", )")), None
+        return ParsedAttendee(_strip_name_decorations(text[:first_open].rstrip(", )")), None)
     constituency = text[first_open + 1 : close_index].strip()
-    return _strip_name_decorations(text[:first_open].rstrip(", ")), constituency
+    return ParsedAttendee(_strip_name_decorations(text[:first_open].rstrip(", ")), constituency)
 
 
-def _parse_speaker_line(line: str) -> tuple[str, Optional[str]]:
+def _parse_speaker_line(line: str) -> ParsedAttendee:
     """
     Parse SPEAKER lines: "[Title] SPEAKER ([Title] Name [(Constituency)]).".
     Extracts the name and constituency from within the outer parentheses.
@@ -751,13 +757,13 @@ def _parse_speaker_line(line: str) -> tuple[str, Optional[str]]:
     # Find the outermost parenthetical (greedy: first '(' to last ')')
     match = re.search(r"\((.+)\)\s*$", line)
     if match is None:
-        return "SPEAKER", None
+        return ParsedAttendee("SPEAKER", None)
     inner = match.group(1).strip()
     inner_stripped = strip_title(inner)
     return _parse_name_and_location(inner_stripped)
 
 
-def _parse_entry_line(line: str) -> Optional[tuple[str, Optional[str]]]:
+def _parse_entry_line(line: str) -> Optional[ParsedAttendee]:
     line = line.strip()
     if not line:
         return None
@@ -906,16 +912,15 @@ def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups) -> list[At
             parsed = _parse_entry_line(line)
             if parsed is None:
                 continue
-            name, location = parsed
-            if not name:
+            if not parsed.name:
                 continue
-            name = normalize_name(name)
+            name = normalize_name(parsed.name)
             canonical = None if parliament is None else resolve_canonical_name(name, parliament, lookups)
             records.append(Attendance(
                 sitting_id=sitting.id,
                 speaker_name=canonical or name,
                 is_present=is_present,
-                location_name=location,
+                location_name=parsed.constituency,
             ))
 
     return records
