@@ -8,6 +8,9 @@ from database.report import Report
 from utils.markdown_parser import get_cleaned_report_markdown
 from utils.text import fix_mojibake
 
+_BRACKET_PATTERN = r"\(([^)]*)\)"
+_SITTING_DATE_FORMAT = "%d-%m-%Y"
+
 
 @dataclass
 class ReportHeader:
@@ -28,17 +31,17 @@ def _get_db_report_header(raw_title: str) -> ReportHeader:
 
     contents = [
         match.group(1)
-        for match in re.finditer(r"\(([^)]*)\)", raw_title)
+        for match in re.finditer(_BRACKET_PATTERN, raw_title)
         if not match.group(1).isupper()
     ]
-    title = re.sub(r"\(([^)]*)\)", _replace_bracket, raw_title).strip()
+    title = re.sub(_BRACKET_PATTERN, _replace_bracket, raw_title).strip()
     if not contents:
         return ReportHeader(title=title)
     return ReportHeader(title=title, subtitle=f"({contents[-1]})")
 
 
 def build_report(hansard_website_response: HansardWebsiteResponse) -> Report:
-    sitting_date = datetime.strptime(hansard_website_response.sitting_date, "%d-%m-%Y")
+    sitting_date = datetime.strptime(hansard_website_response.sitting_date, _SITTING_DATE_FORMAT)
     raw_title = fix_mojibake(hansard_website_response.title)
     db_report_header = _get_db_report_header(raw_title)
 
