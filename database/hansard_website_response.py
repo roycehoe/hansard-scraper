@@ -18,7 +18,7 @@ class HansardWebsiteResponse(SQLModel, table=True):
 
     title: str
     subtitle: Optional[str] = None
-    report_id: str = Field(alias="reportId")
+    report_id: str = Field(alias="reportId", index=True)
     report_type: str = Field(alias="reportType")
 
     html_file_name: Optional[str] = Field(None, alias="htmlFileName")

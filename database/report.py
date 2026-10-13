@@ -28,7 +28,7 @@ class Report(SQLModel, table=True):
     original_title: str
     title: str
     subtitle: Optional[str] = None
-    report_id: str = Field(alias="reportId")
+    report_id: str = Field(alias="reportId", unique=True)
     report_type: str = Field(alias="reportType")
 
     html_file_name: Optional[str] = Field(None, alias="htmlFileName")
