@@ -25,9 +25,7 @@ from services.attendance import (
     VOLUME_TO_PARLIAMENT,
     SpeakerLookups,
     build_speaker_lookups,
-    normalize_name,
     resolve_canonical_name,
-    strip_title,
 )
 from services.role_context import (
     BARE_DEPUTY_RE,
@@ -37,6 +35,10 @@ from services.role_context import (
     chairman_names,
     deputy_speaker_names,
     deputy_speaker_names_in_text,
+)
+from utils.names import (
+    normalize_name,
+    strip_title,
 )
 
 _WRITE_BATCH = 50_000

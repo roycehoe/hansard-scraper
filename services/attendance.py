@@ -5,6 +5,15 @@ from typing import Optional
 from database.attendance import Attendance
 from database.sitting import Sitting
 from database.speaker import Speaker
+from utils.names import (
+    invert_to_natural,
+    normalize_name,
+    period_normalize,
+    spelling_normalize,
+    strip_bin,
+    strip_middle_haji,
+    strip_title,
+)
 
 # Derived from each sitting's Parliament No header
 VOLUME_TO_PARLIAMENT: dict[int, int] = {
@@ -311,28 +320,6 @@ _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
 }
 
 
-# NOTE: longest first, so a shorter prefix never matches ahead of a longer one.
-_TITLE_PREFIXES = (
-    "The Honourable Mr ", "The Honourable Mrs ", "The Honourable Dr ",
-    "The Honourable Miss ", "The Honourable Ms ", "The Honourable Inche ",
-    "The Honourable Encik ", "The Honourable ",
-    "The Hon. Mr ", "The Hon. Mrs ", "The Hon. Dr ",
-    "The Hon. Miss ", "The Hon. Ms ", "The Hon. Inche ",
-    "The Hon. ",
-    "Assoc. Prof. ", "Assoc Prof ",
-    "Er Dr ", "Er ",
-    "BG (NS) ", "BG [NS] ", "MG [NS] ", "MG (NS) ",
-    "RAdm (NS) ", "RAdm ",
-    "BG ", "MG ",
-    "Prof. ", "Prof ",
-    "Maj. ", "Maj ",
-    "Dr. ", "Dr, ", "Mr. ", "Mr, ", "Mi. ", "mr ", "Dr ", "Mr ", "Mrs ", "Miss ", "Ms ", "Mdm ", "Madam ",
-    "Inche ", "Encik ", "Sir ", "Dato ", "Tun Dato ", "Tun ",
-    "Asst Prof ", "Asst. Prof. ",
-    "Tuan Haji ", "Haji ", "Hj. ", "Hj ",
-    "Cdre ", "[NS] ", "(NS) ",
-)
-
 _HONORIFIC_SUFFIX_RE = re.compile(r"(?:,\s*[A-Z][A-Z.]*(?:\s+[A-Z][A-Z.]*)*)+$")
 
 _ISLAMIC_SUFFIX_RE = re.compile(r"\s+[Aa]l-[Hh]aj[jh]?\s*$")
@@ -344,20 +331,11 @@ _OFFICIAL_ROLE_SUFFIX_RE = re.compile(
     re.I,
 )
 
-_INVERTED_TITLE_SUFFIXES = frozenset({"Dr", "Mdm", "Mr", "Mrs", "Ms", "Prof", "Assoc Prof", "RAdm", "BG"})
-
 _MIN_SURNAME_LOOKUP_LENGTH = 2
 _MIN_PREFIX_WORD_COUNT = 2
 _MIN_MULTIWORD_SURNAME_LENGTH = 2
 _MIN_REARRANGEABLE_WORD_COUNT = 3
 _MIN_WORDSET_SUBSET_WORDS = 3
-_MIN_INVERTED_TITLE_SUFFIX_PART_COUNT = 3
-
-
-def normalize_name(name: str) -> str:
-    # NOTE: a lone-initial period ("S. Iswaran") stays, because some Speaker.name values keep it ("A. Rahim Ishak") and others drop it.
-    name = re.sub(r"(?<=[A-Z]\.) (?=[A-Z]\.)", "", name)
-    return re.sub(r"\bMohd\.", "Mohd", name)
 
 
 def _normalize_for_lookup(name: str) -> str:
@@ -367,53 +345,8 @@ def _normalize_for_lookup(name: str) -> str:
     return normalized.lower()
 
 
-def _period_normalize(name: str) -> str:
-    normalized = re.sub(r"(?<=[A-Z])\.(?=[A-Z])", " ", name)
-    normalized = re.sub(r"([A-Z])\.", r"\1", normalized)
-    normalized = re.sub(r"\s+", " ", normalized)
-    return normalized.strip().lower()
-
-
-def _strip_bin(name: str) -> str:
-    return re.sub(r"\s+bin(?:te)?\s+", " ", name, flags=re.IGNORECASE).strip()
-
-
-def _strip_middle_haji(name: str) -> str:
-    return re.sub(r"\s+(?:[Tt]uan\s+)?(?:[Hh]aji|[Hh]j\.?)\s+", " ", name).strip()
-
-
-def _spelling_normalize(name: str) -> str:
-    normalized = re.sub(r"\bMohamad\b|\bMohammed\b|\bMohammad\b", "Mohamed", name)
-    normalized = normalized.replace("-", " ")
-    normalized = re.sub(
-        r"\b([A-Z])((?:\s+[A-Z])+)\b",
-        lambda initials_match: initials_match.group(1) + initials_match.group(2).replace(" ", ""),
-        normalized,
-    )
-    return re.sub(r"\s+", " ", normalized).strip()
-
-
-def strip_title(text: str) -> str:
-    while True:
-        for prefix in _TITLE_PREFIXES:
-            if text.startswith(prefix):
-                text = text[len(prefix):]
-                break
-        else:
-            return text
-
-
-def _invert_to_natural(speaker_name: str) -> Optional[str]:
-    if ", " not in speaker_name:
-        return None
-    parts = speaker_name.split(", ")
-    if len(parts) >= _MIN_INVERTED_TITLE_SUFFIX_PART_COUNT and parts[-1] in _INVERTED_TITLE_SUFFIXES:
-        return strip_title(f"{' '.join(parts[1:-1])} {parts[0]}").strip()
-    return strip_title(f"{', '.join(parts[1:])} {parts[0]}").strip()
-
-
 def _get_wordset_key(name: str) -> tuple[frozenset, int]:
-    words = _period_normalize(name).split()
+    words = period_normalize(name).split()
     return frozenset(words), len(words)
 
 
@@ -438,7 +371,7 @@ def _build_direct_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str]:
     counts: dict[tuple[str, int], int] = {}
     entries: list[tuple[tuple[str, int], str]] = []
     for speaker in speakers:
-        key = (_period_normalize(speaker.name), speaker.parliament_number)
+        key = (period_normalize(speaker.name), speaker.parliament_number)
         counts[key] = counts.get(key, 0) + 1
         entries.append((key, speaker.name))
     return {key: canonical for key, canonical in entries if counts[key] == 1}
@@ -451,7 +384,7 @@ def _build_bin_free_lookup(
     counts: dict[tuple[str, int], int] = {}
     entries: list[tuple[tuple[str, int], str]] = []
     for speaker in speakers:
-        key = (_period_normalize(_strip_bin(speaker.name)), speaker.parliament_number)
+        key = (period_normalize(strip_bin(speaker.name)), speaker.parliament_number)
         counts[key] = counts.get(key, 0) + 1
         entries.append((key, speaker.name))
     return {key: canonical for key, canonical in entries if counts[key] == 1 and key not in direct}
@@ -464,7 +397,7 @@ def _build_inverted_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str
     for speaker in speakers:
         parliament = speaker.parliament_number
         if ", " in speaker.name:
-            natural_stripped = _invert_to_natural(speaker.name)
+            natural_stripped = invert_to_natural(speaker.name)
             key = (_normalize_for_lookup(natural_stripped), parliament)
             inverted[key] = speaker.name
             surname = speaker.name.split(", ")[0]
@@ -491,14 +424,14 @@ def _build_inverted_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str
 def _build_wordset_lookup(speakers: list[Speaker]) -> dict[tuple[frozenset, int, int], str]:
     triples: list[tuple[str, str, int]] = []
     for speaker in speakers:
-        natural = _invert_to_natural(speaker.name)
+        natural = invert_to_natural(speaker.name)
         if natural:
             triples.append((natural, speaker.name, speaker.parliament_number))
         triples.append((speaker.name, speaker.name, speaker.parliament_number))
     counts: dict[tuple[frozenset, int, int], int] = {}
     entries: list[tuple[tuple[frozenset, int, int], str]] = []
     for display, canonical_name, parliament in triples:
-        words = _period_normalize(display).split()
+        words = period_normalize(display).split()
         key = (frozenset(words), len(words), parliament)
         counts[key] = counts.get(key, 0) + 1
         entries.append((key, canonical_name))
@@ -512,14 +445,14 @@ def _build_wordset_lookup(speakers: list[Speaker]) -> dict[tuple[frozenset, int,
 def _build_wordset_subset_lookup(speakers: list[Speaker]) -> dict[tuple[frozenset, int], str]:
     triples: list[tuple[str, str, int]] = []
     for speaker in speakers:
-        natural = _invert_to_natural(speaker.name)
+        natural = invert_to_natural(speaker.name)
         if natural:
             triples.append((natural, speaker.name, speaker.parliament_number))
         triples.append((speaker.name, speaker.name, speaker.parliament_number))
     counts: dict[tuple[frozenset, int], int] = {}
     entries: list[tuple[tuple[frozenset, int], str]] = []
     for display, canonical_name, parliament in triples:
-        words = _period_normalize(strip_title(display)).split()
+        words = period_normalize(strip_title(display)).split()
         if len(words) < _MIN_WORDSET_SUBSET_WORDS:
             continue
         words = [word for word in words if len(word) > 1]
@@ -536,14 +469,14 @@ def _build_wordset_subset_lookup(speakers: list[Speaker]) -> dict[tuple[frozense
 def _build_prefix_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str]:
     forms: list[tuple[str, str, int]] = []
     for speaker in speakers:
-        natural = _invert_to_natural(speaker.name)
+        natural = invert_to_natural(speaker.name)
         if natural:
             forms.append((natural, speaker.name, speaker.parliament_number))
         forms.append((speaker.name, speaker.name, speaker.parliament_number))
     prefix_counts: dict[tuple[str, int], int] = {}
     prefix_entries: list[tuple[tuple[str, int], str]] = []
     for display, canonical, parliament in forms:
-        words = _period_normalize(display).split()
+        words = period_normalize(display).split()
         for prefix_length in range(_MIN_PREFIX_WORD_COUNT, len(words)):
             joined_prefix = " ".join(words[:prefix_length])
             prefix_key = (joined_prefix, parliament)
@@ -560,8 +493,8 @@ def _build_surname_fallback_lookup(speakers: list[Speaker]) -> dict[tuple[str, i
     surname_counts: dict[tuple[str, int], int] = {}
     surname_entries: list[tuple[tuple[str, int], str]] = []
     for speaker in speakers:
-        natural = _invert_to_natural(speaker.name) or speaker.name
-        words = _period_normalize(natural).split()
+        natural = invert_to_natural(speaker.name) or speaker.name
+        words = period_normalize(natural).split()
         if not words:
             continue
         last_word = words[-1]
@@ -690,8 +623,8 @@ def _try_name_variant(
     lookups: SpeakerLookups,
     is_using_wordset: bool = True,
 ) -> Optional[str]:
-    normalized = _period_normalize(name)
-    bin_normalized = _period_normalize(_strip_bin(name))
+    normalized = period_normalize(name)
+    bin_normalized = period_normalize(strip_bin(name))
     canonical = (
         lookups.direct.get((normalized, parliament))
         or lookups.bin_free.get((bin_normalized, parliament))
@@ -703,7 +636,7 @@ def _try_name_variant(
         wordset_canonical = lookups.wordset.get((*_get_wordset_key(name), parliament))
         if wordset_canonical:
             return wordset_canonical
-        subset_words = [word for word in _period_normalize(name).split() if len(word) > 1]
+        subset_words = [word for word in period_normalize(name).split() if len(word) > 1]
         subset_canonical = lookups.wordset_subset.get((frozenset(subset_words), parliament))
         if subset_canonical:
             return subset_canonical
@@ -711,8 +644,8 @@ def _try_name_variant(
 
 
 def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) -> Optional[str]:
-    name = _OCR_FORM_TO_CORRECTED_NAME.get(_period_normalize(name), name)
-    canonical = _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get((_period_normalize(name), parliament))
+    name = _OCR_FORM_TO_CORRECTED_NAME.get(period_normalize(name), name)
+    canonical = _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get((period_normalize(name), parliament))
     if canonical:
         return canonical
     canonical = lookups.inverted.get((_normalize_for_lookup(name), parliament))
@@ -722,13 +655,13 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
     if canonical:
         return canonical
 
-    spelling_normalised_name = _spelling_normalize(name)
+    spelling_normalised_name = spelling_normalize(name)
     if spelling_normalised_name != name:
         canonical = _try_name_variant(spelling_normalised_name, parliament, lookups)
         if canonical:
             return canonical
 
-    name_without_haji = _strip_middle_haji(name)
+    name_without_haji = strip_middle_haji(name)
     if name_without_haji != name:
         canonical = _try_name_variant(name_without_haji, parliament, lookups, is_using_wordset=False)
         if canonical:
@@ -738,13 +671,13 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
     if camel_split_name != name:
         camel_split_stripped_name = strip_title(camel_split_name).strip()
         canonical = (
-            _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get((_period_normalize(camel_split_stripped_name), parliament))
+            _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get((period_normalize(camel_split_stripped_name), parliament))
             or _try_name_variant(camel_split_stripped_name, parliament, lookups)
         )
         if canonical:
             return canonical
 
-    normalised_words = _period_normalize(name).split()
+    normalised_words = period_normalize(name).split()
     if len(normalised_words) == 1:
         return lookups.surname_fallback.get((normalised_words[0], parliament))
     return None
