@@ -63,6 +63,31 @@ DATED_ROLE_TERMS: dict[str, list[tuple[date, date, str]]] = {
     ],
 }
 
+# Heads of state by date, for the bare strings printed in the Address itself. Day-level dates are
+# Wikipedia's, which cites NewspaperSG; no linked row falls within 30 days of a boundary
+# (plans/role-names-research.md). Resolved only by the report-context pass in speaker_links.py, so that
+# addenda and adjournment rows the parser mislabels "The President" stay unlinked.
+HEAD_OF_STATE_TERMS: dict[str, list[tuple[date, date, str]]] = {
+    "His Excellency the Governor": [
+        (date(1952, 4, 21), date(1955, 6, 1), "John Nicoll"),
+        (date(1955, 6, 2), date(1955, 6, 29), "William Goode"),
+        (date(1955, 6, 30), date(1957, 12, 8), "Robert Black"),
+        (date(1957, 12, 9), date(1959, 6, 2), "William Goode"),
+    ],
+    "His Excellency the Yang di-Pertuan Negara": [
+        (date(1959, 6, 3), date(1959, 12, 2), "William Goode"),
+        (date(1959, 12, 3), date(1965, 8, 8), "Yusof bin Ishak"),
+    ],
+    "The President": [
+        (date(1965, 8, 9), date(1970, 11, 22), "Yusof bin Ishak"),
+        (date(1971, 1, 2), date(1981, 5, 11), "Benjamin Henry Sheares"),
+        (date(1981, 10, 23), date(1985, 3, 27), "C.V. Devan Nair"),
+        (date(1985, 9, 2), date(1993, 8, 31), "Wee Kim Wee"),
+        (date(1993, 9, 1), date(1999, 8, 31), "Ong Teng Cheong"),
+        (date(1999, 9, 1), date(2011, 8, 31), "S R Nathan"),
+    ],
+}
+
 ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str] = {
     ("The Minister for Health", 11): "Khaw Boon Wan",
 }

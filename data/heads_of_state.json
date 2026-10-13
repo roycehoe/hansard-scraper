@@ -1,0 +1,19 @@
+[
+  {"name": "John Nicoll",            "parliament_number": 1,  "comments": "Governor 1952 to 1955"},
+  {"name": "Robert Black",           "parliament_number": 1,  "comments": "Governor 1955 to 1957"},
+  {"name": "William Goode",          "parliament_number": 1,  "comments": "Governor 1957 to 1959, Yang di-Pertuan Negara June to December 1959"},
+  {"name": "Yusof bin Ishak",        "parliament_number": 1,  "comments": "Yang di-Pertuan Negara 1959 to 1965, President 1965 to 1970"},
+  {"name": "Yusof bin Ishak",        "parliament_number": 2,  "comments": "Yang di-Pertuan Negara 1959 to 1965, President 1965 to 1970"},
+  {"name": "Benjamin Henry Sheares", "parliament_number": 2,  "comments": "President 1971 to 1981"},
+  {"name": "Benjamin Henry Sheares", "parliament_number": 3,  "comments": "President 1971 to 1981"},
+  {"name": "Benjamin Henry Sheares", "parliament_number": 4,  "comments": "President 1971 to 1981"},
+  {"name": "Benjamin Henry Sheares", "parliament_number": 5,  "comments": "President 1971 to 1981"},
+  {"name": "C.V. Devan Nair",        "parliament_number": 6,  "comments": "President 1981 to 1985"},
+  {"name": "Wee Kim Wee",            "parliament_number": 6,  "comments": "President 1985 to 1993"},
+  {"name": "Wee Kim Wee",            "parliament_number": 7,  "comments": "President 1985 to 1993"},
+  {"name": "Wee Kim Wee",            "parliament_number": 8,  "comments": "President 1985 to 1993"},
+  {"name": "Ong Teng Cheong",        "parliament_number": 9,  "comments": "President 1993 to 1999"},
+  {"name": "S R Nathan",             "parliament_number": 9,  "comments": "President 1999 to 2011"},
+  {"name": "S R Nathan",             "parliament_number": 10, "comments": "President 1999 to 2011"},
+  {"name": "S R Nathan",             "parliament_number": 11, "comments": "President 1999 to 2011"}
+]

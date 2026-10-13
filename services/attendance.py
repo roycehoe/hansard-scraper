@@ -291,6 +291,8 @@ _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
     # "Mrs C. V. Devan Nair" is Mrs Devan Nair, MP for Moulmein 1963 to 1968, printed with her husband's
     # initials; scoped to parliament 1 so C. V. Devan Nair's own rows (parliaments 4 to 6) stay his
     ("c v devan nair", 1): "Devan Nair, Mrs",
+    # "His Excellency the Governor (Sir William Goode, K.C.M.G.)": the post-nominals survive title stripping
+    ("william goode, k c m g", 1): "William Goode",
     # "G.E.N. Oehlers" is George E.N. Oehlers (Labour Front)
     ("g e n oehlers", 1): "George Oehlers",
     # "Rahamat" is a spelling variant of "Rahmat" (already in Speaker table)
