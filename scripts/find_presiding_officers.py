@@ -44,7 +44,7 @@ def main() -> None:
     for sitting in sittings:
         if not sitting.markdown_content:
             continue
-        parliament = infer_parliament(sitting)
+        parliament = infer_parliament(sitting.parlement_no, sitting.volume_no)
         if parliament is None:
             continue
 

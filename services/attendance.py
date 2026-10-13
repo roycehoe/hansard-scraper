@@ -350,10 +350,10 @@ def _get_wordset_key(name: str) -> tuple[frozenset, int]:
     return frozenset(words), len(words)
 
 
-def infer_parliament(sitting: Sitting) -> Optional[int]:
-    if sitting.parlement_no is not None:
-        return sitting.parlement_no
-    return VOLUME_TO_PARLIAMENT.get(sitting.volume_no)  # type: ignore[arg-type]
+def infer_parliament(parlement_no: Optional[int], volume_no: Optional[int]) -> Optional[int]:
+    if parlement_no is not None:
+        return parlement_no
+    return VOLUME_TO_PARLIAMENT.get(volume_no)  # type: ignore[arg-type]
 
 
 @dataclass
@@ -687,7 +687,7 @@ def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups) -> list[At
     if not sitting.markdown_content:
         return []
 
-    parliament = infer_parliament(sitting)
+    parliament = infer_parliament(sitting.parlement_no, sitting.volume_no)
     content = sitting.markdown_content
     records = []
 
