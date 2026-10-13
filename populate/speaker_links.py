@@ -306,13 +306,13 @@ def _write_in_batches(set_speaker_ids_bulk: Callable[[dict[int, int]], None], id
 
 
 # NOTE: a bare head-of-state string is the holder only in the Address itself; the same strings in addenda and adjournment reports are parser errors and stay unlinked.
-def _get_head_of_state_names(report: Report, rows: list[SpeechRow]) -> dict[int, str]:
-    if not report.title.upper().startswith(_ADDRESS_TITLES):
+def _get_head_of_state_names(title: str, sitting_date: datetime, rows: list[SpeechRow]) -> dict[int, str]:
+    if not title.upper().startswith(_ADDRESS_TITLES):
         return {}
     speech_id_to_name = {}
     for row in rows:
         if row.speaker in HEAD_OF_STATE_TERMS:
-            holder = _get_holder_on(HEAD_OF_STATE_TERMS[row.speaker], report.sitting_date)
+            holder = _get_holder_on(HEAD_OF_STATE_TERMS[row.speaker], sitting_date)
             if holder:
                 speech_id_to_name[row.id] = holder
     return speech_id_to_name
@@ -382,7 +382,7 @@ def _populate_role_context_links(
             unlinked = {row.id for row in rows if row.speaker_id is None}
             speech_id_to_name = chairman_names(report.markdown_content or "", rows)
             speech_id_to_name.update(carried_role_names(rows))
-            speech_id_to_name.update(_get_head_of_state_names(report, rows))
+            speech_id_to_name.update(_get_head_of_state_names(report.title, report.sitting_date, rows))
             for speech_id, name in speech_id_to_name.items():
                 if speech_id not in unlinked:
                     continue

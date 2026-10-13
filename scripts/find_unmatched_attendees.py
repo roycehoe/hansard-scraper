@@ -100,7 +100,7 @@ def find_unmatched(*, verbose: bool = False) -> dict[str, Counter]:
     for i, sitting in enumerate(sittings, 1):
         if verbose and i % 100 == 0:
             print(f"  {i}/{total} sittings processed…", file=sys.stderr)
-        parliament = infer_parliament(sitting)
+        parliament = infer_parliament(sitting.parlement_no, sitting.volume_no)
         if parliament is None:
             continue
         for rec in get_sitting_attendance(sitting, lookups):
