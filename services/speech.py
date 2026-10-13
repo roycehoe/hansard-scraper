@@ -145,7 +145,7 @@ _WHOLE_BOLD_LINE_RE = re.compile(r"^\*\*[^*].*\*\*$")
 
 def _extract_mps_speaking(markdown: str) -> list[str]:
     match = _MP_SPEAK_RE.search(markdown)
-    if not match:
+    if match is None:
         return []
     return [part.strip() for part in match.group(1).split(";") if part.strip().strip("* ")]
 
@@ -182,7 +182,7 @@ def _is_section_header_speaker(name: str) -> bool:
 
 def _extract_addenda_minister(markdown: str) -> Optional[str]:
     match = _ADDENDA_MINISTER_RE.search(markdown)
-    return match.group(1).strip() if match else None
+    return match.group(1).strip() if match is not None else None
 
 
 def _extract_body_attribution(markdown: str, report_type: str) -> Optional[str]:
@@ -199,7 +199,7 @@ def _extract_body_attribution(markdown: str, report_type: str) -> Optional[str]:
     """
     if report_type == "atbp":
         match = _ATBP_SPEAKER_RE.search(markdown)
-        return match.group(1).strip() if match else None
+        return match.group(1).strip() if match is not None else None
 
     if report_type == "president-address":
         minister = _extract_addenda_minister(markdown)
@@ -212,11 +212,11 @@ def _extract_body_attribution(markdown: str, report_type: str) -> Optional[str]:
 
     if report_type == "motion":
         match = _ADJOURNMENT_MOVER_RE.search(markdown)
-        return match.group(1).strip() if match else None
+        return match.group(1).strip() if match is not None else None
 
     if report_type == "bill":
         match = _BILL_PRESENTER_RE.search(markdown)
-        return match.group(1).strip() if match else None
+        return match.group(1).strip() if match is not None else None
 
     return None
 
@@ -229,7 +229,7 @@ def _extract_markdown_title(markdown_content: str) -> Optional[str]:
     """Extract the Title field from the markdown header row, if present."""
     for line in markdown_content.splitlines()[:12]:
         match = re.search(r"Title:\|\s*([^|\n]+)", line, re.IGNORECASE)
-        if match:
+        if match is not None:
             candidate = match.group(1).strip()
             if candidate:
                 return candidate
@@ -348,7 +348,7 @@ def _merge_wrapped_bold_lines(lines: list[str]) -> list[str]:
     while index < len(lines):
         line = lines[index]
         label = re.match(r"^\*\*([^*]+)\*\*\s*$", line.strip())
-        if label and not label.group(1).rstrip().endswith(":") and label.group(1).count("(") > label.group(1).count(")"):
+        if label is not None and not label.group(1).rstrip().endswith(":") and label.group(1).count("(") > label.group(1).count(")"):
             following = index + 1
             while following < len(lines) and not lines[following].strip():
                 following += 1
@@ -376,7 +376,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             if re.match(r"^#{1,6}(\s|$)", parsed_line):
                 continue  # skip markdown section headings (e.g. "#### [Mr SPEAKER in the Chair]")
             label_match = _PLAIN_ROLE_LABEL_RE.match(parsed_line)
-            if label_match:
+            if label_match is not None:
                 current_speaker = _LANGUAGE_NOTE_RE.sub("", label_match.group(1)).strip()
                 is_in_preamble = False
                 if label_match.group(2):
@@ -393,7 +393,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             continue
 
         bold_match = re.search(r"((?:\*\*[^*]+?\*\*\s*)+)", parsed_line)
-        if bold_match:
+        if bold_match is not None:
             transcript = re.sub(r"^:\s*", "", parsed_line.split(bold_match.group(0))[-1].strip())
             if transcript.startswith("|"):
                 continue  # table row header ("**Header** | ...") — bold is a column label, not a speaker
@@ -479,7 +479,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 current_speaker = None
 
     for speech in speeches:
-        if match := _LANGUAGE_NOTE_RE.match(speech.transcript):
+        if (match := _LANGUAGE_NOTE_RE.match(speech.transcript)) is not None:
             speech.transcript = speech.transcript[match.end() :]
     return [speech for speech in speeches if speech.transcript.strip() != ""]
 
