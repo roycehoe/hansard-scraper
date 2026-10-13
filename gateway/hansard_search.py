@@ -74,7 +74,7 @@ def _get_page_with_retries(start_index: int, from_date: date, to_date: date) -> 
             time.sleep(_BASE_DELAY * (2 ** attempt))
 
 
-def _months(first: date, last: date) -> Iterator[tuple[date, date]]:
+def _get_months(first: date, last: date) -> Iterator[tuple[date, date]]:
     year, month = first.year, first.month
     while (year, month) <= (last.year, last.month):
         yield (
@@ -85,35 +85,34 @@ def _months(first: date, last: date) -> Iterator[tuple[date, date]]:
 
 
 def get_window_hansard_search_results(from_date: date, to_date: date) -> list[dict]:
-    """Hits with equal sort keys come back in a different order on each request, so one
-    pass over the pages can repeat some hits and skip others. Re-request the pages until
-    the distinct report ids reach the engine total, then give up with a warning."""
+    # NOTE: hits with equal sort keys come back in a different order on each request, so one pass can repeat
+    # some hits and skip others. Pages are re-requested until the distinct report ids reach the engine total.
     first_page = _get_page_with_retries(0, from_date, to_date)
     if not isinstance(first_page, list) or not first_page:
         return []
     total = int(first_page[0]["maxResult"])
-    hit_by_report_id = {hit["reportId"]: hit for hit in first_page}
+    report_id_to_hit = {hit["reportId"]: hit for hit in first_page}
     for _ in range(_MAX_PASSES):
         for start_index in range(0, total, settings.search_page_size):
             page = _get_page_with_retries(start_index, from_date, to_date)
             if isinstance(page, list):
                 for hit in page:
-                    hit_by_report_id.setdefault(hit["reportId"], hit)
-        if len(hit_by_report_id) >= total:
+                    report_id_to_hit.setdefault(hit["reportId"], hit)
+        if len(report_id_to_hit) >= total:
             break
-    if len(hit_by_report_id) < total:
+    if len(report_id_to_hit) < total:
         logger.warning(
             f"Window {from_date} to {to_date}: engine total {total}, "
-            f"fetched {len(hit_by_report_id)} distinct, short by {total - len(hit_by_report_id)}"
+            f"fetched {len(report_id_to_hit)} distinct, short by {total - len(report_id_to_hit)}"
         )
-    return list(hit_by_report_id.values())
+    return list(report_id_to_hit.values())
 
 
 def get_all_hansard_search_results() -> list[dict]:
     all_hansard_search_results = []
-    for from_date, to_date in _months(settings.search_from_date, settings.search_to_date):
-        window_results = get_window_hansard_search_results(from_date, to_date)
-        all_hansard_search_results.extend(window_results)
-        logger.info(f"Fetched {from_date:%Y-%m}: {len(window_results)} distinct hits")
+    for from_date, to_date in _get_months(settings.search_from_date, settings.search_to_date):
+        window_hansard_search_results = get_window_hansard_search_results(from_date, to_date)
+        all_hansard_search_results.extend(window_hansard_search_results)
+        logger.info(f"Fetched {from_date:%Y-%m}: {len(window_hansard_search_results)} distinct hits")
     logger.info(f"Search done: {len(all_hansard_search_results)} distinct hits")
     return all_hansard_search_results
