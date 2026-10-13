@@ -1,0 +1,38 @@
+[
+  {
+    "person_name": null,
+    "members": [
+      {"name": "Terence Ho Wee San", "parliament_number": 13},
+      {"name": "Terence Ho", "parliament_number": 15}
+    ],
+    "decision": "distinct",
+    "source": "Ho Wee San, SCO executive director, NMP 2018 (https://news.smu.edu.sg/sites/news.smu.edu.sg/files/newsroom-pdf/20180917-CNA-Spore-Para.pdf); Ho Wai Luen Terence, IAL, civil servant 2002 to 2020, NMP 2026 (https://www.ial.edu.sg/about-ial/leadership/associate-professor-(practice)-terence-ho/); plans/person-identity-research.md section 1"
+  },
+  {
+    "person_name": null,
+    "members": [
+      {"name": "Toh Keng Kiat, Dr", "parliament_number": 8},
+      {"name": "Toh See Kiat, Dr", "parliament_number": 9}
+    ],
+    "decision": "distinct",
+    "source": "different Chinese names: Toh Keng Kiat 苏庆杰, NMP 1992 to 1994 (https://en.wikipedia.org/wiki/8th_Parliament_of_Singapore); Toh See Kiat 杜世杰, Aljunied GRC, PAP (https://en.wikipedia.org/wiki/9th_Parliament_of_Singapore); plans/person-identity-research.md section 2"
+  },
+  {
+    "person_name": null,
+    "members": [
+      {"name": "Devan Nair, Mrs", "parliament_number": 1},
+      {"name": "C.V. Devan Nair", "parliament_number": 4}
+    ],
+    "decision": "distinct",
+    "source": "Mrs Devan Nair (Avadai Dhanam Lakshimi) was MP for Moulmein 1963 to 1968; C. V. Devan Nair was MP for Anson from 1979 and President 1981 to 1985 (https://en.wikipedia.org/wiki/Devan_Nair); plans/person-identity-research.md sections 3 to 5"
+  },
+  {
+    "person_name": "William Goode",
+    "members": [
+      {"name": "Goode, W.A.C.", "parliament_number": 1},
+      {"name": "William Goode", "parliament_number": 1}
+    ],
+    "decision": "merge",
+    "source": "Sir William Allmond Codrington Goode, Chief Secretary 1953 to 1957, Governor 1957 to 1959, Yang di-Pertuan Negara 1959 (https://en.wikipedia.org/wiki/William_Goode_(colonial_administrator))"
+  }
+]
