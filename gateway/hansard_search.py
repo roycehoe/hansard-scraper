@@ -50,7 +50,9 @@ def get_hansard_search_results(
             return {"errorCode": 0, "description": "No Results Found"}
         response.raise_for_status()
         return response.json()
-    except (requests.exceptions.RequestException, ValueError) as error:
+    except requests.exceptions.RequestException as error:
+        raise HansardGatewayError(f"Search request failed for page {page}") from error
+    except ValueError as error:
         raise HansardGatewayError(f"Search request failed for page {page}") from error
 
 
