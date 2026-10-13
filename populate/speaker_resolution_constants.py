@@ -1,10 +1,6 @@
 from datetime import date
 
-# Office holders by date: (first day, last day, name). Names resolve through the
-# Speaker lookups in the row's parliament, with the colonial fallback for parliament 0.
-# A bare role string links only when exactly one holder was in office that day.
-# Sources: parliament.gov.sg Speaker page (names and years) and the Wikipedia list of
-# Speakers and Deputy Speakers (exact dates); see docs/adr/0002.
+# Sources: parliament.gov.sg Speaker page, Wikipedia dates
 SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(1955, 4, 22), date(1963, 9, 3), "George Oehlers"),
     (date(1963, 10, 22), date(1964, 10, 30), "E.W. Barker"),
@@ -18,8 +14,8 @@ SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(2017, 9, 11), date(2023, 7, 17), "Tan Chuan-Jin"),
 )
 
-# Two Deputy Speakers served at once for most of Parliaments 7, 10, 11 and 12, so a
-# bare "Mr Deputy Speaker" on those dates stays unlinked unless the string names the person.
+# NOTE: two Deputy Speakers served at once for most of Parliaments 7, 10, 11 and 12, so a bare "Mr Deputy Speaker" on those dates stays unlinked unless the string names the person.
+# Sources: same as SPEAKER_TERMS
 DEPUTY_SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(1955, 4, 26), date(1959, 3, 31), "Lim, R.C.H."),
     (date(1959, 7, 15), date(1961, 9, 24), "G. Kandasamy"),
@@ -45,12 +41,10 @@ DEPUTY_SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(2011, 10, 17), date(2015, 8, 24), "Charles Chong"),
 )
 
-# Deputy Speakers Hansard addresses as "Mdm"; the parliament.gov.sg list for 1955 to 2011 names no other woman.
+# NOTE: Hansard addresses these Deputy Speakers as "Mdm"; the parliament.gov.sg list for 1955 to 2011 names no other woman.
 DEPUTY_SPEAKER_WOMEN: frozenset[str] = frozenset({"Lim Hwee Hua", "Indranee Rajah"})
 
-# Role-only strings whose holder changed mid-parliament, by date. Sources disagree on
-# whether Lim Yew Hock took over on 7 or 8 June 1956, so that sitting stays unlinked.
-# Prime Minister handovers (28 Nov 1990, 12 Aug 2004) fell on days without a sitting.
+# NOTE: sources disagree on whether Lim Yew Hock took over on 7 or 8 June 1956, so that sitting stays unlinked. Prime Minister handovers fell on days without a sitting.
 DATED_ROLE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
     "The Chief Minister": (
         (date(1955, 4, 6), date(1956, 6, 6), "David Marshall"),
@@ -63,10 +57,7 @@ DATED_ROLE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
     ),
 }
 
-# Heads of state by date, for the bare strings printed in the Address itself. Day-level dates are
-# Wikipedia's, which cites NewspaperSG; no linked row falls within 30 days of a boundary
-# (plans/role-names-research.md). Resolved only by the report-context pass in speaker_links.py, so that
-# addenda and adjournment rows the parser mislabels "The President" stay unlinked.
+# Sources: Wikipedia day-level dates, citing NewspaperSG
 HEAD_OF_STATE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
     "His Excellency the Governor": (
         (date(1952, 4, 21), date(1955, 6, 1), "John Nicoll"),
