@@ -102,13 +102,30 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"(?:Amendment|Notice of motion|Copies of [^.]{0,80}) handed in(?: to the Clerk| and distributed to hon\. Members)?\.?$",
     r"No Member rising",
     r"\*\s*The same amendment",  # editorial footnote under an amendment list
-    r"The House divided",
+    r"The (?:House|Assembly|Council|Committee) divided",
+    r"Division taken",
+    r"The following amendments? stood on the Order Paper",
 )
 _PROCEDURAL_LINE_RE = re.compile(r"^[\s*_]*(?:" + "|".join(_PROCEDURAL_LINE_ANCHORS) + ")")
 
-# Procedural lines that open a list (the resolution text and the names after a bare "Resolved,"). The
-# lines after one are not the preceding member's, so current_speaker is reset until the next label.
-_LIST_OPENER_RE = re.compile(r"^[\s*_]*Resolved,?[\s*_]*$")
+# Procedural lines that open a list: the resolution text and names after a bare "Resolved,", division
+# names, Order Paper amendments. The lines after one are not the preceding member's, so current_speaker
+# is reset until the next label.
+_LIST_OPENER_RE = re.compile(
+    r"^[\s*_]*(?:Resolved,?[\s*_]*$|The (?:House|Assembly|Council|Committee) divided|Division taken"
+    r"|The following amendments? stood on the Order Paper)"
+)
+
+# A role label with a parenthesised name printed without bold at the start of a plain line (the markdown lost
+# the bold marks): "The Minister for Education (Mr X) (for the Minister for Y): Sir, ...". A bare name label
+# ("Mr Tan: ...") is not taken: too often it is a line quoted inside another member's speech.
+_PLAIN_HONORIFIC = r"(?:Mr|Mrs|Ms|Miss|Mdm|Madam|Dr|Prof|Assoc\.? Prof|Inche|Encik|Tuan|Haji|Che|Er|BG|RAdm|LG|MG|COL)\.?"
+_PLAIN_ROLE_WORD = r"(?:[A-Z][A-Za-z'’.,&-]*|of|for|the|and|to)"
+_PLAIN_ROLE_LABEL_RE = re.compile(
+    r"^(The (?=[^:()]*\b(?:Minister|Secretary|Chairman|President|Leader|Attorney|Speaker)\b)"
+    + _PLAIN_ROLE_WORD + r"(?: " + _PLAIN_ROLE_WORD + r"){0,15} \(" + _PLAIN_HONORIFIC + r" [^()]{2,50}\)"
+    r"(?:\s*\([^()]{1,100}\))*)\s*:\s*(.*)$"
+)
 
 # Bold headings that open a new section of business. The text after one is never the preceding member's,
 # so skipping the heading resets current_speaker. Kept to an explicit list: other headings (budget and
@@ -340,12 +357,19 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
         if _is_artifact_line(parsed_line):
             continue
         if "**" not in parsed_line:
-            if in_preamble:  # skip text before the first real speaker
-                continue
             if re.match(r"^\d{1,2}\.\d{2}\s*[ap]\.?m\.?$", parsed_line, re.IGNORECASE):
                 continue  # skip procedural time markers (e.g. "4.26 pm", "3.30 p.m.")
             if re.match(r"^#{1,6}(\s|$)", parsed_line):
                 continue  # skip markdown section headings (e.g. "#### [Mr SPEAKER in the Chair]")
+            label_match = _PLAIN_ROLE_LABEL_RE.match(parsed_line)
+            if label_match:
+                current_speaker = _LANGUAGE_NOTE_RE.sub("", label_match.group(1)).strip()
+                in_preamble = False
+                if label_match.group(2):
+                    speeches.append(ParsedSpeech(speaker=current_speaker, transcript=label_match.group(2)))
+                continue
+            if in_preamble:  # skip text before the first real speaker
+                continue
             speeches.append(ParsedSpeech(
                 speaker=None if _PROCEDURAL_LINE_RE.match(parsed_line) else current_speaker,
                 transcript=parsed_line,
