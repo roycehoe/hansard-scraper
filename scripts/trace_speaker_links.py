@@ -42,6 +42,8 @@ from services.attendance import build_speaker_lookups
 from services.role_context import BARE_DEPUTY_RE, CARRIED_ROLES, CHAIRMAN_RE
 
 _MAX_PARLIAMENT = 11
+_STALE_EXIT_CODE = 1
+_CLEAN_EXIT_CODE = 0
 
 Key = tuple[str, int, Optional[datetime]]
 
@@ -112,7 +114,7 @@ def main() -> None:
             f"{bad_rows:>6}  {speaker!r}  P{parliament_number}  {sitting_date.date() if sitting_date is not None else '-'}  "
             f"stored [{stored_text}]  resolved {resolved} {speaker_id_to_name.get(resolved)!r}"
         )
-    sys.exit(1 if stale_rows else 0)
+    sys.exit(_STALE_EXIT_CODE if stale_rows else _CLEAN_EXIT_CODE)
 
 
 if __name__ == "__main__":

@@ -39,6 +39,12 @@ from utils.names import (
 )
 
 _SAMPLE_PATH = Path(__file__).parent.parent / "docs" / "speech-speaker" / "sample.json"
+_COLONIAL_PARLIAMENT_NUMBER = 0
+_CHIEF_MINISTER_PARLIAMENTS = (0, 1, 2, 3)
+_EARLY_CHIEF_MINISTER = "David Marshall"
+_LATER_CHIEF_MINISTER = "Lim Yew Hock"
+_UNKNOWN_PARLIAMENT_NUMBER = 0
+_SEPARATOR_WIDTH = 100
 
 
 def _get_presiding_officer_role(raw: str) -> Optional[str]:
@@ -56,7 +62,7 @@ def _resolve(
     name_and_parliament_to_speaker_id: dict[tuple[str, int], int],
 ) -> tuple[Optional[str], int]:
     canonical = resolve_canonical_name(name, parliament, lookups)
-    if canonical is not None or parliament != 0:
+    if canonical is not None or parliament != _COLONIAL_PARLIAMENT_NUMBER:
         return canonical, parliament
     for fallback in COLONIAL_PARLIAMENT_FALLBACKS:
         candidate = resolve_canonical_name(name, fallback, lookups)
@@ -90,7 +96,7 @@ def _preprocess(speaker: str) -> Optional[str]:
 
 
 def _get_role_key(raw: str, parliament: int) -> Optional[tuple[str, int]]:
-    if parliament != 0:
+    if parliament != _COLONIAL_PARLIAMENT_NUMBER:
         return (raw, parliament)
     for fallback_parliament in COLONIAL_PARLIAMENT_FALLBACKS:
         if (raw, fallback_parliament) in ROLE_ONLY_SPEAKERS:
@@ -118,7 +124,7 @@ def main() -> None:
 
     for speech_id in regression_ids:
         if speech_id not in speech_id_to_row:
-            failed.append((speech_id, "<missing>", 0, None))
+            failed.append((speech_id, "<missing>", _UNKNOWN_PARLIAMENT_NUMBER, None))
             continue
         row = speech_id_to_row[speech_id]
         speaker, parliament, sitting_date = row.speaker, row.parliament_number, row.sitting_date
@@ -129,7 +135,7 @@ def main() -> None:
         raw = speaker.rstrip(":").strip()
         presiding_officer_role = _get_presiding_officer_role(raw)
         if presiding_officer_role is not None:
-            presiding_officer_parliament = parliament if parliament != 0 else next(
+            presiding_officer_parliament = parliament if parliament != _COLONIAL_PARLIAMENT_NUMBER else next(
                 (fallback_parliament for fallback_parliament in COLONIAL_PARLIAMENT_FALLBACKS if (presiding_officer_role, fallback_parliament) in PRESIDING_OFFICERS),
                 parliament,
             )
@@ -146,13 +152,13 @@ def main() -> None:
             continue
 
         # Chief Minister (colonial era): date-based dispatch between Marshall and Lim.
-        if raw == "The Chief Minister" and parliament in (0, 1, 2, 3):
+        if raw == "The Chief Minister" and parliament in _CHIEF_MINISTER_PARLIAMENTS:
             chief_minister_name = (
-                "David Marshall"
+                _EARLY_CHIEF_MINISTER
                 if sitting_date is not None and sitting_date < CHIEF_MINISTER_CUTOFF
-                else "Lim Yew Hock"
+                else _LATER_CHIEF_MINISTER
             )
-            chief_minister_canonical, chief_minister_parliament = _resolve(chief_minister_name, 0, lookups, name_and_parliament_to_speaker_id)
+            chief_minister_canonical, chief_minister_parliament = _resolve(chief_minister_name, _COLONIAL_PARLIAMENT_NUMBER, lookups, name_and_parliament_to_speaker_id)
             chief_minister_speaker_id = name_and_parliament_to_speaker_id.get((chief_minister_canonical, chief_minister_parliament)) if chief_minister_canonical is not None else None
             if chief_minister_speaker_id is not None:
                 passed += 1
@@ -191,7 +197,7 @@ def main() -> None:
 
     if failed:
         print(f"{'ID':>8}  {'parl':>4}  {'speaker':<50}  {'canonical'}")
-        print("-" * 100)
+        print("-" * _SEPARATOR_WIDTH)
         for speech_id, speaker, parliament, canonical in failed:
             print(f"{speech_id:>8}  {parliament:>4}  {speaker:<50}  {canonical or '<unresolved>'}")
     else:

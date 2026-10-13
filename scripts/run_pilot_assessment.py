@@ -37,6 +37,13 @@ from utils.names import (
 )
 
 _SAMPLE_PATH = Path(__file__).parent.parent / "docs" / "speech-speaker" / "sample.json"
+_COLONIAL_PARLIAMENT_NUMBER = 0
+_CHIEF_MINISTER_PARLIAMENTS = (0, 1, 2, 3)
+_EARLY_CHIEF_MINISTER = "David Marshall"
+_LATER_CHIEF_MINISTER = "Lim Yew Hock"
+_PERCENT = 100
+_TOP_UNMATCHED_COUNT = 20
+_SEPARATOR_WIDTH = 50
 
 
 def _has_title(match: re.Match) -> bool:
@@ -78,7 +85,7 @@ def _resolve(
     name_and_parliament_to_speaker_id: dict[tuple[str, int], int],
 ) -> tuple[Optional[str], int]:
     canonical = resolve_canonical_name(name, parliament, lookups)
-    if canonical is not None or parliament != 0:
+    if canonical is not None or parliament != _COLONIAL_PARLIAMENT_NUMBER:
         return canonical, parliament
     for fallback in COLONIAL_PARLIAMENT_FALLBACKS:
         candidate = resolve_canonical_name(name, fallback, lookups)
@@ -88,7 +95,7 @@ def _resolve(
 
 
 def _get_role_key(raw: str, parliament: int) -> Optional[tuple[str, int]]:
-    if parliament != 0:
+    if parliament != _COLONIAL_PARLIAMENT_NUMBER:
         return (raw, parliament)
     for fallback_parliament in COLONIAL_PARLIAMENT_FALLBACKS:
         if (raw, fallback_parliament) in ROLE_ONLY_SPEAKERS:
@@ -123,12 +130,12 @@ def main() -> None:
         # Derive report_type from rows — need it for stats
         # We only have (speaker, parliament) here; get report_type via a separate lookup
         # Fall back to grouping by parliament bucket instead
-        bucket = "colonial(parl=0)" if parliament == 0 else f"parl={parliament}"
+        bucket = "colonial(parl=0)" if parliament == _COLONIAL_PARLIAMENT_NUMBER else f"parl={parliament}"
 
         raw = speaker.rstrip(":").strip()
         presiding_officer_role = _get_presiding_officer_role(raw)
         if presiding_officer_role is not None:
-            presiding_officer_parliament = parliament if parliament != 0 else next(
+            presiding_officer_parliament = parliament if parliament != _COLONIAL_PARLIAMENT_NUMBER else next(
                 (fallback_parliament for fallback_parliament in COLONIAL_PARLIAMENT_FALLBACKS if (presiding_officer_role, fallback_parliament) in PRESIDING_OFFICERS),
                 parliament,
             )
@@ -146,13 +153,13 @@ def main() -> None:
             continue
 
         # Chief Minister (colonial era): date-based dispatch between Marshall and Lim.
-        if raw == "The Chief Minister" and parliament in (0, 1, 2, 3):
+        if raw == "The Chief Minister" and parliament in _CHIEF_MINISTER_PARLIAMENTS:
             chief_minister_name = (
-                "David Marshall"
+                _EARLY_CHIEF_MINISTER
                 if sitting_date is not None and sitting_date < CHIEF_MINISTER_CUTOFF
-                else "Lim Yew Hock"
+                else _LATER_CHIEF_MINISTER
             )
-            chief_minister_canonical, chief_minister_parliament = _resolve(chief_minister_name, 0, lookups, name_and_parliament_to_speaker_id)
+            chief_minister_canonical, chief_minister_parliament = _resolve(chief_minister_name, _COLONIAL_PARLIAMENT_NUMBER, lookups, name_and_parliament_to_speaker_id)
             chief_minister_speaker_id = name_and_parliament_to_speaker_id.get((chief_minister_canonical, chief_minister_parliament)) if chief_minister_canonical is not None else None
             bucket_to_stats[bucket]["total"] += 1
             if chief_minister_speaker_id is not None:
@@ -191,17 +198,17 @@ def main() -> None:
 
     total = sum(stats["total"] for stats in bucket_to_stats.values())
     matched = sum(stats["matched"] for stats in bucket_to_stats.values())
-    print(f"\nPilot ({len(pilot_ids)} IDs): {matched}/{total} = {matched/total*100:.1f}%\n")
+    print(f"\nPilot ({len(pilot_ids)} IDs): {matched}/{total} = {matched/total*_PERCENT:.1f}%\n")
     print(f"{'Group':<25} {'Matched':>8} {'Total':>7} {'Rate':>7}")
-    print("-" * 50)
+    print("-" * _SEPARATOR_WIDTH)
     for bucket, stats in sorted(bucket_to_stats.items()):
         matched_count, total_count = stats["matched"], stats["total"]
-        rate = matched_count / total_count * 100 if total_count else 0.0
+        rate = matched_count / total_count * _PERCENT if total_count else 0.0
         print(f"{bucket:<25} {matched_count:>8} {total_count:>7} {rate:>6.1f}%")
 
     print(f"\nTop unmatched speaker strings ({len(unmatched)} total):")
     from collections import Counter
-    top = Counter(unmatched_speaker for unmatched_speaker, _, _ in unmatched).most_common(20)
+    top = Counter(unmatched_speaker for unmatched_speaker, _, _ in unmatched).most_common(_TOP_UNMATCHED_COUNT)
     for speaker, count in top:
         print(f"  {count:>3}x  {speaker!r}")
 
