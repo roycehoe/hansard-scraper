@@ -3,6 +3,19 @@ import re
 import html2text
 
 _MAX_ADJOURNMENT_CONTINUATIONS = 6
+_BOLD_MARKER_LENGTH = 2
+_COLUMN_MARKER_PATTERN = r"Column(?:\s+No)?\s*:\s*\d+"
+_PAGE_TEXT_PATTERN = r"Page:\s*\d+"
+_PAGE_BREAK_ARTIFACT_PATTERN = r"   \n  \n\*\*\*\*  \n  \n"
+_BOLD_ONLY_LINE_PATTERN = r"\*\*[^\n*].*\*\*"
+_CONCATENATED_PART_PATTERN = r"\bPART([IVX]+)OF\b"
+_CONCATENATED_VOLUME_PATTERN = r"\bVOLUME(\d+)\b"
+_TABLE_SEPARATOR_LINE_PATTERN = r"-{3}\s*"
+_ASTERISK_ONLY_LINE_PATTERN = r"\*+\s*"
+_LEADING_EMPTY_BOLD_PATTERN = r"^(\*{4})+"
+_TRAILING_EMPTY_BOLD_PATTERN = r"(\*{4})+$"
+_ADJOURNMENT_LINE_PATTERN = r"Adjourned accordingly at"
+_BLOCK_START_PATTERN = r"^(\*\*|#{1,6}|\* \* \*)"
 
 
 def _strip_nbsp(html: str) -> str:
@@ -10,17 +23,15 @@ def _strip_nbsp(html: str) -> str:
 
 
 def _remove_column_markers(html: str) -> str:
-    return re.sub(r"Column(?:\s+No)?\s*:\s*\d+", "", html)
+    return re.sub(_COLUMN_MARKER_PATTERN, "", html)
 
 
 def _remove_page_text(html: str) -> str:
-    page_text_pattern = r"Page:\s*\d+"
-    return re.sub(page_text_pattern, "", html)
+    return re.sub(_PAGE_TEXT_PATTERN, "", html)
 
 
 def _strip_page_break_artifacts(markdown: str) -> str:
-    page_text_pattern = r"   \n  \n\*\*\*\*  \n  \n"
-    return re.sub(page_text_pattern, " ", markdown)
+    return re.sub(_PAGE_BREAK_ARTIFACT_PATTERN, " ", markdown)
 
 
 def _remove_empty_lines(markdown: str) -> str:
@@ -31,8 +42,8 @@ def _merge_consecutive_bold_only_lines(markdown: str) -> str:
     lines = []
     pending_bold_lines = []
     for line in markdown.splitlines():
-        if re.fullmatch(r"\*\*[^\n*].*\*\*", line.strip()):
-            pending_bold_lines.append(line.strip()[2:-2])  # strip ** … **
+        if re.fullmatch(_BOLD_ONLY_LINE_PATTERN, line.strip()):
+            pending_bold_lines.append(line.strip()[_BOLD_MARKER_LENGTH:-_BOLD_MARKER_LENGTH])  # strip ** … **
             continue
         if pending_bold_lines:
             lines.append(f"**{' '.join(pending_bold_lines)}**")
@@ -64,8 +75,8 @@ def get_cleaned_report_markdown(html: str) -> str:
 def _fix_sitting_concat_headers(html: str) -> str:
     # Modern (vol 79+) HTML stores "PARTIOF SECOND SESSION" and "VOLUME79" in span text
     # without spaces. Fix before passing to html2text.
-    html = re.sub(r"\bPART([IVX]+)OF\b", r"PART \1 OF", html)
-    return re.sub(r"\bVOLUME(\d+)\b", r"VOLUME \1", html)
+    html = re.sub(_CONCATENATED_PART_PATTERN, r"PART \1 OF", html)
+    return re.sub(_CONCATENATED_VOLUME_PATTERN, r"VOLUME \1", html)
 
 
 def _remove_sitting_orphan_bold_markers(markdown: str) -> str:
@@ -95,7 +106,7 @@ def _fix_sitting_split_bold(markdown: str) -> str:
         # Pattern 1: starts with **, has content, doesn't close with **, next line is **
         if (stripped.startswith("**")
                 and not stripped.endswith("**")
-                and len(stripped) > 2
+                and len(stripped) > _BOLD_MARKER_LENGTH
                 and line_index + 1 < len(lines)
                 and lines[line_index + 1].strip() == "**"):
             fixed_lines.append(stripped + "**")
@@ -120,7 +131,7 @@ def _remove_sitting_table_separators(markdown: str) -> str:
     # html2text renders <hr> as "* * *", so standalone "---" lines are always 1-column table artefacts.
     return "\n".join(
         line for line in markdown.splitlines()
-        if line.strip() != "---|---" and not re.fullmatch(r"-{3}\s*", line)
+        if line.strip() != "---|---" and not re.fullmatch(_TABLE_SEPARATOR_LINE_PATTERN, line)
     )
 
 
@@ -132,11 +143,11 @@ def _remove_sitting_empty_bold(markdown: str) -> str:
     cleaned_lines = []
     for line in markdown.splitlines():
         # Drop lines that are entirely asterisks (e.g. ****, ********, etc.)
-        if re.fullmatch(r'\*+\s*', line):
+        if re.fullmatch(_ASTERISK_ONLY_LINE_PATTERN, line):
             continue
         # Strip all leading/trailing **** empty-bold marker groups from content lines
-        line = re.sub(r'^(\*{4})+', '', line)
-        line = re.sub(r'(\*{4})+$', '', line)
+        line = re.sub(_LEADING_EMPTY_BOLD_PATTERN, "", line)
+        line = re.sub(_TRAILING_EMPTY_BOLD_PATTERN, "", line)
         cleaned_lines.append(line)
     return "\n".join(cleaned_lines)
 
@@ -149,14 +160,14 @@ def _merge_sitting_adjournment_lines(markdown: str) -> str:
     line_index = 0
     while line_index < len(lines):
         line = lines[line_index]
-        if re.search(r"Adjourned accordingly at", line, re.IGNORECASE):
+        if re.search(_ADJOURNMENT_LINE_PATTERN, line, re.IGNORECASE):
             merges = 0
             while (
                 not line.rstrip().endswith(".")
                 and not line.rstrip().endswith("._")
                 and merges < _MAX_ADJOURNMENT_CONTINUATIONS
                 and line_index + 1 < len(lines)
-                and not re.match(r"^(\*\*|#{1,6}|\* \* \*)", lines[line_index + 1])
+                and not re.match(_BLOCK_START_PATTERN, lines[line_index + 1])
             ):
                 line_index += 1
                 merges += 1
