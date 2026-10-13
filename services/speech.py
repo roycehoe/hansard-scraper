@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
+from enums import ReportType
 from utils.text import fix_mojibake
 
 
@@ -193,11 +194,11 @@ def _extract_addenda_minister(markdown: str) -> Optional[str]:
 
 
 def _extract_body_attribution(markdown: str, report_type: str) -> Optional[str]:
-    if report_type == "atbp":
+    if report_type == ReportType.ATBP:
         match = _ATBP_SPEAKER_RE.search(markdown)
         return match.group(1).strip() if match is not None else None
 
-    if report_type == "president-address":
+    if report_type == ReportType.PRESIDENT_ADDRESS:
         minister = _extract_addenda_minister(markdown)
         if minister:
             return minister
@@ -205,11 +206,11 @@ def _extract_body_attribution(markdown: str, report_type: str) -> Optional[str]:
             return "The President"
         return None
 
-    if report_type == "motion":
+    if report_type == ReportType.MOTION:
         match = _ADJOURNMENT_MOVER_RE.search(markdown)
         return match.group(1).strip() if match is not None else None
 
-    if report_type == "bill":
+    if report_type == ReportType.BILL:
         match = _BILL_PRESENTER_RE.search(markdown)
         return match.group(1).strip() if match is not None else None
 
@@ -385,8 +386,8 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             new_speaker = _QUESTION_NUMBER_PREFIX_RE.sub("", new_speaker)
             new_speaker = _UNSPACED_HONORIFIC_RE.sub(r"\1 \2", new_speaker)
             # NOTE: A bold drop cap, or in motions a bold line opening with a quote mark, continues the current speaker; the whole line is speech.
-            is_drop_cap = bool(_DROP_CAP_RE.fullmatch(new_speaker)) and new_speaker not in ("Mr", "Er", "Ms", "Dr")
-            if is_drop_cap or (report_type == "motion" and new_speaker[:1] in _OPENING_QUOTE_MARKS):
+            is_drop_cap = bool(_DROP_CAP_RE.fullmatch(new_speaker)) and new_speaker != "Mr" and new_speaker != "Er" and new_speaker != "Ms" and new_speaker != "Dr"
+            if is_drop_cap or (report_type == ReportType.MOTION and new_speaker[:1] in _OPENING_QUOTE_MARKS):
                 prefix = parsed_line[: bold_match.start()]
                 bold_text = bold_match.group(0).replace("*", "").strip()
                 body = bold_text + transcript if is_drop_cap else f"{bold_text} {transcript}"
@@ -445,7 +446,7 @@ def get_speeches(markdown: str, start_of_speech_line: int, report_type: str) -> 
     speech_type = _classify_speech_type(parsed_speeches, len(speakers))
 
     if speech_type == ParsedSpeechType.PARSED:
-        if (report_type in ("president-address", "atbp")
+        if ((report_type == ReportType.PRESIDENT_ADDRESS or report_type == ReportType.ATBP)
                 and not speakers
                 and parsed_speeches
                 and _is_section_header_speaker(parsed_speeches[0].speaker)):
