@@ -70,6 +70,50 @@ def _looks_like_speaker(text: str) -> bool:
     return False
 
 
+def _show_doc(report, start_line: int, speakers: list[str]) -> list[str]:
+    """Print doc summary. Returns list of suspicious HTML bold texts (empty = clean)."""
+    title_display = (report.title or "")[:_TITLE_DISPLAY_LENGTH]
+    print(f"\n  id={report.id}  parl={report.parliament_number}  type={report.report_type}")
+    print(f"  title: {title_display!r}")
+    print(f"  MPs Speaking ({len(speakers)}): {'; '.join(speakers[:_SPEAKERS_SHOWN])}")
+
+    # ── HTML bold analysis ────────────────────────────────────────────────────
+    html_bold_texts = _html_bold_texts(report.content or "")
+    speaker_like = [text for text in html_bold_texts if _looks_like_speaker(text)]
+    print(f"  HTML <strong>/<b> tags: {len(html_bold_texts)} total, {len(speaker_like)} speaker-like")
+    if speaker_like:
+        for text in speaker_like[:_HTML_BOLD_SHOWN]:
+            print(f"    HTML bold: {text!r}")
+
+    # ── Markdown after start line ─────────────────────────────────────────────
+    lines_after = report.markdown_content.splitlines()[start_line + 1:]
+    markdown_bold_lines = [line for line in lines_after if _MARKDOWN_BOLD_RE.search(line.strip())]
+    print(f"  Markdown **bold** lines after start: {len(markdown_bold_lines)}")
+    for line in markdown_bold_lines[:_MARKDOWN_BOLD_SHOWN]:
+        print(f"    MD bold: {line.strip()[:_MARKDOWN_BOLD_DISPLAY_LENGTH]}")
+
+    # ── Raw HTML snippet (around first bold tag) ──────────────────────────────
+    html = report.content or ""
+    first_bold = _FIRST_BOLD_TAG_RE.search(html)
+    if first_bold is not None:
+        snippet_start = max(0, first_bold.start() - _SNIPPET_LEADING_CONTEXT)
+        snippet_end = min(len(html), first_bold.start() + _SNIPPET_TRAILING_CONTEXT)
+        snippet = html[snippet_start:snippet_end]
+        snippet_clean = _WHITESPACE_RE.sub(" ", snippet)
+        print("  HTML snippet around first bold tag:")
+        print(f"    {snippet_clean[:_SNIPPET_DISPLAY_LENGTH]!r}")
+
+    # ── Markdown snippet ──────────────────────────────────────────────────────
+    print(f"  Markdown (lines {start_line}–{start_line + _MARKDOWN_LINES_SHOWN}):")
+    for offset, line in enumerate(lines_after[:_MARKDOWN_LINES_SHOWN]):
+        print(f"    {start_line + 1 + offset:4d}: {line[:_MARKDOWN_LINE_DISPLAY_LENGTH]}")
+
+    # Flag if HTML has speaker-like bold but markdown has none
+    if speaker_like and not markdown_bold_lines:
+        return speaker_like
+    return []
+
+
 def run():
     random.seed(_RANDOM_SEED)
 
@@ -156,50 +200,6 @@ def run():
             print("  HTML bold texts that look like speakers:")
             for flag in flags[:_SUSPICIOUS_FLAGS_SHOWN]:
                 print(f"    {flag!r}")
-
-
-def _show_doc(report, start_line: int, speakers: list[str]) -> list[str]:
-    """Print doc summary. Returns list of suspicious HTML bold texts (empty = clean)."""
-    title_display = (report.title or "")[:_TITLE_DISPLAY_LENGTH]
-    print(f"\n  id={report.id}  parl={report.parliament_number}  type={report.report_type}")
-    print(f"  title: {title_display!r}")
-    print(f"  MPs Speaking ({len(speakers)}): {'; '.join(speakers[:_SPEAKERS_SHOWN])}")
-
-    # ── HTML bold analysis ────────────────────────────────────────────────────
-    html_bold_texts = _html_bold_texts(report.content or "")
-    speaker_like = [text for text in html_bold_texts if _looks_like_speaker(text)]
-    print(f"  HTML <strong>/<b> tags: {len(html_bold_texts)} total, {len(speaker_like)} speaker-like")
-    if speaker_like:
-        for text in speaker_like[:_HTML_BOLD_SHOWN]:
-            print(f"    HTML bold: {text!r}")
-
-    # ── Markdown after start line ─────────────────────────────────────────────
-    lines_after = report.markdown_content.splitlines()[start_line + 1:]
-    markdown_bold_lines = [line for line in lines_after if _MARKDOWN_BOLD_RE.search(line.strip())]
-    print(f"  Markdown **bold** lines after start: {len(markdown_bold_lines)}")
-    for line in markdown_bold_lines[:_MARKDOWN_BOLD_SHOWN]:
-        print(f"    MD bold: {line.strip()[:_MARKDOWN_BOLD_DISPLAY_LENGTH]}")
-
-    # ── Raw HTML snippet (around first bold tag) ──────────────────────────────
-    html = report.content or ""
-    first_bold = _FIRST_BOLD_TAG_RE.search(html)
-    if first_bold is not None:
-        snippet_start = max(0, first_bold.start() - _SNIPPET_LEADING_CONTEXT)
-        snippet_end = min(len(html), first_bold.start() + _SNIPPET_TRAILING_CONTEXT)
-        snippet = html[snippet_start:snippet_end]
-        snippet_clean = _WHITESPACE_RE.sub(" ", snippet)
-        print("  HTML snippet around first bold tag:")
-        print(f"    {snippet_clean[:_SNIPPET_DISPLAY_LENGTH]!r}")
-
-    # ── Markdown snippet ──────────────────────────────────────────────────────
-    print(f"  Markdown (lines {start_line}–{start_line + _MARKDOWN_LINES_SHOWN}):")
-    for offset, line in enumerate(lines_after[:_MARKDOWN_LINES_SHOWN]):
-        print(f"    {start_line + 1 + offset:4d}: {line[:_MARKDOWN_LINE_DISPLAY_LENGTH]}")
-
-    # Flag if HTML has speaker-like bold but markdown has none
-    if speaker_like and not markdown_bold_lines:
-        return speaker_like
-    return []
 
 
 if __name__ == "__main__":
