@@ -6,6 +6,7 @@ from sqlmodel import Session
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech, SpeechReportTypeRow
 from database.init import engine
+from logs import logger
 from services.attendance import (
     build_speaker_lookups,
     resolve_canonical_name,
@@ -63,19 +64,19 @@ def main() -> None:
             report_type_to_unmatched_speakers[row.report_type].append(row.speaker)
 
     total = len(sample)
-    print(f"\nOverall: {matched}/{total} = {matched/total*_PERCENT:.1f}%\n")
-    print(f"{'Report type':<30} {'Matched':>8} {'Total':>7} {'Rate':>7}")
-    print("-" * _SEPARATOR_WIDTH)
+    logger.info(f"\nOverall: {matched}/{total} = {matched/total*_PERCENT:.1f}%\n")
+    logger.info(f"{'Report type':<30} {'Matched':>8} {'Total':>7} {'Rate':>7}")
+    logger.info("-" * _SEPARATOR_WIDTH)
     for report_type, stats in sorted(report_type_to_stats.items()):
         matched_count, total_count = stats["matched"], stats["total"]
         rate = matched_count / total_count * _PERCENT if total_count else 0
-        print(f"{report_type:<30} {matched_count:>8} {total_count:>7} {rate:>6.1f}%")
+        logger.info(f"{report_type:<30} {matched_count:>8} {total_count:>7} {rate:>6.1f}%")
 
     all_unmatched = [unmatched_speaker for unmatched_speakers in report_type_to_unmatched_speakers.values() for unmatched_speaker in unmatched_speakers]
     top = Counter(all_unmatched).most_common(_TOP_UNMATCHED)
-    print(f"\nTop {_TOP_UNMATCHED} unmatched speaker strings:")
+    logger.info(f"\nTop {_TOP_UNMATCHED} unmatched speaker strings:")
     for speaker, count in top:
-        print(f"  {count:>3}x  {speaker!r}")
+        logger.info(f"  {count:>3}x  {speaker!r}")
 
 
 if __name__ == "__main__":

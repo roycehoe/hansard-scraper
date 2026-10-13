@@ -7,6 +7,7 @@ from crud.report import CRUDReport
 from crud.speech import CRUDSpeech
 from database.init import engine
 from database.report import Report
+from logs import logger
 from services.speech import _is_artifact_line, get_start_of_speech_line
 
 _MAX_PARLIAMENT = 11
@@ -77,15 +78,13 @@ def main() -> None:
     adr_denominator = category_to_row_count["linked"] + category_to_row_count["named_unlinked"]
     stored_character_count = sum(category_to_character_count.values())
 
-    print(f"Parliaments 0 to {_MAX_PARLIAMENT}: {len(reports)} reports with markdown, "
+    logger.info(f"Parliaments 0 to {_MAX_PARLIAMENT}: {len(reports)} reports with markdown, "
           f"{len(reports_with_rows)} with speech rows, {rows_total} speech rows")
-    print()
-    print(f"1. ADR 0001 rate:  {category_to_row_count['linked']} / {adr_denominator} = "
+    logger.info(f"1. ADR 0001 rate:  {category_to_row_count['linked']} / {adr_denominator} = "
           f"{_PERCENT * category_to_row_count['linked'] / adr_denominator:.2f}%")
-    print(f"2. All-rows rate:  {category_to_row_count['linked']} / {rows_total} = {_PERCENT * category_to_row_count['linked'] / rows_total:.2f}%")
-    print(f"3. Text share:     {category_to_character_count['linked']} / {body_total} chars = {_PERCENT * category_to_character_count['linked'] / body_total:.2f}%")
-    print()
-    print("Where the body text goes (chars, share of body):")
+    logger.info(f"2. All-rows rate:  {category_to_row_count['linked']} / {rows_total} = {_PERCENT * category_to_row_count['linked'] / rows_total:.2f}%")
+    logger.info(f"3. Text share:     {category_to_character_count['linked']} / {body_total} chars = {_PERCENT * category_to_character_count['linked'] / body_total:.2f}%")
+    logger.info("Where the body text goes (chars, share of body):")
     for label, character_count in (
         ("linked rows", category_to_character_count["linked"]),
         ("named but unlinked rows", category_to_character_count["named_unlinked"]),
@@ -95,9 +94,8 @@ def main() -> None:
         ("dropped inside reports with rows (preamble, headings, labels)",
          body_total - stored_character_count - body_in_zero_row_reports),
     ):
-        print(f"  {label:<64} {character_count:>12} {_PERCENT * character_count / body_total:6.2f}%")
-    print()
-    print("Rows by category:", dict(category_to_row_count))
+        logger.info(f"  {label:<64} {character_count:>12} {_PERCENT * character_count / body_total:6.2f}%")
+    logger.info(f"Rows by category: {dict(category_to_row_count)}")
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ from sqlmodel import Session
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from database.init import engine
+from logs import logger
 from populate.speaker_resolution_constants import (
     CHIEF_MINISTER_CUTOFF,
     COLONIAL_PARLIAMENT_FALLBACKS,
@@ -177,16 +178,16 @@ def main() -> None:
             failed.append((speech_id, speaker, parliament, canonical))
 
     total = len(regression_ids)
-    print(f"\nRegression set: {passed}/{total} passing")
-    print("Baseline (iteration 6): 40/40\n")
+    logger.info(f"\nRegression set: {passed}/{total} passing")
+    logger.info("Baseline (iteration 6): 40/40\n")
 
     if failed:
-        print(f"{'ID':>8}  {'parl':>4}  {'speaker':<50}  {'canonical'}")
-        print("-" * _SEPARATOR_WIDTH)
+        logger.info(f"{'ID':>8}  {'parl':>4}  {'speaker':<50}  {'canonical'}")
+        logger.info("-" * _SEPARATOR_WIDTH)
         for speech_id, speaker, parliament, canonical in failed:
-            print(f"{speech_id:>8}  {parliament:>4}  {speaker:<50}  {canonical or '<unresolved>'}")
+            logger.info(f"{speech_id:>8}  {parliament:>4}  {speaker:<50}  {canonical or '<unresolved>'}")
     else:
-        print("No regressions — all 40 speeches still resolve.")
+        logger.info("No regressions — all 40 speeches still resolve.")
 
 
 if __name__ == "__main__":

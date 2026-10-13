@@ -1,7 +1,6 @@
 import argparse
 import json
 import re
-import sys
 from collections import Counter
 
 from sqlmodel import Session, select
@@ -9,6 +8,7 @@ from sqlmodel import Session, select
 from crud.speaker import CRUDSpeaker
 from database.init import engine
 from database.sitting import Sitting
+from logs import logger
 from services.attendance import (
     SpeakerLookups,
     build_speaker_lookups,
@@ -87,7 +87,7 @@ def find_unmatched(is_verbose: bool = False) -> dict[str, Counter]:
 
     for sitting_number, sitting in enumerate(sittings, 1):
         if is_verbose and sitting_number % _PROGRESS_INTERVAL == 0:
-            print(f"  {sitting_number}/{total} sittings processed…", file=sys.stderr)
+            logger.info(f"  {sitting_number}/{total} sittings processed…")
         parliament = infer_parliament(sitting.parlement_no, sitting.volume_no)
         if parliament is None:
             continue
@@ -121,35 +121,35 @@ def main() -> None:
     parser.add_argument("--verbose", action="store_true")
     arguments = parser.parse_args()
 
-    print("Scanning sittings…", file=sys.stderr)
+    logger.info("Scanning sittings…")
     category_to_counter = find_unmatched(is_verbose=arguments.verbose)
 
     candidates = category_to_counter["candidate"]
     total_unmatched = sum(sum(counter.values()) for counter in category_to_counter.values())
     total_candidates = sum(candidates.values())
 
-    print(f"\nUnmatched attendance rows: {total_unmatched}")
-    print(f"  Candidates (likely real people, no Speaker entry): {total_candidates}")
+    logger.info(f"\nUnmatched attendance rows: {total_unmatched}")
+    logger.info(f"  Candidates (likely real people, no Speaker entry): {total_candidates}")
     for category, counter in category_to_counter.items():
         if category == "candidate":
             continue
         if counter:
-            print(f"  {category}: {sum(counter.values())}")
+            logger.info(f"  {category}: {sum(counter.values())}")
 
     if candidates:
-        print(f"\nTop candidates ({len(candidates)} distinct names):\n")
-        print(f"  {'Count':>6}  Name")
-        print(f"  {'─' * _COUNT_COLUMN_WIDTH}  {'─' * _NAME_COLUMN_WIDTH}")
+        logger.info(f"\nTop candidates ({len(candidates)} distinct names):\n")
+        logger.info(f"  {'Count':>6}  Name")
+        logger.info(f"  {'─' * _COUNT_COLUMN_WIDTH}  {'─' * _NAME_COLUMN_WIDTH}")
         for name, count in candidates.most_common():
-            print(f"  {count:>6}  {name}")
+            logger.info(f"  {count:>6}  {name}")
 
     if arguments.json:
         template = [_get_json_template(name) for name, _ in candidates.most_common()]
         path = arguments.json
         with open(path, "w") as file:
             json.dump(template, file, indent=2, ensure_ascii=False)
-        print(f"\nWrote {len(template)}-entry template to {path}", file=sys.stderr)
-        print("Edit party/parliament_number/comments, then append to data/colonial_la_members.json", file=sys.stderr)
+        logger.info(f"\nWrote {len(template)}-entry template to {path}")
+        logger.info("Edit party/parliament_number/comments, then append to data/colonial_la_members.json")
 
 
 if __name__ == "__main__":
