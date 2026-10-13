@@ -57,3 +57,65 @@ For documents that contain no bold speaker markup, attribution follows a deliber
 
 ### Diagnostic tooling as a first-class concern
 Targeted validation and inspection tools live alongside the main pipeline. Parsing statistics are exported after every run. These tools make it possible to audit specific failure categories by report type without re-running the full pipeline, keeping the feedback loop short.
+
+---
+
+## Measuring progress
+
+Last recalibrated 13 October 2026. Rerun the checks below before claiming any objective is met, and update this section when the figures move.
+
+### The three numbers
+
+`scripts/attribution_text_share.py` prints all three for Parliaments 0 to 11. Quote all three together. Never quote the first on its own.
+
+| Metric | What it counts | 13 Oct 2026 |
+|---|---|---|
+| ADR 0001 rate | Linked rows / rows with a speaker string, minus "hon. Member(s)" and strings starting with "(" or "_" ([ADR 0001](adr/0001-attribution-denominator.md)) | 532,067 / 545,951 = 97.46% |
+| All-rows rate | Linked rows / every speech row, NULL-speaker rows included | 532,067 / 590,815 = 90.06% |
+| Text share | Characters of body text in a linked row / characters of body text in every report with markdown, including reports with no rows | 96.05% of 176.7M |
+
+Text share is the number that answers objective 2 and 4 together: how much of the record a researcher can retrieve by speaker. The ADR 0001 rate has a known weakness. Setting a row's speaker to NULL removes it from the denominator, so the rate rises when the parser gives up on a line. The 13 October procedural repairs moved about 29,000 rows to NULL and raised the rate from 97.02% to 97.42%. Some of those rows really have no speaker. The other two numbers keep that honest.
+
+Where the body text goes, 13 October 2026: 96.05% in linked rows, 0.83% in rows with an unlinked speaker string, 0.15% in ADR-excluded rows, 1.01% in rows with no speaker, 0.14% in reports with no rows, and 1.81% dropped inside reports that have rows (preamble, headings, labels, and text before the first speaker).
+
+### What "parsed" means in each check
+
+None of the automated checks tests that text sits under the right speaker. Read each pass as the narrow claim it is.
+
+| Check | Passes when | Misses |
+|---|---|---|
+| `scripts/diagnose.py` | A title line is found | Zero or wrong speeches; it discards the `get_speeches` output |
+| `scripts/run_sanity_check.py` | Title found, at least one speech, no NULL speaker, on a fixed sample | Wrong speaker or lost text; it rewards crediting procedural lines to the last speaker |
+| `scripts/run_no_speech_validation.py`, `scripts/run_exclusion_sanity_check.py` | A zero-row report has no bold speaker markup | Speeches without bold labels |
+| `scripts/trace_speaker_links.py` | Stored links equal what the resolver returns today | Whether the resolver is right; role-context rows are not re-evaluated |
+
+The only correctness evidence is by hand. `plans/link-precision-audit.md` read 613 linked rows: 613 name strings mapped to the right person, and 98.4% of rows carried text that person said (Wilson 97.0% to 99.1%). `plans/parser-strata-audit.md` read 438 reports: 13.3% had a major defect. Both predate the 13 October rebuilds and neither covers reports with no rows.
+
+### Verdict against the objectives, records before 10 September 2012
+
+Recorded from an independent audit on 13 October 2026, with the zero-row debates fixed afterwards.
+
+| Objective | Verdict |
+|---|---|
+| 1. Complete corpus coverage | Partly. All 20,017 records the search returned are stored and 20,003 have text. The search skipped about 1,700 Parliament 0 to 11 records (estimate in `plans/duplicate-reports.md`), and 14 came back with empty or no content. |
+| 2. Per-utterance speaker index | Partly. 18,705 of 19,227 reports with markdown have rows. 1.81% of body text is dropped inside reports that have rows. |
+| 3. Sitting metadata | Yes for attendance, all 1,333 sittings with HTML. |
+| 4. Speaker identity linking | Partly. The resolver is precise; the gaps are text the parser mislabels or drops, and stored rows that lag the parser. |
+| 5. High-fidelity markdown | Unverified. No check measures what the HTML to markdown step loses. Report 22103 has 16,847 characters of HTML and 287 of markdown. |
+| 6. Parsing-quality tracking | No. The checks above measure structure, not correctness. |
+
+Overall: partly met. Text from 10 September 2012 on is out of this verdict; it was never fetched ([post-2012-text.md](report/post-2012-text.md)).
+
+### Gaps, by who owns them
+
+- The source imposes: unnamed chairs ("The Chairman" where the report gives no chair, about 11,600 rows), collective "hon. Members", bare "Mr Deputy Speaker" on two-holder days, annex pages that are lists of links, procedural lines with no speaker.
+- The project chose: the ADR 0001 denominator, dropping text before the first speaker, collapsing single-speaker reports into one row, and a pass that means only that a title line was found.
+- The project missed, and these are the next work:
+  1. Stored rows lag the parser. An in-memory re-parse found 8,614 of 19,227 reports differ; about 7,600 linked rows would get no speaker and about 2,400 a different speaker string. A full rebuild is on hold: it would undo data-only fixes from 13 October (1,746 filled speakers, 11 Chief Minister corrections) and re-parse 87 reports the F18 guard refused. It needs the user's decision and a per-report guard.
+  2. About 1,700 Parliament 0 to 11 records the search skipped.
+  3. Text after August 2012, which needs a gateway change ([post-2012-text.md](report/post-2012-text.md)).
+  4. Unbolded speaker labels and lists that inherit the last speaker (P2 and P3 in `plans/link-precision-audit.md`).
+
+### Where more work stops paying
+
+Published peers report less than this project. The Knesset corpus reports 94.5% matched with a hand-checked audit; the Glasgow UK Hansard work reports 89.3% for the Commons; ParlaMint, the Australian Hansard datasets and TheyWorkForYou publish no linking rate. None found resolves an unnamed presiding officer to a person: ParlaMint tags the role, the Knesset corpus flags the chair, and Spain's ParlaMint corpus leaves them blank. So work on unnamed chairs, or resolver tuning that moves the rate by tenths of a point, is past the point of value. Work that moves text share, coverage or measured precision is not.

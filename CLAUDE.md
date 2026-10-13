@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Goal and how progress is measured
+
+The goal is in `docs/vision.md`. Its "Measuring progress" section holds the current verdict per objective, the open gaps, and where more work stops paying. Read it before planning work or reporting results.
+
+- Run `python scripts/attribution_text_share.py` before and after any change to parsing or linking, and quote all three numbers it prints: the ADR 0001 rate, the all-rows rate, and text share. The ADR 0001 rate alone rises when the parser sets rows to NULL, so it can hide a regression.
+- A passing `diagnose.py` or `run_sanity_check.py` does not mean speeches are correct; see the table in that section.
+- When a figure there moves, update the section in the same change.
+
 ## Commands
 
 ```bash
@@ -117,6 +125,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `run_sanity_check.py`, `run_no_speech_validation.py`, `run_single_speaker_check.py` — targeted validation runs
 - `run_exclusion_sanity_check.py` — analyses zero-speech (excluded) documents by checking HTML bold tags vs markdown speaker patterns
 - `find_unmatched_attendees.py` — finds attendance names with no match in the Speaker table, grouped by frequency; outputs a JSON template for `colonial_la_members.json`
+- `attribution_text_share.py` — the three attribution numbers in `docs/vision.md`: ADR 0001 rate, all-rows rate, and share of body text in a linked speech
 - `speech_speaker_match_rate.py` — samples speeches stratified by report type, applies the full `SpeakerLookups` name-resolution pipeline via `resolve_canonical_name`, reports match rate overall and by type
 - `load_colonial_la_speakers.py` — idempotent load of `data/colonial_la_members.json` into the `Speaker` table; must be run before `populate_speaker_links`
 - `scrape_speakers_by_parliament.py` — populates the `Speaker` table from parliament.gov.sg
@@ -194,6 +203,7 @@ hansard-scraper/
     ├── run_no_speech_validation.py
     ├── run_single_speaker_check.py
     ├── run_exclusion_sanity_check.py
+    ├── attribution_text_share.py
     ├── speech_speaker_match_rate.py
     ├── load_colonial_la_speakers.py
     └── scrape_speakers_by_parliament.py
