@@ -235,6 +235,8 @@ _OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
     # Presiding-officer role suffix in attendance lines
     "punch coomaraswamy, deputy speaker": "P. Coomaraswamy",  # cascade → inverted "Coomaraswamy, P." (parl=1, vol=25)
     "p coomaraswamy, deputy speaker": "P. Coomaraswamy",      # initials-only form (parl=1, vol=25)
+    "p coomaraswam": "P. Coomaraswamy",                       # truncated spelling in a 1968 header (parl=2)
+    "fang kim heng": "Fong Kim Heng",                         # OCR a for o, 1964 bracket (parl=0)
     # Markdown/formatting artifacts surviving into existing DB rows (parser fix prevents future occurrences)
     "absent: mr ahmad mohd magad": "Ahmad Mohd Magad",  # Absent: prefix not stripped (parl=9, vol=70)
     "**mr ng kah ting": "Ng Kah Ting",          # markdown bold prefix (parl=2, vol=27)
