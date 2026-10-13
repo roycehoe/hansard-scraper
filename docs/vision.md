@@ -62,13 +62,13 @@ Targeted validation and inspection tools live alongside the main pipeline. Parsi
 
 ## Measuring progress
 
-Last recalibrated 13 October 2026, after the refetch of skipped records and the guarded re-parse. Rerun the checks below before claiming any objective is met, and update this section when the figures move.
+Last recalibrated 14 October 2026, after the load of text from 10 September 2012 on. The headline did not move; the new parliaments are reported beside it. Rerun the checks below before claiming any objective is met, and update this section when the figures move.
 
 ### The three numbers
 
 `scripts/attribution_text_share.py` prints all three for Parliaments 0 to 11. Quote all three together. Never quote the first on its own.
 
-| Metric | What it counts | 13 Oct 2026 |
+| Metric | What it counts | 14 Oct 2026 |
 |---|---|---|
 | ADR 0001 rate | Linked rows / rows with a speaker string, minus "hon. Member(s)" and strings starting with "(" or "_" ([ADR 0001](adr/0001-attribution-denominator.md)) | 564,509 / 578,359 = 97.61% |
 | All-rows rate | Linked rows / every speech row, NULL-speaker rows included | 564,509 / 624,332 = 90.42% |
@@ -78,7 +78,7 @@ Text share is the number that answers objective 2 and 4 together: how much of th
 
 Text share overstates too. The second audit ([north-star-audit-2026-10-13.md](report/north-star-audit-2026-10-13.md)) found it about 1.7 points high: its denominator is the markdown after the parser's own start line, so text html2text lost is invisible, and a report collapsed to one speaker counts its whole body as attributed. Its strict text share is 95.12%, and about 94.6% after hand-checked precision. None of the three numbers says whether a link is right.
 
-Where the body text goes, 13 October 2026: 96.81% in linked rows, 0.76% in rows with an unlinked speaker string, 0.11% in ADR-excluded rows, 0.95% in rows with no speaker, 0.15% in reports with no rows, and 1.22% dropped inside reports that have rows (preamble, headings, labels, and text before the first speaker).
+Where the body text goes, Parliaments 0 to 11, 13 October 2026, unchanged by the 14 October load: 96.81% in linked rows, 0.76% in rows with an unlinked speaker string, 0.11% in ADR-excluded rows, 0.95% in rows with no speaker, 0.15% in reports with no rows, and 1.22% dropped inside reports that have rows (preamble, headings, labels, and text before the first speaker).
 
 ### What "parsed" means in each check
 
@@ -93,20 +93,35 @@ None of the automated checks tests that text sits under the right speaker. Read 
 
 The only correctness evidence is by hand. `plans/link-precision-audit.md` read 613 linked rows: 613 name strings mapped to the right person, and 98.4% of rows carried text that person said (Wilson 97.0% to 99.1%). `plans/parser-strata-audit.md` read 438 reports: 13.3% had a major defect. Both predate the 13 October rebuilds and neither covers reports with no rows. The second audit read 100 fresh rows after the rebuilds: 75 of 80 linked rows right (93.8%, Wilson 86.2% to 97.3%), 0 linked to the wrong person, and 20 of 20 unlinked rows correctly unlinked. All five errors were procedural, list or stage-direction text credited to a speaker. Quote 93.8% as the current precision.
 
+### Parliaments 12 to 14, beside the headline
+
+The 14 October load added text from 10 September 2012 on. Same filter as the ADR 0001 rate, then the all-rows rate, then text share, from `scripts/attribution_text_share.py`:
+
+| Scope | ADR 0001 rate | All-rows rate | Text share |
+|---|---|---|---|
+| Parliament 12 (whole) | 89,536 / 90,511 = 98.92% | 89,536 / 91,953 = 97.37% | 98.81% |
+| Parliament 12 from 10 Sep 2012 | 72,013 / 72,778 = 98.95% | | |
+| Parliament 13 | 134,660 / 137,182 = 98.16% | 134,660 / 139,279 = 96.68% | 99.14% |
+| Parliament 14 | 208,563 / 210,646 = 99.01% | 208,563 / 213,056 = 97.89% | 99.22% |
+
+The plan projected 99.1 to 99.3 for Parliament 12 from the cutoff, 98.1 to 99.1 for Parliament 13 and 98.6 for Parliament 14. Parliament 12 from the cutoff is about 110 rows short: "The Chairman" leaves 566 rows unlinked there, and 61 "[Deputy Speaker" parse-noise rows stay in the denominator (77 across Parliaments 12 and 13, where the plan expected 16). Across the new rows the largest unlinked groups are "The Chairman" with 4,018 (no chair named in the report), bare "Mr Deputy Speaker" with 1,119 on days with two holders ([ADR 0002](adr/0002-role-holder-attribution.md) leaves them), "[Deputy Speaker" with 77, "Mr Chairman" with 44, and 5 "Mdm Speaker" rows that are Hansard misprints for "Mdm Deputy Speaker" and stay unlinked. No hand audit covers these rows yet.
+
+Across the whole table: 1,068,620 speech rows, 1,019,991 with a speaker string, 997,268 of them linked (97.8%). Attendance: 134,916 of 135,072 linked (99.88%).
+
 ### Verdict against the objectives, records before 10 September 2012
 
 From two independent audits on 13 October 2026. The second ran after that day's fixes (22 zero-row debates parsed, 1,691 skipped records refetched, 6,615 stale reports re-parsed); its findings are in [north-star-audit-2026-10-13.md](report/north-star-audit-2026-10-13.md).
 
 | Objective | Verdict |
 |---|---|
-| 1. Complete corpus coverage | Mostly. 21,708 records are stored and 21,693 have text, after refetching 1,691 records the search had skipped. 15 came back from SPRS with empty or no content. About 147 Parliament 12 search hits before 10 September 2012 were never refetched. Completeness against SPRS itself is not independently checked. |
+| 1. Complete corpus coverage | Mostly. Corpus-wide, 41,809 distinct records are stored from 47,400 search hits, and 41,678 have text. 131 have none: 106 `atbp` records (the newer system gives them no topic text) and 25 others, 11 of them newer-system ids SPRS no longer serves. The 111 older-system Parliament 12 hits before 10 September 2012 are now added. Completeness against SPRS itself is not independently checked. |
 | 2. Per-utterance speaker index | Partly. 20,353 of 20,918 reports with markdown have rows. 1.22% of body text is dropped inside reports that have rows. 2,078 reports keep rows from an older parser because the re-parse guard refused them. |
-| 3. Sitting metadata | Partly. Attendance is present for all 1,333 sittings with HTML. The PTBA list, sections, annexures and vernaculars are empty for all of them. |
+| 3. Sitting metadata | Partly. Attendance is present for all 1,333 sittings with HTML. The PTBA list, sections, annexures and vernaculars are empty for all of them. The 386 sittings from 10 September 2012 are now filled with metadata and section lists, and attendance for them comes from the structured list. 19,874 of 19,880 sitting sections pair with a stored report ([post-2012-sections-gap.md](report/post-2012-sections-gap.md)). |
 | 4. Speaker identity linking | Mostly. 0 of 80 sampled links point to the wrong person, but 93.8% of linked rows carry text that person said: procedural, list and stage-direction lines inherit a speaker. Stored rows match the current parser except in the 2,078 refused reports. |
 | 5. High-fidelity markdown | Partly. The conversion loses 0.41% of HTML word tokens; 120 reports lose more than 5% and report 22103 loses 97.7%. Deleting `&nbsp;` glues words together in 18,044 reports. |
 | 6. Parsing-quality tracking | No. The checks above measure structure, not correctness. |
 
-Overall: partly met. Text from 10 September 2012 on is out of this verdict; it was never fetched ([post-2012-text.md](report/post-2012-text.md)).
+Overall: partly met. This verdict covers records before 10 September 2012. Text from that date on is now loaded and is measured beside the headline above, with no hand audit yet ([post-2012-text.md](report/post-2012-text.md)).
 
 ### Gaps, by who owns them
 
@@ -114,13 +129,11 @@ Overall: partly met. Text from 10 September 2012 on is out of this verdict; it w
 - The project chose: the ADR 0001 denominator, dropping text before the first speaker, collapsing single-speaker reports into one row, and a pass that means only that a title line was found.
 - The project missed, and these are the next work:
   1. 2,078 reports keep rows from an older parser. The guarded re-parse of 13 October rebuilt 6,615 stale reports and refused the rest: 1,954 by the F18 guard (the new parse drops a body line the stored rows hold, or yields nothing), 87 that step 6b refused, 34 where a re-parse would undo a direct edit, and 3 where it would bring back deleted rows. Each needs a parser fix before it can be rebuilt. The plan, the stored rows of every rebuilt report and two full `pg_dump` backups from before the write were kept outside the repo on 13 October; they are temporary unless moved.
-  2. Text from 10 September 2012 on. Commit 2979c57 sends the topic id as a JSON body; the fetcher still sends the trailing `#` and reads `htmlContent`, which sprs3 records leave empty ([post-2012-text.md](report/post-2012-text.md)).
-  3. The parser drops 1.22% of body text inside reports with rows: text before the first speaker, headings and other lines it skips. The split between them is not measured.
-  4. Unbolded speaker labels and lists that inherit the last speaker (P2 and P3 in `plans/link-precision-audit.md`). Annex tables, division lists and clause text still go to the last speaker, often "Mr Speaker", and "X rose -" stage directions are stored as linked speech (781 to 1,001 rows).
-  5. `utils/markdown_parser.py` deletes `&nbsp;` instead of replacing it with a space, gluing words at about 414,000 places.
-  6. The ADR 0001 rule that drops speaker strings starting with "_" also drops real names written with a leading underscore, such as "__Dr Teo Ho Pin".
-  7. About 147 Parliament 12 search hits before 10 September 2012 were never refetched.
-  8. In report 24248 the fallback start line drops Gan Kim Yong's opening speech, because his label merged into the heading.
+  2. The parser drops 1.22% of body text inside reports with rows: text before the first speaker, headings and other lines it skips. The split between them is not measured.
+  3. Unbolded speaker labels and lists that inherit the last speaker (P2 and P3 in `plans/link-precision-audit.md`). Annex tables, division lists and clause text still go to the last speaker, often "Mr Speaker", and "X rose -" stage directions are stored as linked speech (781 to 1,001 rows).
+  4. `utils/markdown_parser.py` deletes `&nbsp;` instead of replacing it with a space, gluing words at about 414,000 places.
+  5. The ADR 0001 rule that drops speaker strings starting with "_" also drops real names written with a leading underscore, such as "__Dr Teo Ho Pin".
+  6. In report 24248 the fallback start line drops Gan Kim Yong's opening speech, because his label merged into the heading.
 
 ### Where more work stops paying
 

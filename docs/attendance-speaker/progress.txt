@@ -334,3 +334,20 @@ speaker_id (99.8%), 150 unmatched. Changes that touch attendance resolution:
 ## Three production changes, 2026-10-13 (night)
 
 The parse of 22 zero-row reports, the refetch of 1,691 skipped reports and the guarded re-parse of 6,615 reports changed speech rows only. Attendance was unchanged and re-queried afterwards: 96,500 rows, 96,350 with a speaker_id (99.8%), 150 unmatched.
+
+---
+
+## Post-2012 load, 2026-10-14
+
+The load of sitting details from 10 September 2012 on filled 386 post-2012 sittings with metadata and section lists. Those sittings carry no HTML, so 38,572 attendance rows were built from the structured attendance list, with the same name cleaning and resolution. Stage 8 and the person stage ran afterwards. 3 head-of-state speaker rows were added (Tony Tan for Parliaments 12 and 13, Halimah Yacob for 14); no attendance row resolves to them. The registry has 1,437 speaker rows (1,417 members, 20 heads of state) and 573 persons.
+
+| Metric | Value |
+|---|---|
+| Total attendance rows | 135,072 |
+| Matched (speaker_id non-null) | 134,916 |
+| Unmatched | 156 |
+| Match rate | 99.88% |
+| Before 10 September 2012 | 96,350 of 96,500 (150 unlinked, unchanged) |
+| From 10 September 2012 | 38,566 of 38,572 |
+
+The 6 unlinked post-2012 rows are Lee Li Lian on 15 and 25 to 29 January 2016. The SPRS attendance list names her with is_present false; she declined the Parliament 13 seat and never sat. The 150 pre-2012 rows remain the Category 1 parsing failures described in Iteration 2.
