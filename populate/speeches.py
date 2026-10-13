@@ -11,8 +11,7 @@ _BATCH_SIZE = 1_000
 
 def populate_speeches(session: Session):
     reports = CRUDReport(session).get_all()
-    crud = CRUDSpeech(session)
-    existing_report_ids = crud.get_report_ids_with_speeches()
+    existing_report_ids = CRUDSpeech(session).get_report_ids_with_speeches()
     reports_to_process = [report for report in reports if report.id not in existing_report_ids]
     logger.info(f"Parsing speeches for {len(reports_to_process)}/{len(reports)} reports ({len(existing_report_ids)} already done)")
 
@@ -42,8 +41,8 @@ def populate_speeches(session: Session):
                 report_id=report.id,
             ))
         if len(batch) >= _BATCH_SIZE:
-            crud.create_many(batch)
+            CRUDSpeech(session).create_many(batch)
             batch.clear()
 
     if batch:
-        crud.create_many(batch)
+        CRUDSpeech(session).create_many(batch)

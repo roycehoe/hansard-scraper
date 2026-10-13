@@ -10,8 +10,7 @@ _BATCH_SIZE = 500
 
 def populate_reports(session: Session):
     responses = CRUDHansardWebsiteResponse(session).get_all()
-    crud = CRUDReport(session)
-    existing_ids = crud.get_all_report_ids()
+    existing_ids = CRUDReport(session).get_all_report_ids()
     # The search can return one hit twice (plans/duplicate-reports.md); build one report per report_id.
     first_by_report_id = {}
     for response in responses:
@@ -24,7 +23,7 @@ def populate_reports(session: Session):
         logger.info(f"{i}/{len(reports_to_process)}")
         batch.append(build_report(response))
         if len(batch) >= _BATCH_SIZE:
-            crud.create_many(batch)
+            CRUDReport(session).create_many(batch)
             batch.clear()
     if batch:
-        crud.create_many(batch)
+        CRUDReport(session).create_many(batch)

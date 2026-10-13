@@ -1,10 +1,13 @@
 import asyncio
+import itertools
+from collections.abc import Iterator
 from typing import Optional
 
 import httpx
 from sqlmodel import Session
 
 from crud.hansard_website_response import CRUDHansardWebsiteResponse
+from database.hansard_website_response import HansardWebsiteResponse
 from exceptions import HansardGatewayError
 from gateway.hansard_search import get_all_hansard_search_results
 from gateway.hansard_topic import get_hansard_topic_response_async
@@ -34,28 +37,35 @@ async def _fetch_html_content(
     return html_content.replace("\x00", "�")
 
 
+async def _fetch_website_response(
+    result: HansardSearchResult,
+    client: httpx.AsyncClient,
+    semaphore: asyncio.Semaphore,
+    progress: Iterator[int],
+    total: int,
+) -> HansardWebsiteResponse:
+    async with semaphore:
+        content = await _fetch_html_content(result, client)
+        response = build_hansard_website_response(result, content)
+    completed = next(progress)
+    logger.info(f"{completed}/{total}")
+    return response
+
+
 async def _fetch_all(results: list[HansardSearchResult]) -> list:
     semaphore = asyncio.Semaphore(_CONCURRENCY)
-    completed = 0
+    progress = itertools.count(1)
     total = len(results)
 
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
-        async def fetch_one(result):
-            nonlocal completed
-            async with semaphore:
-                content = await _fetch_html_content(result, client)
-                response = build_hansard_website_response(result, content)
-            completed += 1
-            logger.info(f"{completed}/{total}")
-            return response
-
-        return await asyncio.gather(*[fetch_one(result) for result in results])
+        return await asyncio.gather(
+            *[_fetch_website_response(result, client, semaphore, progress, total) for result in results]
+        )
 
 
 def populate_hansard_responses(session: Session):
     all_search_results = [HansardSearchResult(**result) for result in get_all_hansard_search_results()]
-    crud = CRUDHansardWebsiteResponse(session)
-    existing_ids = crud.get_all_report_ids()
+    existing_ids = CRUDHansardWebsiteResponse(session).get_all_report_ids()
     # The search can return one hit twice (plans/duplicate-reports.md); fetch each report_id once.
     first_by_report_id = {}
     for result in all_search_results:
@@ -64,4 +74,4 @@ def populate_hansard_responses(session: Session):
     logger.info(f"Fetching {len(results_to_fetch)}/{len(all_search_results)} ({len(existing_ids)} already in DB)")
 
     responses = asyncio.run(_fetch_all(results_to_fetch))
-    crud.create_many(responses)
+    CRUDHansardWebsiteResponse(session).create_many(responses)

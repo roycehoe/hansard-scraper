@@ -8,8 +8,7 @@ from services.sitting import build_sitting
 
 def populate_sittings(session: Session):
     all_responses = CRUDHansardSittingDateResponse(session).get_all()
-    crud = CRUDSitting(session)
-    existing_dates = crud.get_all_sitting_dates()
+    existing_dates = CRUDSitting(session).get_all_sitting_dates()
     sittings_to_process = [response for response in all_responses if response.sitting_date not in existing_dates]
     logger.info(f"Building {len(sittings_to_process)}/{len(all_responses)} sittings ({len(existing_dates)} already in DB)")
 
@@ -18,4 +17,4 @@ def populate_sittings(session: Session):
         logger.info(f"{i}/{len(sittings_to_process)}: {response.sitting_date}")
         sittings.append(build_sitting(response))
     if sittings:
-        crud.create_many(sittings)
+        CRUDSitting(session).create_many(sittings)
