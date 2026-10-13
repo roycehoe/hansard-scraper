@@ -19,8 +19,8 @@ def get_hansard_search_results(
     from_date: date | None = None,
     to_date: date | None = None,
 ) -> dict | list:
-    from_date = from_date or settings.search_from_date
-    to_date = to_date or settings.search_to_date
+    from_date = settings.search_from_date if from_date is None else from_date
+    to_date = settings.search_to_date if to_date is None else to_date
     query_dict = {
         "keyword": "undefined",
         "fromday": f"{from_date.day:02d}",
