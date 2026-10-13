@@ -9,6 +9,7 @@ from crud.report import CRUDReport
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from database.init import engine
+from logs import logger
 
 # NOTE: the private names are imported on purpose, so the guard runs the exact resolver and not a copy that can drift.
 from populate.speaker_links import (
@@ -77,17 +78,17 @@ def main() -> None:
             stale.append((bad_rows, speaker, parliament_number, sitting_date, counts, resolved))
 
     stale_rows = sum(stale_entry[0] for stale_entry in stale)
-    print(f"Total: {len(key_to_speaker_id_counts)} keys, {total_rows} rows")
-    print(f"Agree: {agree[0]} keys, {agree[1]} rows")
-    print(f"Context-linked, not re-evaluated: {context[0]} keys, {context[1]} rows")
-    print(f"Stale: {len(stale)} keys, {stale_rows} rows")
+    logger.info(f"Total: {len(key_to_speaker_id_counts)} keys, {total_rows} rows")
+    logger.info(f"Agree: {agree[0]} keys, {agree[1]} rows")
+    logger.info(f"Context-linked, not re-evaluated: {context[0]} keys, {context[1]} rows")
+    logger.info(f"Stale: {len(stale)} keys, {stale_rows} rows")
     for bad_rows, speaker, parliament_number, sitting_date, counts, resolved in sorted(
         stale, key=lambda stale_entry: (-stale_entry[0], stale_entry[1], stale_entry[2])
     ):
         stored_text = ", ".join(
             f"{speaker_id} {speaker_id_to_name.get(speaker_id)!r} x{row_count}" for speaker_id, row_count in sorted(counts.items())
         )
-        print(
+        logger.info(
             f"{bad_rows:>6}  {speaker!r}  P{parliament_number}  {sitting_date.date() if sitting_date is not None else '-'}  "
             f"stored [{stored_text}]  resolved {resolved} {speaker_id_to_name.get(resolved)!r}"
         )

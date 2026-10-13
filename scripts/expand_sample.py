@@ -10,6 +10,7 @@ from sqlmodel import Session
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech, SpeechParliamentRow
 from database.init import engine
+from logs import logger
 from services.attendance import (
     SpeakerLookups,
     build_speaker_lookups,
@@ -114,15 +115,15 @@ def main() -> None:
     new_pilot: list[int] = []
     new_held_out: list[int] = []
 
-    print(f"Eligible parliament=0 speeches (excluding existing sample): {len(eligible)}")
-    print("\nSampling per report_type:")
+    logger.info(f"Eligible parliament=0 speeches (excluding existing sample): {len(eligible)}")
+    logger.info("\nSampling per report_type:")
     for report_type, items in sorted(report_type_to_rows.items()):
         random.shuffle(items)
         pilot_slice = items[:_PILOT_COUNT_PER_TYPE]
         held_out_slice = items[_PILOT_COUNT_PER_TYPE : _PILOT_COUNT_PER_TYPE + _HELD_OUT_COUNT_PER_TYPE]
         new_pilot.extend(row.id for row in pilot_slice)
         new_held_out.extend(row.id for row in held_out_slice)
-        print(f"  {report_type:<30} {len(pilot_slice)} pilot + {len(held_out_slice)} held-out")
+        logger.info(f"  {report_type:<30} {len(pilot_slice)} pilot + {len(held_out_slice)} held-out")
 
     passing_pilot: list[int] = []
     for speech_id in new_pilot:
@@ -142,11 +143,11 @@ def main() -> None:
 
     _SAMPLE_PATH.write_text(json.dumps(sample, indent=_JSON_INDENT))
 
-    print("\nExpansion summary:")
-    print(f"  Added pilot:      {len(new_pilot)}")
-    print(f"  Added held-out:   {len(new_held_out)}")
-    print(f"  Added regression: {len(new_regression)} (from {len(passing_pilot)} passing new pilot)")
-    print(f"  New totals — pilot: {len(sample['pilot'])}, held_out: {len(sample['held_out'])}, regression: {len(sample['regression'])}")
+    logger.info("\nExpansion summary:")
+    logger.info(f"  Added pilot:      {len(new_pilot)}")
+    logger.info(f"  Added held-out:   {len(new_held_out)}")
+    logger.info(f"  Added regression: {len(new_regression)} (from {len(passing_pilot)} passing new pilot)")
+    logger.info(f"  New totals — pilot: {len(sample['pilot'])}, held_out: {len(sample['held_out'])}, regression: {len(sample['regression'])}")
 
 
 if __name__ == "__main__":

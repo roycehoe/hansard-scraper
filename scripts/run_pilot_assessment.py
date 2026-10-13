@@ -9,6 +9,7 @@ from sqlmodel import Session
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from database.init import engine
+from logs import logger
 from populate.speaker_resolution_constants import (
     CHIEF_MINISTER_CUTOFF,
     COLONIAL_PARLIAMENT_FALLBACKS,
@@ -182,19 +183,19 @@ def main() -> None:
 
     total = sum(stats["total"] for stats in bucket_to_stats.values())
     matched = sum(stats["matched"] for stats in bucket_to_stats.values())
-    print(f"\nPilot ({len(pilot_ids)} IDs): {matched}/{total} = {matched/total*_PERCENT:.1f}%\n")
-    print(f"{'Group':<25} {'Matched':>8} {'Total':>7} {'Rate':>7}")
-    print("-" * _SEPARATOR_WIDTH)
+    logger.info(f"\nPilot ({len(pilot_ids)} IDs): {matched}/{total} = {matched/total*_PERCENT:.1f}%\n")
+    logger.info(f"{'Group':<25} {'Matched':>8} {'Total':>7} {'Rate':>7}")
+    logger.info("-" * _SEPARATOR_WIDTH)
     for bucket, stats in sorted(bucket_to_stats.items()):
         matched_count, total_count = stats["matched"], stats["total"]
         rate = matched_count / total_count * _PERCENT if total_count else 0.0
-        print(f"{bucket:<25} {matched_count:>8} {total_count:>7} {rate:>6.1f}%")
+        logger.info(f"{bucket:<25} {matched_count:>8} {total_count:>7} {rate:>6.1f}%")
 
-    print(f"\nTop unmatched speaker strings ({len(unmatched)} total):")
+    logger.info(f"\nTop unmatched speaker strings ({len(unmatched)} total):")
     from collections import Counter
     top = Counter(unmatched_speaker for unmatched_speaker, _, _ in unmatched).most_common(_TOP_UNMATCHED_COUNT)
     for speaker, count in top:
-        print(f"  {count:>3}x  {speaker!r}")
+        logger.info(f"  {count:>3}x  {speaker!r}")
 
 
 if __name__ == "__main__":
