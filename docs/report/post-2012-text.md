@@ -90,7 +90,7 @@ It was excluded in code from the start, but no written decision exists, and late
 - `ece9787` (26 Aug 2025) narrowed the same fetch to rows that have an `html_file_name`, which also leaves out sprs3.
 - `1fe6602` (26 Aug 2025) and `49e3e66` (28 Aug 2025) applied the same cutoff to parsing (`select(Report).where(Report.sitting_date < datetime(2012, 9, 10))`).
 - Later refactors (`11b3cc1`, `26aac3e`, `4154ca7`, `afcf9af`) removed the cutoff from fetch and parse. The fetch kept the sprs2-only request shape, so sprs3 records came back empty.
-- The only cutoff left in code is `crud/report.py:62`, in `get_strata_sample`, which samples diagnostics from records before 10 Sep 2012.
+- No cutoff is left in code. The diagnostic sampler that used 10 Sep 2012, `get_strata_sample`, was removed as unreferenced in the style sweep.
 - No commit message, ADR, plan or doc gives a reason. `git log --grep` for 2012, sprs2, sprs3 and silo finds nothing.
 - `docs/vision.md` scopes the project "from the colonial Legislative Assembly through the present". The README says P12's "fetch is incomplete" and that "speeches exist only for Parliaments 0 to 12", which describes the gap but not its cause.
 

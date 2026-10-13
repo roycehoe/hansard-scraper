@@ -1,10 +1,8 @@
 from datetime import datetime
-from typing import Optional
 
 from sqlmodel import Session, col, select
 
 from database.report import Report
-from enums import ReportType
 
 
 class CRUDReport:
@@ -38,38 +36,3 @@ class CRUDReport:
     def get_all_report_ids(self) -> set[str]:
         statement = select(Report.report_id)
         return set(self.session.exec(statement).all())
-
-    def get_first_filtered(
-        self,
-        *,
-        sitting_date_before: Optional[datetime] = None,
-        parliament_number: Optional[int] = None,
-        report_type: Optional[str] = None,
-        has_content: bool = False,
-    ) -> Optional[Report]:
-        filters = []
-        if sitting_date_before is not None:
-            filters.append(Report.sitting_date < sitting_date_before)
-        if parliament_number is not None:
-            filters.append(Report.parliament_number == parliament_number)
-        if report_type is not None:
-            filters.append(Report.report_type == report_type)
-        if has_content:
-            filters.append(Report.content.is_not(None))
-        return self.session.exec(select(Report).where(*filters)).first()
-
-    def get_strata_sample(self) -> list[Report]:
-        MAX_PARLIAMENT_NUMBER = 12
-        result: list[Report] = []
-        for parliament_number in range(1, MAX_PARLIAMENT_NUMBER + 1):
-            for report_type_enum in ReportType:
-                sample = self.get_first_filtered(
-                    sitting_date_before=datetime(2012, 9, 10),
-                    parliament_number=parliament_number,
-                    report_type=report_type_enum.value,
-                    has_content=True,
-                )
-                if sample is None:
-                    continue
-                result.append(sample)
-        return result
