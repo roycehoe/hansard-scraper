@@ -21,6 +21,7 @@ from crud.speaker import CRUDSpeaker
 from database.init import engine
 from database.sitting import Sitting
 from services.attendance import (
+    SpeakerLookups,
     build_speaker_lookups,
     get_sitting_attendance,
     infer_parliament,
@@ -72,7 +73,7 @@ def _get_category(name: str) -> str:
 
 # ── resolution ────────────────────────────────────────────────────────────────
 
-def _is_resolved(name: str, parliament: int, lookups) -> bool:
+def _is_resolved(name: str, parliament: int, lookups: SpeakerLookups) -> bool:
     if resolve_canonical_name(name, parliament, lookups) is not None:
         return True
     if parliament == _COLONIAL_PARLIAMENT_NUMBER:

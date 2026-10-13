@@ -32,7 +32,7 @@ _PERCENT = 100
 _SEPARATOR_WIDTH = 56
 
 
-def main():
+def main() -> None:
     random.seed(_SEED)
 
     with Session(engine) as session:

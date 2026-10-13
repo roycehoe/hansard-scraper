@@ -24,6 +24,7 @@ from sqlmodel import Session
 from crud.report import CRUDReport
 from crud.speech import CRUDSpeech
 from database.init import engine
+from database.report import Report
 from services.speech import _is_artifact_line, get_start_of_speech_line
 
 _MAX_PARLIAMENT = 11
@@ -48,7 +49,7 @@ def _is_adr_excluded(speaker: str) -> bool:
     return bool(_ADR_EXCLUDED_SPEAKER_RE.search(speaker)) or speaker.startswith(("(", "_"))
 
 
-def _get_body_character_count(report) -> int:
+def _get_body_character_count(report: Report) -> int:
     """Countable characters after the start line, or after the metadata header when no start line is found."""
     lines = report.markdown_content.splitlines()
     start = get_start_of_speech_line(
@@ -65,7 +66,7 @@ def _get_body_character_count(report) -> int:
     return total
 
 
-def main():
+def main() -> None:
     with Session(engine) as session:
         reports = [report for report in CRUDReport(session).get_by_markdown_content_not_null() if report.parliament_number <= _MAX_PARLIAMENT]
         rows = []
