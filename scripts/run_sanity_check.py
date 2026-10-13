@@ -1,9 +1,3 @@
-"""
-Sanity check: HansardWebsiteResponse -> Report -> Speech.
-Loads IDs from sample.json (Report IDs), finds matching HansardWebsiteResponses,
-regenerates objects, and compares against the control (raw HTML content).
-"""
-
 import json
 from typing import Optional
 

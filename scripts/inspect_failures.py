@@ -1,5 +1,3 @@
-"""Manual inspection of failing documents for the refine loop."""
-
 import sys
 
 from sqlmodel import Session

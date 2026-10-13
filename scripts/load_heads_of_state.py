@@ -1,12 +1,3 @@
-"""
-Load Governors, the Yang di-Pertuan Negara and Presidents from data/heads_of_state.json into the
-Speaker table as non-member rows (is_member false), one row per parliament in which their speeches
-appear, so stage 8 can link the Address and the bracketed strings that name them.
-
-Idempotent: a row whose (name, parliament_number) already exists is only marked as a non-member.
-
-Run before populate_speaker_links, after load_colonial_la_speakers.
-"""
 import json
 from pathlib import Path
 
