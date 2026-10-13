@@ -38,14 +38,14 @@ def _parse_speakers(html: str, parliament_number: int) -> list[SpeakerResult]:
         name_element = list_item.select_one(".mp-sort-name.name")
         party_element = list_item.select_one(".mp-sort.party")
         legislative_assembly_element = list_item.select_one(".formermp-legislative")
-        if not name_element or not party_element:
+        if name_element is None:
+            continue
+        if party_element is None:
             continue
         full_name = name_element.get_text(strip=True)
         match = re.match(r"^(.*?)\s*\((.+)\)\s*$", full_name)
-        if match:
-            name, comments = match.group(1).strip(), match.group(2).strip()
-        else:
-            name, comments = full_name, None
+        name = full_name if match is None else match.group(1).strip()
+        comments = None if match is None else match.group(2).strip()
         results.append(SpeakerResult(
             name=name,
             party=party_element.get_text(strip=True),
