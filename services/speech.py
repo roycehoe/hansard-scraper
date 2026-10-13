@@ -77,6 +77,41 @@ _PROCEDURAL_STAGE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Plain lines that record procedure or the chair, not a member's words. Each starts the stripped line,
+# after any leading "*", "_" or whitespace.
+_PROCEDURAL_LINE_ANCHORS = (
+    r"Question (?:put,? and agreed to|proposed|again proposed)",
+    r"Question put,? and negatived",
+    r"Amendment, by leave, withdrawn",
+    r"The sum of \$?[0-9,]+ .*ordered to stand part",  # Committee of Supply head
+    r"Clauses? [0-9A-Za-z, to and]{1,30} ordered to stand part",
+    r"Bill (?:accordingly )?read a (?:Second|Third|second|third) time",
+    r"Bill reported without amendment",
+    r"Bill considered in Committee",
+    r"Resolution to be reported",
+    r"Resolved,?[\s*_]*$",  # the bare word; "Resolved, "That ..."" carries the motion text
+    r"Order for Second Reading read",
+    r"Order read for",
+    r"Adjourned accordingly",
+    r"Thereupon (?:Mr|Mdm) (?:Deputy )?Speaker",  # "... left the Chair"
+    r"(?:Sitting|Debate) (?:accordingly )?(?:suspended|resumed)",
+    r"\*\s*The same amendment",  # editorial footnote under an amendment list
+    r"The House divided",
+)
+_PROCEDURAL_LINE_RE = re.compile(r"^[\s*_]*(?:" + "|".join(_PROCEDURAL_LINE_ANCHORS) + ")")
+
+# Bold headings that open a new section of business. The text after one is never the preceding member's,
+# so skipping the heading resets current_speaker. Kept to an explicit list: other headings (budget and
+# Address sub-headings) sit inside a member's speech.
+_SECTION_BOUNDARY_HEADINGS = frozenset({
+    "ADJOURNMENT",
+    "ADJOURNMENT OF DEBATE",
+    "ADJOURNMENT TO A DATE TO BE FIXED",
+    "ADJOURNMENT SINE DIE",
+    "REARRANGEMENT OF ORDER OF BUSINESS",
+    "COMMITTEE OF SUPPLY",
+})
+
 
 def _extract_mps_speaking(markdown: str) -> list[str]:
     match = _MP_SPEAK_RE.search(markdown)
@@ -301,7 +336,10 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 continue  # skip procedural time markers (e.g. "4.26 pm", "3.30 p.m.")
             if re.match(r"^#{1,6}(\s|$)", parsed_line):
                 continue  # skip markdown section headings (e.g. "#### [Mr SPEAKER in the Chair]")
-            speeches.append(ParsedSpeech(speaker=current_speaker, transcript=parsed_line))
+            speeches.append(ParsedSpeech(
+                speaker=None if _PROCEDURAL_LINE_RE.match(parsed_line) else current_speaker,
+                transcript=parsed_line,
+            ))
             continue
 
         bold_match = re.search(r"((?:\*\*[^*]+?\*\*\s*)+)", parsed_line)
@@ -372,6 +410,8 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             if (not transcript
                     and not _SPEAKER_HONORIFIC_RE.search(raw_speaker)
                     and (":" not in bold_match.group(0) or not bold_ends_with_colon)):
+                if raw_speaker in _SECTION_BOUNDARY_HEADINGS:
+                    current_speaker = None
                 continue
             if new_speaker:
                 current_speaker = new_speaker
@@ -381,7 +421,10 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             continue
 
         if not in_preamble:
-            speeches.append(ParsedSpeech(speaker=current_speaker, transcript=parsed_line))
+            speeches.append(ParsedSpeech(
+                speaker=None if _PROCEDURAL_LINE_RE.match(parsed_line) else current_speaker,
+                transcript=parsed_line,
+            ))
 
     for speech in speeches:
         if m := _LANGUAGE_NOTE_RE.match(speech.transcript):
