@@ -15,8 +15,8 @@ All figures below were queried from the database on 13 October 2026, after that 
 | Report types | 23, of which 19 have full text: oral answers, written answers, bills, motions, ministerial statements, budget debates, and more |
 | Full-text records with speeches | 21,260 of 21,838 |
 | Full-text records with no speeches | 578 of 21,838; 567 of those are in Parliaments 0 to 11, mostly budget procedural orders (273), annex and link pages, and records that name no speaker |
-| Speeches linked to a registry speaker, Parliaments 0 to 11 | 584,458 of 602,415 (97.0%) under the denominator in [docs/adr/0001-attribution-denominator.md](docs/adr/0001-attribution-denominator.md): rows with a speaker string, minus collective references and stage directions |
-| Speeches linked, all rows with a speaker string | 602,393 of 625,929 (96.2%) across Parliaments 0 to 12; speeches exist only for those parliaments |
+| Speeches linked to a registry speaker, Parliaments 0 to 11 | 584,447 of 602,415 (97.0%) under the denominator in [docs/adr/0001-attribution-denominator.md](docs/adr/0001-attribution-denominator.md): rows with a speaker string, minus collective references and stage directions |
+| Speeches linked, all rows with a speaker string | 602,382 of 625,929 (96.2%) across Parliaments 0 to 12; speeches exist only for those parliaments |
 | Speeches linked, Parliament 12 | 17,935 of 18,215 (98.5%) under the same denominator; reported separately because its fetch is incomplete |
 | Attendance rows linked to a registry speaker | 96,350 of 96,500 (99.8%) |
 | Sitting metadata | Attendance, PTBA, and debate sections (Parliament 13+) |

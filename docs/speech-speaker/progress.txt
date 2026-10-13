@@ -12,6 +12,8 @@ Three groups of approved proposals from plans/speaker-attribution-push-proposals
 
 **Result:** 584,458 of 602,415 denominator rows linked (97.0%); all rows with a speaker string 602,393 of 625,929 (96.2%); Parliament 12 17,935 of 18,215 (98.5%).
 
+**Correction, later on 2026-10-13.** Review of the group C reassignments found 11 rows (ids 328587 to 328597, sitting of 7 June 1956) where a letter read into the record by The Chief Minister had been credited to Mr Lee Kuan Yew. They now read "The Chief Minister" and are unlinked, because the holder on that date is disputed. Linked rows are 584,447 of 602,415 (97.0%) and 602,382 of 625,929 (96.2%). The same review found drop-cap and quoted bold lines had lost their bold text; the parser keeps it now, and the 7 stored rows were repaired.
+
 | Parliament | Linked | Denominator | Rate |
 |---|---|---|---|
 | 0 | 123,789 | 130,439 | 94.9% |
