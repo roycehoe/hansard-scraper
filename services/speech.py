@@ -167,6 +167,9 @@ def _extract_md_title(markdown_content: str) -> Optional[str]:
 
 def _line_matches_title(line: str, candidate: str) -> bool:
     """Return True if the line matches the candidate title via any strategy."""
+    # Quote marks appear in the markdown title but not the API title, or the reverse.
+    line = re.sub(r"[\"“”]", "", line)
+    candidate = re.sub(r"[\"“”]", "", candidate)
     # Strategy 1: closed bold (**title**) — old format with proper closing
     if f"{candidate}**" in line:
         return True
@@ -228,6 +231,8 @@ def get_start_of_speech_line(
         original_title_clean,
         f"{title} {subtitle}" if subtitle else None,
         md_title or None,
+        # A trailing acronym can wrap onto its own line: "... TRAINING SUBSIDIES" / "(SPUR)"
+        re.sub(r"\s*\([A-Z]+\)$", "", title) if re.search(r"\s*\([A-Z]+\)$", title) else None,
     ] if candidate]
 
     for line_index, line in enumerate(markdown_content.splitlines()):
@@ -252,11 +257,33 @@ def _is_artifact_line(line: str) -> bool:
     return False
 
 
-def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpeech]:
+def _merge_wrapped_bold_lines(lines: list[str]) -> list[str]:
+    """Join a speaker label that wrapped onto two bold lines, such as
+    "**The Minister of State for Education (Mr Gan Kim Yong) (for the Minister for**"
+    followed by "**Education):** ...", so the whole label is one bold block."""
+    merged: list[str] = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        label = re.match(r"^\*\*([^*]+)\*\*\s*$", line.strip())
+        if label and not label.group(1).rstrip().endswith(":") and label.group(1).count("(") > label.group(1).count(")"):
+            following = index + 1
+            while following < len(lines) and not lines[following].strip():
+                following += 1
+            if following < len(lines) and re.match(r"^\*\*(?!\*)", lines[following].lstrip()):
+                merged.append(line.rstrip()[:-2] + " " + lines[following].lstrip()[2:])
+                index = following + 1
+                continue
+        merged.append(line)
+        index += 1
+    return merged
+
+
+def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str = "") -> list[ParsedSpeech]:
     current_speaker = None
     in_preamble = True  # True until the first real bold speaker name is seen
     speeches: list[ParsedSpeech] = []
-    for line in markdown.splitlines()[start_of_speech_line + 1 :]:
+    for line in _merge_wrapped_bold_lines(markdown.splitlines()[start_of_speech_line + 1 :]):
         parsed_line = line.strip()
         parsed_line = re.sub(r"^(\*{4})+", "", parsed_line)  # strip leading **** artifacts (e.g. ****8.**Name**)
         if _is_artifact_line(parsed_line):
@@ -292,6 +319,14 @@ def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpee
             new_speaker = re.sub(r"^\d+\\?\.\s+", "", new_speaker)
             # Fix OCR artifacts where space was dropped between honorific and name
             new_speaker = re.sub(r"^(Mr|Mrs|Ms|Dr|Prof|Mdm|The|BG|RAdm|Er)([A-Z])", r"\1 \2", new_speaker)
+            # A bold drop cap ("**E**very year ...") and, in motions, a bold line opening with a
+            # quote mark (a headline or letter read into the record) continue the current speaker.
+            if (re.fullmatch(r"[A-Za-z]{1,2}", new_speaker) and new_speaker not in ("Mr", "Er", "Ms", "Dr")) or (
+                report_type == "motion" and new_speaker[:1] in "\"“'"
+            ):
+                if transcript and current_speaker is not None:
+                    speeches.append(ParsedSpeech(speaker=current_speaker, transcript=transcript))
+                continue
             # Fix A: reject parliamentary procedural stage labels (e.g. "Third Reading:", "Committee:")
             # These end with a colon so the generic section-title skip misses them.
             if _PROCEDURAL_STAGE_RE.match(new_speaker):
@@ -341,7 +376,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpee
 
 
 def get_speeches(markdown: str, start_of_speech_line: int, report_type: str) -> list[ParsedSpeech]:
-    parsed = _parse_speeches(markdown, start_of_speech_line)
+    parsed = _parse_speeches(markdown, start_of_speech_line, report_type)
     speakers = _extract_mps_speaking(markdown)
     speech_type = _classify_speech_type(parsed, len(speakers))
 

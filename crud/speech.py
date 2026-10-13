@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Iterable, Optional
 
 from sqlalchemy import text
-from sqlmodel import Session, delete, select
+from sqlmodel import Session, col, delete, select
 
 from database.report import Report
 from database.speech import Speech
@@ -41,6 +41,23 @@ class CRUDSpeech:
             .where(Speech.speaker_id == None)  # noqa: E711
             .execution_options(yield_per=_STREAM_BATCH)
         )
+
+    def get_report_ids_with_unlinked_speaker(self, pattern: str) -> list[int]:
+        """Reports holding a speech without speaker_id whose speaker string matches the regex (case-insensitive)."""
+        return list(self.session.exec(
+            select(Speech.report_id).distinct()
+            .where(Speech.speaker_id == None, Speech.speaker.regexp_match(pattern, flags="i"))  # noqa: E711
+        ).all())
+
+    def get_rows_by_report_ids(
+        self, report_ids: list[int]
+    ) -> list[tuple[int, int, Optional[str], str, int, Optional[int]]]:
+        """(id, ordinal, speaker, transcript, report_id, speaker_id) in reading order."""
+        return list(self.session.exec(
+            select(Speech.id, Speech.ordinal, Speech.speaker, Speech.transcript, Speech.report_id, Speech.speaker_id)
+            .where(col(Speech.report_id).in_(report_ids))
+            .order_by(Speech.report_id, Speech.ordinal)
+        ).all())
 
     def get_speaker_info_by_ids(self, ids: list[int]) -> list[tuple[int, str, int, object]]:
         return list(self.session.exec(

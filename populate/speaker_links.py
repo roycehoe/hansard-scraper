@@ -5,12 +5,13 @@ from typing import Iterable, Optional
 from sqlmodel import Session
 
 from crud.attendance import CRUDAttendance
+from crud.report import CRUDReport
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from logs import logger
 from populate.speaker_resolution_constants import (
-    CHIEF_MINISTER_TERMS,
     COLONIAL_PARLIAMENT_FALLBACKS,
+    DATED_ROLE_TERMS,
     DEPUTY_SPEAKER_TERMS,
     NON_SPEAKERS,
     ROLE_ONLY_SPEAKERS,
@@ -24,18 +25,51 @@ from services.attendance import (
     resolve_canonical_name,
     strip_title,
 )
+from services.role_context import (
+    CARRIED_ROLES,
+    CHAIRMAN_RE,
+    carried_role_names,
+    chairman_names,
+)
 
 _WRITE_BATCH = 50_000
+_REPORT_BATCH = 200
 
 # Only these roles resolve by sitting date; every other string resolves the same
 # way for every sitting in a parliament, so it is memoised on (string, parliament).
 _DATE_DEPENDENT_ROLES = (
     "The Chief Minister",
+    "The Prime Minister",
     "Mr Speaker",
     "Mdm Speaker",
     "Mr Deputy Speaker",
     "The Deputy Speaker",
 )
+
+_TITLED_RE = re.compile(r"^(?:Mr|Mrs|Ms|Mdm|Dr|Miss|Inche|Encik|Assoc|Prof|Er)\b")
+
+
+def _preclean(raw: str) -> str:
+    """Remove parse debris from a speaker string before resolution: list numbers and
+    stray punctuation, rank qualifiers such as "(NS)", a trailing "Mr Speaker," that
+    belongs to the transcript, an unclosed parenthesis, an inverted two-part name and
+    a label printed twice."""
+    raw = raw.replace("\ufeff", "").strip()
+    raw = re.sub(r"^\d+\\?\.\s*", "", raw)
+    raw = re.sub(r"^\.\s+", "", raw)
+    raw = re.sub(r"\bAssoc\.Prof\.", "Assoc. Prof.", raw)
+    raw = re.sub(r"\s*[\[(](?:NS|Res)[\])]\s*", " ", raw)
+    raw = re.sub(r"\s+Mr Speaker,?$", "", raw)
+    raw = re.sub(r"\s+", " ", raw).rstrip(";, ").strip()
+    if raw.count("(") > raw.count(")"):
+        cut = raw.rfind("(")
+        inner = raw[cut + 1 :].strip()
+        raw = f"{raw[:cut]}({inner})" if _TITLED_RE.match(inner) else raw[:cut].strip()
+    inverted = re.match(r"^([A-Z][a-z]+), ([A-Z][a-z]+)$", raw)
+    if inverted:
+        raw = f"{inverted.group(2)} {inverted.group(1)}"
+    doubled = re.match(r"^(.{6,}?)\s+\1$", raw)
+    return doubled.group(1) if doubled else raw
 
 
 def _paren_contains_title(m: re.Match) -> bool:
@@ -125,7 +159,7 @@ def _resolve_speech_speaker_id(
     if speaker in NON_SPEAKERS or speaker.startswith("(") or speaker.startswith("_"):
         return None
 
-    raw = speaker.rstrip(":").strip()
+    raw = _preclean(speaker.rstrip(":").strip())
 
     if raw in ("Mr Speaker", "Mdm Speaker") or raw.startswith(
         ("Mr Deputy Speaker", "The Deputy Speaker")
@@ -135,15 +169,15 @@ def _resolve_speech_speaker_id(
             raw, parliament, sitting_date, lookups, speaker_id_lookup
         )
 
-    # Chief Minister (colonial era): Marshall or Lim by sitting date.
-    if raw == "The Chief Minister" and parliament in (0, 1, 2, 3):
-        cm_name = _holder_on(CHIEF_MINISTER_TERMS, sitting_date)
-        if not cm_name:
+    # Roles whose holder changed within a parliament resolve by sitting date.
+    if raw in DATED_ROLE_TERMS:
+        holder = _holder_on(DATED_ROLE_TERMS[raw], sitting_date)
+        if not holder:
             return None
-        cm_canonical, cm_parl = _resolve_with_parliament_fallback(
-            cm_name, 0, lookups, speaker_id_lookup
+        canonical, parl = _resolve_with_parliament_fallback(
+            holder, parliament, lookups, speaker_id_lookup
         )
-        return speaker_id_lookup.get((cm_canonical, cm_parl)) if cm_canonical else None
+        return speaker_id_lookup.get((canonical, parl)) if canonical else None
 
     role_key: Optional[tuple[str, int]] = (
         (raw, parliament) if parliament != 0 else None
@@ -239,6 +273,48 @@ def resolve_speech_rows(
     return updates
 
 
+def _populate_role_context_links(
+    session: Session,
+    lookups: SpeakerLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+) -> None:
+    """Link role-only strings that the report itself resolves: "The Chairman" from the
+    chair annotations, closing line and header, and carried roles from an earlier
+    row that names the holder."""
+    crud_speech = CRUDSpeech(session)
+    pattern = "|".join([CHAIRMAN_RE.pattern] + [f"^{re.escape(role)}$" for role in CARRIED_ROLES])
+    report_ids = crud_speech.get_report_ids_with_unlinked_speaker(pattern)
+    memo: dict[tuple[str, int, Optional[datetime]], Optional[int]] = {}
+    updates: dict[int, int] = {}
+    total = 0
+    for start in range(0, len(report_ids), _REPORT_BATCH):
+        batch = report_ids[start : start + _REPORT_BATCH]
+        reports = {r.id: r for r in CRUDReport(session).get_by_ids(batch)}
+        rows_by_report: dict[int, list] = {}
+        for row in crud_speech.get_rows_by_report_ids(batch):
+            rows_by_report.setdefault(row[4], []).append(row)
+        for report_id, rows in rows_by_report.items():
+            report = reports[report_id]
+            unlinked = {row[0] for row in rows if row[5] is None}
+            speech_rows = [row[:4] for row in rows]
+            names = chairman_names(report.markdown_content or "", speech_rows)
+            names.update(carried_role_names(speech_rows))
+            for speech_id, name in names.items():
+                if speech_id not in unlinked:
+                    continue
+                total += 1
+                key = (name, report.parliament_number, report.sitting_date)
+                if key not in memo:
+                    memo[key] = _resolve_speech_speaker_id(
+                        name, report.parliament_number, report.sitting_date, lookups, speaker_id_lookup
+                    )
+                if memo[key]:
+                    updates[speech_id] = memo[key]
+    _write_in_batches(crud_speech.set_speaker_ids_bulk, updates)
+    session.commit()
+    logger.info(f"Speech: set speaker_id on {len(updates)}/{total} role-context records")
+
+
 def _write_in_batches(set_speaker_ids_bulk, updates: dict[int, int]) -> None:
     items = list(updates.items())
     for start in range(0, len(items), _WRITE_BATCH):
@@ -265,3 +341,4 @@ def populate_speaker_links(session: Session) -> None:
     )
     _write_in_batches(crud_speech.set_speaker_ids_bulk, speech_updates)
     session.commit()
+    _populate_role_context_links(session, lookups, speaker_id_lookup)

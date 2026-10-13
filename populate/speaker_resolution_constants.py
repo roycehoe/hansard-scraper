@@ -45,22 +45,22 @@ DEPUTY_SPEAKER_TERMS: list[tuple[date, date, str]] = [
     (date(2011, 10, 17), date(2015, 8, 24), "Charles Chong"),
 ]
 
-# Sources disagree on whether Lim Yew Hock took over on 7 or 8 June 1956, so the
-# sitting of 7 June 1956 is left out and stays unlinked.
-CHIEF_MINISTER_TERMS: list[tuple[date, date, str]] = [
-    (date(1955, 4, 6), date(1956, 6, 6), "David Marshall"),
-    (date(1956, 6, 8), date(1959, 6, 3), "Lim Yew Hock"),
-]
+# Role-only strings whose holder changed mid-parliament, by date. Sources disagree on
+# whether Lim Yew Hock took over on 7 or 8 June 1956, so that sitting stays unlinked.
+# Prime Minister handovers (28 Nov 1990, 12 Aug 2004) fell on days without a sitting.
+DATED_ROLE_TERMS: dict[str, list[tuple[date, date, str]]] = {
+    "The Chief Minister": [
+        (date(1955, 4, 6), date(1956, 6, 6), "David Marshall"),
+        (date(1956, 6, 8), date(1959, 6, 3), "Lim Yew Hock"),
+    ],
+    "The Prime Minister": [
+        (date(1959, 6, 5), date(1990, 11, 27), "Lee Kuan Yew"),
+        (date(1990, 11, 28), date(2004, 8, 11), "Goh Chok Tong"),
+        (date(2004, 8, 12), date(2024, 5, 14), "Lee Hsien Loong"),
+    ],
+}
 
 ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str] = {
-    ("The Prime Minister", 0): "Lee Kuan Yew",
-    ("The Prime Minister", 1): "Lee Kuan Yew",
-    ("The Prime Minister", 2): "Lee Kuan Yew",
-    ("The Prime Minister", 3): "Lee Kuan Yew",
-    ("The Prime Minister", 5): "Lee Kuan Yew",
-    ("The Prime Minister", 6): "Lee Kuan Yew",
-    ("The Prime Minister", 8): "Goh Chok Tong",
-    ("The Prime Minister", 11): "Lee Hsien Loong",
     ("The Minister for Health", 11): "Khaw Boon Wan",
 }
 
