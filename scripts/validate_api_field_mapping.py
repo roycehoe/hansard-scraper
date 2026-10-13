@@ -108,14 +108,8 @@ SYNTHETIC_NEW_FORMAT = {
 }
 
 
-def _orm_fields(obj) -> dict[str, Any]:
-    return {k: v for k, v in vars(obj).items() if not k.startswith("_")}
-
-
-def _to_snake(name: str) -> str:
-    import re
-    s1 = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", name)
-    return re.sub(r"([a-z\d])([A-Z])", r"\1_\2", s1).lower()
+def _get_orm_field_to_value(orm_object) -> dict[str, Any]:
+    return {key: value for key, value in vars(orm_object).items() if not key.startswith("_")}
 
 
 def _section(title: str) -> None:
@@ -126,41 +120,19 @@ def _section(title: str) -> None:
 
 def validate_search_and_topic() -> bool:
     _section("API 1 — searchResult  →  HansardSearchResult  →  HansardWebsiteResponse")
-    raw_list = get_hansard_search_results(0, 0)
-    if not raw_list:
+    search_results = get_hansard_search_results(0, 0)
+    if not search_results:
         print(f"  {WARN}  No search results returned (check settings.search_from_date).")
         return True
 
-    parsed = raw_list[0]
-    raw = parsed.model_dump(by_alias=True)
-    print(f"  {INFO}  report_id={parsed.report_id}  title={parsed.title[:55]}")
-
-    # Pydantic parse: check every field that has a value in raw is non-None in parsed
-    parsed_dict = parsed.model_dump()
-
-    pydantic_failures = []
-    for raw_key, raw_val in raw.items():
-        if raw_val is None or raw_val == "" or raw_val == []:
-            continue
-        snake = _to_snake(raw_key)
-        if snake not in parsed_dict:
-            continue
-        if parsed_dict[snake] is None:
-            pydantic_failures.append(
-                f"  {FAIL}  raw[{raw_key!r}]={str(raw_val)[:55]!r}  →  HansardSearchResult.{snake}=None"
-            )
-
-    if pydantic_failures:
-        print("\n  HansardSearchResult field losses:")
-        for line in pydantic_failures:
-            print(line)
-    else:
-        print(f"  {PASS}  HansardSearchResult — all raw fields survive Pydantic parse")
+    hansard_search_result = search_results[0]
+    raw = hansard_search_result.model_dump(by_alias=True)
+    print(f"  {INFO}  report_id={hansard_search_result.report_id}  title={hansard_search_result.title[:55]}")
 
     # ORM build: check the explicitly mapped fields
-    orm = build_hansard_website_response(parsed, content=None)
-    orm_dict = _orm_fields(orm)
-    mapped_raw_keys = {
+    hansard_website_response = build_hansard_website_response(hansard_search_result, content=None)
+    orm_field_to_value = _get_orm_field_to_value(hansard_website_response)
+    raw_key_to_orm_field = {
         "volumeNo": "volume_number",
         "parlNo": "parliament_number",
         "sittingNo": "sitting_number",
@@ -174,14 +146,14 @@ def validate_search_and_topic() -> bool:
         "reportVersion": "report_version",
     }
     orm_failures = []
-    for raw_key, orm_field in mapped_raw_keys.items():
-        raw_val = raw.get(raw_key)
-        if raw_val is None or raw_val == "":
+    for raw_key, orm_field in raw_key_to_orm_field.items():
+        raw_value = raw.get(raw_key)
+        if raw_value is None or raw_value == "":
             continue
-        orm_val = orm_dict.get(orm_field)
-        if orm_val is None:
+        orm_value = orm_field_to_value.get(orm_field)
+        if orm_value is None:
             orm_failures.append(
-                f"  {FAIL}  raw[{raw_key!r}]={str(raw_val)[:55]!r}  →  HansardWebsiteResponse.{orm_field}=None"
+                f"  {FAIL}  raw[{raw_key!r}]={str(raw_value)[:55]!r}  →  HansardWebsiteResponse.{orm_field}=None"
             )
 
     if orm_failures:
@@ -191,29 +163,29 @@ def validate_search_and_topic() -> bool:
     else:
         print(f"  {PASS}  HansardWebsiteResponse — all mapped fields present")
 
-    return not (pydantic_failures or orm_failures)
+    return not orm_failures
 
 
 def validate_topic(report_id: str) -> bool:
     _section("API 2 — getHansardTopic  →  htmlContent  →  HansardWebsiteResponse.content")
     print(f"  {INFO}  report_id={report_id!r}")
-    raw_list = get_hansard_search_results(0, 0)
-    if not raw_list:
+    search_results = get_hansard_search_results(0, 0)
+    if not search_results:
         print(f"  {WARN}  No search results; skipping.")
         return True
 
-    parsed = next((r for r in raw_list if r.report_id == report_id), raw_list[0])
-    topic_response = get_hansard_topic_response(report_id)
-    html_content = topic_response.html_content
+    hansard_search_result = next((search_result for search_result in search_results if search_result.report_id == report_id), search_results[0])
+    hansard_topic_response = get_hansard_topic_response(report_id)
+    html_content = hansard_topic_response.html_content
 
-    orm = build_hansard_website_response(parsed, content=html_content)
+    hansard_website_response = build_hansard_website_response(hansard_search_result, content=html_content)
     if html_content:
-        if orm.content is None:
+        if hansard_website_response.content is None:
             print(f"  {FAIL}  topic.htmlContent ({len(html_content)} chars)  →  orm.content=None")
             return False
-        print(f"  {PASS}  htmlContent ({len(html_content)} chars) → orm.content ({len(orm.content)} chars)")
+        print(f"  {PASS}  htmlContent ({len(html_content)} chars) → orm.content ({len(hansard_website_response.content)} chars)")
     else:
-        topic_keys = list(topic_response.model_dump(by_alias=True, exclude_none=True).keys())
+        topic_keys = list(hansard_topic_response.model_dump(by_alias=True, exclude_none=True).keys())
         print(
             f"  {INFO}  htmlContent absent for this report type "
             f"(topic response keys: {topic_keys}) — expected for written answers"
@@ -222,19 +194,19 @@ def validate_topic(report_id: str) -> bool:
 
 
 def _validate_sitting_payload(
-    response: Union[HansardReportOldResponse, HansardReportNewResponse], sitting_date: str, source: str
+    hansard_report_response: Union[HansardReportOldResponse, HansardReportNewResponse], sitting_date: str, source: str
 ) -> bool:
     is_new = is_new_sitting_date_format(sitting_date)
-    raw = response.model_dump(by_alias=True)
+    raw = hansard_report_response.model_dump(by_alias=True)
 
-    if response.error_code is not None:
-        print(f"  {WARN}  API returned error: {response.description} — using synthetic payload instead")
+    if hansard_report_response.error_code is not None:
+        print(f"  {WARN}  API returned error: {hansard_report_response.description} — using synthetic payload instead")
         return None  # signal to caller to fall back
 
     if is_new:
-        data = build_new_hansard_sitting_date_response(response, sitting_date)
+        hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
         metadata = raw["metadata"] or {}
-        new_mapped = {
+        metadata_key_to_orm_field = {
             "parlimentNO": "parlement_no",
             "sessionNO": "session_no",
             "volumeNO": "volume_no",
@@ -252,29 +224,29 @@ def _validate_sitting_payload(
             "ptbaTo": "ptba_to",
             "locationText": "location_text",
         }
-        top_mapped = {
+        raw_key_to_orm_field = {
             "attStartPgNo": "att_start_pg_no",
             "ptbaStartPgNo": "ptba_start_pg_no",
             "atbpStartPgNo": "atbp_start_pg_no",
             "onlinePDFFileName": "online_pdf_file_name",
         }
-        orm_dict = _orm_fields(data)
+        orm_field_to_value = _get_orm_field_to_value(hansard_sitting_date_response)
         failures = []
-        for meta_key, orm_field in new_mapped.items():
-            val = metadata.get(meta_key)
-            if val is None or val == "":
+        for metadata_key, orm_field in metadata_key_to_orm_field.items():
+            value = metadata.get(metadata_key)
+            if value is None or value == "":
                 continue
-            if orm_dict.get(orm_field) is None:
-                failures.append(f"  {FAIL}  metadata[{meta_key!r}]={str(val)[:55]!r}  →  .{orm_field}=None")
-        for rk, of in top_mapped.items():
-            val = raw.get(rk)
-            if val is None or val == "":
+            if orm_field_to_value.get(orm_field) is None:
+                failures.append(f"  {FAIL}  metadata[{metadata_key!r}]={str(value)[:55]!r}  →  .{orm_field}=None")
+        for raw_key, orm_field in raw_key_to_orm_field.items():
+            value = raw.get(raw_key)
+            if value is None or value == "":
                 continue
-            if orm_dict.get(of) is None:
-                failures.append(f"  {FAIL}  raw[{rk!r}]={str(val)[:55]!r}  →  .{of}=None")
+            if orm_field_to_value.get(orm_field) is None:
+                failures.append(f"  {FAIL}  raw[{raw_key!r}]={str(value)[:55]!r}  →  .{orm_field}=None")
     else:
-        data = build_old_hansard_sitting_date_response(response, sitting_date)
-        old_mapped = {
+        hansard_sitting_date_response = build_old_hansard_sitting_date_response(hansard_report_response, sitting_date)
+        raw_key_to_orm_field = {
             "parlNo": "parlement_no",
             "sessionNo": "session_no",
             "volumeNo": "volume_no",
@@ -316,23 +288,23 @@ def _validate_sitting_payload(
             "clarificationSubTitle": "clarification_sub_title",
             "questionCount": "question_count",
         }
-        orm_dict = _orm_fields(data)
+        orm_field_to_value = _get_orm_field_to_value(hansard_sitting_date_response)
         failures = []
-        for raw_key, orm_field in old_mapped.items():
-            val = raw.get(raw_key)
-            if val is None or val == "" or val == []:
+        for raw_key, orm_field in raw_key_to_orm_field.items():
+            value = raw.get(raw_key)
+            if value is None or value == "" or value == []:
                 continue
-            if orm_dict.get(orm_field) is None:
+            if orm_field_to_value.get(orm_field) is None:
                 failures.append(
-                    f"  {FAIL}  raw[{raw_key!r}]={str(val)[:55]!r}  →  .{orm_field}=None"
+                    f"  {FAIL}  raw[{raw_key!r}]={str(value)[:55]!r}  →  .{orm_field}=None"
                 )
 
-    fmt = "new" if is_new else "old"
+    format_label = "new" if is_new else "old"
     if failures:
         for line in failures:
             print(line)
         return False
-    print(f"  {PASS}  HansardSittingDateResponse ({fmt} format, {source}) — no field losses")
+    print(f"  {PASS}  HansardSittingDateResponse ({format_label} format, {source}) — no field losses")
     return True
 
 
@@ -342,38 +314,38 @@ def validate_sitting_date(sitting_date: str, label: str, synthetic: dict) -> boo
 
     response_schema = HansardReportNewResponse if is_new_sitting_date_format(sitting_date) else HansardReportOldResponse
     try:
-        response = get_hansard_report_response(sitting_date)
-    except Exception as e:
-        print(f"  {WARN}  API call failed ({e}) — using synthetic payload")
-        response = response_schema(error_code=500)
+        hansard_report_response = get_hansard_report_response(sitting_date)
+    except Exception as error:
+        print(f"  {WARN}  API call failed ({error}) — using synthetic payload")
+        hansard_report_response = response_schema(error_code=500)
 
-    result = _validate_sitting_payload(response, sitting_date, source="live API")
-    if result is None:
+    is_passed = _validate_sitting_payload(hansard_report_response, sitting_date, source="live API")
+    if is_passed is None:
         # API returned an error — fall back to synthetic
-        result = _validate_sitting_payload(
+        is_passed = _validate_sitting_payload(
             response_schema.model_validate(synthetic), sitting_date, source="synthetic payload"
         )
 
-    return bool(result)
+    return bool(is_passed)
 
 
 if __name__ == "__main__":
-    all_passed = True
-    all_passed &= validate_search_and_topic()
-    all_passed &= validate_topic(get_hansard_search_results(0, 0)[0].report_id)
-    all_passed &= validate_sitting_date(
+    is_all_passed = True
+    is_all_passed &= validate_search_and_topic()
+    is_all_passed &= validate_topic(get_hansard_search_results(0, 0)[0].report_id)
+    is_all_passed &= validate_sitting_date(
         "11-05-2015",
         "old format, pre-2015-08-18",
         SYNTHETIC_OLD_FORMAT,
     )
-    all_passed &= validate_sitting_date(
+    is_all_passed &= validate_sitting_date(
         "15-01-2024",
         "new format, post-2015-08-18",
         SYNTHETIC_NEW_FORMAT,
     )
 
     print(f"\n{'─' * 64}")
-    if all_passed:
+    if is_all_passed:
         print(f"  {PASS}  All field mappings verified.")
     else:
         print(f"  {FAIL}  One or more field losses detected — see above.")
