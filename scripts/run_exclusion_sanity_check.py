@@ -28,33 +28,33 @@ from services.speech import (
     get_start_of_speech_line,
 )
 
-K = 5
-SEED = 42
+_SAMPLE_SIZE_PER_REPORT_TYPE = 5
+_RANDOM_SEED = 42
 # Passed as start_line for a doc with no start line, so _show_doc reads it from line 0.
 _BEFORE_FIRST_LINE = -1
 
 # HTML bold tags that might carry speaker names
 _HTML_BOLD_RE = re.compile(r"<(?:strong|b)\b[^>]*>(.*?)</(?:strong|b)>", re.IGNORECASE | re.DOTALL)
 # Markdown closed-bold pattern (what speaker names look like after conversion)
-_MD_BOLD_RE = re.compile(r"\*\*[^* ][^*]*\*\*")
+_MARKDOWN_BOLD_RE = re.compile(r"\*\*[^* ][^*]*\*\*")
 
 
 def _html_bold_texts(html: str) -> list[str]:
-    return [re.sub(r"\s+", " ", t).strip() for t in _HTML_BOLD_RE.findall(html) if t.strip()]
+    return [re.sub(r"\s+", " ", text).strip() for text in _HTML_BOLD_RE.findall(html) if text.strip()]
 
 
 def _looks_like_speaker(text: str) -> bool:
     """Heuristic: bold text that ends with a colon or contains a personal title."""
-    t = text.strip()
-    if t.endswith(":"):
+    stripped_text = text.strip()
+    if stripped_text.endswith(":"):
         return True
-    if re.search(r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|Col|Brig|Gen|Maj|Capt|Lt)\b", t):
+    if re.search(r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|Col|Brig|Gen|Maj|Capt|Lt)\b", stripped_text):
         return True
     return False
 
 
 def run():
-    random.seed(SEED)
+    random.seed(_RANDOM_SEED)
 
     with Session(engine) as session:
         reports = CRUDReport(session).get_by_markdown_content_not_null()
@@ -87,7 +87,7 @@ def run():
         elif len(speakers) >= 2:
             multi_speaker[report.report_type].append((report, start_line, speakers))
 
-    total_multi = sum(len(v) for v in multi_speaker.values())
+    total_multi = sum(len(reports_of_type) for reports_of_type in multi_speaker.values())
     print(f"Excluded — zero-speaker:  {len(zero_speaker)}")
     print(f"Excluded — multi-speaker: {total_multi}")
     print(f"Excluded — no start line: {len(no_start_line)}")
@@ -118,9 +118,9 @@ def run():
     print("MULTI-SPEAKER DOCS — stratified sample")
     print("=" * 80)
 
-    for rt, items in sorted(multi_speaker.items(), key=lambda x: -len(x[1])):
-        sample = random.sample(items, min(K, len(items)))
-        print(f"\n--- {rt} ({len(items)} total, checking {len(sample)}) ---")
+    for report_type, items in sorted(multi_speaker.items(), key=lambda item: -len(item[1])):
+        sample = random.sample(items, min(_SAMPLE_SIZE_PER_REPORT_TYPE, len(items)))
+        print(f"\n--- {report_type} ({len(items)} total, checking {len(sample)}) ---")
 
         for report, start_line, speakers in sample:
             flags = _show_doc(report, start_line, speakers)
@@ -137,8 +137,8 @@ def run():
             print(f"  title: {report.title!r}")
             print(f"  MPs Speaking: {speakers}")
             print("  HTML bold texts that look like speakers:")
-            for f in flags[:10]:
-                print(f"    {f!r}")
+            for flag in flags[:10]:
+                print(f"    {flag!r}")
 
 
 def _show_doc(report, start_line: int, speakers: list[str]) -> list[str]:
@@ -149,39 +149,39 @@ def _show_doc(report, start_line: int, speakers: list[str]) -> list[str]:
     print(f"  MPs Speaking ({len(speakers)}): {'; '.join(speakers[:5])}")
 
     # ── HTML bold analysis ────────────────────────────────────────────────────
-    html_bolds = _html_bold_texts(report.content or "")
-    speaker_like = [t for t in html_bolds if _looks_like_speaker(t)]
-    print(f"  HTML <strong>/<b> tags: {len(html_bolds)} total, {len(speaker_like)} speaker-like")
+    html_bold_texts = _html_bold_texts(report.content or "")
+    speaker_like = [text for text in html_bold_texts if _looks_like_speaker(text)]
+    print(f"  HTML <strong>/<b> tags: {len(html_bold_texts)} total, {len(speaker_like)} speaker-like")
     if speaker_like:
-        for t in speaker_like[:5]:
-            print(f"    HTML bold: {t!r}")
+        for text in speaker_like[:5]:
+            print(f"    HTML bold: {text!r}")
 
     # ── Markdown after start line ─────────────────────────────────────────────
     lines_after = report.markdown_content.splitlines()[start_line + 1:]
-    md_bolds = [line for line in lines_after if _MD_BOLD_RE.search(line.strip())]
-    print(f"  Markdown **bold** lines after start: {len(md_bolds)}")
-    for line in md_bolds[:5]:
+    markdown_bold_lines = [line for line in lines_after if _MARKDOWN_BOLD_RE.search(line.strip())]
+    print(f"  Markdown **bold** lines after start: {len(markdown_bold_lines)}")
+    for line in markdown_bold_lines[:5]:
         print(f"    MD bold: {line.strip()[:100]}")
 
     # ── Raw HTML snippet (around first bold tag) ──────────────────────────────
     html = report.content or ""
     first_bold = re.search(r"<(?:strong|b)\b", html, re.IGNORECASE)
     if first_bold:
-        snip_start = max(0, first_bold.start() - 100)
-        snip_end = min(len(html), first_bold.start() + 400)
-        snippet = html[snip_start:snip_end]
+        snippet_start = max(0, first_bold.start() - 100)
+        snippet_end = min(len(html), first_bold.start() + 400)
+        snippet = html[snippet_start:snippet_end]
         snippet_clean = re.sub(r"\s+", " ", snippet)
         print("  HTML snippet around first bold tag:")
         print(f"    {snippet_clean[:300]!r}")
 
     # ── Markdown snippet ──────────────────────────────────────────────────────
     print(f"  Markdown (lines {start_line}–{start_line + 20}):")
-    for i, line in enumerate(lines_after[:20]):
-        print(f"    {start_line + 1 + i:4d}: {line[:100]}")
+    for offset, line in enumerate(lines_after[:20]):
+        print(f"    {start_line + 1 + offset:4d}: {line[:100]}")
 
     # Flag if HTML has speaker-like bold but markdown has none
     flags = []
-    if speaker_like and not md_bolds:
+    if speaker_like and not markdown_bold_lines:
         flags = speaker_like
     return flags
 

@@ -14,8 +14,8 @@ from services.speech import get_speeches, get_start_of_speech_line
 
 
 def run():
-    with open("sample.json") as f:
-        sample_sets = json.load(f)
+    with open("sample.json") as sample_file:
+        sample_sets = json.load(sample_file)
 
     report_ids = (
         sample_sets.get("pilot", [])
@@ -26,20 +26,20 @@ def run():
     session = next(get_session())
 
     stored_reports = CRUDReport(session).get_by_ids(report_ids)
-    report_id_strings = {r.report_id for r in stored_reports}
+    report_id_strings = {stored_report.report_id for stored_report in stored_reports}
 
-    hwrs = CRUDHansardWebsiteResponse(session).get_all_by_report_ids(report_id_strings)
-    hwr_by_report_id = {h.report_id: h for h in hwrs}
+    website_responses = CRUDHansardWebsiteResponse(session).get_all_by_report_ids(report_id_strings)
+    report_id_to_website_response = {website_response.report_id: website_response for website_response in website_responses}
 
     print(f"Sample Report IDs:       {len(report_ids)}")
     print(f"Stored Reports found:    {len(stored_reports)}")
-    print(f"Matching HWRs found:     {len(hwrs)}")
+    print(f"Matching HWRs found:     {len(website_responses)}")
     print()
 
     issues = []
     stats = {
         "total": 0,
-        "no_hwr": 0,
+        "no_website_response": 0,
         "no_content": 0,
         "no_markdown": 0,
         "no_start_line": 0,
@@ -53,68 +53,68 @@ def run():
     print(f"{'report_id':<14} {'type':<22} {'md':>2} {'sl':>2} {'sp':>4} {'v':>2}  checks")
     print("-" * 90)
 
-    for stored in sorted(stored_reports, key=lambda r: r.report_type):
-        hwr = hwr_by_report_id.get(stored.report_id)
+    for stored in sorted(stored_reports, key=lambda stored_report: stored_report.report_type):
+        website_response = report_id_to_website_response.get(stored.report_id)
         stats["total"] += 1
 
-        if hwr is None:
-            stats["no_hwr"] += 1
+        if website_response is None:
+            stats["no_website_response"] += 1
             issues.append(f"[NO HWR]  report_id={stored.report_id} type={stored.report_type}")
             print(f"{stored.report_id:<14} {stored.report_type:<22} {'?':>2} {'?':>2} {'?':>4} {'?':>2}  NO HansardWebsiteResponse found")
             continue
 
-        if hwr.content is None:
+        if website_response.content is None:
             stats["no_content"] += 1
             print(f"{stored.report_id:<14} {stored.report_type:<22} {'-':>2} {'-':>2} {'-':>4} {'-':>2}  no content (expected for some types)")
             continue
 
-        regen = build_report(hwr)
+        regenerated_report = build_report(website_response)
 
         checks = []
         failed = False
 
-        if regen.markdown_content is None:
+        if regenerated_report.markdown_content is None:
             stats["no_markdown"] += 1
             checks.append("NO_MARKDOWN")
             failed = True
-        md_flag = "Y" if regen.markdown_content else "N"
+        markdown_flag = "Y" if regenerated_report.markdown_content else "N"
 
-        if regen.title != stored.title:
+        if regenerated_report.title != stored.title:
             stats["title_mismatch"] += 1
-            checks.append(f"TITLE_MISMATCH(stored={stored.title!r} regen={regen.title!r})")
+            checks.append(f"TITLE_MISMATCH(stored={stored.title!r} regen={regenerated_report.title!r})")
             failed = True
 
-        if regen.subtitle != stored.subtitle:
+        if regenerated_report.subtitle != stored.subtitle:
             stats["subtitle_mismatch"] += 1
-            checks.append(f"SUBTITLE_MISMATCH(stored={stored.subtitle!r} regen={regen.subtitle!r})")
+            checks.append(f"SUBTITLE_MISMATCH(stored={stored.subtitle!r} regen={regenerated_report.subtitle!r})")
             failed = True
 
         start_line = None
-        if regen.markdown_content:
+        if regenerated_report.markdown_content:
             start_line = get_start_of_speech_line(
-                regen.markdown_content,
-                regen.title,
-                regen.subtitle,
-                regen.original_title,
-                regen.report_type,
+                regenerated_report.markdown_content,
+                regenerated_report.title,
+                regenerated_report.subtitle,
+                regenerated_report.original_title,
+                regenerated_report.report_type,
             )
-        if start_line is None and regen.markdown_content:
+        if start_line is None and regenerated_report.markdown_content:
             stats["no_start_line"] += 1
             checks.append("NO_START_LINE")
             failed = True
 
         speeches = []
-        sp_count = "-"
+        speech_count = "-"
         valid_flag = "-"
         if start_line is not None:
-            speeches = get_speeches(regen.markdown_content, start_line, regen.report_type)
-            sp_count = str(len(speeches))
+            speeches = get_speeches(regenerated_report.markdown_content, start_line, regenerated_report.report_type)
+            speech_count = str(len(speeches))
             if len(speeches) == 0:
                 stats["no_speeches"] += 1
                 checks.append("NO_SPEECHES")
                 failed = True
             else:
-                invalid = [s for s in speeches if not s.speaker or not s.transcript.strip()]
+                invalid = [speech for speech in speeches if not speech.speaker or not speech.transcript.strip()]
                 if invalid:
                     stats["invalid_speeches"] += 1
                     checks.append(f"INVALID_SPEECHES({len(invalid)})")
@@ -125,9 +125,9 @@ def run():
             stats["pass"] += 1
             checks.append("OK")
 
-        sl_display = "Y" if start_line is not None else "N"
-        check_str = "  ".join(checks)
-        print(f"{stored.report_id:<14} {stored.report_type:<22} {md_flag:>2} {sl_display:>2} {sp_count:>4} {valid_flag:>2}  {check_str}")
+        start_line_flag = "Y" if start_line is not None else "N"
+        checks_text = "  ".join(checks)
+        print(f"{stored.report_id:<14} {stored.report_type:<22} {markdown_flag:>2} {start_line_flag:>2} {speech_count:>4} {valid_flag:>2}  {checks_text}")
 
         if failed:
             issues.append({
@@ -135,18 +135,18 @@ def run():
                 "report_type": stored.report_type,
                 "checks": checks,
                 "title_stored": stored.title,
-                "title_regen": regen.title,
+                "title_regen": regenerated_report.title,
                 "subtitle_stored": stored.subtitle,
-                "subtitle_regen": regen.subtitle,
+                "subtitle_regen": regenerated_report.subtitle,
                 "start_line": start_line,
                 "speech_count": len(speeches),
-                "markdown_snippet": (regen.markdown_content or "")[:500],
+                "markdown_snippet": (regenerated_report.markdown_content or "")[:500],
             })
 
     print()
     print("=" * 90)
     print(f"Total records:         {stats['total']}")
-    print(f"No matching HWR:       {stats['no_hwr']}")
+    print(f"No matching HWR:       {stats['no_website_response']}")
     print(f"No content:            {stats['no_content']}")
     print(f"No markdown generated: {stats['no_markdown']}")
     print(f"No start line:         {stats['no_start_line']}")
@@ -157,7 +157,7 @@ def run():
     print(f"PASS:                  {stats['pass']}")
     print()
 
-    content_records = stats["total"] - stats["no_hwr"] - stats["no_content"]
+    content_records = stats["total"] - stats["no_website_response"] - stats["no_content"]
     if content_records > 0:
         pass_rate = stats["pass"] / content_records * 100
         print(f"Pass rate (content records): {stats['pass']}/{content_records} = {pass_rate:.1f}%")
