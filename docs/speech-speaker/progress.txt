@@ -1,5 +1,54 @@
 # Speech → MP Link Refine-Loop Progress Log
 
+## Approved production changes — 2026-10-13 (evening)
+
+Eight approved steps ran in order on the DigitalOcean database after a verified backup (`defaultdb_backup_20261013` on the same cluster). Each step took a snapshot of the rows it changed, ran a dry run in memory, got a pre-write verdict, wrote in one transaction, read the rows back and had 30 changed rows read by hand. The stage 8 trace guard (`scripts/trace_speaker_links.py`) reported 0 stale rows after the rename and after the final run.
+
+| Step | Rows changed | Hand check | Headline after |
+|---|---|---|---|
+| Duplicate reports: deleted the higher-id copy of 5,591 report ids and their 39,301 speech rows; unique constraint on `report.report_id`; dedupe in populate | 5,591 reports, 39,301 speeches | 30 of 30 pairs identical | 549,250 of 566,020 (97.04%) |
+| Procedural text: 17 anchored forms ("Question put, and agreed to.", "The sum of ... ordered to stand part", bare "Resolved,", "Thereupon Mr Speaker left the Chair", ...) lose their speaker | 23,799 rows (21,689 had a link) | 30 of 30 | 527,561 of 542,519 (97.24%) |
+| Null-speaker fill (plans/null-speaker-rows.md P1): runs after an italic sub-heading in 15 budget statements take the running minister | 1,746 rows filled, all linked | 30 of 30 | 529,307 of 544,265 (97.25%) |
+| Chair-annotation rebuild (plans/link-precision-audit.md P1): 122 reports re-parsed; the parser no longer takes an annotation-plus-heading line as a speaker | 1,724 presiding-officer rows moved, 10 artefact rows dropped | 30 of 30 | 529,267 of 544,198 (97.26%) |
+| Devan Nair: row 1363 renamed "Devan Nair, Mrs" (Moulmein 1963 to 1968), duplicate row 17 deleted, alias scoped to parliament 1 | 2 speaker rows; 26 speech and 77 attendance links unchanged | 103 of 103 hers | unchanged |
+| Person table: 573 persons for 1,434 speaker rows; 16 head-of-state rows (`is_member` false) and the Address rows linked by sitting date; 16 addenda rows mislabelled "The President" stay unlinked | 779 rows linkable | 33 of 33 clusters, 29 of 30 links | after stage 8 |
+| Oehlers anchors (section 10 of the link precision audit): adjournment times, reporter's notes and resolution text get no speaker; 8 reports rebuilt | 798 rows plus 39 in the rebuilt reports | 128 of 128, 30 of 30 | 526,266 of 543,372 (96.85%, rebuilt rows not yet linked) |
+| Unbolded role labels and list resets (plans/parser-labels-and-lists.md, classes A1 and B): 399 reports re-parsed, 87 refused by the text-loss guard; class A2 dropped after a 23 of 30 check | 8,735 rows change speaker | A1 30 of 30, B 30 of 30, blobs 14 of 14, links 30 of 30 | 523,988 of 537,842 (97.42%) after stage 8 |
+
+Stage 8 full run at the end: 59,639 rows newly linked, 0 existing speech or attendance links changed.
+
+**Result:** 523,988 of 537,842 denominator rows linked (97.4%); all rows with a speaker string 540,104 of 558,335 (96.7%); Parliament 12 16,116 of 16,384 (98.4%). The denominator fell from 602,415 because the duplicate copies left (36,395 rows) and 23,799 procedural rows no longer carry a speaker; both are corrections to the denominator, not lost links. 599,024 speech rows, 40,689 with no speaker.
+
+| Parliament | Linked | Denominator | Rate |
+|---|---|---|---|
+| 0 | 111,192 | 116,564 | 95.4% |
+| 1 | 15,277 | 16,208 | 94.3% |
+| 2 | 25,279 | 25,929 | 97.5% |
+| 3 | 19,367 | 20,010 | 96.8% |
+| 4 | 19,839 | 20,325 | 97.6% |
+| 5 | 23,560 | 24,039 | 98.0% |
+| 6 | 36,383 | 37,211 | 97.8% |
+| 7 | 25,817 | 26,157 | 98.7% |
+| 8 | 46,407 | 47,073 | 98.6% |
+| 9 | 56,772 | 57,562 | 98.6% |
+| 10 | 71,731 | 73,144 | 98.1% |
+| 11 | 72,364 | 73,620 | 98.3% |
+| 12 | 16,116 | 16,384 | 98.4% |
+
+By report type, Parliaments 0 to 11: budget 204,646/213,990 = 95.6%; bill 109,503/112,822 = 97.1%; motion 72,619/72,915 = 99.6%; oral-answer 67,313/67,481 = 99.8%; president-address 16,789/17,013 = 98.7%; ministerial-statement 15,349/15,446 = 99.4%; written-answer 13,928/14,144 = 98.5%.
+
+Per sitting date (1,304 dates with denominator rows): 542 fully linked, 563 at 95 to 99.9%, 125 at 90 to 94.9%, 59 at 80 to 89.9%, 12 at 50 to 79.9%, 3 below 50%.
+
+Top unlinked strings: `The Chairman` (11,627, reports where no annotation, closing line or unique header names the chair), `Mr Deputy Speaker` (150, two-holder days the report does not settle), section headings stored as speakers (`SECTION III - REVENUE AND TAX CHANGES` 86, `Opportunities for enterprises` 49), `The Chief Minister` (83, the disputed 1956 handover date).
+
+Reports with full text and no speech rows: 532 of 19,215 in Parliaments 0 to 11 (budget 264, oral-answer 72, atbp 52, written-answer 40, president-address 35, ministerial-statement 30).
+
+Link precision (plans/link-precision-audit.md): the resolver was right on 613 of 613 sampled links; the row text was right on 602 of 613 (98.4%), the 11 misses being parser segmentation errors that the chair rebuild, the role-label parse and the list reset addressed. Not done: the 87 reports the text-loss guard refused, the 1,244 head-of-state rows include about 130 clock and heading fragments, and bare name labels ("Mr Tan: ...") still merge into the previous speaker.
+
+Commits: 2e4b0ed, f48817e, 5b3c00e, c524dd0, e2613fd, 05bd034, c2b9411, 971676b.
+
+---
+
 ## Approved attribution changes — 2026-10-13 (after the rerun below)
 
 Three groups of approved proposals from plans/speaker-attribution-push-proposals.md were applied to the DigitalOcean database, each with a link snapshot before, an in-memory dry run, a check that no unintended existing link moved, and 30 rows read by hand afterwards.

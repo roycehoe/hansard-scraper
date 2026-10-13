@@ -311,3 +311,20 @@ presiding officers by date, Chairman attribution and resolver fixes) ran stage 8
 times. Attendance was unchanged each time: 96,500 rows, 96,350 with a speaker_id (99.8%),
 150 unmatched. The attendance resolver was not touched, except that the Hj form of Haji now
 strips in the middle of a name, which resolved no attendance row.
+
+---
+
+## Approved production changes — 2026-10-13 (evening)
+
+The duplicate-report cleanup, the speech repairs, the person table and the head-of-state rows
+ran stage 8 twice more. Attendance was unchanged each time: 96,500 rows, 96,350 with a
+speaker_id (99.8%), 150 unmatched. Changes that touch attendance resolution:
+
+- Speaker row 1363 is now "Devan Nair, Mrs" (Mrs Devan Nair, Moulmein 1963 to 1968); its 77
+  attendance rows (75 "Devan Nair", 2 "C.V. Devan Nair") were read by hand and are all hers.
+  Duplicate row 17 "Mrs Devan Nair" (no links) was deleted. The OCR alias "c v devan nair" moved
+  to the parliament-scoped map, keyed to parliament 1, so C. V. Devan Nair's own rows
+  (parliaments 4 to 6) stay his. The trace guard reported 0 stale links after the rename.
+- 16 head-of-state speaker rows (`is_member` false) were added for the Address rows; no
+  attendance row resolves to them.
+- Every speaker row now carries a `person_id` (573 persons).
