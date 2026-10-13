@@ -47,12 +47,12 @@ def _normalise(text: str) -> str:
 def _get_header_holders(markdown: str) -> dict[str, set[str]]:
     """Role ("speaker" or "deputy speaker") to the set of names tagged with it in the header."""
     header = _HEADER_RE.search(markdown)
+    if header is None:
+        return {}
     role_to_holder_names: dict[str, set[str]] = {}
-    if not header:
-        return role_to_holder_names
     for entry in header.group(1).split(";"):
         tag = _HEADER_TAG_RE.match(entry.replace("*", ""))
-        if tag:
+        if tag is not None:
             role_to_holder_names.setdefault(tag.group(2).lower(), set()).add(_TITLE_RE.sub("", tag.group(1).strip()))
     return role_to_holder_names
 
@@ -78,7 +78,7 @@ def _get_name_words(name: str) -> set[str]:
 def _is_other_name_in_annotations(annotations: list[tuple[int, str]], name: str) -> bool:
     for _, text in annotations:
         named = re.search(r"\(([^)]+)\)", _normalise(text))
-        if named and not (_get_name_words(named.group(1)) & _get_name_words(name)):
+        if named is not None and not (_get_name_words(named.group(1)) & _get_name_words(name)):
             return True
     return False
 
@@ -117,11 +117,11 @@ def chairman_names(markdown: str, rows: list[SpeechRow]) -> dict[int, str]:
             annotation_position, text = preceding[-1]
             text = _normalise(text)
             named_deputy = _NAMED_DEPUTY_RE.search(text)
-            if named_deputy or not (_SPEAKER_ROLE_RE.match(text) or _DEPUTY_ROLE_RE.match(text)):
+            if named_deputy is not None or not (_SPEAKER_ROLE_RE.match(text) or _DEPUTY_ROLE_RE.match(text)):
                 # The annotation names the person; a chair-change line between it and the row voids it.
                 if any(annotation_position < event_position < position for event_position, _ in events):
                     continue
-                speech_id_to_name[speech_id] = named_deputy.group(1).strip() if named_deputy else text
+                speech_id_to_name[speech_id] = named_deputy.group(1).strip() if named_deputy is not None else text
             elif _SPEAKER_ROLE_RE.match(text):
                 # "[Mr Speaker in the Chair]": corroborated by a closing line naming the Speaker and a
                 # header that names exactly one Speaker.
@@ -150,7 +150,7 @@ def deputy_speaker_names(markdown: str, rows: list[SpeechRow]) -> tuple[dict[int
     normalised = _normalise(markdown)
     annotations = [(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalised)]
     position_to_deputy_match = {position: _NAMED_DEPUTY_RE.search(_normalise(text)) for position, text in annotations}
-    position_to_deputy_name = {position: _TITLE_RE.sub("", match.group(1).strip()) for position, match in position_to_deputy_match.items() if match}
+    position_to_deputy_name = {position: _TITLE_RE.sub("", match.group(1).strip()) for position, match in position_to_deputy_match.items() if match is not None}
     events = [match.start() for match in _CHAIR_EVENT_RE.finditer(normalised)]
     positions = _get_positions(normalised, rows)
     speech_id_to_deputy_name: dict[int, str] = {}
@@ -159,7 +159,7 @@ def deputy_speaker_names(markdown: str, rows: list[SpeechRow]) -> tuple[dict[int
         if not speaker:
             continue
         row_name = _NAMED_DEPUTY_ROW_RE.match(speaker.strip())
-        if row_name:
+        if row_name is not None:
             labelled.add(_TITLE_RE.sub("", row_name.group(1).strip()))
         if not BARE_DEPUTY_RE.match(speaker.strip()):
             continue
@@ -171,7 +171,7 @@ def deputy_speaker_names(markdown: str, rows: list[SpeechRow]) -> tuple[dict[int
             speech_id_to_deputy_name[speech_id] = position_to_deputy_name[preceding[-1]]
     mentioned = set(position_to_deputy_name.values()) | labelled
     header = _HEADER_RE.search(markdown)
-    for entry in (header.group(1).split(";") if header else []):
+    for entry in (header.group(1).split(";") if header is not None else []):
         name = _TITLE_RE.sub("", re.sub(r"\s*\([^)]*\)\s*$", "", entry.replace("*", "").strip()))
         if name:
             mentioned.add(name)
