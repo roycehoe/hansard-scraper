@@ -21,7 +21,7 @@ def _get_speech_start(response: HansardWebsiteResponse) -> tuple[Report, Optiona
     start = (
         get_start_of_speech_line(
             report.markdown_content, report.title, report.subtitle, report.original_title,
-            response.report_type,
+            response.report_type, response.report_version,
         )
         if report.markdown_content is not None
         else None
@@ -43,7 +43,7 @@ def get_report_type_speech_stats(session: Session) -> dict:
         if start is None:
             continue
         report_type_to_counts[report_type]["has_start_line"] += 1
-        get_speeches(report.markdown_content, start, response.report_type)
+        get_speeches(report.markdown_content, start, response.report_type, response.report_version)
         report_type_to_counts[report_type]["can_get_speeches"] += 1
 
     return dict(report_type_to_counts)
@@ -62,7 +62,7 @@ def get_failing_sample(session: Session, no_speech_types: set[str], sample_size:
         if start is None:
             stage_and_report_type_to_responses[("has_start_line", response.report_type)].append(response)
             continue
-        get_speeches(report.markdown_content, start, response.report_type)
+        get_speeches(report.markdown_content, start, response.report_type, response.report_version)
 
     stage_and_report_type_to_sample = {}
     for key, items in stage_and_report_type_to_responses.items():
@@ -82,7 +82,7 @@ def get_passing_sample(session: Session, no_speech_types: set[str], sample_size:
         if report.markdown_content is None or start is None:
             continue
         try:
-            get_speeches(report.markdown_content, start, response.report_type)
+            get_speeches(report.markdown_content, start, response.report_type, response.report_version)
             passing.append(response)
         except Exception:  # noqa: BLE001 a corpus survey must record every failing document, not stop at the first
             pass
@@ -100,7 +100,7 @@ def run_stats_on(responses: list) -> dict:
         if start is None:
             results["fail_start_line"].append(response.id)
             continue
-        get_speeches(report.markdown_content, start, response.report_type)
+        get_speeches(report.markdown_content, start, response.report_type, response.report_version)
         results["pass"].append(response.id)
     return results
 

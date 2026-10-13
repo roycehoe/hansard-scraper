@@ -111,11 +111,12 @@ def run() -> None:
             report.subtitle,
             report.original_title,
             report.report_type,
+            report.report_version,
         )
         if start_line is None:
             no_start_line.append(report)
             continue
-        speeches = get_speeches(report.markdown_content, start_line, report.report_type)
+        speeches = get_speeches(report.markdown_content, start_line, report.report_type, report.report_version)
         if speeches:
             continue
 

@@ -41,12 +41,13 @@ def run() -> None:
             report.subtitle,
             report.original_title,
             report.report_type,
+            report.report_version,
         )
         if start_line is None:
             no_start_line.append(report)
             continue
         total_with_start += 1
-        if not get_speeches(report.markdown_content, start_line, report.report_type):
+        if not get_speeches(report.markdown_content, start_line, report.report_type, report.report_version):
             report_type_to_no_speech_items[report.report_type].append((report, start_line))
 
     total_no_speech = sum(len(items) for items in report_type_to_no_speech_items.values())

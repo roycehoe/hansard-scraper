@@ -25,6 +25,7 @@ def _get_start_line(report: Report) -> Optional[int]:
         report.subtitle,
         report.original_title,
         report.report_type,
+        report.report_version,
     )
 
 
@@ -114,7 +115,9 @@ def run() -> None:
         speech_count = "-"
         valid_flag = "-"
         if start_line is not None:
-            speeches = get_speeches(regenerated_report.markdown_content, start_line, regenerated_report.report_type)
+            speeches = get_speeches(
+                regenerated_report.markdown_content, start_line, regenerated_report.report_type, regenerated_report.report_version
+            )
             speech_count = str(len(speeches))
             if len(speeches) == 0:
                 stats["no_speeches"] += 1

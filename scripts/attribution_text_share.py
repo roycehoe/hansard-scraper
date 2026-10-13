@@ -34,7 +34,8 @@ def _is_adr_excluded(speaker: str) -> bool:
 def _get_body_character_count(report: Report) -> int:
     lines = report.markdown_content.splitlines()
     start = get_start_of_speech_line(
-        report.markdown_content, report.title, report.subtitle, report.original_title, report.report_type
+        report.markdown_content, report.title, report.subtitle, report.original_title, report.report_type,
+        report.report_version,
     )
     if start is None:
         start = max((line_index for line_index, line in enumerate(lines[:_HEADER_SCAN_LINE_COUNT]) if any(marker in line for marker in _HEADER_ROW_MARKERS)), default=_NO_HEADER_ROW_INDEX)
