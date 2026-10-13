@@ -12,6 +12,12 @@ from database.init import get_session
 from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
+_SAMPLE_FILE_PATH = "sample.json"
+_SEPARATOR_WIDTH = 90
+_SNIPPET_LENGTH = 500
+_SNIPPET_LINES_SHOWN = 15
+_PERCENT = 100
+
 
 def _get_start_line(report):
     if not report.markdown_content:
@@ -26,7 +32,7 @@ def _get_start_line(report):
 
 
 def run():
-    with open("sample.json") as sample_file:
+    with open(_SAMPLE_FILE_PATH) as sample_file:
         sample_sets = json.load(sample_file)
 
     report_ids = (
@@ -63,7 +69,7 @@ def run():
     }
 
     print(f"{'report_id':<14} {'type':<22} {'md':>2} {'sl':>2} {'sp':>4} {'v':>2}  checks")
-    print("-" * 90)
+    print("-" * _SEPARATOR_WIDTH)
 
     for stored in sorted(stored_reports, key=lambda stored_report: stored_report.report_type):
         website_response = report_id_to_website_response.get(stored.report_id)
@@ -144,11 +150,11 @@ def run():
                 "subtitle_regen": regenerated_report.subtitle,
                 "start_line": start_line,
                 "speech_count": len(speeches),
-                "markdown_snippet": (regenerated_report.markdown_content or "")[:500],
+                "markdown_snippet": (regenerated_report.markdown_content or "")[:_SNIPPET_LENGTH],
             })
 
     print()
-    print("=" * 90)
+    print("=" * _SEPARATOR_WIDTH)
     print(f"Total records:         {stats['total']}")
     print(f"No matching HWR:       {stats['no_website_response']}")
     print(f"No content:            {stats['no_content']}")
@@ -163,7 +169,7 @@ def run():
 
     content_records = stats["total"] - stats["no_website_response"] - stats["no_content"]
     if content_records > 0:
-        pass_rate = stats["pass"] / content_records * 100
+        pass_rate = stats["pass"] / content_records * _PERCENT
         print(f"Pass rate (content records): {stats['pass']}/{content_records} = {pass_rate:.1f}%")
 
     if issues:
@@ -183,7 +189,7 @@ def run():
                 print(f"  subtitle regen:  {issue['subtitle_regen']!r}")
             if "NO_START_LINE" in str(issue["checks"]) or "NO_SPEECHES" in str(issue["checks"]):
                 print("  markdown snippet:")
-                for line in issue["markdown_snippet"].splitlines()[:15]:
+                for line in issue["markdown_snippet"].splitlines()[:_SNIPPET_LINES_SHOWN]:
                     print(f"    {line}")
 
 

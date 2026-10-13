@@ -16,11 +16,11 @@ from crud.speaker import CRUDSpeaker
 from database.init import engine
 from database.speaker import Speaker
 
-DATA_FILE = Path(__file__).parent.parent / "data" / "colonial_la_members.json"
+_DATA_FILE = Path(__file__).parent.parent / "data" / "colonial_la_members.json"
 
 
 def load_colonial_la_speakers() -> None:
-    records = json.loads(DATA_FILE.read_text())
+    records = json.loads(_DATA_FILE.read_text())
 
     with Session(engine) as session:
         crud = CRUDSpeaker(session)

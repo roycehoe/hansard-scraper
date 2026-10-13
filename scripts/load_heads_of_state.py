@@ -16,11 +16,12 @@ from crud.speaker import CRUDSpeaker
 from database.init import engine
 from database.speaker import Speaker
 
-DATA_FILE = Path(__file__).parent.parent / "data" / "heads_of_state.json"
+_NON_PARTISAN_PARTY = "Non-partisan"
+_DATA_FILE = Path(__file__).parent.parent / "data" / "heads_of_state.json"
 
 
 def load_heads_of_state() -> None:
-    records = json.loads(DATA_FILE.read_text())
+    records = json.loads(_DATA_FILE.read_text())
 
     with Session(engine) as session:
         crud = CRUDSpeaker(session)
@@ -30,7 +31,7 @@ def load_heads_of_state() -> None:
         for record in records:
             speaker = name_and_parliament_number_to_speaker.get((record["name"], record["parliament_number"]))
             if speaker is None:
-                crud.create(Speaker(**record, party="Non-partisan", is_legislative_assembly=False, is_member=False))
+                crud.create(Speaker(**record, party=_NON_PARTISAN_PARTY, is_legislative_assembly=False, is_member=False))
                 inserted += 1
             elif speaker.is_member:
                 speaker.is_member = False
