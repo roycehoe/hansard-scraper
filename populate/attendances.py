@@ -4,7 +4,11 @@ from crud.attendance import CRUDAttendance
 from crud.sitting import CRUDSitting
 from crud.speaker import CRUDSpeaker
 from logs import logger
-from services.attendance import build_speaker_lookups, get_sitting_attendance
+from services.attendance import (
+    build_speaker_lookups,
+    get_sitting_attendance,
+    get_sitting_attendance_from_list,
+)
 
 
 def populate_attendances(session: Session) -> None:
@@ -18,6 +22,11 @@ def populate_attendances(session: Session) -> None:
     )
     for sitting_index, sitting in enumerate(sittings_to_process, start=1):
         logger.info(f"{sitting_index}/{len(sittings_to_process)}: {sitting.sitting_date}")
-        records = list(get_sitting_attendance(sitting, lookups))
+        if sitting.markdown_content is not None:
+            records = get_sitting_attendance(sitting, lookups)
+        elif sitting.attendance_list is not None:
+            records = get_sitting_attendance_from_list(sitting, lookups)
+        else:
+            continue
         if records:
             CRUDAttendance(session).create_many(records)

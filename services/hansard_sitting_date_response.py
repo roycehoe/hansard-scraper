@@ -96,6 +96,8 @@ def build_new_hansard_sitting_date_response(hansard_report_response: HansardRepo
         ptba_from=metadata.ptba_from,
         ptba_to=metadata.ptba_to,
         location_text=metadata.location_text,
+        attendance_list=_serialise_list(hansard_report_response.attendance_list),
+        ptba_list=_serialise_list(hansard_report_response.ptba_list),
         att_start_pg_no=hansard_report_response.att_start_pg_no,
         ptba_start_pg_no=hansard_report_response.ptba_start_pg_no,
         atbp_start_pg_no=hansard_report_response.atbp_start_pg_no,
