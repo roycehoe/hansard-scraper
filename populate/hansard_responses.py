@@ -66,7 +66,7 @@ async def _fetch_all(results: list[HansardSearchResult]) -> list[HansardWebsiteR
 def populate_hansard_responses(session: Session) -> None:
     all_search_results = [HansardSearchResult(**result) for result in get_all_hansard_search_results()]
     existing_ids = CRUDHansardWebsiteResponse(session).get_all_report_ids()
-    # The search can return one hit twice (plans/duplicate-reports.md); fetch each report_id once.
+    # NOTE: the search can return one hit twice, so keep the first hit per report_id.
     first_by_report_id = {}
     for result in all_search_results:
         first_by_report_id.setdefault(result.report_id, result)

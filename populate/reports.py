@@ -11,7 +11,7 @@ _BATCH_SIZE = 500
 def populate_reports(session: Session) -> None:
     responses = CRUDHansardWebsiteResponse(session).get_all()
     existing_ids = CRUDReport(session).get_all_report_ids()
-    # The search can return one hit twice (plans/duplicate-reports.md); build one report per report_id.
+    # NOTE: the search can return one hit twice, so keep the first hit per report_id.
     first_by_report_id = {}
     for response in responses:
         first_by_report_id.setdefault(response.report_id, response)
