@@ -1,5 +1,43 @@
 # Speech → MP Link Refine-Loop Progress Log
 
+## Approved attribution changes — 2026-10-13 (after the rerun below)
+
+Three groups of approved proposals from plans/speaker-attribution-push-proposals.md were applied to the DigitalOcean database, each with a link snapshot before, an in-memory dry run, a check that no unintended existing link moved, and 30 rows read by hand afterwards.
+
+**Group A, stage 4 on zero-speech reports.** 3,032 reports in Parliaments 0 to 11 had markdown and no speech rows; 2,463 parse with the current parser (the rest are annex link pages and procedural records). Inserted 162,741 rows, 160,754 in the denominator, 149,677 linked by stage 8. 0 existing links changed. Sample: 29 of 29 linked rows correct, 1 sampled row an unlinked Chairman. Headline 96.64% → 95.70% on a denominator grown from 439,986 to 600,740.
+
+**Group B, presiding officers by date and chair annotations.** `PRESIDING_OFFICERS` (one name per parliament) was replaced by dated term lists for the Speaker and Deputy Speakers; a parenthesised name in the string wins; a bare "Mr Deputy Speaker" on a day with two holders is unlinked; the Chief Minister rows on 1956-06-07 are unlinked. 6,005 rows changed: 5,303 relinked (for example 1,245 Parliament 1 "Mr Speaker" rows from George Oehlers to A. P. Rajah or Punch Coomaraswamy, 481 Parliament 0 rows to E. W. Barker, 528 "Mr Deputy Speaker (Mr Matthias Yao Chih)" rows from Charles Chong to Matthias Yao), 592 set to null, 110 filled. The parser no longer turns a bare "[X in the Chair]" annotation into a speaker; the 104 reports holding such rows were re-parsed (22,885 → 25,464 rows). Sample: 15 of 15 presiding changes match the sourced terms, 15 of 15 re-parsed rows correct. Headline 95.69%.
+
+**Group C, Chairman attribution, resolver and parser fixes.** New `services/role_context.py` links "The Chairman" from the nearest preceding named annotation, from "[Mr Speaker in the Chair]" corroborated by the closing line and header, or from the closing line plus header when no annotation precedes; "The Chief Secretary" from an earlier row naming the holder. The resolver pre-cleans speaker strings (list numbers, "(NS)" and "(Res)", unclosed parentheses, trailing "Mr Speaker,", inverted and doubled names), resolves "The Prime Minister" by date, treats "Hj" as "Haji" and adds 46 name constants. The parser merges wrapped bold labels, keeps drop caps and (in motions) quoted bold lines with the current speaker, and matches titles despite quote marks or a wrapped acronym. Data: 944 content-free unlinked rows deleted, 11 bill procedural header rows set to null speaker, 107 drop-cap and quote rows reassigned to the running speaker, 22 rows parsed from 3 reports whose title now matches. Regression: 0 existing links changed by the new resolver. 7,174 rows newly linked, 5,749 of them "The Chairman". Sample: 15 of 15 Chairman links consistent with the transcript, 10 of 10 resolver links and 5 of 5 reassigned rows correct. Headline 95.69% → 97.02%.
+
+**Result:** 584,458 of 602,415 denominator rows linked (97.0%); all rows with a speaker string 602,393 of 625,929 (96.2%); Parliament 12 17,935 of 18,215 (98.5%).
+
+| Parliament | Linked | Denominator | Rate |
+|---|---|---|---|
+| 0 | 123,789 | 130,439 | 94.9% |
+| 1 | 17,045 | 18,101 | 94.2% |
+| 2 | 27,967 | 28,819 | 97.0% |
+| 3 | 21,238 | 22,022 | 96.4% |
+| 4 | 22,885 | 23,487 | 97.4% |
+| 5 | 27,140 | 27,725 | 97.9% |
+| 6 | 41,452 | 42,558 | 97.4% |
+| 7 | 28,693 | 29,286 | 98.0% |
+| 8 | 52,300 | 53,212 | 98.3% |
+| 9 | 62,499 | 63,501 | 98.4% |
+| 10 | 77,336 | 79,295 | 97.5% |
+| 11 | 82,114 | 83,970 | 97.8% |
+| 12 | 17,935 | 18,215 | 98.5% |
+
+By report type, Parliaments 0 to 11: budget 221,325/232,156 = 95.3% (10,831 unlinked); bill 130,911/135,399 = 96.7% (4,488); motion 99.1% (779); oral-answer 99.7% (229); president-address 95.5% (804); written-answer 98.7% (218); written-answer-na 99.3% (56).
+
+Per sitting date (1,304 dates with speeches): 470 fully linked, 581 at 95 to 99.9%, 143 at 90 to 94.9%, 72 at 80 to 89.9%, 19 at 50 to 79.9%, 19 below 50%.
+
+Top unlinked strings: `The Chairman` (13,990, reports with no annotation, closing line or unique header name), `Mr Deputy Speaker` (724, days with two Deputy Speakers), `The President (Mr Wee Kim Wee)` (215), `The President (Mr S R Nathan)` (165), `Mdm Deputy Speaker` (139, proposal 12 on hold), `His Excellency the Governor` (104).
+
+Reports with full text and no speech rows: 567 of 20,903 in Parliaments 0 to 11 (budget 273, oral-answer 80, atbp 53, written-answer 47, president-address 37, ministerial-statement 32).
+
+---
+
 ## Stage 8 rerun — 2026-10-13
 
 ### Rerun of populate_speaker_links on the DigitalOcean database
