@@ -36,7 +36,7 @@ def _get_antiforgery_token(session: requests.Session) -> str:
 
 def _parse_speakers(html: str, parliament_number: int) -> list[SpeakerResult]:
     soup = BeautifulSoup(html, "html.parser")
-    results = []
+    speaker_results = []
     for list_item in soup.select("ul.list > li"):
         name_element = list_item.select_one(".mp-sort-name.name")
         party_element = list_item.select_one(".mp-sort.party")
@@ -49,14 +49,14 @@ def _parse_speakers(html: str, parliament_number: int) -> list[SpeakerResult]:
         match = re.match(r"^(.*?)\s*\((.+)\)\s*$", full_name)
         name = full_name if match is None else match.group(1).strip()
         comments = None if match is None else match.group(2).strip()
-        results.append(SpeakerResult(
+        speaker_results.append(SpeakerResult(
             name=name,
             party=party_element.get_text(strip=True),
-            is_legislative_assembly=bool(legislative_assembly_element and legislative_assembly_element.get_text(strip=True)),
+            is_legislative_assembly=legislative_assembly_element is not None and legislative_assembly_element.get_text(strip=True) != "",
             parliament_number=parliament_number,
             comments=comments,
         ))
-    return results
+    return speaker_results
 
 
 def get_all_speakers() -> list[SpeakerResult]:
@@ -67,14 +67,14 @@ def get_all_speakers() -> list[SpeakerResult]:
     except requests.exceptions.RequestException as error:
         raise HansardGatewayError("Failed to establish parliament session") from error
 
-    token = _get_antiforgery_token(session)
+    antiforgery_token = _get_antiforgery_token(session)
     all_speakers = []
     for parliament_number, parliament_page_id in _PARLIAMENT_NUMBER_TO_PAGE_ID.items():
         try:
             response = session.post(
                 settings.parliament_speakers_url,
-                data={"Parliament": parliament_page_id, "sf_antiforgery": token},
-                headers={"X-SF-ANTIFORGERY-REQUEST": token},
+                data={"Parliament": parliament_page_id, "sf_antiforgery": antiforgery_token},
+                headers={"X-SF-ANTIFORGERY-REQUEST": antiforgery_token},
                 timeout=_SPEAKERS_TIMEOUT_SECONDS,
             )
             response.raise_for_status()
