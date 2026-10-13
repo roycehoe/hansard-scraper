@@ -238,6 +238,43 @@ _OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
     # Markdown/formatting artifacts surviving into existing DB rows (parser fix prevents future occurrences)
     "absent: mr ahmad mohd magad": "Ahmad Mohd Magad",  # Absent: prefix not stripped (parl=9, vol=70)
     "**mr ng kah ting": "Ng Kah Ting",          # markdown bold prefix (parl=2, vol=27)
+    # Speech-string variants found in the October 2026 attribution pass; each target is the
+    # one person of that name in the parliaments where the string occurs.
+    "wan hussin bin hj zoohri": "Wan Hussin Zoohri",
+    "mohamed maliki bin osman": "Mohamad Maliki Bin Osman",
+    "rahmat bin kenap al-haj": "Rahmat Bin Kenap",
+    "yaacob bin ibrahim": "Yaacob Bin Mohamed",
+    "mohd sidik bin haji abdul hamid": "Mohamed Sidik Bin Haji Abdul Hamid",
+    "mohdsidik bin haji abdul hamid": "Mohamed Sidik Bin Haji Abdul Hamid",
+    "the assistant minister for education inche mohamed sidik bin haji abdul hamid": "Mohamed Sidik Bin Haji Abdul Hamid",
+    "baharuddin bin mohd ariff": "Baharuddin Bin Mohamed Ariff",
+    "baharuddin": "Baharuddin Bin Mohamed Ariff",
+    "mohamed ali bin alwi": "Mohd Ali Bin Alwi",
+    "mansor haii sukaimi": "Mansor Haji Sukaimi",
+    "ho see bong": "Ho See Beng",
+    "hon sui son": "Hon Sui Sen",
+    "hon sui san": "Hon Sui Sen",
+    "chin tet yuing": "Chin Tet Yung",
+    "ling how dong": "Ling How Doong",
+    "yu-foo yee soon": "Yu-Foo Yee Shoon",
+    "yu-fu yee shoon": "Yu-Foo Yee Shoon",
+    "wan soo bee": "Wan Soon Bee",
+    "lau ping sun": "Lau Ping Sum",
+    "chew heng chin": "Chew Heng Ching",
+    "lim hng hiang": "Lim Hng Kiang",
+    "matthias yao chi": "Matthias Yao Chih",
+    "wong kang seng": "Wong Kan Seng",
+    "tan cheng bok": "Tan Cheng Bock",
+    "sin boon an": "Sin Boon Ann",
+    "chiam seng tong": "Chiam See Tong",
+    "seng han tong": "Seng Han Thong",
+    "chan chee song": "Chan Chee Seng",
+    "arthur beng kin lam": "Arthur Beng Kian Lam",
+    "tony tan kong yam": "Tony Tan Keng Yam",
+    "ahmad jabri bin mohamad akib": "Ahmad Jabri Bin Mohammad Akib",
+    "ang kok pong": "Ang Kok Peng",
+    "tan eng hang": "Tan Eng Liang",
+    "ellen lee geck hoon": "Ellen Lee",
 }
 
 # Manual overrides for names that cannot be resolved by general normalisation rules.
@@ -330,6 +367,13 @@ _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
     ("s rajaratnam", 4): "Rajaratnam, S",
     ("s rajaratnam", 5): "Rajaratnam, S",
     ("s rajaratnam", 6): "Rajaratnam, S",
+    # Speech-string variants found in the October 2026 attribution pass
+    ("mohd ariff", 3): "Mohd Ariff Bin Suradi, Haji",
+    ("gerald ee", 9): "Ee, Gerard",
+    ("yaacob bin yaacob", 1): "Yaacob Bin Mohamed",
+    ("ya'acob", 2): "Yaacob Bin Mohamed",
+    ("kenneth chen khoon lap", 9): "Chen Koon Lap, Kenneth",
+    ("r sinnakarupan", 9): "Sinnakaruppan, R",
 }
 
 
@@ -429,7 +473,7 @@ def _strip_bin(name: str) -> str:
 def _strip_middle_haji(name: str) -> str:
     """Remove 'Haji'/'Tuan Haji' from the middle of a name (not as a prefix).
     Used as a lookup fallback: 'Saidi Haji Shariff' -> 'Saidi Shariff'."""
-    return re.sub(r"\s+(?:[Tt]uan\s+)?[Hh]aji\s+", " ", name).strip()
+    return re.sub(r"\s+(?:[Tt]uan\s+)?(?:[Hh]aji|[Hh]j\.?)\s+", " ", name).strip()
 
 
 def _spelling_normalize(name: str) -> str:
