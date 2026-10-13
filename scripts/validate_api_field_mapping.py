@@ -32,9 +32,12 @@ FAIL = "\033[31mFAIL\033[0m"
 WARN = "\033[33mWARN\033[0m"
 INFO = "\033[34mINFO\033[0m"
 
+_VALUE_PREVIEW_LENGTH = 55
+_HTTP_INTERNAL_SERVER_ERROR = 500
+
 # Synthetic payload for old-format sitting dates (pre-18 Aug 2015).
 # Covers every field mapped by build_old_hansard_sitting_date_response.
-SYNTHETIC_OLD_FORMAT = {
+_SYNTHETIC_OLD_FORMAT = {
     "parlNo": "9",
     "sessionNo": "1",
     "volumeNo": "65",
@@ -81,7 +84,7 @@ SYNTHETIC_OLD_FORMAT = {
 
 # Synthetic payload for new-format sitting dates (18 Aug 2015 onwards).
 # Covers every field mapped by build_new_hansard_sitting_date_response.
-SYNTHETIC_NEW_FORMAT = {
+_SYNTHETIC_NEW_FORMAT = {
     "metadata": {
         "parlimentNO": "13",
         "sessionNO": "2",
@@ -127,7 +130,7 @@ def validate_search_and_topic() -> bool:
 
     hansard_search_result = search_results[0]
     raw = hansard_search_result.model_dump(by_alias=True)
-    print(f"  {INFO}  report_id={hansard_search_result.report_id}  title={hansard_search_result.title[:55]}")
+    print(f"  {INFO}  report_id={hansard_search_result.report_id}  title={hansard_search_result.title[:_VALUE_PREVIEW_LENGTH]}")
 
     # ORM build: check the explicitly mapped fields
     hansard_website_response = build_hansard_website_response(hansard_search_result, content=None)
@@ -153,7 +156,7 @@ def validate_search_and_topic() -> bool:
         orm_value = orm_field_to_value.get(orm_field)
         if orm_value is None:
             orm_failures.append(
-                f"  {FAIL}  raw[{raw_key!r}]={str(raw_value)[:55]!r}  →  HansardWebsiteResponse.{orm_field}=None"
+                f"  {FAIL}  raw[{raw_key!r}]={str(raw_value)[:_VALUE_PREVIEW_LENGTH]!r}  →  HansardWebsiteResponse.{orm_field}=None"
             )
 
     if orm_failures:
@@ -237,13 +240,13 @@ def _validate_sitting_payload(
             if value is None or value == "":
                 continue
             if orm_field_to_value.get(orm_field) is None:
-                failures.append(f"  {FAIL}  metadata[{metadata_key!r}]={str(value)[:55]!r}  →  .{orm_field}=None")
+                failures.append(f"  {FAIL}  metadata[{metadata_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None")
         for raw_key, orm_field in raw_key_to_orm_field.items():
             value = raw.get(raw_key)
             if value is None or value == "":
                 continue
             if orm_field_to_value.get(orm_field) is None:
-                failures.append(f"  {FAIL}  raw[{raw_key!r}]={str(value)[:55]!r}  →  .{orm_field}=None")
+                failures.append(f"  {FAIL}  raw[{raw_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None")
     else:
         hansard_sitting_date_response = build_old_hansard_sitting_date_response(hansard_report_response, sitting_date)
         raw_key_to_orm_field = {
@@ -296,7 +299,7 @@ def _validate_sitting_payload(
                 continue
             if orm_field_to_value.get(orm_field) is None:
                 failures.append(
-                    f"  {FAIL}  raw[{raw_key!r}]={str(value)[:55]!r}  →  .{orm_field}=None"
+                    f"  {FAIL}  raw[{raw_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None"
                 )
 
     format_label = "new" if is_new else "old"
@@ -317,7 +320,7 @@ def validate_sitting_date(sitting_date: str, label: str, synthetic: dict) -> boo
         hansard_report_response = get_hansard_report_response(sitting_date)
     except Exception as error:  # noqa: BLE001 the API call is probed and its failure is the finding, so fall back to the synthetic payload
         print(f"  {WARN}  API call failed ({error}) — using synthetic payload")
-        hansard_report_response = response_schema(error_code=500)
+        hansard_report_response = response_schema(error_code=_HTTP_INTERNAL_SERVER_ERROR)
 
     is_passed = _validate_sitting_payload(hansard_report_response, sitting_date, source="live API")
     if is_passed is None:
@@ -336,12 +339,12 @@ if __name__ == "__main__":
     is_all_passed &= validate_sitting_date(
         "11-05-2015",
         "old format, pre-2015-08-18",
-        SYNTHETIC_OLD_FORMAT,
+        _SYNTHETIC_OLD_FORMAT,
     )
     is_all_passed &= validate_sitting_date(
         "15-01-2024",
         "new format, post-2015-08-18",
-        SYNTHETIC_NEW_FORMAT,
+        _SYNTHETIC_NEW_FORMAT,
     )
 
     print(f"\n{'─' * 64}")
