@@ -62,7 +62,7 @@ def _preprocess(speaker: str) -> Optional[str]:
             (match for match in reversed(parentheticals) if _has_title(match)),
             None,
         )
-        if titled_parenthetical:
+        if titled_parenthetical is not None:
             raw = titled_parenthetical.group(1).strip()
         else:
             raw = raw[: parentheticals[0].start()].strip()
@@ -82,9 +82,18 @@ def _resolve(
         return canonical, parliament
     for fallback in COLONIAL_PARLIAMENT_FALLBACKS:
         candidate = resolve_canonical_name(name, fallback, lookups)
-        if candidate and (candidate, fallback) in name_and_parliament_to_speaker_id:
+        if candidate is not None and (candidate, fallback) in name_and_parliament_to_speaker_id:
             return candidate, fallback
     return None, parliament
+
+
+def _get_role_key(raw: str, parliament: int) -> Optional[tuple[str, int]]:
+    if parliament != 0:
+        return (raw, parliament)
+    for fallback_parliament in COLONIAL_PARLIAMENT_FALLBACKS:
+        if (raw, fallback_parliament) in ROLE_ONLY_SPEAKERS:
+            return (raw, fallback_parliament)
+    return None
 
 
 def main() -> None:
@@ -125,10 +134,10 @@ def main() -> None:
             )
             presiding_officer_name = PRESIDING_OFFICERS.get((presiding_officer_role, presiding_officer_parliament))
             bucket_to_stats[bucket]["total"] += 1
-            if presiding_officer_name:
+            if presiding_officer_name is not None:
                 presiding_officer_canonical, presiding_officer_resolved_parliament = _resolve(presiding_officer_name, presiding_officer_parliament, lookups, name_and_parliament_to_speaker_id)
-                presiding_officer_speaker_id = name_and_parliament_to_speaker_id.get((presiding_officer_canonical, presiding_officer_resolved_parliament)) if presiding_officer_canonical else None
-                if presiding_officer_speaker_id:
+                presiding_officer_speaker_id = name_and_parliament_to_speaker_id.get((presiding_officer_canonical, presiding_officer_resolved_parliament)) if presiding_officer_canonical is not None else None
+                if presiding_officer_speaker_id is not None:
                     bucket_to_stats[bucket]["matched"] += 1
                 else:
                     unmatched.append((speaker, parliament, presiding_officer_canonical or "<unresolved>"))
@@ -140,47 +149,42 @@ def main() -> None:
         if raw == "The Chief Minister" and parliament in (0, 1, 2, 3):
             chief_minister_name = (
                 "David Marshall"
-                if sitting_date and sitting_date < CHIEF_MINISTER_CUTOFF
+                if sitting_date is not None and sitting_date < CHIEF_MINISTER_CUTOFF
                 else "Lim Yew Hock"
             )
             chief_minister_canonical, chief_minister_parliament = _resolve(chief_minister_name, 0, lookups, name_and_parliament_to_speaker_id)
-            chief_minister_speaker_id = name_and_parliament_to_speaker_id.get((chief_minister_canonical, chief_minister_parliament)) if chief_minister_canonical else None
+            chief_minister_speaker_id = name_and_parliament_to_speaker_id.get((chief_minister_canonical, chief_minister_parliament)) if chief_minister_canonical is not None else None
             bucket_to_stats[bucket]["total"] += 1
-            if chief_minister_speaker_id:
+            if chief_minister_speaker_id is not None:
                 bucket_to_stats[bucket]["matched"] += 1
             else:
                 unmatched.append((speaker, parliament, chief_minister_canonical or "<unresolved>"))
             continue
 
         # Role-only strings — resolve by parliament→person mapping.
-        role_key: Optional[tuple[str, int]] = (raw, parliament) if parliament != 0 else None
-        if role_key is None:
-            for fallback_parliament in COLONIAL_PARLIAMENT_FALLBACKS:
-                if (raw, fallback_parliament) in ROLE_ONLY_SPEAKERS:
-                    role_key = (raw, fallback_parliament)
-                    break
-        if role_key and role_key in ROLE_ONLY_SPEAKERS:
+        role_key = _get_role_key(raw, parliament)
+        if role_key is not None and role_key in ROLE_ONLY_SPEAKERS:
             role_name = ROLE_ONLY_SPEAKERS[role_key]
             role_canonical, role_parliament = _resolve(role_name, role_key[1], lookups, name_and_parliament_to_speaker_id)
-            role_speaker_id = name_and_parliament_to_speaker_id.get((role_canonical, role_parliament)) if role_canonical else None
+            role_speaker_id = name_and_parliament_to_speaker_id.get((role_canonical, role_parliament)) if role_canonical is not None else None
             bucket_to_stats[bucket]["total"] += 1
-            if role_speaker_id:
+            if role_speaker_id is not None:
                 bucket_to_stats[bucket]["matched"] += 1
             else:
                 unmatched.append((speaker, parliament, role_canonical or "<unresolved>"))
             continue  # role-only strings are never resolvable via the name cascade
 
         name = _preprocess(speaker)
-        if not name:
+        if name is None:
             # Structural exclusion: artifact or collective reference — not in denominator.
             unmatched.append((speaker, parliament, "<excluded/empty>"))
             continue
 
         canonical, resolved_parliament = _resolve(name, parliament, lookups, name_and_parliament_to_speaker_id)
-        speaker_id = name_and_parliament_to_speaker_id.get((canonical, resolved_parliament)) if canonical else None
+        speaker_id = name_and_parliament_to_speaker_id.get((canonical, resolved_parliament)) if canonical is not None else None
 
         bucket_to_stats[bucket]["total"] += 1
-        if speaker_id:
+        if speaker_id is not None:
             bucket_to_stats[bucket]["matched"] += 1
         else:
             unmatched.append((speaker, parliament, canonical or "<unresolved>"))
