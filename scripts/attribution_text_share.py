@@ -68,11 +68,10 @@ def _get_body_character_count(report) -> int:
 def main():
     with Session(engine) as session:
         reports = [report for report in CRUDReport(session).get_by_markdown_content_not_null() if report.parliament_number <= _MAX_PARLIAMENT]
-        speech_crud = CRUDSpeech(session)
         rows = []
         report_ids = [report.id for report in reports]
         for start in range(0, len(report_ids), _REPORT_BATCH):
-            rows.extend(speech_crud.get_rows_by_report_ids(report_ids[start:start + _REPORT_BATCH]))
+            rows.extend(CRUDSpeech(session).get_rows_by_report_ids(report_ids[start:start + _REPORT_BATCH]))
 
     category_to_row_count: Counter[str] = Counter()
     category_to_character_count: Counter[str] = Counter()

@@ -73,11 +73,10 @@ def main() -> None:
         lookups = build_speaker_lookups(speakers)
 
         key_to_speaker_id_counts: dict[Key, Counter] = {}
-        crud_speech = CRUDSpeech(session)
         for start in range(0, len(reports), _REPORT_BATCH):
             batch = reports[start : start + _REPORT_BATCH]
             report_id_to_parliament_and_date = {report_id: (parliament_number, sitting_date) for report_id, parliament_number, sitting_date in batch}
-            for row in crud_speech.get_rows_by_report_ids(list(report_id_to_parliament_and_date)):
+            for row in CRUDSpeech(session).get_rows_by_report_ids(list(report_id_to_parliament_and_date)):
                 if not row.speaker or row.speaker_id is None:
                     continue
                 parliament_number, sitting_date = report_id_to_parliament_and_date[row.report_id]

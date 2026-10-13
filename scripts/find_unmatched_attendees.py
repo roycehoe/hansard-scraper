@@ -84,7 +84,7 @@ def _is_resolved(name: str, parliament: int, lookups) -> bool:
 
 # ── main ──────────────────────────────────────────────────────────────────────
 
-def find_unmatched(*, is_verbose: bool = False) -> dict[str, Counter]:
+def find_unmatched(is_verbose: bool = False) -> dict[str, Counter]:
     """
     Returns a dict mapping category -> Counter(speaker_name -> count).
     Categories: 'candidate', 'official_with_title', 'presiding',
