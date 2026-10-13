@@ -19,10 +19,11 @@ from settings import settings
 
 _CONCURRENCY = 20
 _HTTP_TIMEOUT_SECONDS = 30
+_SITTING_DATE_FORMAT = "%d-%m-%Y"
 
 
 def _parse_sitting_date(sitting_date: str) -> datetime:
-    return datetime.strptime(sitting_date, "%d-%m-%Y")
+    return datetime.strptime(sitting_date, _SITTING_DATE_FORMAT)
 
 
 def _strip_nul(value_tree: object) -> object:
@@ -38,7 +39,7 @@ def _strip_nul(value_tree: object) -> object:
 @dataclass(frozen=True)
 class FetchedSittingDate:
     sitting_date: str
-    result: Optional[dict]
+    hansard_report_response: Optional[dict]
 
 
 async def _fetch_sitting_date_response(
@@ -48,8 +49,8 @@ async def _fetch_sitting_date_response(
 ) -> FetchedSittingDate:
     async with semaphore:
         try:
-            result = await get_hansard_report_response_async(sitting_date, client)
-            return FetchedSittingDate(sitting_date, result)
+            hansard_report_response = await get_hansard_report_response_async(sitting_date, client)
+            return FetchedSittingDate(sitting_date, hansard_report_response)
         except HansardGatewayError as error:
             logger.warning(f"Skipping {sitting_date}: {error}")
             return FetchedSittingDate(sitting_date, None)
@@ -75,14 +76,14 @@ def populate_hansard_sitting_dates(session: Session) -> None:
 
     for i, fetched_sitting_date in enumerate(fetched, start=1):
         sitting_date = fetched_sitting_date.sitting_date
-        if fetched_sitting_date.result is None:
+        if fetched_sitting_date.hansard_report_response is None:
             continue
         logger.info(f"{i}/{len(dates_to_fetch)}: {sitting_date}")
 
-        result = _strip_nul(fetched_sitting_date.result)
+        hansard_report_response = _strip_nul(fetched_sitting_date.hansard_report_response)
         if _parse_sitting_date(sitting_date) >= settings.sitting_date_format_change:
-            sitting_date_data = build_new_hansard_sitting_date_response(result, sitting_date)
+            sitting_date_data = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
         else:
-            sitting_date_data = build_old_hansard_sitting_date_response(result, sitting_date)
+            sitting_date_data = build_old_hansard_sitting_date_response(hansard_report_response, sitting_date)
 
         CRUDHansardSittingDateResponse(session).create(sitting_date_data.response)
