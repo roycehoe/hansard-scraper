@@ -1,39 +1,56 @@
-from datetime import datetime
+from datetime import date
 
-PRESIDING_OFFICERS: dict[tuple[str, int], str] = {
-    ("SPEAKER", 0): "George Oehlers",
-    ("SPEAKER", 1): "George Oehlers",
-    ("SPEAKER", 2): "Coomaraswamy, P.",
-    ("SPEAKER", 3): "Yeoh Ghim Seng",
-    ("SPEAKER", 4): "Yeoh Ghim Seng",
-    ("SPEAKER", 5): "Yeoh Ghim Seng",
-    ("SPEAKER", 6): "Yeoh Ghim Seng",
-    # Deputy Speakers by parliament term.
-    # Parliament 0 (colonial LA 1955-1965): A.P. Rajah held the role throughout.
-    # His Speaker-table entry is parliament 1; _resolve_presiding_officer checks
-    # (role, 0) before the colonial fallback so this is not overridden by the
-    # parliament-1 deputy speaker (Yong Nyuk Lin).
-    ("DEPUTY SPEAKER", 0): "A.P. Rajah",
-    # Parliament 3 is deliberately omitted: 3 is in COLONIAL_PARLIAMENT_FALLBACKS
-    # [1, 2, 3], so adding an entry would redirect all parliament-0 "Mr Deputy Speaker"
-    # rows to Yong Nyuk Lin instead of A.P. Rajah. Only 5 rows are affected in
-    # parliament 3, so skipping is the correct trade-off.
-    ("DEPUTY SPEAKER", 4): "Yong Nyuk Lin",
-    ("DEPUTY SPEAKER", 5): "Tan Soo Khoon",
-    ("DEPUTY SPEAKER", 6): "Tan Soo Khoon",
-    ("SPEAKER", 7): "Tan Soo Khoon",
-    ("DEPUTY SPEAKER", 7): "Chew Heng Ching",
-    ("SPEAKER", 8): "Tan Soo Khoon",
-    ("DEPUTY SPEAKER", 8): "Chew Heng Ching",
-    ("SPEAKER", 9): "Tan Soo Khoon",
-    ("DEPUTY SPEAKER", 9): "Chew Heng Ching",
-    ("SPEAKER", 10): "Abdullah Bin Tarmugi",
-    ("DEPUTY SPEAKER", 10): "Chew Heng Ching",
-    ("SPEAKER", 11): "Abdullah Bin Tarmugi",
-    ("DEPUTY SPEAKER", 11): "Charles Chong",
-    ("SPEAKER", 12): "Michael Palmer",
-    ("DEPUTY SPEAKER", 12): "Charles Chong",
-}
+# Office holders by date: (first day, last day, name). Names resolve through the
+# Speaker lookups in the row's parliament, with the colonial fallback for parliament 0.
+# A bare role string links only when exactly one holder was in office that day.
+# Sources: parliament.gov.sg Speaker page (names and years) and the Wikipedia list of
+# Speakers and Deputy Speakers (exact dates); see docs/adr/0002.
+SPEAKER_TERMS: list[tuple[date, date, str]] = [
+    (date(1955, 4, 22), date(1963, 9, 3), "George Oehlers"),
+    (date(1963, 10, 22), date(1964, 10, 30), "E.W. Barker"),
+    (date(1964, 11, 2), date(1966, 8, 5), "A.P. Rajah"),
+    (date(1966, 8, 17), date(1970, 1, 18), "Coomaraswamy, P."),
+    (date(1970, 1, 27), date(1988, 8, 17), "Yeoh Ghim Seng"),
+    (date(1989, 1, 9), date(2001, 10, 17), "Tan Soo Khoon"),
+    (date(2002, 3, 22), date(2011, 4, 18), "Abdullah Bin Tarmugi"),
+    (date(2011, 10, 10), date(2012, 12, 12), "Michael Palmer"),
+    (date(2013, 1, 14), date(2017, 8, 7), "Halimah Yacob"),
+    (date(2017, 9, 11), date(2023, 7, 17), "Tan Chuan-Jin"),
+]
+
+# Two Deputy Speakers served at once for most of Parliaments 7, 10, 11 and 12, so a
+# bare "Mr Deputy Speaker" on those dates stays unlinked unless the string names the person.
+DEPUTY_SPEAKER_TERMS: list[tuple[date, date, str]] = [
+    (date(1955, 4, 26), date(1959, 3, 31), "Lim, R.C.H."),
+    (date(1959, 7, 15), date(1961, 9, 24), "G. Kandasamy"),
+    (date(1961, 11, 16), date(1963, 9, 3), "John Mammen"),
+    (date(1963, 12, 9), date(1965, 12, 9), "Fong Kim Heng"),
+    (date(1966, 2, 23), date(1966, 8, 16), "Coomaraswamy, P."),
+    (date(1968, 7, 11), date(1970, 1, 26), "Yeoh Ghim Seng"),
+    (date(1972, 11, 22), date(1976, 12, 5), "Tang See Chim"),
+    (date(1977, 2, 22), date(1980, 12, 4), "Tang See Chim"),
+    (date(1981, 3, 6), date(1984, 12, 3), "Hwang Soo Jin"),
+    (date(1985, 3, 6), date(1988, 8, 17), "Tan Soo Khoon"),
+    (date(1989, 1, 16), date(1991, 8, 13), "Lim Boon Heng"),
+    (date(1989, 1, 16), date(1991, 8, 13), "Abdullah Bin Tarmugi"),
+    (date(1992, 1, 13), date(1993, 6, 30), "Abdullah Bin Tarmugi"),
+    (date(1993, 2, 26), date(1996, 12, 15), "Yap Giau Cheng, Eugene"),
+    (date(1997, 6, 2), date(2001, 10, 17), "Yap Giau Cheng, Eugene"),
+    (date(2002, 4, 1), date(2004, 8, 11), "Lim Hwee Hua"),
+    (date(2002, 4, 1), date(2006, 4, 19), "Chew Heng Ching"),
+    (date(2004, 9, 1), date(2006, 4, 19), "S Iswaran"),
+    (date(2006, 11, 8), date(2011, 4, 18), "Indranee Rajah"),
+    (date(2006, 11, 8), date(2011, 4, 18), "Matthias Yao Chih"),
+    (date(2011, 10, 17), date(2015, 8, 24), "Seah Kian Peng"),
+    (date(2011, 10, 17), date(2015, 8, 24), "Charles Chong"),
+]
+
+# Sources disagree on whether Lim Yew Hock took over on 7 or 8 June 1956, so the
+# sitting of 7 June 1956 is left out and stays unlinked.
+CHIEF_MINISTER_TERMS: list[tuple[date, date, str]] = [
+    (date(1955, 4, 6), date(1956, 6, 6), "David Marshall"),
+    (date(1956, 6, 8), date(1959, 6, 3), "Lim Yew Hock"),
+]
 
 ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str] = {
     ("The Prime Minister", 0): "Lee Kuan Yew",
@@ -56,5 +73,3 @@ NON_SPEAKERS: set[str] = {
 
 COLONIAL_PARLIAMENT_FALLBACKS: list[int] = [1, 2, 3]
 
-# David Marshall was CM until 1956-06-06; Lim Yew Hock from 1956-06-07.
-CHIEF_MINISTER_CUTOFF: datetime = datetime(1956, 6, 7)

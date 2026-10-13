@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import date, datetime
 from typing import Iterable, Optional
 
 from sqlmodel import Session
@@ -9,11 +9,12 @@ from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from logs import logger
 from populate.speaker_resolution_constants import (
-    CHIEF_MINISTER_CUTOFF,
+    CHIEF_MINISTER_TERMS,
     COLONIAL_PARLIAMENT_FALLBACKS,
+    DEPUTY_SPEAKER_TERMS,
     NON_SPEAKERS,
-    PRESIDING_OFFICERS,
     ROLE_ONLY_SPEAKERS,
+    SPEAKER_TERMS,
 )
 from services.attendance import (
     VOLUME_TO_PARLIAMENT,
@@ -28,7 +29,13 @@ _WRITE_BATCH = 50_000
 
 # Only these roles resolve by sitting date; every other string resolves the same
 # way for every sitting in a parliament, so it is memoised on (string, parliament).
-_DATE_DEPENDENT_ROLES = ("The Chief Minister", "Mr Deputy Speaker", "The Deputy Speaker")
+_DATE_DEPENDENT_ROLES = (
+    "The Chief Minister",
+    "Mr Speaker",
+    "Mdm Speaker",
+    "Mr Deputy Speaker",
+    "The Deputy Speaker",
+)
 
 
 def _paren_contains_title(m: re.Match) -> bool:
@@ -36,38 +43,42 @@ def _paren_contains_title(m: re.Match) -> bool:
     return strip_title(inner) != inner
 
 
+def _holder_on(
+    terms: list[tuple[date, date, str]], sitting_date: Optional[datetime]
+) -> Optional[str]:
+    """The single person holding the office on the sitting day, or None when there
+    was none, more than one, or the day is unknown."""
+    if sitting_date is None:
+        return None
+    day = sitting_date.date()
+    holders = [name for first, last, name in terms if first <= day <= last]
+    return holders[0] if len(holders) == 1 else None
+
+
 def _resolve_presiding_officer(
     raw: str,
     parliament: int,
+    sitting_date: Optional[datetime],
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> Optional[int]:
     if raw in ("Mr Speaker", "Mdm Speaker"):
-        role = "SPEAKER"
-    elif raw.startswith("Mr Deputy Speaker") or raw.startswith("The Deputy Speaker"):
-        role = "DEPUTY SPEAKER"
+        name = _holder_on(SPEAKER_TERMS, sitting_date)
+    elif raw.startswith(("Mr Deputy Speaker", "The Deputy Speaker")):
+        # "Mr Deputy Speaker (Mr Matthias Yao Chih)" names the person; a bare string
+        # falls back to the one holder in office that day.
+        named = re.search(r"\(([^)]+)\)", raw)
+        name = (
+            normalize_name(strip_title(named.group(1).strip()))
+            if named
+            else _holder_on(DEPUTY_SPEAKER_TERMS, sitting_date)
+        )
     else:
         return None
-    # Check the exact parliament first so that an explicit (role, 0) entry in
-    # PRESIDING_OFFICERS is not overridden by the colonial fallback below.
-    if (role, parliament) in PRESIDING_OFFICERS:
-        parl = parliament
-    elif parliament != 0:
-        parl = parliament
-    else:
-        parl = next(
-            (
-                p
-                for p in COLONIAL_PARLIAMENT_FALLBACKS
-                if (role, p) in PRESIDING_OFFICERS
-            ),
-            parliament,
-        )
-    name = PRESIDING_OFFICERS.get((role, parl))
     if not name:
         return None
     canonical, resolved_parl = _resolve_with_parliament_fallback(
-        name, parl, lookups, speaker_id_lookup
+        name, parliament, lookups, speaker_id_lookup
     )
     return speaker_id_lookup.get((canonical, resolved_parl)) if canonical else None
 
@@ -120,15 +131,15 @@ def _resolve_speech_speaker_id(
         ("Mr Deputy Speaker", "The Deputy Speaker")
     ):
         # Presiding officers never go through the name cascade.
-        return _resolve_presiding_officer(raw, parliament, lookups, speaker_id_lookup)
-
-    # Chief Minister (colonial era): date-based dispatch between Marshall and Lim.
-    if raw == "The Chief Minister" and parliament in (0, 1, 2, 3):
-        cm_name = (
-            "David Marshall"
-            if sitting_date and sitting_date < CHIEF_MINISTER_CUTOFF
-            else "Lim Yew Hock"
+        return _resolve_presiding_officer(
+            raw, parliament, sitting_date, lookups, speaker_id_lookup
         )
+
+    # Chief Minister (colonial era): Marshall or Lim by sitting date.
+    if raw == "The Chief Minister" and parliament in (0, 1, 2, 3):
+        cm_name = _holder_on(CHIEF_MINISTER_TERMS, sitting_date)
+        if not cm_name:
+            return None
         cm_canonical, cm_parl = _resolve_with_parliament_fallback(
             cm_name, 0, lookups, speaker_id_lookup
         )
