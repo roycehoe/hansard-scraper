@@ -1,7 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 
 import httpx
 from sqlmodel import Session
@@ -11,35 +10,24 @@ from crud.hansard_website_response import CRUDHansardWebsiteResponse
 from exceptions import HansardGatewayError
 from gateway.hansard_report import get_hansard_report_response_async
 from logs import logger
+from schemas.hansard_report_response import (
+    HansardReportNewResponse,
+    HansardReportOldResponse,
+)
 from services.hansard_sitting_date_response import (
     build_new_hansard_sitting_date_response,
     build_old_hansard_sitting_date_response,
 )
-from settings import settings
+from utils.sitting_dates import is_new_sitting_date_format
 
 _CONCURRENCY = 20
 _HTTP_TIMEOUT_SECONDS = 30
-_SITTING_DATE_FORMAT = "%d-%m-%Y"
-
-
-def _parse_sitting_date(sitting_date: str) -> datetime:
-    return datetime.strptime(sitting_date, _SITTING_DATE_FORMAT)
-
-
-def _strip_nul(value_tree: object) -> object:
-    if isinstance(value_tree, str):
-        return value_tree.replace("\x00", "")
-    if isinstance(value_tree, dict):
-        return {key: _strip_nul(value) for key, value in value_tree.items()}
-    if isinstance(value_tree, list):
-        return [_strip_nul(value) for value in value_tree]
-    return value_tree
 
 
 @dataclass(frozen=True)
 class FetchedSittingDate:
     sitting_date: str
-    hansard_report_response: Optional[dict]
+    hansard_report_response: Optional[Union[HansardReportOldResponse, HansardReportNewResponse]]
 
 
 async def _fetch_sitting_date_response(
@@ -80,8 +68,8 @@ def populate_hansard_sitting_dates(session: Session) -> None:
             continue
         logger.info(f"{i}/{len(dates_to_fetch)}: {sitting_date}")
 
-        hansard_report_response = _strip_nul(fetched_sitting_date.hansard_report_response)
-        if _parse_sitting_date(sitting_date) >= settings.sitting_date_format_change:
+        hansard_report_response = fetched_sitting_date.hansard_report_response
+        if is_new_sitting_date_format(sitting_date):
             hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
         else:
             hansard_sitting_date_response = build_old_hansard_sitting_date_response(hansard_report_response, sitting_date)
