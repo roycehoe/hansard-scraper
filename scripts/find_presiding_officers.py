@@ -1,14 +1,3 @@
-"""
-Find the most common Speaker and Deputy Speaker per parliament.
-
-Scans the PRESENT section of every Sitting.markdown_content for lines that
-contain "SPEAKER", resolves the name via the full SpeakerLookups cascade, and
-role_to_parliament_to_name_counts resolved names per parliament per role.  Prints a ready-to-paste Python
-dict literal for _PRESIDING_OFFICERS in populate/speaker_links.py.
-
-Usage:
-    python -m scripts.find_presiding_officers
-"""
 from collections import Counter, defaultdict
 
 from sqlmodel import Session
@@ -39,8 +28,6 @@ def main() -> None:
         speakers = CRUDSpeaker(session).get_all()
 
     lookups = build_speaker_lookups(speakers)
-
-    # role -> parliament -> Counter(canonical_name)
     role_to_parliament_to_name_counts: dict[str, dict[int, Counter]] = {
         _SPEAKER_ROLE: defaultdict(Counter),
         _DEPUTY_SPEAKER_ROLE: defaultdict(Counter),
