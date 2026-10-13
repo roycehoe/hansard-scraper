@@ -16,24 +16,21 @@ class CRUDHansardWebsiteResponse:
         self.session.commit()
 
     def get_all(self) -> list[HansardWebsiteResponse]:
-        return list(self.session.exec(select(HansardWebsiteResponse)).all())
+        statement = select(HansardWebsiteResponse)
+        return list(self.session.exec(statement).all())
 
     def get_all_by_report_type(self, report_type: str) -> list[HansardWebsiteResponse]:
-        return list(self.session.exec(
-            select(HansardWebsiteResponse).where(HansardWebsiteResponse.report_type == report_type)
-        ).all())
+        statement = select(HansardWebsiteResponse).where(HansardWebsiteResponse.report_type == report_type)
+        return list(self.session.exec(statement).all())
 
     def get_all_by_report_ids(self, report_ids: set[str]) -> list[HansardWebsiteResponse]:
-        return list(self.session.exec(
-            select(HansardWebsiteResponse).where(col(HansardWebsiteResponse.report_id).in_(report_ids))
-        ).all())
+        statement = select(HansardWebsiteResponse).where(col(HansardWebsiteResponse.report_id).in_(report_ids))
+        return list(self.session.exec(statement).all())
 
     def get_all_report_ids(self) -> set[str]:
-        return set(self.session.exec(
-            select(HansardWebsiteResponse.report_id)
-        ).all())
+        statement = select(HansardWebsiteResponse.report_id)
+        return set(self.session.exec(statement).all())
 
     def get_all_sitting_dates(self) -> set[str]:
-        return set(self.session.exec(
-            select(HansardWebsiteResponse.sitting_date).distinct()
-        ).all())
+        statement = select(HansardWebsiteResponse.sitting_date).distinct()
+        return set(self.session.exec(statement).all())

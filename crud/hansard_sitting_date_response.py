@@ -14,12 +14,13 @@ class CRUDHansardSittingDateResponse:
         self.session.commit()
 
     def get_all(self) -> list[HansardSittingDateResponse]:
-        return list(self.session.exec(select(HansardSittingDateResponse)).all())
+        statement = select(HansardSittingDateResponse)
+        return list(self.session.exec(statement).all())
 
     def get_all_sitting_dates(self) -> set[str]:
-        return set(self.session.exec(select(HansardSittingDateResponse.sitting_date)).all())
+        statement = select(HansardSittingDateResponse.sitting_date)
+        return set(self.session.exec(statement).all())
 
     def get_by_sitting_date(self, sitting_date: str) -> Optional[HansardSittingDateResponse]:
-        return self.session.exec(
-            select(HansardSittingDateResponse).where(HansardSittingDateResponse.sitting_date == sitting_date)
-        ).first()
+        statement = select(HansardSittingDateResponse).where(HansardSittingDateResponse.sitting_date == sitting_date)
+        return self.session.exec(statement).first()

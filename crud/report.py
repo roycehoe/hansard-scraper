@@ -20,19 +20,24 @@ class CRUDReport:
         self.session.commit()
 
     def get_all(self) -> list[Report]:
-        return list(self.session.exec(select(Report)).all())
+        statement = select(Report)
+        return list(self.session.exec(statement).all())
 
     def get_all_with_markdown(self) -> list[Report]:
-        return list(self.session.exec(select(Report).where(Report.markdown_content.is_not(None))).all())
+        statement = select(Report).where(Report.markdown_content.is_not(None))
+        return list(self.session.exec(statement).all())
 
     def get_by_ids(self, report_ids: list[int]) -> list[Report]:
-        return list(self.session.exec(select(Report).where(col(Report.id).in_(report_ids))).all())
+        statement = select(Report).where(col(Report.id).in_(report_ids))
+        return list(self.session.exec(statement).all())
 
     def get_by_sitting_dates(self, dates: list[datetime]) -> list[Report]:
-        return list(self.session.exec(select(Report).where(col(Report.sitting_date).in_(dates))).all())
+        statement = select(Report).where(col(Report.sitting_date).in_(dates))
+        return list(self.session.exec(statement).all())
 
     def get_all_report_ids(self) -> set[str]:
-        return set(self.session.exec(select(Report.report_id)).all())
+        statement = select(Report.report_id)
+        return set(self.session.exec(statement).all())
 
     def get_first_filtered(
         self,
