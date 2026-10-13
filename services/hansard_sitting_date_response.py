@@ -28,7 +28,6 @@ def _serialise_list(value: object) -> Optional[str]:
 
 
 def build_old_hansard_sitting_date_response(hansard_report_response: dict, sitting_date: str) -> HansardSittingDateData:
-    """Handles the flat response format returned for sittings before 18 Aug 2015."""
     hansard_sitting_date_response = HansardSittingDateResponse(
         parlement_no=_get_int(hansard_report_response.get("parlNo")),
         session_no=_get_int(hansard_report_response.get("sessionNo")),
@@ -88,7 +87,6 @@ def build_old_hansard_sitting_date_response(hansard_report_response: dict, sitti
 
 
 def build_new_hansard_sitting_date_response(hansard_report_response: dict, sitting_date: str) -> HansardSittingDateData:
-    """Handles the nested response format returned for sittings from 18 Aug 2015 onwards."""
     metadata = hansard_report_response.get("metadata") or {}
 
     hansard_sitting_date_response = HansardSittingDateResponse(

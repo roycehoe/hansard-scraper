@@ -43,7 +43,7 @@ def _merge_consecutive_bold_only_lines(markdown: str) -> str:
     pending_bold_lines = []
     for line in markdown.splitlines():
         if re.fullmatch(_BOLD_ONLY_LINE_PATTERN, line.strip()):
-            pending_bold_lines.append(line.strip()[_BOLD_MARKER_LENGTH:-_BOLD_MARKER_LENGTH])  # strip ** … **
+            pending_bold_lines.append(line.strip()[_BOLD_MARKER_LENGTH:-_BOLD_MARKER_LENGTH])
             continue
         if pending_bold_lines:
             lines.append(f"**{' '.join(pending_bold_lines)}**")
@@ -73,37 +73,28 @@ def get_cleaned_report_markdown(html: str) -> str:
 
 
 def _fix_sitting_concat_headers(html: str) -> str:
-    # Modern (vol 79+) HTML stores "PARTIOF SECOND SESSION" and "VOLUME79" in span text
-    # without spaces. Fix before passing to html2text.
+    # NOTE: modern (vol 79+) HTML stores "PARTIOF SECOND SESSION" and "VOLUME79" without spaces.
     html = re.sub(_CONCATENATED_PART_PATTERN, r"PART \1 OF", html)
     return re.sub(_CONCATENATED_VOLUME_PATTERN, r"VOLUME \1", html)
 
 
 def _remove_sitting_orphan_bold_markers(markdown: str) -> str:
-    # After _fix_sitting_split_bold has merged all fixable patterns, any remaining
-    # standalone ** lines are orphaned opening/closing markers (from </span></div>
-    # boundaries in the HTML). Strip them.
+    # NOTE: runs after _fix_sitting_split_bold, so a standalone ** left over is an orphaned marker.
     return "\n".join(line for line in markdown.splitlines() if line.strip() != "**")
 
 
 def _remove_sitting_empty_italic(markdown: str) -> str:
-    # <i></i> or <em></em> empty italic tags render as __ (html2text).
-    # These appear in vol 38-70 docs inside <div id="adjTime"> between the date and meeting-time lines.
+    # NOTE: empty italic tags in vol 38-70 render as __ between the date and meeting-time lines.
     return "\n".join(line for line in markdown.splitlines() if line.strip() != "__")
 
 
 def _fix_sitting_split_bold(markdown: str) -> str:
-    # Fix patterns produced by modern (vol 79+) HTML where <b> tags wrap <P> elements.
-    #
-    # Pattern 1: **TITLE  \n**   → **TITLE**  (bold opens on title line, closes on next)
-    # Pattern 2: **\nTITLE\n**  → **TITLE**  (open ** on own line, single title, close **)
     lines = markdown.splitlines()
     fixed_lines = []
     line_index = 0
     while line_index < len(lines):
         stripped = lines[line_index].strip()
 
-        # Pattern 1: starts with **, has content, doesn't close with **, next line is **
         if (stripped.startswith("**")
                 and not stripped.endswith("**")
                 and len(stripped) > _BOLD_MARKER_LENGTH
@@ -112,7 +103,6 @@ def _fix_sitting_split_bold(markdown: str) -> str:
             fixed_lines.append(stripped + "**")
             line_index += 2
 
-        # Pattern 2: standalone **, single plain content line, closing **
         elif (stripped == "**"
               and line_index + 2 < len(lines)
               and lines[line_index + 1].strip()
@@ -127,8 +117,7 @@ def _fix_sitting_split_bold(markdown: str) -> str:
 
 
 def _remove_sitting_table_separators(markdown: str) -> str:
-    # Strip 2-column table separator (---|---) and 1-column table separator (--- with optional trailing spaces).
-    # html2text renders <hr> as "* * *", so standalone "---" lines are always 1-column table artefacts.
+    # NOTE: html2text renders <hr> as "* * *", so a standalone "---" line is a one-column table artefact.
     return "\n".join(
         line for line in markdown.splitlines()
         if line.strip() != "---|---" and not re.fullmatch(_TABLE_SEPARATOR_LINE_PATTERN, line)
@@ -142,10 +131,8 @@ def _remove_sitting_orphan_italic_markers(markdown: str) -> str:
 def _remove_sitting_empty_bold(markdown: str) -> str:
     cleaned_lines = []
     for line in markdown.splitlines():
-        # Drop lines that are entirely asterisks (e.g. ****, ********, etc.)
         if re.fullmatch(_ASTERISK_ONLY_LINE_PATTERN, line):
             continue
-        # Strip all leading/trailing **** empty-bold marker groups from content lines
         line = re.sub(_LEADING_EMPTY_BOLD_PATTERN, "", line)
         line = re.sub(_TRAILING_EMPTY_BOLD_PATTERN, "", line)
         cleaned_lines.append(line)
@@ -153,8 +140,7 @@ def _remove_sitting_empty_bold(markdown: str) -> str:
 
 
 def _merge_sitting_adjournment_lines(markdown: str) -> str:
-    # The adjournment time is split across multiple <div align="right"> elements in the HTML,
-    # each rendering as a separate line. Merge continuations until the sentence ends with a period.
+    # NOTE: the adjournment time is split across several right-aligned divs, each rendering as its own line.
     lines = markdown.splitlines()
     merged_lines = []
     line_index = 0
