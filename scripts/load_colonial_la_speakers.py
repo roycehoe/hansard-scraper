@@ -1,12 +1,3 @@
-"""
-Load colonial Legislative Assembly members from data/colonial_la_members.json
-into the Speaker table.
-
-Idempotent: skips any row where (name, parliament_number) already exists.
-
-Run before populate_speaker_links so these speakers are available for attendance /
-speech resolution in colonial-era volumes (1–26, parliament 0 and 1).
-"""
 import json
 from pathlib import Path
 

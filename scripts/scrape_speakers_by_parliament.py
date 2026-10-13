@@ -1,9 +1,3 @@
-"""
-Scrape all speakers (MPs and Legislative Assembly members) from parliament.gov.sg
-and load them into the Speaker table.
-
-Run before populate_speaker_links.
-"""
 from sqlmodel import Session
 
 from database.init import engine
