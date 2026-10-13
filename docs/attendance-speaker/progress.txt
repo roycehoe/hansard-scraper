@@ -301,3 +301,13 @@ in memory before writing: 0 rows differed, and neither resolved any of them.
 
 Unchanged since Iteration 2. The 150 remain the Category 1 parsing failures described there
 and in gap.md; they need a parser fix plus targeted deletes, which are phase 2 proposals.
+
+---
+
+## Approved attribution changes — 2026-10-13
+
+The three approved groups of speech-attribution changes (stage 4 on zero-speech reports,
+presiding officers by date, Chairman attribution and resolver fixes) ran stage 8 three more
+times. Attendance was unchanged each time: 96,500 rows, 96,350 with a speaker_id (99.8%),
+150 unmatched. The attendance resolver was not touched, except that the Hj form of Haji now
+strips in the middle of a name, which resolved no attendance row.
