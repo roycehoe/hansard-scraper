@@ -15,8 +15,20 @@ class CRUDSitting:
         self.session.add_all(sittings)
         self.session.commit()
 
+    def update(self, sitting: Sitting) -> None:
+        self.session.add(sitting)
+        self.session.flush()
+
     def get_all(self) -> list[Sitting]:
         statement = select(Sitting)
+        return list(self.session.exec(statement).all())
+
+    def get_by_html_full_content_null_and_sections_null(self) -> list[Sitting]:
+        statement = (
+            select(Sitting)
+            .where(Sitting.html_full_content.is_(None))
+            .where(Sitting.sections.is_(None))
+        )
         return list(self.session.exec(statement).all())
 
     def get_all_sitting_dates(self) -> set[str]:
