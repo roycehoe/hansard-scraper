@@ -27,6 +27,11 @@ from utils.names import (
     normalize_name,
 )
 
+_SPEAKER_ROLE = "SPEAKER"
+_DEPUTY_SPEAKER_ROLE = "DEPUTY SPEAKER"
+_ROLES = (_SPEAKER_ROLE, _DEPUTY_SPEAKER_ROLE)
+_PRESENT_SECTION = "PRESENT"
+
 
 def main() -> None:
     with Session(engine) as session:
@@ -37,8 +42,8 @@ def main() -> None:
 
     # role -> parliament -> Counter(canonical_name)
     role_to_parliament_to_name_counts: dict[str, dict[int, Counter]] = {
-        "SPEAKER": defaultdict(Counter),
-        "DEPUTY SPEAKER": defaultdict(Counter),
+        _SPEAKER_ROLE: defaultdict(Counter),
+        _DEPUTY_SPEAKER_ROLE: defaultdict(Counter),
     }
 
     for sitting in sittings:
@@ -48,18 +53,18 @@ def main() -> None:
         if parliament is None:
             continue
 
-        for line in _extract_section_lines(sitting.markdown_content, "PRESENT"):
+        for line in _extract_section_lines(sitting.markdown_content, _PRESENT_SECTION):
             stripped = line.strip()
-            if "SPEAKER" not in stripped:
+            if _SPEAKER_ROLE not in stripped:
                 continue
 
             if "DEPUTY" in stripped:
-                role = "DEPUTY SPEAKER"
+                role = _DEPUTY_SPEAKER_ROLE
             else:
-                role = "SPEAKER"
+                role = _SPEAKER_ROLE
 
             parsed_speaker = _parse_speaker_line(stripped)
-            if not parsed_speaker.name or parsed_speaker.name == "SPEAKER":
+            if not parsed_speaker.name or parsed_speaker.name == _SPEAKER_ROLE:
                 continue
 
             name = normalize_name(parsed_speaker.name)
@@ -67,12 +72,12 @@ def main() -> None:
             role_to_parliament_to_name_counts[role][parliament][canonical_name] += 1
 
     all_parliaments = sorted(
-        set(role_to_parliament_to_name_counts["SPEAKER"]) | set(role_to_parliament_to_name_counts["DEPUTY SPEAKER"])
+        set(role_to_parliament_to_name_counts[_SPEAKER_ROLE]) | set(role_to_parliament_to_name_counts[_DEPUTY_SPEAKER_ROLE])
     )
 
     print("_PRESIDING_OFFICERS: dict[tuple[str, int], str] = {")
     for parliament in all_parliaments:
-        for role in ("SPEAKER", "DEPUTY SPEAKER"):
+        for role in _ROLES:
             counter = role_to_parliament_to_name_counts[role].get(parliament)
             if not counter:
                 continue

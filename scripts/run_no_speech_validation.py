@@ -22,6 +22,12 @@ from services.speech import get_speeches, get_start_of_speech_line
 _BOLD_SPEAKER_RE = re.compile(r"\*\*[^* ][^*]*\*\*")
 _SAMPLE_SIZE_PER_REPORT_TYPE = 5
 _SEED = 42
+_SEPARATOR_WIDTH = 80
+_TITLE_DISPLAY_WIDTH = 60
+_PREVIEW_LINE_COUNT = 20
+_PREVIEW_LINE_WIDTH = 100
+_BOLD_LINE_COUNT = 5
+_BOLD_LINE_WIDTH = 120
 
 
 def run():
@@ -62,9 +68,9 @@ def run():
         print(f"  {report_type:<30} {len(items)}")
     print()
 
-    print("=" * 80)
+    print("=" * _SEPARATOR_WIDTH)
     print("VALIDATION SAMPLE")
-    print("=" * 80)
+    print("=" * _SEPARATOR_WIDTH)
 
     total_checked = 0
     suspicious = []
@@ -82,18 +88,18 @@ def run():
             if bold_lines:
                 suspicious.append((report, start_line, bold_lines))
 
-            title_display = report.title[:60] if report.title else ""
+            title_display = report.title[:_TITLE_DISPLAY_WIDTH] if report.title else ""
             print(f"  [{status}] id={report.id}  parl={report.parliament_number}  {title_display!r}")
             print(f"          start_line={start_line}  lines_after={len(lines_after)}")
 
-            for offset, line in enumerate(lines_after[:20]):
+            for offset, line in enumerate(lines_after[:_PREVIEW_LINE_COUNT]):
                 marker = "  <-- BOLD" if _BOLD_SPEAKER_RE.search(line.strip()) else ""
-                print(f"    {start_line + 1 + offset:4d}: {line[:100]}{marker}")
-            if len(lines_after) > 20:
-                print(f"    ... ({len(lines_after) - 20} more lines)")
+                print(f"    {start_line + 1 + offset:4d}: {line[:_PREVIEW_LINE_WIDTH]}{marker}")
+            if len(lines_after) > _PREVIEW_LINE_COUNT:
+                print(f"    ... ({len(lines_after) - _PREVIEW_LINE_COUNT} more lines)")
             print()
 
-    print("=" * 80)
+    print("=" * _SEPARATOR_WIDTH)
     print(f"Checked:                   {total_checked}")
     print(f"Suspicious (bold found):   {len(suspicious)}")
     print(f"Confirmed no-speaker:      {total_checked - len(suspicious)}")
@@ -105,7 +111,7 @@ def run():
         bold_count = sum(1 for line in report.markdown_content.splitlines() if _BOLD_SPEAKER_RE.search(line.strip()))
         status = "SUSPICIOUS" if bold_count else "OK"
         print(f"  [{status}] id={report.id}  type={report.report_type}  parl={report.parliament_number}  "
-              f"bold_lines={bold_count}  {report.title[:60]!r}")
+              f"bold_lines={bold_count}  {report.title[:_TITLE_DISPLAY_WIDTH]!r}")
 
     if suspicious:
         print()
@@ -114,8 +120,8 @@ def run():
             print(f"\n  id={report.id}  type={report.report_type}  parl={report.parliament_number}")
             print(f"  title: {report.title!r}")
             print(f"  bold lines found after start_line={start_line}:")
-            for bold_line in bold_lines[:5]:
-                print(f"    {bold_line[:120]}")
+            for bold_line in bold_lines[:_BOLD_LINE_COUNT]:
+                print(f"    {bold_line[:_BOLD_LINE_WIDTH]}")
 
 
 if __name__ == "__main__":

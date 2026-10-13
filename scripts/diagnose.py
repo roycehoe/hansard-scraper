@@ -13,6 +13,9 @@ from database.report import Report
 from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
+_DEFAULT_FAILING_SAMPLE_SIZE = 3
+_DEFAULT_PASSING_SAMPLE_SIZE = 30
+
 
 def _get_speech_start(response: HansardWebsiteResponse) -> tuple[Report, Optional[int]]:
     report = build_report(response)
@@ -48,7 +51,7 @@ def get_report_type_speech_stats(session: Session) -> dict:
     return dict(report_type_to_counts)
 
 
-def get_failing_sample(session: Session, no_speech_types: set[str], sample_size: int = 3) -> dict:
+def get_failing_sample(session: Session, no_speech_types: set[str], sample_size: int = _DEFAULT_FAILING_SAMPLE_SIZE) -> dict:
     """Sample up to sample_size failing documents per (failure_stage, report_type) group."""
     responses = CRUDHansardWebsiteResponse(session).get_all()
     stage_and_report_type_to_responses = defaultdict(list)
@@ -71,7 +74,7 @@ def get_failing_sample(session: Session, no_speech_types: set[str], sample_size:
     return stage_and_report_type_to_sample
 
 
-def get_passing_sample(session: Session, no_speech_types: set[str], sample_size: int = 30) -> list:
+def get_passing_sample(session: Session, no_speech_types: set[str], sample_size: int = _DEFAULT_PASSING_SAMPLE_SIZE) -> list:
     """Sample sample_size currently-passing documents for regression testing."""
     responses = CRUDHansardWebsiteResponse(session).get_all()
     passing = []
