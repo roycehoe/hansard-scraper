@@ -1,4 +1,5 @@
 from logging.config import fileConfig
+from typing import Optional
 
 import sqlalchemy as sa
 import sqlmodel.sql.sqltypes
@@ -14,6 +15,7 @@ import database.sitting  # noqa: F401
 import database.speaker  # noqa: F401
 import database.speech  # noqa: F401
 from alembic import context
+from alembic.runtime.migration import MigrationContext
 from settings import settings
 
 config = context.config
@@ -26,7 +28,13 @@ target_metadata = SQLModel.metadata
 _TEXT_LIKE = (sa.TEXT, sa.VARCHAR, sqlmodel.sql.sqltypes.AutoString)
 
 
-def _compare_type(context, inspected_column, metadata_column, inspected_type, metadata_type):
+def _compare_type(
+    context: MigrationContext,
+    inspected_column: sa.Column,
+    metadata_column: sa.Column,
+    inspected_type: sa.types.TypeEngine,
+    metadata_type: sa.types.TypeEngine,
+) -> Optional[bool]:
     if isinstance(inspected_type, _TEXT_LIKE) and isinstance(metadata_type, _TEXT_LIKE):
         return False
     return None

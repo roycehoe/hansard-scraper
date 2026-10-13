@@ -27,4 +27,14 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff.lint]
-select = ["I", "F"]
+select = [
+    "I", "F",
+    "ANN",
+    "RET504", "RET505", "RET506", "RET507", "RET508",
+    "BLE001",
+    "PLR2004",
+    "T201", "T203",
+    "DTZ003", "DTZ005",
+    "PLW0603",
+]
+ignore = ["ANN204"]
