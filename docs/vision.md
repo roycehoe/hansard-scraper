@@ -108,6 +108,8 @@ The plan projected 99.1 to 99.3 for Parliament 12 from the cutoff, 98.1 to 99.1 
 
 Across the whole table: 1,068,620 speech rows, 1,019,991 with a speaker string, 997,268 of them linked (97.8%). Attendance: 134,916 of 135,072 linked (99.88%).
 
+The decisions, run order, judgement calls and evidence for this load are in [post-2012-load.md](report/post-2012-load.md).
+
 ### Verdict against the objectives, records before 10 September 2012
 
 From two independent audits on 13 October 2026. The second ran after that day's fixes (22 zero-row debates parsed, 1,691 skipped records refetched, 6,615 stale reports re-parsed); its findings are in [north-star-audit-2026-10-13.md](report/north-star-audit-2026-10-13.md).
