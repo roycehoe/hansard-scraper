@@ -441,8 +441,7 @@ def normalize_name(name: str) -> str:
     values keep the period (e.g. "A. Rahim Ishak") while others omit it ("S Iswaran").
     """
     name = re.sub(r"(?<=[A-Z]\.) (?=[A-Z]\.)", "", name)
-    name = re.sub(r"\bMohd\.", "Mohd", name)
-    return name
+    return re.sub(r"\bMohd\.", "Mohd", name)
 
 
 def _normalize_for_lookup(name: str) -> str:
@@ -507,10 +506,8 @@ def _invert_to_natural(speaker_name: str) -> Optional[str]:
         return None
     parts = speaker_name.split(", ")
     if len(parts) >= 3 and parts[-1] in _INVERTED_TITLE_SUFFIXES:
-        rest = " ".join(parts[1:-1])
-    else:
-        rest = ", ".join(parts[1:])
-    return strip_title(f"{rest} {parts[0]}").strip()
+        return strip_title(f"{' '.join(parts[1:-1])} {parts[0]}").strip()
+    return strip_title(f"{', '.join(parts[1:])} {parts[0]}").strip()
 
 
 def _get_wordset_key(name: str) -> tuple[frozenset, int]:
@@ -702,6 +699,25 @@ def build_speaker_lookups(speakers: list[Speaker]) -> SpeakerLookups:
     )
 
 
+def _get_closing_parenthesis_index(text: str, open_index: int) -> Optional[int]:
+    depth = 0
+    for char_index in range(open_index, len(text)):
+        if text[char_index] == "(":
+            depth += 1
+        elif text[char_index] == ")":
+            depth -= 1
+            if depth == 0:
+                return char_index
+    return None
+
+
+def _strip_name_decorations(name_part: str) -> str:
+    name = strip_title(name_part.strip())
+    name = _OFFICIAL_ROLE_SUFFIX_RE.sub("", name).rstrip(", ").strip()
+    name = _HONORIFIC_SUFFIX_RE.sub("", name).rstrip(", ").strip()
+    return _ISLAMIC_SUFFIX_RE.sub("", name).strip()
+
+
 def _parse_name_and_location(text: str) -> tuple[str, Optional[str]]:
     """
     Extract (speaker_name, location_name) from text like:
@@ -716,35 +732,13 @@ def _parse_name_and_location(text: str) -> tuple[str, Optional[str]]:
     text = text.strip().rstrip(". ")
 
     first_open = text.find("(")
-    if first_open != -1:
-        # Walk forward to find matching close paren (handles nesting)
-        depth = 0
-        close_index = -1
-        for char_index in range(first_open, len(text)):
-            if text[char_index] == "(":
-                depth += 1
-            elif text[char_index] == ")":
-                depth -= 1
-                if depth == 0:
-                    close_index = char_index
-                    break
-        if close_index != -1:
-            constituency = text[first_open + 1 : close_index].strip()
-            name_part = text[:first_open].rstrip(", ")
-        else:
-            # No matching close paren — constituency is truncated; use text before "("
-            constituency = None
-            name_part = text[:first_open].rstrip(", )")
-    else:
-        constituency = None
-        name_part = text
-
-    name = strip_title(name_part.strip())
-    name = _OFFICIAL_ROLE_SUFFIX_RE.sub("", name).rstrip(", ").strip()
-    name = _HONORIFIC_SUFFIX_RE.sub("", name).rstrip(", ").strip()
-    # Strip trailing Islamic honorific suffix: "Rahmat Bin Kenap Al-Haj" -> "Rahmat Bin Kenap"
-    name = _ISLAMIC_SUFFIX_RE.sub("", name).strip()
-    return name, constituency
+    if first_open == -1:
+        return _strip_name_decorations(text), None
+    close_index = _get_closing_parenthesis_index(text, first_open)
+    if close_index is None:
+        return _strip_name_decorations(text[:first_open].rstrip(", )")), None
+    constituency = text[first_open + 1 : close_index].strip()
+    return _strip_name_decorations(text[:first_open].rstrip(", ")), constituency
 
 
 def _parse_speaker_line(line: str) -> tuple[str, Optional[str]]:
@@ -755,7 +749,7 @@ def _parse_speaker_line(line: str) -> tuple[str, Optional[str]]:
     line = line.rstrip(". ")
     # Find the outermost parenthetical (greedy: first '(' to last ')')
     match = re.search(r"\((.+)\)\s*$", line)
-    if not match:
+    if match is None:
         return "SPEAKER", None
     inner = match.group(1).strip()
     inner_stripped = strip_title(inner)
@@ -829,21 +823,21 @@ def _try_name_variant(
 ) -> Optional[str]:
     normalized = _period_normalize(name)
     bin_normalized = _period_normalize(_strip_bin(name))
-    result = (
+    canonical = (
         lookups.direct.get((normalized, parliament))
         or lookups.bin_free.get((bin_normalized, parliament))
         or lookups.direct.get((bin_normalized, parliament))
     )
-    if result:
-        return result
+    if canonical:
+        return canonical
     if is_using_wordset:
-        result = lookups.wordset.get((*_get_wordset_key(name), parliament))
-        if result:
-            return result
+        wordset_canonical = lookups.wordset.get((*_get_wordset_key(name), parliament))
+        if wordset_canonical:
+            return wordset_canonical
         subset_words = [word for word in _period_normalize(name).split() if len(word) > 1]
-        result = lookups.wordset_subset.get((frozenset(subset_words), parliament))
-        if result:
-            return result
+        subset_canonical = lookups.wordset_subset.get((frozenset(subset_words), parliament))
+        if subset_canonical:
+            return subset_canonical
     return lookups.prefix.get((normalized, parliament))
 
 
@@ -854,9 +848,7 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
     Reusable by any module that needs speaker name resolution.
     """
     # Apply parliament-agnostic OCR corrections before any parliament-scoped lookup.
-    corrected = _OCR_FORM_TO_CORRECTED_NAME.get(_period_normalize(name))
-    if corrected:
-        name = corrected
+    name = _OCR_FORM_TO_CORRECTED_NAME.get(_period_normalize(name), name)
     canonical = _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get((_period_normalize(name), parliament))
     if canonical:
         return canonical
@@ -911,19 +903,16 @@ def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups) -> list[At
     for section, is_present in [("PRESENT", True), ("ABSENT", False)]:
         for line in _extract_section_lines(content, section):
             parsed = _parse_entry_line(line)
-            if not parsed:
+            if parsed is None:
                 continue
             name, location = parsed
             if not name:
                 continue
             name = normalize_name(name)
-            if parliament is not None:
-                canonical = resolve_canonical_name(name, parliament, lookups)
-                if canonical:
-                    name = canonical
+            canonical = None if parliament is None else resolve_canonical_name(name, parliament, lookups)
             records.append(Attendance(
                 sitting_id=sitting.id,
-                speaker_name=name,
+                speaker_name=canonical or name,
                 is_present=is_present,
                 location_name=location,
             ))
