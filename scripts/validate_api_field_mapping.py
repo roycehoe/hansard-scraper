@@ -255,7 +255,7 @@ def _validate_sitting_payload(raw: dict, sitting_date: str, source: str) -> bool
             "atbpStartPgNo": "atbp_start_pg_no",
             "onlinePDFFileName": "online_pdf_file_name",
         }
-        orm_dict = _orm_fields(data.response)
+        orm_dict = _orm_fields(data)
         failures = []
         for meta_key, orm_field in new_mapped.items():
             val = metadata.get(meta_key)
@@ -313,7 +313,7 @@ def _validate_sitting_payload(raw: dict, sitting_date: str, source: str) -> bool
             "clarificationSubTitle": "clarification_sub_title",
             "questionCount": "question_count",
         }
-        orm_dict = _orm_fields(data.response)
+        orm_dict = _orm_fields(data)
         failures = []
         for raw_key, orm_field in old_mapped.items():
             val = raw.get(raw_key)

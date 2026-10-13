@@ -1,15 +1,7 @@
 import json
-from dataclasses import dataclass
 from typing import Optional
 
-from database.attendance import Attendance
 from database.hansard_sitting_date_response import HansardSittingDateResponse
-
-
-@dataclass
-class HansardSittingDateData:
-    response: HansardSittingDateResponse
-    attendance: list[Attendance]
 
 
 def _get_int(value: object) -> Optional[int]:
@@ -27,8 +19,8 @@ def _serialise_list(value: object) -> Optional[str]:
     return json.dumps(value) if isinstance(value, list) else value
 
 
-def build_old_hansard_sitting_date_response(hansard_report_response: dict, sitting_date: str) -> HansardSittingDateData:
-    hansard_sitting_date_response = HansardSittingDateResponse(
+def build_old_hansard_sitting_date_response(hansard_report_response: dict, sitting_date: str) -> HansardSittingDateResponse:
+    return HansardSittingDateResponse(
         parlement_no=_get_int(hansard_report_response.get("parlNo")),
         session_no=_get_int(hansard_report_response.get("sessionNo")),
         volume_no=_get_int(hansard_report_response.get("volumeNo")),
@@ -77,19 +69,11 @@ def build_old_hansard_sitting_date_response(hansard_report_response: dict, sitti
         question_count=hansard_report_response.get("questionCount"),
     )
 
-    attendance = [
-        Attendance(**item)
-        for item in hansard_report_response.get("attendanceList") or []
-        if isinstance(item, dict)
-    ]
 
-    return HansardSittingDateData(response=hansard_sitting_date_response, attendance=attendance)
-
-
-def build_new_hansard_sitting_date_response(hansard_report_response: dict, sitting_date: str) -> HansardSittingDateData:
+def build_new_hansard_sitting_date_response(hansard_report_response: dict, sitting_date: str) -> HansardSittingDateResponse:
     metadata = hansard_report_response.get("metadata") or {}
 
-    hansard_sitting_date_response = HansardSittingDateResponse(
+    return HansardSittingDateResponse(
         parlement_no=metadata.get("parlimentNO"),
         session_no=metadata.get("sessionNO"),
         volume_no=metadata.get("volumeNO"),
@@ -112,10 +96,3 @@ def build_new_hansard_sitting_date_response(hansard_report_response: dict, sitti
         atbp_start_pg_no=hansard_report_response.get("atbpStartPgNo"),
         online_pdf_file_name=hansard_report_response.get("onlinePDFFileName"),
     )
-
-    attendance = [
-        Attendance(**item)
-        for item in hansard_report_response.get("attendanceList") or []
-    ]
-
-    return HansardSittingDateData(response=hansard_sitting_date_response, attendance=attendance)
