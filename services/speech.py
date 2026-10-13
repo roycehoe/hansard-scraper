@@ -150,8 +150,8 @@ def _extract_mps_speaking(markdown: str) -> list[str]:
     return [part.strip() for part in match.group(1).split(";") if part.strip().strip("* ")]
 
 
-def _classify_speech_type(parsed: list[ParsedSpeech], speaker_count: int) -> ParsedSpeechType:
-    if parsed:
+def _classify_speech_type(parsed_speeches: list[ParsedSpeech], speaker_count: int) -> ParsedSpeechType:
+    if parsed_speeches:
         return ParsedSpeechType.PARSED
     if speaker_count == 1:
         return ParsedSpeechType.SINGLE_SPEAKER
@@ -221,11 +221,11 @@ def _extract_body_attribution(markdown: str, report_type: str) -> Optional[str]:
     return None
 
 
-def _strip_md(text: str) -> str:
+def _strip_markdown_marks(text: str) -> str:
     return re.sub(r"[_*]", "", text)
 
 
-def _extract_md_title(markdown_content: str) -> Optional[str]:
+def _extract_markdown_title(markdown_content: str) -> Optional[str]:
     """Extract the Title field from the markdown header row, if present."""
     for line in markdown_content.splitlines()[:12]:
         match = re.search(r"Title:\|\s*([^|\n]+)", line, re.IGNORECASE)
@@ -247,25 +247,25 @@ def _line_matches_title(line: str, candidate: str) -> bool:
 
     # Strategy 2: markdown heading (# title) — new format (Parliament 12+)
     if line.startswith("#"):
-        heading = _strip_md(line.lstrip("#").strip()).lower()
-        if heading == _strip_md(candidate).lower():
+        heading = _strip_markdown_marks(line.lstrip("#").strip()).lower()
+        if heading == _strip_markdown_marks(candidate).lower():
             return True
 
     # Strategy 3: stripped content — italic, open bold, plain text (old format)
-    stripped = _strip_md(line).strip().lower()
-    if stripped and stripped == _strip_md(candidate).lower():
+    stripped = _strip_markdown_marks(line).strip().lower()
+    if stripped and stripped == _strip_markdown_marks(candidate).lower():
         return True
 
     # Strategy 4: whitespace-normalized — OCR-damaged spacing, continuation markers
     # (line startswith candidate), addenda/prefix mismatches (candidate endswith line), and lines with
     # a context prefix before the title (line endswith candidate, e.g. "[Chair] HEAD X").
-    line_norm = re.sub(r"\s+", "", stripped)
-    candidate_norm = re.sub(r"\s+", "", _strip_md(candidate).lower())
-    if line_norm and candidate_norm and (
-        line_norm == candidate_norm
-        or (line_norm.startswith(candidate_norm) and len(candidate_norm) > 8)
-        or (candidate_norm.endswith(line_norm) and len(line_norm) >= 10)
-        or (line_norm.endswith(candidate_norm) and len(candidate_norm) >= 10)
+    normalized_line = re.sub(r"\s+", "", stripped)
+    normalized_candidate = re.sub(r"\s+", "", _strip_markdown_marks(candidate).lower())
+    if normalized_line and normalized_candidate and (
+        normalized_line == normalized_candidate
+        or (normalized_line.startswith(normalized_candidate) and len(normalized_candidate) > 8)
+        or (normalized_candidate.endswith(normalized_line) and len(normalized_line) >= 10)
+        or (normalized_line.endswith(normalized_candidate) and len(normalized_candidate) >= 10)
     ):
         return True
 
@@ -274,8 +274,8 @@ def _line_matches_title(line: str, candidate: str) -> bool:
     # "**[Mr Speaker in the Chair] TITLE (Announcement by Mr Speaker)**"
     no_chair = re.sub(r"^\[.*?\]\s*", "", stripped).strip()
     no_suffix = re.sub(r"\s*\([^)]*\)\s*$", "", no_chair).strip()
-    line_norm_no_chair = re.sub(r"\s+", "", no_suffix.lower())
-    if line_norm_no_chair and line_norm_no_chair == candidate_norm:
+    normalized_line_without_chair = re.sub(r"\s+", "", no_suffix.lower())
+    if normalized_line_without_chair and normalized_line_without_chair == normalized_candidate:
         return True
 
     return False
@@ -295,13 +295,13 @@ def get_start_of_speech_line(
 
     # Extract the title as written in the markdown header — may differ from the DB
     # title due to HTML entity artifacts, OCR noise, or data entry errors.
-    md_title = fix_mojibake(_extract_md_title(markdown_content) or "")
+    markdown_title = fix_mojibake(_extract_markdown_title(markdown_content) or "")
 
     candidates = [candidate for candidate in [
         title,
         original_title_clean,
         f"{title} {subtitle}" if subtitle else None,
-        md_title or None,
+        markdown_title or None,
         # A trailing acronym can wrap onto its own line: "... TRAINING SUBSIDIES" / "(SPUR)"
         re.sub(r"\s*\([A-Z]+\)$", "", title) if re.search(r"\s*\([A-Z]+\)$", title) else None,
     ] if candidate]
@@ -479,15 +479,15 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 current_speaker = None
 
     for speech in speeches:
-        if m := _LANGUAGE_NOTE_RE.match(speech.transcript):
-            speech.transcript = speech.transcript[m.end() :]
+        if match := _LANGUAGE_NOTE_RE.match(speech.transcript):
+            speech.transcript = speech.transcript[match.end() :]
     return [speech for speech in speeches if speech.transcript.strip() != ""]
 
 
 def get_speeches(markdown: str, start_of_speech_line: int, report_type: str) -> list[ParsedSpeech]:
-    parsed = _parse_speeches(markdown, start_of_speech_line, report_type)
+    parsed_speeches = _parse_speeches(markdown, start_of_speech_line, report_type)
     speakers = _extract_mps_speaking(markdown)
-    speech_type = _classify_speech_type(parsed, len(speakers))
+    speech_type = _classify_speech_type(parsed_speeches, len(speakers))
 
     if speech_type == ParsedSpeechType.PARSED:
         # Old-format docs use bold section headers (e.g. **ASSENTS TO BILLS PASSED**,
@@ -496,13 +496,13 @@ def get_speeches(markdown: str, start_of_speech_line: int, report_type: str) -> 
         # section header, collapse everything to a single correctly-attributed speech.
         if (report_type in ("president-address", "atbp")
                 and not speakers
-                and parsed
-                and _is_section_header_speaker(parsed[0].speaker)):
+                and parsed_speeches
+                and _is_section_header_speaker(parsed_speeches[0].speaker)):
             speaker = _extract_body_attribution(markdown, report_type)
             if speaker:
                 body = _single_speaker_transcript(markdown, start_of_speech_line)
                 return [ParsedSpeech(speaker=speaker, transcript=body)] if body else []
-        return parsed
+        return parsed_speeches
 
     if speech_type == ParsedSpeechType.SINGLE_SPEAKER:
         body = _single_speaker_transcript(markdown, start_of_speech_line)
