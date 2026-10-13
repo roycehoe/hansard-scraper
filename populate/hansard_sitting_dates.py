@@ -17,6 +17,7 @@ from services.hansard_sitting_date_response import (
 from settings import settings
 
 _CONCURRENCY = 20
+_HTTP_TIMEOUT_SECONDS = 30
 
 
 def _parse_sitting_date(sitting_date: str) -> datetime:
@@ -36,7 +37,7 @@ def _strip_nul(value_tree):
 async def _fetch_all_sitting_dates(dates: list[str]) -> list[tuple[str, Optional[dict]]]:
     semaphore = asyncio.Semaphore(_CONCURRENCY)
 
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
 
         async def fetch_one(sitting_date):
             async with semaphore:
