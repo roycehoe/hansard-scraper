@@ -277,6 +277,12 @@ def _parse_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpee
             if transcript.startswith("|"):
                 continue  # table row header ("**Header** | ...") — bold is a column label, not a speaker
             raw_speaker = bold_match.group(0).replace("*", "").replace(":", "").strip()
+            # A bare "[X in the Chair]" annotation records who presides; it is not a
+            # speaker, and any text after it continues the current speaker.
+            if re.fullmatch(r"[\[(]?\s*.+?\s*in the [Cc]hair\s*[.\])]*", raw_speaker):
+                if re.search(r"[A-Za-z0-9]", transcript) and current_speaker is not None:
+                    speeches.append(ParsedSpeech(speaker=current_speaker, transcript=transcript))
+                continue
             # Strip [X in the Chair] chair-annotation prefix (e.g. "**[Mr Speaker in the Chair] BILL**")
             chair_match = re.match(r"^\[(.+?)\s+in the [Cc]hair\]", raw_speaker)
             new_speaker = chair_match.group(1).strip() if chair_match else raw_speaker

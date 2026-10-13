@@ -64,13 +64,14 @@ class CRUDSpeech:
         self.session.commit()
         return result.rowcount
 
-    def set_speaker_ids_bulk(self, updates: dict[int, int]) -> None:
+    def set_speaker_ids_bulk(self, updates: dict[int, Optional[int]]) -> None:
+        """Set speaker_id per speech id; a None value clears the link."""
         if not updates:
             return
         self.session.execute(
             text(
                 "UPDATE speech SET speaker_id = v.speaker_id "
-                "FROM UNNEST(:ids, :speaker_ids) AS v(id, speaker_id) "
+                "FROM UNNEST(:ids, CAST(:speaker_ids AS integer[])) AS v(id, speaker_id) "
                 "WHERE speech.id = v.id"
             ),
             {"ids": list(updates.keys()), "speaker_ids": list(updates.values())},
