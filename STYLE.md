@@ -242,5 +242,5 @@ Decisions made while the guide was applied to the whole tree, kept here so the n
 10. When removing a dead field leaves a dataclass with one field, the dataclass goes too and the builder returns the inner object.
 11. Renaming a variable never changes a log line's text. Log wording changes only under the print-to-logger rule.
 12. Where the pure helpers of two `services/` peers moved to `utils/names.py`, the moved names dropped their leading underscore and no re-export stayed behind; every importer names the new home.
-13. A gateway picks the response schema by the only discriminator the API offers. For `getHansardReport/` that is the sitting date against `settings.sitting_date_format_change`, and the populate stage dispatches on the same date to pick the builder.
+13. A gateway picks the response schema by the only discriminator the API offers. For `getHansardReport/` that is the shape of the body (a `metadata` key means the nested format), and the populate stage dispatches on the model type to pick the builder. The sitting date was the discriminator until 14 October 2026, when the nested format turned out to start on 10 September 2012, not on `settings.sitting_date_format_change`.
 14. NUL bytes are stripped from a sitting-date body in the gateway, before the schema is built, so the stored row is what the schema saw.

@@ -46,7 +46,8 @@ One row per parliamentary item. A report is the smallest unit of parliamentary b
 | `original_title` | str | Title exactly as received from the API. |
 | `subtitle` | str | Parenthetical subtitle if present, e.g. `(in Malay)` or `(Continued)`. |
 | `markdown_content` | str | HTML content converted to clean markdown. `NULL` if the API returned no HTML. |
-| `content` | str | Raw HTML from the API, stored exactly as received. |
+| `content` | str | Raw HTML from the API, stored exactly as received. For the older system (sittings before 10 September 2012, `report_version` sprs2) it is the API's `htmlContent`; for the newer system (sprs3) it is `resultHTML.content`. Newer-system `atbp` records have no text and keep it `NULL`; see [ADR 0003](adr/0003-newer-system-raw-mapping.md). |
+| `report_version` | str | `sprs2` for the older SPRS system, `sprs3` for the newer one. The parser branches on it. |
 
 ### Speech
 
@@ -72,7 +73,7 @@ One row per sitting date. A sitting is a full day of parliamentary proceedings, 
 | `sitting_no` | int | Sitting number within the session. |
 | `sitting_date` | str | Date string as returned by the API. |
 | `online_pdf_file_name` | str | Filename of the online PDF for this sitting. |
-| `html_full_content` | str | Raw HTML of the full sitting proceedings. |
+| `html_full_content` | str | Raw HTML of the full sitting proceedings. `NULL` from 10 September 2012: the newer system serves none. |
 | `ptba_from` | str | PTBA date range start (old format). |
 | `ptba_to` | str | PTBA date range end (old format). |
 | `part_session_str` | str | Part/session label string (new format only). |
@@ -119,13 +120,13 @@ One row per sitting date. A sitting is a full day of parliamentary proceedings, 
 | `foot_note` | str (JSON) | Footnote list, serialised (old format only). |
 | `atbp_list` | str (JSON) | Absence-to-brief-permitted records, serialised (old format only). |
 | `ptba_list` | str (JSON) | Permissions to be absent, serialised from `ptbaList` in the API response. |
-| `attendance_list` | str (JSON) | Attendance list, serialised (old format only). |
+| `attendance_list` | str (JSON) | Attendance list, serialised from `attendanceList` in the API response. The source of `Attendance` rows from 10 September 2012. |
 | `pdf_nodes` | str | PDF nodes (old format only). |
 | `clarification_text` | str | Clarification text (old format only). |
 | `clarification_title` | str | Clarification title (old format only). |
 | `clarification_sub_title` | str | Clarification subtitle (old format only). |
 | `question_count` | str | Question count (old format only). |
-| `markdown_content` | str | Full sitting HTML converted to markdown. Used to parse attendance. |
+| `markdown_content` | str | Full sitting HTML converted to markdown. Used to parse attendance before 10 September 2012; `NULL` after. |
 | `sections` | str (JSON) | Debate sections from `takesSectionVOList`, serialised. New format only. |
 | `annexures` | str (JSON) | Annexure file references from `annexureList`, serialised. New format only. |
 | `vernaculars` | str (JSON) | Vernacular speech files from `vernacularList`, serialised. New format only. |
@@ -133,13 +134,13 @@ One row per sitting date. A sitting is a full day of parliamentary proceedings, 
 
 ### Attendance
 
-One row per person per sitting, parsed from the PRESENT/ABSENT sections of `Sitting.markdown_content`.
+One row per person per sitting, parsed from the PRESENT/ABSENT sections of `Sitting.markdown_content` before 10 September 2012 and from the structured `Sitting.attendance_list` from that date.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `speaker_name` | str | Name as it appears in the attendance list, after title stripping. |
+| `speaker_name` | str | The registry name where the attendance name resolves to a `Speaker` row at build time, otherwise the name as listed after title stripping. |
 | `is_present` | bool | `True` = present, `False` = absent. |
-| `location_name` | str | Constituency or location if listed in the source (e.g. remote attendance). |
+| `location_name` | str | The constituency in parentheses after the name, in every era. The newer API's `locationName`, which marks where a member sat during a hybrid sitting, stays inside `Sitting.attendance_list`. |
 | `speaker_id` | int | FK → `Speaker.id`. `NULL` where the match has not been resolved. |
 
 ### Speaker
