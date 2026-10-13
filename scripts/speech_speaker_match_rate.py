@@ -1,13 +1,3 @@
-"""
-Baseline assessment: what fraction of Speech.speaker values resolve to a Speaker row?
-
-Usage:
-    poetry run python3 scripts/speech_speaker_match_rate.py
-
-Samples ~200 Speech rows stratified by report_type, applies the speaker name matching
-pipeline, and reports the match rate overall and by report_type. Top unmatched
-speaker strings are printed to guide any follow-up curation.
-"""
 import random
 from collections import Counter, defaultdict
 
@@ -46,7 +36,6 @@ def main() -> None:
     }
     lookups = build_speaker_lookups(speakers)
 
-    # Stratify by report_type
     report_type_to_rows: dict[str, list[SpeechReportTypeRow]] = defaultdict(list)
     for row in all_rows:
         report_type_to_rows[row.report_type].append(row)
@@ -56,7 +45,6 @@ def main() -> None:
         sample_size = min(_SAMPLE_PER_TYPE, len(items))
         sample.extend(random.sample(items, sample_size))
 
-    # Run matching
     matched = 0
     report_type_to_unmatched_speakers: dict[str, list[str]] = defaultdict(list)
     report_type_to_stats: dict[str, dict[str, int]] = defaultdict(lambda: {"matched": 0, "total": 0})

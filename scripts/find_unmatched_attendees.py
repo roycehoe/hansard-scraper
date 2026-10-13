@@ -1,14 +1,3 @@
-"""
-Find attendance names with no match in the current Speaker table.
-
-Iterates all Sitting records, parses attendance via get_sitting_attendance,
-and groups unresolved names by frequency.  Run this after adding new Speaker rows
-to discover remaining gaps for colonial_la_members.json.
-
-Usage:
-    python -m scripts.find_unmatched_attendees
-    python -m scripts.find_unmatched_attendees --json candidates.json
-"""
 import argparse
 import json
 import re
@@ -27,8 +16,6 @@ from services.attendance import (
     infer_parliament,
     resolve_canonical_name,
 )
-
-# ── categorisation ────────────────────────────────────────────────────────────
 
 _MIN_ALLCAPS_HEADER_LETTERS = 4
 _PROGRESS_INTERVAL = 100
@@ -71,8 +58,6 @@ def _get_category(name: str) -> str:
     return "candidate"
 
 
-# ── resolution ────────────────────────────────────────────────────────────────
-
 def _is_resolved(name: str, parliament: int, lookups: SpeakerLookups) -> bool:
     if resolve_canonical_name(name, parliament, lookups) is not None:
         return True
@@ -83,14 +68,7 @@ def _is_resolved(name: str, parliament: int, lookups: SpeakerLookups) -> bool:
     return False
 
 
-# ── main ──────────────────────────────────────────────────────────────────────
-
 def find_unmatched(is_verbose: bool = False) -> dict[str, Counter]:
-    """
-    Returns a dict mapping category -> Counter(speaker_name -> count).
-    Categories: 'candidate', 'official_with_title', 'presiding',
-                'allcaps_header', 'document_noise', 'blank'.
-    """
     with Session(engine) as session:
         sittings = session.exec(select(Sitting)).all()
         speakers = CRUDSpeaker(session).get_all()
@@ -135,7 +113,7 @@ def _get_json_template(name: str) -> dict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         "--json", metavar="FILE",
         help="Write candidate JSON template to FILE (ready to merge into colonial_la_members.json)",
@@ -146,7 +124,6 @@ def main() -> None:
     print("Scanning sittings…", file=sys.stderr)
     category_to_counter = find_unmatched(is_verbose=arguments.verbose)
 
-    # ── print report ─────────────────────────────────────────────────────────
     candidates = category_to_counter["candidate"]
     total_unmatched = sum(sum(counter.values()) for counter in category_to_counter.values())
     total_candidates = sum(candidates.values())
@@ -166,7 +143,6 @@ def main() -> None:
         for name, count in candidates.most_common():
             print(f"  {count:>6}  {name}")
 
-    # ── write JSON template ───────────────────────────────────────────────────
     if arguments.json:
         template = [_get_json_template(name) for name, _ in candidates.most_common()]
         path = arguments.json

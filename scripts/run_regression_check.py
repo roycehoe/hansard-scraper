@@ -1,16 +1,3 @@
-"""
-Regression check for the speech → speaker resolution pipeline.
-
-Loads the regression Speech IDs from docs/speech-speaker/sample.json and applies
-the same preprocessing + resolution logic as _populate_speech_speaker_ids in
-populate/speaker_links.py — but in-memory only, no DB writes.
-
-Reports per-speech pass/fail and an overall count to compare against the
-last-documented regression baseline (40/40 at iteration 6).
-
-Usage:
-    PYTHONPATH=. poetry run python3 scripts/run_regression_check.py
-"""
 import json
 import re
 from pathlib import Path
@@ -151,7 +138,6 @@ def main() -> None:
                 failed.append((speech_id, speaker, parliament, None))
             continue
 
-        # Chief Minister (colonial era): date-based dispatch between Marshall and Lim.
         if raw == "The Chief Minister" and parliament in _CHIEF_MINISTER_PARLIAMENTS:
             chief_minister_name = (
                 _EARLY_CHIEF_MINISTER
@@ -166,7 +152,6 @@ def main() -> None:
                 failed.append((speech_id, speaker, parliament, chief_minister_canonical))
             continue
 
-        # Role-only strings — resolve by parliament→person mapping.
         role_key = _get_role_key(raw, parliament)
         if role_key is not None and role_key in ROLE_ONLY_SPEAKERS:
             role_name = ROLE_ONLY_SPEAKERS[role_key]
@@ -176,7 +161,7 @@ def main() -> None:
                 passed += 1
             else:
                 failed.append((speech_id, speaker, parliament, role_canonical))
-            continue  # role-only strings are never resolvable via the name cascade
+            continue
 
         name = _preprocess(speaker)
         if name is None:
