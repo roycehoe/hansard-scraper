@@ -45,6 +45,9 @@ DEPUTY_SPEAKER_TERMS: list[tuple[date, date, str]] = [
     (date(2011, 10, 17), date(2015, 8, 24), "Charles Chong"),
 ]
 
+# Deputy Speakers Hansard addresses as "Mdm"; the parliament.gov.sg list for 1955 to 2011 names no other woman.
+DEPUTY_SPEAKER_WOMEN: set[str] = {"Lim Hwee Hua", "Indranee Rajah"}
+
 # Role-only strings whose holder changed mid-parliament, by date. Sources disagree on
 # whether Lim Yew Hock took over on 7 or 8 June 1956, so that sitting stays unlinked.
 # Prime Minister handovers (28 Nov 1990, 12 Aug 2004) fell on days without a sitting.
