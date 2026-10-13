@@ -3,7 +3,7 @@ Find the most common Speaker and Deputy Speaker per parliament.
 
 Scans the PRESENT section of every Sitting.markdown_content for lines that
 contain "SPEAKER", resolves the name via the full SpeakerLookups cascade, and
-tallies resolved names per parliament per role.  Prints a ready-to-paste Python
+role_to_parliament_to_name_counts resolved names per parliament per role.  Prints a ready-to-paste Python
 dict literal for _PRESIDING_OFFICERS in populate/speaker_links.py.
 
 Usage:
@@ -36,7 +36,7 @@ def main() -> None:
     lookups = build_speaker_lookups(speakers)
 
     # role -> parliament -> Counter(canonical_name)
-    tallies: dict[str, dict[int, Counter]] = {
+    role_to_parliament_to_name_counts: dict[str, dict[int, Counter]] = {
         "SPEAKER": defaultdict(Counter),
         "DEPUTY SPEAKER": defaultdict(Counter),
     }
@@ -63,17 +63,17 @@ def main() -> None:
                 continue
 
             name = normalize_name(parsed_speaker.name)
-            canonical = resolve_canonical_name(name, parliament, lookups) or name
-            tallies[role][parliament][canonical] += 1
+            canonical_name = resolve_canonical_name(name, parliament, lookups) or name
+            role_to_parliament_to_name_counts[role][parliament][canonical_name] += 1
 
     all_parliaments = sorted(
-        set(tallies["SPEAKER"]) | set(tallies["DEPUTY SPEAKER"])
+        set(role_to_parliament_to_name_counts["SPEAKER"]) | set(role_to_parliament_to_name_counts["DEPUTY SPEAKER"])
     )
 
     print("_PRESIDING_OFFICERS: dict[tuple[str, int], str] = {")
     for parliament in all_parliaments:
         for role in ("SPEAKER", "DEPUTY SPEAKER"):
-            counter = tallies[role].get(parliament)
+            counter = role_to_parliament_to_name_counts[role].get(parliament)
             if not counter:
                 continue
             best_name, _count = counter.most_common(1)[0]

@@ -20,14 +20,14 @@ def run():
         reports = CRUDReport(session).get_by_markdown_content_not_null()
 
     single_speaker = [
-        r for r in reports
-        if len(_extract_mps_speaking(r.markdown_content)) == 1
+        report for report in reports
+        if len(_extract_mps_speaking(report.markdown_content)) == 1
     ]
     print(f"Single-speaker docs: {len(single_speaker)}")
 
-    passed_by_type: dict[str, int] = defaultdict(int)
-    failed_by_type: dict[str, int] = defaultdict(int)
-    no_start_by_type: dict[str, int] = defaultdict(int)
+    report_type_to_passed_count: dict[str, int] = defaultdict(int)
+    report_type_to_failed_count: dict[str, int] = defaultdict(int)
+    report_type_to_no_start_count: dict[str, int] = defaultdict(int)
 
     for report in single_speaker:
         start_line = get_start_of_speech_line(
@@ -38,35 +38,35 @@ def run():
             report.report_type,
         )
         if start_line is None:
-            no_start_by_type[report.report_type] += 1
+            report_type_to_no_start_count[report.report_type] += 1
             continue
         speeches = get_speeches(report.markdown_content, start_line, report.report_type)
         if speeches:
-            passed_by_type[report.report_type] += 1
+            report_type_to_passed_count[report.report_type] += 1
         else:
-            failed_by_type[report.report_type] += 1
+            report_type_to_failed_count[report.report_type] += 1
 
     all_types = sorted(
-        set(list(passed_by_type) + list(failed_by_type) + list(no_start_by_type))
+        set(list(report_type_to_passed_count) + list(report_type_to_failed_count) + list(report_type_to_no_start_count))
     )
 
-    total_passed = sum(passed_by_type.values())
-    total_failed = sum(failed_by_type.values())
-    total_no_start = sum(no_start_by_type.values())
+    total_passed = sum(report_type_to_passed_count.values())
+    total_failed = sum(report_type_to_failed_count.values())
+    total_no_start = sum(report_type_to_no_start_count.values())
 
     print(f"\n{'report_type':<28} {'pass':>6} {'fail':>6} {'no_start':>9}")
     print("-" * 52)
-    for rt in all_types:
-        passed = passed_by_type.get(rt, 0)
-        failed = failed_by_type.get(rt, 0)
-        no_start = no_start_by_type.get(rt, 0)
-        print(f"{rt:<28} {passed:>6} {failed:>6} {no_start:>9}")
+    for report_type in all_types:
+        passed = report_type_to_passed_count.get(report_type, 0)
+        failed = report_type_to_failed_count.get(report_type, 0)
+        no_start = report_type_to_no_start_count.get(report_type, 0)
+        print(f"{report_type:<28} {passed:>6} {failed:>6} {no_start:>9}")
     print("-" * 52)
     print(f"{'TOTAL':<28} {total_passed:>6} {total_failed:>6} {total_no_start:>9}")
     print()
     total = total_passed + total_failed + total_no_start
-    pct = 100 * total_passed / total if total else 0
-    print(f"Pass rate (of {total}): {pct:.1f}%")
+    percentage = 100 * total_passed / total if total else 0
+    print(f"Pass rate (of {total}): {percentage:.1f}%")
     if total_failed:
         print(f"  {total_failed} still fail — empty body after start line")
 

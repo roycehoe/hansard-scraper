@@ -19,20 +19,20 @@ from database.init import engine
 from database.report import Report
 from services.speech import get_speeches, get_start_of_speech_line
 
-BOLD_SPEAKER_RE = re.compile(r"\*\*[^* ][^*]*\*\*")
-K = 5
-SEED = 42
+_BOLD_SPEAKER_RE = re.compile(r"\*\*[^* ][^*]*\*\*")
+_SAMPLE_SIZE_PER_REPORT_TYPE = 5
+_SEED = 42
 
 
 def run():
-    random.seed(SEED)
+    random.seed(_SEED)
 
     with Session(engine) as session:
         reports = CRUDReport(session).get_by_markdown_content_not_null()
 
     print(f"Reports with markdown: {len(reports)}")
 
-    no_speech_by_type: dict[str, list[tuple[Report, int]]] = defaultdict(list)
+    report_type_to_no_speech_items: dict[str, list[tuple[Report, int]]] = defaultdict(list)
     no_start_line: list[Report] = []
     total_with_start = 0
 
@@ -49,17 +49,17 @@ def run():
             continue
         total_with_start += 1
         if not get_speeches(report.markdown_content, start_line, report.report_type):
-            no_speech_by_type[report.report_type].append((report, start_line))
+            report_type_to_no_speech_items[report.report_type].append((report, start_line))
 
-    total_no_speech = sum(len(v) for v in no_speech_by_type.values())
+    total_no_speech = sum(len(items) for items in report_type_to_no_speech_items.values())
     print(f"With start line:       {total_with_start}")
     print(f"No-speech docs:        {total_no_speech}")
     print(f"No start line:         {len(no_start_line)}")
     print()
 
     print("Breakdown by report_type:")
-    for rt, items in sorted(no_speech_by_type.items(), key=lambda x: -len(x[1])):
-        print(f"  {rt:<30} {len(items)}")
+    for report_type, items in sorted(report_type_to_no_speech_items.items(), key=lambda entry: -len(entry[1])):
+        print(f"  {report_type:<30} {len(items)}")
     print()
 
     print("=" * 80)
@@ -69,15 +69,15 @@ def run():
     total_checked = 0
     suspicious = []
 
-    for rt, items in sorted(no_speech_by_type.items(), key=lambda x: -len(x[1])):
-        sample = random.sample(items, min(K, len(items)))
-        print(f"\n--- {rt} ({len(items)} total, checking {len(sample)}) ---")
+    for report_type, items in sorted(report_type_to_no_speech_items.items(), key=lambda entry: -len(entry[1])):
+        sample = random.sample(items, min(_SAMPLE_SIZE_PER_REPORT_TYPE, len(items)))
+        print(f"\n--- {report_type} ({len(items)} total, checking {len(sample)}) ---")
 
         for report, start_line in sample:
             total_checked += 1
             lines_after = report.markdown_content.splitlines()[start_line + 1 :]
 
-            bold_lines = [line for line in lines_after if BOLD_SPEAKER_RE.search(line.strip())]
+            bold_lines = [line for line in lines_after if _BOLD_SPEAKER_RE.search(line.strip())]
             status = "SUSPICIOUS" if bold_lines else "OK"
             if bold_lines:
                 suspicious.append((report, start_line, bold_lines))
@@ -86,9 +86,9 @@ def run():
             print(f"  [{status}] id={report.id}  parl={report.parliament_number}  {title_display!r}")
             print(f"          start_line={start_line}  lines_after={len(lines_after)}")
 
-            for i, line in enumerate(lines_after[:20]):
-                marker = "  <-- BOLD" if BOLD_SPEAKER_RE.search(line.strip()) else ""
-                print(f"    {start_line + 1 + i:4d}: {line[:100]}{marker}")
+            for offset, line in enumerate(lines_after[:20]):
+                marker = "  <-- BOLD" if _BOLD_SPEAKER_RE.search(line.strip()) else ""
+                print(f"    {start_line + 1 + offset:4d}: {line[:100]}{marker}")
             if len(lines_after) > 20:
                 print(f"    ... ({len(lines_after) - 20} more lines)")
             print()
@@ -102,7 +102,7 @@ def run():
     print()
     print("=== NO START LINE (never parsed; bold speaker lines counted over the whole doc) ===")
     for report in no_start_line:
-        bold_count = sum(1 for line in report.markdown_content.splitlines() if BOLD_SPEAKER_RE.search(line.strip()))
+        bold_count = sum(1 for line in report.markdown_content.splitlines() if _BOLD_SPEAKER_RE.search(line.strip()))
         status = "SUSPICIOUS" if bold_count else "OK"
         print(f"  [{status}] id={report.id}  type={report.report_type}  parl={report.parliament_number}  "
               f"bold_lines={bold_count}  {report.title[:60]!r}")
@@ -114,8 +114,8 @@ def run():
             print(f"\n  id={report.id}  type={report.report_type}  parl={report.parliament_number}")
             print(f"  title: {report.title!r}")
             print(f"  bold lines found after start_line={start_line}:")
-            for bl in bold_lines[:5]:
-                print(f"    {bl[:120]}")
+            for bold_line in bold_lines[:5]:
+                print(f"    {bold_line[:120]}")
 
 
 if __name__ == "__main__":
