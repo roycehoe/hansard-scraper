@@ -29,6 +29,8 @@ _SPEAKER_ROLE_RE = re.compile(r"^(?:Mr|Mdm)\s*Speaker$", re.IGNORECASE)
 _DEPUTY_ROLE_RE = re.compile(r"^(?:Mr|Mdm)\s*Deputy\s*Speaker$", re.IGNORECASE)
 _NAMED_DEPUTY_RE = re.compile(r"Deputy\s*Speaker\s*\(([^)]+)\)", re.IGNORECASE)
 _TITLE_RE = re.compile(r"^(?:Mr|Mdm|Dr|Sir|Mrs|Ms)\s+")
+BARE_DEPUTY_RE = re.compile(r"^mr deputy speaker:?$", re.IGNORECASE)
+_NAMED_DEPUTY_ROW_RE = re.compile(r"^(?:Mr|Mdm)\s*Deputy\s*Speaker\s*\(([^)]+)\)", re.IGNORECASE)
 _ALIGN_KEY_LENGTH = 35
 _MIN_ALIGN_KEY_LENGTH = 12
 _EVENT_SLACK = 3
@@ -81,6 +83,18 @@ def _annotation_names_other(annotations: list[tuple[int, str]], name: str) -> bo
     return False
 
 
+def _bound_position(positions: list[Optional[int]], index: int, annotations: list[tuple[int, str]]) -> Optional[int]:
+    """Position of row `index`; an unaligned row is bounded by its aligned neighbours and is None
+    when an annotation lies inside the bounds."""
+    if positions[index] is not None:
+        return positions[index]
+    low = next((positions[k] for k in range(index - 1, -1, -1) if positions[k] is not None), 0)
+    high = next((positions[k] for k in range(index + 1, len(positions)) if positions[k] is not None), None)
+    if any(low <= a_pos < (high if high is not None else float("inf")) for a_pos, _ in annotations):
+        return None
+    return low + 1
+
+
 def chairman_names(markdown: str, rows: list[SpeechRow]) -> dict[int, str]:
     """Speech id to the name of the person in the chair, for rows whose speaker is the Chairman
     and whose chair the report itself establishes. Rows the report leaves open are omitted."""
@@ -93,14 +107,9 @@ def chairman_names(markdown: str, rows: list[SpeechRow]) -> dict[int, str]:
     for index, (speech_id, _, speaker, _) in enumerate(rows):
         if not speaker or not CHAIRMAN_RE.match(speaker):
             continue
-        position = positions[index]
+        position = _bound_position(positions, index, annotations)
         if position is None:
-            # Bound the row by its aligned neighbours; an annotation inside the bounds is ambiguous.
-            low = next((positions[k] for k in range(index - 1, -1, -1) if positions[k] is not None), 0)
-            high = next((positions[k] for k in range(index + 1, len(rows)) if positions[k] is not None), None)
-            if any(low <= a_pos < (high if high is not None else float("inf")) for a_pos, _ in annotations):
-                continue
-            position = low + 1
+            continue
         preceding = [a for a in annotations if a[0] < position]
         after_roles = {role for e_pos, role in events if e_pos >= position - _EVENT_SLACK}
         before_roles = {role for e_pos, role in events if e_pos < position - _EVENT_SLACK}
@@ -129,6 +138,51 @@ def chairman_names(markdown: str, rows: list[SpeechRow]) -> dict[int, str]:
         name = next(iter(holders))
         if not _annotation_names_other(annotations, name):
             names[speech_id] = name
+    return names
+
+
+def deputy_speaker_names(markdown: str, rows: list[SpeechRow]) -> tuple[dict[int, str], set[str], set[str]]:
+    """Evidence for bare "Mr Deputy Speaker" rows, names as printed minus the title:
+    (speech id to the name in the annotation last before the row, when that annotation is
+    "[Mr Deputy Speaker (Name) in the Chair]" and no chair change follows it before the row;
+    every name in a "Mr Deputy Speaker (Name)" speaker row; every name the report shows
+    taking part, in the chair annotations, speaker rows or header)."""
+    normalised = _normalise(markdown)
+    annotations = [(m.start(), m.group(1)) for m in _ANNOTATION_RE.finditer(normalised)]
+    named = {pos: _NAMED_DEPUTY_RE.search(_normalise(text)) for pos, text in annotations}
+    named = {pos: _TITLE_RE.sub("", m.group(1).strip()) for pos, m in named.items() if m}
+    events = [m.start() for m in _CHAIR_EVENT_RE.finditer(normalised)]
+    positions = _positions(normalised, rows)
+    row_names: dict[int, str] = {}
+    labelled: set[str] = set()
+    for index, (speech_id, _, speaker, _) in enumerate(rows):
+        if not speaker:
+            continue
+        row_name = _NAMED_DEPUTY_ROW_RE.match(speaker.strip())
+        if row_name:
+            labelled.add(_TITLE_RE.sub("", row_name.group(1).strip()))
+        if not BARE_DEPUTY_RE.match(speaker.strip()):
+            continue
+        position = _bound_position(positions, index, annotations)
+        if position is None:
+            continue
+        preceding = [a_pos for a_pos, _ in annotations if a_pos < position]
+        if preceding and preceding[-1] in named and not any(preceding[-1] < e_pos < position for e_pos in events):
+            row_names[speech_id] = named[preceding[-1]]
+    mentioned = set(named.values()) | labelled
+    header = _HEADER_RE.search(markdown)
+    for entry in (header.group(1).split(";") if header else []):
+        name = _TITLE_RE.sub("", re.sub(r"\s*\([^)]*\)\s*$", "", entry.replace("*", "").strip()))
+        if name:
+            mentioned.add(name)
+    return row_names, labelled, mentioned
+
+
+def deputy_speaker_names_in_text(text: str) -> set[str]:
+    """Names a day-level text associates with the deputy role: "Deputy Speaker (Name)" in brackets,
+    headings and speaker labels, and the header's deputy speaker tag."""
+    names = {_TITLE_RE.sub("", m.group(1).strip()) for m in _NAMED_DEPUTY_RE.finditer(_normalise(text))}
+    names |= _header_holders(text).get("deputy speaker", set())
     return names
 
 

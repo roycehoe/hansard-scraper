@@ -28,6 +28,9 @@ class CRUDReport:
     def get_by_ids(self, ids: list[int]) -> list[Report]:
         return list(self.session.exec(select(Report).where(col(Report.id).in_(ids))).all())
 
+    def get_by_sitting_dates(self, dates: list[datetime]) -> list[Report]:
+        return list(self.session.exec(select(Report).where(col(Report.sitting_date).in_(dates))).all())
+
     def get_all_report_ids(self) -> set[str]:
         return set(self.session.exec(select(Report.report_id)).all())
 
