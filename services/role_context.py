@@ -34,6 +34,8 @@ _NAMED_DEPUTY_ROW_RE = re.compile(r"^(?:Mr|Mdm)\s*Deputy\s*Speaker\s*\(([^)]+)\)
 _ALIGN_KEY_LENGTH = 35
 _MIN_ALIGN_KEY_LENGTH = 12
 _EVENT_SLACK = 3
+_TITLE_WORDS = frozenset({"mr", "mdm", "ms", "mrs", "dr", "sir"})
+_CARRIED_HOLDER_OPENER = " ("
 
 CARRIED_ROLES = ("The Chief Secretary",)
 
@@ -72,7 +74,7 @@ def _get_positions(normalised: str, rows: list[SpeechRow]) -> list[Optional[int]
 
 
 def _get_name_words(name: str) -> set[str]:
-    return set(re.sub(r"[^a-z ]", "", name.lower()).split()) - {"mr", "mdm", "ms", "mrs", "dr", "sir"}
+    return set(re.sub(r"[^a-z ]", "", name.lower()).split()) - _TITLE_WORDS
 
 
 def _is_other_name_in_annotations(annotations: list[tuple[int, str]], name: str) -> bool:
@@ -198,6 +200,6 @@ def carried_role_names(rows: list[SpeechRow]) -> dict[int, str]:
         for role in CARRIED_ROLES:
             if speaker == role and role in role_to_holder:
                 speech_id_to_name[speech_id] = role_to_holder[role]
-            elif speaker.startswith(role + " ("):
-                role_to_holder[role] = speaker[len(role) + 2 :].rstrip(")").strip()
+            elif speaker.startswith(role + _CARRIED_HOLDER_OPENER):
+                role_to_holder[role] = speaker[len(role + _CARRIED_HOLDER_OPENER) :].rstrip(")").strip()
     return speech_id_to_name
