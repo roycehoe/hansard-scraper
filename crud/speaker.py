@@ -17,7 +17,8 @@ class CRUDSpeaker:
         self.session.commit()
 
     def get_all(self) -> list[Speaker]:
-        return list(self.session.exec(select(Speaker)).all())
+        statement = select(Speaker)
+        return list(self.session.exec(statement).all())
 
     def set_person_ids_bulk(self, updates: dict[int, int]) -> None:
         if not updates:

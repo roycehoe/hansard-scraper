@@ -23,61 +23,68 @@ class CRUDSpeech:
         self.session.commit()
 
     def get_report_ids_with_speeches(self) -> set[int]:
-        return set(self.session.exec(select(Speech.report_id).distinct()).all()) - {None}
+        statement = select(Speech.report_id).distinct()
+        return set(self.session.exec(statement).all()) - {None}
 
     def get_speakers_with_report_type(self) -> list[tuple[str, str, int]]:
-        rows = self.session.exec(
+        statement = (
             select(Speech.speaker, Report.report_type, Report.parliament_number)
             .join(Report, Report.id == Speech.report_id)
             .where(Speech.speaker.is_not(None))
-        ).all()
-        return list(rows)
+        )
+        return list(self.session.exec(statement).all())
 
     def get_unresolved_speaker_info(self) -> Iterable[tuple[int, Optional[str], int, datetime]]:
         """Stream (id, speaker, parliament_number, sitting_date) for every speech without a speaker_id."""
-        return self.session.exec(
+        statement = (
             select(Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date)
             .join(Report)
-            .where(Speech.speaker_id == None)  # noqa: E711
+            .where(col(Speech.speaker_id).is_(None))
             .execution_options(yield_per=_STREAM_BATCH)
         )
+        return self.session.exec(statement)
 
     def get_report_ids_with_unlinked_speaker(self, pattern: str) -> list[int]:
         """Reports holding a speech without speaker_id whose speaker string matches the regex (case-insensitive)."""
-        return list(self.session.exec(
-            select(Speech.report_id).distinct()
-            .where(Speech.speaker_id == None, Speech.speaker.regexp_match(pattern, flags="i"))  # noqa: E711
-        ).all())
+        statement = (
+            select(Speech.report_id)
+            .distinct()
+            .where(col(Speech.speaker_id).is_(None))
+            .where(Speech.speaker.regexp_match(pattern, flags="i"))
+        )
+        return list(self.session.exec(statement).all())
 
     def get_rows_by_report_ids(
         self, report_ids: list[int]
     ) -> list[tuple[int, int, Optional[str], str, int, Optional[int]]]:
         """(id, ordinal, speaker, transcript, report_id, speaker_id) in reading order."""
-        return list(self.session.exec(
+        statement = (
             select(Speech.id, Speech.ordinal, Speech.speaker, Speech.transcript, Speech.report_id, Speech.speaker_id)
             .where(col(Speech.report_id).in_(report_ids))
             .order_by(Speech.report_id, Speech.ordinal)
-        ).all())
+        )
+        return list(self.session.exec(statement).all())
 
     def get_speaker_info_by_ids(self, speech_ids: list[int]) -> list[tuple[int, str, int, object]]:
-        return list(self.session.exec(
+        statement = (
             select(Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date)
             .join(Report)
             .where(Speech.id.in_(speech_ids))
-        ).all())
+        )
+        return list(self.session.exec(statement).all())
 
     def get_speaker_info_for_parliament(self, parliament_number: int) -> list[tuple[int, str, str, int]]:
-        return list(self.session.exec(
+        statement = (
             select(Speech.id, Speech.speaker, Report.report_type, Report.parliament_number)
             .join(Report)
-            .where(
-                Speech.speaker.is_not(None),
-                Report.parliament_number == parliament_number,
-            )
-        ).all())
+            .where(Speech.speaker.is_not(None))
+            .where(Report.parliament_number == parliament_number)
+        )
+        return list(self.session.exec(statement).all())
 
     def delete_by_report_id(self, report_id: int) -> int:
-        delete_result = self.session.exec(delete(Speech).where(Speech.report_id == report_id))
+        statement = delete(Speech).where(Speech.report_id == report_id)
+        delete_result = self.session.exec(statement)
         self.session.commit()
         return delete_result.rowcount
 
