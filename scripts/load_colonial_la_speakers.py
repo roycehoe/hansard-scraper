@@ -24,14 +24,14 @@ def load_colonial_la_speakers() -> None:
 
     with Session(engine) as session:
         crud = CRUDSpeaker(session)
-        existing = {(s.name, s.parliament_number) for s in crud.get_all()}
+        existing = {(speaker.name, speaker.parliament_number) for speaker in crud.get_all()}
 
         inserted = 0
-        for rec in records:
-            key = (rec["name"], rec["parliament_number"])
+        for record in records:
+            key = (record["name"], record["parliament_number"])
             if key in existing:
                 continue
-            crud.create(Speaker(**rec))
+            crud.create(Speaker(**record))
             existing.add(key)
             inserted += 1
 

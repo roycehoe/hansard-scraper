@@ -10,19 +10,19 @@ from services.report import build_report
 from services.speech import get_start_of_speech_line
 
 
-def show_doc(response, report, max_lines=60):
-    start = get_start_of_speech_line(
+def show_doc(website_response, report, max_lines=60):
+    start_line = get_start_of_speech_line(
         report.markdown_content, report.title, report.subtitle, report.original_title,
-        response.report_type,
+        website_response.report_type,
     )
-    print(f"  id={response.id} report_type={response.report_type!r}")
+    print(f"  id={website_response.id} report_type={website_response.report_type!r}")
     print(f"  title={report.title!r}")
     print(f"  subtitle={report.subtitle!r}")
     print(f"  original_title={report.original_title!r}")
-    print(f"  has_start_line={start is not None} (line {start})")
+    print(f"  has_start_line={start_line is not None} (line {start_line})")
     print(f"  markdown ({len(report.markdown_content)} chars):")
-    for i, line in enumerate(report.markdown_content.splitlines()[:max_lines]):
-        print(f"    {i:3d}: {line}")
+    for line_number, line in enumerate(report.markdown_content.splitlines()[:max_lines]):
+        print(f"    {line_number:3d}: {line}")
     print()
 
 
@@ -30,29 +30,29 @@ def inspect_type(session: Session, report_type: str, max_failing: int = 3, max_p
     responses = CRUDHansardWebsiteResponse(session).get_all_by_report_type(report_type)
 
     failing, passing = [], []
-    for response in responses:
-        report = build_report(response)
+    for website_response in responses:
+        report = build_report(website_response)
         if report.markdown_content is None:
             continue
-        start = get_start_of_speech_line(
+        start_line = get_start_of_speech_line(
             report.markdown_content, report.title, report.subtitle, report.original_title,
-            response.report_type,
+            website_response.report_type,
         )
-        if start is None:
-            failing.append((response, report))
+        if start_line is None:
+            failing.append((website_response, report))
         else:
-            passing.append((response, report))
+            passing.append((website_response, report))
 
     print(f"\n{'='*60}")
     print(f"report_type={report_type!r}: {len(failing)} failing, {len(passing)} passing (of those with markdown)")
 
     print(f"\n--- FAILING (showing {min(max_failing, len(failing))}) ---")
-    for response, report in failing[:max_failing]:
-        show_doc(response, report)
+    for website_response, report in failing[:max_failing]:
+        show_doc(website_response, report)
 
     print(f"\n--- PASSING (showing {min(max_passing, len(passing))}) ---")
-    for response, report in passing[:max_passing]:
-        show_doc(response, report)
+    for website_response, report in passing[:max_passing]:
+        show_doc(website_response, report)
 
 
 if __name__ == "__main__":

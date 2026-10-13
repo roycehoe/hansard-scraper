@@ -24,13 +24,13 @@ def load_heads_of_state() -> None:
 
     with Session(engine) as session:
         crud = CRUDSpeaker(session)
-        existing = {(s.name, s.parliament_number): s for s in crud.get_all()}
+        name_and_parliament_number_to_speaker = {(speaker.name, speaker.parliament_number): speaker for speaker in crud.get_all()}
 
         inserted = marked = 0
-        for rec in records:
-            speaker = existing.get((rec["name"], rec["parliament_number"]))
+        for record in records:
+            speaker = name_and_parliament_number_to_speaker.get((record["name"], record["parliament_number"]))
             if speaker is None:
-                crud.create(Speaker(**rec, party="Non-partisan", is_legislative_assembly=False, is_member=False))
+                crud.create(Speaker(**record, party="Non-partisan", is_legislative_assembly=False, is_member=False))
                 inserted += 1
             elif speaker.is_member:
                 speaker.is_member = False
