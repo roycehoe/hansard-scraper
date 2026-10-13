@@ -14,6 +14,8 @@ from services.speech import (
     get_start_of_speech_line,
 )
 
+_TABLE_WIDTH = 52
+
 
 def run():
     with Session(engine) as session:
@@ -55,13 +57,13 @@ def run():
     total_no_start = sum(report_type_to_no_start_count.values())
 
     print(f"\n{'report_type':<28} {'pass':>6} {'fail':>6} {'no_start':>9}")
-    print("-" * 52)
+    print("-" * _TABLE_WIDTH)
     for report_type in all_types:
         passed = report_type_to_passed_count.get(report_type, 0)
         failed = report_type_to_failed_count.get(report_type, 0)
         no_start = report_type_to_no_start_count.get(report_type, 0)
         print(f"{report_type:<28} {passed:>6} {failed:>6} {no_start:>9}")
-    print("-" * 52)
+    print("-" * _TABLE_WIDTH)
     print(f"{'TOTAL':<28} {total_passed:>6} {total_failed:>6} {total_no_start:>9}")
     print()
     total = total_passed + total_failed + total_no_start
