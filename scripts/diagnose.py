@@ -112,7 +112,6 @@ def run_stats_on(responses: list) -> dict:
 
 if __name__ == "__main__":
     with Session(engine) as session:
-        crud = CRUDHansardWebsiteResponse(session)
         print("=== Setup: report_type speech stats ===")
         report_type_to_counts = get_report_type_speech_stats(session)
         no_speech_types = set()
@@ -130,7 +129,7 @@ if __name__ == "__main__":
         print(f"\nNo-speech report types (excluded from target): {no_speech_types}")
 
         print("\n=== Baseline (excluding no-speech types) ===")
-        all_responses = crud.get_all()
+        all_responses = CRUDHansardWebsiteResponse(session).get_all()
         target_with_markdown = [
             response for response in all_responses
             if response.report_type not in no_speech_types and build_report(response).markdown_content is not None
