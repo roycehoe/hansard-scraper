@@ -15,5 +15,8 @@
   {"name": "Ong Teng Cheong",        "parliament_number": 9,  "comments": "President 1993 to 1999"},
   {"name": "S R Nathan",             "parliament_number": 9,  "comments": "President 1999 to 2011"},
   {"name": "S R Nathan",             "parliament_number": 10, "comments": "President 1999 to 2011"},
-  {"name": "S R Nathan",             "parliament_number": 11, "comments": "President 1999 to 2011"}
+  {"name": "S R Nathan",             "parliament_number": 11, "comments": "President 1999 to 2011"},
+  {"name": "Tan Keng Yam, Tony",     "parliament_number": 12, "comments": "President 2011 to 2017"},
+  {"name": "Tan Keng Yam, Tony",     "parliament_number": 13, "comments": "President 2011 to 2017"},
+  {"name": "Halimah Yacob",          "parliament_number": 14, "comments": "President 2017 to 2023"}
 ]

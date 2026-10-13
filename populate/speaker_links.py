@@ -52,12 +52,13 @@ _DATE_DEPENDENT_ROLES = (
     "The Prime Minister",
     *_SPEAKER_LABELS,
     "Mr Deputy Speaker",
+    "Mr DeputySpeaker",
     "Mdm Deputy Speaker",
     "Mdm DeputySpeaker",
     "The Deputy Speaker",
 )
 
-_DEPUTY_SPEAKER_LABELS = ("Mr Deputy Speaker", "Mdm Deputy Speaker", "Mdm DeputySpeaker", "The Deputy Speaker")
+_DEPUTY_SPEAKER_LABELS = ("Mr Deputy Speaker", "Mr DeputySpeaker", "Mdm Deputy Speaker", "Mdm DeputySpeaker", "The Deputy Speaker")
 
 _LEADING_LIST_NUMBER_RE = re.compile(r"^\d+\\?\.\s*")
 _LEADING_DOT_RE = re.compile(r"^\.\s+")

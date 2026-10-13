@@ -1,6 +1,6 @@
 from datetime import date
 
-# Sources: parliament.gov.sg Speaker page, Wikipedia dates
+# Sources: parliament.gov.sg Speaker page, Wikipedia dates; Seah Kian Peng from the Hansard sitting of 2 August 2023 ("Election of Speaker") and the Wikipedia Speaker page
 SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(1955, 4, 22), date(1963, 9, 3), "George Oehlers"),
     (date(1963, 10, 22), date(1964, 10, 30), "E.W. Barker"),
@@ -12,10 +12,11 @@ SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(2011, 10, 10), date(2012, 12, 12), "Michael Palmer"),
     (date(2013, 1, 14), date(2017, 8, 7), "Halimah Yacob"),
     (date(2017, 9, 11), date(2023, 7, 17), "Tan Chuan-Jin"),
+    (date(2023, 8, 2), date(2025, 4, 15), "Seah Kian Peng"),
 )
 
-# NOTE: two Deputy Speakers served at once for most of Parliaments 7, 10, 11 and 12, so a bare "Mr Deputy Speaker" on those dates stays unlinked unless the string names the person.
-# Sources: same as SPEAKER_TERMS
+# NOTE: two Deputy Speakers served at once for most of Parliaments 7, 10, 11, 12, 13 and 14, so a bare "Mr Deputy Speaker" on those dates stays unlinked unless the string names the person.
+# Sources: same as SPEAKER_TERMS; Parliaments 13 and 14 from the Hansard sittings of 25 January 2016 and 31 August 2020 ("Election of Deputy Speakers"), the Wikipedia Deputy Speaker page and the 13th and 14th Parliament pages (terms end at dissolution)
 DEPUTY_SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(1955, 4, 26), date(1959, 3, 31), "Lim, R.C.H."),
     (date(1959, 7, 15), date(1961, 9, 24), "G. Kandasamy"),
@@ -39,10 +40,14 @@ DEPUTY_SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(2006, 11, 8), date(2011, 4, 18), "Matthias Yao Chih"),
     (date(2011, 10, 17), date(2015, 8, 24), "Seah Kian Peng"),
     (date(2011, 10, 17), date(2015, 8, 24), "Charles Chong"),
+    (date(2016, 1, 25), date(2020, 6, 23), "Charles Chong"),
+    (date(2016, 1, 25), date(2020, 6, 23), "Lim Biow Chuan"),
+    (date(2020, 8, 31), date(2025, 4, 15), "Jessica Tan Soon Neo"),
+    (date(2020, 8, 31), date(2025, 4, 15), "Christopher de Souza"),
 )
 
-# NOTE: Hansard addresses these Deputy Speakers as "Mdm"; the parliament.gov.sg list for 1955 to 2011 names no other woman.
-DEPUTY_SPEAKER_WOMEN: frozenset[str] = frozenset({"Lim Hwee Hua", "Indranee Rajah"})
+# NOTE: Hansard addresses these Deputy Speakers as "Mdm"; the parliament.gov.sg list for 1955 to 2011 and the Wikipedia Deputy Speaker page name no other woman.
+DEPUTY_SPEAKER_WOMEN: frozenset[str] = frozenset({"Lim Hwee Hua", "Indranee Rajah", "Jessica Tan Soon Neo"})
 
 # NOTE: sources disagree on whether Lim Yew Hock took over on 7 or 8 June 1956, so that sitting stays unlinked. Prime Minister handovers fell on days without a sitting.
 DATED_ROLE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
@@ -76,6 +81,8 @@ HEAD_OF_STATE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
         (date(1985, 9, 2), date(1993, 8, 31), "Wee Kim Wee"),
         (date(1993, 9, 1), date(1999, 8, 31), "Ong Teng Cheong"),
         (date(1999, 9, 1), date(2011, 8, 31), "S R Nathan"),
+        (date(2011, 9, 1), date(2017, 8, 31), "Tan Keng Yam, Tony"),
+        (date(2017, 9, 14), date(2023, 9, 13), "Halimah Yacob"),
     ),
 }
 
