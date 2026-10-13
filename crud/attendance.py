@@ -1,7 +1,10 @@
+from typing import Optional
+
 from sqlalchemy import text
 from sqlmodel import Session, select
 
 from database.attendance import Attendance
+from database.sitting import Sitting
 
 
 class CRUDAttendance:
@@ -20,14 +23,14 @@ class CRUDAttendance:
         rows = self.session.exec(select(Attendance.sitting_id).distinct()).all()
         return {r for r in rows if r is not None}
 
-    def get_unresolved_ids(self) -> list[int]:
+    def get_unresolved_speaker_info(
+        self,
+    ) -> list[tuple[int, Optional[str], Optional[int], Optional[int]]]:
+        """(id, speaker_name, sitting.parlement_no, sitting.volume_no) for every row without a speaker_id."""
         return list(self.session.exec(
-            select(Attendance.id).where(Attendance.speaker_id == None)  # noqa: E711
-        ).all())
-
-    def get_by_ids(self, ids: list[int]) -> list[Attendance]:
-        return list(self.session.exec(
-            select(Attendance).where(Attendance.id.in_(ids))
+            select(Attendance.id, Attendance.speaker_name, Sitting.parlement_no, Sitting.volume_no)
+            .join(Sitting)
+            .where(Attendance.speaker_id == None)  # noqa: E711
         ).all())
 
     def set_speaker_ids_bulk(self, updates: dict[int, int]) -> None:

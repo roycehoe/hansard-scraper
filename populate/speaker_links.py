@@ -1,10 +1,10 @@
 import re
-from typing import Optional
+from datetime import datetime
+from typing import Iterable, Optional
 
 from sqlmodel import Session
 
 from crud.attendance import CRUDAttendance
-from crud.sitting import CRUDSitting
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from logs import logger
@@ -24,7 +24,11 @@ from services.attendance import (
     strip_title,
 )
 
-_BATCH = 1000
+_WRITE_BATCH = 50_000
+
+# Only these roles resolve by sitting date; every other string resolves the same
+# way for every sitting in a parliament, so it is memoised on (string, parliament).
+_DATE_DEPENDENT_ROLES = ("The Chief Minister", "Mr Deputy Speaker", "The Deputy Speaker")
 
 
 def _paren_contains_title(m: re.Match) -> bool:
@@ -84,170 +88,150 @@ def _resolve_with_parliament_fallback(
     return None, parliament
 
 
-def _populate_attendance_speaker_ids(
-    session: Session,
-    speaker_id_lookup: dict[tuple[str, int], int],
+def _resolve_attendance_speaker_id(
+    speaker_name: str,
+    parliament: int,
     lookups: SpeakerLookups,
-) -> None:
-    crud_sitting = CRUDSitting(session)
-    crud = CRUDAttendance(session)
-
-    parliament_by_sitting_id: dict[int, int] = {}
-    for sitting_id, parlement_no, volume_no in crud_sitting.get_parliament_columns():
-        if parlement_no is not None:
-            parliament_by_sitting_id[sitting_id] = parlement_no
-        elif volume_no is not None and volume_no in VOLUME_TO_PARLIAMENT:
-            parliament_by_sitting_id[sitting_id] = VOLUME_TO_PARLIAMENT[volume_no]
-
-    unresolved_ids = crud.get_unresolved_ids()
-    total = len(unresolved_ids)
-    updated = 0
-
-    for batch_start in range(0, total, _BATCH):
-        batch_ids = unresolved_ids[batch_start : batch_start + _BATCH]
-        records = crud.get_by_ids(batch_ids)
-
-        batch_updates: dict[int, int] = {}
-        for record in records:
-            if not record.speaker_name or record.sitting_id is None:
-                continue
-            parliament = parliament_by_sitting_id.get(record.sitting_id)
-            if parliament is None:
-                continue
-
-            speaker_id = speaker_id_lookup.get((record.speaker_name, parliament))
-
-            if not speaker_id:
-                name = normalize_name(strip_title(record.speaker_name))
-                canonical, parliament = _resolve_with_parliament_fallback(
-                    name, parliament, lookups, speaker_id_lookup
-                )
-                if canonical:
-                    speaker_id = speaker_id_lookup.get((canonical, parliament))
-
-            if speaker_id and record.id is not None:
-                batch_updates[record.id] = speaker_id
-                updated += 1
-
-        crud.set_speaker_ids_bulk(batch_updates)
-        session.commit()
-        logger.info(
-            f"Attendance: {min(batch_start + _BATCH, total)}/{total} processed, {updated} resolved"
-        )
-
-    logger.info(f"Attendance: set speaker_id on {updated}/{total} records")
-
-
-def _populate_speech_speaker_ids(
-    session: Session,
     speaker_id_lookup: dict[tuple[str, int], int],
+) -> Optional[int]:
+    speaker_id = speaker_id_lookup.get((speaker_name, parliament))
+    if speaker_id:
+        return speaker_id
+    name = normalize_name(strip_title(speaker_name))
+    canonical, parliament = _resolve_with_parliament_fallback(
+        name, parliament, lookups, speaker_id_lookup
+    )
+    return speaker_id_lookup.get((canonical, parliament)) if canonical else None
+
+
+def _resolve_speech_speaker_id(
+    speaker: str,
+    parliament: int,
+    sitting_date: Optional[datetime],
     lookups: SpeakerLookups,
-) -> None:
-    crud = CRUDSpeech(session)
-    unresolved_ids = crud.get_unresolved_ids()
-    total = len(unresolved_ids)
-    updated = 0
+    speaker_id_lookup: dict[tuple[str, int], int],
+) -> Optional[int]:
+    if speaker in NON_SPEAKERS or speaker.startswith("(") or speaker.startswith("_"):
+        return None
 
-    for batch_start in range(0, total, _BATCH):
-        batch_ids = unresolved_ids[batch_start : batch_start + _BATCH]
-        rows = crud.get_speaker_info_by_ids(batch_ids)
+    raw = speaker.rstrip(":").strip()
 
-        batch_updates: dict[int, int] = {}
-        for speech_id, speaker, parliament, sitting_date in rows:
-            if not speaker:
-                continue
-            if (
-                speaker in NON_SPEAKERS
-                or speaker.startswith("(")
-                or speaker.startswith("_")
-            ):
-                continue
+    if raw in ("Mr Speaker", "Mdm Speaker") or raw.startswith(
+        ("Mr Deputy Speaker", "The Deputy Speaker")
+    ):
+        # Presiding officers never go through the name cascade.
+        return _resolve_presiding_officer(raw, parliament, lookups, speaker_id_lookup)
 
-            raw = speaker.rstrip(":").strip()
-
-            po_sid = _resolve_presiding_officer(
-                raw, parliament, lookups, speaker_id_lookup
-            )
-            if po_sid is not None:
-                batch_updates[speech_id] = po_sid
-                updated += 1
-            if raw in ("Mr Speaker", "Mdm Speaker") or raw.startswith(
-                ("Mr Deputy Speaker", "The Deputy Speaker")
-            ):
-                continue  # always skip cascade for presiding officers
-
-            # Chief Minister (colonial era): date-based dispatch between Marshall and Lim.
-            if raw == "The Chief Minister" and parliament in (0, 1, 2, 3):
-                cm_name = (
-                    "David Marshall"
-                    if sitting_date and sitting_date < CHIEF_MINISTER_CUTOFF
-                    else "Lim Yew Hock"
-                )
-                cm_canonical, cm_parl = _resolve_with_parliament_fallback(
-                    cm_name, 0, lookups, speaker_id_lookup
-                )
-                if cm_canonical:
-                    cm_sid = speaker_id_lookup.get((cm_canonical, cm_parl))
-                    if cm_sid:
-                        batch_updates[speech_id] = cm_sid
-                        updated += 1
-                continue
-
-            role_key: Optional[tuple[str, int]] = (
-                (raw, parliament) if parliament != 0 else None
-            )
-            if role_key is None:
-                for fb in COLONIAL_PARLIAMENT_FALLBACKS:
-                    if (raw, fb) in ROLE_ONLY_SPEAKERS:
-                        role_key = (raw, fb)
-                        break
-            if role_key and role_key in ROLE_ONLY_SPEAKERS:
-                role_name = ROLE_ONLY_SPEAKERS[role_key]
-                role_canonical, role_parl = _resolve_with_parliament_fallback(
-                    role_name, role_key[1], lookups, speaker_id_lookup
-                )
-                if role_canonical:
-                    role_sid = speaker_id_lookup.get((role_canonical, role_parl))
-                    if role_sid:
-                        batch_updates[speech_id] = role_sid
-                        updated += 1
-                continue  # role-only strings are never resolvable via the name cascade
-
-            parens = list(re.finditer(r"\(([^)]+)\)", raw))
-            if parens:
-                title_paren = next(
-                    (m for m in reversed(parens) if _paren_contains_title(m)),
-                    None,
-                )
-                if title_paren:
-                    raw = title_paren.group(1).strip()
-                else:
-                    raw = raw[: parens[0].start()].strip()
-            raw = re.sub(r"^(Mr|Mrs|Dr|Ms|Mdm)([A-Z])", r"\1 \2", raw)
-            raw = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", raw)
-            name = normalize_name(strip_title(raw))
-            if not name:
-                continue
-
-            canonical, parliament = _resolve_with_parliament_fallback(
-                name, parliament, lookups, speaker_id_lookup
-            )
-
-            if canonical is None:
-                continue
-
-            speaker_id = speaker_id_lookup.get((canonical, parliament))
-            if speaker_id:
-                batch_updates[speech_id] = speaker_id
-                updated += 1
-
-        crud.set_speaker_ids_bulk(batch_updates)
-        session.commit()
-        logger.info(
-            f"Speech: {min(batch_start + _BATCH, total)}/{total} processed, {updated} resolved"
+    # Chief Minister (colonial era): date-based dispatch between Marshall and Lim.
+    if raw == "The Chief Minister" and parliament in (0, 1, 2, 3):
+        cm_name = (
+            "David Marshall"
+            if sitting_date and sitting_date < CHIEF_MINISTER_CUTOFF
+            else "Lim Yew Hock"
         )
+        cm_canonical, cm_parl = _resolve_with_parliament_fallback(
+            cm_name, 0, lookups, speaker_id_lookup
+        )
+        return speaker_id_lookup.get((cm_canonical, cm_parl)) if cm_canonical else None
 
-    logger.info(f"Speech: set speaker_id on {updated}/{total} records")
+    role_key: Optional[tuple[str, int]] = (
+        (raw, parliament) if parliament != 0 else None
+    )
+    if role_key is None:
+        for fb in COLONIAL_PARLIAMENT_FALLBACKS:
+            if (raw, fb) in ROLE_ONLY_SPEAKERS:
+                role_key = (raw, fb)
+                break
+    if role_key and role_key in ROLE_ONLY_SPEAKERS:
+        # Role-only strings are never resolvable via the name cascade.
+        role_name = ROLE_ONLY_SPEAKERS[role_key]
+        role_canonical, role_parl = _resolve_with_parliament_fallback(
+            role_name, role_key[1], lookups, speaker_id_lookup
+        )
+        return speaker_id_lookup.get((role_canonical, role_parl)) if role_canonical else None
+
+    parens = list(re.finditer(r"\(([^)]+)\)", raw))
+    if parens:
+        title_paren = next(
+            (m for m in reversed(parens) if _paren_contains_title(m)),
+            None,
+        )
+        if title_paren:
+            raw = title_paren.group(1).strip()
+        else:
+            raw = raw[: parens[0].start()].strip()
+    raw = re.sub(r"^(Mr|Mrs|Dr|Ms|Mdm)([A-Z])", r"\1 \2", raw)
+    raw = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", raw)
+    name = normalize_name(strip_title(raw))
+    if not name:
+        return None
+
+    canonical, parliament = _resolve_with_parliament_fallback(
+        name, parliament, lookups, speaker_id_lookup
+    )
+    return speaker_id_lookup.get((canonical, parliament)) if canonical else None
+
+
+def resolve_attendance_rows(
+    rows: Iterable[tuple[int, Optional[str], Optional[int], Optional[int]]],
+    lookups: SpeakerLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+) -> dict[int, int]:
+    """Map attendance id -> speaker id for every row the cascade can resolve.
+    Rows are (id, speaker_name, sitting.parlement_no, sitting.volume_no)."""
+    memo: dict[tuple[str, int], Optional[int]] = {}
+    updates: dict[int, int] = {}
+    total = 0
+    for attendance_id, speaker_name, parlement_no, volume_no in rows:
+        total += 1
+        if not speaker_name:
+            continue
+        parliament = (
+            parlement_no if parlement_no is not None else VOLUME_TO_PARLIAMENT.get(volume_no)
+        )
+        if parliament is None:
+            continue
+        key = (speaker_name, parliament)
+        if key not in memo:
+            memo[key] = _resolve_attendance_speaker_id(
+                speaker_name, parliament, lookups, speaker_id_lookup
+            )
+        if memo[key]:
+            updates[attendance_id] = memo[key]
+    logger.info(f"Attendance: set speaker_id on {len(updates)}/{total} records")
+    return updates
+
+
+def resolve_speech_rows(
+    rows: Iterable[tuple[int, Optional[str], int, Optional[datetime]]],
+    lookups: SpeakerLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+) -> dict[int, int]:
+    """Map speech id -> speaker id for every row the cascade can resolve.
+    Rows are (id, speaker, report.parliament_number, report.sitting_date)."""
+    memo: dict[tuple[str, int, Optional[datetime]], Optional[int]] = {}
+    updates: dict[int, int] = {}
+    total = 0
+    for speech_id, speaker, parliament, sitting_date in rows:
+        total += 1
+        if not speaker:
+            continue
+        date_key = sitting_date if speaker.startswith(_DATE_DEPENDENT_ROLES) else None
+        key = (speaker, parliament, date_key)
+        if key not in memo:
+            memo[key] = _resolve_speech_speaker_id(
+                speaker, parliament, sitting_date, lookups, speaker_id_lookup
+            )
+        if memo[key]:
+            updates[speech_id] = memo[key]
+    logger.info(f"Speech: set speaker_id on {len(updates)}/{total} records")
+    return updates
+
+
+def _write_in_batches(set_speaker_ids_bulk, updates: dict[int, int]) -> None:
+    items = list(updates.items())
+    for start in range(0, len(items), _WRITE_BATCH):
+        set_speaker_ids_bulk(dict(items[start : start + _WRITE_BATCH]))
 
 
 def populate_speaker_links(session: Session) -> None:
@@ -256,5 +240,17 @@ def populate_speaker_links(session: Session) -> None:
         (s.name, s.parliament_number): s.id for s in speakers if s.id is not None
     }
     lookups = build_speaker_lookups(speakers)
-    _populate_attendance_speaker_ids(session, speaker_id_lookup, lookups)
-    _populate_speech_speaker_ids(session, speaker_id_lookup, lookups)
+
+    crud_attendance = CRUDAttendance(session)
+    attendance_updates = resolve_attendance_rows(
+        crud_attendance.get_unresolved_speaker_info(), lookups, speaker_id_lookup
+    )
+    _write_in_batches(crud_attendance.set_speaker_ids_bulk, attendance_updates)
+    session.commit()
+
+    crud_speech = CRUDSpeech(session)
+    speech_updates = resolve_speech_rows(
+        crud_speech.get_unresolved_speaker_info(), lookups, speaker_id_lookup
+    )
+    _write_in_batches(crud_speech.set_speaker_ids_bulk, speech_updates)
+    session.commit()
