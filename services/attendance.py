@@ -384,7 +384,7 @@ _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
 
 
 # Title prefixes, longest first to avoid partial matches.
-_TITLE_PREFIXES = [
+_TITLE_PREFIXES = (
     "The Honourable Mr ", "The Honourable Mrs ", "The Honourable Dr ",
     "The Honourable Miss ", "The Honourable Ms ", "The Honourable Inche ",
     "The Honourable Encik ", "The Honourable ",
@@ -403,7 +403,7 @@ _TITLE_PREFIXES = [
     "Asst Prof ", "Asst. Prof. ",
     "Tuan Haji ", "Haji ", "Hj. ", "Hj ",
     "Cdre ", "[NS] ", "(NS) ",
-]
+)
 
 # Trailing comma-separated ALL-CAPS honorific abbreviations.
 # Each token may have spaces within it (e.g. "J. P." counts as one token).
@@ -424,12 +424,14 @@ _OFFICIAL_ROLE_SUFFIX_RE = re.compile(
 )
 
 # Title suffixes that can appear at the end of inverted names: "Surname, Firstname, Dr".
-_INVERTED_TITLE_SUFFIXES = {"Dr", "Mdm", "Mr", "Mrs", "Ms", "Prof", "Assoc Prof", "RAdm", "BG"}
+_INVERTED_TITLE_SUFFIXES = frozenset({"Dr", "Mdm", "Mr", "Mrs", "Ms", "Prof", "Assoc Prof", "RAdm", "BG"})
 
 _MIN_SURNAME_LOOKUP_LENGTH = 2
 _MIN_PREFIX_WORD_COUNT = 2
 _MIN_MULTIWORD_SURNAME_LENGTH = 2
 _MIN_REARRANGEABLE_WORD_COUNT = 3
+_MIN_WORDSET_SUBSET_WORDS = 3
+_MIN_INVERTED_TITLE_SUFFIX_PART_COUNT = 3
 
 
 def normalize_name(name: str) -> str:
@@ -505,7 +507,7 @@ def _invert_to_natural(speaker_name: str) -> Optional[str]:
     if ", " not in speaker_name:
         return None
     parts = speaker_name.split(", ")
-    if len(parts) >= 3 and parts[-1] in _INVERTED_TITLE_SUFFIXES:
+    if len(parts) >= _MIN_INVERTED_TITLE_SUFFIX_PART_COUNT and parts[-1] in _INVERTED_TITLE_SUFFIXES:
         return strip_title(f"{' '.join(parts[1:-1])} {parts[0]}").strip()
     return strip_title(f"{', '.join(parts[1:])} {parts[0]}").strip()
 
@@ -622,7 +624,6 @@ def _build_wordset_subset_lookup(speakers: list[Speaker]) -> dict[tuple[frozense
     Only emits entries for names with 3+ words (after title stripping) to avoid false positives.
     Allows matching names where the word count differs, e.g. "Aline Wong" matching "Wong Aline K".
     """
-    _MIN_WORDSET_SUBSET_WORDS = 3
     triples: list[tuple[str, str, int]] = []
     for speaker in speakers:
         natural = _invert_to_natural(speaker.name)
