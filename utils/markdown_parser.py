@@ -2,6 +2,8 @@ import re
 
 import html2text
 
+from enums import ReportVersion
+
 _MAX_ADJOURNMENT_CONTINUATIONS = 6
 _BOLD_MARKER_LENGTH = 2
 _COLUMN_MARKER_PATTERN = r"Column(?:\s+No)?\s*:\s*\d+"
@@ -16,10 +18,21 @@ _LEADING_EMPTY_BOLD_PATTERN = r"^(\*{4})+"
 _TRAILING_EMPTY_BOLD_PATTERN = r"(\*{4})+$"
 _ADJOURNMENT_LINE_PATTERN = r"Adjourned accordingly at"
 _BLOCK_START_PATTERN = r"^(\*\*|#{1,6}|\* \* \*)"
+_BYTE_ORDER_MARK = "\ufeff"
+_EMPTY_EMPHASIS_PATTERN = r"<(strong|em)[^>]*>(\s|&nbsp;|\ufeff)*</\1>"
+_PROC_TEXT_OPENING_PATTERN = r"\[?\s*\(proc text\)\s*"
+_PROC_TEXT_CLOSING_PATTERN = r"\s*\(proc text\)\s*\]?"
 
 
 def _strip_nbsp(html: str) -> str:
     return html.replace("&nbsp;", "")
+
+
+def _prepare_newer_system_html(html: str) -> str:
+    html = re.sub(_EMPTY_EMPHASIS_PATTERN, "", html)
+    html = re.sub(_PROC_TEXT_OPENING_PATTERN, "", html)
+    html = re.sub(_PROC_TEXT_CLOSING_PATTERN, "", html)
+    return html.replace("&nbsp;", " ").replace(_BYTE_ORDER_MARK, "")
 
 
 def _remove_column_markers(html: str) -> str:
@@ -67,7 +80,9 @@ def _postprocess_markdown_base(markdown: str) -> str:
     return _merge_consecutive_bold_only_lines(markdown)
 
 
-def get_cleaned_report_markdown(html: str) -> str:
+def get_cleaned_report_markdown(html: str, report_version: str) -> str:
+    if report_version == ReportVersion.SPRS3:
+        html = _prepare_newer_system_html(html)
     converter = html2text.HTML2Text(bodywidth=0)
     return _postprocess_markdown_base(converter.handle(_preprocess_html(html)))
 

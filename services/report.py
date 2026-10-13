@@ -62,7 +62,9 @@ def build_report(hansard_website_response: HansardWebsiteResponse) -> Report:
         reportType=hansard_website_response.report_type,
         content=hansard_website_response.content,
         markdown_content=(
-            get_cleaned_report_markdown(hansard_website_response.content)
+            get_cleaned_report_markdown(
+                hansard_website_response.content, hansard_website_response.report_version
+            )
             if hansard_website_response.content is not None
             else None
         ),

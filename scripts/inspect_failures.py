@@ -20,7 +20,7 @@ _DEFAULT_REPORT_TYPES = ("bill-intro", "budget", "president-address", "atbp")
 def show_doc(website_response: HansardWebsiteResponse, report: Report, max_lines: int = _MAX_LINES_SHOWN) -> None:
     start_line = get_start_of_speech_line(
         report.markdown_content, report.title, report.subtitle, report.original_title,
-        website_response.report_type,
+        website_response.report_type, website_response.report_version,
     )
     logger.info(f"  id={website_response.id} report_type={website_response.report_type!r}")
     logger.info(f"  title={report.title!r}")
@@ -43,7 +43,7 @@ def inspect_type(session: Session, report_type: str, max_failing: int = _MAX_FAI
             continue
         start_line = get_start_of_speech_line(
             report.markdown_content, report.title, report.subtitle, report.original_title,
-            website_response.report_type,
+            website_response.report_type, website_response.report_version,
         )
         if start_line is None:
             failing.append((website_response, report))

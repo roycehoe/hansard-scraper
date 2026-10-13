@@ -27,12 +27,15 @@ def populate_speeches(session: Session) -> None:
             report.subtitle,
             report.original_title,
             report.report_type,
+            report.report_version,
         )
         if start_of_speech_line is None:
             logger.debug(f"Skipping report {report.id}: could not find start of speech line")
             continue
         for ordinal, speech in enumerate(
-            get_speeches(report.markdown_content, start_of_speech_line, report.report_type)
+            get_speeches(
+                report.markdown_content, start_of_speech_line, report.report_type, report.report_version
+            )
         ):
             batch.append(Speech(
                 ordinal=ordinal + 1,

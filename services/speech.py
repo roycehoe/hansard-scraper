@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from enums import ReportType
+from enums import ReportType, ReportVersion
 from utils.text import fix_mojibake
 
 
@@ -53,6 +53,19 @@ _BILL_PRESENTER_RE = re.compile(
     r"presented\s+by[^(]*\(([^)]+)\)",
     re.IGNORECASE,
 )
+
+_NEWER_ADJOURNMENT_MOVER_RE = re.compile(
+    r"[−–\-]\s*\[((?:Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc\s+Prof)[^]]+)\]",
+    re.IGNORECASE,
+)
+
+_NEWER_BILL_PRESENTER_RE = re.compile(
+    r"presented\s+by[^(;]*\(([^)]+)\)",
+    re.IGNORECASE,
+)
+
+_NEWER_SYSTEM_NAME_TRAILING_CHARS = ". "
+_NEWER_SYSTEM_START_LINE = -1
 
 _SPEAKER_HONORIFIC_RE = re.compile(
     r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|Inche|Tuan|Haji|The|Er)\b"
@@ -193,7 +206,9 @@ def _extract_addenda_minister(markdown: str) -> Optional[str]:
     return match.group(1).strip() if match is not None else None
 
 
-def _extract_body_attribution(markdown: str, report_type: str) -> Optional[str]:
+def _extract_body_attribution(markdown: str, report_type: str, report_version: str) -> Optional[str]:
+    is_newer_system = report_version == ReportVersion.SPRS3
+
     if report_type == ReportType.ATBP:
         match = _ATBP_SPEAKER_RE.search(markdown)
         return match.group(1).strip() if match is not None else None
@@ -205,6 +220,14 @@ def _extract_body_attribution(markdown: str, report_type: str) -> Optional[str]:
         if not _MINISTRY_HEADING_RE.search(markdown):
             return "The President"
         return None
+
+    if is_newer_system and report_type == ReportType.MOTION:
+        match = _NEWER_ADJOURNMENT_MOVER_RE.search(markdown)
+        return match.group(1).strip().rstrip(_NEWER_SYSTEM_NAME_TRAILING_CHARS) if match is not None else None
+
+    if is_newer_system and (report_type == ReportType.BILL or report_type == ReportType.BILL_INTRODUCTION):
+        match = _NEWER_BILL_PRESENTER_RE.search(markdown)
+        return match.group(1).strip().rstrip(_NEWER_SYSTEM_NAME_TRAILING_CHARS) if match is not None else None
 
     if report_type == ReportType.MOTION:
         match = _ADJOURNMENT_MOVER_RE.search(markdown)
@@ -278,8 +301,12 @@ def get_start_of_speech_line(
     title: str,
     subtitle: Optional[str],
     original_title: str,
-    report_type: str = "",
+    report_type: str,
+    report_version: str,
 ) -> Optional[int]:
+    if report_version == ReportVersion.SPRS3:
+        return _NEWER_SYSTEM_START_LINE
+
     title = fix_mojibake(title)
     subtitle = fix_mojibake(subtitle) if subtitle else subtitle
     original_title = fix_mojibake(original_title)
@@ -440,7 +467,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
     return [speech for speech in speeches if speech.transcript.strip() != ""]
 
 
-def get_speeches(markdown: str, start_of_speech_line: int, report_type: str) -> list[ParsedSpeech]:
+def get_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
     parsed_speeches = _parse_speeches(markdown, start_of_speech_line, report_type)
     speakers = _extract_mps_speaking(markdown)
     speech_type = _classify_speech_type(parsed_speeches, len(speakers))
@@ -450,7 +477,7 @@ def get_speeches(markdown: str, start_of_speech_line: int, report_type: str) -> 
                 and not speakers
                 and parsed_speeches
                 and _is_section_header_speaker(parsed_speeches[0].speaker)):
-            speaker = _extract_body_attribution(markdown, report_type)
+            speaker = _extract_body_attribution(markdown, report_type, report_version)
             if speaker:
                 body = _get_single_speaker_transcript(markdown, start_of_speech_line)
                 return [ParsedSpeech(speaker=speaker, transcript=body)] if body else []
@@ -461,7 +488,7 @@ def get_speeches(markdown: str, start_of_speech_line: int, report_type: str) -> 
         return [ParsedSpeech(speaker=speakers[0], transcript=body)] if body else []
 
     if speech_type == ParsedSpeechType.NO_SPEAKER:
-        speaker = _extract_body_attribution(markdown, report_type)
+        speaker = _extract_body_attribution(markdown, report_type, report_version)
         if speaker:
             body = _get_single_speaker_transcript(markdown, start_of_speech_line)
             return [ParsedSpeech(speaker=speaker, transcript=body)] if body else []
