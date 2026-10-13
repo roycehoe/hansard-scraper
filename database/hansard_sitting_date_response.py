@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import ConfigDict, model_validator
 from pydantic.alias_generators import to_camel
@@ -10,7 +10,7 @@ class HansardSittingDateResponse(SQLModel, table=True):
 
     @model_validator(mode="before")
     @classmethod
-    def strip_nul(cls, data: Any) -> Any:
+    def strip_nul(cls, data: object) -> object:
         if isinstance(data, dict):
             return {key: value.replace("\x00", "") if isinstance(value, str) else value for key, value in data.items()}
         return data

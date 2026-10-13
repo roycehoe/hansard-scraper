@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from pathlib import Path
 
 from sqlmodel import Session, create_engine
@@ -16,6 +17,6 @@ def create_db_and_tables() -> None:
     command.upgrade(alembic_config, "head")
 
 
-def get_session():
+def get_session() -> Iterator[Session]:
     with Session(engine) as session:
         yield session
