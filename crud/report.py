@@ -25,8 +25,8 @@ class CRUDReport:
     def get_all_with_markdown(self) -> list[Report]:
         return list(self.session.exec(select(Report).where(Report.markdown_content.is_not(None))).all())
 
-    def get_by_ids(self, ids: list[int]) -> list[Report]:
-        return list(self.session.exec(select(Report).where(col(Report.id).in_(ids))).all())
+    def get_by_ids(self, report_ids: list[int]) -> list[Report]:
+        return list(self.session.exec(select(Report).where(col(Report.id).in_(report_ids))).all())
 
     def get_by_sitting_dates(self, dates: list[datetime]) -> list[Report]:
         return list(self.session.exec(select(Report).where(col(Report.sitting_date).in_(dates))).all())

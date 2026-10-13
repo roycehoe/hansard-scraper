@@ -12,7 +12,7 @@ class HansardSittingDateResponse(SQLModel, table=True):
     @classmethod
     def strip_nul(cls, data: Any) -> Any:
         if isinstance(data, dict):
-            return {k: v.replace("\x00", "") if isinstance(v, str) else v for k, v in data.items()}
+            return {key: value.replace("\x00", "") if isinstance(value, str) else value for key, value in data.items()}
         return data
 
     id: Optional[int] = Field(default=None, primary_key=True)

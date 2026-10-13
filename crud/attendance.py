@@ -11,17 +11,17 @@ class CRUDAttendance:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, record: Attendance) -> None:
-        self.session.add(record)
+    def create(self, attendance: Attendance) -> None:
+        self.session.add(attendance)
         self.session.commit()
 
-    def create_many(self, records: list[Attendance]) -> None:
-        self.session.add_all(records)
+    def create_many(self, attendances: list[Attendance]) -> None:
+        self.session.add_all(attendances)
         self.session.commit()
 
     def get_sitting_ids_with_attendance(self) -> set[int]:
-        rows = self.session.exec(select(Attendance.sitting_id).distinct()).all()
-        return {r for r in rows if r is not None}
+        sitting_ids = self.session.exec(select(Attendance.sitting_id).distinct()).all()
+        return {sitting_id for sitting_id in sitting_ids if sitting_id is not None}
 
     def get_unresolved_speaker_info(
         self,

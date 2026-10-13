@@ -10,7 +10,7 @@ from sqlmodel import Field, Relationship, SQLModel
 
 EmptyStrNoneInt = Annotated[
     Optional[int],
-    BeforeValidator(lambda v: None if isinstance(v, str) and v.strip() == "" else v),
+    BeforeValidator(lambda value: None if isinstance(value, str) and value.strip() == "" else value),
 ]
 
 
