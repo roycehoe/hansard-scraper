@@ -8,6 +8,7 @@ from crud.hansard_website_response import CRUDHansardWebsiteResponse
 from database.hansard_website_response import HansardWebsiteResponse
 from database.init import engine
 from database.report import Report
+from logs import logger
 from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
@@ -106,7 +107,7 @@ def run_stats_on(responses: list) -> dict:
 
 if __name__ == "__main__":
     with Session(engine) as session:
-        print("=== Setup: report_type speech stats ===")
+        logger.info("=== Setup: report_type speech stats ===")
         report_type_to_counts = get_report_type_speech_stats(session)
         no_speech_types = set()
         for report_type, speech_statistics in sorted(report_type_to_counts.items(), key=lambda entry: entry[1]["has_markdown"], reverse=True):
@@ -118,11 +119,11 @@ if __name__ == "__main__":
                 marker = " <-- ZERO SPEECHES"
             else:
                 marker = ""
-            print(f"  {report_type:30s} total={speech_statistics['total']:4d} has_md={has_markdown:4d} has_start={has_start_line:4d} speeches={can_get_speeches:4d}{marker}")
+            logger.info(f"  {report_type:30s} total={speech_statistics['total']:4d} has_md={has_markdown:4d} has_start={has_start_line:4d} speeches={can_get_speeches:4d}{marker}")
 
-        print(f"\nNo-speech report types (excluded from target): {no_speech_types}")
+        logger.info(f"\nNo-speech report types (excluded from target): {no_speech_types}")
 
-        print("\n=== Baseline (excluding no-speech types) ===")
+        logger.info("\n=== Baseline (excluding no-speech types) ===")
         all_responses = CRUDHansardWebsiteResponse(session).get_all()
         target_with_markdown = [
             response for response in all_responses
@@ -131,6 +132,6 @@ if __name__ == "__main__":
         baseline = run_stats_on(target_with_markdown)
         total = len(baseline["pass"]) + len(baseline["fail_start_line"]) + len(baseline["fail_speeches"])
         percentage = 100 * len(baseline["pass"]) / total if total else 0
-        print(f"  Pass: {len(baseline['pass'])}/{total} ({percentage:.1f}%)")
-        print(f"  Fail has_start_line: {len(baseline['fail_start_line'])}")
-        print(f"  Fail can_get_speeches: {len(baseline['fail_speeches'])}")
+        logger.info(f"  Pass: {len(baseline['pass'])}/{total} ({percentage:.1f}%)")
+        logger.info(f"  Fail has_start_line: {len(baseline['fail_start_line'])}")
+        logger.info(f"  Fail can_get_speeches: {len(baseline['fail_speeches'])}")
