@@ -13,6 +13,18 @@ from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
 
+def _get_start_line(report):
+    if not report.markdown_content:
+        return None
+    return get_start_of_speech_line(
+        report.markdown_content,
+        report.title,
+        report.subtitle,
+        report.original_title,
+        report.report_type,
+    )
+
+
 def run():
     with open("sample.json") as sample_file:
         sample_sets = json.load(sample_file)
@@ -89,15 +101,7 @@ def run():
             checks.append(f"SUBTITLE_MISMATCH(stored={stored.subtitle!r} regen={regenerated_report.subtitle!r})")
             is_failed = True
 
-        start_line = None
-        if regenerated_report.markdown_content:
-            start_line = get_start_of_speech_line(
-                regenerated_report.markdown_content,
-                regenerated_report.title,
-                regenerated_report.subtitle,
-                regenerated_report.original_title,
-                regenerated_report.report_type,
-            )
+        start_line = _get_start_line(regenerated_report)
         if start_line is None and regenerated_report.markdown_content:
             stats["no_start_line"] += 1
             checks.append("NO_START_LINE")

@@ -166,7 +166,7 @@ def _show_doc(report, start_line: int, speakers: list[str]) -> list[str]:
     # ── Raw HTML snippet (around first bold tag) ──────────────────────────────
     html = report.content or ""
     first_bold = re.search(r"<(?:strong|b)\b", html, re.IGNORECASE)
-    if first_bold:
+    if first_bold is not None:
         snippet_start = max(0, first_bold.start() - 100)
         snippet_end = min(len(html), first_bold.start() + 400)
         snippet = html[snippet_start:snippet_end]
@@ -180,10 +180,9 @@ def _show_doc(report, start_line: int, speakers: list[str]) -> list[str]:
         print(f"    {start_line + 1 + offset:4d}: {line[:100]}")
 
     # Flag if HTML has speaker-like bold but markdown has none
-    flags = []
     if speaker_like and not markdown_bold_lines:
-        flags = speaker_like
-    return flags
+        return speaker_like
+    return []
 
 
 if __name__ == "__main__":
