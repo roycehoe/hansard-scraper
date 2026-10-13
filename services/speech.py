@@ -321,11 +321,15 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             new_speaker = re.sub(r"^(Mr|Mrs|Ms|Dr|Prof|Mdm|The|BG|RAdm|Er)([A-Z])", r"\1 \2", new_speaker)
             # A bold drop cap ("**E**very year ...") and, in motions, a bold line opening with a
             # quote mark (a headline or letter read into the record) continue the current speaker.
-            if (re.fullmatch(r"[A-Za-z]{1,2}", new_speaker) and new_speaker not in ("Mr", "Er", "Ms", "Dr")) or (
-                report_type == "motion" and new_speaker[:1] in "\"“'"
-            ):
-                if transcript and current_speaker is not None:
-                    speeches.append(ParsedSpeech(speaker=current_speaker, transcript=transcript))
+            # The whole line is speech, so the transcript keeps any list marker before the bold
+            # ("(a) **C** onnected") and the bold text itself.
+            is_drop_cap = bool(re.fullmatch(r"[A-Za-z]{1,2}", new_speaker)) and new_speaker not in ("Mr", "Er", "Ms", "Dr")
+            if is_drop_cap or (report_type == "motion" and new_speaker[:1] in "\"“'"):
+                prefix = parsed_line[: bold_match.start()]
+                bold_text = bold_match.group(0).replace("*", "").strip()
+                body = bold_text + transcript if is_drop_cap else f"{bold_text} {transcript}"
+                if not in_preamble:
+                    speeches.append(ParsedSpeech(speaker=current_speaker, transcript=(prefix + body).strip()))
                 continue
             # Fix A: reject parliamentary procedural stage labels (e.g. "Third Reading:", "Committee:")
             # These end with a colon so the generic section-title skip misses them.
