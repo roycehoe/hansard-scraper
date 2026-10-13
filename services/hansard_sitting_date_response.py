@@ -15,7 +15,9 @@ class HansardSittingDateData:
 def _get_int(value) -> Optional[int]:
     try:
         return int(value)
-    except (TypeError, ValueError):
+    except TypeError:
+        return None
+    except ValueError:
         return None
 
 
