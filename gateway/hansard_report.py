@@ -10,15 +10,24 @@ from schemas.hansard_report_response import (
     HansardReportOldResponse,
 )
 from settings import settings
-from utils.sitting_dates import is_new_sitting_date_format
+from utils.sitting_dates import get_zero_padded_sitting_date
 from utils.text import strip_nul
+
+_NEW_FORMAT_KEY = "metadata"
+
+
+def _build_hansard_report_response(body: object) -> Union[HansardReportOldResponse, HansardReportNewResponse]:
+    body = strip_nul(body)
+    if isinstance(body, dict) and _NEW_FORMAT_KEY in body:
+        return HansardReportNewResponse(**body)
+    return HansardReportOldResponse(**body)
 
 
 def get_hansard_report_response(sitting_date: str) -> Union[HansardReportOldResponse, HansardReportNewResponse]:
-    response_schema = HansardReportNewResponse if is_new_sitting_date_format(sitting_date) else HansardReportOldResponse
+    request_body = {"sittingDate": get_zero_padded_sitting_date(sitting_date)}
     try:
-        response = requests.post(url=f"{settings.hansard_report_url}?sittingDate={sitting_date}")
-        return response_schema(**strip_nul(response.json()))
+        response = requests.post(url=settings.hansard_report_url, json=request_body)
+        return _build_hansard_report_response(response.json())
     except requests.exceptions.RequestException as error:
         raise HansardGatewayError(f"Report request failed for {sitting_date}") from error
     except ValueError as error:
@@ -28,11 +37,13 @@ def get_hansard_report_response(sitting_date: str) -> Union[HansardReportOldResp
 async def get_hansard_report_response_async(
     sitting_date: str, client: httpx.AsyncClient
 ) -> Union[HansardReportOldResponse, HansardReportNewResponse]:
-    response_schema = HansardReportNewResponse if is_new_sitting_date_format(sitting_date) else HansardReportOldResponse
+    request_body = {"sittingDate": get_zero_padded_sitting_date(sitting_date)}
     try:
-        response = await async_post_with_retry(client, f"{settings.hansard_report_url}?sittingDate={sitting_date}")
-        return response_schema(**strip_nul(response.json()))
+        response = await async_post_with_retry(client, settings.hansard_report_url, request_body)
+        return _build_hansard_report_response(response.json())
     except httpx.RequestError as error:
+        raise HansardGatewayError(f"Report request failed for {sitting_date}") from error
+    except httpx.HTTPStatusError as error:
         raise HansardGatewayError(f"Report request failed for {sitting_date}") from error
     except ValueError as error:
         raise HansardGatewayError(f"Report request failed for {sitting_date}") from error

@@ -18,10 +18,9 @@ from services.hansard_sitting_date_response import (
     build_new_hansard_sitting_date_response,
     build_old_hansard_sitting_date_response,
 )
-from utils.sitting_dates import is_new_sitting_date_format
 
-_CONCURRENCY = 20
-_HTTP_TIMEOUT_SECONDS = 30
+_CONCURRENCY = 2
+_HTTP_TIMEOUT_SECONDS = 120
 
 
 @dataclass(frozen=True)
@@ -69,7 +68,7 @@ def populate_hansard_sitting_dates(session: Session) -> None:
         logger.info(f"{i}/{len(dates_to_fetch)}: {sitting_date}")
 
         hansard_report_response = fetched_sitting_date.hansard_report_response
-        if is_new_sitting_date_format(sitting_date):
+        if isinstance(hansard_report_response, HansardReportNewResponse):
             hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
         else:
             hansard_sitting_date_response = build_old_hansard_sitting_date_response(hansard_report_response, sitting_date)
