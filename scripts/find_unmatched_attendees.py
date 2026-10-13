@@ -75,7 +75,7 @@ def _is_resolved(name: str, parliament: int, lookups) -> bool:
 
 # ── main ──────────────────────────────────────────────────────────────────────
 
-def find_unmatched(*, verbose: bool = False) -> dict[str, Counter]:
+def find_unmatched(*, is_verbose: bool = False) -> dict[str, Counter]:
     """
     Returns a dict mapping category -> Counter(speaker_name -> count).
     Categories: 'candidate', 'official_with_title', 'presiding',
@@ -98,7 +98,7 @@ def find_unmatched(*, verbose: bool = False) -> dict[str, Counter]:
     total = len(sittings)
 
     for sitting_number, sitting in enumerate(sittings, 1):
-        if verbose and sitting_number % 100 == 0:
+        if is_verbose and sitting_number % 100 == 0:
             print(f"  {sitting_number}/{total} sittings processed…", file=sys.stderr)
         parliament = infer_parliament(sitting.parlement_no, sitting.volume_no)
         if parliament is None:
@@ -134,7 +134,7 @@ def main() -> None:
     arguments = parser.parse_args()
 
     print("Scanning sittings…", file=sys.stderr)
-    category_to_counter = find_unmatched(verbose=arguments.verbose)
+    category_to_counter = find_unmatched(is_verbose=arguments.verbose)
 
     # ── print report ─────────────────────────────────────────────────────────
     candidates = category_to_counter["candidate"]
