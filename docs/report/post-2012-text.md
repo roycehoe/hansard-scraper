@@ -1,5 +1,7 @@
 # Post-September 2012 report text, 13 October 2026
 
+**Status, 14 October 2026: closed.** The fetcher now picks the id and the response field by system, and the production load ran. 16,123 newer-system reports were filled with text, and 3,880 skipped search hits were inserted (3,769 newer-system, 111 older-system Parliament 12 hits before 10 September 2012). The database now holds 41,809 distinct records, 41,678 with text. The 131 without text are 106 `atbp` records (the newer system gives them no topic text) and 25 others, 11 of them newer-system ids SPRS no longer serves. The sections below describe the gap as found on 13 October 2026 and are kept as written.
+
 Read-only. No DB write, no code edit. DB claims name the query, which ran inside `BEGIN READ ONLY ... ROLLBACK`. API claims give the exact request so you can rerun it.
 
 ## 1. What the database holds

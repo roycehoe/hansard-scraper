@@ -1,5 +1,33 @@
 # Speech → MP Link Refine-Loop Progress Log
 
+## Post-2012 load, 2026-10-14
+
+The production load of report text and sitting details from 10 September 2012 on ran, then stage 8 and the person stage. Figures are re-queried from the live database afterwards.
+
+- 16,123 newer-system reports filled with text (Parliament 12 from 10 September 2012, 13 and 14).
+- 3,880 skipped search hits inserted: 3,769 newer-system and 111 older-system Parliament 12 hits before 10 September 2012 (594, 1,037 and 2,249 by parliament).
+- 427,891 speech rows parsed. Counts came in above the plan's sample projection: +9.1% for Parliament 12, +0.1% for 13 and +9.5% for 14 (reports filled in place), and +3.7% for inserted reports.
+- 3 head-of-state speaker rows (Tony Tan for Parliaments 12 and 13, Halimah Yacob for 14). The registry has 1,437 speaker rows (1,417 members, 20 heads of state) and 573 persons.
+
+**Result:** 1,068,620 speech rows; 1,019,991 with a speaker string, 997,268 of them linked (97.8%). The headline for Parliaments 0 to 11 did not move: 564,509 of 578,359 (97.61%); all rows 564,509 of 624,332 (90.42%); text share 96.81% of 188.1M characters.
+
+Beside the headline (ADR 0001 rate, all-rows rate, text share, from `scripts/attribution_text_share.py`):
+
+| Scope | ADR 0001 rate | All-rows rate | Text share |
+|---|---|---|---|
+| Parliament 12 (whole) | 89,536 of 90,511 (98.92%) | 89,536 of 91,953 (97.37%) | 98.81% |
+| Parliament 12 from 10 Sep 2012 | 72,013 of 72,778 (98.95%) | | |
+| Parliament 13 | 134,660 of 137,182 (98.16%) | 134,660 of 139,279 (96.68%) | 99.14% |
+| Parliament 14 | 208,563 of 210,646 (99.01%) | 208,563 of 213,056 (97.89%) | 99.22% |
+
+The plan projected 99.1 to 99.3 for Parliament 12 from the cutoff, 98.1 to 99.1 for 13 and 98.6 for 14. Parliament 12 from the cutoff is about 110 rows short: "The Chairman" leaves 566 rows unlinked there, and 61 "[Deputy Speaker" parse-noise rows stay in the denominator (77 across Parliaments 12 and 13, where the plan expected 16).
+
+Largest unlinked groups in the new rows: "The Chairman" 4,018 (no chair named in the report), bare "Mr Deputy Speaker" 1,119 on days with two men in the post (ADR 0002 leaves them), "[Deputy Speaker" 77 parse noise, "Mr Chairman" 44, and 5 "Mdm Speaker" rows that are Hansard misprints for "Mdm Deputy Speaker" and stay unlinked under ADR 0002.
+
+Full-text records with speech rows: 41,024 of 41,678. The 654 with none are 552 in Parliaments 0 to 11, 35 in Parliament 12, 30 in 13 and 37 in 14. The newer-system ones are mostly Committee of Supply openers and procedural records that name no speaker. 131 records have no text: 106 atbp and 25 others, 11 of them newer-system ids SPRS no longer serves.
+
+---
+
 ## Three production changes, 2026-10-13 (night)
 
 Three changes ran on the DigitalOcean database after the evening steps below. Figures are re-queried from the live database afterwards.

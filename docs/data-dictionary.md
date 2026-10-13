@@ -214,7 +214,8 @@ One row per individual, grouping the per-parliament `Speaker` rows. Derived and 
 ## Known limitations
 
 - Records from 1955–1965 cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament. `Speaker.is_legislative_assembly = True` marks these members.
-- 561 records with full text have no speech rows as of 13 October 2026 (552 in Parliaments 0 to 11): mostly budget procedural orders with no named author, annex and appendix documents whose body is a list of PDF links, and procedural records that name no speaker.
+- 654 records with full text have no speech rows as of 14 October 2026 (552 in Parliaments 0 to 11): mostly budget procedural orders with no named author, annex and appendix documents whose body is a list of PDF links, Committee of Supply openers, and procedural records that name no speaker.
+- 131 of 41,809 records have no text (`content` is `NULL`): 106 `atbp` records, whose newer-system bill list is in `sitting.a2b`, and 25 others, 11 of them newer-system ids that SPRS no longer serves.
 - Some `Report.title` values contain Windows-1252 mojibake (e.g. `â€™` instead of `'`). `Report.markdown_content` has correct Unicode. Affects ~382 `president-address` titles and ~2,153 `budget` titles. `Report.original_title` is the unmodified raw value.
 - Colonial-era records from 1955–1961 (Parliament 0) have no `MPs Speaking` field, so single-speaker attribution fallback cannot apply.
 - `Speech.speaker_id` is incomplete for colonial-era and early-parliament records.
