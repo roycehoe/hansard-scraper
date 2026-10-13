@@ -494,7 +494,7 @@ def _spelling_normalize(name: str) -> str:
     # Collapse sequences of spaced single uppercase letters: "B P M" -> "BPM"
     normalized = re.sub(
         r"\b([A-Z])((?:\s+[A-Z])+)\b",
-        lambda abbrev_match: abbrev_match.group(1) + abbrev_match.group(2).replace(" ", ""),
+        lambda initials_match: initials_match.group(1) + initials_match.group(2).replace(" ", ""),
         normalized,
     )
     return re.sub(r"\s+", " ", normalized).strip()
@@ -513,7 +513,7 @@ def _invert_to_natural(speaker_name: str) -> Optional[str]:
     return strip_title(f"{rest} {parts[0]}").strip()
 
 
-def _wordset_key(name: str) -> tuple[frozenset, int]:
+def _get_wordset_key(name: str) -> tuple[frozenset, int]:
     words = _period_normalize(name).split()
     return frozenset(words), len(words)
 
@@ -638,7 +638,7 @@ def _build_wordset_subset_lookup(speakers: list[Speaker]) -> dict[tuple[frozense
         words = _period_normalize(strip_title(display)).split()
         if len(words) < _MIN_WORDSET_SUBSET_WORDS:
             continue
-        words = [w for w in words if len(w) > 1]
+        words = [word for word in words if len(word) > 1]
         key = (frozenset(words), parliament)
         counts[key] = counts.get(key, 0) + 1
         entries.append((key, canonical_name))
@@ -661,8 +661,8 @@ def _build_prefix_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str]:
     for display, canonical, parliament in forms:
         words = _period_normalize(display).split()
         for prefix_length in range(_MIN_PREFIX_WORD_COUNT, len(words)):
-            prefix_str = " ".join(words[:prefix_length])
-            prefix_key = (prefix_str, parliament)
+            joined_prefix = " ".join(words[:prefix_length])
+            prefix_key = (joined_prefix, parliament)
             prefix_counts[prefix_key] = prefix_counts.get(prefix_key, 0) + 1
             prefix_entries.append((prefix_key, canonical))
     prefix: dict[tuple[str, int], str] = {}
@@ -719,17 +719,17 @@ def _parse_name_and_location(text: str) -> tuple[str, Optional[str]]:
     if first_open != -1:
         # Walk forward to find matching close paren (handles nesting)
         depth = 0
-        close_idx = -1
+        close_index = -1
         for char_index in range(first_open, len(text)):
             if text[char_index] == "(":
                 depth += 1
             elif text[char_index] == ")":
                 depth -= 1
                 if depth == 0:
-                    close_idx = char_index
+                    close_index = char_index
                     break
-        if close_idx != -1:
-            constituency = text[first_open + 1 : close_idx].strip()
+        if close_index != -1:
+            constituency = text[first_open + 1 : close_index].strip()
             name_part = text[:first_open].rstrip(", ")
         else:
             # No matching close paren — constituency is truncated; use text before "("
@@ -794,8 +794,8 @@ def _extract_section_lines(content: str, section: str) -> list[str]:
     """
     lines = content.split("\n")
     in_section = False
-    other = "ABSENT" if section == "PRESENT" else "PRESENT"
-    result = []
+    other_section = "ABSENT" if section == "PRESENT" else "PRESENT"
+    entry_lines = []
 
     for line in lines:
         stripped = line.strip()
@@ -807,7 +807,7 @@ def _extract_section_lines(content: str, section: str) -> list[str]:
             continue
 
         # End-of-section markers
-        if re.match(rf"^(?:\*{{2}}|#+)?\s*{other}\s*:(?:\*{{2}})?\s*$", stripped, re.IGNORECASE):
+        if re.match(rf"^(?:\*{{2}}|#+)?\s*{other_section}\s*:(?:\*{{2}})?\s*$", stripped, re.IGNORECASE):
             break
         if stripped.startswith("####") or stripped.startswith("# ") or stripped == "* * *":
             break
@@ -816,9 +816,9 @@ def _extract_section_lines(content: str, section: str) -> list[str]:
             break
 
         if stripped:
-            result.append(line)
+            entry_lines.append(line)
 
-    return result
+    return entry_lines
 
 
 def _try_name_variant(
@@ -837,11 +837,11 @@ def _try_name_variant(
     if result:
         return result
     if include_wordset:
-        result = lookups.wordset.get((*_wordset_key(name), parliament))
+        result = lookups.wordset.get((*_get_wordset_key(name), parliament))
         if result:
             return result
-        _wss_words = [w for w in _period_normalize(name).split() if len(w) > 1]
-        result = lookups.wordset_subset.get((frozenset(_wss_words), parliament))
+        subset_words = [word for word in _period_normalize(name).split() if len(word) > 1]
+        result = lookups.wordset_subset.get((frozenset(subset_words), parliament))
         if result:
             return result
     return lookups.prefix.get((normalized, parliament))
@@ -867,36 +867,36 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
     if canonical:
         return canonical
 
-    spelled = _spelling_normalize(name)
-    if spelled != name:
-        canonical = _try_name_variant(spelled, parliament, lookups)
+    spelling_normalised_name = _spelling_normalize(name)
+    if spelling_normalised_name != name:
+        canonical = _try_name_variant(spelling_normalised_name, parliament, lookups)
         if canonical:
             return canonical
 
-    no_haji = _strip_middle_haji(name)
-    if no_haji != name:
-        canonical = _try_name_variant(no_haji, parliament, lookups, include_wordset=False)
+    name_without_haji = _strip_middle_haji(name)
+    if name_without_haji != name:
+        canonical = _try_name_variant(name_without_haji, parliament, lookups, include_wordset=False)
         if canonical:
             return canonical
 
     # CamelCase split fallback for source markdown that concatenated names without
     # spaces ("AbdullahTarmugi"). Re-strip title after splitting in case the missing
     # space prevented strip_title from matching at extraction time.
-    split = re.sub(r"([a-z\.])([A-Z])", r"\1 \2", name)
-    if split != name:
-        split_stripped = strip_title(split).strip()
+    camel_split_name = re.sub(r"([a-z\.])([A-Z])", r"\1 \2", name)
+    if camel_split_name != name:
+        camel_split_stripped_name = strip_title(camel_split_name).strip()
         canonical = (
-            _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get((_period_normalize(split_stripped), parliament))
-            or _try_name_variant(split_stripped, parliament, lookups)
+            _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get((_period_normalize(camel_split_stripped_name), parliament))
+            or _try_name_variant(camel_split_stripped_name, parliament, lookups)
         )
         if canonical:
             return canonical
 
     # Surname-only fallback: if name reduces to a single token, try it as the unique
     # last name in this parliament.  Only fires for unambiguous cases.
-    words_pn = _period_normalize(name).split()
-    if len(words_pn) == 1:
-        return lookups.surname_fallback.get((words_pn[0], parliament))
+    normalised_words = _period_normalize(name).split()
+    if len(normalised_words) == 1:
+        return lookups.surname_fallback.get((normalised_words[0], parliament))
     return None
 
 
