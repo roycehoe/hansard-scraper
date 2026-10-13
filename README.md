@@ -4,23 +4,23 @@ Pipeline and database for Singapore's parliamentary record, from the colonial Le
 
 ## Coverage
 
-All figures below were queried from the database on 13 October 2026, after that day's speaker-link rerun, the speech parse of 2,466 reports that had no speech rows, and the approved attribution changes (dated presiding officers, Chairman attribution from the report, parser and name fixes). The database itself is not published.
+All figures below were queried from the database on 13 October 2026, after that day's speaker-link rerun, the approved attribution changes, the duplicate-report cleanup, the procedural-text and chair-annotation repairs, the person table and the head-of-state links. The database itself is not published.
 
 | | |
 |---|---|
 | Date range | 22 April 1955 to 8 April 2025 |
 | Parliaments | 0 (colonial) through 14 |
 | Sitting dates | 1,719 |
-| Records | 41,829 fetched, 21,838 with full text |
+| Records | 36,238 distinct records from 41,829 search hits (5,591 hits came back twice), 20,003 with full text |
 | Report types | 23, of which 19 have full text: oral answers, written answers, bills, motions, ministerial statements, budget debates, and more |
-| Full-text records with speeches | 21,260 of 21,838 |
-| Full-text records with no speeches | 578 of 21,838; 567 of those are in Parliaments 0 to 11, mostly budget procedural orders (273), annex and link pages, and records that name no speaker |
-| Speeches linked to a registry speaker, Parliaments 0 to 11 | 584,447 of 602,415 (97.0%) under the denominator in [docs/adr/0001-attribution-denominator.md](docs/adr/0001-attribution-denominator.md): rows with a speaker string, minus collective references and stage directions |
-| Speeches linked, all rows with a speaker string | 602,382 of 625,929 (96.2%) across Parliaments 0 to 12; speeches exist only for those parliaments |
-| Speeches linked, Parliament 12 | 17,935 of 18,215 (98.5%) under the same denominator; reported separately because its fetch is incomplete |
+| Full-text records with speeches | 19,462 of 20,003 |
+| Full-text records with no speeches | 541 of 20,003; 532 of those are in Parliaments 0 to 11, mostly budget procedural orders (264), annex and link pages, and records that name no speaker |
+| Speeches linked to a registry speaker, Parliaments 0 to 11 | 523,988 of 537,842 (97.4%) under the denominator in [docs/adr/0001-attribution-denominator.md](docs/adr/0001-attribution-denominator.md): rows with a speaker string, minus collective references and stage directions |
+| Speeches linked, all rows with a speaker string | 540,104 of 558,335 (96.7%) across Parliaments 0 to 12; speeches exist only for those parliaments |
+| Speeches linked, Parliament 12 | 16,116 of 16,384 (98.4%) under the same denominator; reported separately because its fetch is incomplete |
 | Attendance rows linked to a registry speaker | 96,350 of 96,500 (99.8%) |
 | Sitting metadata | Attendance, PTBA, and debate sections (Parliament 13+) |
-| Speaker registry | 1,419 speakers by parliament, from parliament.gov.sg |
+| Speaker registry | 1,434 speaker rows by parliament: 1,417 members from parliament.gov.sg and the colonial list, 17 heads of state marked as non-members; grouped into 573 persons |
 
 ## Quick start
 
@@ -60,7 +60,7 @@ Records come from the Parliament of Singapore's Parliament Reports search system
 ## Known limitations
 
 - Records from 1955–1965 predate independence and cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament.
-- 578 records with full text have no speech rows in the database as of 13 October 2026. 273 are budget procedural orders; the rest are mostly annex and index documents whose body is a list of links, and procedural records that name no speaker. See [docs/report/learnings.md](docs/report/learnings.md).
+- 541 records with full text have no speech rows in the database as of 13 October 2026. 264 are budget procedural orders; the rest are mostly annex and index documents whose body is a list of links, and procedural records that name no speaker. See [docs/report/learnings.md](docs/report/learnings.md).
 - Some `title` fields have encoding artifacts from the source API; `markdown_content` has correct Unicode.
 - Speaker identity linking (`speaker_id`) is incomplete. The largest unlinked group is "The Chairman" in Committee of Supply debates where the report does not say who was in the chair, followed by "Mr Deputy Speaker" on days with two Deputy Speakers; see [docs/adr/0002-role-holder-attribution.md](docs/adr/0002-role-holder-attribution.md).
 

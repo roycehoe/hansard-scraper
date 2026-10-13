@@ -17,7 +17,8 @@ Sitting (one day's session)
 Report (one parliamentary item within a sitting)
   └── Speech      (one utterance by one speaker)
 
-Speaker (one row per person per parliament)
+Person (one row per individual)
+  └── Speaker    (one row per person per parliament)
 ```
 
 `Report` and `Sitting` share `sitting_date`, `parliament_number`, and `volume_number` as natural join keys. `Speech.speaker_id` links to `Speaker.id` where the match has been resolved.
@@ -39,7 +40,7 @@ One row per parliamentary item. A report is the smallest unit of parliamentary b
 | `sitting_number` | int | Which sitting within the session. |
 | `sitting_date` | datetime | Date of the sitting. |
 | `speech_number` | int | Sequential number of this item within the sitting (the `sno` field from the API). |
-| `report_id` | str | The SPRS identifier for this report. |
+| `report_id` | str | The SPRS identifier for this report. Unique in `Report`; the raw `HansardWebsiteResponse` table keeps every search hit, so it can hold the same id twice. |
 | `report_type` | str | Category of parliamentary business. See [Report types](#report-types) below. |
 | `title` | str | Cleaned title. Mojibake corrected; HTML entity artifacts stripped. |
 | `original_title` | str | Title exactly as received from the API. |
@@ -143,7 +144,7 @@ One row per person per sitting, parsed from the PRESENT/ABSENT sections of `Sitt
 
 ### Speaker
 
-Identities scraped from parliament.gov.sg. One row per person per parliament — the same person appears multiple times across parliaments. The name "Speaker" is used because the table includes colonial Legislative Assembly members who were not MPs.
+Identities scraped from parliament.gov.sg, plus the colonial Legislative Assembly list (`data/colonial_la_members.json`) and the heads of state (`data/heads_of_state.json`). One row per person per parliament — the same person appears multiple times across parliaments, and `person_id` groups those rows. The name "Speaker" is used because the table includes colonial Legislative Assembly members who were not MPs, and Governors, the Yang di-Pertuan Negara and Presidents, who are not members at all.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -152,6 +153,18 @@ Identities scraped from parliament.gov.sg. One row per person per parliament —
 | `parliament_number` | int | Parliament they served in. |
 | `is_legislative_assembly` | bool | `True` for colonial Legislative Assembly members (pre-independence). |
 | `comments` | str | Footnote annotations from the source page, e.g. appointment dates or name changes. |
+| `is_member` | bool | `False` for heads of state, who speak in the House (the Address) but are not members. |
+| `person_id` | int | FK → `Person.id`. Set for every row by `populate_persons`. |
+
+### Person
+
+One row per individual, grouping the per-parliament `Speaker` rows. Derived and rebuildable: rows join on identical names, then on names equal after title and inversion normalisation, subject to the hand decisions in `data/person_decisions.json` (`merge` and `distinct` entries with a cited source). A person holds at most one speaker row per parliament.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `canonical_name` | str | The most common spelling among the person's speaker rows, or the name a `merge` decision gives. |
+| `basis` | str | Which rule formed the group: `auto:exact`, `auto:normalised`, `review:merge` or `single`. |
+| `notes` | str | Free text; unused so far. |
 
 ---
 
@@ -200,7 +213,7 @@ Identities scraped from parliament.gov.sg. One row per person per parliament —
 ## Known limitations
 
 - Records from 1955–1965 cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament. `Speaker.is_legislative_assembly = True` marks these members.
-- 578 records with full text have no speech rows as of 13 October 2026 (567 in Parliaments 0 to 11): mostly budget procedural orders with no named author, annex and appendix documents whose body is a list of PDF links, and procedural records that name no speaker.
+- 541 records with full text have no speech rows as of 13 October 2026 (532 in Parliaments 0 to 11): mostly budget procedural orders with no named author, annex and appendix documents whose body is a list of PDF links, and procedural records that name no speaker.
 - Some `Report.title` values contain Windows-1252 mojibake (e.g. `â€™` instead of `'`). `Report.markdown_content` has correct Unicode. Affects ~382 `president-address` titles and ~2,153 `budget` titles. `Report.original_title` is the unmodified raw value.
 - Colonial-era records from 1955–1961 (Parliament 0) have no `MPs Speaking` field, so single-speaker attribution fallback cannot apply.
 - `Speech.speaker_id` is incomplete for colonial-era and early-parliament records.
