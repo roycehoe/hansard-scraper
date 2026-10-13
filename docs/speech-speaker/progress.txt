@@ -4,6 +4,8 @@
 
 The production load of report text and sitting details from 10 September 2012 on ran, then stage 8 and the person stage. Figures are re-queried from the live database afterwards.
 
+Decisions, judgement calls and evidence: [post-2012-load.md](../report/post-2012-load.md).
+
 - 16,123 newer-system reports filled with text (Parliament 12 from 10 September 2012, 13 and 14).
 - 3,880 skipped search hits inserted: 3,769 newer-system and 111 older-system Parliament 12 hits before 10 September 2012 (594, 1,037 and 2,249 by parliament).
 - 427,891 speech rows parsed. Counts came in above the plan's sample projection: +9.1% for Parliament 12, +0.1% for 13 and +9.5% for 14 (reports filled in place), and +3.7% for inserted reports.

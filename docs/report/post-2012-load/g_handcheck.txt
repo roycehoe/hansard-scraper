@@ -1,0 +1,14 @@
+  id  |        name        | parliament_number |    party     | is_member | is_legislative_assembly | person_id |               md5                
+------+--------------------+-------------------+--------------+-----------+-------------------------+-----------+----------------------------------
+ 1436 | Tan Keng Yam, Tony |                12 | Non-partisan | f         | f                       |           | 7a1da035419c8b580d7c90663a6dcb9c
+ 1437 | Tan Keng Yam, Tony |                13 | Non-partisan | f         | f                       |           | 7a1da035419c8b580d7c90663a6dcb9c
+ 1438 | Halimah Yacob      |                14 | Non-partisan | f         | f                       |           | bfbe80717d2aed1968f9a79d4b782891
+(3 rows)
+
+  id  |        name        | parliament_number |    party     | is_member | is_legislative_assembly |               md5                
+------+--------------------+-------------------+--------------+-----------+-------------------------+----------------------------------
+ 1436 | Tan Keng Yam, Tony |                12 | Non-partisan | f         | f                       | 7a1da035419c8b580d7c90663a6dcb9c
+ 1437 | Tan Keng Yam, Tony |                13 | Non-partisan | f         | f                       | 7a1da035419c8b580d7c90663a6dcb9c
+ 1438 | Halimah Yacob      |                14 | Non-partisan | f         | f                       | bfbe80717d2aed1968f9a79d4b782891
+(3 rows)
+
