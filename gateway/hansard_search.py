@@ -1,5 +1,6 @@
 import calendar
 import time
+from collections.abc import Iterator
 from datetime import date
 from typing import Optional, Union
 
@@ -62,7 +63,7 @@ def get_hansard_search_results(
         raise HansardGatewayError(f"Search request failed for page {page}") from error
 
 
-def _get_page_with_retries(start_index: int, from_date: date, to_date: date):
+def _get_page_with_retries(start_index: int, from_date: date, to_date: date) -> Union[dict, list]:
     for attempt in range(_MAX_RETRIES + 1):
         try:
             return get_hansard_search_results(start_index, start_index + settings.search_page_size - 1, from_date, to_date)
@@ -73,7 +74,7 @@ def _get_page_with_retries(start_index: int, from_date: date, to_date: date):
             time.sleep(_BASE_DELAY * (2 ** attempt))
 
 
-def _months(first: date, last: date):
+def _months(first: date, last: date) -> Iterator[tuple[date, date]]:
     year, month = first.year, first.month
     while (year, month) <= (last.year, last.month):
         yield (
