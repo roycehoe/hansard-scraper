@@ -17,7 +17,7 @@ from services.speech import (
 _TABLE_WIDTH = 52
 
 
-def run():
+def run() -> None:
     with Session(engine) as session:
         reports = CRUDReport(session).get_by_markdown_content_not_null()
 
