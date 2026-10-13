@@ -5,10 +5,12 @@ regenerates objects, and compares against the control (raw HTML content).
 """
 
 import json
+from typing import Optional
 
 from crud.hansard_website_response import CRUDHansardWebsiteResponse
 from crud.report import CRUDReport
 from database.init import get_session
+from database.report import Report
 from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
@@ -19,7 +21,7 @@ _SNIPPET_LINES_SHOWN = 15
 _PERCENT = 100
 
 
-def _get_start_line(report):
+def _get_start_line(report: Report) -> Optional[int]:
     if not report.markdown_content:
         return None
     return get_start_of_speech_line(
@@ -31,7 +33,7 @@ def _get_start_line(report):
     )
 
 
-def run():
+def run() -> None:
     with open(_SAMPLE_FILE_PATH) as sample_file:
         sample_sets = json.load(sample_file)
 

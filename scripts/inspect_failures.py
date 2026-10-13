@@ -5,7 +5,9 @@ import sys
 from sqlmodel import Session
 
 from crud.hansard_website_response import CRUDHansardWebsiteResponse
+from database.hansard_website_response import HansardWebsiteResponse
 from database.init import engine
+from database.report import Report
 from services.report import build_report
 from services.speech import get_start_of_speech_line
 
@@ -16,7 +18,7 @@ _SEPARATOR_WIDTH = 60
 _DEFAULT_REPORT_TYPES = ("bill-intro", "budget", "president-address", "atbp")
 
 
-def show_doc(website_response, report, max_lines=_MAX_LINES_SHOWN):
+def show_doc(website_response: HansardWebsiteResponse, report: Report, max_lines: int = _MAX_LINES_SHOWN) -> None:
     start_line = get_start_of_speech_line(
         report.markdown_content, report.title, report.subtitle, report.original_title,
         website_response.report_type,
@@ -32,7 +34,7 @@ def show_doc(website_response, report, max_lines=_MAX_LINES_SHOWN):
     print()
 
 
-def inspect_type(session: Session, report_type: str, max_failing: int = _MAX_FAILING_SHOWN, max_passing: int = _MAX_PASSING_SHOWN):
+def inspect_type(session: Session, report_type: str, max_failing: int = _MAX_FAILING_SHOWN, max_passing: int = _MAX_PASSING_SHOWN) -> None:
     responses = CRUDHansardWebsiteResponse(session).get_all_by_report_type(report_type)
 
     failing, passing = [], []
