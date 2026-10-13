@@ -65,8 +65,7 @@ def _fix_sitting_concat_headers(html: str) -> str:
     # Modern (vol 79+) HTML stores "PARTIOF SECOND SESSION" and "VOLUME79" in span text
     # without spaces. Fix before passing to html2text.
     html = re.sub(r"\bPART([IVX]+)OF\b", r"PART \1 OF", html)
-    html = re.sub(r"\bVOLUME(\d+)\b", r"VOLUME \1", html)
-    return html
+    return re.sub(r"\bVOLUME(\d+)\b", r"VOLUME \1", html)
 
 
 def _remove_sitting_orphan_bold_markers(markdown: str) -> str:

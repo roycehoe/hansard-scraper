@@ -15,23 +15,26 @@ class ReportHeader:
     subtitle: Optional[str] = None
 
 
+def _replace_bracket(match: re.Match) -> str:
+    if match.group(1).isupper():
+        return match.group(0)
+    return ""
+
+
 def _get_db_report_header(raw_title: str) -> ReportHeader:
     raw_title = raw_title.replace("\n", " ")
     if raw_title[-1] != ")":
         return ReportHeader(title=raw_title)
 
-    subtitle = None
-
-    def _get_bracket_replacement(match: re.Match) -> str:
-        nonlocal subtitle
-        content = match.group(1)
-        if content.isupper():
-            return match.group(0)
-        subtitle = f"({content})"
-        return ""
-
-    title = re.sub(r"\(([^)]*)\)", _get_bracket_replacement, raw_title).strip()
-    return ReportHeader(title=title, subtitle=subtitle)
+    contents = [
+        match.group(1)
+        for match in re.finditer(r"\(([^)]*)\)", raw_title)
+        if not match.group(1).isupper()
+    ]
+    title = re.sub(r"\(([^)]*)\)", _replace_bracket, raw_title).strip()
+    if not contents:
+        return ReportHeader(title=title)
+    return ReportHeader(title=title, subtitle=f"({contents[-1]})")
 
 
 def build_report(hansard_website_response: HansardWebsiteResponse) -> Report:
