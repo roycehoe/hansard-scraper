@@ -1,15 +1,3 @@
-"""Validates that every non-None field in a raw API response survives parsing into the ORM.
-
-For live APIs that respond: calls the real endpoint and verifies field coverage.
-For endpoints that are unavailable: falls back to a synthetic payload that exercises
-every mapped field, which is a stricter test than hitting an endpoint that may omit fields.
-
-No data is written to the database.
-
-Usage:
-    PYTHONPATH=. poetry run python scripts/validate_api_field_mapping.py
-"""
-
 import sys
 from typing import Optional, Union
 
@@ -34,9 +22,6 @@ INFO = "\033[34mINFO\033[0m"
 
 _VALUE_PREVIEW_LENGTH = 55
 _HTTP_INTERNAL_SERVER_ERROR = 500
-
-# Synthetic payload for old-format sitting dates (pre-18 Aug 2015).
-# Covers every field mapped by build_old_hansard_sitting_date_response.
 _SYNTHETIC_OLD_FORMAT = {
     "parlNo": "9",
     "sessionNo": "1",
@@ -81,9 +66,6 @@ _SYNTHETIC_OLD_FORMAT = {
     "questionCount": "3",
     "attendanceList": [{"name": "Dr Tan Cheng Bock", "status": "P"}],
 }
-
-# Synthetic payload for new-format sitting dates (18 Aug 2015 onwards).
-# Covers every field mapped by build_new_hansard_sitting_date_response.
 _SYNTHETIC_NEW_FORMAT = {
     "metadata": {
         "parlimentNO": "13",
@@ -131,8 +113,6 @@ def validate_search_and_topic() -> bool:
     hansard_search_result = search_results[0]
     raw = hansard_search_result.model_dump(by_alias=True)
     print(f"  {INFO}  report_id={hansard_search_result.report_id}  title={hansard_search_result.title[:_VALUE_PREVIEW_LENGTH]}")
-
-    # ORM build: check the explicitly mapped fields
     hansard_website_response = build_hansard_website_response(hansard_search_result, content=None)
     orm_field_to_value = _get_orm_field_to_value(hansard_website_response)
     raw_key_to_orm_field = {
@@ -204,7 +184,7 @@ def _validate_sitting_payload(
 
     if hansard_report_response.error_code is not None:
         print(f"  {WARN}  API returned error: {hansard_report_response.description} — using synthetic payload instead")
-        return None  # signal to caller to fall back
+        return None
 
     if is_new:
         hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
@@ -324,7 +304,6 @@ def validate_sitting_date(sitting_date: str, label: str, synthetic: dict) -> boo
 
     is_passed = _validate_sitting_payload(hansard_report_response, sitting_date, source="live API")
     if is_passed is None:
-        # API returned an error — fall back to synthetic
         is_passed = _validate_sitting_payload(
             response_schema.model_validate(synthetic), sitting_date, source="synthetic payload"
         )
