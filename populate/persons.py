@@ -24,8 +24,8 @@ def _load_decisions() -> list[Decision]:
 
 
 def populate_persons(session: Session) -> None:
-    """Give every speaker row a person. A cluster that already holds a person keeps it (the lowest id
-    when it holds several); a cluster with none gets a new one. Rerunning with unchanged input writes nothing."""
+    # NOTE: a cluster that already holds a person keeps it, the lowest id when it holds several.
+    # A cluster with none gets a new person, so rerunning with unchanged input writes nothing.
     speakers = CRUDSpeaker(session).get_all()
     result = cluster_speakers(speakers, _load_decisions())
     for conflict in result.conflicts:
