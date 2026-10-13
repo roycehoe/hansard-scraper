@@ -4,6 +4,7 @@ Sanity check on the ~256 excluded docs (where get_speeches returns []).
 Excluded set:
   - 0 names in MPs Speaking  (~3 docs)
   - 2+ names in MPs Speaking (~253 docs) — assumed to be annex/index docs
+  - no start line: never parsed; every one is shown, not sampled
 
 For each group, draw a stratified random sample (K per report_type) and compare:
   - Raw HTML: does it contain <strong> or <b> tags with speaker-like content?
@@ -18,6 +19,7 @@ from collections import defaultdict
 
 from sqlmodel import Session
 
+import database.speech  # noqa: F401  (registers Speech for Report.speeches)
 from crud.report import CRUDReport
 from database.init import engine
 from services.speech import (
@@ -28,6 +30,8 @@ from services.speech import (
 
 K = 5
 SEED = 42
+# Passed as start_line for a doc with no start line, so _show_doc reads it from line 0.
+_BEFORE_FIRST_LINE = -1
 
 # HTML bold tags that might carry speaker names
 _HTML_BOLD_RE = re.compile(r"<(?:strong|b)\b[^>]*>(.*?)</(?:strong|b)>", re.IGNORECASE | re.DOTALL)
@@ -60,6 +64,7 @@ def run():
     # Identify the excluded set: get_speeches returns [] after fallback
     zero_speaker: list = []
     multi_speaker: dict[str, list] = defaultdict(list)
+    no_start_line: list = []
 
     for report in reports:
         start_line = get_start_of_speech_line(
@@ -70,6 +75,7 @@ def run():
             report.report_type,
         )
         if start_line is None:
+            no_start_line.append(report)
             continue
         speeches = get_speeches(report.markdown_content, start_line, report.report_type)
         if speeches:
@@ -84,6 +90,7 @@ def run():
     total_multi = sum(len(v) for v in multi_speaker.values())
     print(f"Excluded — zero-speaker:  {len(zero_speaker)}")
     print(f"Excluded — multi-speaker: {total_multi}")
+    print(f"Excluded — no start line: {len(no_start_line)}")
     print()
 
     # ── Zero-speaker group ────────────────────────────────────────────────────
@@ -93,13 +100,23 @@ def run():
     for report, start_line in zero_speaker:
         _show_doc(report, start_line, speakers=[])
 
+    # ── No-start-line group: never parsed, so every doc is shown ──────────────
+    print()
+    print("=" * 80)
+    print("NO-START-LINE DOCS (never parsed)")
+    print("=" * 80)
+    suspicious = []
+    for report in no_start_line:
+        speakers = _extract_mps_speaking(report.markdown_content)
+        flags = _show_doc(report, _BEFORE_FIRST_LINE, speakers)
+        if flags:
+            suspicious.append((report, _BEFORE_FIRST_LINE, speakers, flags))
+
     # ── Multi-speaker group ───────────────────────────────────────────────────
     print()
     print("=" * 80)
     print("MULTI-SPEAKER DOCS — stratified sample")
     print("=" * 80)
-
-    suspicious = []
 
     for rt, items in sorted(multi_speaker.items(), key=lambda x: -len(x[1])):
         sample = random.sample(items, min(K, len(items)))
