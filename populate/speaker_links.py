@@ -80,10 +80,10 @@ def _preclean(raw: str) -> str:
         inner = raw[cut + 1 :].strip()
         raw = f"{raw[:cut]}({inner})" if _TITLED_RE.match(inner) else raw[:cut].strip()
     inverted = re.match(r"^([A-Z][a-z]+), ([A-Z][a-z]+)$", raw)
-    if inverted:
+    if inverted is not None:
         raw = f"{inverted.group(2)} {inverted.group(1)}"
     doubled = re.match(r"^(.{6,}?)\s+\1$", raw)
-    return doubled.group(1) if doubled else raw
+    return doubled.group(1) if doubled is not None else raw
 
 
 def _is_title_in_parentheses(match: re.Match) -> bool:
@@ -103,6 +103,20 @@ def _get_holder_on(
     return holders[0] if len(holders) == 1 else None
 
 
+def _get_presiding_officer_id(
+    name: Optional[str],
+    parliament: int,
+    lookups: SpeakerLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+) -> Optional[int]:
+    if not name:
+        return None
+    canonical, resolved_parliament = _resolve_with_parliament_fallback(
+        name, parliament, lookups, speaker_id_lookup
+    )
+    return speaker_id_lookup.get((canonical, resolved_parliament)) if canonical else None
+
+
 def _resolve_presiding_officer(
     raw: str,
     parliament: int,
@@ -111,8 +125,10 @@ def _resolve_presiding_officer(
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> Optional[int]:
     if raw in ("Mr Speaker", "Mdm Speaker"):
-        name = _get_holder_on(SPEAKER_TERMS, sitting_date)
-    elif raw.startswith(_DEPUTY_SPEAKER_LABELS):
+        return _get_presiding_officer_id(
+            _get_holder_on(SPEAKER_TERMS, sitting_date), parliament, lookups, speaker_id_lookup
+        )
+    if raw.startswith(_DEPUTY_SPEAKER_LABELS):
         # "Mr Deputy Speaker (Mr Matthias Yao Chih)" names the person; a bare string
         # falls back to the one holder in office that day.
         # "Mdm" names the only woman holding the office in her window; a bare "Mr" on a
@@ -125,17 +141,11 @@ def _resolve_presiding_officer(
         )
         name = (
             normalize_name(strip_title(named_match.group(1).strip()))
-            if named_match
+            if named_match is not None
             else _get_holder_on(terms, sitting_date)
         )
-    else:
-        return None
-    if not name:
-        return None
-    canonical, resolved_parliament = _resolve_with_parliament_fallback(
-        name, parliament, lookups, speaker_id_lookup
-    )
-    return speaker_id_lookup.get((canonical, resolved_parliament)) if canonical else None
+        return _get_presiding_officer_id(name, parliament, lookups, speaker_id_lookup)
+    return None
 
 
 def _resolve_with_parliament_fallback(
@@ -161,13 +171,22 @@ def _resolve_attendance_speaker_id(
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> Optional[int]:
     speaker_id = speaker_id_lookup.get((speaker_name, parliament))
-    if speaker_id:
+    if speaker_id is not None:
         return speaker_id
     name = normalize_name(strip_title(speaker_name))
     canonical, parliament = _resolve_with_parliament_fallback(
         name, parliament, lookups, speaker_id_lookup
     )
     return speaker_id_lookup.get((canonical, parliament)) if canonical else None
+
+
+def _get_role_key(raw: str, parliament: int) -> Optional[tuple[str, int]]:
+    if parliament != 0:
+        return (raw, parliament)
+    for fallback_parliament in COLONIAL_PARLIAMENT_FALLBACKS:
+        if (raw, fallback_parliament) in ROLE_ONLY_SPEAKERS:
+            return (raw, fallback_parliament)
+    return None
 
 
 def _resolve_speech_speaker_id(
@@ -198,15 +217,8 @@ def _resolve_speech_speaker_id(
         )
         return speaker_id_lookup.get((canonical, resolved_parliament)) if canonical else None
 
-    role_key: Optional[tuple[str, int]] = (
-        (raw, parliament) if parliament != 0 else None
-    )
-    if role_key is None:
-        for fallback_parliament in COLONIAL_PARLIAMENT_FALLBACKS:
-            if (raw, fallback_parliament) in ROLE_ONLY_SPEAKERS:
-                role_key = (raw, fallback_parliament)
-                break
-    if role_key and role_key in ROLE_ONLY_SPEAKERS:
+    role_key = _get_role_key(raw, parliament)
+    if role_key is not None and role_key in ROLE_ONLY_SPEAKERS:
         # Role-only strings are never resolvable via the name cascade.
         role_name = ROLE_ONLY_SPEAKERS[role_key]
         role_canonical, role_parliament = _resolve_with_parliament_fallback(
@@ -220,7 +232,7 @@ def _resolve_speech_speaker_id(
             (match for match in reversed(parenthesised_matches) if _is_title_in_parentheses(match)),
             None,
         )
-        if title_match:
+        if title_match is not None:
             raw = title_match.group(1).strip()
         else:
             raw = raw[: parenthesised_matches[0].start()].strip()
@@ -260,7 +272,7 @@ def resolve_attendance_rows(
             key_to_speaker_id[key] = _resolve_attendance_speaker_id(
                 speaker_name, parliament, lookups, speaker_id_lookup
             )
-        if key_to_speaker_id[key]:
+        if key_to_speaker_id[key] is not None:
             attendance_id_to_speaker_id[attendance_id] = key_to_speaker_id[key]
     logger.info(f"Attendance: set speaker_id on {len(attendance_id_to_speaker_id)}/{total} records")
     return attendance_id_to_speaker_id
@@ -286,7 +298,7 @@ def resolve_speech_rows(
             key_to_speaker_id[key] = _resolve_speech_speaker_id(
                 speaker, parliament, sitting_date, lookups, speaker_id_lookup
             )
-        if key_to_speaker_id[key]:
+        if key_to_speaker_id[key] is not None:
             speech_id_to_speaker_id[speech_id] = key_to_speaker_id[key]
     logger.info(f"Speech: set speaker_id on {len(speech_id_to_speaker_id)}/{total} records")
     return speech_id_to_speaker_id
@@ -330,7 +342,7 @@ def _populate_role_context_links(
                     key_to_speaker_id[key] = _resolve_speech_speaker_id(
                         name, report.parliament_number, report.sitting_date, lookups, speaker_id_lookup
                     )
-                if key_to_speaker_id[key]:
+                if key_to_speaker_id[key] is not None:
                     speech_id_to_speaker_id[speech_id] = key_to_speaker_id[key]
     _write_in_batches(crud_speech.set_speaker_ids_bulk, speech_id_to_speaker_id)
     session.commit()
