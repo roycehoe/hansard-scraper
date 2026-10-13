@@ -41,14 +41,14 @@ def normalised_name(name: str) -> str:
     return _period_normalize(_strip_bin(strip_title(natural)))
 
 
-def _slot(speaker: Speaker) -> tuple[int, bool, bool]:
+def _get_slot(speaker: Speaker) -> tuple[int, bool, bool]:
     return speaker.parliament_number, speaker.is_legislative_assembly, speaker.is_member
 
 
-class _Union:
+class _SpeakerClusters:
     def __init__(self, speakers: list[Speaker], distinct: set[frozenset[int]]):
-        self.parent = {s.id: s.id for s in speakers}
-        self.members = {s.id: [s] for s in speakers}
+        self.parent = {speaker.id: speaker.id for speaker in speakers}
+        self.members = {speaker.id: [speaker] for speaker in speakers}
         self.distinct = distinct  # pairs of speaker ids that may never share a person
         self.basis: dict[int, str] = {}
 
@@ -57,69 +57,78 @@ class _Union:
             speaker_id = self.parent[speaker_id]
         return speaker_id
 
-    def refusal(self, a: int, b: int) -> Optional[str]:
-        left, right = self.members[a], self.members[b]
-        if {_slot(s) for s in left} & {_slot(s) for s in right}:
+    def refusal(self, left_id: int, right_id: int) -> Optional[str]:
+        left, right = self.members[left_id], self.members[right_id]
+        if {_get_slot(speaker) for speaker in left} & {_get_slot(speaker) for speaker in right}:
             return "same parliament"
-        if any(frozenset((x.id, y.id)) in self.distinct for x in left for y in right):
+        if any(
+            frozenset((left_speaker.id, right_speaker.id)) in self.distinct
+            for left_speaker in left
+            for right_speaker in right
+        ):
             return "distinct decision"
         return None
 
-    def union(self, a: int, b: int, basis: str) -> Optional[str]:
-        a, b = self.find(a), self.find(b)
-        if a == b:
+    def union(self, left_id: int, right_id: int, basis: str) -> Optional[str]:
+        left_id, right_id = self.find(left_id), self.find(right_id)
+        if left_id == right_id:
             return None
-        if why := self.refusal(a, b):
-            return why
-        self.parent[b] = a
-        self.members[a] += self.members.pop(b)
-        self.basis[a] = basis
+        if refusal_reason := self.refusal(left_id, right_id):
+            return refusal_reason
+        self.parent[right_id] = left_id
+        self.members[left_id] += self.members.pop(right_id)
+        self.basis[left_id] = basis
         return None
 
 
-def _canonical_name(cluster: list[Speaker]) -> str:
-    counts = Counter(s.name for s in cluster)
-    return max(cluster, key=lambda s: (counts[s.name], s.parliament_number, len(s.name))).name
+def _get_canonical_name(cluster: list[Speaker]) -> str:
+    counts = Counter(speaker.name for speaker in cluster)
+    return max(
+        cluster, key=lambda speaker: (counts[speaker.name], speaker.parliament_number, len(speaker.name))
+    ).name
 
 
 def cluster_speakers(speakers: list[Speaker], decisions: list[Decision]) -> ClusterResult:
-    by_key = {(s.name, s.parliament_number): s for s in speakers}
+    key_to_speaker = {(speaker.name, speaker.parliament_number): speaker for speaker in speakers}
     for decision in decisions:
         for key in decision.members:
-            if key not in by_key:
+            if key not in key_to_speaker:
                 raise ValueError(f"person decision names no speaker row: {key}")
     distinct = {
-        frozenset((by_key[a].id, by_key[b].id))
-        for d in decisions if d.decision == "distinct"
-        for a in d.members for b in d.members if a != b
+        frozenset((key_to_speaker[left_key].id, key_to_speaker[right_key].id))
+        for decision in decisions if decision.decision == "distinct"
+        for left_key in decision.members for right_key in decision.members if left_key != right_key
     }
-    union = _Union(speakers, distinct)
-    result = ClusterResult()
-    merged_names: dict[int, str] = {}  # a merged row's id -> the decision's person name
+    clusters = _SpeakerClusters(speakers, distinct)
+    cluster_result = ClusterResult()
+    speaker_id_to_person_name: dict[int, str] = {}  # a merged row's id -> the decision's person name
 
     for decision in decisions:
         if decision.decision != "merge":
             continue
-        first, *rest = (by_key[k].id for k in decision.members)
+        first, *rest = (key_to_speaker[key].id for key in decision.members)
         for other in rest:
-            if why := union.union(first, other, "review:merge"):
-                raise ValueError(f"merge decision refused ({why}): {decision.members}")
+            if refusal_reason := clusters.union(first, other, "review:merge"):
+                raise ValueError(f"merge decision refused ({refusal_reason}): {decision.members}")
         if decision.person_name:
-            merged_names[first] = decision.person_name
+            speaker_id_to_person_name[first] = decision.person_name
 
-    for basis, key_of in (("auto:exact", lambda s: s.name), ("auto:normalised", lambda s: normalised_name(s.name))):
-        groups: dict[str, list[int]] = {}
-        for s in speakers:
-            groups.setdefault(key_of(s), []).append(s.id)
-        for key, ids in groups.items():
-            for other in ids[1:]:
-                if why := union.union(ids[0], other, basis):
-                    result.conflicts.append(f"{basis} {key!r}: {why}")
+    for basis, key_function in (
+        ("auto:exact", lambda speaker: speaker.name),
+        ("auto:normalised", lambda speaker: normalised_name(speaker.name)),
+    ):
+        key_to_speaker_ids: dict[str, list[int]] = {}
+        for speaker in speakers:
+            key_to_speaker_ids.setdefault(key_function(speaker), []).append(speaker.id)
+        for key, speaker_ids in key_to_speaker_ids.items():
+            for other in speaker_ids[1:]:
+                if refusal_reason := clusters.union(speaker_ids[0], other, basis):
+                    cluster_result.conflicts.append(f"{basis} {key!r}: {refusal_reason}")
 
-    for root, members in union.members.items():
-        members = sorted(members, key=lambda s: s.parliament_number)
-        result.clusters.append(members)
-        decided = [merged_names[s.id] for s in members if s.id in merged_names]
-        result.names.append(decided[0] if decided else _canonical_name(members))
-        result.bases.append(union.basis.get(root, "single"))
-    return result
+    for root, members in clusters.members.items():
+        members = sorted(members, key=lambda speaker: speaker.parliament_number)
+        cluster_result.clusters.append(members)
+        decided = [speaker_id_to_person_name[speaker.id] for speaker in members if speaker.id in speaker_id_to_person_name]
+        cluster_result.names.append(decided[0] if decided else _get_canonical_name(members))
+        cluster_result.bases.append(clusters.basis.get(root, "single"))
+    return cluster_result
