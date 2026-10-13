@@ -315,7 +315,7 @@ def validate_sitting_date(sitting_date: str, label: str, synthetic: dict) -> boo
     response_schema = HansardReportNewResponse if is_new_sitting_date_format(sitting_date) else HansardReportOldResponse
     try:
         hansard_report_response = get_hansard_report_response(sitting_date)
-    except Exception as error:
+    except Exception as error:  # noqa: BLE001 the API call is probed and its failure is the finding, so fall back to the synthetic payload
         print(f"  {WARN}  API call failed ({error}) — using synthetic payload")
         hansard_report_response = response_schema(error_code=500)
 
