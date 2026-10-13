@@ -25,13 +25,15 @@ from utils.names import (
     strip_title,
 )
 
-SAMPLE_PER_TYPE = 10
-SEED = 42
-TOP_UNMATCHED = 30
+_SAMPLE_PER_TYPE = 10
+_SEED = 42
+_TOP_UNMATCHED = 30
+_PERCENT = 100
+_SEPARATOR_WIDTH = 56
 
 
 def main():
-    random.seed(SEED)
+    random.seed(_SEED)
 
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
@@ -51,7 +53,7 @@ def main():
 
     sample: list[SpeechReportTypeRow] = []
     for report_type, items in report_type_to_rows.items():
-        sample_size = min(SAMPLE_PER_TYPE, len(items))
+        sample_size = min(_SAMPLE_PER_TYPE, len(items))
         sample.extend(random.sample(items, sample_size))
 
     # Run matching
@@ -73,17 +75,17 @@ def main():
             report_type_to_unmatched_speakers[row.report_type].append(row.speaker)
 
     total = len(sample)
-    print(f"\nOverall: {matched}/{total} = {matched/total*100:.1f}%\n")
+    print(f"\nOverall: {matched}/{total} = {matched/total*_PERCENT:.1f}%\n")
     print(f"{'Report type':<30} {'Matched':>8} {'Total':>7} {'Rate':>7}")
-    print("-" * 56)
+    print("-" * _SEPARATOR_WIDTH)
     for report_type, stats in sorted(report_type_to_stats.items()):
         matched_count, total_count = stats["matched"], stats["total"]
-        rate = matched_count / total_count * 100 if total_count else 0
+        rate = matched_count / total_count * _PERCENT if total_count else 0
         print(f"{report_type:<30} {matched_count:>8} {total_count:>7} {rate:>6.1f}%")
 
     all_unmatched = [unmatched_speaker for unmatched_speakers in report_type_to_unmatched_speakers.values() for unmatched_speaker in unmatched_speakers]
-    top = Counter(all_unmatched).most_common(TOP_UNMATCHED)
-    print(f"\nTop {TOP_UNMATCHED} unmatched speaker strings:")
+    top = Counter(all_unmatched).most_common(_TOP_UNMATCHED)
+    print(f"\nTop {_TOP_UNMATCHED} unmatched speaker strings:")
     for speaker, count in top:
         print(f"  {count:>3}x  {speaker!r}")
 

@@ -29,6 +29,15 @@ from services.attendance import (
 
 # ── categorisation ────────────────────────────────────────────────────────────
 
+_MIN_ALLCAPS_HEADER_LETTERS = 4
+_PROGRESS_INTERVAL = 100
+_COLONIAL_PARLIAMENT_NUMBER = 0
+_COLONIAL_PARLIAMENT_FALLBACKS = (1, 2, 3)
+_COUNT_COLUMN_WIDTH = 6
+_NAME_COLUMN_WIDTH = 50
+_TEMPLATE_PARTY = "Unknown"
+_TEMPLATE_PARLIAMENT_NUMBER = 1
+
 _OFFICIAL_TITLE_RE = re.compile(
     r",\s*(?:Financial|Chief|Colonial|Acting\s+Chief)\s+Secretary"
     r"|,\s*Attorney[-\s]General"
@@ -54,7 +63,7 @@ def _get_category(name: str) -> str:
     if _OFFICIAL_TITLE_RE.search(stripped_name):
         return "official_with_title"
     alpha = re.sub(r"[^A-Za-z]", "", stripped_name)
-    if alpha and alpha == alpha.upper() and len(alpha) >= 4:
+    if alpha and alpha == alpha.upper() and len(alpha) >= _MIN_ALLCAPS_HEADER_LETTERS:
         return "allcaps_header"
     if _DOCUMENT_NOISE_RE.search(stripped_name):
         return "document_noise"
@@ -66,8 +75,8 @@ def _get_category(name: str) -> str:
 def _is_resolved(name: str, parliament: int, lookups) -> bool:
     if resolve_canonical_name(name, parliament, lookups) is not None:
         return True
-    if parliament == 0:
-        for fallback_parliament in [1, 2, 3]:
+    if parliament == _COLONIAL_PARLIAMENT_NUMBER:
+        for fallback_parliament in _COLONIAL_PARLIAMENT_FALLBACKS:
             if resolve_canonical_name(name, fallback_parliament, lookups) is not None:
                 return True
     return False
@@ -98,7 +107,7 @@ def find_unmatched(*, is_verbose: bool = False) -> dict[str, Counter]:
     total = len(sittings)
 
     for sitting_number, sitting in enumerate(sittings, 1):
-        if is_verbose and sitting_number % 100 == 0:
+        if is_verbose and sitting_number % _PROGRESS_INTERVAL == 0:
             print(f"  {sitting_number}/{total} sittings processed…", file=sys.stderr)
         parliament = infer_parliament(sitting.parlement_no, sitting.volume_no)
         if parliament is None:
@@ -117,8 +126,8 @@ def find_unmatched(*, is_verbose: bool = False) -> dict[str, Counter]:
 def _get_json_template(name: str) -> dict:
     return {
         "name": name,
-        "party": "Unknown",
-        "parliament_number": 1,
+        "party": _TEMPLATE_PARTY,
+        "parliament_number": _TEMPLATE_PARLIAMENT_NUMBER,
         "is_legislative_assembly": True,
         "comments": None,
     }
@@ -152,7 +161,7 @@ def main() -> None:
     if candidates:
         print(f"\nTop candidates ({len(candidates)} distinct names):\n")
         print(f"  {'Count':>6}  Name")
-        print(f"  {'─'*6}  {'─'*50}")
+        print(f"  {'─' * _COUNT_COLUMN_WIDTH}  {'─' * _NAME_COLUMN_WIDTH}")
         for name, count in candidates.most_common():
             print(f"  {count:>6}  {name}")
 

@@ -28,6 +28,10 @@ from services.speech import _is_artifact_line, get_start_of_speech_line
 
 _MAX_PARLIAMENT = 11
 _REPORT_BATCH = 2_000
+_HEADER_SCAN_LINE_COUNT = 15
+_NO_HEADER_ROW_INDEX = -1
+_PERCENT = 100
+_RULE_LINE_PREFIX = "---"
 
 # ADR 0001: collective references and stage directions name no one person.
 _ADR_EXCLUDED_SPEAKER_RE = re.compile(r"hon\.? members?", re.IGNORECASE)
@@ -51,11 +55,11 @@ def _get_body_character_count(report) -> int:
         report.markdown_content, report.title, report.subtitle, report.original_title, report.report_type
     )
     if start is None:
-        start = max((line_index for line_index, line in enumerate(lines[:15]) if any(marker in line for marker in _HEADER_ROW_MARKERS)), default=-1)
+        start = max((line_index for line_index, line in enumerate(lines[:_HEADER_SCAN_LINE_COUNT]) if any(marker in line for marker in _HEADER_ROW_MARKERS)), default=_NO_HEADER_ROW_INDEX)
     total = 0
     for line in lines[start + 1:]:
         stripped = line.strip()
-        if _is_artifact_line(stripped) or stripped.startswith("---"):
+        if _is_artifact_line(stripped) or stripped.startswith(_RULE_LINE_PREFIX):
             continue
         total += _get_countable_character_count(_LEADING_BOLD_LABEL_RE.sub("", stripped, count=1) if "**" in stripped else stripped)
     return total
@@ -97,9 +101,9 @@ def main():
           f"{len(reports_with_rows)} with speech rows, {rows_total} speech rows")
     print()
     print(f"1. ADR 0001 rate:  {category_to_row_count['linked']} / {adr_denominator} = "
-          f"{100 * category_to_row_count['linked'] / adr_denominator:.2f}%")
-    print(f"2. All-rows rate:  {category_to_row_count['linked']} / {rows_total} = {100 * category_to_row_count['linked'] / rows_total:.2f}%")
-    print(f"3. Text share:     {category_to_character_count['linked']} / {body_total} chars = {100 * category_to_character_count['linked'] / body_total:.2f}%")
+          f"{_PERCENT * category_to_row_count['linked'] / adr_denominator:.2f}%")
+    print(f"2. All-rows rate:  {category_to_row_count['linked']} / {rows_total} = {_PERCENT * category_to_row_count['linked'] / rows_total:.2f}%")
+    print(f"3. Text share:     {category_to_character_count['linked']} / {body_total} chars = {_PERCENT * category_to_character_count['linked'] / body_total:.2f}%")
     print()
     print("Where the body text goes (chars, share of body):")
     for label, character_count in (
@@ -111,7 +115,7 @@ def main():
         ("dropped inside reports with rows (preamble, headings, labels)",
          body_total - stored_character_count - body_in_zero_row_reports),
     ):
-        print(f"  {label:<64} {character_count:>12} {100 * character_count / body_total:6.2f}%")
+        print(f"  {label:<64} {character_count:>12} {_PERCENT * character_count / body_total:6.2f}%")
     print()
     print("Rows by category:", dict(category_to_row_count))
 

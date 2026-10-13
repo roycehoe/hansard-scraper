@@ -39,14 +39,18 @@ _SAMPLE_PATH = Path(__file__).parent.parent / "docs" / "speech-mp" / "sample.jso
 _SEED = 42
 _PILOT_COUNT_PER_TYPE = 5
 _HELD_OUT_COUNT_PER_TYPE = 3
-_COLONIAL_PARLIAMENT_FALLBACKS = [1, 2, 3]
+_COLONIAL_PARLIAMENT_FALLBACKS = (1, 2, 3)
+_COLONIAL_PARLIAMENT_NUMBER = 0
+_PILOT_TO_REGRESSION_RATIO = 5
+_MIN_REGRESSION_COUNT = 1
+_JSON_INDENT = 2
 
-_STRUCTURAL_EXCLUSIONS = {
+_STRUCTURAL_EXCLUSIONS = frozenset({
     "An hon. Member", "Some hon. Members", "Non-Residents",
     "Tributes by Leader of the House and Opposition Leaders",
     "Mr Speaker", "Mr Deputy Speaker", "The Clerk", "Hon. Members",
     "Several Members", "Members",
-}
+})
 _SECTION_HEADER_RE = re.compile(r"^[A-Z][A-Z0-9 /(),.\-]+$")
 
 
@@ -85,7 +89,7 @@ def _is_resolved(
     canonical = resolve_canonical_name(name, parliament, lookups)
     if canonical is not None:
         return (canonical, parliament) in name_and_parliament_to_speaker_id
-    if parliament == 0:
+    if parliament == _COLONIAL_PARLIAMENT_NUMBER:
         for fallback in _COLONIAL_PARLIAMENT_FALLBACKS:
             candidate = resolve_canonical_name(name, fallback, lookups)
             if candidate is not None and (candidate, fallback) in name_and_parliament_to_speaker_id:
@@ -101,7 +105,7 @@ def main() -> None:
 
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
-        rows = CRUDSpeech(session).get_speaker_rows_by_speaker_not_null_and_parliament_number(0)
+        rows = CRUDSpeech(session).get_speaker_rows_by_speaker_not_null_and_parliament_number(_COLONIAL_PARLIAMENT_NUMBER)
 
     name_and_parliament_to_speaker_id = {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None}
     lookups = build_speaker_lookups(speakers)
@@ -148,14 +152,14 @@ def main() -> None:
             passing_pilot.append(speech_id)
 
     # Maintain ~1:5 regression:pilot ratio (current: 40/202 ≈ 1:5)
-    regression_count = max(1, len(new_pilot) // 5)
+    regression_count = max(_MIN_REGRESSION_COUNT, len(new_pilot) // _PILOT_TO_REGRESSION_RATIO)
     new_regression = random.sample(passing_pilot, min(regression_count, len(passing_pilot)))
 
     sample["pilot"].extend(new_pilot)
     sample["held_out"].extend(new_held_out)
     sample["regression"].extend(new_regression)
 
-    _SAMPLE_PATH.write_text(json.dumps(sample, indent=2))
+    _SAMPLE_PATH.write_text(json.dumps(sample, indent=_JSON_INDENT))
 
     print("\nExpansion summary:")
     print(f"  Added pilot:      {len(new_pilot)}")
