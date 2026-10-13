@@ -5,6 +5,7 @@ from crud.hansard_website_response import CRUDHansardWebsiteResponse
 from crud.report import CRUDReport
 from database.init import get_session
 from database.report import Report
+from logs import logger
 from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
@@ -45,10 +46,10 @@ def run() -> None:
     website_responses = CRUDHansardWebsiteResponse(session).get_all_by_report_ids(report_id_strings)
     report_id_to_website_response = {website_response.report_id: website_response for website_response in website_responses}
 
-    print(f"Sample Report IDs:       {len(report_ids)}")
-    print(f"Stored Reports found:    {len(stored_reports)}")
-    print(f"Matching HWRs found:     {len(website_responses)}")
-    print()
+    logger.info(f"Sample Report IDs:       {len(report_ids)}")
+    logger.info(f"Stored Reports found:    {len(stored_reports)}")
+    logger.info(f"Matching HWRs found:     {len(website_responses)}")
+    logger.info("")
 
     issues = []
     stats = {
@@ -64,8 +65,8 @@ def run() -> None:
         "pass": 0,
     }
 
-    print(f"{'report_id':<14} {'type':<22} {'md':>2} {'sl':>2} {'sp':>4} {'v':>2}  checks")
-    print("-" * _SEPARATOR_WIDTH)
+    logger.info(f"{'report_id':<14} {'type':<22} {'md':>2} {'sl':>2} {'sp':>4} {'v':>2}  checks")
+    logger.info("-" * _SEPARATOR_WIDTH)
 
     for stored in sorted(stored_reports, key=lambda stored_report: stored_report.report_type):
         website_response = report_id_to_website_response.get(stored.report_id)
@@ -74,12 +75,12 @@ def run() -> None:
         if website_response is None:
             stats["no_website_response"] += 1
             issues.append(f"[NO HWR]  report_id={stored.report_id} type={stored.report_type}")
-            print(f"{stored.report_id:<14} {stored.report_type:<22} {'?':>2} {'?':>2} {'?':>4} {'?':>2}  NO HansardWebsiteResponse found")
+            logger.info(f"{stored.report_id:<14} {stored.report_type:<22} {'?':>2} {'?':>2} {'?':>4} {'?':>2}  NO HansardWebsiteResponse found")
             continue
 
         if website_response.content is None:
             stats["no_content"] += 1
-            print(f"{stored.report_id:<14} {stored.report_type:<22} {'-':>2} {'-':>2} {'-':>4} {'-':>2}  no content (expected for some types)")
+            logger.info(f"{stored.report_id:<14} {stored.report_type:<22} {'-':>2} {'-':>2} {'-':>4} {'-':>2}  no content (expected for some types)")
             continue
 
         regenerated_report = build_report(website_response)
@@ -133,7 +134,7 @@ def run() -> None:
 
         start_line_flag = "Y" if start_line is not None else "N"
         checks_text = "  ".join(checks)
-        print(f"{stored.report_id:<14} {stored.report_type:<22} {markdown_flag:>2} {start_line_flag:>2} {speech_count:>4} {valid_flag:>2}  {checks_text}")
+        logger.info(f"{stored.report_id:<14} {stored.report_type:<22} {markdown_flag:>2} {start_line_flag:>2} {speech_count:>4} {valid_flag:>2}  {checks_text}")
 
         if is_failed:
             issues.append({
@@ -149,44 +150,44 @@ def run() -> None:
                 "markdown_snippet": (regenerated_report.markdown_content or "")[:_SNIPPET_LENGTH],
             })
 
-    print()
-    print("=" * _SEPARATOR_WIDTH)
-    print(f"Total records:         {stats['total']}")
-    print(f"No matching HWR:       {stats['no_website_response']}")
-    print(f"No content:            {stats['no_content']}")
-    print(f"No markdown generated: {stats['no_markdown']}")
-    print(f"No start line:         {stats['no_start_line']}")
-    print(f"No speeches:           {stats['no_speeches']}")
-    print(f"Invalid speeches:      {stats['invalid_speeches']}")
-    print(f"Title mismatches:      {stats['title_mismatch']}")
-    print(f"Subtitle mismatches:   {stats['subtitle_mismatch']}")
-    print(f"PASS:                  {stats['pass']}")
-    print()
+    logger.info("")
+    logger.info("=" * _SEPARATOR_WIDTH)
+    logger.info(f"Total records:         {stats['total']}")
+    logger.info(f"No matching HWR:       {stats['no_website_response']}")
+    logger.info(f"No content:            {stats['no_content']}")
+    logger.info(f"No markdown generated: {stats['no_markdown']}")
+    logger.info(f"No start line:         {stats['no_start_line']}")
+    logger.info(f"No speeches:           {stats['no_speeches']}")
+    logger.info(f"Invalid speeches:      {stats['invalid_speeches']}")
+    logger.info(f"Title mismatches:      {stats['title_mismatch']}")
+    logger.info(f"Subtitle mismatches:   {stats['subtitle_mismatch']}")
+    logger.info(f"PASS:                  {stats['pass']}")
+    logger.info("")
 
     content_records = stats["total"] - stats["no_website_response"] - stats["no_content"]
     if content_records > 0:
         pass_rate = stats["pass"] / content_records * _PERCENT
-        print(f"Pass rate (content records): {stats['pass']}/{content_records} = {pass_rate:.1f}%")
+        logger.info(f"Pass rate (content records): {stats['pass']}/{content_records} = {pass_rate:.1f}%")
 
     if issues:
-        print()
-        print("=== ISSUE DETAILS ===")
+        logger.info("")
+        logger.info("=== ISSUE DETAILS ===")
         for issue in issues:
             if isinstance(issue, str):
-                print(f"\n  {issue}")
+                logger.info(f"\n  {issue}")
                 continue
-            print(f"\n  report_id={issue['report_id']}  type={issue['report_type']}")
-            print(f"  checks: {issue['checks']}")
+            logger.info(f"\n  report_id={issue['report_id']}  type={issue['report_type']}")
+            logger.info(f"  checks: {issue['checks']}")
             if "TITLE_MISMATCH" in str(issue["checks"]):
-                print(f"  title stored: {issue['title_stored']!r}")
-                print(f"  title regen:  {issue['title_regen']!r}")
+                logger.info(f"  title stored: {issue['title_stored']!r}")
+                logger.info(f"  title regen:  {issue['title_regen']!r}")
             if "SUBTITLE_MISMATCH" in str(issue["checks"]):
-                print(f"  subtitle stored: {issue['subtitle_stored']!r}")
-                print(f"  subtitle regen:  {issue['subtitle_regen']!r}")
+                logger.info(f"  subtitle stored: {issue['subtitle_stored']!r}")
+                logger.info(f"  subtitle regen:  {issue['subtitle_regen']!r}")
             if "NO_START_LINE" in str(issue["checks"]) or "NO_SPEECHES" in str(issue["checks"]):
-                print("  markdown snippet:")
+                logger.info("  markdown snippet:")
                 for line in issue["markdown_snippet"].splitlines()[:_SNIPPET_LINES_SHOWN]:
-                    print(f"    {line}")
+                    logger.info(f"    {line}")
 
 
 if __name__ == "__main__":
