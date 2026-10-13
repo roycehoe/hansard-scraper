@@ -1,18 +1,3 @@
-"""
-Expand the stratified sample to cover parliament=0 speeches newly matchable
-after the colonial LA members load (iteration 13).
-
-Adds K=5 pilot + K=3 held-out per report_type for parliament=0 speeches not
-already in the sample. Expands the regression set proportionally (~1:5 ratio)
-from new pilot speeches that currently resolve.
-
-Updates docs/speech-speaker/sample.json in-place.
-
-Usage:
-    PYTHONPATH=. poetry run python3 scripts/expand_sample.py
-
-Run once — re-running is safe (no eligible speeches remain after first run).
-"""
 import json
 import random
 import re
@@ -110,7 +95,6 @@ def main() -> None:
     name_and_parliament_to_speaker_id = {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None}
     lookups = build_speaker_lookups(speakers)
 
-    # Filter: exclude structural non-MPs, artifacts, already-sampled IDs
     eligible: list[SpeechParliamentRow] = []
     for row in rows:
         if not row.speaker:
@@ -123,7 +107,6 @@ def main() -> None:
 
     speech_id_to_row = {row.id: row for row in eligible}
 
-    # Group by report_type and sample
     report_type_to_rows: dict[str, list[SpeechParliamentRow]] = defaultdict(list)
     for row in eligible:
         report_type_to_rows[row.report_type].append(row)
@@ -141,7 +124,6 @@ def main() -> None:
         new_held_out.extend(row.id for row in held_out_slice)
         print(f"  {report_type:<30} {len(pilot_slice)} pilot + {len(held_out_slice)} held-out")
 
-    # Regression expansion: run resolution on new pilot speeches
     passing_pilot: list[int] = []
     for speech_id in new_pilot:
         if speech_id not in speech_id_to_row:
@@ -151,7 +133,6 @@ def main() -> None:
         if name is not None and _is_resolved(name, eligible_row.parliament_number, lookups, name_and_parliament_to_speaker_id):
             passing_pilot.append(speech_id)
 
-    # Maintain ~1:5 regression:pilot ratio (current: 40/202 ≈ 1:5)
     regression_count = max(_MIN_REGRESSION_COUNT, len(new_pilot) // _PILOT_TO_REGRESSION_RATIO)
     new_regression = random.sample(passing_pilot, min(regression_count, len(passing_pilot)))
 

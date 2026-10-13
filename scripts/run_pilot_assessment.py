@@ -1,13 +1,3 @@
-"""
-Run the full resolution pipeline against the fixed pilot set in sample.json
-and report match rates by report_type.
-
-Unlike speech_speaker_match_rate.py (random sampling), this uses the fixed
-pilot IDs so results are comparable across iterations.
-
-Usage:
-    PYTHONPATH=. poetry run python3 scripts/run_pilot_assessment.py
-"""
 import json
 import re
 from collections import defaultdict
@@ -127,9 +117,6 @@ def main() -> None:
         if not speaker:
             continue
 
-        # Derive report_type from rows — need it for stats
-        # We only have (speaker, parliament) here; get report_type via a separate lookup
-        # Fall back to grouping by parliament bucket instead
         bucket = "colonial(parl=0)" if parliament == _COLONIAL_PARLIAMENT_NUMBER else f"parl={parliament}"
 
         raw = speaker.rstrip(":").strip()
@@ -152,7 +139,6 @@ def main() -> None:
                 unmatched.append((speaker, parliament, "<no presiding officer mapping>"))
             continue
 
-        # Chief Minister (colonial era): date-based dispatch between Marshall and Lim.
         if raw == "The Chief Minister" and parliament in _CHIEF_MINISTER_PARLIAMENTS:
             chief_minister_name = (
                 _EARLY_CHIEF_MINISTER
@@ -168,7 +154,6 @@ def main() -> None:
                 unmatched.append((speaker, parliament, chief_minister_canonical or "<unresolved>"))
             continue
 
-        # Role-only strings — resolve by parliament→person mapping.
         role_key = _get_role_key(raw, parliament)
         if role_key is not None and role_key in ROLE_ONLY_SPEAKERS:
             role_name = ROLE_ONLY_SPEAKERS[role_key]
@@ -179,11 +164,10 @@ def main() -> None:
                 bucket_to_stats[bucket]["matched"] += 1
             else:
                 unmatched.append((speaker, parliament, role_canonical or "<unresolved>"))
-            continue  # role-only strings are never resolvable via the name cascade
+            continue
 
         name = _preprocess(speaker)
         if name is None:
-            # Structural exclusion: artifact or collective reference — not in denominator.
             unmatched.append((speaker, parliament, "<excluded/empty>"))
             continue
 

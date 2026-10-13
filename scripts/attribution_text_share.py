@@ -1,21 +1,3 @@
-"""
-Speech attribution measured three ways for Parliaments 0 to 11, so no single denominator can flatter the result.
-
-Usage:
-    poetry run python3 scripts/attribution_text_share.py
-
-1. ADR 0001 rate: linked rows / rows with a speaker string, minus collective "hon. Member(s)" references and
-   strings starting with "(" or "_" (docs/adr/0001-attribution-denominator.md).
-2. All-rows rate: linked rows / every speech row, NULL-speaker rows included. Setting a row's speaker to NULL
-   raises rate 1 but not this one.
-3. Text share: characters of body text that sit in a linked row / characters of body text in every report with
-   markdown, including reports that produced no rows. This is the figure that answers "how much of the record
-   can a researcher retrieve by speaker". Text the parser drops never reaches rates 1 or 2.
-
-Characters are counted after removing whitespace and markdown markup, and body text excludes the metadata header,
-the title line, page and column markers, and the bold speaker label at the start of a line.
-"""
-
 import re
 from collections import Counter
 
@@ -34,7 +16,6 @@ _NO_HEADER_ROW_INDEX = -1
 _PERCENT = 100
 _RULE_LINE_PREFIX = "---"
 
-# ADR 0001: collective references and stage directions name no one person.
 _ADR_EXCLUDED_SPEAKER_RE = re.compile(r"hon\.? members?", re.IGNORECASE)
 _MARKUP_AND_SPACE_RE = re.compile(r"[\s*_\\#|]+")
 _LEADING_BOLD_LABEL_RE = re.compile(r"^.*?(\*\*[^*]+?\*\*\s*)+:?")
@@ -50,7 +31,6 @@ def _is_adr_excluded(speaker: str) -> bool:
 
 
 def _get_body_character_count(report: Report) -> int:
-    """Countable characters after the start line, or after the metadata header when no start line is found."""
     lines = report.markdown_content.splitlines()
     start = get_start_of_speech_line(
         report.markdown_content, report.title, report.subtitle, report.original_title, report.report_type

@@ -1,26 +1,3 @@
-"""
-Regression guard for stage 8 speech links in Parliaments 0 to 11.
-
-Re-runs the stage 8 speech resolver once per distinct key and compares the result
-with every stored speech.speaker_id. A key is (speaker string, parliament, sitting
-date when the string starts with a date-dependent role, else None), the same memo
-key as resolve_speech_rows. Read-only: nothing is written.
-
-Imports the underscore-private _resolve_speech_speaker_id and _DATE_DEPENDENT_ROLES
-from populate/speaker_links.py on purpose: the guard must run the exact resolver,
-not a copy that can drift.
-
-"The Chairman", a carried role, a bare head-of-state string and a bare "Mr Deputy Speaker"
-can be linked by the two report-context passes, which a per-key call does not reproduce.
-When the resolver returns None for such a key it is counted as context-linked, not
-stale. When it returns an id, the id is compared as usual.
-
-Run it before and after any change to populate/speaker_resolution_constants.py or
-services/attendance.py. Exits 1 when any stored link is stale, else 0.
-
-Usage:
-    PYTHONPATH=. poetry run python scripts/trace_speaker_links.py
-"""
 import sys
 from collections import Counter
 from datetime import datetime
@@ -32,6 +9,8 @@ from crud.report import CRUDReport
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from database.init import engine
+
+# NOTE: the private names are imported on purpose, so the guard runs the exact resolver and not a copy that can drift.
 from populate.speaker_links import (
     _DATE_DEPENDENT_ROLES,
     _REPORT_BATCH,
@@ -60,7 +39,6 @@ def _is_context_linked(speaker: str) -> bool:
 def main() -> None:
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
-        # Keep only (id, parliament, date): each Report carries its markdown.
         reports = [
             (report.id, report.parliament_number, report.sitting_date)
             for report in CRUDReport(session).get_all()
