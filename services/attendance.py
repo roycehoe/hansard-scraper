@@ -210,7 +210,6 @@ _OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
     "mt. lin you eng": "Lin You Eng",            # Mt.=OCR of Mr.; same person as Lim You Eng (parl=1, vol=14)
     "phue bah lee": "Phua Bah Lee",              # Phue→Phua (parl=5, vol=43)
     "phua bali lee": "Phua Bah Lee",             # Bali→Bah (parl=3, vol=31)
-    "c v devan nair": "Devan Nair",              # C.V. prefix not resolvable via wordset (parl=0→1, vol=23)
     # Post-nominal decoration variants not yet covered
     "ang kok peng, b bm.": "Ang Kok Peng",      # B.B.m. (lowercase m survives _period_normalize, parl=5, vol=44)
     "ang kok peng. b b m": "Ang Kok Peng",      # B.B.M. with period separator (parl=3, vol=36)
@@ -289,6 +288,9 @@ _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
     # Colonial-era variant spellings
     # "D.S. Marshall" is David Marshall (Labour Front Chief Minister)
     ("d s marshall", 1): "David Marshall",
+    # "Mrs C. V. Devan Nair" is Mrs Devan Nair, MP for Moulmein 1963 to 1968, printed with her husband's
+    # initials; scoped to parliament 1 so C. V. Devan Nair's own rows (parliaments 4 to 6) stay his
+    ("c v devan nair", 1): "Devan Nair, Mrs",
     # "G.E.N. Oehlers" is George E.N. Oehlers (Labour Front)
     ("g e n oehlers", 1): "George Oehlers",
     # "Rahamat" is a spelling variant of "Rahmat" (already in Speaker table)
