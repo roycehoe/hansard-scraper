@@ -6,6 +6,7 @@ from sqlmodel import Session
 from crud.speaker import CRUDSpeaker
 from database.init import engine
 from database.speaker import Speaker
+from logs import logger
 
 _NON_PARTISAN_PARTY = "Non-partisan"
 _DATA_FILE = Path(__file__).parent.parent / "data" / "heads_of_state.json"
@@ -28,7 +29,7 @@ def load_heads_of_state() -> None:
                 CRUDSpeaker(session).update(speaker)
                 marked += 1
 
-        print(f"Inserted {inserted} head-of-state speakers, marked {marked} existing rows as non-members")
+        logger.info(f"Inserted {inserted} head-of-state speakers, marked {marked} existing rows as non-members")
 
 
 if __name__ == "__main__":

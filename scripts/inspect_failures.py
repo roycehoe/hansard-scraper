@@ -6,6 +6,7 @@ from crud.hansard_website_response import CRUDHansardWebsiteResponse
 from database.hansard_website_response import HansardWebsiteResponse
 from database.init import engine
 from database.report import Report
+from logs import logger
 from services.report import build_report
 from services.speech import get_start_of_speech_line
 
@@ -21,15 +22,15 @@ def show_doc(website_response: HansardWebsiteResponse, report: Report, max_lines
         report.markdown_content, report.title, report.subtitle, report.original_title,
         website_response.report_type,
     )
-    print(f"  id={website_response.id} report_type={website_response.report_type!r}")
-    print(f"  title={report.title!r}")
-    print(f"  subtitle={report.subtitle!r}")
-    print(f"  original_title={report.original_title!r}")
-    print(f"  has_start_line={start_line is not None} (line {start_line})")
-    print(f"  markdown ({len(report.markdown_content)} chars):")
+    logger.info(f"  id={website_response.id} report_type={website_response.report_type!r}")
+    logger.info(f"  title={report.title!r}")
+    logger.info(f"  subtitle={report.subtitle!r}")
+    logger.info(f"  original_title={report.original_title!r}")
+    logger.info(f"  has_start_line={start_line is not None} (line {start_line})")
+    logger.info(f"  markdown ({len(report.markdown_content)} chars):")
     for line_number, line in enumerate(report.markdown_content.splitlines()[:max_lines]):
-        print(f"    {line_number:3d}: {line}")
-    print()
+        logger.info(f"    {line_number:3d}: {line}")
+    logger.info("")
 
 
 def inspect_type(session: Session, report_type: str, max_failing: int = _MAX_FAILING_SHOWN, max_passing: int = _MAX_PASSING_SHOWN) -> None:
@@ -49,14 +50,14 @@ def inspect_type(session: Session, report_type: str, max_failing: int = _MAX_FAI
         else:
             passing.append((website_response, report))
 
-    print(f"\n{'=' * _SEPARATOR_WIDTH}")
-    print(f"report_type={report_type!r}: {len(failing)} failing, {len(passing)} passing (of those with markdown)")
+    logger.info(f"\n{'=' * _SEPARATOR_WIDTH}")
+    logger.info(f"report_type={report_type!r}: {len(failing)} failing, {len(passing)} passing (of those with markdown)")
 
-    print(f"\n--- FAILING (showing {min(max_failing, len(failing))}) ---")
+    logger.info(f"\n--- FAILING (showing {min(max_failing, len(failing))}) ---")
     for website_response, report in failing[:max_failing]:
         show_doc(website_response, report)
 
-    print(f"\n--- PASSING (showing {min(max_passing, len(passing))}) ---")
+    logger.info(f"\n--- PASSING (showing {min(max_passing, len(passing))}) ---")
     for website_response, report in passing[:max_passing]:
         show_doc(website_response, report)
 

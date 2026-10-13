@@ -8,6 +8,7 @@ import database.speech  # noqa: F401 registers Speech for Report.speeches
 from crud.report import CRUDReport
 from database.init import engine
 from database.report import Report
+from logs import logger
 from services.speech import (
     _extract_mps_speaking,
     get_speeches,
@@ -55,22 +56,22 @@ def _looks_like_speaker(text: str) -> bool:
 
 def _show_doc(report: Report, start_line: int, speakers: list[str]) -> list[str]:
     title_display = (report.title or "")[:_TITLE_DISPLAY_LENGTH]
-    print(f"\n  id={report.id}  parl={report.parliament_number}  type={report.report_type}")
-    print(f"  title: {title_display!r}")
-    print(f"  MPs Speaking ({len(speakers)}): {'; '.join(speakers[:_SPEAKERS_SHOWN])}")
+    logger.info(f"\n  id={report.id}  parl={report.parliament_number}  type={report.report_type}")
+    logger.info(f"  title: {title_display!r}")
+    logger.info(f"  MPs Speaking ({len(speakers)}): {'; '.join(speakers[:_SPEAKERS_SHOWN])}")
 
     html_bold_texts = _html_bold_texts(report.content or "")
     speaker_like = [text for text in html_bold_texts if _looks_like_speaker(text)]
-    print(f"  HTML <strong>/<b> tags: {len(html_bold_texts)} total, {len(speaker_like)} speaker-like")
+    logger.info(f"  HTML <strong>/<b> tags: {len(html_bold_texts)} total, {len(speaker_like)} speaker-like")
     if speaker_like:
         for text in speaker_like[:_HTML_BOLD_SHOWN]:
-            print(f"    HTML bold: {text!r}")
+            logger.info(f"    HTML bold: {text!r}")
 
     lines_after = report.markdown_content.splitlines()[start_line + 1:]
     markdown_bold_lines = [line for line in lines_after if _MARKDOWN_BOLD_RE.search(line.strip())]
-    print(f"  Markdown **bold** lines after start: {len(markdown_bold_lines)}")
+    logger.info(f"  Markdown **bold** lines after start: {len(markdown_bold_lines)}")
     for line in markdown_bold_lines[:_MARKDOWN_BOLD_SHOWN]:
-        print(f"    MD bold: {line.strip()[:_MARKDOWN_BOLD_DISPLAY_LENGTH]}")
+        logger.info(f"    MD bold: {line.strip()[:_MARKDOWN_BOLD_DISPLAY_LENGTH]}")
 
     html = report.content or ""
     first_bold = _FIRST_BOLD_TAG_RE.search(html)
@@ -79,12 +80,12 @@ def _show_doc(report: Report, start_line: int, speakers: list[str]) -> list[str]
         snippet_end = min(len(html), first_bold.start() + _SNIPPET_TRAILING_CONTEXT)
         snippet = html[snippet_start:snippet_end]
         snippet_clean = _WHITESPACE_RE.sub(" ", snippet)
-        print("  HTML snippet around first bold tag:")
-        print(f"    {snippet_clean[:_SNIPPET_DISPLAY_LENGTH]!r}")
+        logger.info("  HTML snippet around first bold tag:")
+        logger.info(f"    {snippet_clean[:_SNIPPET_DISPLAY_LENGTH]!r}")
 
-    print(f"  Markdown (lines {start_line}–{start_line + _MARKDOWN_LINES_SHOWN}):")
+    logger.info(f"  Markdown (lines {start_line}–{start_line + _MARKDOWN_LINES_SHOWN}):")
     for offset, line in enumerate(lines_after[:_MARKDOWN_LINES_SHOWN]):
-        print(f"    {start_line + 1 + offset:4d}: {line[:_MARKDOWN_LINE_DISPLAY_LENGTH]}")
+        logger.info(f"    {start_line + 1 + offset:4d}: {line[:_MARKDOWN_LINE_DISPLAY_LENGTH]}")
 
     if speaker_like and not markdown_bold_lines:
         return speaker_like
@@ -97,7 +98,7 @@ def run() -> None:
     with Session(engine) as session:
         reports = CRUDReport(session).get_by_markdown_content_not_null()
 
-    print(f"Reports with markdown: {len(reports)}")
+    logger.info(f"Reports with markdown: {len(reports)}")
 
     zero_speaker: list = []
     multi_speaker: dict[str, list] = defaultdict(list)
@@ -125,21 +126,21 @@ def run() -> None:
             multi_speaker[report.report_type].append((report, start_line, speakers))
 
     total_multi = sum(len(reports_of_type) for reports_of_type in multi_speaker.values())
-    print(f"Excluded — zero-speaker:  {len(zero_speaker)}")
-    print(f"Excluded — multi-speaker: {total_multi}")
-    print(f"Excluded — no start line: {len(no_start_line)}")
-    print()
+    logger.info(f"Excluded — zero-speaker:  {len(zero_speaker)}")
+    logger.info(f"Excluded — multi-speaker: {total_multi}")
+    logger.info(f"Excluded — no start line: {len(no_start_line)}")
+    logger.info("")
 
-    print(_SEPARATOR)
-    print("ZERO-SPEAKER DOCS (MPs Speaking absent or empty)")
-    print(_SEPARATOR)
+    logger.info(_SEPARATOR)
+    logger.info("ZERO-SPEAKER DOCS (MPs Speaking absent or empty)")
+    logger.info(_SEPARATOR)
     for report, start_line in zero_speaker:
         _show_doc(report, start_line, speakers=[])
 
-    print()
-    print(_SEPARATOR)
-    print("NO-START-LINE DOCS (never parsed)")
-    print(_SEPARATOR)
+    logger.info("")
+    logger.info(_SEPARATOR)
+    logger.info("NO-START-LINE DOCS (never parsed)")
+    logger.info(_SEPARATOR)
     suspicious = []
     for report in no_start_line:
         speakers = _extract_mps_speaking(report.markdown_content)
@@ -147,31 +148,31 @@ def run() -> None:
         if flags:
             suspicious.append((report, _BEFORE_FIRST_LINE, speakers, flags))
 
-    print()
-    print(_SEPARATOR)
-    print("MULTI-SPEAKER DOCS — stratified sample")
-    print(_SEPARATOR)
+    logger.info("")
+    logger.info(_SEPARATOR)
+    logger.info("MULTI-SPEAKER DOCS — stratified sample")
+    logger.info(_SEPARATOR)
 
     for report_type, items in sorted(multi_speaker.items(), key=lambda item: -len(item[1])):
         sample = random.sample(items, min(_SAMPLE_SIZE_PER_REPORT_TYPE, len(items)))
-        print(f"\n--- {report_type} ({len(items)} total, checking {len(sample)}) ---")
+        logger.info(f"\n--- {report_type} ({len(items)} total, checking {len(sample)}) ---")
 
         for report, start_line, speakers in sample:
             flags = _show_doc(report, start_line, speakers)
             if flags:
                 suspicious.append((report, start_line, speakers, flags))
 
-    print()
-    print(_SEPARATOR)
-    print(f"SUSPICIOUS (HTML bold present, no markdown speaker): {len(suspicious)}")
+    logger.info("")
+    logger.info(_SEPARATOR)
+    logger.info(f"SUSPICIOUS (HTML bold present, no markdown speaker): {len(suspicious)}")
     if suspicious:
         for report, start_line, speakers, flags in suspicious:
-            print(f"\n  id={report.id}  type={report.report_type}  parl={report.parliament_number}")
-            print(f"  title: {report.title!r}")
-            print(f"  MPs Speaking: {speakers}")
-            print("  HTML bold texts that look like speakers:")
+            logger.info(f"\n  id={report.id}  type={report.report_type}  parl={report.parliament_number}")
+            logger.info(f"  title: {report.title!r}")
+            logger.info(f"  MPs Speaking: {speakers}")
+            logger.info("  HTML bold texts that look like speakers:")
             for flag in flags[:_SUSPICIOUS_FLAGS_SHOWN]:
-                print(f"    {flag!r}")
+                logger.info(f"    {flag!r}")
 
 
 if __name__ == "__main__":
