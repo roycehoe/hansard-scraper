@@ -7,9 +7,9 @@ _MAX_RETRIES = 3
 _BASE_DELAY = 1.0
 
 
-async def async_post_with_retry(client: httpx.AsyncClient, url: str) -> httpx.Response:
+async def async_post_with_retry(client: httpx.AsyncClient, url: str, json: dict | None = None) -> httpx.Response:
     for attempt in range(_MAX_RETRIES + 1):
-        response = await client.post(url)
+        response = await client.post(url, json=json)
         if response.status_code != 429:
             return response
         if attempt == _MAX_RETRIES:
