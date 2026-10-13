@@ -4,11 +4,11 @@ from typing import Callable, Iterable, Optional, Sequence
 
 from sqlmodel import Session
 
-from crud.attendance import CRUDAttendance
+from crud.attendance import AttendanceSpeakerRow, CRUDAttendance
 from crud.report import CRUDReport
 from crud.sitting import CRUDSitting
 from crud.speaker import CRUDSpeaker
-from crud.speech import CRUDSpeech
+from crud.speech import CRUDSpeech, SpeechRow, SpeechSpeakerRow
 from database.report import Report
 from logs import logger
 from populate.speaker_resolution_constants import (
@@ -248,53 +248,53 @@ def _resolve_speech_speaker_id(
 
 
 def resolve_attendance_rows(
-    rows: Iterable[tuple[int, Optional[str], Optional[int], Optional[int]]],
+    rows: Iterable[AttendanceSpeakerRow],
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> dict[int, int]:
     key_to_speaker_id: dict[tuple[str, int], Optional[int]] = {}
     attendance_id_to_speaker_id: dict[int, int] = {}
     total = 0
-    for attendance_id, speaker_name, parlement_no, volume_no in rows:
+    for row in rows:
         total += 1
-        if not speaker_name:
+        if not row.speaker_name:
             continue
         parliament = (
-            parlement_no if parlement_no is not None else VOLUME_TO_PARLIAMENT.get(volume_no)
+            row.parlement_no if row.parlement_no is not None else VOLUME_TO_PARLIAMENT.get(row.volume_no)
         )
         if parliament is None:
             continue
-        key = (speaker_name, parliament)
+        key = (row.speaker_name, parliament)
         if key not in key_to_speaker_id:
             key_to_speaker_id[key] = _resolve_attendance_speaker_id(
-                speaker_name, parliament, lookups, speaker_id_lookup
+                row.speaker_name, parliament, lookups, speaker_id_lookup
             )
         if key_to_speaker_id[key] is not None:
-            attendance_id_to_speaker_id[attendance_id] = key_to_speaker_id[key]
+            attendance_id_to_speaker_id[row.id] = key_to_speaker_id[key]
     logger.info(f"Attendance: set speaker_id on {len(attendance_id_to_speaker_id)}/{total} records")
     return attendance_id_to_speaker_id
 
 
 def resolve_speech_rows(
-    rows: Iterable[tuple[int, Optional[str], int, Optional[datetime]]],
+    rows: Iterable[SpeechSpeakerRow],
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> dict[int, int]:
     key_to_speaker_id: dict[tuple[str, int, Optional[datetime]], Optional[int]] = {}
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
-    for speech_id, speaker, parliament, sitting_date in rows:
+    for row in rows:
         total += 1
-        if not speaker:
+        if not row.speaker:
             continue
-        date_key = sitting_date if speaker.startswith(_DATE_DEPENDENT_ROLES) else None
-        key = (speaker, parliament, date_key)
+        date_key = row.sitting_date if row.speaker.startswith(_DATE_DEPENDENT_ROLES) else None
+        key = (row.speaker, row.parliament_number, date_key)
         if key not in key_to_speaker_id:
             key_to_speaker_id[key] = _resolve_speech_speaker_id(
-                speaker, parliament, sitting_date, lookups, speaker_id_lookup
+                row.speaker, row.parliament_number, row.sitting_date, lookups, speaker_id_lookup
             )
         if key_to_speaker_id[key] is not None:
-            speech_id_to_speaker_id[speech_id] = key_to_speaker_id[key]
+            speech_id_to_speaker_id[row.id] = key_to_speaker_id[key]
     logger.info(f"Speech: set speaker_id on {len(speech_id_to_speaker_id)}/{total} records")
     return speech_id_to_speaker_id
 
@@ -306,15 +306,15 @@ def _write_in_batches(set_speaker_ids_bulk: Callable[[dict[int, int]], None], id
 
 
 # NOTE: a bare head-of-state string is the holder only in the Address itself; the same strings in addenda and adjournment reports are parser errors and stay unlinked.
-def _get_head_of_state_names(report: Report, rows: list[tuple]) -> dict[int, str]:
+def _get_head_of_state_names(report: Report, rows: list[SpeechRow]) -> dict[int, str]:
     if not report.title.upper().startswith(_ADDRESS_TITLES):
         return {}
     speech_id_to_name = {}
-    for speech_id, _, speaker, _ in rows:
-        if speaker in HEAD_OF_STATE_TERMS:
-            holder = _get_holder_on(HEAD_OF_STATE_TERMS[speaker], report.sitting_date)
+    for row in rows:
+        if row.speaker in HEAD_OF_STATE_TERMS:
+            holder = _get_holder_on(HEAD_OF_STATE_TERMS[row.speaker], report.sitting_date)
             if holder:
-                speech_id_to_name[speech_id] = holder
+                speech_id_to_name[row.id] = holder
     return speech_id_to_name
 
 
@@ -374,16 +374,15 @@ def _populate_role_context_links(
     for start in range(0, len(report_ids), _REPORT_BATCH):
         batch = report_ids[start : start + _REPORT_BATCH]
         report_id_to_report = {report.id: report for report in CRUDReport(session).get_by_ids(batch)}
-        report_id_to_rows: dict[int, list[tuple]] = {}
+        report_id_to_rows: dict[int, list[SpeechRow]] = {}
         for row in CRUDSpeech(session).get_rows_by_report_ids(batch):
-            report_id_to_rows.setdefault(row[4], []).append(row)
+            report_id_to_rows.setdefault(row.report_id, []).append(row)
         for report_id, rows in report_id_to_rows.items():
             report = report_id_to_report[report_id]
-            unlinked = {row[0] for row in rows if row[5] is None}
-            speech_rows = [row[:4] for row in rows]
-            speech_id_to_name = chairman_names(report.markdown_content or "", speech_rows)
-            speech_id_to_name.update(carried_role_names(speech_rows))
-            speech_id_to_name.update(_get_head_of_state_names(report, speech_rows))
+            unlinked = {row.id for row in rows if row.speaker_id is None}
+            speech_id_to_name = chairman_names(report.markdown_content or "", rows)
+            speech_id_to_name.update(carried_role_names(rows))
+            speech_id_to_name.update(_get_head_of_state_names(report, rows))
             for speech_id, name in speech_id_to_name.items():
                 if speech_id not in unlinked:
                     continue
@@ -414,13 +413,13 @@ def _populate_deputy_speaker_links(
     for start in range(0, len(report_ids), _REPORT_BATCH):
         batch = report_ids[start : start + _REPORT_BATCH]
         report_id_to_report = {report.id: report for report in CRUDReport(session).get_by_ids(batch)}
-        report_id_to_rows: dict[int, list[tuple]] = {}
+        report_id_to_rows: dict[int, list[SpeechRow]] = {}
         for row in CRUDSpeech(session).get_rows_by_report_ids(batch):
-            report_id_to_rows.setdefault(row[4], []).append(row)
+            report_id_to_rows.setdefault(row.report_id, []).append(row)
         pending_reports = []
         for report_id, rows in report_id_to_rows.items():
             report = report_id_to_report[report_id]
-            bare_deputy_rows = [row for row in rows if row[5] is None and BARE_DEPUTY_RE.match(row[2] or "")]
+            bare_deputy_rows = [row for row in rows if row.speaker_id is None and BARE_DEPUTY_RE.match(row.speaker or "")]
             day = report.sitting_date.date()
             holders = [name for first, last, name in DEPUTY_SPEAKER_TERMS if first <= day <= last]
             if not bare_deputy_rows or len(holders) != _DEPUTY_SPEAKER_PAIR_SIZE:
@@ -431,29 +430,27 @@ def _populate_deputy_speaker_links(
             if None in holder_to_speaker_id.values():
                 continue
             valid_holder_ids = set(holder_to_speaker_id.values())
-            speech_id_to_deputy_name, labelled, mentioned = deputy_speaker_names(
-                report.markdown_content or "", [row[:4] for row in rows]
-            )
-            named_holder_ids = _get_speaker_ids_for_names(mentioned, parliament, lookups, speaker_id_lookup) & valid_holder_ids
+            deputy_names = deputy_speaker_names(report.markdown_content or "", rows)
+            named_holder_ids = _get_speaker_ids_for_names(deputy_names.mentioned, parliament, lookups, speaker_id_lookup) & valid_holder_ids
             if len(named_holder_ids) > 1:
                 continue
             male_holders = [holder for holder in holders if holder not in DEPUTY_SPEAKER_WOMEN]
             if len(male_holders) == 1:
                 if named_holder_ids <= {holder_to_speaker_id[male_holders[0]]}:
-                    speech_id_to_speaker_id.update({row[0]: holder_to_speaker_id[male_holders[0]] for row in bare_deputy_rows})
+                    speech_id_to_speaker_id.update({row.id: holder_to_speaker_id[male_holders[0]] for row in bare_deputy_rows})
                 continue
             if len(male_holders) != _DEPUTY_SPEAKER_PAIR_SIZE:
                 continue
-            labelled_ids = _get_speaker_ids_for_names(labelled, parliament, lookups, speaker_id_lookup) & valid_holder_ids
+            labelled_ids = _get_speaker_ids_for_names(deputy_names.labelled, parliament, lookups, speaker_id_lookup) & valid_holder_ids
             speech_id_to_candidate_id = {}
             for row in bare_deputy_rows:
-                if row[0] in speech_id_to_deputy_name:
-                    found = _get_speaker_ids_for_names([speech_id_to_deputy_name[row[0]]], parliament, lookups, speaker_id_lookup) & valid_holder_ids
+                if row.id in deputy_names.speech_id_to_deputy_name:
+                    found = _get_speaker_ids_for_names([deputy_names.speech_id_to_deputy_name[row.id]], parliament, lookups, speaker_id_lookup) & valid_holder_ids
                     candidate = next(iter(found)) if found else None
                 else:
                     candidate = next(iter(labelled_ids)) if len(labelled_ids) == 1 else None
                 if candidate is not None:
-                    speech_id_to_candidate_id[row[0]] = candidate
+                    speech_id_to_candidate_id[row.id] = candidate
             if speech_id_to_candidate_id:
                 pending_reports.append((report, speech_id_to_candidate_id, valid_holder_ids))
         if not pending_reports:

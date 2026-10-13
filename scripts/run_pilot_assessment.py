@@ -98,10 +98,7 @@ def main() -> None:
     speaker_id_lookup = {(s.name, s.parliament_number): s.id for s in speakers if s.id is not None}
     lookups = build_speaker_lookups(speakers)
 
-    rows_by_id: dict[int, tuple[str, int, object]] = {
-        speech_id: (speaker, parliament, sitting_date)
-        for speech_id, speaker, parliament, sitting_date in rows
-    }
+    rows_by_id = {row.id: row for row in rows}
 
     type_stats: dict[str, dict[str, int]] = defaultdict(lambda: {"matched": 0, "total": 0})
     unmatched: list[tuple[str, int, str]] = []
@@ -109,7 +106,8 @@ def main() -> None:
     for speech_id in pilot_ids:
         if speech_id not in rows_by_id:
             continue
-        speaker, parliament, sitting_date = rows_by_id[speech_id]
+        row = rows_by_id[speech_id]
+        speaker, parliament, sitting_date = row.speaker, row.parliament_number, row.sitting_date
         if not speaker:
             continue
 

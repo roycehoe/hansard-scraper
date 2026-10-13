@@ -14,7 +14,7 @@ from collections import Counter, defaultdict
 from sqlmodel import Session
 
 from crud.speaker import CRUDSpeaker
-from crud.speech import CRUDSpeech
+from crud.speech import CRUDSpeech, SpeechReportTypeRow
 from database.init import engine
 from services.attendance import (
     build_speaker_lookups,
@@ -29,15 +29,13 @@ SAMPLE_PER_TYPE = 10
 SEED = 42
 TOP_UNMATCHED = 30
 
-_Row = tuple[str, str, int]
-
 
 def main():
     random.seed(SEED)
 
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
-        all_rows: list[_Row] = CRUDSpeech(session).get_speakers_with_report_type()
+        all_rows: list[SpeechReportTypeRow] = CRUDSpeech(session).get_speakers_with_report_type()
 
     speaker_id_lookup: dict[tuple[str, int], int] = {
         (s.name, s.parliament_number): s.id
@@ -47,11 +45,11 @@ def main():
     lookups = build_speaker_lookups(speakers)
 
     # Stratify by report_type
-    by_type: dict[str, list[_Row]] = defaultdict(list)
+    by_type: dict[str, list[SpeechReportTypeRow]] = defaultdict(list)
     for row in all_rows:
-        by_type[row[1]].append(row)
+        by_type[row.report_type].append(row)
 
-    sample: list[_Row] = []
+    sample: list[SpeechReportTypeRow] = []
     for report_type, items in by_type.items():
         k = min(SAMPLE_PER_TYPE, len(items))
         sample.extend(random.sample(items, k))
@@ -61,18 +59,18 @@ def main():
     unmatched_by_type: dict[str, list[str]] = defaultdict(list)
     type_stats: dict[str, dict[str, int]] = defaultdict(lambda: {"matched": 0, "total": 0})
 
-    for speaker, report_type, parliament in sample:
-        name = strip_title(speaker.rstrip(":").strip())
+    for row in sample:
+        name = strip_title(row.speaker.rstrip(":").strip())
         name = normalize_name(name)
-        canonical = resolve_canonical_name(name, parliament, lookups) if name else None
-        found = canonical is not None and (canonical, parliament) in speaker_id_lookup
+        canonical = resolve_canonical_name(name, row.parliament_number, lookups) if name else None
+        found = canonical is not None and (canonical, row.parliament_number) in speaker_id_lookup
 
-        type_stats[report_type]["total"] += 1
+        type_stats[row.report_type]["total"] += 1
         if found:
             matched += 1
-            type_stats[report_type]["matched"] += 1
+            type_stats[row.report_type]["matched"] += 1
         else:
-            unmatched_by_type[report_type].append(speaker)
+            unmatched_by_type[row.report_type].append(row.speaker)
 
     total = len(sample)
     print(f"\nOverall: {matched}/{total} = {matched/total*100:.1f}%\n")

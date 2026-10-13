@@ -73,18 +73,18 @@ def main():
     row_counts: Counter[str] = Counter()
     row_chars: Counter[str] = Counter()
     reports_with_rows = set()
-    for _id, _ordinal, speaker, transcript, report_id, speaker_id in rows:
-        reports_with_rows.add(report_id)
-        if speaker is None:
+    for row in rows:
+        reports_with_rows.add(row.report_id)
+        if row.speaker is None:
             category = "no_speaker"
-        elif _is_adr_excluded(speaker):
+        elif _is_adr_excluded(row.speaker):
             category = "adr_excluded"
-        elif speaker_id is None:
+        elif row.speaker_id is None:
             category = "named_unlinked"
         else:
             category = "linked"
         row_counts[category] += 1
-        row_chars[category] += _countable_chars(transcript)
+        row_chars[category] += _countable_chars(row.transcript)
 
     body_by_report = {r.id: _body_chars(r) for r in reports}
     body_total = sum(body_by_report.values())

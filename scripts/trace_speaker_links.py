@@ -75,14 +75,12 @@ def main() -> None:
         for start in range(0, len(reports), _REPORT_BATCH):
             batch = reports[start : start + _REPORT_BATCH]
             by_id = {report_id: (parl, day) for report_id, parl, day in batch}
-            for _, _, speaker, _, report_id, speaker_id in crud_speech.get_rows_by_report_ids(
-                list(by_id)
-            ):
-                if not speaker or speaker_id is None:
+            for row in crud_speech.get_rows_by_report_ids(list(by_id)):
+                if not row.speaker or row.speaker_id is None:
                     continue
-                parl, day = by_id[report_id]
-                date_key = day if speaker.startswith(_DATE_DEPENDENT_ROLES) else None
-                stored.setdefault((speaker, parl, date_key), Counter())[speaker_id] += 1
+                parl, day = by_id[row.report_id]
+                date_key = day if row.speaker.startswith(_DATE_DEPENDENT_ROLES) else None
+                stored.setdefault((row.speaker, parl, date_key), Counter())[row.speaker_id] += 1
 
     total_rows = sum(sum(c.values()) for c in stored.values())
     agree, context, stale = [0, 0], [0, 0], []
