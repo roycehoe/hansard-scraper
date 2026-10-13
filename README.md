@@ -4,21 +4,23 @@ Pipeline and database for Singapore's parliamentary record, from the colonial Le
 
 ## Coverage
 
-Figures from the last full run, 2 to 5 June 2026. Record counts come from the `statistics.csv` export of 2 June, which is not published. Speech and attendance counts come from the database on 5 June (commit ccfcbb4 and [docs/attendance-speaker/progress.txt](docs/attendance-speaker/progress.txt)). The database itself is not published.
+All figures below were queried from the database on 13 October 2026, after the speaker-link rerun of that day. The database itself is not published.
 
 | | |
 |---|---|
-| Date range | 22 April 1955 to 7 May 2026 |
-| Parliaments | 0 (colonial) through 15 |
-| Sitting dates | 1,745 |
-| Records | 45,302 fetched, 21,854 with full text |
-| Report types | 24, of which 21 have full text: oral answers, written answers, bills, motions, ministerial statements, budget debates, and more |
-| Speech start located | 21,813 of 21,854 records with full text |
-| Full-text records with no speeches | About 490 of 21,854 as of 31 May: about 253 multi-speaker link indexes and about 237 procedural records that name no speaker |
-| Speeches linked to a registry speaker | 235,944 of 257,344 (91.7%) |
-| Attendance rows linked to a registry speaker | 96,298 of 96,500 (99.8%) |
+| Date range | 22 April 1955 to 8 April 2025 |
+| Parliaments | 0 (colonial) through 14 |
+| Sitting dates | 1,719 |
+| Records | 41,829 fetched, 21,838 with full text |
+| Report types | 23, of which 19 have full text: oral answers, written answers, bills, motions, ministerial statements, budget debates, and more |
+| Full-text records with speeches | 18,795 of 21,838 |
+| Full-text records with no speeches | 3,043 of 21,838; 3,032 of those are in Parliaments 0 to 11, and 1,470 of those are budget records |
+| Speeches linked to a registry speaker, Parliaments 0 to 11 | 425,223 of 439,986 (96.6%) under the denominator in [docs/adr/0001-attribution-denominator.md](docs/adr/0001-attribution-denominator.md): rows with a speaker string, minus collective references and stage directions |
+| Speeches linked, all rows with a speaker string | 443,132 of 461,558 (96.0%) across Parliaments 0 to 12; speeches exist only for those parliaments |
+| Speeches linked, Parliament 12 | 17,909 of 18,215 (98.3%) under the same denominator; reported separately because its fetch is incomplete |
+| Attendance rows linked to a registry speaker | 96,350 of 96,500 (99.8%) |
 | Sitting metadata | Attendance, PTBA, and debate sections (Parliament 13+) |
-| Speaker registry | All speakers by parliament, from parliament.gov.sg |
+| Speaker registry | 1,419 speakers by parliament, from parliament.gov.sg |
 
 ## Quick start
 
@@ -58,9 +60,9 @@ Records come from the Parliament of Singapore's Parliament Reports search system
 ## Known limitations
 
 - Records from 1955–1965 predate independence and cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament.
-- About 490 records with full text yield no speeches. About 253 are multi-speaker annex and index documents whose body is a list of links. About 237 are procedural records that name no speaker, mostly budget orders. See [docs/report/learnings.md](docs/report/learnings.md).
+- 3,043 records with full text have no speech rows in the database as of 13 October 2026. 1,470 are budget records; the rest are mostly bills, motions, annex and index documents whose body is a list of links, and procedural records that name no speaker. See [docs/report/learnings.md](docs/report/learnings.md).
 - Some `title` fields have encoding artifacts from the source API; `markdown_content` has correct Unicode.
-- Speaker identity linking (`speaker_id`) is incomplete for colonial-era and early-parliament records.
+- Speaker identity linking (`speaker_id`) is incomplete. The largest unlinked group is role-only strings such as "The Chairman" in Committee of Supply debates; see [docs/adr/0002-role-holder-attribution.md](docs/adr/0002-role-holder-attribution.md).
 
 Full details in [docs/data-dictionary.md](docs/data-dictionary.md).
 

@@ -1,14 +1,16 @@
-# Attendance → Speaker ID Gap: 202 Unresolved Rows
+# Attendance → Speaker ID Gap: 150 Unresolved Rows
 
 ## Context
 
 The attendance pipeline (`populate_attendances` → `populate_speaker_links`) achieves 99.8%
-speaker_id resolution on the production database (96,298 / 96,500 rows). The remaining
-202 unmatched rows all fall into the colonial bucket — sittings where
-`COALESCE(sitting.parlement_no, 0) = 0`.
+speaker_id resolution on the production database (96,350 / 96,500 rows on 2026-10-13).
+This document was written when 202 rows were unmatched; Iteration 2 in progress.txt
+(2026-06-05) resolved 52 of them, and the stage 8 rerun of 2026-10-13 resolved none of the
+remaining 150. The unmatched rows all come from sittings where `sitting.parlement_no` is
+NULL (every sitting in the database), so the parliament is inferred from `volume_no`.
 
-This document details what those 202 rows actually are, why they remain unmatched, and
-what paths exist to resolve them.
+This document details what the original 202 rows actually were, why they remained
+unmatched, and what paths exist to resolve the rest.
 
 ---
 

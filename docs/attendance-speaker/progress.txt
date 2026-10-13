@@ -282,3 +282,22 @@ Remaining 150 are overwhelmingly Category 1 parsing failures (role strings, proc
 text, document noise, dates) — records that should never have become Attendance rows.
 These need parser tightening in `_extract_section_lines`/`_parse_entry_line` plus
 targeted DELETEs, not OCR corrections.
+
+---
+
+## Stage 8 rerun — 2026-10-13
+
+Rerun of `populate_speaker_links` on the DigitalOcean database with the rewritten stage 8
+(one query for every unlinked row, memoised resolution per (speaker_name, parliament), UNNEST
+writes). The equivalence gate compared old and new resolution over the same 150 unlinked rows
+in memory before writing: 0 rows differed, and neither resolved any of them.
+
+| Metric | Value |
+|---|---|
+| Total attendance rows | 96,500 |
+| Matched (speaker_id non-null) | 96,350 |
+| Unmatched | 150 |
+| Match rate | 99.8% |
+
+Unchanged since Iteration 2. The 150 remain the Category 1 parsing failures described there
+and in gap.md; they need a parser fix plus targeted deletes, which are phase 2 proposals.

@@ -1,0 +1,3 @@
+# 0002. Role-holder attribution
+
+Many speeches name only a role, such as "Mr Speaker", "The Chief Minister" or "The Chairman", and the transcript never names the person. Stage 8 already links "Mr Speaker" and "The Chief Minister" to whoever held the role on the sitting date. The alternative was to leave every role-only string unlinked, which would leave tens of thousands of rows unattributed even though the holder is a matter of public record. A role-only string may be linked to a person when a cited source shows exactly one holder of that role on that sitting date. When the source is ambiguous, missing, or the role could have been filled by a stand-in that day, the row stays unlinked. A wrong link is worse than no link.
