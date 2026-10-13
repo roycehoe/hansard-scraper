@@ -13,6 +13,7 @@ from collections import defaultdict
 
 from sqlmodel import Session
 
+import database.speech  # noqa: F401  (registers Speech for Report.speeches)
 from crud.report import CRUDReport
 from database.init import engine
 from database.report import Report
@@ -32,6 +33,7 @@ def run():
     print(f"Reports with markdown: {len(reports)}")
 
     no_speech_by_type: dict[str, list[tuple[Report, int]]] = defaultdict(list)
+    no_start_line: list[Report] = []
     total_with_start = 0
 
     for report in reports:
@@ -43,6 +45,7 @@ def run():
             report.report_type,
         )
         if start_line is None:
+            no_start_line.append(report)
             continue
         total_with_start += 1
         if not get_speeches(report.markdown_content, start_line, report.report_type):
@@ -51,6 +54,7 @@ def run():
     total_no_speech = sum(len(v) for v in no_speech_by_type.values())
     print(f"With start line:       {total_with_start}")
     print(f"No-speech docs:        {total_no_speech}")
+    print(f"No start line:         {len(no_start_line)}")
     print()
 
     print("Breakdown by report_type:")
@@ -93,6 +97,15 @@ def run():
     print(f"Checked:                   {total_checked}")
     print(f"Suspicious (bold found):   {len(suspicious)}")
     print(f"Confirmed no-speaker:      {total_checked - len(suspicious)}")
+
+    # A report with no start line is never parsed, so it must not drop out of the check unseen.
+    print()
+    print("=== NO START LINE (never parsed; bold speaker lines counted over the whole doc) ===")
+    for report in no_start_line:
+        bold_count = sum(1 for line in report.markdown_content.splitlines() if BOLD_SPEAKER_RE.search(line.strip()))
+        status = "SUSPICIOUS" if bold_count else "OK"
+        print(f"  [{status}] id={report.id}  type={report.report_type}  parl={report.parliament_number}  "
+              f"bold_lines={bold_count}  {report.title[:60]!r}")
 
     if suspicious:
         print()
