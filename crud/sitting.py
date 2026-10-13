@@ -25,7 +25,6 @@ class CRUDSitting:
         return {sitting_date for sitting_date in sitting_dates if sitting_date is not None}
 
     def get_markdown_by_dates(self, dates: list[str]) -> dict[str, str]:
-        """Sitting markdown by sitting_date text ("d-m-yyyy"); sittings without markdown are omitted."""
         statement = (
             select(Sitting.sitting_date, Sitting.markdown_content)
             .where(col(Sitting.sitting_date).in_(dates))
