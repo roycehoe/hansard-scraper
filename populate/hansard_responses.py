@@ -55,7 +55,11 @@ def populate_hansard_responses(session: Session):
     all_search_results = [HansardSearchResult(**r) for r in get_all_hansard_search_results()]
     crud = CRUDHansardWebsiteResponse(session)
     existing_ids = crud.get_all_report_ids()
-    to_fetch = [r for r in all_search_results if r.report_id not in existing_ids]
+    # The search can return one hit twice (plans/duplicate-reports.md); fetch each report_id once.
+    first_by_report_id = {}
+    for result in all_search_results:
+        first_by_report_id.setdefault(result.report_id, result)
+    to_fetch = [r for r in first_by_report_id.values() if r.report_id not in existing_ids]
     logger.info(f"Fetching {len(to_fetch)}/{len(all_search_results)} ({len(existing_ids)} already in DB)")
 
     responses = asyncio.run(_fetch_all(to_fetch))
