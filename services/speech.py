@@ -89,16 +89,26 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"Bill reported without amendment",
     r"Bill considered in Committee",
     r"Resolution to be reported",
-    r"Resolved,?[\s*_]*$",  # the bare word; "Resolved, "That ..."" carries the motion text
+    r"Resolved(?:,|[\s*_]*$)",  # the bare word, or "Resolved, "That ..."" recording the resolution
     r"Order for Second Reading read",
     r"Order read for",
     r"Adjourned accordingly",
     r"Thereupon (?:Mr|Mdm) (?:Deputy )?Speaker",  # "... left the Chair"
-    r"(?:Sitting|Debate) (?:accordingly )?(?:suspended|resumed)",
+    r"(?:Sitting|Debate) (?:according(?:ly)? )?(?:suspended|resumed)",
+    r"Suspension of Sitting",
+    r"resumed at \d",  # second half of a suspension line split over two rows
+    r"\d{1,2}\.\d{2} [ap]\.?m\.? until \d|_\d{1,2}\.\d{2} [ap]\.?m\.? to \d",  # "_4.22 p.m. until 5.30 p.m._"
+    r"[A-Z][a-z]+(?:-[a-z]+)? minutes? (?:past|to) [A-Z][a-z]+ o'clock",  # adjournment time, spelled out
+    r"(?:Amendment|Notice of motion|Copies of [^.]{0,80}) handed in(?: to the Clerk| and distributed to hon\. Members)?\.?$",
+    r"No Member rising",
     r"\*\s*The same amendment",  # editorial footnote under an amendment list
     r"The House divided",
 )
 _PROCEDURAL_LINE_RE = re.compile(r"^[\s*_]*(?:" + "|".join(_PROCEDURAL_LINE_ANCHORS) + ")")
+
+# Procedural lines that open a list (the resolution text and the names after a bare "Resolved,"). The
+# lines after one are not the preceding member's, so current_speaker is reset until the next label.
+_LIST_OPENER_RE = re.compile(r"^[\s*_]*Resolved,?[\s*_]*$")
 
 # Bold headings that open a new section of business. The text after one is never the preceding member's,
 # so skipping the heading resets current_speaker. Kept to an explicit list: other headings (budget and
@@ -340,6 +350,8 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 speaker=None if _PROCEDURAL_LINE_RE.match(parsed_line) else current_speaker,
                 transcript=parsed_line,
             ))
+            if _LIST_OPENER_RE.match(parsed_line):
+                current_speaker = None
             continue
 
         bold_match = re.search(r"((?:\*\*[^*]+?\*\*\s*)+)", parsed_line)
@@ -425,6 +437,8 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 speaker=None if _PROCEDURAL_LINE_RE.match(parsed_line) else current_speaker,
                 transcript=parsed_line,
             ))
+            if _LIST_OPENER_RE.match(parsed_line):
+                current_speaker = None
 
     for speech in speeches:
         if m := _LANGUAGE_NOTE_RE.match(speech.transcript):
