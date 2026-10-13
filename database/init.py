@@ -12,8 +12,8 @@ _ALEMBIC_INI = Path(__file__).parent.parent / "alembic.ini"
 
 
 def create_db_and_tables() -> None:
-    cfg = Config(str(_ALEMBIC_INI))
-    command.upgrade(cfg, "head")
+    alembic_config = Config(str(_ALEMBIC_INI))
+    command.upgrade(alembic_config, "head")
 
 
 def get_session():

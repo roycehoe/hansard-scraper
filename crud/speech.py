@@ -59,11 +59,11 @@ class CRUDSpeech:
             .order_by(Speech.report_id, Speech.ordinal)
         ).all())
 
-    def get_speaker_info_by_ids(self, ids: list[int]) -> list[tuple[int, str, int, object]]:
+    def get_speaker_info_by_ids(self, speech_ids: list[int]) -> list[tuple[int, str, int, object]]:
         return list(self.session.exec(
             select(Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date)
             .join(Report)
-            .where(Speech.id.in_(ids))
+            .where(Speech.id.in_(speech_ids))
         ).all())
 
     def get_speaker_info_for_parliament(self, parliament_number: int) -> list[tuple[int, str, str, int]]:
@@ -77,9 +77,9 @@ class CRUDSpeech:
         ).all())
 
     def delete_by_report_id(self, report_id: int) -> int:
-        result = self.session.exec(delete(Speech).where(Speech.report_id == report_id))
+        delete_result = self.session.exec(delete(Speech).where(Speech.report_id == report_id))
         self.session.commit()
-        return result.rowcount
+        return delete_result.rowcount
 
     def set_speaker_ids_bulk(self, updates: dict[int, Optional[int]]) -> None:
         """Set speaker_id per speech id; a None value clears the link."""
