@@ -85,7 +85,7 @@ def get_passing_sample(session: Session, no_speech_types: set[str], sample_size:
         try:
             get_speeches(report.markdown_content, start, response.report_type)
             passing.append(response)
-        except Exception:
+        except Exception:  # noqa: BLE001 a corpus survey must record every failing document, not stop at the first
             pass
 
     random.shuffle(passing)
