@@ -328,3 +328,9 @@ speaker_id (99.8%), 150 unmatched. Changes that touch attendance resolution:
 - 16 head-of-state speaker rows (`is_member` false) were added for the Address rows; no
   attendance row resolves to them.
 - Every speaker row now carries a `person_id` (573 persons).
+
+---
+
+## Three production changes, 2026-10-13 (night)
+
+The parse of 22 zero-row reports, the refetch of 1,691 skipped reports and the guarded re-parse of 6,615 reports changed speech rows only. Attendance was unchanged and re-queried afterwards: 96,500 rows, 96,350 with a speaker_id (99.8%), 150 unmatched.

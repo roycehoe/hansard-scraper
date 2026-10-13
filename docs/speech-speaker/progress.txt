@@ -1,5 +1,49 @@
 # Speech → MP Link Refine-Loop Progress Log
 
+## Three production changes, 2026-10-13 (night)
+
+Three changes ran on the DigitalOcean database after the evening steps below. Figures are re-queried from the live database afterwards.
+
+| Step | Rows changed | Headline after (Parliaments 0 to 11) |
+|---|---|---|
+| Parse of 22 reports that had no speech rows, after a parser fallback (7e71bbd) | 8,188 rows inserted | 532,067 of 545,951 (from 523,988 of 537,842, 97.42%) |
+| Refetch of reports the search had skipped (2979c57, 7d6a93b): 1,692 hits found, 1,691 Parliament 0 to 11 reports added, 1 hit left out because it copied a stored report under another id | 1,691 reports, 38,074 speech rows | 567,190 of 581,626 |
+| Guarded re-parse of stored reports: 6,615 rebuilt, 181,849 rows deleted and 177,292 inserted; 2,078 refused (1,954 because the new parse would drop a line the stored rows hold, 87 refused earlier by the role-label re-parse, 34 that would undo a hand fix, 3 that would bring back deleted rows) | outside the rebuilt reports, 0 links changed | 564,509 of 578,359 (97.61%) |
+
+5 more hits are in the engine total but cannot be fetched: 1 in April 1963 and 4 in October 2003. The topic fetch now sends a JSON body, and the search gateway now crawls month by month.
+
+**Why the denominator moved.** It went from 537,842 to 578,359 across the three steps. The 22 reports and the refetch added rows (8,188 and 38,074), and the rows they added mostly carry a speaker string, so the denominator grew with the linked count. The re-parse then replaced 181,849 rows with 177,292 and dropped procedural lines that the earlier parses had kept as rows. That took the denominator down by 3,267 (581,626 to 578,359) and the linked count down by 2,681 (567,190 to 564,509). Of the 3,267 rows that left the denominator, 586 were unlinked, a far higher share than the 2.4% unlinked across the whole denominator, so the rate rose from 97.42% to 97.61% even though the linked count fell in the last step. The denominator is not comparable between the two dates as a count of the same rows.
+
+**Result:** 564,509 of 578,359 denominator rows linked (97.61%), up from 523,988 of 537,842 (97.42%). All Parliament 0 to 11 rows, null-speaker rows included: 564,509 of 624,332 (90.42%); 581,565 of those rows have a speaker string, and 42,767 have none. Parliament 12: 15,901 of 16,137 (98.5%), against 16,116 of 16,384 in the evening entry. All rows with a speaker string, Parliaments 0 to 12: 580,410 of 597,709 (97.1%). 640,729 speech rows in total, 43,020 with no speaker. 37,929 reports, all with distinct report_id.
+
+Text share (`scripts/attribution_text_share.py`, Parliaments 0 to 11): 96.81% of 188,134,946 characters of body text sit in a linked row, against 96.05% of 176.7M in the previous README. The rest: named but unlinked rows 0.76%, ADR-excluded rows 0.11%, rows with no speaker 0.95%, reports with no rows 0.15%, text dropped inside reports with rows 1.22%.
+
+| Parliament | Linked | Denominator | Rate |
+|---|---|---|---|
+| 0 | 113,499 | 118,945 | 95.4% |
+| 1 | 15,878 | 16,792 | 94.6% |
+| 2 | 25,894 | 26,496 | 97.7% |
+| 3 | 19,216 | 19,858 | 96.8% |
+| 4 | 20,958 | 21,451 | 97.7% |
+| 5 | 24,940 | 25,425 | 98.1% |
+| 6 | 41,044 | 41,960 | 97.8% |
+| 7 | 27,330 | 27,651 | 98.8% |
+| 8 | 48,408 | 49,079 | 98.6% |
+| 9 | 59,918 | 60,688 | 98.7% |
+| 10 | 79,303 | 80,767 | 98.2% |
+| 11 | 88,121 | 89,247 | 98.7% |
+| 12 | 15,901 | 16,137 | 98.5% |
+
+By report type, Parliaments 0 to 11: budget 213,373/222,909 = 95.7%; bill 122,649/126,123 = 97.2%; oral-answer 73,942/74,007 = 99.9%; motion 72,754/73,045 = 99.6%; president-address 24,330/24,531 = 99.2%; ministerial-statement 18,036/18,090 = 99.7%; written-answer 14,448/14,555 = 99.3%; written-answer-na 6,394/6,433 = 99.4%; yang-di-message 6,234/6,234; matter-adj 5,237/5,244 = 99.9%; misc 3,127/3,146 = 99.4%; speaker 1,286/1,342 = 95.8%; the other 8 types have 2,699 of 2,700 linked.
+
+Reports with full text and no speech rows: 561 of 21,693 (552 of 20,905 in Parliaments 0 to 11): budget 266, oral-answer 84, atbp 53, written-answer 48, ministerial-statement 33, motion 23, president-address 21, bill 13, speaker 5, other 6. In the evening entry: 532 of 19,215 in Parliaments 0 to 11.
+
+Attendance was not touched: 96,350 of 96,500 (99.8%).
+
+Commits: 7e71bbd, 2979c57, 7d6a93b.
+
+---
+
 ## Approved production changes — 2026-10-13 (evening)
 
 Eight approved steps ran in order on the DigitalOcean database after a verified backup (`defaultdb_backup_20261013` on the same cluster). Each step took a snapshot of the rows it changed, ran a dry run in memory, got a pre-write verdict, wrote in one transaction, read the rows back and had 30 changed rows read by hand. The stage 8 trace guard (`scripts/trace_speaker_links.py`) reported 0 stale rows after the rename and after the final run.
