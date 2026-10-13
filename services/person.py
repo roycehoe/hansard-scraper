@@ -49,7 +49,7 @@ class _SpeakerClusters:
             speaker_id = self.parent[speaker_id]
         return speaker_id
 
-    def refusal(self, left_id: int, right_id: int) -> Optional[str]:
+    def get_refusal_reason(self, left_id: int, right_id: int) -> Optional[str]:
         left, right = self.members[left_id], self.members[right_id]
         if {_get_slot(speaker) for speaker in left} & {_get_slot(speaker) for speaker in right}:
             return "same parliament"
@@ -65,7 +65,7 @@ class _SpeakerClusters:
         left_id, right_id = self.find(left_id), self.find(right_id)
         if left_id == right_id:
             return None
-        if refusal_reason := self.refusal(left_id, right_id):
+        if refusal_reason := self.get_refusal_reason(left_id, right_id):
             return refusal_reason
         self.parent[right_id] = left_id
         self.members[left_id] += self.members.pop(right_id)

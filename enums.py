@@ -24,4 +24,4 @@ class ReportType(StrEnum):
     OBITUARY_SPEECH = "obituary-speech"
     YANG_DI_MESSAGE = "yang-di-message"
     MISCELLANEOUS = "misc"
-    ATBP = "atbp"  # “all that besides” / catch-all category
+    ATBP = "atbp"  # catch-all category
