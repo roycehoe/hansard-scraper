@@ -2,5 +2,5 @@ from database.speaker import Speaker
 from schemas.speaker import SpeakerResult
 
 
-def build_speaker(result: SpeakerResult) -> Speaker:
-    return Speaker(**result.model_dump())
+def build_speaker(speaker_result: SpeakerResult) -> Speaker:
+    return Speaker(**speaker_result.model_dump())

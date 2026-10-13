@@ -12,7 +12,7 @@ class HansardSittingDateData:
     attendance: list[Attendance]
 
 
-def _to_int(value) -> Optional[int]:
+def _get_int(value) -> Optional[int]:
     try:
         return int(value)
     except (TypeError, ValueError):
@@ -25,71 +25,71 @@ def _serialise_list(value) -> Optional[str]:
     return json.dumps(value) if isinstance(value, list) else value
 
 
-def build_old_hansard_sitting_date_response(result: dict, sitting_date: str) -> HansardSittingDateData:
+def build_old_hansard_sitting_date_response(hansard_report_response: dict, sitting_date: str) -> HansardSittingDateData:
     """Handles the flat response format returned for sittings before 18 Aug 2015."""
-    response = HansardSittingDateResponse(
-        parlement_no=_to_int(result.get("parlNo")),
-        session_no=_to_int(result.get("sessionNo")),
-        volume_no=_to_int(result.get("volumeNo")),
-        sitting_no=_to_int(result.get("sittingNo")),
+    hansard_sitting_date_response = HansardSittingDateResponse(
+        parlement_no=_get_int(hansard_report_response.get("parlNo")),
+        session_no=_get_int(hansard_report_response.get("sessionNo")),
+        volume_no=_get_int(hansard_report_response.get("volumeNo")),
+        sitting_no=_get_int(hansard_report_response.get("sittingNo")),
         sitting_date=sitting_date,
-        online_pdf_file_name=result.get("onlinePDFFileName"),
-        html_full_content=result.get("htmlFullContent"),
-        ptba_from=result.get("ptbaFrom"),
-        ptba_to=result.get("ptbaTo"),
-        member_id=result.get("memberId"),
-        report_type=result.get("reportType"),
-        portfolio=result.get("portfolio"),
-        member_name=result.get("memberName"),
-        report_version=result.get("reportVersion"),
-        report_start_col=result.get("reportStartCol"),
-        report_end_col=result.get("reportEndCol"),
-        title=result.get("title"),
-        column_start=result.get("columnStart"),
-        report_content=result.get("reportContent"),
-        column_end=result.get("columnEnd"),
-        report_id=result.get("reportId"),
-        score=result.get("score"),
-        max_result=result.get("maxResult"),
-        sno=result.get("sno"),
-        full_content_flag=result.get("fullContentFlag"),
-        from_month=result.get("fromMonth"),
-        from_day=result.get("fromDay"),
-        from_year=result.get("fromYear"),
-        html_content=result.get("htmlContent"),
-        subtitle=result.get("subtitle"),
-        content=result.get("content"),
-        speaker_names=result.get("mpNames"),
-        html_file_name=result.get("htmlFileName"),
-        ver_pdf=result.get("verPdf"),
-        foot_notes=result.get("footNotes"),
-        foot_note_question=result.get("footNoteQuestion"),
-        foot_note_questions=result.get("footNoteQuestions"),
-        foot_note=_serialise_list(result.get("footNote")),
-        atbp_list=_serialise_list(result.get("atbpList")),
-        ptba_list=_serialise_list(result.get("ptbaList")),
-        attendance_list=_serialise_list(result.get("attendanceList")),
-        pdf_nodes=result.get("pdfNodes"),
-        clarification_text=result.get("clarificationText"),
-        clarification_title=result.get("clarificationTitle"),
-        clarification_sub_title=result.get("clarificationSubTitle"),
-        question_count=result.get("questionCount"),
+        online_pdf_file_name=hansard_report_response.get("onlinePDFFileName"),
+        html_full_content=hansard_report_response.get("htmlFullContent"),
+        ptba_from=hansard_report_response.get("ptbaFrom"),
+        ptba_to=hansard_report_response.get("ptbaTo"),
+        member_id=hansard_report_response.get("memberId"),
+        report_type=hansard_report_response.get("reportType"),
+        portfolio=hansard_report_response.get("portfolio"),
+        member_name=hansard_report_response.get("memberName"),
+        report_version=hansard_report_response.get("reportVersion"),
+        report_start_col=hansard_report_response.get("reportStartCol"),
+        report_end_col=hansard_report_response.get("reportEndCol"),
+        title=hansard_report_response.get("title"),
+        column_start=hansard_report_response.get("columnStart"),
+        report_content=hansard_report_response.get("reportContent"),
+        column_end=hansard_report_response.get("columnEnd"),
+        report_id=hansard_report_response.get("reportId"),
+        score=hansard_report_response.get("score"),
+        max_result=hansard_report_response.get("maxResult"),
+        sno=hansard_report_response.get("sno"),
+        full_content_flag=hansard_report_response.get("fullContentFlag"),
+        from_month=hansard_report_response.get("fromMonth"),
+        from_day=hansard_report_response.get("fromDay"),
+        from_year=hansard_report_response.get("fromYear"),
+        html_content=hansard_report_response.get("htmlContent"),
+        subtitle=hansard_report_response.get("subtitle"),
+        content=hansard_report_response.get("content"),
+        speaker_names=hansard_report_response.get("mpNames"),
+        html_file_name=hansard_report_response.get("htmlFileName"),
+        ver_pdf=hansard_report_response.get("verPdf"),
+        foot_notes=hansard_report_response.get("footNotes"),
+        foot_note_question=hansard_report_response.get("footNoteQuestion"),
+        foot_note_questions=hansard_report_response.get("footNoteQuestions"),
+        foot_note=_serialise_list(hansard_report_response.get("footNote")),
+        atbp_list=_serialise_list(hansard_report_response.get("atbpList")),
+        ptba_list=_serialise_list(hansard_report_response.get("ptbaList")),
+        attendance_list=_serialise_list(hansard_report_response.get("attendanceList")),
+        pdf_nodes=hansard_report_response.get("pdfNodes"),
+        clarification_text=hansard_report_response.get("clarificationText"),
+        clarification_title=hansard_report_response.get("clarificationTitle"),
+        clarification_sub_title=hansard_report_response.get("clarificationSubTitle"),
+        question_count=hansard_report_response.get("questionCount"),
     )
 
     attendance = [
         Attendance(**item)
-        for item in result.get("attendanceList") or []
+        for item in hansard_report_response.get("attendanceList") or []
         if isinstance(item, dict)
     ]
 
-    return HansardSittingDateData(response=response, attendance=attendance)
+    return HansardSittingDateData(response=hansard_sitting_date_response, attendance=attendance)
 
 
-def build_new_hansard_sitting_date_response(result: dict, sitting_date: str) -> HansardSittingDateData:
+def build_new_hansard_sitting_date_response(hansard_report_response: dict, sitting_date: str) -> HansardSittingDateData:
     """Handles the nested response format returned for sittings from 18 Aug 2015 onwards."""
-    metadata = result.get("metadata") or {}
+    metadata = hansard_report_response.get("metadata") or {}
 
-    response = HansardSittingDateResponse(
+    hansard_sitting_date_response = HansardSittingDateResponse(
         parlement_no=metadata.get("parlimentNO"),
         session_no=metadata.get("sessionNO"),
         volume_no=metadata.get("volumeNO"),
@@ -107,15 +107,15 @@ def build_new_hansard_sitting_date_response(result: dict, sitting_date: str) -> 
         ptba_from=metadata.get("ptbaFrom"),
         ptba_to=metadata.get("ptbaTo"),
         location_text=metadata.get("locationText"),
-        att_start_pg_no=result.get("attStartPgNo"),
-        ptba_start_pg_no=result.get("ptbaStartPgNo"),
-        atbp_start_pg_no=result.get("atbpStartPgNo"),
-        online_pdf_file_name=result.get("onlinePDFFileName"),
+        att_start_pg_no=hansard_report_response.get("attStartPgNo"),
+        ptba_start_pg_no=hansard_report_response.get("ptbaStartPgNo"),
+        atbp_start_pg_no=hansard_report_response.get("atbpStartPgNo"),
+        online_pdf_file_name=hansard_report_response.get("onlinePDFFileName"),
     )
 
     attendance = [
         Attendance(**item)
-        for item in result.get("attendanceList") or []
+        for item in hansard_report_response.get("attendanceList") or []
     ]
 
-    return HansardSittingDateData(response=response, attendance=attendance)
+    return HansardSittingDateData(response=hansard_sitting_date_response, attendance=attendance)
