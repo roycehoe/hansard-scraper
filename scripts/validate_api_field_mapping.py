@@ -11,7 +11,7 @@ Usage:
 """
 
 import sys
-from typing import Any, Union
+from typing import Optional, Union
 
 from gateway.hansard_report import get_hansard_report_response
 from gateway.hansard_search import get_hansard_search_results
@@ -111,7 +111,7 @@ _SYNTHETIC_NEW_FORMAT = {
 }
 
 
-def _get_orm_field_to_value(orm_object) -> dict[str, Any]:
+def _get_orm_field_to_value(orm_object: object) -> dict[str, object]:
     return {key: value for key, value in vars(orm_object).items() if not key.startswith("_")}
 
 
@@ -198,7 +198,7 @@ def validate_topic(report_id: str) -> bool:
 
 def _validate_sitting_payload(
     hansard_report_response: Union[HansardReportOldResponse, HansardReportNewResponse], sitting_date: str, source: str
-) -> bool:
+) -> Optional[bool]:
     is_new = is_new_sitting_date_format(sitting_date)
     raw = hansard_report_response.model_dump(by_alias=True)
 
