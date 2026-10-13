@@ -1,3 +1,4 @@
+import json
 import re
 from dataclasses import dataclass
 from typing import Optional
@@ -5,6 +6,7 @@ from typing import Optional
 from database.attendance import Attendance
 from database.sitting import Sitting
 from database.speaker import Speaker
+from schemas.hansard_report_response import HansardReportAttendanceEntry
 from utils.names import (
     invert_to_natural,
     normalize_name,
@@ -336,6 +338,8 @@ _MIN_PREFIX_WORD_COUNT = 2
 _MIN_MULTIWORD_SURNAME_LENGTH = 2
 _MIN_REARRANGEABLE_WORD_COUNT = 3
 _MIN_WORDSET_SUBSET_WORDS = 3
+
+_LEAVE_NOTE_PREFIX = "For information on permission given to Members for leave of absence"
 
 
 def _normalize_for_lookup(name: str) -> str:
@@ -706,5 +710,35 @@ def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups) -> list[At
                 is_present=is_present,
                 location_name=parsed.constituency,
             ))
+
+    return records
+
+
+def get_sitting_attendance_from_list(sitting: Sitting, lookups: SpeakerLookups) -> list[Attendance]:
+    if sitting.attendance_list is None:
+        return []
+
+    parliament = infer_parliament(sitting.parlement_no, sitting.volume_no)
+    records = []
+
+    for raw_entry in json.loads(sitting.attendance_list):
+        entry = HansardReportAttendanceEntry.model_validate(raw_entry)
+        if entry.mp_name is None:
+            continue
+        if entry.mp_name.startswith(_LEAVE_NOTE_PREFIX):
+            continue
+        parsed = _parse_entry_line(entry.mp_name)
+        if parsed is None:
+            continue
+        if not parsed.name:
+            continue
+        name = normalize_name(parsed.name)
+        canonical = None if parliament is None else resolve_canonical_name(name, parliament, lookups)
+        records.append(Attendance(
+            sitting_id=sitting.id,
+            speaker_name=canonical or name,
+            is_present=entry.attendance,
+            location_name=parsed.constituency,
+        ))
 
     return records
