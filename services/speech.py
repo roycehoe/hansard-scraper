@@ -55,12 +55,12 @@ _BILL_PRESENTER_RE = re.compile(
 )
 
 _NEWER_ADJOURNMENT_MOVER_RE = re.compile(
-    r"[−–\-]\s*\[((?:Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc\s+Prof)[^]]+)\]",
+    r"[−–—‒\-]\s*\[(?:\()?((?:Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc\s+Prof)[^]()]+)\)?\]",
     re.IGNORECASE,
 )
 
 _NEWER_BILL_PRESENTER_RE = re.compile(
-    r"presented\s+by[^(;]*\(([^)]+)\)",
+    r"presented\s+by\s+(?:[^(;]*\(([^)]+)\)|([^(;.]+))",
     re.IGNORECASE,
 )
 
@@ -227,7 +227,10 @@ def _extract_body_attribution(markdown: str, report_type: str, report_version: s
 
     if is_newer_system and (report_type == ReportType.BILL or report_type == ReportType.BILL_INTRODUCTION):
         match = _NEWER_BILL_PRESENTER_RE.search(markdown)
-        return match.group(1).strip().rstrip(_NEWER_SYSTEM_NAME_TRAILING_CHARS) if match is not None else None
+        if match is None:
+            return None
+        presenter = match.group(1) if match.group(1) is not None else match.group(2)
+        return presenter.strip().rstrip(_NEWER_SYSTEM_NAME_TRAILING_CHARS)
 
     if report_type == ReportType.MOTION:
         match = _ADJOURNMENT_MOVER_RE.search(markdown)
