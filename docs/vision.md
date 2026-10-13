@@ -62,7 +62,7 @@ Targeted validation and inspection tools live alongside the main pipeline. Parsi
 
 ## Measuring progress
 
-Last recalibrated 13 October 2026. Rerun the checks below before claiming any objective is met, and update this section when the figures move.
+Last recalibrated 13 October 2026, after the refetch of skipped records and the guarded re-parse. Rerun the checks below before claiming any objective is met, and update this section when the figures move.
 
 ### The three numbers
 
@@ -70,13 +70,13 @@ Last recalibrated 13 October 2026. Rerun the checks below before claiming any ob
 
 | Metric | What it counts | 13 Oct 2026 |
 |---|---|---|
-| ADR 0001 rate | Linked rows / rows with a speaker string, minus "hon. Member(s)" and strings starting with "(" or "_" ([ADR 0001](adr/0001-attribution-denominator.md)) | 532,067 / 545,951 = 97.46% |
-| All-rows rate | Linked rows / every speech row, NULL-speaker rows included | 532,067 / 590,815 = 90.06% |
-| Text share | Characters of body text in a linked row / characters of body text in every report with markdown, including reports with no rows | 96.05% of 176.7M |
+| ADR 0001 rate | Linked rows / rows with a speaker string, minus "hon. Member(s)" and strings starting with "(" or "_" ([ADR 0001](adr/0001-attribution-denominator.md)) | 564,509 / 578,359 = 97.61% |
+| All-rows rate | Linked rows / every speech row, NULL-speaker rows included | 564,509 / 624,332 = 90.42% |
+| Text share | Characters of body text in a linked row / characters of body text in every report with markdown, including reports with no rows | 96.81% of 188.1M |
 
 Text share is the number that answers objective 2 and 4 together: how much of the record a researcher can retrieve by speaker. The ADR 0001 rate has a known weakness. Setting a row's speaker to NULL removes it from the denominator, so the rate rises when the parser gives up on a line. The 13 October procedural repairs moved about 29,000 rows to NULL and raised the rate from 97.02% to 97.42%. Some of those rows really have no speaker. The other two numbers keep that honest.
 
-Where the body text goes, 13 October 2026: 96.05% in linked rows, 0.83% in rows with an unlinked speaker string, 0.15% in ADR-excluded rows, 1.01% in rows with no speaker, 0.14% in reports with no rows, and 1.81% dropped inside reports that have rows (preamble, headings, labels, and text before the first speaker).
+Where the body text goes, 13 October 2026: 96.81% in linked rows, 0.76% in rows with an unlinked speaker string, 0.11% in ADR-excluded rows, 0.95% in rows with no speaker, 0.15% in reports with no rows, and 1.22% dropped inside reports that have rows (preamble, headings, labels, and text before the first speaker).
 
 ### What "parsed" means in each check
 
@@ -93,14 +93,14 @@ The only correctness evidence is by hand. `plans/link-precision-audit.md` read 6
 
 ### Verdict against the objectives, records before 10 September 2012
 
-Recorded from an independent audit on 13 October 2026, with the zero-row debates fixed afterwards.
+Recorded from an independent audit on 13 October 2026, updated after that day's fixes: the 22 zero-row debates parsed, 1,691 skipped records refetched, and 6,615 stale reports re-parsed.
 
 | Objective | Verdict |
 |---|---|
-| 1. Complete corpus coverage | Partly. All 20,017 records the search returned are stored and 20,003 have text. The search skipped about 1,700 Parliament 0 to 11 records (estimate in `plans/duplicate-reports.md`), and 14 came back with empty or no content. |
-| 2. Per-utterance speaker index | Partly. 18,705 of 19,227 reports with markdown have rows. 1.81% of body text is dropped inside reports that have rows. |
+| 1. Complete corpus coverage | Mostly. 21,708 records are stored and 21,693 have text, after refetching 1,691 records the search had skipped. 15 came back from SPRS with empty or no content. Completeness against SPRS itself is not independently checked. |
+| 2. Per-utterance speaker index | Partly. 20,353 of 20,918 reports with markdown have rows. 1.22% of body text is dropped inside reports that have rows. 2,078 reports keep rows from an older parser because the re-parse guard refused them. |
 | 3. Sitting metadata | Yes for attendance, all 1,333 sittings with HTML. |
-| 4. Speaker identity linking | Partly. The resolver is precise; the gaps are text the parser mislabels or drops, and stored rows that lag the parser. |
+| 4. Speaker identity linking | Mostly. The resolver is precise, and stored rows now match the current parser except in the 2,078 refused reports. The remaining gaps are text the parser mislabels or drops. |
 | 5. High-fidelity markdown | Unverified. No check measures what the HTML to markdown step loses. Report 22103 has 16,847 characters of HTML and 287 of markdown. |
 | 6. Parsing-quality tracking | No. The checks above measure structure, not correctness. |
 
@@ -111,9 +111,9 @@ Overall: partly met. Text from 10 September 2012 on is out of this verdict; it w
 - The source imposes: unnamed chairs ("The Chairman" where the report gives no chair, about 11,600 rows), collective "hon. Members", bare "Mr Deputy Speaker" on two-holder days, annex pages that are lists of links, procedural lines with no speaker.
 - The project chose: the ADR 0001 denominator, dropping text before the first speaker, collapsing single-speaker reports into one row, and a pass that means only that a title line was found.
 - The project missed, and these are the next work:
-  1. Stored rows lag the parser. An in-memory re-parse found 8,614 of 19,227 reports differ; about 7,600 linked rows would get no speaker and about 2,400 a different speaker string. A full rebuild is on hold: it would undo data-only fixes from 13 October (1,746 filled speakers, 11 Chief Minister corrections) and re-parse 87 reports the F18 guard refused. It needs the user's decision and a per-report guard.
-  2. About 1,700 Parliament 0 to 11 records the search skipped.
-  3. Text after August 2012, which needs a gateway change ([post-2012-text.md](report/post-2012-text.md)).
+  1. 2,078 reports keep rows from an older parser. The guarded re-parse of 13 October rebuilt 6,615 stale reports and refused the rest: 1,954 by the F18 guard (the new parse drops a body line the stored rows hold, or yields nothing), 87 that step 6b refused, 34 where a re-parse would undo a direct edit, and 3 where it would bring back deleted rows. Each needs a parser fix before it can be rebuilt. The plan, the stored rows of every rebuilt report and two full `pg_dump` backups from before the write were kept outside the repo on 13 October; they are temporary unless moved.
+  2. Text from 10 September 2012 on. Commit 2979c57 sends the topic id as a JSON body; the fetcher still sends the trailing `#` and reads `htmlContent`, which sprs3 records leave empty ([post-2012-text.md](report/post-2012-text.md)).
+  3. The parser drops 1.22% of body text inside reports with rows: text before the first speaker, headings and other lines it skips. The split between them is not measured.
   4. Unbolded speaker labels and lists that inherit the last speaker (P2 and P3 in `plans/link-precision-audit.md`).
 
 ### Where more work stops paying
