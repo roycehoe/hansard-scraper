@@ -64,11 +64,11 @@ def _get_category(name: str) -> str:
 # ── resolution ────────────────────────────────────────────────────────────────
 
 def _is_resolved(name: str, parliament: int, lookups) -> bool:
-    if resolve_canonical_name(name, parliament, lookups):
+    if resolve_canonical_name(name, parliament, lookups) is not None:
         return True
     if parliament == 0:
         for fallback_parliament in [1, 2, 3]:
-            if resolve_canonical_name(name, fallback_parliament, lookups):
+            if resolve_canonical_name(name, fallback_parliament, lookups) is not None:
                 return True
     return False
 

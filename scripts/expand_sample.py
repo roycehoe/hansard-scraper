@@ -65,7 +65,7 @@ def _preprocess(speaker: str) -> Optional[str]:
         return None
     raw = speaker.rstrip(":").strip()
     parenthetical_match = re.search(r"\s*\(([^)]+)\)\s*$", raw)
-    if parenthetical_match:
+    if parenthetical_match is not None:
         inner = parenthetical_match.group(1).strip()
         if strip_title(inner) != inner:
             raw = inner
@@ -88,7 +88,7 @@ def _is_resolved(
     if parliament == 0:
         for fallback in _COLONIAL_PARLIAMENT_FALLBACKS:
             candidate = resolve_canonical_name(name, fallback, lookups)
-            if candidate and (candidate, fallback) in name_and_parliament_to_speaker_id:
+            if candidate is not None and (candidate, fallback) in name_and_parliament_to_speaker_id:
                 return True
     return False
 
@@ -144,7 +144,7 @@ def main() -> None:
             continue
         eligible_row = speech_id_to_row[speech_id]
         name = _preprocess(eligible_row.speaker)
-        if name and _is_resolved(name, eligible_row.parliament_number, lookups, name_and_parliament_to_speaker_id):
+        if name is not None and _is_resolved(name, eligible_row.parliament_number, lookups, name_and_parliament_to_speaker_id):
             passing_pilot.append(speech_id)
 
     # Maintain ~1:5 regression:pilot ratio (current: 40/202 ≈ 1:5)
