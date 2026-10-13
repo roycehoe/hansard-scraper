@@ -16,12 +16,12 @@ def populate_reports(session: Session):
     first_by_report_id = {}
     for response in responses:
         first_by_report_id.setdefault(response.report_id, response)
-    to_process = [r for r in first_by_report_id.values() if r.report_id not in existing_ids]
-    logger.info(f"Building {len(to_process)}/{len(responses)} reports ({len(existing_ids)} already in DB)")
+    reports_to_process = [response for response in first_by_report_id.values() if response.report_id not in existing_ids]
+    logger.info(f"Building {len(reports_to_process)}/{len(responses)} reports ({len(existing_ids)} already in DB)")
 
     batch = []
-    for i, response in enumerate(to_process, start=1):
-        logger.info(f"{i}/{len(to_process)}")
+    for i, response in enumerate(reports_to_process, start=1):
+        logger.info(f"{i}/{len(reports_to_process)}")
         batch.append(build_report(response))
         if len(batch) >= _BATCH_SIZE:
             crud.create_many(batch)

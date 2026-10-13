@@ -10,12 +10,12 @@ def populate_sittings(session: Session):
     all_responses = CRUDHansardSittingDateResponse(session).get_all()
     crud = CRUDSitting(session)
     existing_dates = crud.get_all_sitting_dates()
-    to_process = [r for r in all_responses if r.sitting_date not in existing_dates]
-    logger.info(f"Building {len(to_process)}/{len(all_responses)} sittings ({len(existing_dates)} already in DB)")
+    sittings_to_process = [response for response in all_responses if response.sitting_date not in existing_dates]
+    logger.info(f"Building {len(sittings_to_process)}/{len(all_responses)} sittings ({len(existing_dates)} already in DB)")
 
     sittings = []
-    for i, response in enumerate(to_process, start=1):
-        logger.info(f"{i}/{len(to_process)}: {response.sitting_date}")
+    for i, response in enumerate(sittings_to_process, start=1):
+        logger.info(f"{i}/{len(sittings_to_process)}: {response.sitting_date}")
         sittings.append(build_sitting(response))
     if sittings:
         crud.create_many(sittings)

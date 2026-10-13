@@ -10,36 +10,36 @@ _BATCH_SIZE = 1000
 
 
 def populate_speeches(session: Session):
-    db_reports = CRUDReport(session).get_all()
+    reports = CRUDReport(session).get_all()
     crud = CRUDSpeech(session)
     existing_report_ids = crud.get_report_ids_with_speeches()
-    to_process = [db_report for db_report in db_reports if db_report.id not in existing_report_ids]
-    logger.info(f"Parsing speeches for {len(to_process)}/{len(db_reports)} reports ({len(existing_report_ids)} already done)")
+    reports_to_process = [report for report in reports if report.id not in existing_report_ids]
+    logger.info(f"Parsing speeches for {len(reports_to_process)}/{len(reports)} reports ({len(existing_report_ids)} already done)")
 
     batch = []
-    for report_index, db_report in enumerate(to_process, start=1):
-        logger.info(f"{report_index}/{len(to_process)}")
-        if db_report.markdown_content is None:
-            logger.debug(f"Skipping report {db_report.id}: no markdown content")
+    for report_index, report in enumerate(reports_to_process, start=1):
+        logger.info(f"{report_index}/{len(reports_to_process)}")
+        if report.markdown_content is None:
+            logger.debug(f"Skipping report {report.id}: no markdown content")
             continue
         start_of_speech_line = get_start_of_speech_line(
-            db_report.markdown_content,
-            db_report.title,
-            db_report.subtitle,
-            db_report.original_title,
-            db_report.report_type,
+            report.markdown_content,
+            report.title,
+            report.subtitle,
+            report.original_title,
+            report.report_type,
         )
         if start_of_speech_line is None:
-            logger.debug(f"Skipping report {db_report.id}: could not find start of speech line")
+            logger.debug(f"Skipping report {report.id}: could not find start of speech line")
             continue
         for ordinal, speech in enumerate(
-            get_speeches(db_report.markdown_content, start_of_speech_line, db_report.report_type)
+            get_speeches(report.markdown_content, start_of_speech_line, report.report_type)
         ):
             batch.append(Speech(
                 ordinal=ordinal + 1,
                 speaker=speech.speaker,
                 transcript=speech.transcript,
-                report_id=db_report.id,
+                report_id=report.id,
             ))
         if len(batch) >= _BATCH_SIZE:
             crud.create_many(batch)
