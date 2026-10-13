@@ -139,6 +139,9 @@ _SECTION_BOUNDARY_HEADINGS = frozenset({
     "COMMITTEE OF SUPPLY",
 })
 
+# A line that is bold from end to end: a heading, not a "**Speaker:** text" label.
+_WHOLE_BOLD_LINE_RE = re.compile(r"^\*\*[^*].*\*\*$")
+
 
 def _extract_mps_speaking(markdown: str) -> list[str]:
     match = _MP_SPEAK_RE.search(markdown)
@@ -308,6 +311,17 @@ def get_start_of_speech_line(
             if _line_matches_title(line, candidate):
                 return line_index
 
+    return _first_bold_line_start(markdown_content)
+
+
+def _first_bold_line_start(markdown_content: str) -> Optional[int]:
+    """Fallback when no line matches the title, e.g. "DEBATE ON PRESIDENT'S ADDRESS" whose body
+    heading reads "PRESIDENT'S ADDRESS Debate on the Address (First Allotted Day)". A fully bold
+    first line is a heading and stands in for the title line; a bold label followed by text is the
+    first speech, so parsing starts on the line before it."""
+    for line_index, line in enumerate(markdown_content.splitlines()):
+        if line.startswith("**") and line.strip("* "):
+            return line_index if _WHOLE_BOLD_LINE_RE.match(line.strip()) else line_index - 1
     return None
 
 
