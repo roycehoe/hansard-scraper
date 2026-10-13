@@ -17,7 +17,7 @@ class HansardSittingDateResponse(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
 
-    # Shared fields (old and new format)
+    # NOTE: filled by both the old and new API formats
     parlement_no: Optional[int] = None
     session_no: Optional[int] = None
     volume_no: Optional[int] = None
@@ -28,7 +28,7 @@ class HansardSittingDateResponse(SQLModel, table=True):
     ptba_from: Optional[str] = None
     ptba_to: Optional[str] = None
 
-    # New format only (from metadata and top-level scalars)
+    # NOTE: filled by the new API format only
     part_session_str: Optional[str] = None
     start_time_str: Optional[str] = None
     speaker: Optional[str] = None
@@ -43,7 +43,7 @@ class HansardSittingDateResponse(SQLModel, table=True):
     ptba_start_pg_no: Optional[int] = None
     atbp_start_pg_no: Optional[int] = None
 
-    # Old format only
+    # NOTE: filled by the old API format only
     member_id: Optional[str] = None
     report_type: Optional[str] = None
     portfolio: Optional[str] = None
@@ -72,10 +72,10 @@ class HansardSittingDateResponse(SQLModel, table=True):
     foot_notes: Optional[str] = None
     foot_note_question: Optional[str] = None
     foot_note_questions: Optional[str] = None
-    foot_note: Optional[str] = None       # serialised JSON list
-    atbp_list: Optional[str] = None       # serialised JSON list
-    ptba_list: Optional[str] = None       # serialised JSON list
-    attendance_list: Optional[str] = None  # serialised JSON list
+    foot_note: Optional[str] = None
+    atbp_list: Optional[str] = None
+    ptba_list: Optional[str] = None
+    attendance_list: Optional[str] = None
     pdf_nodes: Optional[str] = None
     clarification_text: Optional[str] = None
     clarification_title: Optional[str] = None

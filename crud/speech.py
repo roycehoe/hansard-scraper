@@ -35,7 +35,6 @@ class CRUDSpeech:
         return list(self.session.exec(statement).all())
 
     def get_unresolved_speaker_info(self) -> Iterable[tuple[int, Optional[str], int, datetime]]:
-        """Stream (id, speaker, parliament_number, sitting_date) for every speech without a speaker_id."""
         statement = (
             select(Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date)
             .join(Report)
@@ -45,7 +44,6 @@ class CRUDSpeech:
         return self.session.exec(statement)
 
     def get_report_ids_with_unlinked_speaker(self, pattern: str) -> list[int]:
-        """Reports holding a speech without speaker_id whose speaker string matches the regex (case-insensitive)."""
         statement = (
             select(Speech.report_id)
             .distinct()
@@ -57,7 +55,6 @@ class CRUDSpeech:
     def get_rows_by_report_ids(
         self, report_ids: list[int]
     ) -> list[tuple[int, int, Optional[str], str, int, Optional[int]]]:
-        """(id, ordinal, speaker, transcript, report_id, speaker_id) in reading order."""
         statement = (
             select(Speech.id, Speech.ordinal, Speech.speaker, Speech.transcript, Speech.report_id, Speech.speaker_id)
             .where(col(Speech.report_id).in_(report_ids))
@@ -89,7 +86,6 @@ class CRUDSpeech:
         return delete_result.rowcount
 
     def set_speaker_ids_bulk(self, updates: dict[int, Optional[int]]) -> None:
-        """Set speaker_id per speech id; a None value clears the link."""
         if not updates:
             return
         self.session.execute(

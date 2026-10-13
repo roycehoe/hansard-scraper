@@ -27,7 +27,6 @@ class CRUDAttendance:
     def get_unresolved_speaker_info(
         self,
     ) -> list[tuple[int, Optional[str], Optional[int], Optional[int]]]:
-        """(id, speaker_name, sitting.parlement_no, sitting.volume_no) for every row without a speaker_id."""
         statement = (
             select(Attendance.id, Attendance.speaker_name, Sitting.parlement_no, Sitting.volume_no)
             .join(Sitting)
