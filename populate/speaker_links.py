@@ -1,6 +1,6 @@
 import re
 from datetime import date, datetime
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Sequence
 
 from sqlmodel import Session
 
@@ -41,14 +41,15 @@ from services.role_context import (
 
 _WRITE_BATCH = 50_000
 _REPORT_BATCH = 200
+_DEPUTY_SPEAKER_PAIR_SIZE = 2
+_SPEAKER_LABELS = ("Mr Speaker", "Mdm Speaker")
 
 # Only these roles resolve by sitting date; every other string resolves the same
 # way for every sitting in a parliament, so it is memoised on (string, parliament).
 _DATE_DEPENDENT_ROLES = (
     "The Chief Minister",
     "The Prime Minister",
-    "Mr Speaker",
-    "Mdm Speaker",
+    *_SPEAKER_LABELS,
     "Mr Deputy Speaker",
     "Mdm Deputy Speaker",
     "Mdm DeputySpeaker",
@@ -57,6 +58,17 @@ _DATE_DEPENDENT_ROLES = (
 
 _DEPUTY_SPEAKER_LABELS = ("Mr Deputy Speaker", "Mdm Deputy Speaker", "Mdm DeputySpeaker", "The Deputy Speaker")
 
+_LEADING_LIST_NUMBER_RE = re.compile(r"^\d+\\?\.\s*")
+_LEADING_DOT_RE = re.compile(r"^\.\s+")
+_ASSOC_PROF_RE = re.compile(r"\bAssoc\.Prof\.")
+_RANK_QUALIFIER_RE = re.compile(r"\s*[\[(](?:NS|Res)[\])]\s*")
+_TRAILING_MR_SPEAKER_RE = re.compile(r"\s+Mr Speaker,?$")
+_WHITESPACE_RE = re.compile(r"\s+")
+_INVERTED_NAME_RE = re.compile(r"^([A-Z][a-z]+), ([A-Z][a-z]+)$")
+_DOUBLED_LABEL_RE = re.compile(r"^(.{6,}?)\s+\1$")
+_PARENTHESIS_RE = re.compile(r"\(([^)]+)\)")
+_TITLE_DOT_PREFIX_RE = re.compile(r"^(Mr|Mrs|Dr|Ms)\.\s+")
+_GLUED_TITLE_RE = re.compile(r"^(Mr|Mrs|Dr|Ms|Mdm)([A-Z])")
 _TITLED_RE = re.compile(r"^(?:Mr|Mrs|Ms|Mdm|Dr|Miss|Inche|Encik|Assoc|Prof|Er)\b")
 
 # The Address is the only report where a bare head-of-state string is the holder speaking.
@@ -69,30 +81,30 @@ def _preclean(raw: str) -> str:
     belongs to the transcript, an unclosed parenthesis, an inverted two-part name and
     a label printed twice."""
     raw = raw.replace("\ufeff", "").strip()
-    raw = re.sub(r"^\d+\\?\.\s*", "", raw)
-    raw = re.sub(r"^\.\s+", "", raw)
-    raw = re.sub(r"\bAssoc\.Prof\.", "Assoc. Prof.", raw)
-    raw = re.sub(r"\s*[\[(](?:NS|Res)[\])]\s*", " ", raw)
-    raw = re.sub(r"\s+Mr Speaker,?$", "", raw)
-    raw = re.sub(r"\s+", " ", raw).rstrip(";, ").strip()
+    raw = _LEADING_LIST_NUMBER_RE.sub("", raw)
+    raw = _LEADING_DOT_RE.sub("", raw)
+    raw = _ASSOC_PROF_RE.sub("Assoc. Prof.", raw)
+    raw = _RANK_QUALIFIER_RE.sub(" ", raw)
+    raw = _TRAILING_MR_SPEAKER_RE.sub("", raw)
+    raw = _WHITESPACE_RE.sub(" ", raw).rstrip(";, ").strip()
     if raw.count("(") > raw.count(")"):
         cut = raw.rfind("(")
         inner = raw[cut + 1 :].strip()
         raw = f"{raw[:cut]}({inner})" if _TITLED_RE.match(inner) else raw[:cut].strip()
-    inverted = re.match(r"^([A-Z][a-z]+), ([A-Z][a-z]+)$", raw)
+    inverted = _INVERTED_NAME_RE.match(raw)
     if inverted is not None:
         raw = f"{inverted.group(2)} {inverted.group(1)}"
-    doubled = re.match(r"^(.{6,}?)\s+\1$", raw)
+    doubled = _DOUBLED_LABEL_RE.match(raw)
     return doubled.group(1) if doubled is not None else raw
 
 
 def _is_title_in_parentheses(match: re.Match) -> bool:
-    inner = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", match.group(1).strip())
+    inner = _TITLE_DOT_PREFIX_RE.sub(r"\1 ", match.group(1).strip())
     return strip_title(inner) != inner
 
 
 def _get_holder_on(
-    terms: list[tuple[date, date, str]], sitting_date: Optional[datetime]
+    terms: Sequence[tuple[date, date, str]], sitting_date: Optional[datetime]
 ) -> Optional[str]:
     """The single person holding the office on the sitting day, or None when there
     was none, more than one, or the day is unknown."""
@@ -124,7 +136,7 @@ def _resolve_presiding_officer(
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> Optional[int]:
-    if raw in ("Mr Speaker", "Mdm Speaker"):
+    if raw in _SPEAKER_LABELS:
         return _get_presiding_officer_id(
             _get_holder_on(SPEAKER_TERMS, sitting_date), parliament, lookups, speaker_id_lookup
         )
@@ -133,7 +145,7 @@ def _resolve_presiding_officer(
         # falls back to the one holder in office that day.
         # "Mdm" names the only woman holding the office in her window; a bare "Mr" on a
         # two-holder day is settled from the report by `_populate_deputy_speaker_links`.
-        named_match = re.search(r"\(([^)]+)\)", raw)
+        named_match = _PARENTHESIS_RE.search(raw)
         terms = (
             [term for term in DEPUTY_SPEAKER_TERMS if term[2] in DEPUTY_SPEAKER_WOMEN]
             if raw.startswith("Mdm")
@@ -201,7 +213,7 @@ def _resolve_speech_speaker_id(
 
     raw = _preclean(speaker.rstrip(":").strip())
 
-    if raw in ("Mr Speaker", "Mdm Speaker") or raw.startswith(_DEPUTY_SPEAKER_LABELS):
+    if raw in _SPEAKER_LABELS or raw.startswith(_DEPUTY_SPEAKER_LABELS):
         # Presiding officers never go through the name cascade.
         return _resolve_presiding_officer(
             raw, parliament, sitting_date, lookups, speaker_id_lookup
@@ -226,7 +238,7 @@ def _resolve_speech_speaker_id(
         )
         return speaker_id_lookup.get((role_canonical, role_parliament)) if role_canonical else None
 
-    parenthesised_matches = list(re.finditer(r"\(([^)]+)\)", raw))
+    parenthesised_matches = list(_PARENTHESIS_RE.finditer(raw))
     if parenthesised_matches:
         title_match = next(
             (match for match in reversed(parenthesised_matches) if _is_title_in_parentheses(match)),
@@ -236,8 +248,8 @@ def _resolve_speech_speaker_id(
             raw = title_match.group(1).strip()
         else:
             raw = raw[: parenthesised_matches[0].start()].strip()
-    raw = re.sub(r"^(Mr|Mrs|Dr|Ms|Mdm)([A-Z])", r"\1 \2", raw)
-    raw = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", raw)
+    raw = _GLUED_TITLE_RE.sub(r"\1 \2", raw)
+    raw = _TITLE_DOT_PREFIX_RE.sub(r"\1 ", raw)
     name = normalize_name(strip_title(raw))
     if not name:
         return None
@@ -376,6 +388,10 @@ def _get_speaker_id_for_name(
     return speaker_id_lookup.get((canonical, resolved_parliament)) if canonical else None
 
 
+def _get_sitting_date_key(sitting_date: datetime) -> str:
+    return f"{sitting_date.day}-{sitting_date.month}-{sitting_date.year}"
+
+
 def _populate_deputy_speaker_links(
     session: Session,
     lookups: SpeakerLookups,
@@ -413,7 +429,7 @@ def _populate_deputy_speaker_links(
             bare_deputy_rows = [row for row in rows if row[5] is None and BARE_DEPUTY_RE.match(row[2] or "")]
             day = report.sitting_date.date()
             holders = [name for first, last, name in DEPUTY_SPEAKER_TERMS if first <= day <= last]
-            if not bare_deputy_rows or len(holders) != 2:
+            if not bare_deputy_rows or len(holders) != _DEPUTY_SPEAKER_PAIR_SIZE:
                 continue
             total += len(bare_deputy_rows)
             parliament = report.parliament_number
@@ -432,7 +448,7 @@ def _populate_deputy_speaker_links(
                 if named_holder_ids <= {holder_to_speaker_id[male_holders[0]]}:
                     speech_id_to_speaker_id.update({row[0]: holder_to_speaker_id[male_holders[0]] for row in bare_deputy_rows})
                 continue
-            if len(male_holders) != 2:
+            if len(male_holders) != _DEPUTY_SPEAKER_PAIR_SIZE:
                 continue
             labelled_ids = ids_of(labelled, parliament) & valid_holder_ids
             speech_id_to_candidate_id = {}
@@ -453,11 +469,11 @@ def _populate_deputy_speaker_links(
         for other in crud_report.get_by_sitting_dates(list(dates)):
             sitting_date_to_reports.setdefault(other.sitting_date, []).append(other)
         sitting_date_key_to_markdown = CRUDSitting(session).get_markdown_by_dates(
-            [f"{sitting_date.day}-{sitting_date.month}-{sitting_date.year}" for sitting_date in dates]
+            [_get_sitting_date_key(sitting_date) for sitting_date in dates]
         )
         for report, speech_id_to_candidate_id, valid_holder_ids in pending_reports:
             sitting_date, parliament = report.sitting_date, report.parliament_number
-            named_today = day_ids(("sitting", sitting_date), sitting_date_key_to_markdown.get(f"{sitting_date.day}-{sitting_date.month}-{sitting_date.year}", ""), parliament)
+            named_today = day_ids(("sitting", sitting_date), sitting_date_key_to_markdown.get(_get_sitting_date_key(sitting_date), ""), parliament)
             for other in sitting_date_to_reports.get(sitting_date, []):
                 if other.id != report.id:
                     named_today = named_today | day_ids(other.id, other.markdown_content or "", parliament)

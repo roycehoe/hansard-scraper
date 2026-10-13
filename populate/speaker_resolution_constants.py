@@ -5,7 +5,7 @@ from datetime import date
 # A bare role string links only when exactly one holder was in office that day.
 # Sources: parliament.gov.sg Speaker page (names and years) and the Wikipedia list of
 # Speakers and Deputy Speakers (exact dates); see docs/adr/0002.
-SPEAKER_TERMS: list[tuple[date, date, str]] = [
+SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(1955, 4, 22), date(1963, 9, 3), "George Oehlers"),
     (date(1963, 10, 22), date(1964, 10, 30), "E.W. Barker"),
     (date(1964, 11, 2), date(1966, 8, 5), "A.P. Rajah"),
@@ -16,11 +16,11 @@ SPEAKER_TERMS: list[tuple[date, date, str]] = [
     (date(2011, 10, 10), date(2012, 12, 12), "Michael Palmer"),
     (date(2013, 1, 14), date(2017, 8, 7), "Halimah Yacob"),
     (date(2017, 9, 11), date(2023, 7, 17), "Tan Chuan-Jin"),
-]
+)
 
 # Two Deputy Speakers served at once for most of Parliaments 7, 10, 11 and 12, so a
 # bare "Mr Deputy Speaker" on those dates stays unlinked unless the string names the person.
-DEPUTY_SPEAKER_TERMS: list[tuple[date, date, str]] = [
+DEPUTY_SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(1955, 4, 26), date(1959, 3, 31), "Lim, R.C.H."),
     (date(1959, 7, 15), date(1961, 9, 24), "G. Kandasamy"),
     (date(1961, 11, 16), date(1963, 9, 3), "John Mammen"),
@@ -43,61 +43,63 @@ DEPUTY_SPEAKER_TERMS: list[tuple[date, date, str]] = [
     (date(2006, 11, 8), date(2011, 4, 18), "Matthias Yao Chih"),
     (date(2011, 10, 17), date(2015, 8, 24), "Seah Kian Peng"),
     (date(2011, 10, 17), date(2015, 8, 24), "Charles Chong"),
-]
+)
 
 # Deputy Speakers Hansard addresses as "Mdm"; the parliament.gov.sg list for 1955 to 2011 names no other woman.
-DEPUTY_SPEAKER_WOMEN: set[str] = {"Lim Hwee Hua", "Indranee Rajah"}
+DEPUTY_SPEAKER_WOMEN: frozenset[str] = frozenset({"Lim Hwee Hua", "Indranee Rajah"})
 
 # Role-only strings whose holder changed mid-parliament, by date. Sources disagree on
 # whether Lim Yew Hock took over on 7 or 8 June 1956, so that sitting stays unlinked.
 # Prime Minister handovers (28 Nov 1990, 12 Aug 2004) fell on days without a sitting.
-DATED_ROLE_TERMS: dict[str, list[tuple[date, date, str]]] = {
-    "The Chief Minister": [
+DATED_ROLE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
+    "The Chief Minister": (
         (date(1955, 4, 6), date(1956, 6, 6), "David Marshall"),
         (date(1956, 6, 8), date(1959, 6, 3), "Lim Yew Hock"),
-    ],
-    "The Prime Minister": [
+    ),
+    "The Prime Minister": (
         (date(1959, 6, 5), date(1990, 11, 27), "Lee Kuan Yew"),
         (date(1990, 11, 28), date(2004, 8, 11), "Goh Chok Tong"),
         (date(2004, 8, 12), date(2024, 5, 14), "Lee Hsien Loong"),
-    ],
+    ),
 }
 
 # Heads of state by date, for the bare strings printed in the Address itself. Day-level dates are
 # Wikipedia's, which cites NewspaperSG; no linked row falls within 30 days of a boundary
 # (plans/role-names-research.md). Resolved only by the report-context pass in speaker_links.py, so that
 # addenda and adjournment rows the parser mislabels "The President" stay unlinked.
-HEAD_OF_STATE_TERMS: dict[str, list[tuple[date, date, str]]] = {
-    "His Excellency the Governor": [
+HEAD_OF_STATE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
+    "His Excellency the Governor": (
         (date(1952, 4, 21), date(1955, 6, 1), "John Nicoll"),
         (date(1955, 6, 2), date(1955, 6, 29), "William Goode"),
         (date(1955, 6, 30), date(1957, 12, 8), "Robert Black"),
         (date(1957, 12, 9), date(1959, 6, 2), "William Goode"),
-    ],
-    "His Excellency the Yang di-Pertuan Negara": [
+    ),
+    "His Excellency the Yang di-Pertuan Negara": (
         (date(1959, 6, 3), date(1959, 12, 2), "William Goode"),
         (date(1959, 12, 3), date(1965, 8, 8), "Yusof bin Ishak"),
-    ],
-    "The President": [
+    ),
+    "The President": (
         (date(1965, 8, 9), date(1970, 11, 22), "Yusof bin Ishak"),
         (date(1971, 1, 2), date(1981, 5, 11), "Benjamin Henry Sheares"),
         (date(1981, 10, 23), date(1985, 3, 27), "C.V. Devan Nair"),
         (date(1985, 9, 2), date(1993, 8, 31), "Wee Kim Wee"),
         (date(1993, 9, 1), date(1999, 8, 31), "Ong Teng Cheong"),
         (date(1999, 9, 1), date(2011, 8, 31), "S R Nathan"),
-    ],
+    ),
 }
 
 ROLE_ONLY_SPEAKERS: dict[tuple[str, int], str] = {
     ("The Minister for Health", 11): "Khaw Boon Wan",
 }
 
-NON_SPEAKERS: set[str] = {
-    "An hon. Member",
-    "Some hon. Members",
-    "Non-Residents",
-    "Tributes by Leader of the House and Opposition Leaders",
-}
+NON_SPEAKERS: frozenset[str] = frozenset(
+    {
+        "An hon. Member",
+        "Some hon. Members",
+        "Non-Residents",
+        "Tributes by Leader of the House and Opposition Leaders",
+    }
+)
 
-COLONIAL_PARLIAMENT_FALLBACKS: list[int] = [1, 2, 3]
+COLONIAL_PARLIAMENT_FALLBACKS: tuple[int, ...] = (1, 2, 3)
 
