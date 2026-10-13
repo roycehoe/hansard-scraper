@@ -1,11 +1,3 @@
-"""Group per-parliament Speaker rows into persons (plans/person-identity.md).
-
-Rules, in order: a hand decision from data/person_decisions.json ("merge" joins the listed rows,
-"distinct" forbids any join between them), then identical names, then names equal after title,
-period, "bin" and inversion normalisation. A person holds at most one row per
-(parliament_number, is_legislative_assembly, is_member); a rule that would break that is refused and
-reported, and a merge decision that would break it stops the run.
-"""
 from collections import Counter
 from dataclasses import dataclass, field
 from typing import Optional
@@ -18,22 +10,22 @@ from services.attendance import (
     strip_title,
 )
 
-Key = tuple[str, int]  # (name, parliament_number), the natural key of a speaker row
+Key = tuple[str, int]
 
 
 @dataclass
 class Decision:
     members: list[Key]
-    decision: str  # "merge" or "distinct"
+    decision: str
     person_name: Optional[str] = None
 
 
 @dataclass
 class ClusterResult:
     clusters: list[list[Speaker]] = field(default_factory=list)
-    names: list[str] = field(default_factory=list)  # canonical name per cluster
-    bases: list[str] = field(default_factory=list)  # rule that formed each cluster
-    conflicts: list[str] = field(default_factory=list)  # refused unions, for the log
+    names: list[str] = field(default_factory=list)
+    bases: list[str] = field(default_factory=list)
+    conflicts: list[str] = field(default_factory=list)
 
 
 def normalised_name(name: str) -> str:
@@ -49,7 +41,7 @@ class _SpeakerClusters:
     def __init__(self, speakers: list[Speaker], distinct: set[frozenset[int]]):
         self.parent = {speaker.id: speaker.id for speaker in speakers}
         self.members = {speaker.id: [speaker] for speaker in speakers}
-        self.distinct = distinct  # pairs of speaker ids that may never share a person
+        self.distinct = distinct
         self.basis: dict[int, str] = {}
 
     def find(self, speaker_id: int) -> int:
@@ -101,7 +93,7 @@ def cluster_speakers(speakers: list[Speaker], decisions: list[Decision]) -> Clus
     }
     clusters = _SpeakerClusters(speakers, distinct)
     cluster_result = ClusterResult()
-    speaker_id_to_person_name: dict[int, str] = {}  # a merged row's id -> the decision's person name
+    speaker_id_to_person_name: dict[int, str] = {}
 
     for decision in decisions:
         if decision.decision != "merge":

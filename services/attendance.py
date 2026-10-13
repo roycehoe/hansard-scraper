@@ -6,7 +6,7 @@ from database.attendance import Attendance
 from database.sitting import Sitting
 from database.speaker import Speaker
 
-# Derived from markdown content: "Parliament No:| N" header in every sitting.
+# Derived from each sitting's Parliament No header
 VOLUME_TO_PARLIAMENT: dict[int, int] = {
     1: 1, 2: 1, 3: 1, 4: 1, 6: 1, 7: 1, 8: 1, 9: 1, 11: 1,
     12: 0, 13: 0, 14: 0, 15: 0, 16: 0, 17: 0, 18: 0, 19: 0,
@@ -25,222 +25,179 @@ VOLUME_TO_PARLIAMENT: dict[int, int] = {
     88: 12, 89: 12,
 }
 
-# Parliament-agnostic OCR corrections applied before the cascade.
-# Key: _period_normalize(ocr_form) → corrected name fed into the cascade.
-# Use this for character-substitution errors and post-nominal decorations — errors that
-# the same OCR scanner makes regardless of which parliament the sitting belongs to.
-# For genuinely parliament-specific fixes (surname disambiguation, inverted canonicals)
-# use _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER below.
+# NOTE: scanner errors made in every parliament go here; fixes that need a parliament go in _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.
 _OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
-    # Character-substitution errors
-    "lai tha chai": "Lai Tai Chai",       # Tha→Tai (vols 32-51, parl=3-6)
+    "lai tha chai": "Lai Tai Chai",  # vols 32-51, parl 3-6
     "lai tha chia": "Lai Tai Chai",
-    "chin ham tong": "Chin Harn Tong",    # Ham→Harn
-    "lbrahim othman": "Ibrahim Othman",   # l→I (lowercase for capital)
-    "yong nyuk lm": "Yong Nyuk Lin",      # Lm→Lin (truncated)
-    "leong keng sung": "Leong Keng Seng", # u→e
-    "gob keng swee": "Goh Keng Swee",     # b→h
+    "chin ham tong": "Chin Harn Tong",
+    "lbrahim othman": "Ibrahim Othman",
+    "yong nyuk lm": "Yong Nyuk Lin",
+    "leong keng sung": "Leong Keng Seng",
+    "gob keng swee": "Goh Keng Swee",
     "gob chew chua": "Goh Chew Chua",
-    "a rahim lshak": "A. Rahim Ishak",    # l→I in "Ishak"
-    "jek youn thong": "Jek Yeun Thong",   # ou→eu
-    "jek yuen thong": "Jek Yeun Thong",   # ue→eu
-    "wee loon boon": "Wee Toon Boon",     # l→T (lowercase for uppercase)
-    "wee toon. boon": "Wee Toon Boon",    # spurious period after "Toon"
-    "yaacoh bin mohamed": "Yaacob Bin Mohamed",  # h→b
-    "toh chih chye": "Toh Chin Chye",     # h→n
-    "ng kah tins": "Ng Kah Ting",         # s→g (spurious suffix)
-    "ho chong choon": "Ho Cheng Choon",   # o→e
-    "ho kah loong": "Ho Kah Leong",       # oo→eo
-    "lob miaw gong": "Loh Miaw Gong",     # b→h
-    "sia kat hui": "Sia Kah Hui",         # t→h
-    "buang bin omar junied": "Buang Bin Omar Junid",  # spurious 'e'
-    "wang soon fong": "Wong Soon Fong",   # a→o
-    "urn cheng lock": "Lim Cheng Lock",   # Urn→Lim
-    "sahorah binte ahmad": "Sahorah Binte Ahmat",  # d→t
-    "he puay choc.": "Hoe Puay Choo",    # He→Hoe, Choc→Choo
-    "scow peck leng": "Seow Peck Leng",  # c→e
-    "tan kb gan": "Tan Kia Gan",          # Kb→Kia
-    "ahmed bin ibrahim": "Ahmad Bin Ibrahim",  # e→a
-    "sob ghee soon": "Soh Ghee Soon",    # b→h
-    "low for tuck": "Low Por Tuck",      # F→P
-    "lim yew yock": "Lim Yew Hock",     # Y→H
-    # Rahmat Bin Kenap: suffix/prefix OCR corruption
-    "rahmat bin kenap a1-haj": "Rahmat Bin Kenap",  # A1→Al (digit 1 for l)
-    "haii rahmat bin kenap": "Rahmat Bin Kenap",    # Haii prefix = OCR of "Haji"
-    "rahmat bin kensp": "Rahmat Bin Kenap",          # Kensp→Kenap
-    # S. Rajaratnam OCR variants → corrected form hits the ("s rajaratnam", p) override
+    "a rahim lshak": "A. Rahim Ishak",
+    "jek youn thong": "Jek Yeun Thong",
+    "jek yuen thong": "Jek Yeun Thong",
+    "wee loon boon": "Wee Toon Boon",
+    "wee toon. boon": "Wee Toon Boon",
+    "yaacoh bin mohamed": "Yaacob Bin Mohamed",
+    "toh chih chye": "Toh Chin Chye",
+    "ng kah tins": "Ng Kah Ting",
+    "ho chong choon": "Ho Cheng Choon",
+    "ho kah loong": "Ho Kah Leong",
+    "lob miaw gong": "Loh Miaw Gong",
+    "sia kat hui": "Sia Kah Hui",
+    "buang bin omar junied": "Buang Bin Omar Junid",
+    "wang soon fong": "Wong Soon Fong",
+    "urn cheng lock": "Lim Cheng Lock",
+    "sahorah binte ahmad": "Sahorah Binte Ahmat",
+    "he puay choc.": "Hoe Puay Choo",
+    "scow peck leng": "Seow Peck Leng",
+    "tan kb gan": "Tan Kia Gan",
+    "ahmed bin ibrahim": "Ahmad Bin Ibrahim",
+    "sob ghee soon": "Soh Ghee Soon",
+    "low for tuck": "Low Por Tuck",
+    "lim yew yock": "Lim Yew Hock",
+    "rahmat bin kenap a1-haj": "Rahmat Bin Kenap",
+    "haii rahmat bin kenap": "Rahmat Bin Kenap",
+    "rahmat bin kensp": "Rahmat Bin Kenap",
     "s rajaratnarn": "S. Rajaratnam",
     "s rajaratam": "S. Rajaratnam",
     "s raiaratnam": "S. Rajaratnam",
-    # Yaacob Bin Mohamed with Islamic suffix appended (speech transcripts, parl=0 sittings)
     "yaacob bin mohamed al-haj": "Yaacob Bin Mohamed",
-    # OCR-corrupted prefix not caught by strip_title (period after lowercase letter)
     "inche. ahmad jabri bin mohammad akib": "Ahmad Jabri Bin Mohammad Akib",
-    # Post-nominal decorations: _period_normalize expands uppercase initials (D.U.T.→d u t)
-    # and preserves trailing periods after lowercase letters (San.→san.)
     "lim kim san. d u t": "Lim Kim San",
     "ho see beng. b b m": "Ho See Beng",
     "lim yew hock. s m n": "Lim Yew Hock",
     "thio chan bee. j p": "Thio Chan Bee",
     "thio chan bee, .j p": "Thio Chan Bee",
     "thio chan bee, j p": "Thio Chan Bee",
-    "thio chan bee, j.p.": "Thio Chan Bee",  # lowercase j.p. survives as-is
+    "thio chan bee, j.p.": "Thio Chan Bee",
     "r jumabhoy. c b e": "Jumabhoy, R.",
     "abdul hamid bin haji jumat. p m n": "Abdul Hamid Bin Haji Jumat",
     "ong piah teng. o b e": "Ong Piah Teng",
-    "tan eng liang. b b m": "Tan Eng Liang",  # B.B.M. post-nominal
-    # Character-substitution errors — parl=3–5 era names
-    "yeo choc kok": "Yeo Choo Kok",      # c→o
-    "yoo choo kok": "Yeo Choo Kok",      # oo→eo in first syllable
-    "chai chong vii": "Chai Chong Yii",  # V→Y
-    "ivan batist": "Ivan Baptist",        # truncated 'Baptist'
-    "lee yiok song": "Lee Yiok Seng",    # o→e
-    "lee chiaw memg": "Lee Chiaw Meng",  # g→ng (truncated)
-    "mg nam piau": "Ang Nam Piau",       # Mg→Ang
-    # parl=4–6 era OCR variants
-    "lou teik soon": "Lau Teik Soon",    # o→a (vol 39, parl=4)
-    "eugune yap giau cheng": "Eugene Yap Giau Cheng",  # u→e; cascade → inverted "Yap Giau Cheng, Eugene"
-    "yeo n ing hong": "Yeo Ning Hong",   # space-split 'Ning' (vol 45, parl=6)
-    # Mixed-era OCR variants
-    "koh kam son": "Koh Lam Son",        # m→l (vol 50, parl=6)
-    "rohan'bin kamis": "Rohan Bin Kamis",  # apostrophe for space (vols 38-44, parl=4-5)
-    "p govindasamy": "P. Govindaswamy",  # amy→awamy; cascade → inverted "Govindaswamy, P." (parl=1-4)
-    "p govindaswarny": "P. Govindaswamy",  # rny→my variant
-    "n govindaswamy": "N. Govindasamy",  # extra 'w'; cascade → inverted "Govindasamy, N." (parl=2-4)
-    # Post-nominal P.B.m. with lowercase 'm' (parl=5-8)
+    "tan eng liang. b b m": "Tan Eng Liang",
+    "yeo choc kok": "Yeo Choo Kok",
+    "yoo choo kok": "Yeo Choo Kok",
+    "chai chong vii": "Chai Chong Yii",
+    "ivan batist": "Ivan Baptist",
+    "lee yiok song": "Lee Yiok Seng",
+    "lee chiaw memg": "Lee Chiaw Meng",
+    "mg nam piau": "Ang Nam Piau",
+    "lou teik soon": "Lau Teik Soon",  # vol 39, parl 4
+    "eugune yap giau cheng": "Eugene Yap Giau Cheng",
+    "yeo n ing hong": "Yeo Ning Hong",  # vol 45, parl 6
+    "koh kam son": "Koh Lam Son",  # vol 50, parl 6
+    "rohan'bin kamis": "Rohan Bin Kamis",  # vols 38-44, parl 4-5
+    "p govindasamy": "P. Govindaswamy",  # parl 1-4
+    "p govindaswarny": "P. Govindaswamy",
+    "n govindaswamy": "N. Govindasamy",  # parl 2-4
     "wong kwei cheong, p bm.": "Wong Kwei Cheong",
     "tay eng soon, p bm.": "Tay Eng Soon",
-    # Character substitutions — colonial and early parliament era
-    "mohd ali bin aiwi": "Mohd Ali Bin Alwi",  # i→l in "Alwi" (parl=1)
-    "chiang hal ding": "Chiang Hai Ding",       # l→i (vols 30-32, parl=2-3)
-    "yeo loon chia": "Yeo Toon Chia",           # l→T (vols 34-36, parl=3-4)
-    "scab mui kok": "Seah Mui Kok",             # c→e, b→h (vols 32-33, parl=3)
-    "mg kok peng": "Ang Kok Peng",              # Mg→Ang (vol 33, parl=3)
-    "sidek bin sa niff": "Sidek Bin Saniff",    # space inserted in 'Saniff' (vols 42-45, parl=5-6)
-    # Space-split 'Ning' at a different position than iter 9
-    "yeo ni ng hong": "Yeo Ning Hong",          # 'Ni ng' split (cf. 'N ing' in iter 9)
-    # Trailing period on name (no post-nominal)
+    "mohd ali bin aiwi": "Mohd Ali Bin Alwi",  # parl 1
+    "chiang hal ding": "Chiang Hai Ding",  # vols 30-32, parl 2-3
+    "yeo loon chia": "Yeo Toon Chia",  # vols 34-36, parl 3-4
+    "scab mui kok": "Seah Mui Kok",  # vols 32-33, parl 3
+    "mg kok peng": "Ang Kok Peng",  # vol 33, parl 3
+    "sidek bin sa niff": "Sidek Bin Saniff",  # vols 42-45, parl 5-6
+    "yeo ni ng hong": "Yeo Ning Hong",
     "francis thomas.": "Francis Thomas",
     "john mammen.": "John Mammen",
-    # Ahmad Jabri prefix OCR variants not caught by existing "inche. ..." entry
-    "lnche ahmad jabri bin mohammad akib": "Ahmad Jabri Bin Mohammad Akib",  # l→I in 'Inche'
-    "inche, ahmad jabri bin mohammad akib": "Ahmad Jabri Bin Mohammad Akib",  # comma for period
-    # Role-appended colonial official names (parl=0/1 era)
+    "lnche ahmad jabri bin mohammad akib": "Ahmad Jabri Bin Mohammad Akib",
+    "inche, ahmad jabri bin mohammad akib": "Ahmad Jabri Bin Mohammad Akib",
     "oon khye kiang. financial secretary": "Oon Khye Kiang",
-    "t m hart, c m g financial secretary": "T.M. Hart",  # cascade → inverted "Hart, T.M."
-    # Character substitutions — parl=2–6 era
-    "sidek bin siniff": "Sidek Bin Saniff",          # i→a (cf. iter 11 'Sa niff' form)
-    "yea choo kok": "Yeo Choo Kok",                  # a→e
-    "goh ghok tong": "Goh Chok Tong",                # Gh→Ch
-    "hwang soo tin": "Hwang Soo Jin",                # t→j
-    "othmah bin haron eusofe": "Othman Bin Haron Eusofe",  # h→n
-    "s joyakumar": "S Jayakumar",                    # o→a
-    "tsy eng soon": "Tay Eng Soon",                  # Ts→Ta
-    "lea kuan yew": "Lee Kuan Yew",                  # a→e
-    "lau telk soon": "Lau Teik Soon",                # transposed l/k in 'Teik'
-    # Post-nominal B.B.m. comma separator variant (cf. "ho see beng. b b m" with period)
+    "t m hart, c m g financial secretary": "T.M. Hart",
+    "sidek bin siniff": "Sidek Bin Saniff",
+    "yea choo kok": "Yeo Choo Kok",
+    "goh ghok tong": "Goh Chok Tong",
+    "hwang soo tin": "Hwang Soo Jin",
+    "othmah bin haron eusofe": "Othman Bin Haron Eusofe",
+    "s joyakumar": "S Jayakumar",
+    "tsy eng soon": "Tay Eng Soon",
+    "lea kuan yew": "Lee Kuan Yew",
+    "lau telk soon": "Lau Teik Soon",
     "ho see beng, b bm.": "Ho See Beng",
-    # Trailing paren from malformed constituency stripping
-    "r jumabhoy)": "Jumabhoy, R.",  # cascade → direct lookup "Jumabhoy, R." at parl=1
-    # Post-nominal B.B.M. with period separator on Yeoh Ghim Seng
+    "r jumabhoy)": "Jumabhoy, R.",  # parl 1
     "yeoh ghim seng. b b m": "Yeoh Ghim Seng",
-    "yeoh ghim seng, b b m, .j p": "Yeoh Ghim Seng",   # B.B.M., .J.P.
-    "yeoh ghim seng, b b m,. j p": "Yeoh Ghim Seng",   # B B M,. J.P. variant
-    # Character substitutions and space-inserted forms
-    "p selvedurai": "P. Selvadurai",     # e→a; cascade → inverted "Selvadurai, P."
-    "mold. ariff bin suradi": "Mohd Ariff Bin Suradi, Haji",  # Mold→Mohd
-    "ow chin. hock": "Ow Chin Hock",    # spurious period in name (parl=4-9)
-    "m k a jabba.r": "M K A Jabbar",    # period inserted in 'Jabbar' (parl=5)
-    "mah bow t2an": "Mah Bow Tan",      # '2' spuriously inserted (parl=7-8)
-    # Saidi Shariff OCR variants — cascade uses _strip_middle_haji to find "Saidi Shariff"
-    "said! haji shariff": "Saidi Haji Shariff",   # ! for 'i'
-    "saidi haii shariff": "Saidi Haji Shariff",   # Haii→Haji
-    # Role-appended name forms
+    "yeoh ghim seng, b b m, .j p": "Yeoh Ghim Seng",
+    "yeoh ghim seng, b b m,. j p": "Yeoh Ghim Seng",
+    "p selvedurai": "P. Selvadurai",
+    "mold. ariff bin suradi": "Mohd Ariff Bin Suradi, Haji",
+    "ow chin. hock": "Ow Chin Hock",  # parl 4-9
+    "m k a jabba.r": "M K A Jabbar",  # parl 5
+    "mah bow t2an": "Mah Bow Tan",  # parl 7-8
+    "said! haji shariff": "Saidi Haji Shariff",
+    "saidi haii shariff": "Saidi Haji Shariff",
     "jek yeun thong minister for culture": "Jek Yeun Thong",
     "goh keng swee minister of defence": "Goh Keng Swee",
     "ahmad bin ibrahim (sembawang. minister for labour": "Ahmad Bin Ibrahim",
     "lee kuan yew (tanjong pagan. prime minister": "Lee Kuan Yew",
-    # Post-nominal decorated forms for colonial officials
     "george oehlers. o b e": "George Oehlers",
     "george oehlers, (o b e": "George Oehlers",
-    "w a c goode. c m g": "W.A.C. Goode",  # cascade → inverted "Goode, W.A.C."
-    # Sha'ari Bin Tadin OCR variants
-    "sha'ari bin tedin": "Sha'ari Bin Tadin",  # e→a in 'Tadin'
-    "sh'ari bin tadin": "Sha'ari Bin Tadin",   # missing 'a' after Sh'
-    "s1ia'ari bin tadin": "Sha'ari Bin Tadin",  # digit 1 for 'a' (S1ia→Sha)
-    # Comma/punctuation misplacements
-    "ahmad, bin ibrahim": "Ahmad Bin Ibrahim",   # comma misplacement
-    "j, f conceicao": "J.F. Conceicao",         # J, F → J.F.; cascade → inverted "Conceicao, J.F."
-    # Post-nominal variants not yet caught
-    "hon sui sen. d u b c": "Hon Sui Sen",       # D.U.B.C. honour
-    "chau sik ting, p bm.": "Chau Sik Ting",    # P.B.m.; cascade → inverted "Chau Sik Ting, Dr"
-    "ho see beng, a.bm.": "Ho See Beng",        # a.B.m. variant (lowercase 'a')
-    # Trailing apostrophe / spurious period in name
+    "w a c goode. c m g": "W.A.C. Goode",
+    "sha'ari bin tedin": "Sha'ari Bin Tadin",
+    "sh'ari bin tadin": "Sha'ari Bin Tadin",
+    "s1ia'ari bin tadin": "Sha'ari Bin Tadin",
+    "ahmad, bin ibrahim": "Ahmad Bin Ibrahim",
+    "j, f conceicao": "J.F. Conceicao",
+    "hon sui sen. d u b c": "Hon Sui Sen",
+    "chau sik ting, p bm.": "Chau Sik Ting",
+    "ho see beng, a.bm.": "Ho See Beng",
     "mohd ghazali bin ismail'": "Mohd Ghazali Bin Ismail",
     "hwang. soo jin": "Hwang Soo Jin",
     "fong. sip chee": "Fong Sip Chee",
-    # Inverted-initial variant
-    "p seivadurai": "P. Selvadurai",             # ei→el; cascade → inverted "Selvadurai, P."
-    # "Should already resolve" anomalies — existing entries cover different name or separator form
-    "inche. buang bin omar junid": "Buang Bin Omar Junid",  # existing entries only cover Ahmad Jabri
-    "j,f conceicao": "J.F. Conceicao",          # existing "j, f conceicao" has space; this has none
-    "ong piah teng, o b e": "Ong Piah Teng",    # existing "ong piah teng. o b e" uses period sep
-    "ang nam piau.": "Ang Nam Piau",             # existing "mg nam piau" handles Mg→Ang; trailing period not covered
-    "yeoh ghim seng)": "Yeoh Ghim Seng",        # trailing paren (existing entries cover post-nominal forms)
-    "p selvadural": "P. Selvadurai",             # ural→urai; cascade → inverted "Selvadurai, P."
-    "yaacob bin mohamed ai-haj": "Yaacob Bin Mohamed",  # AI-Haj (uppercase I) vs al-haj (lowercase l)
-    # Character substitutions — parl=2–5 era new variants
-    "hwang soo un": "Hwang Soo Jin",             # un→Jin (parl=2, vol=27)
-    "lau teik sobn": "Lau Teik Soon",            # Sobn→Soon (parl=5, vol=45)
-    "mohd mi bin alwi": "Mohd Ali Bin Alwi",     # Mi→Ali (parl=0, vol=20)
-    "othman bin haron elisofe": "Othman Bin Haron Eusofe",  # ELisofe→Eusofe (parl=5, vol=45)
-    "adbul hamid bin haji jumat": "Abdul Hamid Bin Haji Jumat",  # Adbul→Abdul (parl=1, vol=14)
-    "dl chiang hai ding": "Chiang Hai Ding",     # DL=OCR of Dr/Mr (parl=2, vol=32)
-    "dr yeoh ghim seng": "Yeoh Ghim Seng",       # DR=all-caps OCR not in _TITLE_PREFIXES (parl=6, vol=50)
-    "mr tan soo khoon": "Tan Soo Khoon",         # MR=all-caps OCR not in _TITLE_PREFIXES (parl=6, vol=50)
-    "cha,u sik ting": "Chau Sik Ting",           # comma inside name (parl=5, vol=42)
-    "lee tee long": "Lee Tee Tong",              # long→Tong (parl=0→1, vol=23)
-    "ch'ng lit koon": "Ch'ng Jit Koon",          # lit→Jit (parl=3, vol=32)
-    "ong tang cheong": "Ong Teng Cheong",        # Tang→Teng (parl=4, vol=39)
-    "ong tong cheong": "Ong Teng Cheong",        # Tong→Teng (parl=5, vol=43)
-    "lee yock suen": "Lee Yock Suan",            # Suen→Suan (parl=5, vol=40)
-    "sia khoon soong": "Sia Khoon Seong",        # Soong→Seong (parl=4, vol=38)
-    "lirn choon mong": "Lim Choon Mong",         # Lirn→Lim (parl=1, vol=9)
-    "lim you eng": "Lin You Eng",                # Lim→Lin (parl=1, vol=15)
-    "mt. lin you eng": "Lin You Eng",            # Mt.=OCR of Mr.; same person as Lim You Eng (parl=1, vol=14)
-    "phue bah lee": "Phua Bah Lee",              # Phue→Phua (parl=5, vol=43)
-    "phua bali lee": "Phua Bah Lee",             # Bali→Bah (parl=3, vol=31)
-    # Post-nominal decoration variants not yet covered
-    "ang kok peng, b bm.": "Ang Kok Peng",      # B.B.m. (lowercase m survives _period_normalize, parl=5, vol=44)
-    "ang kok peng. b b m": "Ang Kok Peng",      # B.B.M. with period separator (parl=3, vol=36)
-    "seah mui kok, b bm.": "Seah Mui Kok",      # B.B.m. (parl=5, vol=43)
-    "seah mui kok, e.bm.": "Seah Mui Kok",      # e.B.m. (lowercase e+period survives, parl=5, vol=43)
-    "seah mui kok, ba.m.": "Seah Mui Kok",      # B.a.m. (B. stripped, a. survives, parl=5, vol=44)
-    "thio chan bee, j p tanglin)": "Thio Chan Bee",  # post-nominal J.P. + constituency (parl=1, vol=15)
-    # Post-nominal for colonial officials
-    "c h butterfield. q c": "C.H. Butterfield",  # Q.C. post-nominal; cascade → inverted "Butterfield, C.H." (parl=1, vol=2)
-    "e p shanks, q c attorney-general": "E.P. Shanks",  # Q.C. + role; cascade → inverted "Shanks, E.P." (parl=1, vol=6)
-    # Constituency+role appended forms
-    "goh keng swee kreta ayer) minister for finance": "Goh Keng Swee",   # (parl=0→1, vol=23)
-    "lim kim san cairnhill), minister for national development": "Lim Kim San",  # (parl=0→1, vol=23)
-    "chor yeok eng bukit timah), parliamentary secretary to the minister for health": "Chor Yeok Eng",  # (parl=3, vol=31)
-    "ngeow pack hua aboon lay)": "Ngeow Pack Hua",   # OCR constituency (parl=4, vol=38)
-    "ya'acob bin mohamed kampong ubi), minister of state, prime minister's office": "Yaacob Bin Mohamed",  # (parl=2, vol=27)
-    # Trailing punctuation on real names
-    "wong foo nam.": "Wong Foo Nam",             # trailing period (parl=1, vol=2)
-    "s v lingam.": "S.V. Lingam",               # trailing period; cascade → inverted "Lingam, S.V." (parl=1, vol=11)
-    "c h koh.": "C.H. Koh",                     # trailing period; cascade → inverted "Koh, C.H." (parl=1, vol=15)
-    "urn kim san": "Lim Kim San",                # Urn→Lim (cf. "urn cheng lock"; parl=2, vol=30)
-    # Presiding-officer role suffix in attendance lines
-    "punch coomaraswamy, deputy speaker": "P. Coomaraswamy",  # cascade → inverted "Coomaraswamy, P." (parl=1, vol=25)
-    "p coomaraswamy, deputy speaker": "P. Coomaraswamy",      # initials-only form (parl=1, vol=25)
-    "p coomaraswam": "P. Coomaraswamy",                       # truncated spelling in a 1968 header (parl=2)
-    "fang kim heng": "Fong Kim Heng",                         # OCR a for o, 1964 bracket (parl=0)
-    # Markdown/formatting artifacts surviving into existing DB rows (parser fix prevents future occurrences)
-    "absent: mr ahmad mohd magad": "Ahmad Mohd Magad",  # Absent: prefix not stripped (parl=9, vol=70)
-    "**mr ng kah ting": "Ng Kah Ting",          # markdown bold prefix (parl=2, vol=27)
-    # Speech-string variants found in the October 2026 attribution pass; each target is the
-    # one person of that name in the parliaments where the string occurs.
+    "p seivadurai": "P. Selvadurai",
+    "inche. buang bin omar junid": "Buang Bin Omar Junid",
+    "j,f conceicao": "J.F. Conceicao",
+    "ong piah teng, o b e": "Ong Piah Teng",
+    "ang nam piau.": "Ang Nam Piau",
+    "yeoh ghim seng)": "Yeoh Ghim Seng",
+    "p selvadural": "P. Selvadurai",
+    "yaacob bin mohamed ai-haj": "Yaacob Bin Mohamed",
+    "hwang soo un": "Hwang Soo Jin",  # parl 2, vol 27
+    "lau teik sobn": "Lau Teik Soon",  # parl 5, vol 45
+    "mohd mi bin alwi": "Mohd Ali Bin Alwi",  # parl 0, vol 20
+    "othman bin haron elisofe": "Othman Bin Haron Eusofe",  # parl 5, vol 45
+    "adbul hamid bin haji jumat": "Abdul Hamid Bin Haji Jumat",  # parl 1, vol 14
+    "dl chiang hai ding": "Chiang Hai Ding",  # parl 2, vol 32
+    "dr yeoh ghim seng": "Yeoh Ghim Seng",  # parl 6, vol 50
+    "mr tan soo khoon": "Tan Soo Khoon",  # parl 6, vol 50
+    "cha,u sik ting": "Chau Sik Ting",  # parl 5, vol 42
+    "lee tee long": "Lee Tee Tong",  # parl 0 to 1, vol 23
+    "ch'ng lit koon": "Ch'ng Jit Koon",  # parl 3, vol 32
+    "ong tang cheong": "Ong Teng Cheong",  # parl 4, vol 39
+    "ong tong cheong": "Ong Teng Cheong",  # parl 5, vol 43
+    "lee yock suen": "Lee Yock Suan",  # parl 5, vol 40
+    "sia khoon soong": "Sia Khoon Seong",  # parl 4, vol 38
+    "lirn choon mong": "Lim Choon Mong",  # parl 1, vol 9
+    "lim you eng": "Lin You Eng",  # parl 1, vol 15
+    "mt. lin you eng": "Lin You Eng",  # parl 1, vol 14
+    "phue bah lee": "Phua Bah Lee",  # parl 5, vol 43
+    "phua bali lee": "Phua Bah Lee",  # parl 3, vol 31
+    "ang kok peng, b bm.": "Ang Kok Peng",  # parl 5, vol 44
+    "ang kok peng. b b m": "Ang Kok Peng",  # parl 3, vol 36
+    "seah mui kok, b bm.": "Seah Mui Kok",  # parl 5, vol 43
+    "seah mui kok, e.bm.": "Seah Mui Kok",  # parl 5, vol 43
+    "seah mui kok, ba.m.": "Seah Mui Kok",  # parl 5, vol 44
+    "thio chan bee, j p tanglin)": "Thio Chan Bee",  # parl 1, vol 15
+    "c h butterfield. q c": "C.H. Butterfield",  # parl 1, vol 2
+    "e p shanks, q c attorney-general": "E.P. Shanks",  # parl 1, vol 6
+    "goh keng swee kreta ayer) minister for finance": "Goh Keng Swee",  # parl 0 to 1, vol 23
+    "lim kim san cairnhill), minister for national development": "Lim Kim San",  # parl 0 to 1, vol 23
+    "chor yeok eng bukit timah), parliamentary secretary to the minister for health": "Chor Yeok Eng",  # parl 3, vol 31
+    "ngeow pack hua aboon lay)": "Ngeow Pack Hua",  # parl 4, vol 38
+    "ya'acob bin mohamed kampong ubi), minister of state, prime minister's office": "Yaacob Bin Mohamed",  # parl 2, vol 27
+    "wong foo nam.": "Wong Foo Nam",  # parl 1, vol 2
+    "s v lingam.": "S.V. Lingam",  # parl 1, vol 11
+    "c h koh.": "C.H. Koh",  # parl 1, vol 15
+    "urn kim san": "Lim Kim San",  # parl 2, vol 30
+    "punch coomaraswamy, deputy speaker": "P. Coomaraswamy",  # parl 1, vol 25
+    "p coomaraswamy, deputy speaker": "P. Coomaraswamy",  # parl 1, vol 25
+    "p coomaraswam": "P. Coomaraswamy",  # 1968 header, parl 2
+    "fang kim heng": "Fong Kim Heng",  # 1964 bracket, parl 0
+    "absent: mr ahmad mohd magad": "Ahmad Mohd Magad",  # parl 9, vol 70
+    "**mr ng kah ting": "Ng Kah Ting",  # parl 2, vol 27
+    # Found in the October 2026 attribution pass
     "wan hussin bin hj zoohri": "Wan Hussin Zoohri",
     "mohamed maliki bin osman": "Mohamad Maliki Bin Osman",
     "rahmat bin kenap al-haj": "Rahmat Bin Kenap",
@@ -278,31 +235,16 @@ _OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
     "ellen lee geck hoon": "Ellen Lee",
 }
 
-# Manual overrides for names that cannot be resolved by general normalisation rules.
-# Key: (period_normalized_extracted_name, parliament_number)
-# Value: canonical Speaker.name
-# Use for: (a) surname-only forms where parliament is needed for disambiguation,
-# (b) inverted-format canonicals the cascade can't reach without explicit mapping.
-# Do NOT use for OCR character substitutions — those belong in _OCR_FORM_TO_CORRECTED_NAME above.
+# NOTE: surname-only forms and inverted canonicals go here; OCR character errors belong in _OCR_FORM_TO_CORRECTED_NAME.
 _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
-    # Colonial-era variant spellings
-    # "D.S. Marshall" is David Marshall (Labour Front Chief Minister)
     ("d s marshall", 1): "David Marshall",
-    # "Mrs C. V. Devan Nair" is Mrs Devan Nair, MP for Moulmein 1963 to 1968, printed with her husband's
-    # initials; scoped to parliament 1 so C. V. Devan Nair's own rows (parliaments 4 to 6) stay his
+    # Mrs Devan Nair, not C. V. Devan Nair
     ("c v devan nair", 1): "Devan Nair, Mrs",
-    # "His Excellency the Governor (Sir William Goode, K.C.M.G.)": the post-nominals survive title stripping
     ("william goode, k c m g", 1): "William Goode",
-    # "G.E.N. Oehlers" is George E.N. Oehlers (Labour Front)
     ("g e n oehlers", 1): "George Oehlers",
-    # "Rahamat" is a spelling variant of "Rahmat" (already in Speaker table)
     ("rahamat bin kenap", 1): "Rahmat Bin Kenap",
-    # OCR spelling variants of existing parliament-1 MPs
-    # "Koo Young" is "Koo Yong" (Barisan Sosialis)
     ("koo young", 1): "Koo Yong",
-    # "Chew Chin Han" is "Chew Chin Harn" (People's Action Party)
     ("chew chin han", 1): "Chew Chin Harn",
-    # Surname-only speech forms for colonial officials -- all unique in parliament 1
     ("hart", 1): "Hart, T.M.",
     ("goode", 1): "Goode, W.A.C.",
     ("butterfield", 1): "Butterfield, C.H.",
@@ -312,19 +254,15 @@ _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
     ("stewart", 1): "Stewart, S.T.",
     ("davies", 1): "Davies, E.J.",
     ("higham", 1): "Higham, J.D.",
-    # Speaker table has typo "Gahni" instead of "Ghani"
+    # NOTE: the Speaker table spells it Gahni
     ("ahmad khalis bin abdul ghani", 10): "Ahmad Khalis bin Abdul Gahni",
-    # "B M M" is an abbreviation of "Bin Masagos Mohamad"
     ("masagos zulkifli b m m", 11): "Masagos Zulkifli Bin Masagos Mohamad",
     ("masagos zulkifli b m m", 12): "Masagos Zulkifli Bin Masagos Mohamad",
-    # Extracted name lacks the ", Dr" title suffix present in Speaker.name
     ("lim chun leng, michael", 8): "Lim Chun Leng, Michael, Dr",
     ("lim chun leng, michael", 9): "Lim Chun Leng, Michael, Dr",
     ("lim chun leng, michael", 10): "Lim Chun Leng, Michael, Dr",
-    # One-letter spelling difference in Speaker.name
     ("abdul nasser bin kamaruddin", 7): "Abdul Nasser Bin Kamarudin",
     ("seet ai mee", 7): "Seet Ai Mei, Dr",
-    # Surname-only references: "Mr Jeyaretnam", "Prof. Jayakumar", etc.
     ("jeyaretnam", 5): "J B Jeyaretnam",
     ("jeyaretnam", 6): "J B Jeyaretnam",
     ("jeyaretnam", 9): "J B Jeyaretnam",
@@ -340,40 +278,30 @@ _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
     ("dhanabalan", 6): "S. Dhanabalan",
     ("dhanabalan", 7): "S. Dhanabalan",
     ("dhanabalan", 8): "S. Dhanabalan",
-    # Barker, E.W. stored in inverted format; last word of canonical is "E.W." not "Barker"
     ("barker", 1): "Barker, E.W.",
     ("barker", 2): "Barker, E.W.",
     ("barker", 3): "Barker, E.W.",
     ("barker", 4): "Barker, E.W.",
     ("barker", 5): "Barker, E.W.",
     ("barker", 6): "Barker, E.W.",
-    # Bani, S.T. stored in inverted format; resolved after parl=0 fallback to parl=1
     ("bani", 1): "Bani, S.T.",
-    # Full-name variant: "Joshua Benjamin Jeyaretnam" for J B Jeyaretnam
     ("joshua benjamin jeyaretnam", 5): "J B Jeyaretnam",
     ("joshua benjamin jeyaretnam", 6): "J B Jeyaretnam",
-    # Apostrophe variant: "Ya'acob" vs "Yaacob" in Speaker table
     ("ya'acob bin mohamed", 1): "Yaacob Bin Mohamed",
     ("ya'acob bin mohamed", 2): "Yaacob Bin Mohamed",
     ("ya'acob bin mohamed", 3): "Yaacob Bin Mohamed",
     ("ya'acob bin mohamed", 4): "Yaacob Bin Mohamed",
-    # Mohd Ariff Bin Suradi — prefix lookup drops ("mohd ariff", N) because both the
-    # natural and original forms of the inverted name generate the same prefix key,
-    # causing the deduplication count to hit 2 and exclude it as ambiguous.
+    # NOTE: the prefix lookup drops these as ambiguous, because both name forms yield the same key.
     ("mohd ariff", 1): "Mohd Ariff Bin Suradi, Haji",
     ("mohd ariff", 2): "Mohd Ariff Bin Suradi, Haji",
-    # Tuan Haji Yaacob — strip_title leaves "Yaacob" (single word); no lookup reaches
-    # "Yaacob Bin Mohamed" from a bare first name alone.
     ("yaacob", 1): "Yaacob Bin Mohamed",
-    # S. Rajaratnam stored inverted as "Rajaratnam, S"; "Mr. S. Rajaratnam" leaves "Mr."
-    # after strip_title which doesn't handle the period-after-title form
     ("s rajaratnam", 1): "Rajaratnam, S",
     ("s rajaratnam", 2): "Rajaratnam, S",
     ("s rajaratnam", 3): "Rajaratnam, S",
     ("s rajaratnam", 4): "Rajaratnam, S",
     ("s rajaratnam", 5): "Rajaratnam, S",
     ("s rajaratnam", 6): "Rajaratnam, S",
-    # Speech-string variants found in the October 2026 attribution pass
+    # Found in the October 2026 attribution pass
     ("mohd ariff", 3): "Mohd Ariff Bin Suradi, Haji",
     ("gerald ee", 9): "Ee, Gerard",
     ("yaacob bin yaacob", 1): "Yaacob Bin Mohamed",
@@ -383,7 +311,7 @@ _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
 }
 
 
-# Title prefixes, longest first to avoid partial matches.
+# NOTE: longest first, so a shorter prefix never matches ahead of a longer one.
 _TITLE_PREFIXES = (
     "The Honourable Mr ", "The Honourable Mrs ", "The Honourable Dr ",
     "The Honourable Miss ", "The Honourable Ms ", "The Honourable Inche ",
@@ -405,17 +333,10 @@ _TITLE_PREFIXES = (
     "Cdre ", "[NS] ", "(NS) ",
 )
 
-# Trailing comma-separated ALL-CAPS honorific abbreviations.
-# Each token may have spaces within it (e.g. "J. P." counts as one token).
 _HONORIFIC_SUFFIX_RE = re.compile(r"(?:,\s*[A-Z][A-Z.]*(?:\s+[A-Z][A-Z.]*)*)+$")
 
-# Islamic suffix like "Al-Haj", "Al-Hajj" that can follow the name after a space.
 _ISLAMIC_SUFFIX_RE = re.compile(r"\s+[Aa]l-[Hh]aj[jh]?\s*$")
 
-# Trailing official role suffix: ", Financial Secretary", ", Attorney-General", etc.
-# Applied before _HONORIFIC_SUFFIX_RE so that mixed-case role titles don't block
-# the all-caps honorific stripping (e.g. "Hart, C.M.G., Financial Secretary" ->
-# strip role -> "Hart, C.M.G." -> strip honorific -> "Hart").
 _OFFICIAL_ROLE_SUFFIX_RE = re.compile(
     r",\s*(?:Acting\s+)?(?:Financial|Chief|Colonial)\s+Secretary"
     r"|,\s*Attorney[-\s]General"
@@ -423,7 +344,6 @@ _OFFICIAL_ROLE_SUFFIX_RE = re.compile(
     re.I,
 )
 
-# Title suffixes that can appear at the end of inverted names: "Surname, Firstname, Dr".
 _INVERTED_TITLE_SUFFIXES = frozenset({"Dr", "Mdm", "Mr", "Mrs", "Ms", "Prof", "Assoc Prof", "RAdm", "BG"})
 
 _MIN_SURNAME_LOOKUP_LENGTH = 2
@@ -435,64 +355,36 @@ _MIN_INVERTED_TITLE_SUFFIX_PART_COUNT = 3
 
 
 def normalize_name(name: str) -> str:
-    """
-    Normalise a name string for storage and lookup:
-    1. Collapse spaces between consecutive initials: "E. W. Barker" -> "E.W. Barker"
-    2. Normalise Malay abbreviation: "Mohd." -> "Mohd"
-    Note: lone-initial period ("S. Iswaran") is NOT stripped because some Speaker.name
-    values keep the period (e.g. "A. Rahim Ishak") while others omit it ("S Iswaran").
-    """
+    # NOTE: a lone-initial period ("S. Iswaran") stays, because some Speaker.name values keep it ("A. Rahim Ishak") and others drop it.
     name = re.sub(r"(?<=[A-Z]\.) (?=[A-Z]\.)", "", name)
     return re.sub(r"\bMohd\.", "Mohd", name)
 
 
 def _normalize_for_lookup(name: str) -> str:
     normalized = normalize_name(name)
-    # Additional normalization for inverted-lookup key only:
-    # strip period from a lone leading initial ("S. Name" -> "S Name") so that
-    # "S. Rajaratnam" matches the lookup key for "Rajaratnam, S" (stored without period).
-    # This does NOT affect the stored speaker_name -- only the lookup search key.
+    # NOTE: only this lookup key loses the lone-initial period, so "S. Rajaratnam" finds "Rajaratnam, S"; stored names keep it.
     normalized = re.sub(r"^([A-Z])\. (?=[A-Z])", r"\1 ", normalized)
     return normalized.lower()
 
 
 def _period_normalize(name: str) -> str:
-    """
-    Normalize for period-stripped key comparison:
-    'M.K.A. Jabbar' -> 'm k a jabbar'
-    'J.B. Jeyaretnam' -> 'j b jeyaretnam'
-    'S. Jayakumar' -> 's jayakumar'
-    'Harun bin A. Ghani' -> 'harun bin a ghani'
-    """
-    # Insert space between consecutive uppercase initials using lookbehind/lookahead
-    # so all pairs are split in one pass: "M.K.A." -> "M K A." (positions don't consume).
     normalized = re.sub(r"(?<=[A-Z])\.(?=[A-Z])", " ", name)
-    normalized = re.sub(r"([A-Z])\.", r"\1", normalized)   # strip remaining trailing period: "K." -> "K"
+    normalized = re.sub(r"([A-Z])\.", r"\1", normalized)
     normalized = re.sub(r"\s+", " ", normalized)
     return normalized.strip().lower()
 
 
 def _strip_bin(name: str) -> str:
-    """Remove the Malay 'bin'/'binte' patronymic connector (case-insensitive)."""
     return re.sub(r"\s+bin(?:te)?\s+", " ", name, flags=re.IGNORECASE).strip()
 
 
 def _strip_middle_haji(name: str) -> str:
-    """Remove 'Haji'/'Tuan Haji' from the middle of a name (not as a prefix).
-    Used as a lookup fallback: 'Saidi Haji Shariff' -> 'Saidi Shariff'."""
     return re.sub(r"\s+(?:[Tt]uan\s+)?(?:[Hh]aji|[Hh]j\.?)\s+", " ", name).strip()
 
 
 def _spelling_normalize(name: str) -> str:
-    """
-    Normalise common spelling variants for lookup purposes only:
-    - Mohamad/Mohammed/Mohammad -> Mohamed
-    - Consecutive spaced single uppercase letters -> joined: "B P M" -> "BPM"
-    - Hyphens -> spaces (to match "Lee Siew-Choh" against "Lee Siew Choh")
-    """
     normalized = re.sub(r"\bMohamad\b|\bMohammed\b|\bMohammad\b", "Mohamed", name)
     normalized = normalized.replace("-", " ")
-    # Collapse sequences of spaced single uppercase letters: "B P M" -> "BPM"
     normalized = re.sub(
         r"\b([A-Z])((?:\s+[A-Z])+)\b",
         lambda initials_match: initials_match.group(1) + initials_match.group(2).replace(" ", ""),
@@ -512,8 +404,6 @@ def strip_title(text: str) -> str:
 
 
 def _invert_to_natural(speaker_name: str) -> Optional[str]:
-    """Convert 'Surname, Firstname[, TitleSuffix]' to natural 'Firstname Surname' form.
-    Returns None if the name is not in inverted format."""
     if ", " not in speaker_name:
         return None
     parts = speaker_name.split(", ")
@@ -620,10 +510,6 @@ def _build_wordset_lookup(speakers: list[Speaker]) -> dict[tuple[frozenset, int,
 
 
 def _build_wordset_subset_lookup(speakers: list[Speaker]) -> dict[tuple[frozenset, int], str]:
-    """Like _build_wordset_lookup but keyed by (frozenset(words), parliament) without word count.
-    Only emits entries for names with 3+ words (after title stripping) to avoid false positives.
-    Allows matching names where the word count differs, e.g. "Aline Wong" matching "Wong Aline K".
-    """
     triples: list[tuple[str, str, int]] = []
     for speaker in speakers:
         natural = _invert_to_natural(speaker.name)
@@ -719,6 +605,7 @@ def _get_closing_parenthesis_index(text: str, open_index: int) -> Optional[int]:
 
 
 def _strip_name_decorations(name_part: str) -> str:
+    # NOTE: the role suffix goes first, so a mixed-case role title never blocks the all-caps honorific strip.
     name = strip_title(name_part.strip())
     name = _OFFICIAL_ROLE_SUFFIX_RE.sub("", name).rstrip(", ").strip()
     name = _HONORIFIC_SUFFIX_RE.sub("", name).rstrip(", ").strip()
@@ -726,18 +613,9 @@ def _strip_name_decorations(name_part: str) -> str:
 
 
 def _parse_name_and_location(text: str) -> ParsedAttendee:
-    """
-    Extract (speaker_name, location_name) from text like:
-      "Name, Honorifics (Constituency), Portfolio [possibly (more)]"
-      "Name (Constituency)"
-      "Name, Honorifics"   (no constituency)
-
-    Uses the FIRST parenthetical as constituency, not the last, so that
-    portfolio suffixes like ", Second Deputy Prime Minister (Foreign Affairs)"
-    do not clobber the constituency.
-    """
     text = text.strip().rstrip(". ")
 
+    # NOTE: the first parenthetical is the constituency, so a later portfolio parenthetical never replaces it.
     first_open = text.find("(")
     if first_open == -1:
         return ParsedAttendee(_strip_name_decorations(text), None)
@@ -749,12 +627,7 @@ def _parse_name_and_location(text: str) -> ParsedAttendee:
 
 
 def _parse_speaker_line(line: str) -> ParsedAttendee:
-    """
-    Parse SPEAKER lines: "[Title] SPEAKER ([Title] Name [(Constituency)]).".
-    Extracts the name and constituency from within the outer parentheses.
-    """
     line = line.rstrip(". ")
-    # Find the outermost parenthetical (greedy: first '(' to last ')')
     match = re.search(r"\((.+)\)\s*$", line)
     if match is None:
         return ParsedAttendee("SPEAKER", None)
@@ -767,19 +640,15 @@ def _parse_entry_line(line: str) -> Optional[ParsedAttendee]:
     line = line.strip()
     if not line:
         return None
-    # Strip bullet prefix for modern vol 88-89 (## Present: / ## Absent: format)
     if line.startswith("* "):
         line = line[2:].strip()
     if not line:
         return None
-    # Strip markdown bold prefix: "**Mr Ng Kah Ting" -> "Mr Ng Kah Ting"
     if line.startswith("**"):
         line = line[2:].strip()
-    # Strip stray section-label prefix: "Absent: Mr Ahmad Mohd Magad" -> "Mr Ahmad Mohd Magad"
     line = re.sub(r"^(?:Absent|Present):\s*", "", line, flags=re.IGNORECASE)
     if not line:
         return None
-    # Strip leading OCR digit artifacts: "2Mr" -> "Mr"
     line = re.sub(r"^\d+(?=[A-Z])", "", line)
 
     if "SPEAKER" in line:
@@ -789,10 +658,6 @@ def _parse_entry_line(line: str) -> Optional[ParsedAttendee]:
 
 
 def _extract_section_lines(content: str, section: str) -> list[str]:
-    """
-    Extract non-empty entry lines from a PRESENT or ABSENT section.
-    Handles both standard ("PRESENT:") and modern ("## Present:") headers.
-    """
     lines = content.split("\n")
     is_in_section = False
     other_section = "ABSENT" if section == "PRESENT" else "PRESENT"
@@ -802,17 +667,14 @@ def _extract_section_lines(content: str, section: str) -> list[str]:
         stripped = line.strip()
 
         if not is_in_section:
-            # Detect section header: "PRESENT:", "**PRESENT:**", or "## Present:"
             if re.match(rf"^(?:\*{{2}}|#+)?\s*{section}\s*:(?:\*{{2}})?\s*$", stripped, re.IGNORECASE):
                 is_in_section = True
             continue
 
-        # End-of-section markers
         if re.match(rf"^(?:\*{{2}}|#+)?\s*{other_section}\s*:(?:\*{{2}})?\s*$", stripped, re.IGNORECASE):
             break
         if stripped.startswith("####") or stripped.startswith("# ") or stripped == "* * *":
             break
-        # Numbered oral-question marker ("1\. **Mr X asked...") signals section end.
         if re.match(r"^\d+\\\.?\s", stripped):
             break
 
@@ -849,12 +711,6 @@ def _try_name_variant(
 
 
 def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) -> Optional[str]:
-    """
-    Try to match a name string to canonical Speaker.name using the full lookup cascade.
-    Returns canonical Speaker.name if found, None if no match.
-    Reusable by any module that needs speaker name resolution.
-    """
-    # Apply parliament-agnostic OCR corrections before any parliament-scoped lookup.
     name = _OCR_FORM_TO_CORRECTED_NAME.get(_period_normalize(name), name)
     canonical = _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get((_period_normalize(name), parliament))
     if canonical:
@@ -878,9 +734,6 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
         if canonical:
             return canonical
 
-    # CamelCase split fallback for source markdown that concatenated names without
-    # spaces ("AbdullahTarmugi"). Re-strip title after splitting in case the missing
-    # space prevented strip_title from matching at extraction time.
     camel_split_name = re.sub(r"([a-z\.])([A-Z])", r"\1 \2", name)
     if camel_split_name != name:
         camel_split_stripped_name = strip_title(camel_split_name).strip()
@@ -891,8 +744,6 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
         if canonical:
             return canonical
 
-    # Surname-only fallback: if name reduces to a single token, try it as the unique
-    # last name in this parliament.  Only fires for unambiguous cases.
     normalised_words = _period_normalize(name).split()
     if len(normalised_words) == 1:
         return lookups.surname_fallback.get((normalised_words[0], parliament))
