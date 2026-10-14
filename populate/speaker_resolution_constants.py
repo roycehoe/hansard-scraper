@@ -15,6 +15,9 @@ SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(2023, 8, 2), date(2025, 4, 15), "Seah Kian Peng"),
 )
 
+# NOTE: Hansard prints "Mdm Speaker" for her; every other Speaker in SPEAKER_TERMS is a man.
+SPEAKER_WOMEN: frozenset[str] = frozenset({"Halimah Yacob"})
+
 # NOTE: two Deputy Speakers served at once for most of Parliaments 7, 10, 11, 12, 13 and 14, so a bare "Mr Deputy Speaker" on those dates stays unlinked unless the string names the person.
 # Sources: same as SPEAKER_TERMS; Parliaments 13 and 14 from the Hansard sittings of 25 January 2016 and 31 August 2020 ("Election of Deputy Speakers"), the Wikipedia Deputy Speaker page and the 13th and 14th Parliament pages (terms end at dissolution)
 DEPUTY_SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (

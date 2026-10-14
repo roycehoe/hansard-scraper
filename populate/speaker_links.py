@@ -20,6 +20,7 @@ from populate.speaker_resolution_constants import (
     NON_SPEAKERS,
     ROLE_ONLY_SPEAKERS,
     SPEAKER_TERMS,
+    SPEAKER_WOMEN,
 )
 from services.attendance import (
     VOLUME_TO_PARLIAMENT,
@@ -148,9 +149,11 @@ def _resolve_presiding_officer(
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> Optional[int]:
     if raw in _SPEAKER_LABELS:
-        return _get_presiding_officer_id(
-            _get_holder_on(SPEAKER_TERMS, sitting_date), parliament, lookups, speaker_id_lookup
-        )
+        holder = _get_holder_on(SPEAKER_TERMS, sitting_date)
+        is_woman_label = raw == "Mdm Speaker"
+        if is_woman_label != (holder in SPEAKER_WOMEN):
+            return None
+        return _get_presiding_officer_id(holder, parliament, lookups, speaker_id_lookup)
     if raw.startswith(_DEPUTY_SPEAKER_LABELS):
         named_match = _PARENTHESIS_RE.search(raw)
         terms = (
