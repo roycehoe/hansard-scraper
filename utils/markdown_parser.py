@@ -19,14 +19,20 @@ _TRAILING_EMPTY_BOLD_PATTERN = r"(\*{4})+$"
 _ADJOURNMENT_LINE_PATTERN = r"Adjourned accordingly at"
 _BLOCK_START_PATTERN = r"^(\*\*|#{1,6}|\* \* \*)"
 _BYTE_ORDER_MARK = "\ufeff"
+_NBSP_ENTITY = "&nbsp;"
+_NBSP_ONLY_EMPHASIS_PATTERN = r"<(i|b|u|em|strong)\b[^>]*>\s*(?:&nbsp;\s*)+</\1\s*>"
 _EMPTY_EMPHASIS_PATTERN = r"<(strong|em)[^>]*>(\s|&nbsp;|\ufeff)*</\1>"
 _PROC_TEXT_PAIR_PATTERN = r"\[\s*\(proc text\)\s*(.*?)\s*\(proc text\)\s*\]"
 _PROC_TEXT_LONE_PATTERN = r"\[?\s*\(proc text\)\s*\]?"
 _DATA_IMAGE_PATTERN = r"<img[^>]*src=\"data:[^\"]*\"[^>]*>"
 
 
-def _strip_nbsp(html: str) -> str:
-    return html.replace("&nbsp;", "")
+def _replace_nbsp_only_emphasis_with_space(html: str) -> str:
+    return re.sub(_NBSP_ONLY_EMPHASIS_PATTERN, " ", html, flags=re.IGNORECASE)
+
+
+def _replace_nbsp_with_space(html: str) -> str:
+    return html.replace(_NBSP_ENTITY, " ")
 
 
 def _prepare_newer_system_html(html: str) -> str:
@@ -34,7 +40,7 @@ def _prepare_newer_system_html(html: str) -> str:
     html = re.sub(_PROC_TEXT_PAIR_PATTERN, r"\1", html, flags=re.DOTALL)
     html = re.sub(_PROC_TEXT_LONE_PATTERN, "", html)
     html = re.sub(_DATA_IMAGE_PATTERN, "", html)
-    return html.replace("&nbsp;", " ").replace(_BYTE_ORDER_MARK, "")
+    return html.replace(_BYTE_ORDER_MARK, "")
 
 
 def _remove_column_markers(html: str) -> str:
@@ -71,7 +77,8 @@ def _merge_consecutive_bold_only_lines(markdown: str) -> str:
 
 
 def _preprocess_html(html: str) -> str:
-    html = _strip_nbsp(html)
+    html = _replace_nbsp_only_emphasis_with_space(html)
+    html = _replace_nbsp_with_space(html)
     html = _remove_column_markers(html)
     return _remove_page_text(html)
 
