@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Iterable, Optional
 
 from sqlalchemy import text
-from sqlmodel import Session, col, delete, select
+from sqlmodel import Session, col, delete, func, select
 
 from database.report import Report
 from database.speech import Speech
@@ -44,6 +44,21 @@ class SpeechParliamentRow:
     parliament_number: int
 
 
+@dataclass(frozen=True)
+class SpeechLinkRow:
+    report_id: int
+    ordinal: int
+    speaker: Optional[str]
+    speaker_id: int
+    transcript: str
+
+
+@dataclass(frozen=True)
+class SpeakerStringCount:
+    speaker: str
+    row_count: int
+
+
 class CRUDSpeech:
     def __init__(self, session: Session):
         self.session = session
@@ -76,6 +91,23 @@ class CRUDSpeech:
             .execution_options(yield_per=_STREAM_BATCH)
         )
         return (SpeechSpeakerRow(*row) for row in self.session.exec(statement))
+
+    def get_link_rows_by_speaker_id_not_null(self) -> Iterable[SpeechLinkRow]:
+        statement = (
+            select(Speech.report_id, Speech.ordinal, Speech.speaker, Speech.speaker_id, Speech.transcript)
+            .where(col(Speech.speaker_id).is_not(None))
+            .execution_options(yield_per=_STREAM_BATCH)
+        )
+        return (SpeechLinkRow(*row) for row in self.session.exec(statement))
+
+    def get_speaker_counts_by_speaker_id_null_and_speaker_not_null(self) -> list[SpeakerStringCount]:
+        statement = (
+            select(Speech.speaker, func.count())
+            .where(col(Speech.speaker_id).is_(None))
+            .where(col(Speech.speaker).is_not(None))
+            .group_by(Speech.speaker)
+        )
+        return [SpeakerStringCount(*row) for row in self.session.exec(statement).all()]
 
     def get_report_ids_by_speaker_id_null_and_speaker_regex(self, pattern: str) -> list[int]:
         statement = (

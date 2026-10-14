@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from sqlalchemy import text
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col, func, select
 
 from database.attendance import Attendance
 from database.sitting import Sitting
@@ -14,6 +14,19 @@ class AttendanceSpeakerRow:
     speaker_name: Optional[str]
     parlement_no: Optional[int]
     volume_no: Optional[int]
+
+
+@dataclass(frozen=True)
+class AttendancePresenceRow:
+    sitting_id: int
+    speaker_id: int
+    is_present: Optional[bool]
+
+
+@dataclass(frozen=True)
+class AttendanceSittingCount:
+    sitting_id: int
+    row_count: int
 
 
 class CRUDAttendance:
@@ -32,6 +45,17 @@ class CRUDAttendance:
         statement = select(Attendance.sitting_id).distinct()
         sitting_ids = self.session.exec(statement).all()
         return {sitting_id for sitting_id in sitting_ids if sitting_id is not None}
+
+    def get_presence_rows_by_speaker_id_not_null(self) -> list[AttendancePresenceRow]:
+        statement = (
+            select(Attendance.sitting_id, Attendance.speaker_id, Attendance.is_present)
+            .where(col(Attendance.speaker_id).is_not(None))
+        )
+        return [AttendancePresenceRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_sitting_counts(self) -> list[AttendanceSittingCount]:
+        statement = select(Attendance.sitting_id, func.count()).group_by(Attendance.sitting_id)
+        return [AttendanceSittingCount(*row) for row in self.session.exec(statement).all()]
 
     def get_speaker_rows_by_speaker_id_null(self) -> list[AttendanceSpeakerRow]:
         statement = (

@@ -1,8 +1,18 @@
+from dataclasses import dataclass
 from datetime import datetime
 
 from sqlmodel import Session, col, select
 
 from database.report import Report
+
+
+@dataclass(frozen=True)
+class ReportHeaderRow:
+    id: int
+    report_type: str
+    parliament_number: int
+    sitting_date: datetime
+    title: str
 
 
 class CRUDReport:
@@ -44,3 +54,7 @@ class CRUDReport:
     def get_all_report_ids(self) -> set[str]:
         statement = select(Report.report_id)
         return set(self.session.exec(statement).all())
+
+    def get_header_rows(self) -> list[ReportHeaderRow]:
+        statement = select(Report.id, Report.report_type, Report.parliament_number, Report.sitting_date, Report.title)
+        return [ReportHeaderRow(*row) for row in self.session.exec(statement).all()]
