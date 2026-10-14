@@ -135,6 +135,8 @@ From the verdicts and hand checks. None blocked a step.
 
 - The step h "Mdm Speaker" exception (judgement call b) lives only in the load's scratch driver, not in `populate/speaker_links.py`. Any whole run of stage 8 relinks the 5 rows (speech ids 1183545, 1201718, 1215654, 1215656 and 1221834) to Tan Chuan-Jin. The recovery ran stage 8 whole and had to set those 5 rows back to null inside its transaction. Until the exception moves into the code, every whole run needs the same revert ([stage8_links_reverted_outside_new_rows.json](post-2012-load/recover5/stage8_links_reverted_outside_new_rows.json)).
 
+- The driver-only "Mdm Speaker" exception above is fixed in code: stage 8 now leaves a Speaker label unlinked when its honorific contradicts the Speaker of the day (ADR 0002). `trace_speaker_links.py` now reports 1 stale row: speech 365674, a "Mdm Speaker" adjournment line on 12 January 2011 linked to Abdullah Bin Tarmugi. It stays linked pending the owner's decision.
+
 - Leave a "Mr Speaker" or "Mdm Speaker" row unlinked when the last chair annotation before it names a Deputy Speaker, or when the next speaker opens by addressing the Deputy Speaker. Needs an ADR 0002 note and a sweep over all parliaments (h).
 - Decide whether to link the 5 "Mdm Speaker" rows to Jessica Tan under a written misprint rule. The two pre-2012 honorific contradictions ("Mdm Speaker" linked to Abdullah Bin Tarmugi, "Mr Chairman" linked to Indranee Rajah) belong to the same review (h).
 - Stage lines after a Committee of Supply suspension ("Debate in Committee of Supply resumed.", "Head T (cont) -") are credited to "Mr Speaker" (reports 5003 and 46018). A parser fix (h).
