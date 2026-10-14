@@ -1,6 +1,17 @@
+from dataclasses import dataclass
+from typing import Optional
+
 from sqlmodel import Session, col, select
 
 from database.sitting import Sitting
+
+
+@dataclass(frozen=True)
+class SittingDateRow:
+    id: int
+    sitting_date: Optional[str]
+    parlement_no: Optional[int]
+    volume_no: Optional[int]
 
 
 class CRUDSitting:
@@ -44,3 +55,7 @@ class CRUDSitting:
         )
         sitting_markdown_rows = self.session.exec(statement).all()
         return {sitting_date: markdown for sitting_date, markdown in sitting_markdown_rows}
+
+    def get_date_rows(self) -> list[SittingDateRow]:
+        statement = select(Sitting.id, Sitting.sitting_date, Sitting.parlement_no, Sitting.volume_no)
+        return [SittingDateRow(*row) for row in self.session.exec(statement).all()]
