@@ -26,7 +26,7 @@ The plan projected 99.1 to 99.3 for Parliament 12 from the cutoff, 98.1 to 99.1 
 
 Largest unlinked groups in the new rows: "The Chairman" 4,018 (no chair named in the report), bare "Mr Deputy Speaker" 1,119 on days with two men in the post (ADR 0002 leaves them), "[Deputy Speaker" 77 parse noise, "Mr Chairman" 44, and 5 "Mdm Speaker" rows that are Hansard misprints for "Mdm Deputy Speaker" and stay unlinked under ADR 0002.
 
-Full-text records with speech rows: 41,024 of 41,678. The 654 with none are 552 in Parliaments 0 to 11, 35 in Parliament 12, 30 in 13 and 37 in 14. The newer-system ones are mostly Committee of Supply openers and procedural records that name no speaker. 131 records have no text: 106 atbp and 25 others, 11 of them newer-system ids SPRS no longer serves.
+Full-text records with speech rows: 41,024 of 41,678. The 654 with none are 552 in Parliaments 0 to 11, 35 in Parliament 12, 30 in 13 and 37 in 14. The newer-system ones are mostly Committee of Supply openers and procedural records that name no speaker. 131 records had no text: 106 atbp and 25 others, 11 of them newer-system ids that returned no text. The later recovery (docs/report/post-2012-load.md) filled 3 by retrying and added 2 re-prefixed hits with text; 6 stay empty because the API answers HTTP 400 on every attempt.
 
 ---
 

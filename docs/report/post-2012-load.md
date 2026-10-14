@@ -67,12 +67,13 @@ All steps ran at commit c218743.
 | g | Resolver constants (in code) and head-of-state speaker rows | 3 speaker rows: Tan Keng Yam, Tony for Parliaments 12 and 13, Halimah Yacob for 14; 0 existing rows marked non-member | 1,436 to 1,438, 3 ids | 3 rows equal rehearsal 3, column for column | 0 |
 | h | Stage 8 links, then the person stage | Speech links added 416,858; attendance links added 38,566; 5 "Mdm Speaker" rows nulled by name; 3 speaker rows joined to persons 113 and 257 | none | 30 of 30 | 0 |
 | i | Sitting sections measured against stored reports | document only | none | n/a | n/a |
+| r | Recovery of five textless reports (see judgement calls e and f) | 3 raw and 3 report rows filled in place; 2 raw and 2 report rows inserted; 48 speech rows, 43 linked | raw 47,403 and 47,404; report 47,401 and 47,402; speech 1,526,791 to 1,526,838 ([recover5/](post-2012-load/recover5/)) | 48 of 48 against the source HTML | 0 |
 | k | Coverage figures and docs refreshed (commits eb6339c, c74801a, 4fd36b9) | document only | none | n/a | n/a |
 
 Notes on the table:
 
 - Step b filled 3,753 ids that have more than one raw row. None of those rows differ in content. The step is bounded by `settings.search_to_date`, and no row falls after 8 April 2025.
-- Step c's ids are contiguous. The 3,880 hits are the crawl's 3,882 minus the 2 duplicates in `data/excluded_report_ids.json`.
+- Step c's ids are contiguous. The 3,880 hits are the crawl's 3,882 minus 2 hits that were wrongly excluded as duplicates; the recovery later inserted them (judgement call f).
 - Step e's id range holds exactly 427,891 ids (1,526,790 minus 1,098,900, plus 1). Its count came in 9.1% above the plan's sample projection for Parliament 12 and 9.5% above for 14, because rows per report are heavy-tailed and 30-report samples give a loose mean.
 - Step f's id range holds exactly 38,572 ids. By parliament: 12 has 8,802 rows, 13 has 13,457 and 14 has 16,313.
 - Step h's speech additions outside step e's rows are 28 "The President (Dr Tony Tan Keng Yam)" rows from the Address of 10 October 2011 (ids 999,177 to 999,205). The plan predicted them.
@@ -87,9 +88,9 @@ Notes on the table:
 | Text share, Parliaments 0 to 11 | 96.81%, as in [vision.md](../vision.md) |
 | Parliament 12 (whole) | 89,536 of 90,511 (98.92%); all rows 89,536 of 91,953 (97.37%); text share 98.81% |
 | Parliament 12 from 10 September 2012 | 72,013 of 72,778 (98.95%) |
-| Parliament 13 | 134,660 of 137,182 (98.16%); all rows 134,660 of 139,279 (96.68%); text share 99.14% |
-| Parliament 14 | 208,563 of 210,646 (99.01%); all rows 208,563 of 213,056 (97.89%); text share 99.22% |
-| Whole speech table | 1,068,620 rows; 1,019,991 with a speaker string; 997,268 linked (97.8%) |
+| Parliament 13 | 134,662 of 137,186 (98.16%); all rows 134,662 of 139,285 (96.68%); text share 99.14% (after the recovery; the load itself ended at 134,660 of 137,182) |
+| Parliament 14 | 208,604 of 210,687 (99.01%); all rows 208,604 of 213,098 (97.89%); text share 99.22% (after the recovery; the load itself ended at 208,563 of 210,646) |
+| Whole speech table | 1,068,668 rows; 1,020,036 with a speaker string; 997,311 linked (97.8%) (the load ended at 1,068,620, 1,019,991 and 997,268; the recovery added 48, 45 and 43) |
 | Attendance | 38,572 new rows, 38,566 linked; whole table 134,916 of 135,072 linked (99.88%) |
 | Trace | `trace_speaker_links.py` over Parliaments 0 to 14: 8,915 keys, 997,268 rows, 0 stale ([trace_p14.log](post-2012-load/trace_p14.log)). Over Parliaments 0 to 11 only, before and after step h: 6,662 keys, 564,509 rows, 0 stale ([before](post-2012-load/h_trace_before.log), [after](post-2012-load/h_trace_after.log)). |
 
@@ -98,9 +99,9 @@ The plan projected 99.1 to 99.3 for Parliament 12 from the cutoff, 98.1 to 99.1 
 Where sources disagree:
 
 - [trace_p14.log](post-2012-load/trace_p14.log) shows 8,915 keys and 997,268 rows. The two step h trace logs cover Parliaments 0 to 11 only and show 6,662 keys and 564,509 rows. The 997,268 rows equal the linked speech count in the table above, so the logs agree with each other once the scope is read.
-- The brief, [post-2012-text.md](post-2012-text.md) and [vision.md](../vision.md) say 11 newer-system ids are "no longer served". [b_verdict.md](post-2012-load/b_verdict.md) splits them: 8 ids the engine no longer serves and 3 (written-statement 2628, 2645 and 2646) that return HTTP 400.
+- The brief, [post-2012-text.md](post-2012-text.md) and [vision.md](../vision.md) said 11 newer-system ids were "no longer served". [b_verdict.md](post-2012-load/b_verdict.md) split them into 8 ids the engine no longer serves and 3 (written-statement 2628, 2645 and 2646) that returned HTTP 400. The recovery showed the 3 answer 400 only intermittently, and the two bill-intro and ministerial-statement ids now return 400 forever because the site serves those items under new ids. Only 6 ids are a true API gap (judgement call e). The wording in post-2012-text.md is fixed; vision.md still carries the old wording.
 - The plan calls Lee Li Lian's 6 January 2016 entries "present". The API and the stored rows say `is_present` false. This file follows the data.
-- The research crawl found 3,882 hits (Parliament 12: 594, 13: 1,038, 14: 2,250). The load inserted 3,880 (594, 1,037, 2,249) because 2 hits duplicate stored reports.
+- The research crawl found 3,882 hits (Parliament 12: 594, 13: 1,038, 14: 2,250). The load inserted 3,880 (594, 1,037, 2,249) because it excluded 2 hits as duplicates of stored reports. That exclusion was wrong, and the recovery inserted them (judgement call f).
 
 ## Judgement calls
 
@@ -108,7 +109,7 @@ The owner approved each of these on 14 October 2026.
 
 **a. Four stored `ptba_to` values overwritten with the API value.** Two dates, each with a raw row and a sitting row: 10 November 2016 ("2016" to "2016/2017", rows 4007 and 6336) and 3 October 2023 ("2023" to "2023/2024", rows 3730 and 6057). The fill stage normally keeps a stored value that differs from the API. Here the API value is the raw record and the stored value was truncated, so the step overwrote them. The ids are in [f_ptba_to_overwrites.json](post-2012-load/f_ptba_to_overwrites.json). The two warnings were the only fill warnings in any rehearsal.
 
-**b. Five "Mdm Speaker" rows left unlinked.** Speech ids 1201718, 1183545, 1215656, 1215654 and 1221834, in reports 6866, 7597 (twice), 7962 and 5185, between January 2022 and February 2023. Each is a Hansard misprint for "Mdm Deputy Speaker": Jessica Tan Soon Neo held the chair, and the neighbouring chair rows say so. Linking them to her would read "Speaker" as "Deputy Speaker", a substitution ADR 0002 does not license. They stay null until a written misprint rule exists. A named exception in stage 8 enforces this. See [h_mdm_speaker_nulled.json](post-2012-load/h_mdm_speaker_nulled.json).
+**b. Five "Mdm Speaker" rows left unlinked.** Speech ids 1201718, 1183545, 1215656, 1215654 and 1221834, in reports 6866, 7597 (twice), 7962 and 5185, between January 2022 and February 2023. Each is a Hansard misprint for "Mdm Deputy Speaker": Jessica Tan Soon Neo held the chair, and the neighbouring chair rows say so. Linking them to her would read "Speaker" as "Deputy Speaker", a substitution ADR 0002 does not license. They stay null until a written misprint rule exists. A named exception in the load's driver enforces this (see the first follow-up). See [h_mdm_speaker_nulled.json](post-2012-load/h_mdm_speaker_nulled.json).
 
 **c. "Mr Speaker" printed while a Deputy Speaker held the chair links to the Speaker.** [h_verdict.md](post-2012-load/h_verdict.md) lists 8 likely new rows among roughly 19,400 Speaker-label links (0.05%). The proxies used to find them miss rows where nobody addresses the chair, so the true count is likely in the tens. ADR 0002 as written allows the link, and the same code path produced the pre-2012 links in the headline. Deferred to one sweep across all parliaments, with an ADR 0002 note.
 
@@ -117,9 +118,12 @@ The owner approved each of these on 14 October 2026.
 **e. Reports still without text.**
 - 105 newer-system atbp reports (87 filled by step b, 18 inserted by step c). The API returns no topic text for them.
 - 1 older-system atbp report, stored before this load.
-- 11 newer-system reports: 8 written-statement (1963, 2243, 2244, 2498, 2628, 2644, 2645, 2646), 1 bill-intro (1318), 1 ministerial-statement (1902) and 1 oral-answer (1730). The fetch failed or the engine no longer serves them. A retry is being looked into by another worker.
+- 11 newer-system reports that the fetch failed for. The recovery on 14 October 2026 resolved them as follows:
+  - 3 recovered by retrying: written-statement 2628, 2645 and 2646 (7 March 2025) answer HTTP 400 intermittently. Each was retried up to 10 times, 2 s apart, in a scratch script (retry is a cross-cutting change, so it stays out of `gateway/`). Each returned text within 2 attempts. Their raw and report rows were filled in place.
+  - 2 covered by the new ids: the stored `bill-intro-1318#` and `ministerial-statement-1902#` now return HTTP 400 forever, and the items are stored with text under `budget-1318#` and `clarification-1902#` (judgement call f). The two old rows stay textless.
+  - 6 remain an API gap, returning HTTP 400 on every attempt: written-statement 1963, 2243, 2244, 2498 and 2644, and oral-answer 1730. They keep null content.
 
-**f. Two hits excluded as duplicates.** `budget-1318#` and `clarification-1902#` are the stored `bill-intro-1318#` (3 March 2020) and `ministerial-statement-1902#` (10 March 2022) returned again under new type prefixes. Both are listed in `data/excluded_report_ids.json` and never inserted.
+**f. Two hits wrongly excluded as duplicates, then inserted.** The load excluded `budget-1318#` and `clarification-1902#` through `data/excluded_report_ids.json`, on the reading that they were the stored `bill-intro-1318#` (3 March 2020) and `ministerial-statement-1902#` (10 March 2022) returned again under new type prefixes. That was wrong. The old ids stopped working and the site serves the same items only under the new ids (803 and 8,964 characters). The recovery removed both entries (the file is now an empty list, which the loader reads as no exclusions), inserted the two hits with text through the normal path, and parsed 32 speech rows for them (6 and 26). The old rows stay in place, textless, because deleting stored rows is out of scope and nothing reads them. Result: raw rows 47,402, distinct records 41,811, 41,683 with text, 128 without (106 atbp and 22 others).
 
 **g. No speaker row for Lee Li Lian.** She declined the Parliament 13 seat, so no row is added. Her 6 attendance rows (15 and 25 to 29 January 2016, "Non-Constituency Member", `is_present` false) stay unlinked. Adding a row would be a wrong link.
 
@@ -128,6 +132,8 @@ The owner approved each of these on 14 October 2026.
 ## Known follow-ups
 
 From the verdicts and hand checks. None blocked a step.
+
+- The step h "Mdm Speaker" exception (judgement call b) lives only in the load's scratch driver, not in `populate/speaker_links.py`. Any whole run of stage 8 relinks the 5 rows (speech ids 1183545, 1201718, 1215654, 1215656 and 1221834) to Tan Chuan-Jin. The recovery ran stage 8 whole and had to set those 5 rows back to null inside its transaction. Until the exception moves into the code, every whole run needs the same revert ([stage8_links_reverted_outside_new_rows.json](post-2012-load/recover5/stage8_links_reverted_outside_new_rows.json)).
 
 - Leave a "Mr Speaker" or "Mdm Speaker" row unlinked when the last chair annotation before it names a Deputy Speaker, or when the next speaker opens by addressing the Deputy Speaker. Needs an ADR 0002 note and a sweep over all parliaments (h).
 - Decide whether to link the 5 "Mdm Speaker" rows to Jessica Tan under a written misprint rule. The two pre-2012 honorific contradictions ("Mdm Speaker" linked to Abdullah Bin Tarmugi, "Mr Chairman" linked to Indranee Rajah) belong to the same review (h).
