@@ -9,9 +9,9 @@ class Attendance(SQLModel, table=True):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    sitting_id: Optional[int] = Field(default=None, foreign_key="sitting.id")
+    sitting_id: Optional[int] = Field(default=None, foreign_key="sitting.id", index=True)
 
     speaker_name: Optional[str] = None
     is_present: Optional[bool] = Field(default=None, alias="attendance")
     location_name: Optional[str] = None
-    speaker_id: Optional[int] = Field(default=None, foreign_key="speaker.id")
+    speaker_id: Optional[int] = Field(default=None, foreign_key="speaker.id", index=True)

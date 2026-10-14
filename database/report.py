@@ -6,6 +6,7 @@ if TYPE_CHECKING:
 
 from pydantic import BeforeValidator, ConfigDict
 from pydantic.alias_generators import to_camel
+from sqlalchemy import Index, text
 from sqlmodel import Field, Relationship, SQLModel
 
 EmptyStrNoneInt = Annotated[
@@ -16,6 +17,10 @@ EmptyStrNoneInt = Annotated[
 
 class Report(SQLModel, table=True):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+    __table_args__ = (
+        Index("ix_report_sitting_date_parliament_number", "sitting_date", "parliament_number"),
+        Index("ix_report_title_fts", text("to_tsvector('english', title)"), postgresql_using="gin"),
+    )
 
     id: Optional[int] = Field(default=None, primary_key=True)
 
