@@ -70,8 +70,8 @@ Last recalibrated 14 October 2026, after the non-speech repair: 12,245 stored ro
 
 | Metric | What it counts | 14 Oct 2026 |
 |---|---|---|
-| ADR 0001 rate | Linked rows / rows with a speaker string, minus "hon. Member(s)" and strings starting with "(" or "_" ([ADR 0001](adr/0001-attribution-denominator.md)) | 554,901 / 567,756 = 97.74% |
-| All-rows rate | Linked rows / every speech row, NULL-speaker rows included | 554,901 / 624,332 = 88.88% |
+| ADR 0001 rate | Linked rows / rows with a speaker string, minus "hon. Member(s)" and strings starting with "(" or "_" ([ADR 0001](adr/0001-attribution-denominator.md)) | 554,900 / 567,756 = 97.74% |
+| All-rows rate | Linked rows / every speech row, NULL-speaker rows included | 554,900 / 624,332 = 88.88% |
 | Text share | Characters of body text in a linked row / characters of body text in every report with markdown, including reports with no rows | 96.58% of 188.1M |
 
 Text share is the number that answers objective 2 and 4 together: how much of the record a researcher can retrieve by speaker. The ADR 0001 rate has a known weakness. Setting a row's speaker to NULL removes it from the denominator, so the rate rises when the parser gives up on a line. The 13 October procedural repairs moved about 29,000 rows to NULL and raised the rate from 97.02% to 97.42%. Some of those rows really have no speaker. The other two numbers keep that honest. The 14 October non-speech repair did the same on purpose: the ADR 0001 rate rose from 97.61% to 97.74% while the all-rows rate fell from 90.42% to 88.88% and text share from 96.81% to 96.58%, because about 9,600 linked rows in Parliaments 0 to 11 held text no member spoke.
@@ -107,7 +107,7 @@ The 14 October load added text from 10 September 2012 on. Same filter as the ADR
 
 The plan projected 99.1 to 99.3 for Parliament 12 from the cutoff, 98.1 to 99.1 for Parliament 13 and 98.6 for Parliament 14. Parliament 12 from the cutoff is about 110 rows short: "The Chairman" leaves 566 rows unlinked there, and 61 "[Deputy Speaker" parse-noise rows stay in the denominator (77 across Parliaments 12 and 13, where the plan expected 16). Across the new rows the largest unlinked groups are "The Chairman" with 4,018 (no chair named in the report), bare "Mr Deputy Speaker" with 1,119 on days with two holders ([ADR 0002](adr/0002-role-holder-attribution.md) leaves them), "[Deputy Speaker" with 77, "Mr Chairman" with 44, and 5 "Mdm Speaker" rows that are Hansard misprints for "Mdm Deputy Speaker" and stay unlinked. No hand audit covers these rows yet.
 
-Across the whole table: 1,068,668 speech rows, 1,007,791 with a speaker string, 986,176 of them linked (97.9%). Attendance: 134,916 of 135,072 linked (99.88%).
+Across the whole table: 1,068,668 speech rows, 1,007,791 with a speaker string, 986,175 of them linked (97.9%). Attendance: 134,916 of 135,072 linked (99.88%).
 
 The decisions, run order, judgement calls and evidence for this load are in [post-2012-load.md](report/post-2012-load.md).
 
