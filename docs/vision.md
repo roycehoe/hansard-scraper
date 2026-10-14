@@ -62,23 +62,23 @@ Targeted validation and inspection tools live alongside the main pipeline. Parsi
 
 ## Measuring progress
 
-Last recalibrated 14 October 2026, after the non-speech repair: 12,245 stored rows that were procedural text, editorial notes or "rose" stage directions lost their speaker (`be4d7dd`, and a targeted UPDATE of the stored rows; the plan is `plans/peer-learnings-brief.md`). Rerun the checks below before claiming any objective is met, and update this section when the figures move.
+Last recalibrated 15 October 2026, after round 0 of the speech fidelity loop: `&nbsp;` became a space, and 50,971 stored rows in 3,315 older-system reports were updated in place ([speech-fidelity-loop.md](report/speech-fidelity-loop.md)). The 14 October non-speech repair before it gave no speaker to 12,245 stored rows that were procedural text, editorial notes or "rose" stage directions (`be4d7dd`, and a targeted UPDATE of the stored rows; the plan is `plans/peer-learnings-brief.md`). Rerun the checks below before claiming any objective is met, and update this section when the figures move.
 
 ### The three numbers
 
 `scripts/attribution_text_share.py` prints all three for Parliaments 0 to 11. Quote all three together. Never quote the first on its own.
 
-| Metric | What it counts | 14 Oct 2026 |
+| Metric | What it counts | 15 Oct 2026 |
 |---|---|---|
-| ADR 0001 rate | Linked rows / rows with a speaker string, minus "hon. Member(s)" and strings starting with "(" or "_" ([ADR 0001](adr/0001-attribution-denominator.md)) | 554,900 / 567,756 = 97.74% |
-| All-rows rate | Linked rows / every speech row, NULL-speaker rows included | 554,900 / 624,332 = 88.88% |
-| Text share | Characters of body text in a linked row / characters of body text in every report with markdown, including reports with no rows | 96.58% of 188.1M |
+| ADR 0001 rate | Linked rows / rows with a speaker string, minus "hon. Member(s)" and strings starting with "(" or "_" ([ADR 0001](adr/0001-attribution-denominator.md)) | 554,941 / 567,782 = 97.74% |
+| All-rows rate | Linked rows / every speech row, NULL-speaker rows included | 554,941 / 624,332 = 88.89% |
+| Text share | Characters of body text in a linked row / characters of body text in every report with markdown, including reports with no rows | 96.59% of 188.1M |
 
 Text share is the number that answers objective 2 and 4 together: how much of the record a researcher can retrieve by speaker. The ADR 0001 rate has a known weakness. Setting a row's speaker to NULL removes it from the denominator, so the rate rises when the parser gives up on a line. The 13 October procedural repairs moved about 29,000 rows to NULL and raised the rate from 97.02% to 97.42%. Some of those rows really have no speaker. The other two numbers keep that honest. The 14 October non-speech repair did the same on purpose: the ADR 0001 rate rose from 97.61% to 97.74% while the all-rows rate fell from 90.42% to 88.88% and text share from 96.81% to 96.58%, because about 9,600 linked rows in Parliaments 0 to 11 held text no member spoke.
 
 Text share overstates too. The second audit ([north-star-audit-2026-10-13.md](report/north-star-audit-2026-10-13.md)) found it about 1.7 points high: its denominator is the markdown after the parser's own start line, so text html2text lost is invisible, and a report collapsed to one speaker counts its whole body as attributed. Its strict text share is 95.12%, and about 94.6% after hand-checked precision. None of the three numbers says whether a link is right.
 
-Where the body text goes, Parliaments 0 to 11, 14 October 2026, after the non-speech repair: 96.58% in linked rows, 0.75% in rows with an unlinked speaker string, 0.11% in ADR-excluded rows, 1.19% in rows with no speaker, 0.15% in reports with no rows, and 1.22% dropped inside reports that have rows (preamble, headings, labels, and text before the first speaker).
+Where the body text goes, Parliaments 0 to 11, 15 October 2026, after round 0 of the speech fidelity loop: 96.59% in linked rows, 0.74% in rows with an unlinked speaker string, 0.10% in ADR-excluded rows, 1.19% in rows with no speaker, 0.15% in reports with no rows, and 1.22% dropped inside reports that have rows (preamble, headings, labels, and text before the first speaker).
 
 ### What "parsed" means in each check
 
@@ -121,7 +121,7 @@ From two independent audits on 13 October 2026. The second ran after that day's 
 | 2. Per-utterance speaker index | Partly. 20,353 of 20,918 reports with markdown have rows. 1.22% of body text is dropped inside reports that have rows. 2,078 reports keep rows from an older parser because the re-parse guard refused them. |
 | 3. Sitting metadata | Partly. Attendance is present for all 1,333 sittings with HTML. The PTBA list, sections, annexures and vernaculars are empty for all of them. The 386 sittings from 10 September 2012 are now filled with metadata and section lists, and attendance for them comes from the structured list. 19,874 of 19,880 sitting sections pair with a stored report ([post-2012-sections-gap.md](report/post-2012-sections-gap.md)). |
 | 4. Speaker identity linking | Mostly. 0 of 80 sampled links point to the wrong person, and 93.8% of linked rows carried text that person said before the 14 October non-speech repair, which removed the speaker from 12,245 procedural, editorial-note and stage-direction rows; lists inside a speech still inherit it. Stored rows match the current parser except in the 2,078 refused reports. |
-| 5. High-fidelity markdown | Partly. The conversion loses 0.41% of HTML word tokens; 120 reports lose more than 5% and report 22103 loses 97.7%. Deleting `&nbsp;` glues words together in 18,044 reports. |
+| 5. High-fidelity markdown | Partly. The conversion loses 0.41% of HTML word tokens; 120 reports lose more than 5% and report 22103 loses 97.7%. Round 0 of the speech fidelity loop stopped `&nbsp;` gluing words in 3,315 older-system reports; 149 more are held back, and the glued-word detector still finds 31.8 pipeline hits per million tokens. |
 | 6. Parsing-quality tracking | No. The checks above measure structure, not correctness. |
 
 Overall: partly met. This verdict covers records before 10 September 2012. Text from that date on is now loaded and is measured beside the headline above, with no hand audit yet ([post-2012-text.md](report/post-2012-text.md)).
@@ -134,8 +134,8 @@ Overall: partly met. This verdict covers records before 10 September 2012. Text 
   1. 2,078 reports keep rows from an older parser. The guarded re-parse of 13 October rebuilt 6,615 stale reports and refused the rest: 1,954 by the F18 guard (the new parse drops a body line the stored rows hold, or yields nothing), 87 that step 6b refused, 34 where a re-parse would undo a direct edit, and 3 where it would bring back deleted rows. Each needs a parser fix before it can be rebuilt. The plan, the stored rows of every rebuilt report and two full `pg_dump` backups from before the write were kept outside the repo on 13 October; they are temporary unless moved.
   2. The parser drops 1.22% of body text inside reports with rows: text before the first speaker, headings and other lines it skips. The split between them is not measured.
   3. Unbolded speaker labels and lists that inherit the last speaker (P2 and P3 in `plans/link-precision-audit.md`). The 14 October repair gave no speaker to the lines after a procedural line, to whole-line editorial notes and to "rose" stage directions; what remains is unbolded labels, lists inside a member's speech, 83 "Certificate of Urgency handed in." rows, 4 rows in two stale reports (26467, 27699) the repair could not match, and 6 rows of a Budget statement in report 22691 resumed after a suspension, now unattributed instead of credited to Mr Speaker. Annex tables after a heading are ministers' own tables in written answers and stay with them.
-  4. `utils/markdown_parser.py` deletes `&nbsp;` instead of replacing it with a space, gluing words at about 414,000 places.
-  5. The ADR 0001 rule that drops speaker strings starting with "_" also drops real names written with a leading underscore, such as "__Dr Teo Ho Pin".
+  4. Glued and split words, markup residue and other conversion defects that the speech fidelity loop ([speech-fidelity-loop.md](report/speech-fidelity-loop.md)) is working through. Round 0 fixed `&nbsp;` in 3,315 older-system reports and cut the detectors' pipeline hits from 35,993 to 2,041 (dictionary test) and from 14,569 to 824 (punctuation test). 149 reports whose markdown the fix changes are held back: stale reports, `Column :` marker lines, exposed html2text escapes, and changed row counts.
+  5. The ADR 0001 rule that drops speaker strings starting with "_" also drops real names written with a leading underscore. Round 0 removed the stray `__` from 33 such labels, "__Dr Teo Ho Pin" among them. One name is left, `_S_ hawn Huang Wei Zhong (Jurong)` on 2 rows; the other 10 strings starting with "_" are italic headings.
   6. In report 24248 the fallback start line drops Gan Kim Yong's opening speech, because his label merged into the heading.
 
 ### Where more work stops paying
