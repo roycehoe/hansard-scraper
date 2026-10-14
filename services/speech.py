@@ -105,9 +105,40 @@ _PROCEDURAL_LINE_ANCHORS = (
 )
 _PROCEDURAL_LINE_RE = re.compile(r"^[\s*_]*(?:" + "|".join(_PROCEDURAL_LINE_ANCHORS) + ")")
 
-_LIST_OPENER_RE = re.compile(
-    r"^[\s*_]*(?:Resolved,?[\s*_]*$|The (?:House|Assembly|Council|Committee) divided|Division taken"
-    r"|The following amendments? stood on the Order Paper)"
+# NOTE: these procedural lines keep the current speaker, because the lines after them were often the mover's own speech.
+_TURN_KEEPING_PROCEDURAL_LINE_RE = re.compile(r"^[\s*_]*(?:Question (?:again )?proposed|\*\s*The same amendment)")
+
+_WHOLE_BRACKETED_LINE_RE = re.compile(r"^[\s_*]*\[(?:[^\[\]]|\[[^\[\]]*\])*\][\s_*.]*$")
+# NOTE: a "Please refer" note must name a vernacular speech, because whole-line "[Please refer to ...]" rows in written answers are the minister's answer.
+_VERNACULAR_NOTE_RE = re.compile(
+    r"^[\s_*]*\[[\s_*]*(?:For\s*vernacular|Please\s*refer\s*to[^\]]*Vernacular)",
+    re.IGNORECASE,
+)
+_STANDING_ORDER_NOTE_RE = re.compile(r"^[\s_*]*\[[\s_*]*Pursuant to Standing Order", re.IGNORECASE)
+_CHAIR_NOTE_RE = re.compile(r"^[\s_*]*\[[^\[\]]*\bin the Chair[\s_*.]*\]", re.IGNORECASE)
+_REACTION_NOTE_RE = re.compile(r"^[\s_*]*\[[\s_*]*(?:Laughter|Interruption)[\s_*.]*\]")
+_SUPPLY_HEADER_NOTE_RE = re.compile(r"^[\s_*]*\[(?:Committee of Supply|Official Report) - [^\[\]]*\]\(\S*\)[\s_*.]*$")
+_CHAMBER_NOTE_RE = re.compile(
+    r"^[\s_*\[(]*[^.?!;:\"“”\[\]]{0,250}?\b(?:left|entered) the Chamber"
+    r"(?: and took his seat| to receive His Excellency)?[\s_*.)\]]*$"
+)
+_HOUSE_ROSE_NOTE_RE = re.compile(r"^[\s_*\[(]*The House rose\b[^.\[\]]{0,80}[\s_*.)\]]*$")
+_COPIES_NOTE_RE = re.compile(
+    r"^[\s_*\[(]*(?:Typed copies|Printed copies|Copies)\b(?: of [^\[\]]{1,150}?)?(?: accordingly)?"
+    r" (?:handed in|distributed|circulated)(?: to (?:the )?Clerk(?: at the Table)?)?(?: and distributed)?"
+    r"(?: to (?:[Hh]on\. |hon )?Members)?[\s_*.)\]]*$"
+)
+
+_ROSE_SUBJECT_WORD = r"(?:[A-Z(][\w.'’()-]*|and|hon|than|five|bin|binte|for)"
+_PLAIN_STAGE_DIRECTION_RE = re.compile(
+    r"^[\s_*]*(?=.*\b(?:Mr|Mrs|Ms|Mdm|Dr|Prof|Inche|Encik|Tuan|Dato|Members?|Minister)\b)"
+    + _ROSE_SUBJECT_WORD + r"(?:,? " + _ROSE_SUBJECT_WORD + r")*"
+    r" rose(?: in (?:his|her|their) place(?: for their (?:dissent|abstention) to be recorded)?)?[\s_*]*[-–—.]*[\s_*]*$"
+)
+_LABELLED_STAGE_DIRECTION_RE = re.compile(
+    r"^[\s_*]*(?:and \*\*[^*]+\*\* )?(?:again |later )?"
+    r"(?:rose(?: in (?:his|her) place| and then resumed his seat)?|left the Chamber|entered the Chamber(?: and took his seat)?)"
+    r"[\s_*]*[-–—.]*[\s_*]*(?:\[Interruption\])?[\s_*.]*$"
 )
 
 _PLAIN_HONORIFIC = r"(?:Mr|Mrs|Ms|Miss|Mdm|Madam|Dr|Prof|Assoc\.? Prof|Inche|Encik|Tuan|Haji|Che|Er|BG|RAdm|LG|MG|COL)\.?"
@@ -366,6 +397,40 @@ def _merge_wrapped_bold_lines(lines: list[str]) -> list[str]:
     return merged
 
 
+def _is_editorial_note(line: str) -> bool:
+    language_note = _LANGUAGE_NOTE_RE.match(line)
+    note = line[language_note.end():] if language_note is not None else line
+    if _WHOLE_BRACKETED_LINE_RE.match(note) and (
+        _VERNACULAR_NOTE_RE.match(note)
+        or _STANDING_ORDER_NOTE_RE.match(note)
+        or _CHAIR_NOTE_RE.match(note)
+        or _REACTION_NOTE_RE.match(note)
+    ):
+        return True
+    return bool(
+        _SUPPLY_HEADER_NOTE_RE.match(line)
+        or _CHAMBER_NOTE_RE.match(line)
+        or _HOUSE_ROSE_NOTE_RE.match(line)
+        or _COPIES_NOTE_RE.match(line)
+    )
+
+
+def _is_non_speech_line(line: str) -> bool:
+    if _PROCEDURAL_LINE_RE.match(line):
+        return True
+    if _is_editorial_note(line):
+        return True
+    return bool(_PLAIN_STAGE_DIRECTION_RE.match(line))
+
+
+def _is_turn_ending_line(line: str) -> bool:
+    if _WHOLE_BRACKETED_LINE_RE.match(line) and _STANDING_ORDER_NOTE_RE.match(line):
+        return True
+    if not _PROCEDURAL_LINE_RE.match(line):
+        return False
+    return not _TURN_KEEPING_PROCEDURAL_LINE_RE.match(line)
+
+
 def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str = "") -> list[ParsedSpeech]:
     current_speaker = None
     is_in_preamble = True
@@ -390,10 +455,10 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             if is_in_preamble:
                 continue
             speeches.append(ParsedSpeech(
-                speaker=None if _PROCEDURAL_LINE_RE.match(parsed_line) else current_speaker,
+                speaker=None if _is_non_speech_line(parsed_line) else current_speaker,
                 transcript=parsed_line,
             ))
-            if _LIST_OPENER_RE.match(parsed_line):
+            if _is_turn_ending_line(parsed_line):
                 current_speaker = None
             continue
 
@@ -449,6 +514,11 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 if raw_speaker in _SECTION_BOUNDARY_HEADINGS:
                     current_speaker = None
                 continue
+            # NOTE: a bold name before "rose -" is a stage direction, not a speaker label, so the current speaker stays.
+            if _LABELLED_STAGE_DIRECTION_RE.match(transcript):
+                is_in_preamble = False
+                speeches.append(ParsedSpeech(speaker=None, transcript=transcript))
+                continue
             if new_speaker:
                 current_speaker = new_speaker
                 is_in_preamble = False
@@ -458,10 +528,10 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
 
         if not is_in_preamble:
             speeches.append(ParsedSpeech(
-                speaker=None if _PROCEDURAL_LINE_RE.match(parsed_line) else current_speaker,
+                speaker=None if _is_non_speech_line(parsed_line) else current_speaker,
                 transcript=parsed_line,
             ))
-            if _LIST_OPENER_RE.match(parsed_line):
+            if _is_turn_ending_line(parsed_line):
                 current_speaker = None
 
     for speech in speeches:
