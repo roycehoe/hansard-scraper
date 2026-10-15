@@ -1,0 +1,52 @@
+{
+  "why": "A paragraph split by a page marker ('... borrowers' TDSR exceed' / '60% in exceptional cases.') was stored as two rows.",
+  "source_report_id": 15743,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Selective Relaxation on Total Debt Servicing Ratio Restrictions",
+  "subtitle": null,
+  "original_title": "Selective Relaxation on Total Debt Servicing Ratio Restrictions",
+  "html": "<p>7 <strong>Ms Sylvia Lim</strong> asked\t<span style=\"color: rgb(51, 51, 51);\">the Prime Minister whether the Total Debt Servicing Ratio (TDSR) restrictions can be relaxed to allow borrowers to obtain credit facilities if they are able to offer unencumbered private property as collateral to financial institutions, even if they have breached the TDSR limits, so as to enable them to manage their overall loan commitments.</span>&nbsp;</p><p><strong>\tThe Minister for Education (Higher Education and Skills) and Second Minister for Defence (Mr Ong Ye Kung) (for the Prime Minister)</strong>: Under the Total Debt Servicing Ratio (TDSR) framework, a borrower's monthly loan instalments should not exceed 60% of his monthly income.</p><p>This is to help ensure that borrowers have sufficient cash income to meet their debt obligations. The 60% threshold applies to any property loan regardless of whether it is a loan for purchasing a property or a loan secured on an unencumbered property. Even with unencumbered private property as collateral, it is important that the borrower has sufficient cash income to meet the debt obligation. If the borrower fails to make repayment and defaults, the lender could seize and sell the property. This may not be a big problem for a wealthy borrower with several properties, but for someone who is living in that property, it can cause significant hardship.</p><p>Therefore, it is more prudent to have our current rules as the default position. However, financial institutions may approve property loan applications where the borrowers' TDSR exceed </p><p>\t<span style=\"color: rgb(51, 51, 51);\">Page: 12</span></p><p>60% in exceptional cases. Such exceptions must be approved by the financial institutions' credit committees, in line with the policies set by their board of directors.</p><p><strong>\tMs Sylvia Lim (Aljunied)</strong>: Madam, a supplementary question for the Minister. I kind of expected that answer, but the reason I am highlighting it is because, as the Minister mentioned, the TDSR formula is actually focused on income and does not take into account the assets that the potential borrower may have.</p><p>We are seeing residents of ours in this current economic climate who have seen a drop in their income. They do believe that with the assets that they have, if there can be some relaxation where they can get a loan from a financial institution, they will be able to manage their overall indebtedness. Of course, in their view, the bank would be secured with their asset but they feel that they have other resources to manage such a loan. They need to manage their current liquidity challenges. I think this is a problem that MAS could look into.</p><p>We also have situations where retirees who are reasonably rich are unable to get any loans at all because they have no income. So, perhaps, MAS should review this because I think there is some ground concern and some people are having a hard time now.</p><p><strong>\tMr Ong Ye Kung</strong>:&nbsp;There are some circumstances, for example, if the borrower runs a company, is a sole proprietor or SME boss and the loan is raised in the name of the company, actually the TDSR does not apply. I think there is some leeway for this group.</p><p>For others, there are also some circumstances, such as they hold other assets, debentures, bonds, coins, gold and so on. MAS and the banks do take into account that this can also be income-generating and can also be counted as income stream. So, there is another group that is also, in a way, catered to.</p><p>Lastly, there are others, maybe the cases that the Member has encountered, where they need to reduce their fully-paid-for property to re-mortgage. We take note of that feedback. We have received similar feedback and will study them carefully.&nbsp;</p>",
+  "expected_rows": [
+    [
+      "Ms Sylvia Lim",
+      "asked the Prime Minister whether the Total Debt Servicing Ratio (TDSR) restrictions can be relaxed to allow borrowers to obtain credit facilities if they are able to offer unencumbered private property as collateral to financial institutions, even if they have breached the TDSR limits, so as to enable them to manage their overall loan commitments."
+    ],
+    [
+      "The Minister for Education (Higher Education and Skills) and Second Minister for Defence (Mr Ong Ye Kung) (for the Prime Minister)",
+      "Under the Total Debt Servicing Ratio (TDSR) framework, a borrower's monthly loan instalments should not exceed 60% of his monthly income."
+    ],
+    [
+      "The Minister for Education (Higher Education and Skills) and Second Minister for Defence (Mr Ong Ye Kung) (for the Prime Minister)",
+      "This is to help ensure that borrowers have sufficient cash income to meet their debt obligations. The 60% threshold applies to any property loan regardless of whether it is a loan for purchasing a property or a loan secured on an unencumbered property. Even with unencumbered private property as collateral, it is important that the borrower has sufficient cash income to meet the debt obligation. If the borrower fails to make repayment and defaults, the lender could seize and sell the property. This may not be a big problem for a wealthy borrower with several properties, but for someone who is living in that property, it can cause significant hardship."
+    ],
+    [
+      "The Minister for Education (Higher Education and Skills) and Second Minister for Defence (Mr Ong Ye Kung) (for the Prime Minister)",
+      "Therefore, it is more prudent to have our current rules as the default position. However, financial institutions may approve property loan applications where the borrowers' TDSR exceed 60% in exceptional cases. Such exceptions must be approved by the financial institutions' credit committees, in line with the policies set by their board of directors."
+    ],
+    [
+      "Ms Sylvia Lim (Aljunied)",
+      "Madam, a supplementary question for the Minister. I kind of expected that answer, but the reason I am highlighting it is because, as the Minister mentioned, the TDSR formula is actually focused on income and does not take into account the assets that the potential borrower may have."
+    ],
+    [
+      "Ms Sylvia Lim (Aljunied)",
+      "We are seeing residents of ours in this current economic climate who have seen a drop in their income. They do believe that with the assets that they have, if there can be some relaxation where they can get a loan from a financial institution, they will be able to manage their overall indebtedness. Of course, in their view, the bank would be secured with their asset but they feel that they have other resources to manage such a loan. They need to manage their current liquidity challenges. I think this is a problem that MAS could look into."
+    ],
+    [
+      "Ms Sylvia Lim (Aljunied)",
+      "We also have situations where retirees who are reasonably rich are unable to get any loans at all because they have no income. So, perhaps, MAS should review this because I think there is some ground concern and some people are having a hard time now."
+    ],
+    [
+      "Mr Ong Ye Kung",
+      "There are some circumstances, for example, if the borrower runs a company, is a sole proprietor or SME boss and the loan is raised in the name of the company, actually the TDSR does not apply. I think there is some leeway for this group."
+    ],
+    [
+      "Mr Ong Ye Kung",
+      "For others, there are also some circumstances, such as they hold other assets, debentures, bonds, coins, gold and so on. MAS and the banks do take into account that this can also be income-generating and can also be counted as income stream. So, there is another group that is also, in a way, catered to."
+    ],
+    [
+      "Mr Ong Ye Kung",
+      "Lastly, there are others, maybe the cases that the Member has encountered, where they need to reduce their fully-paid-for property to re-mortgage. We take note of that feedback. We have received similar feedback and will study them carefully."
+    ]
+  ]
+}
