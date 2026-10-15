@@ -170,6 +170,8 @@ _MAX_SPEAKER_NAME_LENGTH = 80
 _OPENING_QUOTE_MARKS = "\"“'"
 
 _SPEAKER_ROLE_WORD_RE = re.compile(r"\b(President|Speaker|Minister|Secretary|Deputy|Senior|Acting)\b", re.IGNORECASE)
+_OFFICE_WORD_RE = re.compile(r"\b(?:Chairman|Clerk|Leader)\b")
+_DEFINITE_ARTICLE = "The"
 _MARKDOWN_TITLE_RE = re.compile(r"Title:\|\s*([^|\n]+)", re.IGNORECASE)
 _MARKDOWN_MARKS_RE = re.compile(r"[_*]")
 _QUOTE_MARKS_RE = re.compile(r"[\"“”]")
@@ -436,6 +438,17 @@ def _is_turn_ending_line(line: str) -> bool:
     return not _TURN_KEEPING_PROCEDURAL_LINE_RE.match(line)
 
 
+def _is_speaker_name(name: str) -> bool:
+    honorifics = _SPEAKER_HONORIFIC_RE.findall(name)
+    if not honorifics:
+        return False
+    if any(honorific != _DEFINITE_ARTICLE for honorific in honorifics):
+        return True
+    if "(" in name:
+        return True
+    return _SPEAKER_ROLE_WORD_RE.search(name) is not None or _OFFICE_WORD_RE.search(name) is not None
+
+
 def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str = "") -> list[ParsedSpeech]:
     current_speaker = None
     is_in_preamble = True
@@ -514,7 +527,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                     speeches.append(ParsedSpeech(speaker=None, transcript=transcript))
                 continue
             if (not transcript.strip(_EMPHASIS_MARK_CHARACTERS)
-                    and not _SPEAKER_HONORIFIC_RE.search(raw_speaker)
+                    and not _is_speaker_name(raw_speaker)
                     and (":" not in bold_match.group(0) or not is_bold_ending_with_colon)):
                 if raw_speaker in _SECTION_BOUNDARY_HEADINGS:
                     current_speaker = None
