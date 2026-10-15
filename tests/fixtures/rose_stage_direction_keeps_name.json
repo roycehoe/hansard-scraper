@@ -1,0 +1,44 @@
+{
+  "why": "A bold name before 'rose ---' lost the name: the no-speaker row read 'rose ---'. Trimmed: the 'indicated assent' paragraph is removed.",
+  "source_report_id": 37915,
+  "report_version": "sprs2",
+  "report_type": "personal-explanation",
+  "title": "PERSONAL EXPLANATION",
+  "subtitle": null,
+  "original_title": "PERSONAL EXPLANATION",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n\n<head>\n\n\n\n<meta http-equiv=\"Content-Type\" content=\"text/html;charset=iso-8859-1\">\n\n<meta name=\"Parl_No\" content=\"1\">\n\n<meta name=\"Sess_No\" content=\"1\">\n\n<meta name=\"Vol_No\" content=\"24\">\n\n<meta name=\"Sit_No\" content=\"13\">\n\n<meta name=\"Sit_Date\" content=\"1965-12-29\">\n\n<meta name=\"Sect_Name\" content=\"PERSONAL EXPLANATION\">\n\n<meta name=\"Title\" content=\"PERSONAL EXPLANATION\">\n\n<meta name=\"MP_Speak\" content=\"Mr Teong Eng Siong; Mr A. P. Rajah (Mr Speaker);\">\n\n<meta name=\"Start_Col\" content=\"687\">\n\n<meta name=\"End_Col\" content=\"688\">\n\n</head>\n\n<body>\n\n\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\"><tr><td>\n\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">24</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">13</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">29-12-1965</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">PERSONAL EXPLANATION</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">PERSONAL EXPLANATION</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Mr Teong Eng Siong; Mr A. P. Rajah (Mr Speaker);</font></td></tr>\n\n</table></td></tr>\n\n</table>\n\n<br><br><font size=\"1\"><b>Column: 687</b></font><br><br>\n\n<div align=\"center\"><h4>PERSONAL EXPLANATION</h4></div>\n\n\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Teong Eng Siong (Sembawang)</b> rose ---\n\n\n\n<br><br><!-- Mr A. P. Rajah (Mr Speaker) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Speaker:</b> The Member for Sembawang has a personal\n\nexplanation?\n\n\n\n<br><br><!-- Mr Teong Eng Siong -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Teong Eng Siong</b>(<i>In Mandarin</i>): Mr Speaker, I have\n\na  certain excerpt from a newspaper to quote  to  you.\n\nThis quotation appears in the Malay Mail. The reporter\n\nis  one Mr Harold Soh. In today's Malay Mail, on page\n\n4, there\n\n\n\n<br><br><font size=\"1\"><b>Column: 688</b></font><br><br>\n\n\n\nis  a  report  of the proceedings in the  Committee  of\n\nSupply  of our Parliament. It said that the Member  for\n\nSembawang had produced a black-list of nurses and given\n\nit  to the Minister for Health. In actual fact, it  was\n\nwrong  reporting, because I only gave  the  information\n\nwhich the Minister required of me. So I would like  the\n\npaper concerned to correct the wrong reporting.\n\n\n\n<br><br><!-- Mr A. P. Rajah (Mr Speaker) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Speaker:</b> Part of the Member's translation did not\n\ncome  through  to me on the ear-phone. Did  the  Member\n\ngive the name and the date of the paper?\n\n\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;<b>An hon. Member:</b> The Malay Mail.\n\n\n\n<br><br><!-- Mr A. P. Rajah (Mr Speaker) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Speaker:</b> The Member did. Very well.\n\n\n\n<br><br><!-- Mr Teong Eng Siong -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Teong Eng Siong</b>(<i>In Mandarin</i>): Mr Speaker, do you\n\nwant me to repeat what I have said?\n\n\n\n<br><br><!-- Mr A. P. Rajah (Mr Speaker) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Speaker:</b> I just want to know the name of the paper\n\nand the date of the paper. It is perfectly in order.\n\n\n\n</body>\n\n</html>\n\n",
+  "expected_rows": [
+    [
+      null,
+      "Mr Teong Eng Siong (Sembawang) rose ---"
+    ],
+    [
+      "Mr Speaker",
+      "The Member for Sembawang has a personal explanation?"
+    ],
+    [
+      "Mr Teong Eng Siong",
+      "Mr Speaker, I have a certain excerpt from a newspaper to quote to you. This quotation appears in the Malay Mail. The reporter is one Mr Harold Soh. In today's Malay Mail, on page 4, there is a report of the proceedings in the Committee of Supply of our Parliament. It said that the Member for Sembawang had produced a black-list of nurses and given it to the Minister for Health. In actual fact, it was wrong reporting, because I only gave the information which the Minister required of me. So I would like the paper concerned to correct the wrong reporting."
+    ],
+    [
+      "Mr Speaker",
+      "Part of the Member's translation did not come through to me on the ear-phone. Did the Member give the name and the date of the paper?"
+    ],
+    [
+      "An hon. Member",
+      "The Malay Mail."
+    ],
+    [
+      "Mr Speaker",
+      "The Member did. Very well."
+    ],
+    [
+      "Mr Teong Eng Siong",
+      "Mr Speaker, do you want me to repeat what I have said?"
+    ],
+    [
+      "Mr Speaker",
+      "I just want to know the name of the paper and the date of the paper. It is perfectly in order."
+    ]
+  ]
+}

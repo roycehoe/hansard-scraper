@@ -237,6 +237,7 @@ _UNSPACED_HONORIFIC_RE = re.compile(r"^(Mr|Mrs|Ms|Dr|Prof|Mdm|The|BG|RAdm|Er)([A
 _DROP_CAP_RE = re.compile(r"[A-Za-z]{1,2}")
 _PARENTHESISED_RE = re.compile(r"^\(.*\)$")
 _ITALIC_HEADING_RE = re.compile(r"^_[^_].*_$")
+_SENTENCE_FINAL_RE = re.compile(r"[.?!][\"'”’)\]_*]*$")
 
 
 def _extract_mps_speaking(markdown: str) -> list[str]:
@@ -605,10 +606,18 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 if raw_speaker in _SECTION_BOUNDARY_HEADINGS:
                     current_speaker = None
                 continue
-            # NOTE: a bold name before "rose -" is a stage direction, not a speaker label, so the current speaker stays.
+            # NOTE: a bold name before "rose -" is a stage direction, not a speaker label, so the current speaker stays and the name stays in the text.
             if _LABELLED_STAGE_DIRECTION_RE.match(transcript):
                 is_in_preamble = False
-                speeches.append(ParsedSpeech(speaker=None, transcript=transcript))
+                text_before_bold = parsed_line[: bold_match.start()]
+                is_lead_with_letters = _LETTER_RE.search(text_before_bold) is not None
+                if is_lead_with_letters and _SENTENCE_FINAL_RE.search(text_before_bold.strip()):
+                    speeches.append(ParsedSpeech(speaker=current_speaker, transcript=text_before_bold.strip()))
+                    is_lead_with_letters = False
+                bold_text = bold_match.group(0).replace("*", "")
+                name_separator = " " if bold_text != bold_text.rstrip() else ""
+                direction_lead = text_before_bold if is_lead_with_letters else ""
+                speeches.append(ParsedSpeech(speaker=None, transcript=direction_lead + bold_text.strip() + name_separator + transcript))
                 continue
             if new_speaker:
                 current_speaker = new_speaker
