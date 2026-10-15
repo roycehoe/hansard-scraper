@@ -615,7 +615,7 @@ def _get_proc_text(line: str) -> Optional[str]:
     match = _PROC_TEXT_LINE_RE.match(line)
     if match is None:
         return None
-    return match.group(1) + match.group(2) + match.group(3)
+    return match.group(1) + match.group(2).strip() + match.group(3)
 
 
 def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speaker: str) -> list[ParsedSpeech]:

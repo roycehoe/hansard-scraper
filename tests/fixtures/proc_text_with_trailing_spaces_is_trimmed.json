@@ -1,0 +1,22 @@
+{
+  "why": "A bill introduction tagged (proc text) has a non-breaking space before the closing marker; the tagged row is trimmed, so it ends with the bill's own text and not with a space.",
+  "source_report_id": 2461,
+  "report_version": "sprs3",
+  "report_type": "bill-intro",
+  "title": "Criminal Law (Temporary Provisions) (Amendment) Bill ",
+  "subtitle": null,
+  "original_title": "Criminal Law (Temporary Provisions) (Amendment) Bill ",
+  "html": "<p>[(proc text) \"to&nbsp;<span style=\"color: rgb(51, 51, 51);\">amend the Criminal Law (Temporary Provisions) Act 1955\",&nbsp;</span>(proc text)]</p><p>[(proc text) presented by the Minister of State for Home Affairs (Assoc Prof Dr Muhammad Faishal Ibrahim) on behalf of the Minister for Home Affairs;&nbsp;read the First time; to be read a Second time on the next available Sitting of Parliament, and to be printed. (proc text)]</p>",
+  "expected_rows": [
+    [
+      null,
+      "\"to amend the Criminal Law (Temporary Provisions) Act 1955\",",
+      "PROCEDURAL"
+    ],
+    [
+      null,
+      "presented by the Minister of State for Home Affairs (Assoc Prof Dr Muhammad Faishal Ibrahim) on behalf of the Minister for Home Affairs; read the First time; to be read a Second time on the next available Sitting of Parliament, and to be printed.",
+      "PROCEDURAL"
+    ]
+  ]
+}
