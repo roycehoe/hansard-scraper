@@ -1,0 +1,22 @@
+{
+  "why": "A bold name before 'took the Oath of Allegiance' is a procedural record: the row has no speaker and kind PROCEDURAL, while the Speaker's line before it is SPEECH.",
+  "source_report_id": 33254,
+  "report_version": "sprs2",
+  "report_type": "admin-oaths",
+  "title": "ADMINISTRATION OF OATH",
+  "subtitle": null,
+  "original_title": "ADMINISTRATION OF OATH",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\r\n<head>\r\n\r\n<meta http-equiv=\"Content-Type\" content=\"text/html;charset=iso-8859-1\">\r\n<meta name=\"Parl_No\" content=\"5\">\r\n<meta name=\"Sess_No\" content=\"1\">\r\n<meta name=\"Vol_No\" content=\"41\">\r\n<meta name=\"Sit_No\" content=\"6\">\r\n<meta name=\"Sit_Date\" content=\"1981-12-22\">\r\n<meta name=\"Sect_Name\" content=\"ADMINISTRATION OF OATHS\">\r\n<meta name=\"Title\" content=\"ADMINISTRATION OF OATH\">\r\n<meta name=\"MP_Speak\" content=\"Dr Yeoh Ghim Seng (Mr Speaker);\">\r\n<meta name=\"Start_Col\" content=\"289\">\r\n<meta name=\"End_Col\" content=\"289\">\r\n</head>\r\n<body>\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\"><tr><td>\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">5</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">41</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">6</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">22-12-1981</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">ADMINISTRATION OF OATHS</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">ADMINISTRATION OF OATH</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Dr Yeoh Ghim Seng (Mr Speaker);</font></td></tr>\r\n</table></td></tr>\r\n</table>\r\n<br><br><font size=\"1\"><b>Column: 289</b></font><br><br>\r\n\r\n\r\n<div align=\"center\"><h4>[Mr Speaker in the Chair]</h4></div>\r\n\r\n<div align=\"center\"><b>ADMINISTRATION OF OATH</b></div>\r\n\r\n<br><br><!-- Dr Yeoh Ghim Seng (Mr Speaker) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Speaker:</b> Order. The hon. Member\r\ndesirous of taking his seat will please come\r\nforward.\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Joshua Benjamin Jeyaretnam (Anson)</b> took the Oath of Allegiance.\r\n\r\n\r\n\r\n</body>\r\n</html>\r\n",
+  "expected_rows": [
+    [
+      "Mr Speaker",
+      "Order. The hon. Member desirous of taking his seat will please come forward.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "Mr Joshua Benjamin Jeyaretnam (Anson) took the Oath of Allegiance.",
+      "PROCEDURAL"
+    ]
+  ]
+}

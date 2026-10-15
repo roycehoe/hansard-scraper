@@ -10,19 +10,23 @@
   "expected_rows": [
     [
       "Mdm Speaker",
-      "Order. Oath of Allegiance. The hon Member, present to take his seat, will please come forward when his name is called."
+      "Order. Oath of Allegiance. The hon Member, present to take his seat, will please come forward when his name is called.",
+      "SPEECH"
     ],
     [
       null,
-      "The following Member took and subscribed the Oath of Allegiance:"
+      "The following Member took and subscribed the Oath of Allegiance:",
+      "PROCEDURAL"
     ],
     [
       null,
-      "Mr Murali Pillai (Bukit Batok)"
+      "Mr Murali Pillai (Bukit Batok)",
+      "UNCLASSIFIED"
     ],
     [
       "Mdm Speaker",
-      "Order. Questions for Oral Answer."
+      "Order. Questions for Oral Answer.",
+      "SPEECH"
     ]
   ]
 }

@@ -10,19 +10,23 @@
   "expected_rows": [
     [
       null,
-      "Order for Third Reading read."
+      "Order for Third Reading read.",
+      "PROCEDURAL"
     ],
     [
       "The Minister for National Development (Mr Mah Bow Tan)",
-      "Mr Deputy Speaker, Sir, I beg to move, \"That the Bill be now read a Third time.\""
+      "Mr Deputy Speaker, Sir, I beg to move, \"That the Bill be now read a Third time.\"",
+      "SPEECH"
     ],
     [
       "The Minister for National Development (Mr Mah Bow Tan)",
-      "Sir, at its Second Reading in April this year, the House committed the Building Maintenance and Management Bill to a Select Committee. This was because it was likely to have impact on a broad cross-section of the population."
+      "Sir, at its Second Reading in April this year, the House committed the Building Maintenance and Management Bill to a Select Committee. This was because it was likely to have impact on a broad cross-section of the population.",
+      "SPEECH"
     ],
     [
       "The Minister for National Development (Mr Mah Bow Tan)",
-      "The Select Committee has received 61 written representations on the Bill from various stakeholders, including management corporations (MCs), subsidiary proprietors (SPs), managing agents (MAs), developers and lawyers."
+      "The Select Committee has received 61 written representations on the Bill from various stakeholders, including management corporations (MCs), subsidiary proprietors (SPs), managing agents (MAs), developers and lawyers.",
+      "SPEECH"
     ]
   ]
 }

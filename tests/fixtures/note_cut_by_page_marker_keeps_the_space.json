@@ -10,11 +10,13 @@
   "expected_rows": [
     [
       "Mdm Speaker",
-      "Order. End of Question Time."
+      "Order. End of Question Time.",
+      "SPEECH"
     ],
     [
       null,
-      "[_Pursuant to Standing Order No 22(3), provided that Members had not asked for questions standing in their names to be postponed to a later Sitting day or withdrawn, written answers to questions not reached by the end of Question Time are reproduced in the Appendix_.]"
+      "[_Pursuant to Standing Order No 22(3), provided that Members had not asked for questions standing in their names to be postponed to a later Sitting day or withdrawn, written answers to questions not reached by the end of Question Time are reproduced in the Appendix_.]",
+      "EDITORIAL_NOTE"
     ]
   ]
 }

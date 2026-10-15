@@ -10,11 +10,13 @@
   "expected_rows": [
     [
       "Mr C. H. Butterfield (Attorney-General)",
-      "\"to amend the Companies Ordinance, 1940 (No. 49 of 1940)\", presented by the Attorney-General; read the First time; to be read a Second time on Wednesday, 9th November, 1955, and to be printed."
+      "\"to amend the Companies Ordinance, 1940 (No. 49 of 1940)\", presented by the Attorney-General; read the First time; to be read a Second time on Wednesday, 9th November, 1955, and to be printed.",
+      "SPEECH"
     ],
     [
       null,
-      "[Mr Deputy Speaker (Mr R. C. H. LIM) in the Chair]"
+      "[Mr Deputy Speaker (Mr R. C. H. LIM) in the Chair]",
+      "PROCEDURAL"
     ]
   ]
 }

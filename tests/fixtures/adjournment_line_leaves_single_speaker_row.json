@@ -10,11 +10,13 @@
   "expected_rows": [
     [
       "Dr Ng Eng Hen",
-      "Resolved, \"That Parliament do now adjourn.\" − [Dr Ng Eng Hen]."
+      "Resolved, \"That Parliament do now adjourn.\" − [Dr Ng Eng Hen].",
+      "SPEECH"
     ],
     [
       null,
-      "_Adjourned accordingly at 6.49 pm._"
+      "_Adjourned accordingly at 6.49 pm._",
+      "PROCEDURAL"
     ]
   ]
 }

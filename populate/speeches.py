@@ -41,6 +41,7 @@ def populate_speeches(session: Session) -> None:
                 ordinal=ordinal + 1,
                 speaker=speech.speaker,
                 transcript=speech.transcript,
+                kind=speech.kind,
                 report_id=report.id,
             ))
         if len(batch) >= _BATCH_SIZE:

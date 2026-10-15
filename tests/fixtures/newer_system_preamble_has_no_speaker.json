@@ -10,15 +10,18 @@
   "expected_rows": [
     [
       null,
-      "Resolved, \"That Parliament do now adjourn.\" – [Ms Indranee Rajah]."
+      "Resolved, \"That Parliament do now adjourn.\" – [Ms Indranee Rajah].",
+      "PROCEDURAL"
     ],
     [
       "Mr Speaker",
-      "I need to let all of you know what time we are starting tomorrow. Pursuant to Standing Order 2(3)a, I wish to inform hon Members that the Sitting tomorrow will commence at 10.00 am. Order. Order."
+      "I need to let all of you know what time we are starting tomorrow. Pursuant to Standing Order 2(3)a, I wish to inform hon Members that the Sitting tomorrow will commence at 10.00 am. Order. Order.",
+      "SPEECH"
     ],
     [
       null,
-      "_Adjourned accordingly at 6.52 pm._"
+      "_Adjourned accordingly at 6.52 pm._",
+      "PROCEDURAL"
     ]
   ]
 }

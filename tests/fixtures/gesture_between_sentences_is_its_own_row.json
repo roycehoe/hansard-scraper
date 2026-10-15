@@ -10,31 +10,38 @@
   "expected_rows": [
     [
       "Mr Jeyaretnam",
-      "They said, \"No, we can't see any future for us in this place.\" I said, \"Don't be silly. You stay.\" But they said they were making their plans to leave. And it is not just them. The people who leave here are not just the ordinary workers. They cannot leave. The people who leave are those who have some sort of skill, training, who are able to use their skills outside. So that is robbing this country of the talent that we could have. If only we could try and understand why they are leaving this place. I am not trying to spin a yarn."
+      "They said, \"No, we can't see any future for us in this place.\" I said, \"Don't be silly. You stay.\" But they said they were making their plans to leave. And it is not just them. The people who leave here are not just the ordinary workers. They cannot leave. The people who leave are those who have some sort of skill, training, who are able to use their skills outside. So that is robbing this country of the talent that we could have. If only we could try and understand why they are leaving this place. I am not trying to spin a yarn.",
+      "SPEECH"
     ],
     [
       "Mr Jeyaretnam",
-      "As I said, the Prime Minister was worried about the brain drain. I do not think anyone will deny that there is a brain drain. I know other countries also have this problem. But we need it so vitally, because again, Members, we are reminded, times without number, that our only resources are our people. We cannot dig up something from under the ground to sell to foreigners. We cannot tap the rubber from our trees to sell them. All we can sell is here"
+      "As I said, the Prime Minister was worried about the brain drain. I do not think anyone will deny that there is a brain drain. I know other countries also have this problem. But we need it so vitally, because again, Members, we are reminded, times without number, that our only resources are our people. We cannot dig up something from under the ground to sell to foreigners. We cannot tap the rubber from our trees to sell them. All we can sell is here",
+      "SPEECH"
     ],
     [
       null,
-      "[pointing to the brain]"
+      "[pointing to the brain]",
+      "CHAMBER_EVENT"
     ],
     [
       "Mr Jeyaretnam",
-      "in our citizens, their ideas, their technology that they can invent. And people will buy them. But we are trying to kill that. Can you not see it? We are trying to kill the only resources that this country possesses. And we are trying to kill it by refusing to let our citizens widen their knowledge by reading material elsewhere than just in the Straits Times and the Chinese, Malay papers that the Government puts out. If they are to be left with just these papers, I am afraid you will find that the supply of this brain power will diminish as time goes on. It must because it will get warped by just one information from one pipeline being fed into it all the time, and they would not be able to think for themselves."
+      "in our citizens, their ideas, their technology that they can invent. And people will buy them. But we are trying to kill that. Can you not see it? We are trying to kill the only resources that this country possesses. And we are trying to kill it by refusing to let our citizens widen their knowledge by reading material elsewhere than just in the Straits Times and the Chinese, Malay papers that the Government puts out. If they are to be left with just these papers, I am afraid you will find that the supply of this brain power will diminish as time goes on. It must because it will get warped by just one information from one pipeline being fed into it all the time, and they would not be able to think for themselves.",
+      "SPEECH"
     ],
     [
       "Mr Jeyaretnam",
-      "There is another thing that I have noticed and which is disturbing for the society. I come across from time to time officials of the Government being so frightened of exercising any discretion. They say, \"Mr Jeyaretnam, those are the rules we must follow.\" I say, \"Look, they are the rules, I know. I am not asking you. But there are some cases you must be able to exercise your discretion.\" They say, \"No, I must refer it to my superior.\" And so it goes right up, I suppose, to the Permanent Secretary. Can you see what a waste it is? And all this because we are fettering our people. We are tying them up in the one aspect where we need their contribution, and that is here"
+      "There is another thing that I have noticed and which is disturbing for the society. I come across from time to time officials of the Government being so frightened of exercising any discretion. They say, \"Mr Jeyaretnam, those are the rules we must follow.\" I say, \"Look, they are the rules, I know. I am not asking you. But there are some cases you must be able to exercise your discretion.\" They say, \"No, I must refer it to my superior.\" And so it goes right up, I suppose, to the Permanent Secretary. Can you see what a waste it is? And all this because we are fettering our people. We are tying them up in the one aspect where we need their contribution, and that is here",
+      "SPEECH"
     ],
     [
       null,
-      "[pointing to the brain]."
+      "[pointing to the brain].",
+      "CHAMBER_EVENT"
     ],
     [
       "Mr Jeyaretnam",
-      "And unless we can release that, unlock it for them, we are not going to reach the City of Excellence. We are not going to have a society with a free flow of information, hi-tech information that the PAP talked about before the 1984 elections. By no way are we going to get that. All we will have are people who know only what the PAP press put out."
+      "And unless we can release that, unlock it for them, we are not going to reach the City of Excellence. We are not going to have a society with a free flow of information, hi-tech information that the PAP talked about before the 1984 elections. By no way are we going to get that. All we will have are people who know only what the PAP press put out.",
+      "SPEECH"
     ]
   ]
 }

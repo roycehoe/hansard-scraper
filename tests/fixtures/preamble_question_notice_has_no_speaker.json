@@ -10,27 +10,33 @@
   "expected_rows": [
     [
       null,
-      "The following Questions stood in the name of Mr Ong Lian Teng ---"
+      "The following Questions stood in the name of Mr Ong Lian Teng ---",
+      "UNCLASSIFIED"
     ],
     [
       null,
-      "17. To ask the Minister for Law and National Development when the Government will install street lights at the 11th and 12th milestones, Woodlands Road."
+      "17. To ask the Minister for Law and National Development when the Government will install street lights at the 11th and 12th milestones, Woodlands Road.",
+      "DOCUMENT_TEXT"
     ],
     [
       null,
-      "18. To ask the Minister for Law and National Development what is the sum of money spent by the Government for rural development in the Bukit Panjang Constituency from 1st January, 1964, to 31st December, 1964, and the details of such expenditure."
+      "18. To ask the Minister for Law and National Development what is the sum of money spent by the Government for rural development in the Bukit Panjang Constituency from 1st January, 1964, to 31st December, 1964, and the details of such expenditure.",
+      "DOCUMENT_TEXT"
     ],
     [
       null,
-      "19. To ask the Minister for Law and National Development whether Temporary Occupation Licence fees of Crown Land in the Mandai area have been increased and by what percentage."
+      "19. To ask the Minister for Law and National Development whether Temporary Occupation Licence fees of Crown Land in the Mandai area have been increased and by what percentage.",
+      "DOCUMENT_TEXT"
     ],
     [
       "Mr Speaker",
-      "Mr Ong Lian Teng."
+      "Mr Ong Lian Teng.",
+      "SPEECH"
     ],
     [
       "Mr Speaker",
-      "There being no response, Mr E. W. Barker handed in to the Clerk written answers to Questions Nos. 17, 18 and 19."
+      "There being no response, Mr E. W. Barker handed in to the Clerk written answers to Questions Nos. 17, 18 and 19.",
+      "SPEECH"
     ]
   ]
 }

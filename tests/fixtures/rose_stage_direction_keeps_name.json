@@ -10,35 +10,43 @@
   "expected_rows": [
     [
       null,
-      "Mr Teong Eng Siong (Sembawang) rose ---"
+      "Mr Teong Eng Siong (Sembawang) rose ---",
+      "CHAMBER_EVENT"
     ],
     [
       "Mr Speaker",
-      "The Member for Sembawang has a personal explanation?"
+      "The Member for Sembawang has a personal explanation?",
+      "SPEECH"
     ],
     [
       "Mr Teong Eng Siong",
-      "Mr Speaker, I have a certain excerpt from a newspaper to quote to you. This quotation appears in the Malay Mail. The reporter is one Mr Harold Soh. In today's Malay Mail, on page 4, there is a report of the proceedings in the Committee of Supply of our Parliament. It said that the Member for Sembawang had produced a black-list of nurses and given it to the Minister for Health. In actual fact, it was wrong reporting, because I only gave the information which the Minister required of me. So I would like the paper concerned to correct the wrong reporting."
+      "Mr Speaker, I have a certain excerpt from a newspaper to quote to you. This quotation appears in the Malay Mail. The reporter is one Mr Harold Soh. In today's Malay Mail, on page 4, there is a report of the proceedings in the Committee of Supply of our Parliament. It said that the Member for Sembawang had produced a black-list of nurses and given it to the Minister for Health. In actual fact, it was wrong reporting, because I only gave the information which the Minister required of me. So I would like the paper concerned to correct the wrong reporting.",
+      "SPEECH"
     ],
     [
       "Mr Speaker",
-      "Part of the Member's translation did not come through to me on the ear-phone. Did the Member give the name and the date of the paper?"
+      "Part of the Member's translation did not come through to me on the ear-phone. Did the Member give the name and the date of the paper?",
+      "SPEECH"
     ],
     [
       "An hon. Member",
-      "The Malay Mail."
+      "The Malay Mail.",
+      "SPEECH"
     ],
     [
       "Mr Speaker",
-      "The Member did. Very well."
+      "The Member did. Very well.",
+      "SPEECH"
     ],
     [
       "Mr Teong Eng Siong",
-      "Mr Speaker, do you want me to repeat what I have said?"
+      "Mr Speaker, do you want me to repeat what I have said?",
+      "SPEECH"
     ],
     [
       "Mr Speaker",
-      "I just want to know the name of the paper and the date of the paper. It is perfectly in order."
+      "I just want to know the name of the paper and the date of the paper. It is perfectly in order.",
+      "SPEECH"
     ]
   ]
 }

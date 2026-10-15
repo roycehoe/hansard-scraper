@@ -10,243 +10,303 @@
   "expected_rows": [
     [
       null,
-      "Head 0307 -"
+      "Head 0307 -",
+      "HEADING"
     ],
     [
       "Mr Govindaswamy",
-      "Mr Speaker, Sir, I would like to take my six amendments together."
+      "Mr Speaker, Sir, I would like to take my six amendments together.",
+      "SPEECH"
     ],
     [
       "The Chairman",
-      "Will you move the first amendment, Mr Govindaswamy?"
+      "Will you move the first amendment, Mr Govindaswamy?",
+      "SPEECH"
     ],
     [
       "Mr Govindaswamy",
-      "Sir, I beg to move,"
+      "Sir, I beg to move,",
+      "SPEECH"
     ],
     [
       "Mr Govindaswamy",
-      "That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1001. I will also range over *amendments (2) , (3) , (4) , (5) and (6)."
+      "That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1001. I will also range over *amendments (2) , (3) , (4) , (5) and (6).",
+      "SPEECH"
     ],
     [
       null,
-      "* The amendments read as follows:"
+      "* The amendments read as follows:",
+      "EDITORIAL_NOTE"
     ],
     [
       null,
-      "(2) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1002."
+      "(2) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1002.",
+      "DOCUMENT_TEXT"
     ],
     [
       null,
-      "(3) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1004."
+      "(3) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1004.",
+      "DOCUMENT_TEXT"
     ],
     [
       null,
-      "(4) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1012."
+      "(4) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1012.",
+      "DOCUMENT_TEXT"
     ],
     [
       null,
-      "(5) (standing also in the name of Madam Chan Choy Siong): That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1023."
+      "(5) (standing also in the name of Madam Chan Choy Siong): That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1023.",
+      "DOCUMENT_TEXT"
     ],
     [
       null,
-      "(6) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1024."
+      "(6) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1024.",
+      "DOCUMENT_TEXT"
     ],
     [
       "Mr Govindaswamy",
-      "Mr Speaker, Sir, I would like to bring to the notice of the House the fact that the Postal Department has been working quite efficiently in past years. In the 1965 Budget sittings, I pointed out that the postal quarters at Radin Mas, Tanglin, Wilkinson Road, Geylang and Choon Guan Street old postal-drivers garage quarters were in pretty bad condition and I urged that they be improved. The Minister of State promised to look into the matter, but I regret to say, Sir, that nothing has been done. I am now compelled to ask him the same question and I hope that some action will be taken to improve these postmen's quarters."
+      "Mr Speaker, Sir, I would like to bring to the notice of the House the fact that the Postal Department has been working quite efficiently in past years. In the 1965 Budget sittings, I pointed out that the postal quarters at Radin Mas, Tanglin, Wilkinson Road, Geylang and Choon Guan Street old postal-drivers garage quarters were in pretty bad condition and I urged that they be improved. The Minister of State promised to look into the matter, but I regret to say, Sir, that nothing has been done. I am now compelled to ask him the same question and I hope that some action will be taken to improve these postmen's quarters.",
+      "SPEECH"
     ],
     [
       "Mr Govindaswamy",
-      "Mr Speaker, Sir, I would also like to draw the attention of this House to the difficult working conditions of postmen. In my opinion, and speaking from experience, I think that the duties of postmen are among the toughest in the whole civil service. I am sure that the public are also aware of this. Outwardly, they seem to be merrily delivering letters, parcels and registered articles, but it must be appreciated that their duties are not that simple. They are required to discharge them within a stipulated time. They have to cycle under the hot sun or in heavy rain and sometimes with their heavy loads up hilly slopes, which is most strenuous and exhausting, and they are penalised for any loss of letters or articles. Above all, they have to rush through their daily deliveries within a very short time. They also have to climb many storeys in our modern multi-storeyed flats. Under these trying conditions of work, it is not unreasonable to ask that they be provided with decent quarters so that they may have a proper night's rest in order that they can be fit to undertake another day's heavy work."
+      "Mr Speaker, Sir, I would also like to draw the attention of this House to the difficult working conditions of postmen. In my opinion, and speaking from experience, I think that the duties of postmen are among the toughest in the whole civil service. I am sure that the public are also aware of this. Outwardly, they seem to be merrily delivering letters, parcels and registered articles, but it must be appreciated that their duties are not that simple. They are required to discharge them within a stipulated time. They have to cycle under the hot sun or in heavy rain and sometimes with their heavy loads up hilly slopes, which is most strenuous and exhausting, and they are penalised for any loss of letters or articles. Above all, they have to rush through their daily deliveries within a very short time. They also have to climb many storeys in our modern multi-storeyed flats. Under these trying conditions of work, it is not unreasonable to ask that they be provided with decent quarters so that they may have a proper night's rest in order that they can be fit to undertake another day's heavy work.",
+      "SPEECH"
     ],
     [
       "Mr Govindaswamy",
-      "Mr Speaker, Sir, I notice in the Estimates that a number of higher grade posts in the Postal Department has been increased. I also notice from the Budget Statement of the Finance Minister of the 5th of December that there has been a substantial increase in the number of houses and factories, but that there is to be no increase in the number of postmen for 1968. In fact, the Minister stated that the number of new buildings commenced this year showed no less than a 66 per cent increase over that of last year and that private construction was, particularly active, showing a 94.5 per cent increase. Yet I am surprised to note that there is no provision for an increase of even one postman but that there is an increase in the number of higher grade posts. For example, the number of senior officers has been raised from 8 to 13 since 1963, but there has been no increase in the number of clerical staff. We have now a Postmaster-General, a Deputy Postmaster-General, two Controllers of Posts, 13 Assistant Controllers of Posts, an i three Chief Superintendents. This increase in the number of higher grade posts is hardly explainable. I do not know what work they are doing, but I certainly cannot imagine how increased deliveries due to the increase in population, houses, flats and factories, can be met by increasing the number of senior officers. I have, however, no objection to the creation of the post of Deputy Postmaster-General, but I cannot see the need for two Controllers of Posts. Will the Minister consider reducing the number to one Controller of Posts and three Assistant Controllers of Posts? The savings in salaries of these four posts will be sufficient to pay for 30 postmen, which will mean that 30 families will be looked after."
+      "Mr Speaker, Sir, I notice in the Estimates that a number of higher grade posts in the Postal Department has been increased. I also notice from the Budget Statement of the Finance Minister of the 5th of December that there has been a substantial increase in the number of houses and factories, but that there is to be no increase in the number of postmen for 1968. In fact, the Minister stated that the number of new buildings commenced this year showed no less than a 66 per cent increase over that of last year and that private construction was, particularly active, showing a 94.5 per cent increase. Yet I am surprised to note that there is no provision for an increase of even one postman but that there is an increase in the number of higher grade posts. For example, the number of senior officers has been raised from 8 to 13 since 1963, but there has been no increase in the number of clerical staff. We have now a Postmaster-General, a Deputy Postmaster-General, two Controllers of Posts, 13 Assistant Controllers of Posts, an i three Chief Superintendents. This increase in the number of higher grade posts is hardly explainable. I do not know what work they are doing, but I certainly cannot imagine how increased deliveries due to the increase in population, houses, flats and factories, can be met by increasing the number of senior officers. I have, however, no objection to the creation of the post of Deputy Postmaster-General, but I cannot see the need for two Controllers of Posts. Will the Minister consider reducing the number to one Controller of Posts and three Assistant Controllers of Posts? The savings in salaries of these four posts will be sufficient to pay for 30 postmen, which will mean that 30 families will be looked after.",
+      "SPEECH"
     ],
     [
       "Mr Govindaswamy",
-      "Mr Speaker, Sir, I hope the Minister will appreciate that postmen are working under heavy pressure. When one postman goes on leave, his delivery beat is shared by other postmen who are already overloaded. But overtime is paid often not in fair proportion to the overtime work performed. In short, this is because of the shortage of postmen. To cite an example, on 14th November this year, one assistant postman died shortly after he arrived for duty at the General Post Office. The pressure of work was certainly one of the causes that contributed to his death. The office is not well-ventilated and is congested by the accumulation of mail bags and parcels. Indeed, one wonders how many of them have T.B.-God knows!"
+      "Mr Speaker, Sir, I hope the Minister will appreciate that postmen are working under heavy pressure. When one postman goes on leave, his delivery beat is shared by other postmen who are already overloaded. But overtime is paid often not in fair proportion to the overtime work performed. In short, this is because of the shortage of postmen. To cite an example, on 14th November this year, one assistant postman died shortly after he arrived for duty at the General Post Office. The pressure of work was certainly one of the causes that contributed to his death. The office is not well-ventilated and is congested by the accumulation of mail bags and parcels. Indeed, one wonders how many of them have T.B.-God knows!",
+      "SPEECH"
     ],
     [
       "Mr Govindaswamy",
-      "Mr Speaker, Sir, I respectfully request that the Minister take effective steps to improve the working conditions of postmen by providing better quarters for them and by increasing their number rather than by increasing the number of senior officers."
+      "Mr Speaker, Sir, I respectfully request that the Minister take effective steps to improve the working conditions of postmen by providing better quarters for them and by increasing their number rather than by increasing the number of senior officers.",
+      "SPEECH"
     ],
     [
       "The Minister of State for the Prime Minister's Department (Tuan Haji Yaacob bin Mohamed)",
-      "Mr Speaker, Sir,I fully sympathise with the Member for Anson who spoke on the hardships experienced by postmen who earn small wages. As he has moved amendment (1) and ranged over amendments (2) , (3) , (4) , (5) and (6) , I will reply to them one by one."
+      "Mr Speaker, Sir,I fully sympathise with the Member for Anson who spoke on the hardships experienced by postmen who earn small wages. As he has moved amendment (1) and ranged over amendments (2) , (3) , (4) , (5) and (6) , I will reply to them one by one.",
+      "SPEECH"
     ],
     [
       "The Minister of State for the Prime Minister's Department (Tuan Haji Yaacob bin Mohamed)",
-      "As regards postmen's quarters, last year -I have been the Minister of State since 1965 - I promised that I would look into the matter when it was raised in Parliament."
+      "As regards postmen's quarters, last year -I have been the Minister of State since 1965 - I promised that I would look into the matter when it was raised in Parliament.",
+      "SPEECH"
     ],
     [
       "The Minister of State for the Prime Minister's Department (Tuan Haji Yaacob bin Mohamed)",
-      "I would like to explain that in 1963 at a meeting of the Postal Services Joint Committee, the Staff Side requested that the department take up with the Government the desirability of repairs and alterations to the postmen's quarters at Lorong 27-A, Geylang, Kampong Bahru, Tanglin Post Office and Wilkinson Road. The Staff Side also requested that the single-room quarters occupied by postmen at Choon Guan Street should he altered to provide two rooms for each occupant. The matter was taken up with the Public Works Department and limited repairs and renovations were undertaken in due course."
+      "I would like to explain that in 1963 at a meeting of the Postal Services Joint Committee, the Staff Side requested that the department take up with the Government the desirability of repairs and alterations to the postmen's quarters at Lorong 27-A, Geylang, Kampong Bahru, Tanglin Post Office and Wilkinson Road. The Staff Side also requested that the single-room quarters occupied by postmen at Choon Guan Street should he altered to provide two rooms for each occupant. The matter was taken up with the Public Works Department and limited repairs and renovations were undertaken in due course.",
+      "SPEECH"
     ],
     [
       "The Minister of State for the Prime Minister's Department (Tuan Haji Yaacob bin Mohamed)",
-      "However, the Public Works Department reported that in respect of alterations to provide more living space, the Development Planning Sub-Committee had not approved any structural alterations as the quarters were very old buildings."
+      "However, the Public Works Department reported that in respect of alterations to provide more living space, the Development Planning Sub-Committee had not approved any structural alterations as the quarters were very old buildings.",
+      "SPEECH"
     ],
     [
       "The Minister of State for the Prime Minister's Department (Tuan Haji Yaacob bin Mohamed)",
-      "It is pertinent to point out to the Member for Anson that postmen are not entitled to quarters under their scheme of service, and therefore Government should not spend public funds to enlarge existing old quarters. However, postmen, as members of the public, are eligible for public housing, and it is understood that there will be no difficulty in obtaining Housing Board flats if applicants are not selective. This will provide better housing facilities for the postmen concerned."
+      "It is pertinent to point out to the Member for Anson that postmen are not entitled to quarters under their scheme of service, and therefore Government should not spend public funds to enlarge existing old quarters. However, postmen, as members of the public, are eligible for public housing, and it is understood that there will be no difficulty in obtaining Housing Board flats if applicants are not selective. This will provide better housing facilities for the postmen concerned.",
+      "SPEECH"
     ],
     [
       "The Minister of State for the Prime Minister's Department (Tuan Haji Yaacob bin Mohamed)",
-      "Concerning the Deputy Postmaster-General, subhead 1002, because of the recent take-over of Singapore functions from Postal Headquarters, Kuala Lumpur, including the Singapore section of the Post Office Savings Bank which operated at Petaling Jaya, the range of duties and responsibilities discharged by the Postmaster-General, Singapore, has increased, in order to avert the administrative burden at the Postmaster-General level, it is necessary to create the post of Deputy Postmaster-General."
+      "Concerning the Deputy Postmaster-General, subhead 1002, because of the recent take-over of Singapore functions from Postal Headquarters, Kuala Lumpur, including the Singapore section of the Post Office Savings Bank which operated at Petaling Jaya, the range of duties and responsibilities discharged by the Postmaster-General, Singapore, has increased, in order to avert the administrative burden at the Postmaster-General level, it is necessary to create the post of Deputy Postmaster-General.",
+      "SPEECH"
     ],
     [
       "The Minister of State for the Prime Minister's Department (Tuan Haji Yaacob bin Mohamed)",
-      "On subhead 1004, in 1966 the posts of Assistant Controller of Posts were increased from 9 to 13. The four new posts are for the following new branches to be taken over from Postal Headquarters, Kuala Lumpur: -(a) Post Office Savings Bank, (b) Finance and Checking Branch, (c) Statistics and International Branch, and (d) Money Order, Stamps, and Services Branch."
+      "On subhead 1004, in 1966 the posts of Assistant Controller of Posts were increased from 9 to 13. The four new posts are for the following new branches to be taken over from Postal Headquarters, Kuala Lumpur: -(a) Post Office Savings Bank, (b) Finance and Checking Branch, (c) Statistics and International Branch, and (d) Money Order, Stamps, and Services Branch.",
+      "SPEECH"
     ],
     [
       "The Minister of State for the Prime Minister's Department (Tuan Haji Yaacob bin Mohamed)",
-      "Regarding subhead 1012, Postal Clerks, Timescale, it was proposed to increase the 1968 establishment of postal clerks by 69, i.e., making a total of 508. The reasons for the increase are as follows: (1) nine postal clerks to meet the normal growth of work; and (2) 60 postal clerks, currently employed as temporary clerks, to man the four new branches, namely, the Post Office Savings Bank, the Finance and Checking Branch, the Statistics and international Branch, and the Money Order, Stamps and Services Branch, which branches are to be transferred to the permanent establishment. In respect of the increase of nine postal clerks, it is regretted that the Permanent Secretary (Finance) did not support the proposal. In respect of the 60 postal clerks, the Permanent Secretary (Finance) has instead provided a block vote of $320,000 under O.C.S.E., appearing in page 109 of the Estimates under subhead 3005, Expenses relating to Postal Headquarters Branches and Post Office Savings Bank, Singapore. This vote is to meet payment of emoluments and C.P.F, contributions of the staff of the four new branches, pending a review of the staffing position of the Department."
+      "Regarding subhead 1012, Postal Clerks, Timescale, it was proposed to increase the 1968 establishment of postal clerks by 69, i.e., making a total of 508. The reasons for the increase are as follows: (1) nine postal clerks to meet the normal growth of work; and (2) 60 postal clerks, currently employed as temporary clerks, to man the four new branches, namely, the Post Office Savings Bank, the Finance and Checking Branch, the Statistics and international Branch, and the Money Order, Stamps and Services Branch, which branches are to be transferred to the permanent establishment. In respect of the increase of nine postal clerks, it is regretted that the Permanent Secretary (Finance) did not support the proposal. In respect of the 60 postal clerks, the Permanent Secretary (Finance) has instead provided a block vote of $320,000 under O.C.S.E., appearing in page 109 of the Estimates under subhead 3005, Expenses relating to Postal Headquarters Branches and Post Office Savings Bank, Singapore. This vote is to meet payment of emoluments and C.P.F, contributions of the staff of the four new branches, pending a review of the staffing position of the Department.",
+      "SPEECH"
     ],
     [
       "The Minister of State for the Prime Minister's Department (Tuan Haji Yaacob bin Mohamed)",
-      "Regarding subhead 1023, Postmen. Timescale, it was proposed to increase the establishment in the 1968 Estimates by 15 postmen, making a total of 462, to cope with the growth of delivery work as mentioned by the Member for Anson a little while ago. Unfortunately, the proposals submitted to the Ministry of Finance were not supported by the Permanent Secretary (Finance)."
+      "Regarding subhead 1023, Postmen. Timescale, it was proposed to increase the establishment in the 1968 Estimates by 15 postmen, making a total of 462, to cope with the growth of delivery work as mentioned by the Member for Anson a little while ago. Unfortunately, the proposals submitted to the Ministry of Finance were not supported by the Permanent Secretary (Finance).",
+      "SPEECH"
     ],
     [
       "The Minister of State for the Prime Minister's Department (Tuan Haji Yaacob bin Mohamed)",
-      "Regarding subhead 1024, the current establishment of assistant postmen is 106. It was proposed to increase the establishment by one, making a total of 107. Unfortunately, too, the Ministry of Finance did not support this proposal either. However, I sympathise with the hon. Member for Anson."
+      "Regarding subhead 1024, the current establishment of assistant postmen is 106. It was proposed to increase the establishment by one, making a total of 107. Unfortunately, too, the Ministry of Finance did not support this proposal either. However, I sympathise with the hon. Member for Anson.",
+      "SPEECH"
     ],
     [
       "Mr Govindaswamy",
-      "Regarding the Choon Guan Street Postal Garage quarters, I understand from the Minister of State that there are two rooms each in every quarters. That is incorrect, because there are 22 quarters; four with two rooms each, and the rest -18 quarters -have one room each."
+      "Regarding the Choon Guan Street Postal Garage quarters, I understand from the Minister of State that there are two rooms each in every quarters. That is incorrect, because there are 22 quarters; four with two rooms each, and the rest -18 quarters -have one room each.",
+      "SPEECH"
     ],
     [
       "Mr Govindaswamy",
-      "The Minister of State has also mentioned just now the increase in the number of postmen and others, and his reason is that the Ministry of Finance has been cutting down the expenditure. What is the meaning of cutting and further cutting the vote? The Minister of State must tell the Finance Ministry that this Department needs the increase, because the postmen are at present suffering. He must explain to the Minister for Finance the reasons for increasing the number of posts. Just ask any Assistant Controller of Posts or anybody to deliver letters in the Alexandra area for one day. Just let them try, and they will see how difficult is the postman's job. And if you do not want to increase the number of posts, you are pressuring them. It is like hell. They want to run away from the Postal Department. That would be very unfair to the Postal Department."
+      "The Minister of State has also mentioned just now the increase in the number of postmen and others, and his reason is that the Ministry of Finance has been cutting down the expenditure. What is the meaning of cutting and further cutting the vote? The Minister of State must tell the Finance Ministry that this Department needs the increase, because the postmen are at present suffering. He must explain to the Minister for Finance the reasons for increasing the number of posts. Just ask any Assistant Controller of Posts or anybody to deliver letters in the Alexandra area for one day. Just let them try, and they will see how difficult is the postman's job. And if you do not want to increase the number of posts, you are pressuring them. It is like hell. They want to run away from the Postal Department. That would be very unfair to the Postal Department.",
+      "SPEECH"
     ],
     [
       "Mr Govindaswamy",
-      "I now ask the Minister to go and press this matter again and get the increase. But since the Minister for State has already replied, and although I am not satisfied, I have to withdraw my amendment."
+      "I now ask the Minister to go and press this matter again and get the increase. But since the Minister for State has already replied, and although I am not satisfied, I have to withdraw my amendment.",
+      "SPEECH"
     ],
     [
       null,
-      "Amendment, by leave, withdrawn."
+      "Amendment, by leave, withdrawn.",
+      "PROCEDURAL"
     ],
     [
       null,
-      "The following amendments stood in the name of Mr P. Govindaswamy -"
+      "The following amendments stood in the name of Mr P. Govindaswamy -",
+      "PROCEDURAL"
     ],
     [
       null,
-      "(2) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1002."
+      "(2) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1002.",
+      "DOCUMENT_TEXT"
     ],
     [
       null,
-      "(3) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1004."
+      "(3) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1004.",
+      "DOCUMENT_TEXT"
     ],
     [
       null,
-      "(4) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1012."
+      "(4) That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1012.",
+      "DOCUMENT_TEXT"
     ],
     [
       "The Chairman",
-      "Amendments (2) , (3) and (4) , standing in Mr Govindaswamy's name, are not being moved. Amendment (5)*, Madam Chan. I very much regret that I must, even before you begin, inform you, Madam Chan, that you have precisely two minutes."
+      "Amendments (2) , (3) and (4) , standing in Mr Govindaswamy's name, are not being moved. Amendment (5)*, Madam Chan. I very much regret that I must, even before you begin, inform you, Madam Chan, that you have precisely two minutes.",
+      "SPEECH"
     ],
     [
       "Madam Chan Choy Siong",
-      "I am not moving."
+      "I am not moving.",
+      "SPEECH"
     ],
     [
       null,
-      "* Amendment (5), standing in the names of Mr P. Govindaswamy and Madam Chan Choy Siong, reads as follows:"
+      "* Amendment (5), standing in the names of Mr P. Govindaswamy and Madam Chan Choy Siong, reads as follows:",
+      "EDITORIAL_NOTE"
     ],
     [
       null,
-      "That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1023."
+      "That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1023.",
+      "DOCUMENT_TEXT"
     ],
     [
       "The Chairman",
-      "Thank you. Amendment (6)+ is not being moved. Amendment (7) , Mr Lim Guan Hoo."
+      "Thank you. Amendment (6)+ is not being moved. Amendment (7) , Mr Lim Guan Hoo.",
+      "SPEECH"
     ],
     [
       null,
-      "+ Amendment (6), standing in the name of Mr P. Govindaswamy, reads as follows:"
+      "+ Amendment (6), standing in the name of Mr P. Govindaswamy, reads as follows:",
+      "EDITORIAL_NOTE"
     ],
     [
       null,
-      "That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1024."
+      "That the sum to be allocated for Head 0307 be reduced by $10 in respect of subhead 1024.",
+      "DOCUMENT_TEXT"
     ],
     [
       "Mr Lim Guan Hoo (Bukit Merah)",
-      "Mr Speaker, I beg to move,"
+      "Mr Speaker, I beg to move,",
+      "SPEECH"
     ],
     [
       "Mr Lim Guan Hoo (Bukit Merah)",
-      "That the sum to be allocated for Head 0307 be reduced by $10 in respect of item (5) of subhead 3002."
+      "That the sum to be allocated for Head 0307 be reduced by $10 in respect of item (5) of subhead 3002.",
+      "SPEECH"
     ],
     [
       "Mr Lim Guan Hoo (Bukit Merah)",
-      "Mr Speaker, this item that I wish to discuss concerns posting boxes and installation expenses in housing estates. The sum allocated for next year is only $150. From this meagre figure, it appears that the authorities concerned are not interested in setting up more posting boxes in densely populated areas."
+      "Mr Speaker, this item that I wish to discuss concerns posting boxes and installation expenses in housing estates. The sum allocated for next year is only $150. From this meagre figure, it appears that the authorities concerned are not interested in setting up more posting boxes in densely populated areas.",
+      "SPEECH"
     ],
     [
       "Mr Lim Guan Hoo (Bukit Merah)",
-      "Many housing estates are coming up in Singapore. Because of poor planning in the old days when no provision was made for these posting boxes, there are now inadequate facilities for posting. This is similar to the lack of planning of hawker pitches. As a result of such poor planning, we often receive many complaints to the effect that it is extremely difficult to post a letter because of the inadequate number of posting boxes in housing estates."
+      "Many housing estates are coming up in Singapore. Because of poor planning in the old days when no provision was made for these posting boxes, there are now inadequate facilities for posting. This is similar to the lack of planning of hawker pitches. As a result of such poor planning, we often receive many complaints to the effect that it is extremely difficult to post a letter because of the inadequate number of posting boxes in housing estates.",
+      "SPEECH"
     ],
     [
       "Mr Lim Guan Hoo (Bukit Merah)",
-      "Mr Speaker, we all know that in some countries some people have to travel a long way by train to send a letter. But if we want Singapore to progress, we must not compare ourselves with these countries, This is a poor comparison. We must not look backward. So in so far as housing estates are concerned, we can see from the many complaints coming from the residents -"
+      "Mr Speaker, we all know that in some countries some people have to travel a long way by train to send a letter. But if we want Singapore to progress, we must not compare ourselves with these countries, This is a poor comparison. We must not look backward. So in so far as housing estates are concerned, we can see from the many complaints coming from the residents -",
+      "SPEECH"
     ],
     [
       "The Chairman",
-      "Order. It is guillotine time,"
+      "Order. It is guillotine time,",
+      "SPEECH"
     ],
     [
       "Mr Lim Guan Hoo",
-      "I will shorten my speech."
+      "I will shorten my speech.",
+      "SPEECH"
     ],
     [
       "The Chairman",
-      "We have in fact gone past the time fixed. I am afraid you will have to go without an answer from the Minister, Mr Lim."
+      "We have in fact gone past the time fixed. I am afraid you will have to go without an answer from the Minister, Mr Lim.",
+      "SPEECH"
     ],
     [
       "Mr Lim Guan Hoo",
-      "Just two more sentences, Sir."
+      "Just two more sentences, Sir.",
+      "SPEECH"
     ],
     [
       "The Chairman",
-      "All right, Mr Lim."
+      "All right, Mr Lim.",
+      "SPEECH"
     ],
     [
       "Mr Lim Guan Hoo",
-      "ir, if the Postal Authorities have not thought of any improvement in this respect, then the residents in housing estates will one day be forced to breathe their own dust in order to carry their messages out."
+      "ir, if the Postal Authorities have not thought of any improvement in this respect, then the residents in housing estates will one day be forced to breathe their own dust in order to carry their messages out.",
+      "SPEECH"
     ],
     [
       "The Chairman",
-      "I have no time to call upon the Minister to reply. Mr Lim, are you prepared to withdraw?"
+      "I have no time to call upon the Minister to reply. Mr Lim, are you prepared to withdraw?",
+      "SPEECH"
     ],
     [
       "Mr Lim Guan Hoo",
-      "Since there is no reply from the Minister, whether or not I am satisfied with it, I have to withdraw my amendment."
+      "Since there is no reply from the Minister, whether or not I am satisfied with it, I have to withdraw my amendment.",
+      "SPEECH"
     ],
     [
       null,
-      "Amendment, by leave, withdrawn,"
+      "Amendment, by leave, withdrawn,",
+      "PROCEDURAL"
     ],
     [
       null,
-      "The time allotted for Head 0307 having expired, the following amendment, standing in the names of Mr Tay Boon Too and Mr Teong Eng Siong, was not proceeded with:"
+      "The time allotted for Head 0307 having expired, the following amendment, standing in the names of Mr Tay Boon Too and Mr Teong Eng Siong, was not proceeded with:",
+      "PROCEDURAL"
     ],
     [
       null,
-      "That the total sum to be allocated for Head 0307 be reduced by $100."
+      "That the total sum to be allocated for Head 0307 be reduced by $100.",
+      "DOCUMENT_TEXT"
     ],
     [
       null,
-      "The sum of $16,101,610 for Head 0307 ordered to stand part of the Estimates."
+      "The sum of $16,101,610 for Head 0307 ordered to stand part of the Estimates.",
+      "PROCEDURAL"
     ],
     [
       "The Chairman",
-      "Before we go on to the next Head, it may be appropriate if I, at this juncture, just make a reference to time. I have based guillotine times on the times requested by Members, and I have tried to be as fair as possible. To accommodate all hon. Members, it has been necessary to cut down to 40 per cent the time each Member has requested."
+      "Before we go on to the next Head, it may be appropriate if I, at this juncture, just make a reference to time. I have based guillotine times on the times requested by Members, and I have tried to be as fair as possible. To accommodate all hon. Members, it has been necessary to cut down to 40 per cent the time each Member has requested.",
+      "SPEECH"
     ],
     [
       "The Chairman",
-      "The guillotine times as to when discussion of any head shall end have been circulated to Members three or four days ago. If Members continue to speak without an eye on the clock, they are merely depriving other Members of their opportunity to speak. While I am not affected, I have to enforce the rules. This will be to the disadvantage of Members who have amendments in their names but are lower down the list in the notice of amendments, 1, therefore, ask Members to keep an eye on the clock as they speak. From the list of times, Members will know how many more Members want to speak on a Head, For the next Head, Registry of Vehicles, discussion must terminate at 5 o'clock. There are five Members who want to speak, and the Minister must reply. Members must adjust their speeches to fit in to the available time, if no Member is to be cut out completely."
+      "The guillotine times as to when discussion of any head shall end have been circulated to Members three or four days ago. If Members continue to speak without an eye on the clock, they are merely depriving other Members of their opportunity to speak. While I am not affected, I have to enforce the rules. This will be to the disadvantage of Members who have amendments in their names but are lower down the list in the notice of amendments, 1, therefore, ask Members to keep an eye on the clock as they speak. From the list of times, Members will know how many more Members want to speak on a Head, For the next Head, Registry of Vehicles, discussion must terminate at 5 o'clock. There are five Members who want to speak, and the Minister must reply. Members must adjust their speeches to fit in to the available time, if no Member is to be cut out completely.",
+      "SPEECH"
     ]
   ]
 }
