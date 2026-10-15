@@ -1,0 +1,32 @@
+{
+  "why": "'[Laughter]' inside Mr Deputy Speaker's paragraph was stored as his speech; it becomes its own row with no speaker, with the text before and after it kept as his.",
+  "source_report_id": 11895,
+  "report_version": "sprs3",
+  "report_type": "motion",
+  "title": "Extension of a Sitting",
+  "subtitle": null,
+  "original_title": "Extension of a Sitting",
+  "html": "<p><strong>Mr Deputy Speaker</strong>: Order. Pursuant to Standing Order No 2(5)(d), I propose to&nbsp;extend the time of this day's Sitting beyond the moment of interruption for a period of up to 30&nbsp;minutes. Mr Edwin Tong, you have another two minutes. If you are unlikely to finish within two minutes, then I will ask for an exemption of Standing Order 48 for you.</p><p><strong>Mr Edwin Tong Chun Fai</strong>: I thought you said five minutes.</p><p><strong>Mr Deputy Speaker</strong>:&nbsp;Time is moving [<em>Laughter</em>]. Order. Minister Desmond Lee can apply for exemption.</p>",
+  "expected_rows": [
+    [
+      "Mr Deputy Speaker",
+      "Order. Pursuant to Standing Order No 2(5)(d), I propose to extend the time of this day's Sitting beyond the moment of interruption for a period of up to 30 minutes. Mr Edwin Tong, you have another two minutes. If you are unlikely to finish within two minutes, then I will ask for an exemption of Standing Order 48 for you."
+    ],
+    [
+      "Mr Edwin Tong Chun Fai",
+      "I thought you said five minutes."
+    ],
+    [
+      "Mr Deputy Speaker",
+      "Time is moving"
+    ],
+    [
+      null,
+      "[_Laughter_]."
+    ],
+    [
+      "Mr Deputy Speaker",
+      "Order. Minister Desmond Lee can apply for exemption."
+    ]
+  ]
+}

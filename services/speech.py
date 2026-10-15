@@ -140,15 +140,6 @@ _TURN_KEEPING_PROCEDURAL_LINE_RE = re.compile(
     r"^[\s*_]*(?:Question (?:again )?proposed|\*\s*The same amendment|" + "|".join(_QUESTION_DECISION_ANCHORS) + ")"
 )
 
-_OATH_LINE_RE = re.compile(
-    r"^(?!.*\b(?:I|[Ww]e|[Yy]ou|[Mm]y|[Oo]ur)\b)[\s_*]*[^?!\"“”\[\]]{0,250}?\b(?:took(?: and subscribed)? (?:the|an|his|her|their) Oath|made (?:an |the |his |her |their )?Affirmation)"
-    r" of Allegiance\b[^.?!]{0,80}?[\s_*]*[.:]?[\s_*\-–—]*$"
-)
-_STAGE_DIRECTION_LINE_RE = re.compile(
-    r"^[\s_*]*(?:Petition handed to the Clerk|Written [Ss]tatement by .{1,200}?Standing Order|Thereupon,? (?:the Clerk|a count)"
-    r"|After (?:one|two|three) minutes?[\s_*]*[-–—]*[\s_*]*$|Certificate of Urgency signed by the President"
-    r"|Members summoned into (?:the )?Chamber|\(?Whereupon\b|The Clerk (?:handed|then|read))"
-)
 _AMENDMENT_NOTE_RE = re.compile(
     r"^[\s_*]*(?:\(\d+\) )?In page \d+(?:, (?:after )?lines? [\d, and]+)?: (?:after|to|leave)"
     r"|^[\s_]*[*+#]{1,2}\s*The (?:[Mm]otion|amendment|same (?:motion|amendment)) (?:also )?stood in the names? of"
@@ -162,6 +153,16 @@ _CLOSED_FOOTNOTE_START_RE = re.compile(
 )
 _MAX_CLOSED_FOOTNOTE_LINES = 10
 _HORIZONTAL_RULE = "* * *"
+
+_OATH_LINE_RE = re.compile(
+    r"^(?!.*\b(?:I|[Ww]e|[Yy]ou|[Mm]y|[Oo]ur)\b)[\s_*]*[^?!\"“”\[\]]{0,250}?\b(?:took(?: and subscribed)? (?:the|an|his|her|their) Oath|made (?:an |the |his |her |their )?Affirmation)"
+    r" of Allegiance\b[^.?!]{0,80}?[\s_*]*[.:]?[\s_*\-–—]*$"
+)
+_STAGE_DIRECTION_LINE_RE = re.compile(
+    r"^[\s_*]*(?:Petition handed to the Clerk|Written [Ss]tatement by .{1,200}?Standing Order|Thereupon,? (?:the Clerk|a count)"
+    r"|After (?:one|two|three) minutes?[\s_*]*[-–—]*[\s_*]*$|Certificate of Urgency signed by the President"
+    r"|Members summoned into (?:the )?Chamber|\(?Whereupon\b|The Clerk (?:handed|then|read))"
+)
 
 _WHOLE_BRACKETED_LINE_RE = re.compile(r"^[\s_*]*\[(?:[^\[\]]|\[[^\[\]]*\])*\][\s_*.]*$")
 # NOTE: a "Please refer" note must name a vernacular speech, because whole-line "[Please refer to ...]" rows in written answers are the minister's answer.
@@ -274,6 +275,16 @@ _LOWERCASE_START_RE = re.compile(r"^[a-z]")
 _STAGE_DIRECTION_VERB_RE = re.compile(r"^(?:indicated|rose|resumed|say|said|signified|left|entered|took|made|stood|went|remained|again|later|and)\b")
 _ITALIC_HEADING_RE = re.compile(r"^_[^_].*_$")
 _SENTENCE_FINAL_RE = re.compile(r"[.?!][\"'”’)\]_*]*$")
+_BRACKET_SPAN_RE = re.compile(r"(?:(?<=\s)[_*]+|^[_*]+)?\[([^\[\]]{1,250})\](?:[_*]*\.)?(?:[_*]+(?=\s|$))?")
+_BRACKET_INNER_EDGE_CHARACTERS = " _*."
+_STAGE_DIRECTION_INNER_RE = re.compile(
+    r"^(?:More |Loud )?(?:Applause|Laughter|Interruptions?|Pauses?|Silence)\b(?:[ .][^\[\]]{0,60})?$"
+    r"|^[A-Z(][^\[\]]*\b(?:shown|distributed|circulated|handed(?: in| out| over)?)\b"
+    r"|^(?:Mr|Mrs|Ms|Mdm|Madam|Dr|Prof|Assoc\.? Prof|Encik|Inche|Hon\.?|The|Some|An?)\b[^\[\]]{0,80}?"
+    r"\b(?:interrupted|rose|entered the Chamber|left the Chamber|resumed (?:his|her) seat|took (?:his|her) seat|indicated|raised (?:his|her) hand|stood up|walked)\b"
+    r"|^(?:and )?(?:resumed (?:his|her) seat|remained seated|entered the Chamber)"
+    r"|^[Ii]ndicat(?:ing|ion)\b|^[Gg]esturing\b|^[Ss]how(?:ing|s)\b|^The hon\.? Member gestured"
+)
 
 
 def _extract_mps_speaking(markdown: str) -> list[str]:
@@ -762,7 +773,33 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
     return [speech for speech in speeches if speech.transcript.strip() != ""]
 
 
-def get_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
+def _split_stage_directions(speeches: list[ParsedSpeech]) -> list[ParsedSpeech]:
+    split_speeches: list[ParsedSpeech] = []
+    for speech in speeches:
+        if speech.speaker is None:
+            split_speeches.append(speech)
+            continue
+        direction_matches = [
+            match for match in _BRACKET_SPAN_RE.finditer(speech.transcript)
+            if _STAGE_DIRECTION_INNER_RE.match(match.group(1).strip(_BRACKET_INNER_EDGE_CHARACTERS)) is not None
+        ]
+        if not direction_matches:
+            split_speeches.append(speech)
+            continue
+        position = 0
+        for match in direction_matches:
+            text_before = speech.transcript[position:match.start()].strip()
+            if text_before:
+                split_speeches.append(ParsedSpeech(speaker=speech.speaker, transcript=text_before))
+            split_speeches.append(ParsedSpeech(speaker=None, transcript=match.group(0)))
+            position = match.end()
+        text_after = speech.transcript[position:].strip()
+        if text_after:
+            split_speeches.append(ParsedSpeech(speaker=speech.speaker, transcript=text_after))
+    return split_speeches
+
+
+def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
     parsed_speeches = _parse_speeches(markdown, start_of_speech_line, report_type)
     speakers = _extract_mps_speaking(markdown)
     speech_type = _classify_speech_type(parsed_speeches, len(speakers))
@@ -786,3 +823,7 @@ def get_speeches(markdown: str, start_of_speech_line: int, report_type: str, rep
             return _get_single_speaker_speeches(markdown, start_of_speech_line, speaker)
 
     return []
+
+
+def get_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
+    return _split_stage_directions(_get_unsplit_speeches(markdown, start_of_speech_line, report_type, report_version))
