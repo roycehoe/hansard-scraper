@@ -51,6 +51,16 @@ _NBSP_ONLY_EMPHASIS_PATTERN = r"<(i|b|u|em|strong)\b[^>]*>\s*(?:&nbsp;\s*)+</\1\
 _EMPTY_EMPHASIS_PATTERN = r"<(strong|em)[^>]*>(\s|&nbsp;|\ufeff)*</\1>"
 _PROC_TEXT_PAIR_PATTERN = r"\[\s*\(proc text\)\s*(.*?)\s*\(proc text\)\s*\]"
 _PROC_TEXT_LONE_PATTERN = r"\[?\s*\(proc text\)\s*\]?"
+_PROC_TEXT_BLOCK_PATTERN = (
+    r"(<(p|h[1-6])\b[^>]*>(?:\s|&nbsp;|<(?:span|em|strong|b|i|u)\b[^>]*>)*)"
+    r"\[\s*\(proc text\)\s*((?:(?!\(proc text\)|</?(?:p|h[1-6]|div|br|table|tr|td|li|ul|ol)\b).)+?)\s*\(proc text\)\s*\]"
+    r"((?:\s|&nbsp;|</(?:span|em|strong|b|i|u)\s*>)*</\2\s*>)"
+)
+_PROC_TEXT_OPEN_SENTINEL = "\ue001"
+_PROC_TEXT_CLOSE_SENTINEL = "\ue002"
+PROC_TEXT_OPEN_TAG = "[(proc text) "
+PROC_TEXT_CLOSE_TAG = " (proc text)]"
+_PROC_TEXT_LINE_START_PATTERN = r"^[\s_*]*" + re.escape(PROC_TEXT_OPEN_TAG)
 _ESCAPED_TEXT_CHARACTER_PATTERN = r"\\([\\.+\-])"
 _DATA_IMAGE_PATTERN = r"<img[^>]*src=\"data:[^\"]*\"[^>]*>"
 _SPACE_BEFORE_ANCHOR_PATTERN = r"(\s+)(<a\b[^>]*>)"
@@ -106,10 +116,17 @@ def _escape_bare_ampersands(html: str) -> str:
     return re.sub(_AMPERSAND_PATTERN, _escape_bare_ampersand, html)
 
 
-def _prepare_newer_system_html(html: str) -> str:
-    html = re.sub(_EMPTY_EMPHASIS_PATTERN, " ", html)
+def _keep_proc_text_blocks(html: str) -> str:
+    # NOTE: only a tag that wraps a whole block is kept; one sharing its block with other text, or spanning blocks, often marks speech by mistake.
+    html = re.sub(_PROC_TEXT_BLOCK_PATTERN, rf"\1{_PROC_TEXT_OPEN_SENTINEL}\3{_PROC_TEXT_CLOSE_SENTINEL}\4", html, flags=re.DOTALL)
     html = re.sub(_PROC_TEXT_PAIR_PATTERN, r"\1", html, flags=re.DOTALL)
     html = re.sub(_PROC_TEXT_LONE_PATTERN, "", html)
+    return html.replace(_PROC_TEXT_OPEN_SENTINEL, PROC_TEXT_OPEN_TAG).replace(_PROC_TEXT_CLOSE_SENTINEL, PROC_TEXT_CLOSE_TAG)
+
+
+def _prepare_newer_system_html(html: str) -> str:
+    html = re.sub(_EMPTY_EMPHASIS_PATTERN, " ", html)
+    html = _keep_proc_text_blocks(html)
     html = re.sub(_DATA_IMAGE_PATTERN, "", html)
     return html.replace(_BYTE_ORDER_MARK, "")
 
@@ -138,8 +155,15 @@ def _has_unclosed_bracket(text: str) -> bool:
     return text.count(_OPENING_BRACKET) > text.count(_CLOSING_BRACKET)
 
 
+def _is_proc_text_line(line: str) -> bool:
+    return re.match(_PROC_TEXT_LINE_START_PATTERN, line) is not None
+
+
 def _should_join_across_page_break(before: str, after: str) -> bool:
     if not before.strip() or not after.strip():
+        return False
+    # NOTE: the source tags a whole block as procedural text, so it never joins the paragraph next to it.
+    if _is_proc_text_line(before) or _is_proc_text_line(after):
         return False
     # NOTE: a marker inside a bracketed note cuts the note itself, whatever emphasis or stage-direction marks sit at the cut.
     if _has_unclosed_bracket(before) and re.match(_NON_SPEECH_BLOCK_PATTERN, after) is None:
@@ -315,6 +339,7 @@ def _merge_split_direction_lines(markdown: str) -> str:
                 and re.search(_ALPHANUMERIC_PATTERN, lines[line_index + 1])
                 and not re.match(_BLOCK_START_PATTERN, lines[line_index + 1])
                 and not re.match(_DIRECTION_START_PATTERN, lines[line_index + 1], re.IGNORECASE)
+                and not _is_proc_text_line(lines[line_index + 1])
             ):
                 line_index += 1
                 merges += 1

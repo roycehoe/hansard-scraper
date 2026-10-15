@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Optional
 
 from enums import ReportType, ReportVersion, SpeechKind
+from utils.markdown_parser import PROC_TEXT_CLOSE_TAG, PROC_TEXT_OPEN_TAG
 from utils.text import fix_mojibake
 
 
@@ -253,6 +254,7 @@ _SECTION_BOUNDARY_HEADINGS = frozenset({
 })
 
 _WHOLE_BOLD_LINE_RE = re.compile(r"^\*\*[^*].*\*\*$")
+_PROC_TEXT_LINE_RE = re.compile(r"^([_*]*)" + re.escape(PROC_TEXT_OPEN_TAG) + r"(.*)" + re.escape(PROC_TEXT_CLOSE_TAG) + r"([_*]*)$")
 _RESOLVED_LINE_RE = re.compile(r"^[\s*_]*Resolved(?:,|[\s*_]*$)")
 _ADJOURNMENT_LINE_RE = re.compile(r"^[\s*_]*Adjourned accordingly")
 _SENTENCE_END_RE = re.compile(r"\.[\s_*]*$")
@@ -607,6 +609,13 @@ def _is_turn_ending_line(line: str) -> bool:
     return not _TURN_KEEPING_PROCEDURAL_LINE_RE.match(line)
 
 
+def _get_proc_text(line: str) -> Optional[str]:
+    match = _PROC_TEXT_LINE_RE.match(line)
+    if match is None:
+        return None
+    return match.group(1) + match.group(2) + match.group(3)
+
+
 def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speaker: str) -> list[ParsedSpeech]:
     speeches: list[ParsedSpeech] = []
     speaker_lines: list[str] = []
@@ -616,9 +625,11 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
         stripped = line.strip()
         if _REPORT_HEADER_FIELD_RE.match(stripped):
             continue
-        unmarked = _LINE_EDGE_MARKUP_RE.sub("", stripped)
-        if not unmarked.strip(_MARKUP_ONLY_CHARACTERS):
+        edge_unmarked = _LINE_EDGE_MARKUP_RE.sub("", stripped)
+        if not edge_unmarked.strip(_MARKUP_ONLY_CHARACTERS):
             continue
+        proc_text = _get_proc_text(edge_unmarked)
+        unmarked = edge_unmarked if proc_text is None else proc_text
         if adjournment_continuations > 0:
             speeches[-1].transcript += " " + unmarked
             adjournment_continuations = 0 if _SENTENCE_END_RE.search(unmarked) else adjournment_continuations - 1
@@ -629,12 +640,13 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
         non_speech_kind = _get_non_speech_kind(unmarked)
         if is_resolved_line or non_speech_kind is None:
             is_body_started = True
-            speaker_lines.append(unmarked)
-            continue
+            if proc_text is None:
+                speaker_lines.append(unmarked)
+                continue
         if speaker_lines:
             speeches.append(ParsedSpeech(speaker=speaker, transcript=" ".join(speaker_lines), kind=SpeechKind.SPEECH))
             speaker_lines = []
-        speeches.append(ParsedSpeech(speaker=None, transcript=unmarked, kind=non_speech_kind))
+        speeches.append(ParsedSpeech(speaker=None, transcript=unmarked, kind=SpeechKind.PROCEDURAL if proc_text is not None else non_speech_kind))
         if _ADJOURNMENT_LINE_RE.match(unmarked) and not _SENTENCE_END_RE.search(unmarked):
             adjournment_continuations = _MAX_ADJOURNMENT_CONTINUATIONS
     if speaker_lines:
@@ -763,6 +775,16 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
         parsed_line = line.strip()
         parsed_line = _LEADING_BOLD_ARTIFACT_RE.sub("", parsed_line)
         if _is_artifact_line(parsed_line):
+            continue
+        proc_text = _get_proc_text(parsed_line)
+        # NOTE: the source tags this block as a step in the House's business, so it gets no speaker; the turn ends exactly as the untagged line would end it.
+        if proc_text is not None:
+            if not is_in_preamble or not _is_preamble_title_line(proc_text):
+                (preamble_speeches if is_in_preamble else speeches).append(
+                    ParsedSpeech(speaker=None, transcript=proc_text, kind=SpeechKind.PROCEDURAL)
+                )
+            if not is_in_preamble and _is_turn_ending_line(proc_text):
+                current_speaker = None
             continue
         if (
             "**" not in parsed_line

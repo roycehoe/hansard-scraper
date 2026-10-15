@@ -1,0 +1,52 @@
+{
+  "why": "A paragraph the source tags [(proc text) ... (proc text)] was credited to Mr Speaker; the tag is kept in the markdown and the paragraph becomes a no-speaker PROCEDURAL row, while the Speaker's own lines keep their speaker.",
+  "source_report_id": 314,
+  "report_version": "sprs3",
+  "report_type": "speaker",
+  "title": "Commencement Time of Committee of Supply",
+  "subtitle": null,
+  "original_title": "Commencement Time of Committee of Supply",
+  "html": "<h6>2.33 pm</h6><p><strong>Mr Speaker</strong>:&nbsp;Order. We have completed the debate on the Budget Statement. I propose to take a break now and will resume Sitting at 2.55 pm.&nbsp;</p><p>I have revised —&nbsp;</p><p>[(proc text) Hon Members began to rise from their seats. (proc text)]</p><p><strong>Mr Speaker</strong>: Hang on, hang on. [<em>Laughter.</em>] I know we are all hungry and tired.</p><p>I have revised the commencement time of the Committee of Supply. With the change in commencement time to start our Committee of Supply at 2.55 pm, the revised guillotine time for Head U, Prime Minister's Office, is 5.45 pm.</p><p>Hon Members will be notified of the revised conclusion times for the subsequent Heads of Expenditure. Order, order.</p><p class=\"ql-align-right\"><em>&nbsp;Sitting accordingly suspended</em></p><p class=\"ql-align-right\"><em>&nbsp;at 2.34 pm until 2.55 pm.</em></p>",
+  "expected_rows": [
+    [
+      "Mr Speaker",
+      "Order. We have completed the debate on the Budget Statement. I propose to take a break now and will resume Sitting at 2.55 pm.",
+      "SPEECH"
+    ],
+    [
+      "Mr Speaker",
+      "I have revised —",
+      "SPEECH"
+    ],
+    [
+      null,
+      "Hon Members began to rise from their seats.",
+      "PROCEDURAL"
+    ],
+    [
+      "Mr Speaker",
+      "Hang on, hang on. I know we are all hungry and tired.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "[_Laughter._]",
+      "CHAMBER_EVENT"
+    ],
+    [
+      "Mr Speaker",
+      "I have revised the commencement time of the Committee of Supply. With the change in commencement time to start our Committee of Supply at 2.55 pm, the revised guillotine time for Head U, Prime Minister's Office, is 5.45 pm.",
+      "SPEECH"
+    ],
+    [
+      "Mr Speaker",
+      "Hon Members will be notified of the revised conclusion times for the subsequent Heads of Expenditure. Order, order.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "_Sitting accordingly suspended at 2.34 pm until 2.55 pm._",
+      "PROCEDURAL"
+    ]
+  ]
+}
