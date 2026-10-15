@@ -4,3 +4,7 @@ class HansardError(Exception):
 
 class HansardGatewayError(HansardError):
     pass
+
+
+class HansardUnattributedSpeechError(HansardError):
+    pass

@@ -4,6 +4,8 @@ from enum import Enum
 from typing import Optional
 
 from enums import ReportType, ReportVersion, SpeechKind
+from exceptions import HansardUnattributedSpeechError
+from schemas.unattributed_speech import UnattributedSpeechRange
 from utils.markdown_parser import PROC_TEXT_CLOSE_TAG, PROC_TEXT_OPEN_TAG
 from utils.text import fix_mojibake
 
@@ -998,3 +1000,32 @@ def get_speeches(markdown: str, start_of_speech_line: int, report_type: str, rep
         for speech in speeches
     ]
     return [speech for speech in unmarked_speeches if speech.transcript.strip() != ""]
+
+
+def _get_unattributed_range_start(speeches: list[ParsedSpeech], speech_range: UnattributedSpeechRange) -> int:
+    for index, speech in enumerate(speeches):
+        if speech.speaker == speech_range.speaker and speech.transcript.startswith(speech_range.first_transcript_start):
+            return index
+    raise HansardUnattributedSpeechError(f"Report {speech_range.report_id}: no row starts with {speech_range.first_transcript_start!r}")
+
+
+def _get_unattributed_range_end(speeches: list[ParsedSpeech], speech_range: UnattributedSpeechRange, start: int) -> int:
+    for index in range(start, len(speeches)):
+        speech = speeches[index]
+        if speech.speaker == speech_range.speaker and speech.transcript.startswith(speech_range.last_transcript_start):
+            return index
+    raise HansardUnattributedSpeechError(f"Report {speech_range.report_id}: no row starts with {speech_range.last_transcript_start!r}")
+
+
+def _is_unattributable(speech: ParsedSpeech, speaker: Optional[str]) -> bool:
+    return speech.speaker == speaker and (speech.kind == SpeechKind.SPEECH or speech.kind == SpeechKind.UNCLASSIFIED)
+
+
+def apply_unattributed_speech_range(speeches: list[ParsedSpeech], speech_range: UnattributedSpeechRange) -> list[ParsedSpeech]:
+    start = _get_unattributed_range_start(speeches, speech_range)
+    end = _get_unattributed_range_end(speeches, speech_range, start)
+    return [
+        ParsedSpeech(speaker=None, transcript=speech.transcript, kind=SpeechKind.SPEECH)
+        if start <= index <= end and _is_unattributable(speech, speech_range.speaker) else speech
+        for index, speech in enumerate(speeches)
+    ]
