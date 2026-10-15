@@ -1,0 +1,42 @@
+{
+  "why": "Four '[Laughter]' events sit mid-sentence in Dr Lee's paragraph. The paragraph stays one row with the events cut out and the text either side joined by one space; each event follows it as a no-speaker CHAMBER_EVENT row, and the trailing dash stays with the last event.",
+  "source_report_id": 34592,
+  "report_version": "sprs2",
+  "report_type": "bill",
+  "title": "MASSAGE ESTABLISHMENTS BILL",
+  "subtitle": null,
+  "original_title": "MASSAGE ESTABLISHMENTS BILL",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n\n<head>\n\n\n\n<meta http-equiv=\"Content-Type\" content=\"text/html;charset=iso-8859-1\">\n\n<meta name=\"Parl_No\" content=\"0\">\n\n<meta name=\"Sess_No\" content=\"1\">\n\n<meta name=\"Vol_No\" content=\"11\">\n\n<meta name=\"Sit_No\" content=\"9\">\n\n<meta name=\"Sit_Date\" content=\"1959-09-02\">\n\n<meta name=\"Sect_Name\" content=\"BILLS\">\n\n<meta name=\"Title\" content=\"MASSAGE ESTABLISHMENTS BILL\">\n\n<meta name=\"MP_Speak\" content=\"Mr K. M. Byrne (Minister for Labour and Law); Dr Lee Siew Choh; Inche Buang Bin Omar Junid; Sir George Oehlers (Mr Speaker);\">\n\n<meta name=\"Start_Col\" content=\"609\">\n\n<meta name=\"End_Col\" content=\"612\">\n\n</head>\n\n<body>\n\n\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\"><tr><td>\n\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">0</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">11</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">9</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">02-09-1959</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">BILLS</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">MASSAGE ESTABLISHMENTS BILL</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Mr K. M. Byrne (Minister for Labour and Law); Dr Lee Siew Choh; Inche Buang Bin Omar Junid; Sir George Oehlers (Mr Speaker);</font></td></tr>\n\n</table></td></tr>\n\n</table>\n\n<br><br><font size=\"1\"><b>Column: 609</b></font><br><br>\n\n<div align=\"center\"><b>MASSAGE ESTABLISHMENTS BILL</b></div>\n\n\n\n<br><br><!-- Dr Lee Siew Choh -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Dr Lee Siew Choh (Queenstown):</b> Mr Speaker, Sir,\n\nlike  most things that will forever look  for  the\n\nline  of  least  resistance, so  we  see  so  many\n\nmassage   establishments  mushrooming   all   over\n\nSingapore.  Those who read Chinese  newspapers  no\n\ndoubt  will  see daily advertisements  which  show\n\npretty  faces  and  also tell prospective  clients\n\nwhere to go for a pleasant massage. But in medical\n\npractice,  Sir,  massage is a  form  of  treatment\n\nadvocated  for the loosening of stiff  joints  and\n\ntired  muscles  [Laughter] and helping - excuse  me,\n\nSir - to promote a free blood flow [Laughter] to the\n\naffected  parts, thus increasing [Laughter] - sorry,\n\nSir - the  outflow of waste products  and  generally\n\nstimulating the activity of the human body. But of\n\ncourse  the snag is that there are many  parts  of\n\nthe body [Laughter]-\n\n\n\n<br><br><!-- Sir George Oehlers (Mr Speaker) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Speaker:</b> Order. I think probably the Member\n\nfor  Queenstown is anticipating a pleasant massage\n\nafter this sitting!\n\n\n\n\n\n</body></html>",
+  "expected_rows": [
+    [
+      "Dr Lee Siew Choh (Queenstown)",
+      "Mr Speaker, Sir, like most things that will forever look for the line of least resistance, so we see so many massage establishments mushrooming all over Singapore. Those who read Chinese newspapers no doubt will see daily advertisements which show pretty faces and also tell prospective clients where to go for a pleasant massage. But in medical practice, Sir, massage is a form of treatment advocated for the loosening of stiff joints and tired muscles and helping - excuse me, Sir - to promote a free blood flow to the affected parts, thus increasing - sorry, Sir - the outflow of waste products and generally stimulating the activity of the human body. But of course the snag is that there are many parts of the body",
+      "SPEECH"
+    ],
+    [
+      null,
+      "[Laughter]",
+      "CHAMBER_EVENT"
+    ],
+    [
+      null,
+      "[Laughter]",
+      "CHAMBER_EVENT"
+    ],
+    [
+      null,
+      "[Laughter]",
+      "CHAMBER_EVENT"
+    ],
+    [
+      null,
+      "[Laughter]-",
+      "CHAMBER_EVENT"
+    ],
+    [
+      "Mr Speaker",
+      "Order. I think probably the Member for Queenstown is anticipating a pleasant massage after this sitting!",
+      "SPEECH"
+    ]
+  ]
+}
