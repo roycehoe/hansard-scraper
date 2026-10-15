@@ -87,7 +87,7 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"Bill (?:accordingly )?read a (?:Second|Third|second|third) time",
     r"Bill reported without amendment",
     r"Bill considered in Committee",
-    r"Resolution to be reported",
+    r"(?:(?:First|Second|Third) [Rr]esolution|Resolutions?) (?:to be )?reported",
     r"Resolved(?:,|[\s*_]*$)",
     r"Order for Second Reading read",
     r"Order read for",
@@ -105,18 +105,40 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"Division taken",
     r"The following amendments? stood on the Order Paper",
     r"(?:The )?(?:Clause|Schedule)(?:, as amended,)? ordered to stand part",
+    r"There being only one proposal, the Clerk",
+    r"(?:Mr|Mdm|Madam) (?:Deputy )?Speaker,? _?went to the Chair",
+    r"_?Then,? the Mace",
+    r"Question negatived",
+    r"Bill read the First time",
+    r"With the consent of (?:Mr|Mdm|Madam) (?:Deputy )?Speaker",
+    r"Question, put,? and agreed to",
+    r"The Question having been proposed at",
+    r"At the conclusion of .{1,60}?(?:Address|speech), Mr (?:SPEAKER|Speaker), preceded by",
+    r"The (?:Assembly|House|Council) resumed its sitting",
 )
 _QUESTION_DECISION_ANCHORS = (
     r"Question,? [\"“'‘]?That\b.*(?:\bput\b|, agreed to\.?$|,? and negatived\.?$)",
     r"(?:Main |Original )?Question,? as amended,? .*(?:\bput\b|accordingly)",
     r"Question on the [^.]{1,60}? (?:put\b|accordingly)",
     r"Question accordingly (?:agreed|aggreed|negatived)",
+    r"Question put,? [\"“'‘]That\b",
+    r"(?:Main |Original )Motion,? as amended,? agreed to",
 )
 _PROCEDURAL_LINE_RE = re.compile(r"^[\s*_]*(?:" + "|".join(_PROCEDURAL_LINE_ANCHORS + _QUESTION_DECISION_ANCHORS) + ")")
 
 # NOTE: these procedural lines keep the current speaker, because the lines after them were often the mover's or the chair's own speech.
 _TURN_KEEPING_PROCEDURAL_LINE_RE = re.compile(
     r"^[\s*_]*(?:Question (?:again )?proposed|\*\s*The same amendment|" + "|".join(_QUESTION_DECISION_ANCHORS) + ")"
+)
+
+_OATH_LINE_RE = re.compile(
+    r"^(?!.*\b(?:I|[Ww]e|[Yy]ou|[Mm]y|[Oo]ur)\b)[\s_*]*[^?!\"“”\[\]]{0,250}?\b(?:took(?: and subscribed)? (?:the|an|his|her|their) Oath|made (?:an |the |his |her |their )?Affirmation)"
+    r" of Allegiance\b[^.?!]{0,80}?[\s_*]*[.:]?[\s_*\-–—]*$"
+)
+_STAGE_DIRECTION_LINE_RE = re.compile(
+    r"^[\s_*]*(?:Petition handed to the Clerk|Written [Ss]tatement by .{1,200}?Standing Order|Thereupon,? (?:the Clerk|a count)"
+    r"|After (?:one|two|three) minutes?[\s_*]*[-–—]*[\s_*]*$|Certificate of Urgency signed by the President"
+    r"|Members summoned into (?:the )?Chamber|\(?Whereupon\b|The Clerk (?:handed|then|read))"
 )
 
 _WHOLE_BRACKETED_LINE_RE = re.compile(r"^[\s_*]*\[(?:[^\[\]]|\[[^\[\]]*\])*\][\s_*.]*$")
@@ -144,7 +166,8 @@ _ROSE_SUBJECT_WORD = r"(?:[A-Z(][\w.'’()-]*|and|hon|than|five|bin|binte|for)"
 _PLAIN_STAGE_DIRECTION_RE = re.compile(
     r"^[\s_*]*(?=.*\b(?:Mr|Mrs|Ms|Mdm|Dr|Prof|Inche|Encik|Tuan|Dato|Members?|Minister)\b)"
     + _ROSE_SUBJECT_WORD + r"(?:,? " + _ROSE_SUBJECT_WORD + r")*"
-    r" rose(?: in (?:his|her|their) place(?: for their (?:dissent|abstention) to be recorded)?)?[\s_*]*[-–—.]*[\s_*]*$"
+    r" (?:rose(?: in (?:his|her|their) place)?(?: for their (?:dissent|abstention) to be recorded)?"
+    r"|indicated (?:assent|dissent|agreement|for their (?:dissent|abstention) to be recorded)|resumed (?:his|her) seat)[\s_*]*[-–—.]*[\s_*]*$"
 )
 _LABELLED_STAGE_DIRECTION_RE = re.compile(
     r"^[\s_*]*(?:and \*\*[^*]+\*\* )?(?:again |later )?"
@@ -439,6 +462,10 @@ def _is_editorial_note(line: str) -> bool:
 def _is_non_speech_line(line: str) -> bool:
     if _PROCEDURAL_LINE_RE.match(line):
         return True
+    if _OATH_LINE_RE.match(line):
+        return True
+    if _STAGE_DIRECTION_LINE_RE.match(line):
+        return True
     if _is_editorial_note(line):
         return True
     return bool(_PLAIN_STAGE_DIRECTION_RE.match(line))
@@ -446,6 +473,8 @@ def _is_non_speech_line(line: str) -> bool:
 
 def _is_turn_ending_line(line: str) -> bool:
     if _WHOLE_BRACKETED_LINE_RE.match(line) and _STANDING_ORDER_NOTE_RE.match(line):
+        return True
+    if _OATH_LINE_RE.match(line):
         return True
     if not _PROCEDURAL_LINE_RE.match(line):
         return False
