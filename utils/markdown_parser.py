@@ -16,6 +16,7 @@ _TABLE_SEPARATOR_LINE_PATTERN = r"-{3}\s*"
 _ASTERISK_ONLY_LINE_PATTERN = r"\*+\s*"
 _LEADING_EMPTY_BOLD_PATTERN = r"^(\*{4})+"
 _TRAILING_EMPTY_BOLD_PATTERN = r"(\*{4})+$"
+_LEADING_NESTED_BOLD_PATTERN = r"^\*{4}([^*\n]+)\*\*([^*\n]+)\*\*"
 _ADJOURNMENT_LINE_PATTERN = r"Adjourned accordingly at"
 _BLOCK_START_PATTERN = r"^(\*\*|#{1,6}|\* \* \*)"
 _BYTE_ORDER_MARK = "\ufeff"
@@ -76,6 +77,10 @@ def _merge_consecutive_bold_only_lines(markdown: str) -> str:
     return "\n".join(lines)
 
 
+def _flatten_leading_nested_bold(markdown: str) -> str:
+    return re.sub(_LEADING_NESTED_BOLD_PATTERN, r"**\1\2**", markdown, flags=re.MULTILINE)
+
+
 def _preprocess_html(html: str) -> str:
     html = _replace_nbsp_only_emphasis_with_space(html)
     html = _replace_nbsp_with_space(html)
@@ -93,7 +98,8 @@ def get_cleaned_report_markdown(html: str, report_version: str) -> str:
     if report_version == ReportVersion.SPRS3:
         html = _prepare_newer_system_html(html)
     converter = html2text.HTML2Text(bodywidth=0)
-    return _postprocess_markdown_base(converter.handle(_preprocess_html(html)))
+    markdown = _postprocess_markdown_base(converter.handle(_preprocess_html(html)))
+    return _flatten_leading_nested_bold(markdown)
 
 
 def _fix_sitting_concat_headers(html: str) -> str:
