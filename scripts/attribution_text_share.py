@@ -13,6 +13,7 @@ from services.speech import (
     _is_artifact_line,
     get_start_of_speech_line,
 )
+from utils.markdown_parser import PROC_TEXT_CLOSE_TAG, PROC_TEXT_OPEN_TAG
 
 _HEADLINE_MAX_PARLIAMENT = 11
 _REPORTED_PARLIAMENTS = (12, 13, 14)
@@ -25,12 +26,13 @@ _RULE_LINE_PREFIX = "---"
 
 _ADR_EXCLUDED_SPEAKER_RE = re.compile(r"hon\.? members?", re.IGNORECASE)
 _MARKUP_AND_SPACE_RE = re.compile(r"[\s*_\\#|]+")
+_PROC_TEXT_TAG_RE = re.compile(re.escape(PROC_TEXT_OPEN_TAG) + "|" + re.escape(PROC_TEXT_CLOSE_TAG))
 _LEADING_BOLD_LABEL_RE = re.compile(r"^.*?(\*\*[^*]+?\*\*\s*)+:?")
 _HEADER_ROW_MARKERS = ("Title:|", "MPs Speaking:|")
 
 
 def _get_countable_character_count(text: str) -> int:
-    return len(_MARKUP_AND_SPACE_RE.sub("", text))
+    return len(_MARKUP_AND_SPACE_RE.sub("", _PROC_TEXT_TAG_RE.sub("", text)))
 
 
 def _is_adr_excluded(speaker: str) -> bool:

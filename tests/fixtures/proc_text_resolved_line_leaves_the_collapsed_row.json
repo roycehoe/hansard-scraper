@@ -1,0 +1,22 @@
+{
+  "why": "A tagged Resolved line in a motion with no labels was collapsed under the mover; the source's (proc text) tag wins, so it is a no-speaker PROCEDURAL row and nothing is credited to the mover.",
+  "source_report_id": 248,
+  "report_version": "sprs3",
+  "report_type": "motion",
+  "title": "Adjournment",
+  "subtitle": null,
+  "original_title": "Adjournment",
+  "html": "<p>[(proc text) Resolved, \"That Parliament do now adjourn.\"&nbsp;– [Ms Indranee Rajah]. (proc text)]</p><p class=\"ql-align-right\"><em>Adjourned accordingly at 6.49 pm.</em></p>",
+  "expected_rows": [
+    [
+      null,
+      "Resolved, \"That Parliament do now adjourn.\" – [Ms Indranee Rajah].",
+      "PROCEDURAL"
+    ],
+    [
+      null,
+      "_Adjourned accordingly at 6.49 pm._",
+      "PROCEDURAL"
+    ]
+  ]
+}
