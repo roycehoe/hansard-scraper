@@ -1,6 +1,6 @@
 # 0005. Text before the first speaker dropped
 
-Status: accepted. `docs/vision.md` lists it as a structural limit and as a project choice; this record dates it and counts it, 15 October 2026. Two parts stay open and are named under Consequences.
+Status: superseded by [0008](0008-text-before-the-first-speaker-kept.md), 15 October 2026. Its last alternative, a row-type column, was built in [0009](0009-speech-kind-column.md).
 
 Context. `_parse_speeches` skips every line until the first speaker is set (`is_in_preamble`). Older-system reports also start after the line that matches the report title. Lines in that stretch get no row: "Order for Second Reading read.", "Head K - Ministry of Education", "Order read for consideration in Committee of Supply", and in motion reports the "Resolved," text and the quoted motion. Commit `156ca70` of 30 May 2026 introduced the skip. It raised the pass metric from 96.9% to 99.8% because it stopped creating rows with no speaker. The records give that as the reason and no researcher need.
 
