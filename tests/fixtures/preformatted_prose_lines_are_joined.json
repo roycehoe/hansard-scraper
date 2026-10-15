@@ -1,0 +1,56 @@
+{
+  "why": "Prose wrapped inside a preformatted block was stored one row per source line, while a table in the same block keeps its rows.",
+  "source_report_id": 41549,
+  "report_version": "sprs2",
+  "report_type": "motion",
+  "title": "LIQUORS DUTIES",
+  "subtitle": null,
+  "original_title": "LIQUORS DUTIES",
+  "html": "<html><head></head><body>\r\n\r\n<table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\"><tr><td>\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">0</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">LIQUORS DUTIES</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Mr T. M. Hart;</font></td></tr>\r\n\r\n</table></td></tr>\r\n\r\n</table>\r\n\r\n<br><br><font size=\"1\"><b>Column: 1087</b></font><br><br>\r\n\r\n\r\n\r\n<div align=\"center\"><b>LIQUORS DUTIES</b></div>\r\n\r\n\r\n\r\n<br><br><!-- Mr T. M. Hart -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr T. M. Hart:</b> Sir, I have His Excellency the\r\n\r\nGovernor's authority to move,\r\n\r\n\r\n\r\n<pre>\r\n\r\n  Intoxicating Liquors.                  Duty.\r\n\r\n                                         $  c.\r\n\r\n  (a) Samsu (including Medicated Samsu)  27 00 per proof gallon.\r\n\r\n  (b) Ale, Beer, Stout, Porter, Cider    \r\n\r\n      and Perry                           4 80 per gallon.\r\n\r\n\r\n\r\nII. The duty payable upon intoxicating liquors\r\n\r\ndistilled, fermented, made or prepared in any place\r\n\r\nlicensed under the Liquors Revenue Ordinance for\r\n\r\nthe distillation, fermentation, making or\r\n\r\npreparation of intoxicating liquors shall be: -\r\n\r\n\r\n\r\nGovernments  in the Dominions under Trusteeship or the British Pro-\r\n\r\ntectorates and Protected States, the Trust\r\n\r\nTerritories shall be levied thereon.\r\n\r\nNo duty shall be levied.\r\n\r\n</pre>\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;The increases in duty have been in force since that date.\r\n\r\n\r\n</body>\r\n\r\n</html>\r\n",
+  "expected_rows": [
+    [
+      "Mr T. M. Hart",
+      "Sir, I have His Excellency the Governor's authority to move,"
+    ],
+    [
+      "Mr T. M. Hart",
+      "Intoxicating Liquors.                  Duty."
+    ],
+    [
+      "Mr T. M. Hart",
+      "$  c."
+    ],
+    [
+      "Mr T. M. Hart",
+      "(a) Samsu (including Medicated Samsu)  27 00 per proof gallon."
+    ],
+    [
+      "Mr T. M. Hart",
+      "(b) Ale, Beer, Stout, Porter, Cider"
+    ],
+    [
+      "Mr T. M. Hart",
+      "and Perry                           4 80 per gallon."
+    ],
+    [
+      "Mr T. M. Hart",
+      "II. The duty payable upon intoxicating liquors distilled, fermented, made or prepared in any place licensed under the Liquors Revenue Ordinance for the distillation, fermentation, making or preparation of intoxicating liquors shall be: -"
+    ],
+    [
+      "Mr T. M. Hart",
+      "Governments  in the Dominions under Trusteeship or the British Pro-tectorates and Protected States, the Trust"
+    ],
+    [
+      "Mr T. M. Hart",
+      "Territories shall be levied thereon."
+    ],
+    [
+      "Mr T. M. Hart",
+      "No duty shall be levied."
+    ],
+    [
+      "Mr T. M. Hart",
+      "The increases in duty have been in force since that date."
+    ]
+  ]
+}
