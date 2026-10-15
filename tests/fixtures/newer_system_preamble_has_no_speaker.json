@@ -1,0 +1,24 @@
+{
+  "why": "A newer-system adjournment motion starts with the unlabelled line Resolved, That Parliament do now adjourn; the body has no title anchor, so every line before the first label is preamble and is kept as rows with no speaker.",
+  "source_report_id": 227,
+  "report_version": "sprs3",
+  "report_type": "motion",
+  "title": "Adjournment",
+  "subtitle": null,
+  "original_title": "Adjournment",
+  "html": "<p>[(proc text) Resolved, \"That Parliament do now adjourn.\"&nbsp;– [Ms Indranee Rajah]. (proc text)]</p><p><strong> Mr Speaker</strong>: I need to let all of you know what time we are starting tomorrow. Pursuant to Standing Order 2(3)a, I wish to inform hon Members that the Sitting tomorrow will commence at 10.00 am. Order. Order.</p><p class=\"ql-align-right\"><em>Adjourned accordingly at 6.52 pm.</em></p>",
+  "expected_rows": [
+    [
+      null,
+      "Resolved, \"That Parliament do now adjourn.\" – [Ms Indranee Rajah]."
+    ],
+    [
+      "Mr Speaker",
+      "I need to let all of you know what time we are starting tomorrow. Pursuant to Standing Order 2(3)a, I wish to inform hon Members that the Sitting tomorrow will commence at 10.00 am. Order. Order."
+    ],
+    [
+      null,
+      "_Adjourned accordingly at 6.52 pm._"
+    ]
+  ]
+}
