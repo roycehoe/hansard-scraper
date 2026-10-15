@@ -104,11 +104,20 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"The (?:House|Assembly|Council|Committee) divided",
     r"Division taken",
     r"The following amendments? stood on the Order Paper",
+    r"(?:The )?(?:Clause|Schedule)(?:, as amended,)? ordered to stand part",
 )
-_PROCEDURAL_LINE_RE = re.compile(r"^[\s*_]*(?:" + "|".join(_PROCEDURAL_LINE_ANCHORS) + ")")
+_QUESTION_DECISION_ANCHORS = (
+    r"Question,? [\"“'‘]?That\b.*(?:\bput\b|, agreed to\.?$|,? and negatived\.?$)",
+    r"(?:Main |Original )?Question,? as amended,? .*(?:\bput\b|accordingly)",
+    r"Question on the [^.]{1,60}? (?:put\b|accordingly)",
+    r"Question accordingly (?:agreed|aggreed|negatived)",
+)
+_PROCEDURAL_LINE_RE = re.compile(r"^[\s*_]*(?:" + "|".join(_PROCEDURAL_LINE_ANCHORS + _QUESTION_DECISION_ANCHORS) + ")")
 
-# NOTE: these procedural lines keep the current speaker, because the lines after them were often the mover's own speech.
-_TURN_KEEPING_PROCEDURAL_LINE_RE = re.compile(r"^[\s*_]*(?:Question (?:again )?proposed|\*\s*The same amendment)")
+# NOTE: these procedural lines keep the current speaker, because the lines after them were often the mover's or the chair's own speech.
+_TURN_KEEPING_PROCEDURAL_LINE_RE = re.compile(
+    r"^[\s*_]*(?:Question (?:again )?proposed|\*\s*The same amendment|" + "|".join(_QUESTION_DECISION_ANCHORS) + ")"
+)
 
 _WHOLE_BRACKETED_LINE_RE = re.compile(r"^[\s_*]*\[(?:[^\[\]]|\[[^\[\]]*\])*\][\s_*.]*$")
 # NOTE: a "Please refer" note must name a vernacular speech, because whole-line "[Please refer to ...]" rows in written answers are the minister's answer.

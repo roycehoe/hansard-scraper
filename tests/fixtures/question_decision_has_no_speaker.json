@@ -1,0 +1,36 @@
+{
+  "why": "A recorded decision ('Question, \"That ...\", put and negatived.') stayed with Mr Speaker instead of having no speaker.",
+  "source_report_id": 1751,
+  "report_version": "sprs3",
+  "report_type": "motion",
+  "title": "Electoral Boundaries ",
+  "subtitle": null,
+  "original_title": "Electoral Boundaries ",
+  "html": "<h6>3.20 pm</h6><p><strong>Mr Speaker</strong>: Ms Hazel Poa.</p><p><strong>Ms Hazel Poa (Non-Constituency Member)</strong>:&nbsp;Mr Speaker, Sir, I beg to move*, \"That this House calls on the Government to review the process by which&nbsp;electoral boundaries are determined in order to increase the transparency and fairness of the electoral boundary&nbsp;<span style=\"color: rgb(51, 51, 51);\">review process for all political parties.\"</span></p><p><strong> Mr Speaker</strong>: Before I proceed to declare the results of the vote, are there any Members who wish to claim that their vote has not been recorded correctly?</p><p>I do not see any.&nbsp;I will proceed to declare the voting results now. There are 10 \"Ayes\", \"76 Noes\", no \"Abstentions\". The \"Noes\" have it.</p><p>[(proc text) Question, \"That this House calls on the Government to review the process by which electoral boundaries are determined in order to increase the transparency and fairness of the electoral boundary review process for all political parties\", put and negatived. (proc text)]</p><h6><strong> </strong>5.28 pm</h6><p><strong>Mr Speaker</strong>: Leader of the House.</p>",
+  "expected_rows": [
+    [
+      "Mr Speaker",
+      "Ms Hazel Poa."
+    ],
+    [
+      "Ms Hazel Poa (Non-Constituency Member)",
+      "Mr Speaker, Sir, I beg to move*, \"That this House calls on the Government to review the process by which electoral boundaries are determined in order to increase the transparency and fairness of the electoral boundary review process for all political parties.\""
+    ],
+    [
+      "Mr Speaker",
+      "Before I proceed to declare the results of the vote, are there any Members who wish to claim that their vote has not been recorded correctly?"
+    ],
+    [
+      "Mr Speaker",
+      "I do not see any. I will proceed to declare the voting results now. There are 10 \"Ayes\", \"76 Noes\", no \"Abstentions\". The \"Noes\" have it."
+    ],
+    [
+      null,
+      "Question, \"That this House calls on the Government to review the process by which electoral boundaries are determined in order to increase the transparency and fairness of the electoral boundary review process for all political parties\", put and negatived."
+    ],
+    [
+      "Mr Speaker",
+      "Leader of the House."
+    ]
+  ]
+}
