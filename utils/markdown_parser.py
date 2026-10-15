@@ -1,4 +1,5 @@
 import re
+from collections import Counter
 from html.entities import html5
 
 import html2text
@@ -43,6 +44,17 @@ _ESCAPED_TEXT_CHARACTER_PATTERN = r"\\([\\.+\-])"
 _DATA_IMAGE_PATTERN = r"<img[^>]*src=\"data:[^\"]*\"[^>]*>"
 _SPACE_BEFORE_ANCHOR_PATTERN = r"(\s+)(<a\b[^>]*>)"
 _FOOTNOTE_SECTION_PATTERN = r"(<div class=\"fns\">)"
+_PREFORMATTED_BLOCK_PATTERN = r"(<pre\b[^>]*>)(.*?)(</pre>)"
+_HTML_TAG_START = "<"
+_WIDE_GAP_PATTERN = r"(?<=\S) {3,}(?=\S)"
+_TABLE_MARK_PATTERN = r"\. \. \.|_{3}|={3}|[}|]|(?<=\S) {6,}(?=\S)"
+_NUMBER_AFTER_GAP_PATTERN = r"\S {3,}[^ ]*\d.{0,40}$"
+_LIST_ITEM_PATTERN = r"^[a-z0-9]{1,4}[.)]\s"
+_MIN_DOUBLE_SPACED_GAPS = 2
+_MIN_WRAPPED_LINE_LENGTH = 20
+_MIN_WRAPPED_LINE_RATIO = 0.6
+_PARAGRAPH_GAP_SINGLE_SPACED = 1
+_PARAGRAPH_GAP_DOUBLE_SPACED = 2
 
 
 def _replace_nbsp_only_emphasis_with_space(html: str) -> str:
@@ -145,6 +157,85 @@ def _join_paragraphs_across_page_breaks(markdown: str) -> str:
     return "\n".join(lines).replace(_PAGE_BREAK_SENTINEL, "")
 
 
+def _get_line_indent(line: str) -> int:
+    return len(line) - len(line.lstrip())
+
+
+def _is_preformatted_table(lines: list[str]) -> bool:
+    if any(re.search(_TABLE_MARK_PATTERN, line.rstrip()) or re.search(_NUMBER_AFTER_GAP_PATTERN, line.rstrip()) for line in lines):
+        return True
+    gap_starts = Counter()
+    gap_ends = Counter()
+    for line in lines:
+        for gap in re.finditer(_WIDE_GAP_PATTERN, line):
+            gap_starts[gap.start()] += 1
+            gap_ends[gap.end()] += 1
+    return any(count > 1 for count in (*gap_starts.values(), *gap_ends.values()))
+
+
+def _split_preformatted_paragraphs(lines: list[str]) -> list[list[int]]:
+    content_indexes = [index for index, line in enumerate(lines) if line.strip()]
+    blank_counts = [after - before - 1 for before, after in zip(content_indexes, content_indexes[1:])]
+    single_blank_count = blank_counts.count(1)
+    is_double_spaced = single_blank_count >= _MIN_DOUBLE_SPACED_GAPS and single_blank_count > blank_counts.count(0)
+    paragraph_gap = _PARAGRAPH_GAP_DOUBLE_SPACED if is_double_spaced else _PARAGRAPH_GAP_SINGLE_SPACED
+    paragraphs = []
+    for position, index in enumerate(content_indexes):
+        if position == 0 or blank_counts[position - 1] >= paragraph_gap:
+            paragraphs.append([])
+        paragraphs[-1].append(index)
+    return paragraphs
+
+
+def _should_join_preformatted_lines(before: str, after: str, longest_length: int) -> bool:
+    if _get_line_indent(before) != _get_line_indent(after):
+        return False
+    if len(before.strip()) < max(_MIN_WRAPPED_LINE_LENGTH, _MIN_WRAPPED_LINE_RATIO * longest_length):
+        return False
+    if not after.strip()[:1].islower() or re.match(_LIST_ITEM_PATTERN, after.strip()):
+        return False
+    return _should_join_across_page_break(before.strip(), after.strip())
+
+
+def _get_preformatted_join_separators(lines: list[str]) -> dict[int, str]:
+    separators = {}
+    for paragraph in _split_preformatted_paragraphs(lines):
+        paragraph_lines = [lines[index] for index in paragraph]
+        if _is_preformatted_table(paragraph_lines):
+            continue
+        longest_length = max(len(line.strip()) for line in paragraph_lines)
+        for before_index, after_index in zip(paragraph, paragraph[1:]):
+            if _should_join_preformatted_lines(lines[before_index], lines[after_index], longest_length):
+                separators[after_index] = _get_page_break_separator(lines[before_index].strip(), lines[after_index].strip())
+    return separators
+
+
+def _join_preformatted_block(match: re.Match) -> str:
+    opening, text, closing = match.groups()
+    if _HTML_TAG_START in text:
+        return match.group(0)
+    lines = text.split("\n")
+    separators = _get_preformatted_join_separators(lines)
+    joined_lines = []
+    pending_blank_lines = []
+    for index, line in enumerate(lines):
+        if index in separators:
+            joined_lines[-1] = joined_lines[-1].rstrip() + separators[index] + line.lstrip()
+            pending_blank_lines = []
+            continue
+        if not line.strip():
+            pending_blank_lines.append(line)
+            continue
+        joined_lines.extend(pending_blank_lines)
+        pending_blank_lines = []
+        joined_lines.append(line)
+    return opening + "\n".join(joined_lines + pending_blank_lines) + closing
+
+
+def _join_wrapped_preformatted_lines(html: str) -> str:
+    return re.sub(_PREFORMATTED_BLOCK_PATTERN, _join_preformatted_block, html, flags=re.DOTALL | re.IGNORECASE)
+
+
 def _merge_consecutive_bold_only_lines(markdown: str) -> str:
     lines = []
     pending_bold_lines = []
@@ -185,6 +276,7 @@ def _postprocess_markdown_base(markdown: str) -> str:
 def get_cleaned_report_markdown(html: str, report_version: str) -> str:
     if report_version == ReportVersion.SPRS3:
         html = _prepare_newer_system_html(html)
+    html = _join_wrapped_preformatted_lines(html)
     converter = html2text.HTML2Text(bodywidth=0)
     converter.ignore_links = True
     markdown = _postprocess_markdown_base(converter.handle(_mark_footnote_section(_move_space_into_anchor(_preprocess_html(html)))))
