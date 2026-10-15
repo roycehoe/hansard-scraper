@@ -1,0 +1,15 @@
+# 0005. Text before the first speaker dropped
+
+Status: accepted. `docs/vision.md` lists it as a structural limit and as a project choice; this record dates it and counts it, 15 October 2026. Two parts stay open and are named under Consequences.
+
+Context. `_parse_speeches` skips every line until the first speaker is set (`is_in_preamble`). Older-system reports also start after the line that matches the report title. Lines in that stretch get no row: "Order for Second Reading read.", "Head K - Ministry of Education", "Order read for consideration in Committee of Supply", and in motion reports the "Resolved," text and the quoted motion. Commit `156ca70` of 30 May 2026 introduced the skip. It raised the pass metric from 96.9% to 99.8% because it stopped creating rows with no speaker. The records give that as the reason and no researcher need.
+
+Decision. Keep dropping preamble lines. `docs/vision.md` excludes preamble, table headers and sitting metadata lines from `Speech` rows by design. The raw HTML and `Report.markdown_content` keep the text. Newer-system reports start at the top of the body, so only their lines before the first label are in this class.
+
+Consequences. 0.41% of body text is dropped inside reports that have rows, after round 1 (Parliaments 0 to 11). That figure covers preamble, headings, labels and text before the first speaker, and the split between them is not measured. The 0.11% of body text in reports with no rows is a separate figure.
+
+The missing-lines check on 18,683 reports, which predates the 13 October rebuilds, found 2,420 reports with at least one missing line. 561 miss 200 characters or more, 168 miss 500 or more, 85 miss 1,000 or more, 43 miss 3,000 or more and 29 miss 10,000 or more. Of 47 reports missing 2,000 or more leading characters, at least 8 lost an unlabelled opening speech to the preamble rule. The rest mostly show a start line matched to a later repeat of the heading. In the round 1 residual read, 5 of the 32 largest-residual reports lost text before the first speaker: 38041 lost its three questions, 141 tokens, and kept 2 rows; 42035, 36794, 37153 and 39032 lost question and amendment notices. Report 24248 loses Gan Kim Yong's opening speech because the label merged into the heading, and 31083 and 42017 are listed by report in [data-loss-register.md](../data-loss-register.md).
+
+Open. Whether the design keeps the motion text and unlabelled opening speeches is not decided. The strata audit calls motion text "the exception to decide", and the round 1 residual analysis ranks it tenth of its fixes, as Tier A if kept and by design otherwise. Corpus counts for those two are not measured.
+
+Alternatives. Keep preamble lines as rows with no speaker: that was the behaviour before 30 May 2026, and the strata audit found stored rows from before it still holding 1,441 "Order for Second Reading read" rows. A count of 13 October 2026 found 5,101 rows with no speaker ahead of the first speaker in Parliaments 0 to 11. Keep only motion text: not built. Add a row-type or confidence column to tell preamble rows from speech: out of scope in the peer-learnings brief, decision 1.

@@ -78,7 +78,7 @@ On the old definition, which counted header fields as body text, the same stored
 
 Text share overstates too. The second audit ([north-star-audit-2026-10-13.md](report/north-star-audit-2026-10-13.md)) found it about 1.7 points high: its denominator is the markdown after the parser's own start line, so text html2text lost is invisible, and a report collapsed to one speaker counts its whole body as attributed. Its strict text share is 95.12%, and about 94.6% after hand-checked precision. None of the three numbers says whether a link is right.
 
-Where the body text goes, Parliaments 0 to 11, 15 October 2026, after round 1: 97.43% in linked rows, 0.75% in rows with an unlinked speaker string, 0.11% in ADR-excluded rows, 1.20% in rows with no speaker, 0.11% in reports with no rows, and 0.41% dropped inside reports that have rows (preamble, headings, labels, and text before the first speaker).
+Where the body text goes, Parliaments 0 to 11, 15 October 2026, after round 1: 97.43% in linked rows, 0.75% in rows with an unlinked speaker string, 0.11% in ADR-excluded rows, 1.20% in rows with no speaker, 0.11% in reports with no rows, and 0.41% dropped inside reports that have rows (preamble, headings, labels, and text before the first speaker). Every step that changes or drops source text, with its cost, whether it can be undone and who decided it, is in [data-loss-register.md](data-loss-register.md).
 
 ### What "parsed" means in each check
 
