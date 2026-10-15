@@ -9,6 +9,17 @@ _MAX_ADJOURNMENT_CONTINUATIONS = 6
 _BOLD_MARKER_LENGTH = 2
 _COLUMN_MARKER_PATTERN = r"Column(?:\s+No)?\s*:\s*\d+"
 _PAGE_TEXT_PATTERN = r"Page:\s*\d+"
+_PAGE_BREAK_SENTINEL = "\ue000"
+_PARAGRAPH_MARKER_PATTERN = (
+    r"</?p\b[^>]*>\s*(?:<span[^>]*>)?\s*(?:" + _COLUMN_MARKER_PATTERN + "|" + _PAGE_TEXT_PATTERN + r")\s*(?:</span>)?\s*</?p\b[^>]*>"
+)
+_SENTENCE_END_PATTERN = r"[.?!:][\"'\u201d\u2019)\]*_\s]*$"
+_NON_SPEECH_BLOCK_PATTERN = r"^(#{1,6}|\* \* \*|!\[)"
+_STAGE_DIRECTION_END_PATTERN = r"[\]_*]\s*$"
+_EMPHASIS_START_PATTERN = r"^\s*[_*]"
+_COLUMN_RANGE_LINE_PATTERN = r"\*Cols?\."
+_TIME_OF_DAY_LINE_PATTERN = r"\d{1,2}[.:]\d{2}\s*[ap]m\s*"
+_HYPHENATED_FRAGMENT_PATTERN = r"[A-Za-z]-$"
 _PAGE_BREAK_ARTIFACT_PATTERN = r"   \n  \n\*\*\*\*  \n  \n"
 _BOLD_ONLY_LINE_PATTERN = r"\*\*[^\n*].*\*\*"
 _CONCATENATED_PART_PATTERN = r"\bPART([IVX]+)OF\b"
@@ -69,6 +80,10 @@ def _prepare_newer_system_html(html: str) -> str:
     return html.replace(_BYTE_ORDER_MARK, "")
 
 
+def _mark_paragraph_page_breaks(html: str) -> str:
+    return re.sub(_PARAGRAPH_MARKER_PATTERN, f"<p>{_PAGE_BREAK_SENTINEL}</p>", html)
+
+
 def _remove_column_markers(html: str) -> str:
     return re.sub(_COLUMN_MARKER_PATTERN, "", html)
 
@@ -83,6 +98,45 @@ def _strip_page_break_artifacts(markdown: str) -> str:
 
 def _remove_empty_lines(markdown: str) -> str:
     return "\n".join(line for line in markdown.splitlines() if line)
+
+
+def _should_join_across_page_break(before: str, after: str) -> bool:
+    if not before.strip() or not after.strip():
+        return False
+    if re.match(_EMPHASIS_START_PATTERN, after) or re.match(_NON_SPEECH_BLOCK_PATTERN, after):
+        return False
+    if re.search(_STAGE_DIRECTION_END_PATTERN, before) or re.match(_COLUMN_RANGE_LINE_PATTERN, before):
+        return False
+    if re.fullmatch(_TIME_OF_DAY_LINE_PATTERN, before, flags=re.IGNORECASE) or re.fullmatch(_TIME_OF_DAY_LINE_PATTERN, after, flags=re.IGNORECASE):
+        return False
+    if re.match(_NON_SPEECH_BLOCK_PATTERN, before):
+        return False
+    if re.fullmatch(_BOLD_ONLY_LINE_PATTERN, before.strip()):
+        return False
+    return re.search(_SENTENCE_END_PATTERN, before) is None
+
+
+def _get_page_break_separator(before: str, after: str) -> str:
+    if re.search(_HYPHENATED_FRAGMENT_PATTERN, before) and after[:1].islower():
+        return ""
+    return " "
+
+
+def _join_paragraphs_across_page_breaks(markdown: str) -> str:
+    lines = []
+    is_after_page_break = False
+    for line in markdown.splitlines():
+        if line.strip() == _PAGE_BREAK_SENTINEL:
+            is_after_page_break = True
+            continue
+        if is_after_page_break and lines and _should_join_across_page_break(lines[-1], line):
+            before = lines[-1].rstrip()
+            after = line.lstrip()
+            lines[-1] = before + _get_page_break_separator(before, after) + after
+        else:
+            lines.append(line)
+        is_after_page_break = False
+    return "\n".join(lines).replace(_PAGE_BREAK_SENTINEL, "")
 
 
 def _merge_consecutive_bold_only_lines(markdown: str) -> str:
@@ -110,6 +164,7 @@ def _preprocess_html(html: str) -> str:
     html = _replace_nbsp_only_emphasis_with_space(html)
     html = _replace_nbsp_with_space(html)
     html = _escape_bare_ampersands(html)
+    html = _mark_paragraph_page_breaks(html)
     html = _remove_column_markers(html)
     return _remove_page_text(html)
 
@@ -117,6 +172,7 @@ def _preprocess_html(html: str) -> str:
 def _postprocess_markdown_base(markdown: str) -> str:
     markdown = _strip_page_break_artifacts(markdown)
     markdown = _remove_empty_lines(markdown)
+    markdown = _join_paragraphs_across_page_breaks(markdown)
     return _merge_consecutive_bold_only_lines(markdown)
 
 
