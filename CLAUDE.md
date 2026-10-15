@@ -38,7 +38,7 @@ python -m alembic downgrade -1          # roll back one migration
 python scripts/scrape_speakers_by_parliament.py
 ```
 
-There are no automated tests in this project.
+`poetry run pytest` runs the golden fixtures in `tests/`: each is a trimmed source HTML excerpt plus the speech rows the parser must produce. Each parser fix adds a fixture for the defect it closes.
 
 ## Architecture
 

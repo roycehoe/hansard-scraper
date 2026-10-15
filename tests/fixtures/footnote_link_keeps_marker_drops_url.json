@@ -1,0 +1,28 @@
+{
+  "why": "Footnote links kept their URL in the text instead of only the marker.",
+  "source_report_id": 19985,
+  "report_version": "sprs2",
+  "report_type": "written-answer",
+  "title": "Public Service Broadcast (PSB) Funding and Viewership",
+  "subtitle": null,
+  "original_title": "Public Service\nBroadcast (PSB) Funding and Viewership",
+  "html": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\r\n<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><head></head><body><div class=\"hansardContent\"><table bgcolor=\"#FFFFFF\" border=\"1\" bordercolor=\"#000000\" cellpadding=\"1\" cellspacing=\"0\" width=\"100%\"><tr><td><table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">12</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">89</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">5</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">13-08-2012</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">Written Answers to Questions</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">Public Service\r\nBroadcast (PSB) Funding and Viewership</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Ms Janice Koh, Assoc Prof Dr  Yaacob Ibrahim</font></td></tr></table></td></tr></table><p class=\"column\">Page: 557</p><h1 class=\"title topictitle1\">Public Service\r\nBroadcast (PSB) Funding and Viewership<!--topictitle--></h1>\r\n<div class=\"body hansardBaseBody hansardContenteBody\"><div class=\"section hcSection hcAnswer\" id=\"id-e0e52b54-bb7f-4e41-affe-fc7646978faa\"><a name=\"hansardContent43a675dd-5000-42da-9fd5-40978d79310f__id-e0e52b54-bb7f-4e41-affe-fc7646978faa\"><!--a--></a><p class=\"p hcParagraph\" id=\"id-b13b3bf4-a85b-425e-905a-3faa556e9a6f\"><a name=\"hansardContent43a675dd-5000-42da-9fd5-40978d79310f__id-b13b3bf4-a85b-425e-905a-3faa556e9a6f\"><!--a--></a><span class=\"ph hcInline hcMember\"><strong class=\"ph b\">Assoc Prof Dr Yaacob Ibrahim</strong></span>:\r\nIn the Financial Years (FY) 2010 and 2011, Public Service Broadcast\r\n(PSB) funding catered for the provision of over 2,000 hours of local productions<a  target='_blank'  href=\"/search/search/download?value=#fntarg_11\"\"><sup>11</sup></a> each\r\nyear, broadcast across MediaCorp's seven free-to-air (FTA) TV channels.\r\nThis amounted to over 200 programme titles each year. </p><p class=\"p hcParagraph\" id=\"id-55369af0-27c1-4033-bf0b-a46753324450\"><a name=\"hansardContent43a675dd-5000-42da-9fd5-40978d79310f__id-55369af0-27c1-4033-bf0b-a46753324450\"><!--a--></a>In terms of the genre composition\r\nof PSB-funded local programme hours, about 60% comprise news<a  target='_blank'  href=\"/search/search/download?value=#fntarg_12\"\"><sup>12</sup></a> and information programmes, which includes current affairs.</p></div></div><div class=\"fns\"><div class=\"fn\"><a  target='_blank'  href=\"/search/search/download?value=#fnsrc_11\"\"><sup>11</sup></a>  PSB\r\nfunding caters for over 4,000 hours of programmes each year, of\r\nwhich over 2,000 are local productions. The remaining hours are\r\nacquired programmes, such as educational and arts/culture programmes,\r\nwhich help to supplement the overall PSB content offering.</div><div class=\"fn\"><a  target='_blank'  href=\"/search/search/download?value=#fnsrc_12\"\"><sup>12</sup></a>  News programmes receive some PSB\r\nfunding support, but by and large, MediaCorp is obligated to provide\r\nnews at its own cost.</div></div></div></body></html>",
+  "expected_rows": [
+    [
+      "Assoc Prof Dr Yaacob Ibrahim",
+      "In the Financial Years (FY) 2010 and 2011, Public Service Broadcast (PSB) funding catered for the provision of over 2,000 hours of local productions11 each year, broadcast across MediaCorp's seven free-to-air (FTA) TV channels. This amounted to over 200 programme titles each year."
+    ],
+    [
+      "Assoc Prof Dr Yaacob Ibrahim",
+      "In terms of the genre composition of PSB-funded local programme hours, about 60% comprise news12 and information programmes, which includes current affairs."
+    ],
+    [
+      "Assoc Prof Dr Yaacob Ibrahim",
+      "11 PSB funding caters for over 4,000 hours of programmes each year, of which over 2,000 are local productions. The remaining hours are acquired programmes, such as educational and arts/culture programmes, which help to supplement the overall PSB content offering."
+    ],
+    [
+      "Assoc Prof Dr Yaacob Ibrahim",
+      "12 News programmes receive some PSB funding support, but by and large, MediaCorp is obligated to provide news at its own cost."
+    ]
+  ]
+}
