@@ -224,6 +224,10 @@ _SECTION_BOUNDARY_HEADINGS = frozenset({
 })
 
 _WHOLE_BOLD_LINE_RE = re.compile(r"^\*\*[^*].*\*\*$")
+_RESOLVED_LINE_RE = re.compile(r"^[\s*_]*Resolved(?:,|[\s*_]*$)")
+_ADJOURNMENT_LINE_RE = re.compile(r"^[\s*_]*Adjourned accordingly")
+_SENTENCE_END_RE = re.compile(r"\.[\s_*]*$")
+_MAX_ADJOURNMENT_CONTINUATIONS = 6
 
 
 _MARKDOWN_TITLE_SCAN_LINES = 12
@@ -287,15 +291,6 @@ def _classify_speech_type(parsed_speeches: list[ParsedSpeech], speaker_count: in
     if speaker_count > 1:
         return ParsedSpeechType.MULTI_SPEAKER
     return ParsedSpeechType.NO_SPEAKER
-
-
-def _get_single_speaker_transcript(markdown: str, start_of_speech_line: int) -> str:
-    return " ".join(
-        unmarked
-        for line in markdown.splitlines()[start_of_speech_line + 1:]
-        if not _REPORT_HEADER_FIELD_RE.match(stripped := line.strip())
-        and (unmarked := _LINE_EDGE_MARKUP_RE.sub("", stripped)).strip(_MARKUP_ONLY_CHARACTERS)
-    )
 
 
 def _is_section_header_speaker(name: str) -> bool:
@@ -514,6 +509,45 @@ def _is_turn_ending_line(line: str) -> bool:
     if not _PROCEDURAL_LINE_RE.match(line):
         return False
     return not _TURN_KEEPING_PROCEDURAL_LINE_RE.match(line)
+
+
+def _is_collapsed_non_speech_line(stripped: str, unmarked: str, is_body_started: bool) -> bool:
+    if _RESOLVED_LINE_RE.match(unmarked):
+        return False
+    if not is_body_started and (_MARKDOWN_HEADING_RE.match(stripped) or _WHOLE_BOLD_LINE_RE.match(stripped)):
+        return True
+    return _is_non_speech_line(unmarked)
+
+
+def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speaker: str) -> list[ParsedSpeech]:
+    speeches: list[ParsedSpeech] = []
+    speaker_lines: list[str] = []
+    is_body_started = False
+    adjournment_continuations = 0
+    for line in markdown.splitlines()[start_of_speech_line + 1:]:
+        stripped = line.strip()
+        if _REPORT_HEADER_FIELD_RE.match(stripped):
+            continue
+        unmarked = _LINE_EDGE_MARKUP_RE.sub("", stripped)
+        if not unmarked.strip(_MARKUP_ONLY_CHARACTERS):
+            continue
+        if adjournment_continuations > 0:
+            speeches[-1].transcript += " " + unmarked
+            adjournment_continuations = 0 if _SENTENCE_END_RE.search(unmarked) else adjournment_continuations - 1
+            continue
+        if not _is_collapsed_non_speech_line(stripped, unmarked, is_body_started):
+            is_body_started = True
+            speaker_lines.append(unmarked)
+            continue
+        if speaker_lines:
+            speeches.append(ParsedSpeech(speaker=speaker, transcript=" ".join(speaker_lines)))
+            speaker_lines = []
+        speeches.append(ParsedSpeech(speaker=None, transcript=unmarked))
+        if _ADJOURNMENT_LINE_RE.match(unmarked) and not _SENTENCE_END_RE.search(unmarked):
+            adjournment_continuations = _MAX_ADJOURNMENT_CONTINUATIONS
+    if speaker_lines:
+        speeches.append(ParsedSpeech(speaker=speaker, transcript=" ".join(speaker_lines)))
+    return speeches
 
 
 def _is_speaker_name(name: str) -> bool:
@@ -740,18 +774,15 @@ def get_speeches(markdown: str, start_of_speech_line: int, report_type: str, rep
                 and _is_section_header_speaker(parsed_speeches[0].speaker)):
             speaker = _extract_body_attribution(markdown, report_type, report_version)
             if speaker:
-                body = _get_single_speaker_transcript(markdown, start_of_speech_line)
-                return [ParsedSpeech(speaker=speaker, transcript=body)] if body else []
+                return _get_single_speaker_speeches(markdown, start_of_speech_line, speaker)
         return parsed_speeches
 
     if speech_type == ParsedSpeechType.SINGLE_SPEAKER:
-        body = _get_single_speaker_transcript(markdown, start_of_speech_line)
-        return [ParsedSpeech(speaker=speakers[0], transcript=body)] if body else []
+        return _get_single_speaker_speeches(markdown, start_of_speech_line, speakers[0])
 
     if speech_type == ParsedSpeechType.NO_SPEAKER:
         speaker = _extract_body_attribution(markdown, report_type, report_version)
         if speaker:
-            body = _get_single_speaker_transcript(markdown, start_of_speech_line)
-            return [ParsedSpeech(speaker=speaker, transcript=body)] if body else []
+            return _get_single_speaker_speeches(markdown, start_of_speech_line, speaker)
 
     return []
