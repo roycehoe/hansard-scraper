@@ -149,7 +149,7 @@ _AMENDMENT_NOTE_RE = re.compile(
     r"|^[\s_]*[*+#]{1,2}\s*The (?:[Mm]otion|amendment|same (?:motion|amendment)) (?:also )?stood in the names? of"
 )
 _FOOTNOTE_LINE_RE = re.compile(
-    r"^(?!\*\s*(?:Cols?\b|Vol\b|\d))(?:\*(?!\*)|\+{1,2}|#(?=\S)|†|‡|\[\d{1,2}\])\s*\S"
+    r"^(?!\*\s*(?:Cols?\b|Vol\b|\d))(?:\*(?!\*)|\+{1,2}|#(?=\S)|\^|†|‡|\[\d{1,2}\])\s*\S"
     r"|^\d{1,2}\s+[A-Z](?!.*\s{3})"
 )
 _CLOSED_FOOTNOTE_START_RE = re.compile(
@@ -157,10 +157,10 @@ _CLOSED_FOOTNOTE_START_RE = re.compile(
 )
 _MAX_CLOSED_FOOTNOTE_LINES = 10
 _MIN_SPEECH_LINE_LENGTH = 120
-_CARET_NOTE_MARKER = "^"
 _SPEECH_START_RE = re.compile(r"^(?!In page\b|That\b)[A-Z]")
 _FOOTNOTE_REFERENCE_RE = re.compile(r"\b(?:Appendix|Annex|cols?\.?|columns?|See|reproduced|Letter)\b", re.IGNORECASE)
 _HORIZONTAL_RULE = "* * *"
+_UNDERSCORE_RULE_RE = re.compile(r"^_{20,}$")
 
 _OATH_LINE_RE = re.compile(
     r"^(?!.*\b(?:I|[Ww]e|[Yy]ou|[Mm]y|[Oo]ur)\b)[\s_*]*[^?!\"“”\[\]]{0,250}?\b(?:took(?: and subscribed)? (?:the|an|his|her|their) Oath|made (?:an |the |his |her |their )?Affirmation)"
@@ -641,7 +641,7 @@ def _get_speech_start_position(lines: list[str], block: list[int]) -> int:
     # NOTE: a page-bottom footnote is followed by the next page's speech before the next rule, so a long paragraph right after a finished note is speech.
     for position, index in enumerate(block):
         line = lines[index].strip()
-        if _is_note_line(line) or line.startswith(_CARET_NOTE_MARKER):
+        if _is_note_line(line):
             continue
         previous_line = lines[block[position - 1]].strip() if position > 0 else ""
         is_speech = (
@@ -655,7 +655,7 @@ def _get_speech_start_position(lines: list[str], block: list[int]) -> int:
 
 
 def _get_footnote_line_indexes(lines: list[str]) -> set[int]:
-    rule_indexes = [index for index, line in enumerate(lines) if line.strip() == _HORIZONTAL_RULE]
+    rule_indexes = [index for index, line in enumerate(lines) if line.strip() == _HORIZONTAL_RULE or _UNDERSCORE_RULE_RE.match(line.strip()) is not None]
     footnote_line_indexes: set[int] = set()
     for position, rule_index in enumerate(rule_indexes):
         is_closed = position + 1 < len(rule_indexes)
