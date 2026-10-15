@@ -186,6 +186,7 @@ _MARKDOWN_HEADING_RE = re.compile(r"^#{1,6}(\s|$)")
 _REPORT_HEADER_FIELD_RE = re.compile(r"^\|?\s*(?:Parliament No|Session No|Volume No|Sitting No|Sitting Date|Section Name|Title|MPs? Speaking):\|")
 _LINE_EDGE_MARKUP_RE = re.compile(r"^(?:#{1,6}|\|)\s*|\s*\|$")
 _MARKUP_ONLY_CHARACTERS = "* _|-"
+_EMPHASIS_MARK_CHARACTERS = "*_ "
 _BOLD_RUN_RE = re.compile(r"((?:\*\*[^*]+?\*\*\s*)+)")
 _LEADING_COLON_RE = re.compile(r"^:\s*")
 _CHAIR_ANNOTATION_FULL_RE = re.compile(r"[\[(]?\s*.+?\s*in the [Cc]hair\s*[.\])]*")
@@ -512,7 +513,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 if transcript:
                     speeches.append(ParsedSpeech(speaker=None, transcript=transcript))
                 continue
-            if (not transcript
+            if (not transcript.strip(_EMPHASIS_MARK_CHARACTERS)
                     and not _SPEAKER_HONORIFIC_RE.search(raw_speaker)
                     and (":" not in bold_match.group(0) or not is_bold_ending_with_colon)):
                 if raw_speaker in _SECTION_BOUNDARY_HEADINGS:
