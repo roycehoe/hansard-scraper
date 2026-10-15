@@ -115,6 +115,15 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"The Question having been proposed at",
     r"At the conclusion of .{1,60}?(?:Address|speech), Mr (?:SPEAKER|Speaker), preceded by",
     r"The (?:Assembly|House|Council) resumed its sitting",
+    r"The following amendments? (?:also )?stood in the names? of",
+    r"The time allotted for .{1,80}? having expired",
+    r"Amendments? agreed to",
+    r"[*+#]{1,2}\s*(?:The (?:amendments?|motion)(?:, [^:]{1,200},)? reads? as follows|Consequential amendments?:)",
+    r"Amendments? made: In (?:page|line|clause)",
+    r"(?:First|Second|Third|Fourth|Fifth|Sixth|New) Schedule(?:, as amended,)? ordered to stand part",
+    r"Parts? [IVXL]+\b.{0,80}ordered to stand part",
+    r"Bill reported with (?:an )?amendments?",
+    r"Consideration of [Cc]lauses? [\dA-Za-z, ()]{1,30} postponed",
 )
 _QUESTION_DECISION_ANCHORS = (
     r"Question,? [\"“'‘]?That\b.*(?:\bput\b|, agreed to\.?$|,? and negatived\.?$)",
@@ -140,6 +149,19 @@ _STAGE_DIRECTION_LINE_RE = re.compile(
     r"|After (?:one|two|three) minutes?[\s_*]*[-–—]*[\s_*]*$|Certificate of Urgency signed by the President"
     r"|Members summoned into (?:the )?Chamber|\(?Whereupon\b|The Clerk (?:handed|then|read))"
 )
+_AMENDMENT_NOTE_RE = re.compile(
+    r"^[\s_*]*(?:\(\d+\) )?In page \d+(?:, (?:after )?lines? [\d, and]+)?: (?:after|to|leave)"
+    r"|^[\s_]*[*+#]{1,2}\s*The (?:[Mm]otion|amendment|same (?:motion|amendment)) (?:also )?stood in the names? of"
+)
+_FOOTNOTE_LINE_RE = re.compile(
+    r"^(?!\*\s*(?:Cols?\b|Vol\b|\d))(?:\*(?!\*)|\+{1,2}|#(?=\S)|†|‡|\[\d{1,2}\])\s*\S"
+    r"|^\d{1,2}\s+[A-Z](?!.*\s{3})"
+)
+_CLOSED_FOOTNOTE_START_RE = re.compile(
+    r"^\(\d{1,2}\)\s|^The (?:motion|amendment|same (?:motion|amendment)) also stood in the names? of"
+)
+_MAX_CLOSED_FOOTNOTE_LINES = 10
+_HORIZONTAL_RULE = "* * *"
 
 _WHOLE_BRACKETED_LINE_RE = re.compile(r"^[\s_*]*\[(?:[^\[\]]|\[[^\[\]]*\])*\][\s_*.]*$")
 # NOTE: a "Please refer" note must name a vernacular speech, because whole-line "[Please refer to ...]" rows in written answers are the minister's answer.
@@ -477,6 +499,8 @@ def _is_non_speech_line(line: str) -> bool:
         return True
     if _STAGE_DIRECTION_LINE_RE.match(line):
         return True
+    if _AMENDMENT_NOTE_RE.match(line):
+        return True
     if _is_editorial_note(line):
         return True
     return bool(_PLAIN_STAGE_DIRECTION_RE.match(line))
@@ -538,11 +562,41 @@ def _is_honourable_members_phrase(line: str) -> bool:
     return _LOWERCASE_START_RE.match(text_after_bold) is not None and _STAGE_DIRECTION_VERB_RE.match(text_after_bold) is None
 
 
+def _is_closed_footnote_block(lines: list[str], block: list[int], is_closed: bool) -> bool:
+    if not is_closed or len(block) > _MAX_CLOSED_FOOTNOTE_LINES:
+        return False
+    if any(_BOLD_OPENING_RE.match(lines[index].strip()) for index in block):
+        return False
+    first_line = lines[block[0]].strip()
+    return _FOOTNOTE_LINE_RE.match(first_line) is not None or _CLOSED_FOOTNOTE_START_RE.match(first_line) is not None
+
+
+def _get_footnote_line_indexes(lines: list[str]) -> set[int]:
+    rule_indexes = [index for index, line in enumerate(lines) if line.strip() == _HORIZONTAL_RULE]
+    footnote_line_indexes: set[int] = set()
+    for position, rule_index in enumerate(rule_indexes):
+        is_closed = position + 1 < len(rule_indexes)
+        block_end = rule_indexes[position + 1] if is_closed else len(lines)
+        block = [index for index in range(rule_index + 1, block_end) if lines[index].strip()]
+        if not block:
+            continue
+        if _is_closed_footnote_block(lines, block, is_closed):
+            footnote_line_indexes.update(block)
+            continue
+        for index in block:
+            if _FOOTNOTE_LINE_RE.match(lines[index].strip()) is None:
+                break
+            footnote_line_indexes.add(index)
+    return footnote_line_indexes
+
+
 def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str = "") -> list[ParsedSpeech]:
     current_speaker = None
     is_in_preamble = True
     speeches: list[ParsedSpeech] = []
-    for line in _merge_wrapped_bold_lines(markdown.splitlines()[start_of_speech_line + 1 :]):
+    lines = _merge_wrapped_bold_lines(markdown.splitlines()[start_of_speech_line + 1 :])
+    footnote_line_indexes = _get_footnote_line_indexes(lines)
+    for line_index, line in enumerate(lines):
         parsed_line = line.strip()
         parsed_line = _LEADING_BOLD_ARTIFACT_RE.sub("", parsed_line)
         if _is_artifact_line(parsed_line):
@@ -565,6 +619,10 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                     speeches.append(ParsedSpeech(speaker=current_speaker, transcript=label_match.group(2)))
                 continue
             if is_in_preamble:
+                continue
+            # NOTE: a footnote between rules sits inside a speech, so it gets no speaker and the turn carries on after it.
+            if line_index in footnote_line_indexes:
+                speeches.append(ParsedSpeech(speaker=None, transcript=parsed_line))
                 continue
             speeches.append(ParsedSpeech(
                 speaker=None if _is_non_speech_line(parsed_line) else current_speaker,
