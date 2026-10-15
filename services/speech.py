@@ -20,6 +20,8 @@ class ParsedSpeechType(Enum):
     NO_SPEAKER = "NO_SPEAKER"
 
 
+_BOLD_MARKER = "**"
+
 _MP_SPEAK_RE = re.compile(r"MPs? Speaking:\|[ \t]*([^\n|]+)", re.IGNORECASE)
 
 _ATBP_SPEAKER_RE = re.compile(
@@ -826,4 +828,9 @@ def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type:
 
 
 def get_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
-    return _split_stage_directions(_get_unsplit_speeches(markdown, start_of_speech_line, report_type, report_version))
+    speeches = _split_stage_directions(_get_unsplit_speeches(markdown, start_of_speech_line, report_type, report_version))
+    unmarked_speeches = [
+        ParsedSpeech(speaker=speech.speaker, transcript=speech.transcript.replace(_BOLD_MARKER, ""))
+        for speech in speeches
+    ]
+    return [speech for speech in unmarked_speeches if speech.transcript.strip() != ""]
