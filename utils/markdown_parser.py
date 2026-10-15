@@ -25,6 +25,7 @@ _NBSP_ONLY_EMPHASIS_PATTERN = r"<(i|b|u|em|strong)\b[^>]*>\s*(?:&nbsp;\s*)+</\1\
 _EMPTY_EMPHASIS_PATTERN = r"<(strong|em)[^>]*>(\s|&nbsp;|\ufeff)*</\1>"
 _PROC_TEXT_PAIR_PATTERN = r"\[\s*\(proc text\)\s*(.*?)\s*\(proc text\)\s*\]"
 _PROC_TEXT_LONE_PATTERN = r"\[?\s*\(proc text\)\s*\]?"
+_ESCAPED_TEXT_CHARACTER_PATTERN = r"\\([\\.+\-])"
 _DATA_IMAGE_PATTERN = r"<img[^>]*src=\"data:[^\"]*\"[^>]*>"
 
 
@@ -34,6 +35,10 @@ def _replace_nbsp_only_emphasis_with_space(html: str) -> str:
 
 def _replace_nbsp_with_space(html: str) -> str:
     return html.replace(_NBSP_ENTITY, " ")
+
+
+def _unescape_text_characters(markdown: str) -> str:
+    return re.sub(_ESCAPED_TEXT_CHARACTER_PATTERN, r"\1", markdown)
 
 
 def _prepare_newer_system_html(html: str) -> str:
@@ -99,7 +104,8 @@ def get_cleaned_report_markdown(html: str, report_version: str) -> str:
         html = _prepare_newer_system_html(html)
     converter = html2text.HTML2Text(bodywidth=0)
     markdown = _postprocess_markdown_base(converter.handle(_preprocess_html(html)))
-    return _flatten_leading_nested_bold(markdown)
+    markdown = _flatten_leading_nested_bold(markdown)
+    return _unescape_text_characters(markdown)
 
 
 def _fix_sitting_concat_headers(html: str) -> str:
