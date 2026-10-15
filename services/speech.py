@@ -206,6 +206,7 @@ _CHAIR_ANNOTATION_FULL_RE = re.compile(r"[\[(]?\s*.+?\s*in the [Cc]hair\s*[.\])]
 _CHAIR_ANNOTATION_PREFIX_RE = re.compile(r"[\[(]\s*.+?\s*in the [Cc]hair\s*[.\])]")
 _ALPHANUMERIC_RE = re.compile(r"[A-Za-z0-9]")
 _LETTER_RE = re.compile(r"[A-Za-z]")
+_PARENTHESIS_RE = re.compile(r"[()]")
 _MISS_RE = re.compile(r"\bMiss\b")
 _LIST_ENUMERATOR_RE = re.compile(r"\(\s*[A-Za-z]{1,4}\s*\)")
 _QUESTION_NUMBER_PREFIX_RE = re.compile(r"^\d+\\?\.\s+")
@@ -473,6 +474,18 @@ def _is_bold_mid_sentence(line: str) -> bool:
     return _LETTER_RE.search(text_before_bold) is not None
 
 
+def _is_bold_without_letters(line: str) -> bool:
+    bold_match = _BOLD_RUN_RE.search(line)
+    if bold_match is None:
+        return False
+    bold_text = bold_match.group(0)
+    return (
+        _LETTER_RE.search(bold_text) is None
+        and _PARENTHESIS_RE.search(bold_text) is None
+        and _LETTER_RE.search(line) is not None
+    )
+
+
 def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str = "") -> list[ParsedSpeech]:
     current_speaker = None
     is_in_preamble = True
@@ -482,7 +495,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
         parsed_line = _LEADING_BOLD_ARTIFACT_RE.sub("", parsed_line)
         if _is_artifact_line(parsed_line):
             continue
-        if "**" not in parsed_line or _is_bold_mid_sentence(parsed_line):
+        if "**" not in parsed_line or _is_bold_mid_sentence(parsed_line) or _is_bold_without_letters(parsed_line):
             if _TIME_MARKER_RE.match(parsed_line):
                 continue
             if _MARKDOWN_HEADING_RE.match(parsed_line):
