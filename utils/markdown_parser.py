@@ -1,4 +1,5 @@
 import re
+from html.entities import html5
 
 import html2text
 
@@ -21,6 +22,8 @@ _ADJOURNMENT_LINE_PATTERN = r"Adjourned accordingly at"
 _BLOCK_START_PATTERN = r"^(\*\*|#{1,6}|\* \* \*)"
 _BYTE_ORDER_MARK = "\ufeff"
 _NBSP_ENTITY = "&nbsp;"
+_AMPERSAND_PATTERN = r"&([A-Za-z][A-Za-z0-9]*|#)?"
+_AMPERSAND_ENTITY = "&amp;"
 _NBSP_ONLY_EMPHASIS_PATTERN = r"<(i|b|u|em|strong)\b[^>]*>\s*(?:&nbsp;\s*)+</\1\s*>"
 _EMPTY_EMPHASIS_PATTERN = r"<(strong|em)[^>]*>(\s|&nbsp;|\ufeff)*</\1>"
 _PROC_TEXT_PAIR_PATTERN = r"\[\s*\(proc text\)\s*(.*?)\s*\(proc text\)\s*\]"
@@ -39,6 +42,17 @@ def _replace_nbsp_with_space(html: str) -> str:
 
 def _unescape_text_characters(markdown: str) -> str:
     return re.sub(_ESCAPED_TEXT_CHARACTER_PATTERN, r"\1", markdown)
+
+
+def _escape_bare_ampersand(match: re.Match) -> str:
+    word = match.group(1)
+    if word == "#" or word in html5 or f"{word};" in html5:
+        return match.group(0)
+    return _AMPERSAND_ENTITY + (word or "")
+
+
+def _escape_bare_ampersands(html: str) -> str:
+    return re.sub(_AMPERSAND_PATTERN, _escape_bare_ampersand, html)
 
 
 def _prepare_newer_system_html(html: str) -> str:
@@ -89,6 +103,7 @@ def _flatten_leading_nested_bold(markdown: str) -> str:
 def _preprocess_html(html: str) -> str:
     html = _replace_nbsp_only_emphasis_with_space(html)
     html = _replace_nbsp_with_space(html)
+    html = _escape_bare_ampersands(html)
     html = _remove_column_markers(html)
     return _remove_page_text(html)
 
