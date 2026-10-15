@@ -206,6 +206,8 @@ _CHAIR_ANNOTATION_FULL_RE = re.compile(r"[\[(]?\s*.+?\s*in the [Cc]hair\s*[.\])]
 _CHAIR_ANNOTATION_PREFIX_RE = re.compile(r"[\[(]\s*.+?\s*in the [Cc]hair\s*[.\])]")
 _ALPHANUMERIC_RE = re.compile(r"[A-Za-z0-9]")
 _LETTER_RE = re.compile(r"[A-Za-z]")
+_MISS_RE = re.compile(r"\bMiss\b")
+_LIST_ENUMERATOR_RE = re.compile(r"\(\s*[A-Za-z]{1,4}\s*\)")
 _QUESTION_NUMBER_PREFIX_RE = re.compile(r"^\d+\\?\.\s+")
 _UNSPACED_HONORIFIC_RE = re.compile(r"^(Mr|Mrs|Ms|Dr|Prof|Mdm|The|BG|RAdm|Er)([A-Z])")
 _DROP_CAP_RE = re.compile(r"[A-Za-z]{1,2}")
@@ -460,6 +462,17 @@ def _is_speaker_name(name: str) -> bool:
     return _SPEAKER_ROLE_WORD_RE.search(name) is not None or _OFFICE_WORD_RE.search(name) is not None
 
 
+def _is_bold_mid_sentence(line: str) -> bool:
+    bold_match = _BOLD_RUN_RE.search(line)
+    if bold_match is None:
+        return False
+    bold_text = bold_match.group(0).replace("*", "").strip()
+    if _SPEAKER_HONORIFIC_RE.search(bold_text) or _MISS_RE.search(bold_text) or _DROP_CAP_RE.fullmatch(bold_text):
+        return False
+    text_before_bold = _LIST_ENUMERATOR_RE.sub("", _LANGUAGE_NOTE_RE.sub("", line[: bold_match.start()]))
+    return _LETTER_RE.search(text_before_bold) is not None
+
+
 def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str = "") -> list[ParsedSpeech]:
     current_speaker = None
     is_in_preamble = True
@@ -469,7 +482,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
         parsed_line = _LEADING_BOLD_ARTIFACT_RE.sub("", parsed_line)
         if _is_artifact_line(parsed_line):
             continue
-        if "**" not in parsed_line:
+        if "**" not in parsed_line or _is_bold_mid_sentence(parsed_line):
             if _TIME_MARKER_RE.match(parsed_line):
                 continue
             if _MARKDOWN_HEADING_RE.match(parsed_line):
