@@ -154,6 +154,10 @@ _CLOSED_FOOTNOTE_START_RE = re.compile(
     r"^\(\d{1,2}\)\s|^The (?:motion|amendment|same (?:motion|amendment)) also stood in the names? of"
 )
 _MAX_CLOSED_FOOTNOTE_LINES = 10
+_MIN_SPEECH_LINE_LENGTH = 120
+_CARET_NOTE_MARKER = "^"
+_SPEECH_START_RE = re.compile(r"^(?!In page\b|That\b)[A-Z]")
+_FOOTNOTE_REFERENCE_RE = re.compile(r"\b(?:Appendix|Annex|cols?\.?|columns?|See|reproduced|Letter)\b", re.IGNORECASE)
 _HORIZONTAL_RULE = "* * *"
 
 _OATH_LINE_RE = re.compile(
@@ -620,6 +624,23 @@ def _is_closed_footnote_block(lines: list[str], block: list[int], is_closed: boo
     return _FOOTNOTE_LINE_RE.match(first_line) is not None or _CLOSED_FOOTNOTE_START_RE.match(first_line) is not None
 
 
+def _get_speech_start_position(lines: list[str], block: list[int]) -> int:
+    # NOTE: a page-bottom footnote is followed by the next page's speech before the next rule, so a long paragraph right after a finished note is speech.
+    for position, index in enumerate(block):
+        line = lines[index].strip()
+        if _FOOTNOTE_LINE_RE.match(line) is not None or _CLOSED_FOOTNOTE_START_RE.match(line) is not None or line.startswith(_CARET_NOTE_MARKER):
+            continue
+        previous_line = lines[block[position - 1]].strip() if position > 0 else ""
+        is_speech = (
+            len(line) >= _MIN_SPEECH_LINE_LENGTH
+            and _SPEECH_START_RE.match(line) is not None
+            and _SENTENCE_END_RE.search(previous_line) is not None
+            and _FOOTNOTE_REFERENCE_RE.search(previous_line) is None
+        )
+        return position if is_speech else len(block)
+    return len(block)
+
+
 def _get_footnote_line_indexes(lines: list[str]) -> set[int]:
     rule_indexes = [index for index, line in enumerate(lines) if line.strip() == _HORIZONTAL_RULE]
     footnote_line_indexes: set[int] = set()
@@ -630,7 +651,7 @@ def _get_footnote_line_indexes(lines: list[str]) -> set[int]:
         if not block:
             continue
         if _is_closed_footnote_block(lines, block, is_closed):
-            footnote_line_indexes.update(block)
+            footnote_line_indexes.update(block[: _get_speech_start_position(lines, block)])
             continue
         for index in block:
             if _FOOTNOTE_LINE_RE.match(lines[index].strip()) is None:
