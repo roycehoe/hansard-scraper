@@ -615,20 +615,24 @@ def _is_honourable_members_phrase(line: str) -> bool:
     return _LOWERCASE_START_RE.match(text_after_bold) is not None and _STAGE_DIRECTION_VERB_RE.match(text_after_bold) is None
 
 
+def _is_note_line(line: str) -> bool:
+    return _FOOTNOTE_LINE_RE.match(line) is not None or _CLOSED_FOOTNOTE_START_RE.match(line) is not None
+
+
 def _is_closed_footnote_block(lines: list[str], block: list[int], is_closed: bool) -> bool:
     if not is_closed or len(block) > _MAX_CLOSED_FOOTNOTE_LINES:
         return False
     if any(_BOLD_OPENING_RE.match(lines[index].strip()) for index in block):
         return False
     first_line = lines[block[0]].strip()
-    return _FOOTNOTE_LINE_RE.match(first_line) is not None or _CLOSED_FOOTNOTE_START_RE.match(first_line) is not None
+    return _is_note_line(first_line)
 
 
 def _get_speech_start_position(lines: list[str], block: list[int]) -> int:
     # NOTE: a page-bottom footnote is followed by the next page's speech before the next rule, so a long paragraph right after a finished note is speech.
     for position, index in enumerate(block):
         line = lines[index].strip()
-        if _FOOTNOTE_LINE_RE.match(line) is not None or _CLOSED_FOOTNOTE_START_RE.match(line) is not None or line.startswith(_CARET_NOTE_MARKER):
+        if _is_note_line(line) or line.startswith(_CARET_NOTE_MARKER):
             continue
         previous_line = lines[block[position - 1]].strip() if position > 0 else ""
         is_speech = (
@@ -779,13 +783,13 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             if is_turn_ending_direction or _LABELLED_STAGE_DIRECTION_RE.match(transcript):
                 is_in_preamble = False
                 text_before_bold = parsed_line[: bold_match.start()]
-                is_lead_with_letters = _LETTER_RE.search(text_before_bold) is not None
-                if is_lead_with_letters and _SENTENCE_FINAL_RE.search(text_before_bold.strip()):
+                has_lead_letters = _LETTER_RE.search(text_before_bold) is not None
+                is_lead_sentence = has_lead_letters and _SENTENCE_FINAL_RE.search(text_before_bold.strip()) is not None
+                if is_lead_sentence:
                     speeches.append(ParsedSpeech(speaker=current_speaker, transcript=text_before_bold.strip()))
-                    is_lead_with_letters = False
                 bold_text = bold_match.group(0).replace("*", "")
                 name_separator = " " if bold_text != bold_text.rstrip() else ""
-                direction_lead = text_before_bold if is_lead_with_letters else ""
+                direction_lead = text_before_bold if has_lead_letters and not is_lead_sentence else ""
                 speeches.append(ParsedSpeech(speaker=None, transcript=direction_lead + bold_text.strip() + name_separator + transcript))
                 if is_turn_ending_direction:
                     current_speaker = None
@@ -815,35 +819,38 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
     return [speech for speech in speeches if speech.transcript.strip() != ""]
 
 
-def _append_speech_segment(split_speeches: list[ParsedSpeech], segment: str, speaker: Optional[str], is_after_direction: bool) -> None:
-    # NOTE: punctuation left after a direction ("[Interruption]-") belongs to the interrupted speech, so it stays on the direction row.
-    if is_after_direction and _ALPHANUMERIC_RE.search(segment) is None:
-        split_speeches[-1].transcript += segment.rstrip()
-        return
-    if segment.strip():
-        split_speeches.append(ParsedSpeech(speaker=speaker, transcript=segment.strip()))
+def _split_speech_at_directions(speech: ParsedSpeech) -> list[ParsedSpeech]:
+    direction_matches = [
+        match for match in _BRACKET_SPAN_RE.finditer(speech.transcript)
+        if _STAGE_DIRECTION_INNER_RE.match(match.group(1).strip(_BRACKET_INNER_EDGE_CHARACTERS)) is not None
+    ]
+    if not direction_matches:
+        return [speech]
+    parts: list[tuple[str, bool]] = []
+    position = 0
+    for match in direction_matches:
+        parts.append((speech.transcript[position:match.start()], False))
+        parts.append((match.group(0), True))
+        position = match.end()
+    parts.append((speech.transcript[position:], False))
+    rows: list[ParsedSpeech] = []
+    for text, is_direction in parts:
+        if is_direction:
+            rows.append(ParsedSpeech(speaker=None, transcript=text))
+        # NOTE: punctuation left after a direction ("[Interruption]-") belongs to the interrupted speech, so it stays on the direction row.
+        elif rows and _ALPHANUMERIC_RE.search(text) is None:
+            rows[-1].transcript += text.rstrip()
+        elif text.strip():
+            rows.append(ParsedSpeech(speaker=speech.speaker, transcript=text.strip()))
+    return rows
 
 
 def _split_stage_directions(speeches: list[ParsedSpeech]) -> list[ParsedSpeech]:
-    split_speeches: list[ParsedSpeech] = []
-    for speech in speeches:
-        if speech.speaker is None:
-            split_speeches.append(speech)
-            continue
-        direction_matches = [
-            match for match in _BRACKET_SPAN_RE.finditer(speech.transcript)
-            if _STAGE_DIRECTION_INNER_RE.match(match.group(1).strip(_BRACKET_INNER_EDGE_CHARACTERS)) is not None
-        ]
-        if not direction_matches:
-            split_speeches.append(speech)
-            continue
-        position = 0
-        for match in direction_matches:
-            _append_speech_segment(split_speeches, speech.transcript[position:match.start()], speech.speaker, position > 0)
-            split_speeches.append(ParsedSpeech(speaker=None, transcript=match.group(0)))
-            position = match.end()
-        _append_speech_segment(split_speeches, speech.transcript[position:], speech.speaker, True)
-    return split_speeches
+    return [
+        row
+        for speech in speeches
+        for row in ([speech] if speech.speaker is None else _split_speech_at_directions(speech))
+    ]
 
 
 def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
@@ -852,9 +859,10 @@ def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type:
     speech_type = _classify_speech_type(parsed_speeches, len(speakers))
 
     if speech_type == ParsedSpeechType.PARSED:
+        first_speaker = next((speech.speaker for speech in parsed_speeches if speech.speaker is not None), None)
         if ((report_type == ReportType.PRESIDENT_ADDRESS or report_type == ReportType.ATBP)
                 and not speakers
-                and (first_speaker := next((speech.speaker for speech in parsed_speeches if speech.speaker is not None), None)) is not None
+                and first_speaker is not None
                 and _is_section_header_speaker(first_speaker)):
             speaker = _extract_body_attribution(markdown, report_type, report_version)
             if speaker:
