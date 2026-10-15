@@ -1,0 +1,24 @@
+{
+  "why": "An adjournment direction split across three right-aligned blocks was stored as three rows.",
+  "source_report_id": 32503,
+  "report_version": "sprs2",
+  "report_type": "motion",
+  "title": "ADJOURNMENT",
+  "subtitle": null,
+  "original_title": "ADJOURNMENT",
+  "html": "<html><head></head><body>\r\n\r\n<table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\"><tr><td>\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">3</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">ADJOURNMENT</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Mr Speaker;</font></td></tr>\r\n\r\n</table></td></tr>\r\n\r\n</table>\r\n\r\n<br><br><font size=\"1\"><b>Column: 1087</b></font><br><br>\r\n\r\n\r\n\r\n<div align=\"center\"><b>ADJOURNMENT</b></div>\r\n\r\n\r\n\r\n<br><br><!-- Mr Speaker -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Speaker:</b> The House stands adjourned.\r\n\r\n\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;Question put, and agreed to.\r\n\r\n\r\n\r\n<br><br><div align=\"right\">Adjourned accordingly at Three</div>\r\n\r\n<div align=\"right\">Minutes past Seven o'clock p.m.</div>\r\n\r\n<div align=\"right\">to a date to be fixed.</div>\r\n\r\n\r\n\r\n</body>\r\n\r\n</html>\r\n",
+  "expected_rows": [
+    [
+      "Mr Speaker",
+      "The House stands adjourned."
+    ],
+    [
+      null,
+      "Question put, and agreed to."
+    ],
+    [
+      null,
+      "Adjourned accordingly at Three Minutes past Seven o'clock p.m. to a date to be fixed."
+    ]
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "why": "A suspension direction split across two right-aligned paragraphs was stored as two rows.",
+  "source_report_id": 18436,
+  "report_version": "sprs3",
+  "report_type": "motion",
+  "title": "Motion on Committee of Supply",
+  "subtitle": null,
+  "original_title": "Motion on Committee of Supply",
+  "html": "<h6>4.40 pm</h6><p><strong>Mr Speaker</strong>: Order. I suspend the Sitting and will take the Chair at 5.15 pm.</p><p class=\"ql-align-right\"><em>&nbsp;Sitting accordingly suspended</em></p><p class=\"ql-align-right\"><em>&nbsp;at 4.55 pm until 5.15 pm.</em></p><p class=\"ql-align-center\"><em>Sitting resumed at 5.15 pm</em></p><p class=\"ql-align-center\"><strong>[Mdm Speaker in the Chair]</strong></p><p><strong>Mdm Speaker</strong>: Mr Pritam Singh.</p>",
+  "expected_rows": [
+    [
+      "Mr Speaker",
+      "Order. I suspend the Sitting and will take the Chair at 5.15 pm."
+    ],
+    [
+      null,
+      "_Sitting accordingly suspended at 4.55 pm until 5.15 pm._"
+    ],
+    [
+      null,
+      "_Sitting resumed at 5.15 pm_"
+    ],
+    [
+      "Mdm Speaker",
+      "Mr Pritam Singh."
+    ]
+  ]
+}

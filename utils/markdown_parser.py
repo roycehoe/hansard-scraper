@@ -8,6 +8,7 @@ from enums import ReportVersion
 
 _MAX_ADJOURNMENT_CONTINUATIONS = 6
 _BOLD_MARKER_LENGTH = 2
+_EMPHASIS_MARK = "_"
 _COLUMN_MARKER_PATTERN = r"Column(?:\s+No)?\s*:\s*\d+"
 _PAGE_TEXT_PATTERN = r"Page:\s*\d+"
 _PAGE_BREAK_SENTINEL = "\ue000"
@@ -31,6 +32,10 @@ _LEADING_EMPTY_BOLD_PATTERN = r"^(\*{4})+"
 _TRAILING_EMPTY_BOLD_PATTERN = r"(\*{4})+$"
 _LEADING_NESTED_BOLD_PATTERN = r"^\*{4}([^*\n]+)\*\*([^*\n]+)\*\*"
 _ADJOURNMENT_LINE_PATTERN = r"Adjourned accordingly at"
+_SPLIT_DIRECTION_LINE_PATTERN = r"_?(?:Adjourned accordingly|(?:Sitting|Debate) (?:accordingly )?suspended)"
+_DIRECTION_START_PATTERN = r"_?(?:Adjourned|Sitting|Debate)\b"
+_ALPHANUMERIC_PATTERN = r"[A-Za-z0-9]"
+_TIME_ABBREVIATION_END_PATTERN = r"[ap]\.m\.[\"')\]*_\s]*$"
 _BLOCK_START_PATTERN = r"^(\*\*|#{1,6}|\* \* \*)"
 _BYTE_ORDER_MARK = "\ufeff"
 _NBSP_ENTITY = "&nbsp;"
@@ -253,6 +258,45 @@ def _merge_consecutive_bold_only_lines(markdown: str) -> str:
     return "\n".join(lines)
 
 
+def _join_emphasised_lines(before: str, after: str) -> str:
+    before = before.rstrip()
+    after = after.lstrip()
+    if before.endswith(_EMPHASIS_MARK) and after.startswith(_EMPHASIS_MARK):
+        return before[:-1] + " " + after[1:]
+    return before + " " + after
+
+
+def _is_split_direction_open(line: str, next_line: str) -> bool:
+    if re.search(_SENTENCE_END_PATTERN, line) is None:
+        return True
+    return re.search(_TIME_ABBREVIATION_END_PATTERN, line, re.IGNORECASE) is not None and next_line.lstrip(_EMPHASIS_MARK + " ")[:1].islower()
+
+
+def _merge_split_direction_lines(markdown: str) -> str:
+    # NOTE: right-aligned adjournment and suspension directions are split across several source blocks, each rendering as its own line.
+    lines = markdown.splitlines()
+    merged_lines = []
+    line_index = 0
+    while line_index < len(lines):
+        line = lines[line_index]
+        if re.match(_SPLIT_DIRECTION_LINE_PATTERN, line.lstrip(), re.IGNORECASE):
+            merges = 0
+            while (
+                merges < _MAX_ADJOURNMENT_CONTINUATIONS
+                and line_index + 1 < len(lines)
+                and _is_split_direction_open(line, lines[line_index + 1])
+                and re.search(_ALPHANUMERIC_PATTERN, lines[line_index + 1])
+                and not re.match(_BLOCK_START_PATTERN, lines[line_index + 1])
+                and not re.match(_DIRECTION_START_PATTERN, lines[line_index + 1], re.IGNORECASE)
+            ):
+                line_index += 1
+                merges += 1
+                line = _join_emphasised_lines(line, lines[line_index])
+        merged_lines.append(line)
+        line_index += 1
+    return "\n".join(merged_lines)
+
+
 def _flatten_leading_nested_bold(markdown: str) -> str:
     return re.sub(_LEADING_NESTED_BOLD_PATTERN, r"**\1\2**", markdown, flags=re.MULTILINE)
 
@@ -280,6 +324,7 @@ def get_cleaned_report_markdown(html: str, report_version: str) -> str:
     converter = html2text.HTML2Text(bodywidth=0)
     converter.ignore_links = True
     markdown = _postprocess_markdown_base(converter.handle(_mark_footnote_section(_move_space_into_anchor(_preprocess_html(html)))))
+    markdown = _merge_split_direction_lines(markdown)
     markdown = _flatten_leading_nested_bold(markdown)
     return _unescape_text_characters(markdown)
 
