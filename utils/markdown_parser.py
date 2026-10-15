@@ -118,6 +118,7 @@ def get_cleaned_report_markdown(html: str, report_version: str) -> str:
     if report_version == ReportVersion.SPRS3:
         html = _prepare_newer_system_html(html)
     converter = html2text.HTML2Text(bodywidth=0)
+    converter.ignore_links = True
     markdown = _postprocess_markdown_base(converter.handle(_preprocess_html(html)))
     markdown = _flatten_leading_nested_bold(markdown)
     return _unescape_text_characters(markdown)

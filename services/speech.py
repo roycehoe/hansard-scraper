@@ -117,7 +117,7 @@ _VERNACULAR_NOTE_RE = re.compile(
 _STANDING_ORDER_NOTE_RE = re.compile(r"^[\s_*]*\[[\s_*]*Pursuant to Standing Order", re.IGNORECASE)
 _CHAIR_NOTE_RE = re.compile(r"^[\s_*]*\[[^\[\]]*\bin the Chair[\s_*.]*\]", re.IGNORECASE)
 _REACTION_NOTE_RE = re.compile(r"^[\s_*]*\[[\s_*]*(?:Laughter|Interruption)[\s_*.]*\]")
-_SUPPLY_HEADER_NOTE_RE = re.compile(r"^[\s_*]*\[(?:Committee of Supply|Official Report) - [^\[\]]*\]\(\S*\)[\s_*.]*$")
+_SUPPLY_HEADER_NOTE_RE = re.compile(r"^[\s_*]*(?:Committee of Supply|Official Report) - [^\[\]]*[\s_*.]*$")
 _CHAMBER_NOTE_RE = re.compile(
     r"^[\s_*\[(]*[^.?!;:\"“”\[\]]{0,250}?\b(?:left|entered) the Chamber"
     r"(?: and took his seat| to receive His Excellency)?[\s_*.)\]]*$"
