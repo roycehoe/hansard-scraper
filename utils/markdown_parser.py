@@ -39,6 +39,7 @@ _TIME_ABBREVIATION_END_PATTERN = r"[ap]\.m\.[\"')\]*_\s]*$"
 _BLOCK_START_PATTERN = r"^(\*\*|#{1,6}|\* \* \*)"
 _BYTE_ORDER_MARK = "\ufeff"
 _NBSP_ENTITY = "&nbsp;"
+_FOOTNOTE_HASH_MARKER_PATTERN = r"#(?:&nbsp;)+(</sup>)?\s*"
 _AMPERSAND_PATTERN = r"&([A-Za-z][A-Za-z0-9]*|#)?"
 _AMPERSAND_ENTITY = "&amp;"
 _NBSP_ONLY_EMPHASIS_PATTERN = r"<(i|b|u|em|strong)\b[^>]*>\s*(?:&nbsp;\s*)+</\1\s*>"
@@ -68,6 +69,11 @@ def _replace_nbsp_only_emphasis_with_space(html: str) -> str:
 
 def _replace_nbsp_with_space(html: str) -> str:
     return html.replace(_NBSP_ENTITY, " ")
+
+
+def _glue_footnote_hash_markers(html: str) -> str:
+    # NOTE: a marker followed by a space would read as a markdown heading, so it stays glued to its note like the other markers.
+    return re.sub(_FOOTNOTE_HASH_MARKER_PATTERN, r"#\1", html)
 
 
 def _move_space_into_anchor(html: str) -> str:
@@ -323,7 +329,7 @@ def get_cleaned_report_markdown(html: str, report_version: str) -> str:
     html = _join_wrapped_preformatted_lines(html)
     converter = html2text.HTML2Text(bodywidth=0)
     converter.ignore_links = True
-    markdown = _postprocess_markdown_base(converter.handle(_mark_footnote_section(_move_space_into_anchor(_preprocess_html(html)))))
+    markdown = _postprocess_markdown_base(converter.handle(_mark_footnote_section(_move_space_into_anchor(_preprocess_html(_glue_footnote_hash_markers(html))))))
     markdown = _merge_split_direction_lines(markdown)
     markdown = _flatten_leading_nested_bold(markdown)
     return _unescape_text_characters(markdown)
