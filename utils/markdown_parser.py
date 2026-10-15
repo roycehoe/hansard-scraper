@@ -9,6 +9,8 @@ from enums import ReportVersion
 _MAX_ADJOURNMENT_CONTINUATIONS = 6
 _BOLD_MARKER_LENGTH = 2
 _EMPHASIS_MARK = "_"
+_OPENING_BRACKET = "["
+_CLOSING_BRACKET = "]"
 _COLUMN_MARKER_PATTERN = r"Column(?:\s+No)?\s*:\s*\d+"
 _PAGE_TEXT_PATTERN = r"Page:\s*\d+"
 _PAGE_BREAK_SENTINEL = "\ue000"
@@ -129,9 +131,16 @@ def _remove_empty_lines(markdown: str) -> str:
     return "\n".join(line for line in markdown.splitlines() if line)
 
 
+def _has_unclosed_bracket(text: str) -> bool:
+    return text.count(_OPENING_BRACKET) > text.count(_CLOSING_BRACKET)
+
+
 def _should_join_across_page_break(before: str, after: str) -> bool:
     if not before.strip() or not after.strip():
         return False
+    # NOTE: a marker inside a bracketed note cuts the note itself, whatever emphasis or stage-direction marks sit at the cut.
+    if _has_unclosed_bracket(before) and re.match(_NON_SPEECH_BLOCK_PATTERN, after) is None:
+        return True
     if re.match(_EMPHASIS_START_PATTERN, after) or re.match(_NON_SPEECH_BLOCK_PATTERN, after):
         return False
     if re.search(_STAGE_DIRECTION_END_PATTERN, before) or re.match(_COLUMN_RANGE_LINE_PATTERN, before):
@@ -161,7 +170,10 @@ def _join_paragraphs_across_page_breaks(markdown: str) -> str:
         if is_after_page_break and lines and _should_join_across_page_break(lines[-1], line):
             before = lines[-1].rstrip()
             after = line.lstrip()
-            lines[-1] = before + _get_page_break_separator(before, after) + after
+            if before.endswith(_EMPHASIS_MARK) and after.startswith(_EMPHASIS_MARK) and _has_unclosed_bracket(before):
+                lines[-1] = before[:-1] + after[1:]
+            else:
+                lines[-1] = before + _get_page_break_separator(before, after) + after
         else:
             lines.append(line)
         is_after_page_break = False
