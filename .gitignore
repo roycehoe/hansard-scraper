@@ -216,3 +216,4 @@ __marimo__/
 
 # per-run export of Parliament report metadata
 statistics.csv
+!tests/fixtures/*.json
