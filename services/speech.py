@@ -183,6 +183,9 @@ _BOLD_OPENING_RE = re.compile(r"^\*\*(?!\*)")
 _LEADING_BOLD_ARTIFACT_RE = re.compile(r"^(\*{4})+")
 _TIME_MARKER_RE = re.compile(r"^\d{1,2}\.\d{2}\s*[ap]\.?m\.?$", re.IGNORECASE)
 _MARKDOWN_HEADING_RE = re.compile(r"^#{1,6}(\s|$)")
+_REPORT_HEADER_FIELD_RE = re.compile(r"^\|?\s*(?:Parliament No|Session No|Volume No|Sitting No|Sitting Date|Section Name|Title|MPs? Speaking):\|")
+_LINE_EDGE_MARKUP_RE = re.compile(r"^(?:#{1,6}|\|)\s*|\s*\|$")
+_MARKUP_ONLY_CHARACTERS = "* _|-"
 _BOLD_RUN_RE = re.compile(r"((?:\*\*[^*]+?\*\*\s*)+)")
 _LEADING_COLON_RE = re.compile(r"^:\s*")
 _CHAIR_ANNOTATION_FULL_RE = re.compile(r"[\[(]?\s*.+?\s*in the [Cc]hair\s*[.\])]*")
@@ -215,9 +218,10 @@ def _classify_speech_type(parsed_speeches: list[ParsedSpeech], speaker_count: in
 
 def _get_single_speaker_transcript(markdown: str, start_of_speech_line: int) -> str:
     return " ".join(
-        stripped
+        unmarked
         for line in markdown.splitlines()[start_of_speech_line + 1:]
-        if (stripped := line.strip()) and stripped.strip("* ")
+        if not _REPORT_HEADER_FIELD_RE.match(stripped := line.strip())
+        and (unmarked := _LINE_EDGE_MARKUP_RE.sub("", stripped)).strip(_MARKUP_ONLY_CHARACTERS)
     )
 
 
