@@ -554,9 +554,10 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
             speeches[-1].transcript += " " + unmarked
             adjournment_continuations = 0 if _SENTENCE_END_RE.search(unmarked) else adjournment_continuations - 1
             continue
-        if not is_body_started and (_MARKDOWN_HEADING_RE.match(stripped) or _WHOLE_BOLD_LINE_RE.match(stripped)):
+        is_resolved_line = _RESOLVED_LINE_RE.match(unmarked) is not None
+        if not is_body_started and not is_resolved_line and (_MARKDOWN_HEADING_RE.match(stripped) or _WHOLE_BOLD_LINE_RE.match(stripped)):
             continue
-        if _RESOLVED_LINE_RE.match(unmarked) or not _is_non_speech_line(unmarked):
+        if is_resolved_line or not _is_non_speech_line(unmarked):
             is_body_started = True
             speaker_lines.append(unmarked)
             continue
