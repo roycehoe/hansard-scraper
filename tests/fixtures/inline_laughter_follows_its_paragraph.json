@@ -1,5 +1,5 @@
 {
-  "why": "'[Laughter]' inside the minister's paragraph was stored as his speech; it becomes its own no-speaker row and the paragraph splits around it.",
+  "why": "'[Laughter]' inside the minister's paragraph was stored as his speech; it is cut out, the paragraph stays one row with the text either side joined by one space, and the laughter follows it as a no-speaker CHAMBER_EVENT row.",
   "source_report_id": 19640,
   "report_version": "sprs3",
   "report_type": "oral-answer",
@@ -60,18 +60,13 @@
     ],
     [
       "Mr K Shanmugam",
-      "The Member will appreciate first that this is not under either of my two Ministries. I am answering the question because I was foolish enough to put it on my Facebook, thinking aloud.",
+      "The Member will appreciate first that this is not under either of my two Ministries. I am answering the question because I was foolish enough to put it on my Facebook, thinking aloud. And so the Ministry has asked me to respond to the Member. I think time limits are going too far. The Member should ask the Minister concerned.",
       "SPEECH"
     ],
     [
       null,
       "[_Laughter_]",
       "CHAMBER_EVENT"
-    ],
-    [
-      "Mr K Shanmugam",
-      "And so the Ministry has asked me to respond to the Member. I think time limits are going too far. The Member should ask the Minister concerned.",
-      "SPEECH"
     ]
   ]
 }

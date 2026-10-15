@@ -1,5 +1,5 @@
 {
-  "why": "'[Laughter]' inside Mr Deputy Speaker's paragraph was stored as his speech; it becomes its own row with no speaker, with the text before and after it kept as his.",
+  "why": "'[Laughter].' inside Mr Deputy Speaker's paragraph was stored as his speech; the laughter becomes its own no-speaker row after the paragraph, and the full stop stays with \"Time is moving\" so the sentences do not run together.",
   "source_report_id": 11895,
   "report_version": "sprs3",
   "report_type": "motion",
@@ -20,18 +20,13 @@
     ],
     [
       "Mr Deputy Speaker",
-      "Time is moving",
+      "Time is moving. Order. Minister Desmond Lee can apply for exemption.",
       "SPEECH"
     ],
     [
       null,
-      "[_Laughter_].",
+      "[_Laughter_]",
       "CHAMBER_EVENT"
-    ],
-    [
-      "Mr Deputy Speaker",
-      "Order. Minister Desmond Lee can apply for exemption.",
-      "SPEECH"
     ]
   ]
 }

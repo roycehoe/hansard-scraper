@@ -210,13 +210,13 @@ _COPIES_NOTE_RE = re.compile(
 )
 
 _ROSE_SUBJECT_WORD = r"(?:[A-Z(][\w.'’()-]*|and|hon|than|five|bin|binte|for)"
-_PLAIN_STAGE_DIRECTION_RE = re.compile(
+_PLAIN_CHAMBER_EVENT_RE = re.compile(
     r"^[\s_*]*(?=.*\b(?:Mr|Mrs|Ms|Mdm|Dr|Prof|Inche|Encik|Tuan|Dato|Members?|Minister)\b)"
     + _ROSE_SUBJECT_WORD + r"(?:,? " + _ROSE_SUBJECT_WORD + r")*"
     r" (?:rose(?: in (?:his|her|their) place)?(?: for their (?:dissent|abstention) to be recorded)?"
     r"|indicated (?:assent|dissent|agreement|for their (?:dissent|abstention) to be recorded)|resumed (?:his|her) seat)[\s_*]*[-–—.]*[\s_*]*$"
 )
-_LABELLED_STAGE_DIRECTION_RE = re.compile(
+_LABELLED_CHAMBER_EVENT_RE = re.compile(
     r"^[\s_*]*(?:and \*\*[^*]+\*\* )?(?:again |later )?"
     r"(?:rose(?: in (?:his|her) place| and then resumed his seat)?|left the Chamber|entered the Chamber(?: and took his seat)?)"
     r"[\s_*]*[-–—.]*[\s_*]*(?:\[Interruption\])?[\s_*.]*$"
@@ -300,11 +300,13 @@ _DROP_CAP_RE = re.compile(r"[A-Za-z]{1,2}")
 _PARENTHESISED_RE = re.compile(r"^\(.*\)$")
 _HONOURABLE_MEMBERS_RE = re.compile(r"^(?:Some |The )?[Hh]on(?:ourable|\.)? Members?$")
 _LOWERCASE_START_RE = re.compile(r"^[a-z]")
-_STAGE_DIRECTION_VERB_RE = re.compile(r"^(?:indicated|rose|resumed|say|said|signified|left|entered|took|made|stood|went|remained|again|later|and)\b")
+_CHAMBER_EVENT_VERB_RE = re.compile(r"^(?:indicated|rose|resumed|say|said|signified|left|entered|took|made|stood|went|remained|again|later|and)\b")
 _ITALIC_HEADING_RE = re.compile(r"^_[^_].*_$")
 _SENTENCE_FINAL_RE = re.compile(r"[.?!][\"'”’)\]_*]*$")
 _BRACKET_SPAN_RE = re.compile(r"(?:(?<=\s)[_*]+|^[_*]+)?\[([^\[\]]{1,250})\](?:[_*]*\.)?(?:[_*]+(?=\s|$))?")
 _BRACKET_INNER_EDGE_CHARACTERS = " _*."
+_EVENT_FULL_STOP_RE = re.compile(r"\][_*]*(\.)[_*]*$")
+_EMPTY_EMPHASIS_TAIL_RE = re.compile(r"(?<=\])(?:__|\*\*)$")
 _AUDIENCE_EVENT_PATTERN = r"(?i:(?:more |loud )?(?:applause|laughter|interruptions?|interjections?|pauses?|silence|background noise)\b(?:[ .][^\[\]]{0,60})?$)"
 _DOCUMENT_ACTION_PATTERN = (
     r"(?:[A-Z(]"
@@ -318,7 +320,7 @@ _MEMBER_ACTION_PATTERN = (
 )
 _SEAT_ACTION_PATTERN = r"(?:and )?(?:resumed (?:his|her) seat|remained seated|entered the Chamber)"
 _GESTURE_PATTERN = r"(?i:(?:and )?(?:indicat(?:ing|ion)|gestur(?:ing|ed)|pointing|pointed|showing|shows|exhibiting|holds? up|holding up|waving|displaying)\b)"
-_STAGE_DIRECTION_INNER_RE = re.compile(
+_CHAMBER_EVENT_INNER_RE = re.compile(
     "^(?:" + "|".join((_AUDIENCE_EVENT_PATTERN, _DOCUMENT_ACTION_PATTERN, _MEMBER_ACTION_PATTERN, _SEAT_ACTION_PATTERN, _GESTURE_PATTERN)) + ")"
 )
 
@@ -550,7 +552,7 @@ def _get_non_speech_kind(line: str) -> Optional[SpeechKind]:
     note_kind = _get_note_kind(line)
     if note_kind is not None:
         return note_kind
-    if _PLAIN_STAGE_DIRECTION_RE.match(line) is not None:
+    if _PLAIN_CHAMBER_EVENT_RE.match(line) is not None:
         return SpeechKind.CHAMBER_EVENT
     if _OATH_LINE_RE.match(line) is not None or _PROCEDURAL_RECORD_LINE_RE.match(line) is not None:
         return SpeechKind.PROCEDURAL
@@ -689,7 +691,7 @@ def _is_honourable_members_phrase(line: str) -> bool:
     if _HONOURABLE_MEMBERS_RE.match(bold_match.group(0).replace("*", "").strip()) is None:
         return False
     text_after_bold = line[bold_match.end():]
-    return _LOWERCASE_START_RE.match(text_after_bold) is not None and _STAGE_DIRECTION_VERB_RE.match(text_after_bold) is None
+    return _LOWERCASE_START_RE.match(text_after_bold) is not None and _CHAMBER_EVENT_VERB_RE.match(text_after_bold) is None
 
 
 def _is_note_line(line: str) -> bool:
@@ -852,9 +854,9 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 if raw_speaker in _SECTION_BOUNDARY_HEADINGS:
                     current_speaker = None
                 continue
-            # NOTE: a bold name before "rose -" is a stage direction, not a speaker label, so the current speaker stays and the name stays in the text.
+            # NOTE: a bold name before "rose -" is a chamber event, not a speaker label, so the current speaker stays and the name stays in the text.
             is_turn_ending_direction = _LABELLED_TURN_ENDING_DIRECTION_RE.match(transcript) is not None
-            if is_turn_ending_direction or _LABELLED_STAGE_DIRECTION_RE.match(transcript):
+            if is_turn_ending_direction or _LABELLED_CHAMBER_EVENT_RE.match(transcript):
                 is_in_preamble = False
                 text_before_bold = parsed_line[: bold_match.start()]
                 has_lead_letters = _LETTER_RE.search(text_before_bold) is not None
@@ -895,37 +897,48 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
     return [speech for speech in speeches if speech.transcript.strip() != ""]
 
 
-def _split_speech_at_directions(speech: ParsedSpeech) -> list[ParsedSpeech]:
-    direction_matches = [
+def _split_speech_at_chamber_events(speech: ParsedSpeech) -> list[ParsedSpeech]:
+    event_matches = [
         match for match in _BRACKET_SPAN_RE.finditer(speech.transcript)
-        if _STAGE_DIRECTION_INNER_RE.match(match.group(1).strip(_BRACKET_INNER_EDGE_CHARACTERS)) is not None
+        if _CHAMBER_EVENT_INNER_RE.match(match.group(1).strip(_BRACKET_INNER_EDGE_CHARACTERS)) is not None
     ]
-    if not direction_matches:
+    if not event_matches:
         return [speech]
     parts: list[tuple[str, bool]] = []
     position = 0
-    for match in direction_matches:
+    for match in event_matches:
         parts.append((speech.transcript[position:match.start()], False))
         parts.append((match.group(0), True))
         position = match.end()
     parts.append((speech.transcript[position:], False))
-    rows: list[ParsedSpeech] = []
-    for text, is_direction in parts:
-        if is_direction:
-            rows.append(ParsedSpeech(speaker=None, transcript=text, kind=SpeechKind.CHAMBER_EVENT))
-        # NOTE: punctuation left after a direction ("[Interruption]-") belongs to the interrupted speech, so it stays on the direction row.
-        elif rows and _ALPHANUMERIC_RE.search(text) is None:
-            rows[-1].transcript += text.rstrip()
+    paragraph_parts: list[str] = []
+    event_rows: list[ParsedSpeech] = []
+    for text, is_event in parts:
+        full_stop = _EVENT_FULL_STOP_RE.search(text) if is_event else None
+        # NOTE: a full stop after the brackets ends the sentence the event cut, so it goes back to the paragraph unless that already ends one.
+        is_full_stop_returned = full_stop is not None and bool(paragraph_parts) and _SENTENCE_FINAL_RE.search(paragraph_parts[-1]) is None
+        if is_full_stop_returned:
+            paragraph_parts[-1] += "."
+            event_text = _EMPTY_EMPHASIS_TAIL_RE.sub("", text[: full_stop.start(1)] + text[full_stop.end(1):])
+            event_rows.append(ParsedSpeech(speaker=None, transcript=event_text, kind=SpeechKind.CHAMBER_EVENT))
+        elif is_event:
+            event_rows.append(ParsedSpeech(speaker=None, transcript=text, kind=SpeechKind.CHAMBER_EVENT))
+        # NOTE: punctuation left after an event ("[Interruption]-") belongs to the interrupted speech, so it stays on the event row.
+        elif event_rows and _ALPHANUMERIC_RE.search(text) is None:
+            event_rows[-1].transcript += text.rstrip()
         elif text.strip():
-            rows.append(ParsedSpeech(speaker=speech.speaker, transcript=text.strip(), kind=speech.kind))
-    return rows
+            paragraph_parts.append(text.strip())
+    if not paragraph_parts:
+        return event_rows
+    # NOTE: the paragraph stays whole so no sentence is cut; the events follow it, so their place inside it is lost.
+    return [ParsedSpeech(speaker=speech.speaker, transcript=" ".join(paragraph_parts), kind=speech.kind), *event_rows]
 
 
-def _split_stage_directions(speeches: list[ParsedSpeech]) -> list[ParsedSpeech]:
+def _split_chamber_events(speeches: list[ParsedSpeech]) -> list[ParsedSpeech]:
     return [
         row
         for speech in speeches
-        for row in ([speech] if speech.speaker is None else _split_speech_at_directions(speech))
+        for row in ([speech] if speech.speaker is None else _split_speech_at_chamber_events(speech))
     ]
 
 
@@ -957,7 +970,7 @@ def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type:
 
 
 def get_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
-    speeches = _split_stage_directions(_get_unsplit_speeches(markdown, start_of_speech_line, report_type, report_version))
+    speeches = _split_chamber_events(_get_unsplit_speeches(markdown, start_of_speech_line, report_type, report_version))
     unmarked_speeches = [
         ParsedSpeech(speaker=speech.speaker, transcript=speech.transcript.replace(_BOLD_MARKER, ""), kind=speech.kind)
         for speech in speeches
