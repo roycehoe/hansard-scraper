@@ -4,6 +4,7 @@ from sqlalchemy import Index, text
 from sqlmodel import Field, Relationship, SQLModel
 
 from database.report import Report
+from enums import SpeechKind
 
 
 class Speech(SQLModel, table=True):
@@ -16,6 +17,7 @@ class Speech(SQLModel, table=True):
     ordinal: int
     speaker: Optional[str]
     transcript: str
+    kind: Optional[SpeechKind] = None
 
     report_id: Optional[int] = Field(default=None, foreign_key="report.id", index=True)
     report: Report = Relationship(back_populates="speeches")
