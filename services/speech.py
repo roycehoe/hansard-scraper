@@ -70,7 +70,7 @@ _NEWER_SYSTEM_NAME_TRAILING_CHARS = ". "
 _NEWER_SYSTEM_START_LINE = -1
 
 _SPEAKER_HONORIFIC_RE = re.compile(
-    r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|Inche|Tuan|Haji|The|Er)\b"
+    r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|Inche|Tuan|Haji|The|Er|Encik|BG|MG|RAdm|Maj|Cdre|Tun|Dato)\b"
 )
 
 _PROCEDURAL_STAGE_RE = re.compile(
