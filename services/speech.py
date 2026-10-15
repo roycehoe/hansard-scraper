@@ -76,6 +76,8 @@ _PROCEDURAL_STAGE_RE = re.compile(
     re.IGNORECASE,
 )
 
+_TABLE_CAPTION_RE = re.compile(r"^_?Table\b")
+
 _PROCEDURAL_LINE_ANCHORS = (
     r"Question (?:put,? and agreed to|proposed|again proposed)",
     r"Question put,? and negatived",
@@ -508,6 +510,8 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                     speeches.append(ParsedSpeech(speaker=current_speaker, transcript=(prefix + body).strip()))
                 continue
             if _PROCEDURAL_STAGE_RE.match(new_speaker):
+                continue
+            if _TABLE_CAPTION_RE.match(new_speaker):
                 continue
             if (
                 "$" in new_speaker
