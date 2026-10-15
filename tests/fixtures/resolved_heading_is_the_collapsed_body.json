@@ -1,0 +1,16 @@
+{
+  "why": "A report whose only body is a heading \"Resolved, That the proceedings ... exempted\" lost its single line to the leading-title skip; a Resolved line is the body, not a title.",
+  "source_report_id": 7427,
+  "report_version": "sprs3",
+  "report_type": "motion",
+  "title": "Exempted Business",
+  "subtitle": null,
+  "original_title": "Exempted Business",
+  "html": "<h6>[(proc text) Resolved, \"That the proceedings on the business set down on the Order Paper for today be exempted at today's Sitting from the provisions of Standing Order No 2.\" – [Ms Indranee Rajah] (proc text)]</h6>",
+  "expected_rows": [
+    [
+      "Ms Indranee Rajah",
+      "Resolved, \"That the proceedings on the business set down on the Order Paper for today be exempted at today's Sitting from the provisions of Standing Order No 2.\" – [Ms Indranee Rajah]"
+    ]
+  ]
+}
