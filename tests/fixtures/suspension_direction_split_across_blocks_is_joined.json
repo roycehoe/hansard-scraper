@@ -10,19 +10,23 @@
   "expected_rows": [
     [
       "Mr Speaker",
-      "Order. I suspend the Sitting and will take the Chair at 5.15 pm."
+      "Order. I suspend the Sitting and will take the Chair at 5.15 pm.",
+      "SPEECH"
     ],
     [
       null,
-      "_Sitting accordingly suspended at 4.55 pm until 5.15 pm._"
+      "_Sitting accordingly suspended at 4.55 pm until 5.15 pm._",
+      "PROCEDURAL"
     ],
     [
       null,
-      "_Sitting resumed at 5.15 pm_"
+      "_Sitting resumed at 5.15 pm_",
+      "PROCEDURAL"
     ],
     [
       "Mdm Speaker",
-      "Mr Pritam Singh."
+      "Mr Pritam Singh.",
+      "SPEECH"
     ]
   ]
 }

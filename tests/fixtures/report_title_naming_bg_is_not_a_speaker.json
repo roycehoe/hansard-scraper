@@ -10,15 +10,18 @@
   "expected_rows": [
     [
       null,
-      "Resumption of Debate on the Prime Minister's Statement [21st May 1996]."
+      "Resumption of Debate on the Prime Minister's Statement [21st May 1996].",
+      "UNCLASSIFIED"
     ],
     [
       null,
-      "Question again proposed."
+      "Question again proposed.",
+      "PROCEDURAL"
     ],
     [
       "Mr Chng Hee Kok (Tampines GRC)",
-      "Sir, first I would like to declare that I am the Managing Director of a public listed company that is involved in property development and I would like to declare my pecuniary interest."
+      "Sir, first I would like to declare that I am the Managing Director of a public listed company that is involved in property development and I would like to declare my pecuniary interest.",
+      "SPEECH"
     ]
   ]
 }

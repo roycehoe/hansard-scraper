@@ -10,19 +10,23 @@
   "expected_rows": [
     [
       "Mdm Halimah Yacob",
-      "asked the Minister for Health (a) if he will provide a breakdown of the Medisave balances of CPF members by age and income level; (b) how many CPF members have accumulated the Medisave Minimum Sum; and (c) how many CPF members have no Medisave savings at all."
+      "asked the Minister for Health (a) if he will provide a breakdown of the Medisave balances of CPF members by age and income level; (b) how many CPF members have accumulated the Medisave Minimum Sum; and (c) how many CPF members have no Medisave savings at all.",
+      "SPEECH"
     ],
     [
       "Mr Khaw Boon Wan",
-      "Sir, a breakdown of the Medisave balances of CPF members by age and income level is tabulated on Ministry of Health's website. The Clerk of Parliament will now circulate the statistical table to Members, as it will be time-consuming for me to read out those data."
+      "Sir, a breakdown of the Medisave balances of CPF members by age and income level is tabulated on Ministry of Health's website. The Clerk of Parliament will now circulate the statistical table to Members, as it will be time-consuming for me to read out those data.",
+      "SPEECH"
     ],
     [
       null,
-      "[_Copies of table distributed to Members_.]"
+      "[_Copies of table distributed to Members_.]",
+      "CHAMBER_EVENT"
     ],
     [
       "Mr Khaw Boon Wan",
-      "As expected, the average Medisave balance would increase with income level. Likewise, it would also increase with the age of the members, but up to the age of 60."
+      "As expected, the average Medisave balance would increase with income level. Likewise, it would also increase with the age of the members, but up to the age of 60.",
+      "SPEECH"
     ]
   ]
 }

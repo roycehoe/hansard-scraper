@@ -10,31 +10,38 @@
   "expected_rows": [
     [
       "Mr Lee Khoon Choy",
-      "Mr Speaker, Sir, we have heard over and over again that they want to protect parliamentary democracy. That is why I have to bring up examples to show that those who support unconstitutional actions are now describing themselves as protectors of parliamentary democracy. Just one more instance; can you really believe that these people are champions of parliamentary democracy when they are led by a leader who has sworn an oath of allegiance to Joe Stalin?"
+      "Mr Speaker, Sir, we have heard over and over again that they want to protect parliamentary democracy. That is why I have to bring up examples to show that those who support unconstitutional actions are now describing themselves as protectors of parliamentary democracy. Just one more instance; can you really believe that these people are champions of parliamentary democracy when they are led by a leader who has sworn an oath of allegiance to Joe Stalin?",
+      "SPEECH"
     ],
     [
       "An hon. Member",
-      "Khrushchev!"
+      "Khrushchev!",
+      "SPEECH"
     ],
     [
       "Mr Lee Khoon Choy",
-      "Mr Speaker, Sir, we have heard of parliamentary democracy"
+      "Mr Speaker, Sir, we have heard of parliamentary democracy",
+      "SPEECH"
     ],
     [
       null,
-      "[Interruption]-"
+      "[Interruption]-",
+      "CHAMBER_EVENT"
     ],
     [
       "The Chairman",
-      "Order."
+      "Order.",
+      "SPEECH"
     ],
     [
       "Mr Lee Khoon Choy",
-      "I believe that history has proved that parliamentary democracy has failed in this part of the world. You can look around our neighbouring countries"
+      "I believe that history has proved that parliamentary democracy has failed in this part of the world. You can look around our neighbouring countries",
+      "SPEECH"
     ],
     [
       null,
-      "[Interruption]-"
+      "[Interruption]-",
+      "CHAMBER_EVENT"
     ]
   ]
 }

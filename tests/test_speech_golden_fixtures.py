@@ -26,4 +26,4 @@ def test_speeches_match_golden_fixture(fixture_path: Path) -> None:
 
     speeches = get_speeches(markdown, start_of_speech_line, fixture["report_type"], fixture["report_version"])
 
-    assert [[speech.speaker, speech.transcript] for speech in speeches] == fixture["expected_rows"]
+    assert [[speech.speaker, speech.transcript, speech.kind] for speech in speeches] == fixture["expected_rows"]

@@ -10,15 +10,18 @@
   "expected_rows": [
     [
       "Mr Cheo Chai Chen",
-      "asked the Minister for Labour whether the investigation into the explosion at the Sembawang Shipyard on 9th August 1994 is completed and, if so, what are the findings."
+      "asked the Minister for Labour whether the investigation into the explosion at the Sembawang Shipyard on 9th August 1994 is completed and, if so, what are the findings.",
+      "SPEECH"
     ],
     [
       "Dr Lee Boon Yang",
-      "I presume that the Member of Parliament for Nee Soon Central is referring to the explosion in Sembawang Bethlehem Pte Ltd on 9th August 1994."
+      "I presume that the Member of Parliament for Nee Soon Central is referring to the explosion in Sembawang Bethlehem Pte Ltd on 9th August 1994.",
+      "SPEECH"
     ],
     [
       "Dr Lee Boon Yang",
-      "The Committee of Inquiry appointed by the Minister for Labour to inquire into the cause and circumstances of the explosion had completed the inquiry and submitted its report on 3rd December 1994. The findings of the Committee were released and published in the press on 17th December 1994."
+      "The Committee of Inquiry appointed by the Minister for Labour to inquire into the cause and circumstances of the explosion had completed the inquiry and submitted its report on 3rd December 1994. The findings of the Committee were released and published in the press on 17th December 1994.",
+      "SPEECH"
     ]
   ]
 }

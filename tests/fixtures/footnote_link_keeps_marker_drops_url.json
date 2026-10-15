@@ -10,19 +10,23 @@
   "expected_rows": [
     [
       "Assoc Prof Dr Yaacob Ibrahim",
-      "In the Financial Years (FY) 2010 and 2011, Public Service Broadcast (PSB) funding catered for the provision of over 2,000 hours of local productions11 each year, broadcast across MediaCorp's seven free-to-air (FTA) TV channels. This amounted to over 200 programme titles each year."
+      "In the Financial Years (FY) 2010 and 2011, Public Service Broadcast (PSB) funding catered for the provision of over 2,000 hours of local productions11 each year, broadcast across MediaCorp's seven free-to-air (FTA) TV channels. This amounted to over 200 programme titles each year.",
+      "SPEECH"
     ],
     [
       "Assoc Prof Dr Yaacob Ibrahim",
-      "In terms of the genre composition of PSB-funded local programme hours, about 60% comprise news12 and information programmes, which includes current affairs."
+      "In terms of the genre composition of PSB-funded local programme hours, about 60% comprise news12 and information programmes, which includes current affairs.",
+      "SPEECH"
     ],
     [
       null,
-      "11 PSB funding caters for over 4,000 hours of programmes each year, of which over 2,000 are local productions. The remaining hours are acquired programmes, such as educational and arts/culture programmes, which help to supplement the overall PSB content offering."
+      "11 PSB funding caters for over 4,000 hours of programmes each year, of which over 2,000 are local productions. The remaining hours are acquired programmes, such as educational and arts/culture programmes, which help to supplement the overall PSB content offering.",
+      "EDITORIAL_NOTE"
     ],
     [
       null,
-      "12 News programmes receive some PSB funding support, but by and large, MediaCorp is obligated to provide news at its own cost."
+      "12 News programmes receive some PSB funding support, but by and large, MediaCorp is obligated to provide news at its own cost.",
+      "EDITORIAL_NOTE"
     ]
   ]
 }

@@ -10,27 +10,33 @@
   "expected_rows": [
     [
       "Mr Speaker",
-      "Ms Hazel Poa."
+      "Ms Hazel Poa.",
+      "SPEECH"
     ],
     [
       "Ms Hazel Poa (Non-Constituency Member)",
-      "Mr Speaker, Sir, I beg to move*, \"That this House calls on the Government to review the process by which electoral boundaries are determined in order to increase the transparency and fairness of the electoral boundary review process for all political parties.\""
+      "Mr Speaker, Sir, I beg to move*, \"That this House calls on the Government to review the process by which electoral boundaries are determined in order to increase the transparency and fairness of the electoral boundary review process for all political parties.\"",
+      "SPEECH"
     ],
     [
       "Mr Speaker",
-      "Before I proceed to declare the results of the vote, are there any Members who wish to claim that their vote has not been recorded correctly?"
+      "Before I proceed to declare the results of the vote, are there any Members who wish to claim that their vote has not been recorded correctly?",
+      "SPEECH"
     ],
     [
       "Mr Speaker",
-      "I do not see any. I will proceed to declare the voting results now. There are 10 \"Ayes\", \"76 Noes\", no \"Abstentions\". The \"Noes\" have it."
+      "I do not see any. I will proceed to declare the voting results now. There are 10 \"Ayes\", \"76 Noes\", no \"Abstentions\". The \"Noes\" have it.",
+      "SPEECH"
     ],
     [
       null,
-      "Question, \"That this House calls on the Government to review the process by which electoral boundaries are determined in order to increase the transparency and fairness of the electoral boundary review process for all political parties\", put and negatived."
+      "Question, \"That this House calls on the Government to review the process by which electoral boundaries are determined in order to increase the transparency and fairness of the electoral boundary review process for all political parties\", put and negatived.",
+      "PROCEDURAL"
     ],
     [
       "Mr Speaker",
-      "Leader of the House."
+      "Leader of the House.",
+      "SPEECH"
     ]
   ]
 }

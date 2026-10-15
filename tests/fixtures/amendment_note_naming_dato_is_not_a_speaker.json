@@ -10,35 +10,43 @@
   "expected_rows": [
     [
       "Mr Ong Chang Sam",
-      "Sir, can I take amendments* (7) to (11) together?"
+      "Sir, can I take amendments* (7) to (11) together?",
+      "SPEECH"
     ],
     [
       null,
-      "*Amendments (7) to (11), standing in the names of Mr Ong Chang Sum, reads as follows:"
+      "*Amendments (7) to (11), standing in the names of Mr Ong Chang Sum, reads as follows:",
+      "EDITORIAL_NOTE"
     ],
     [
       "Mr Ong Chang Sam",
-      "(7) That the sum to allocated for Head D58 be reduced by $10 in respect of item (1) of subhead 11."
+      "(7) That the sum to allocated for Head D58 be reduced by $10 in respect of item (1) of subhead 11.",
+      "SPEECH"
     ],
     [
       "Mr Ong Chang Sam",
-      "(8) That the sum to allocated for Head D58 be reduced by $10 in respect of item (3) of subhead 11."
+      "(8) That the sum to allocated for Head D58 be reduced by $10 in respect of item (3) of subhead 11.",
+      "SPEECH"
     ],
     [
       null,
-      "(9) That the sum to allocated for Head D58 be reduced by $10 in respect of item (7) of subhead 11."
+      "(9) That the sum to allocated for Head D58 be reduced by $10 in respect of item (7) of subhead 11.",
+      "DOCUMENT_TEXT"
     ],
     [
       null,
-      "(10) That the sum to be allocated for Head D58 be reduced by $10 in respect of item (6) of subhead 12."
+      "(10) That the sum to be allocated for Head D58 be reduced by $10 in respect of item (6) of subhead 12.",
+      "DOCUMENT_TEXT"
     ],
     [
       null,
-      "(11) That the sum to be allocated for Head D58 be reduced by $10 in respect of item (7) of subhead 12."
+      "(11) That the sum to be allocated for Head D58 be reduced by $10 in respect of item (7) of subhead 12.",
+      "DOCUMENT_TEXT"
     ],
     [
       "The Chairman",
-      "Are they all connected?"
+      "Are they all connected?",
+      "SPEECH"
     ]
   ]
 }

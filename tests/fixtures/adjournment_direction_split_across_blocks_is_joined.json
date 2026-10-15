@@ -10,15 +10,18 @@
   "expected_rows": [
     [
       "Mr Speaker",
-      "The House stands adjourned."
+      "The House stands adjourned.",
+      "SPEECH"
     ],
     [
       null,
-      "Question put, and agreed to."
+      "Question put, and agreed to.",
+      "PROCEDURAL"
     ],
     [
       null,
-      "Adjourned accordingly at Three Minutes past Seven o'clock p.m. to a date to be fixed."
+      "Adjourned accordingly at Three Minutes past Seven o'clock p.m. to a date to be fixed.",
+      "PROCEDURAL"
     ]
   ]
 }

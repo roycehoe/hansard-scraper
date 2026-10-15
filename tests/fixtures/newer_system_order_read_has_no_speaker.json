@@ -10,31 +10,38 @@
   "expected_rows": [
     [
       null,
-      "Order for Second Reading read."
+      "Order for Second Reading read.",
+      "PROCEDURAL"
     ],
     [
       "The Second Minister for Finance (Ms Indranee Rajah) (for the Minister for Finance)",
-      "Mr Speaker, I beg to move, \"That the Bill be now read a Second time.\""
+      "Mr Speaker, I beg to move, \"That the Bill be now read a Second time.\"",
+      "SPEECH"
     ],
     [
       "The Second Minister for Finance (Ms Indranee Rajah) (for the Minister for Finance)",
-      "The Companies and Limited Liability Partnerships CLLP (Miscellaneous Amendments) Bill, or the CLLP Bill, is associated with the previous Bill on the Order Paper, The Corporate Services Providers Bill (CSP Bill). The main amendments of the CLLP Bill were explained in my Second Reading speech of the CSP Bill earlier and the substance of this Bill was debated concurrently with the CSP Bill earlier. Mr Speaker, I beg to move."
+      "The Companies and Limited Liability Partnerships CLLP (Miscellaneous Amendments) Bill, or the CLLP Bill, is associated with the previous Bill on the Order Paper, The Corporate Services Providers Bill (CSP Bill). The main amendments of the CLLP Bill were explained in my Second Reading speech of the CSP Bill earlier and the substance of this Bill was debated concurrently with the CSP Bill earlier. Mr Speaker, I beg to move.",
+      "SPEECH"
     ],
     [
       null,
-      "Question put, and agreed to."
+      "Question put, and agreed to.",
+      "PROCEDURAL"
     ],
     [
       null,
-      "Bill accordingly read a Second time and committed to a Committee of the whole House."
+      "Bill accordingly read a Second time and committed to a Committee of the whole House.",
+      "PROCEDURAL"
     ],
     [
       null,
-      "The House immediately resolved itself into a Committee on the Bill. – [Ms Indranee Rajah]."
+      "The House immediately resolved itself into a Committee on the Bill. – [Ms Indranee Rajah].",
+      "PROCEDURAL"
     ],
     [
       null,
-      "Bill considered in Committee; reported without amendment; read a Third time and passed."
+      "Bill considered in Committee; reported without amendment; read a Third time and passed.",
+      "PROCEDURAL"
     ]
   ]
 }

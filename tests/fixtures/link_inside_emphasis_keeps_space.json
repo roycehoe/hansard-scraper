@@ -10,15 +10,18 @@
   "expected_rows": [
     [
       null,
-      "Order for Second Reading read."
+      "Order for Second Reading read.",
+      "PROCEDURAL"
     ],
     [
       "Mr Gan Thiam Poh (Pasir Ris-Punggol)",
-      "Mr Speaker, Sir, thank you for allowing me to join the debate. I will speak in Mandarin first."
+      "Mr Speaker, Sir, thank you for allowing me to join the debate. I will speak in Mandarin first.",
+      "SPEECH"
     ],
     [
       "Mr Gan Thiam Poh (Pasir Ris-Punggol)",
-      "[_Please refer to Pg 368-369 for Vernacular Speeches._] Mr Speaker, Sir, food, clothing, shelter and transport are basic necessities of life. People have been seeking a perfect transport solution that is convenient, fast, safe, reliable and economical. In ancient times, people looked for horses that run a thousand miles a day, while in current times, we look to MRTs and high speed trains."
+      "[_Please refer to Pg 368-369 for Vernacular Speeches._] Mr Speaker, Sir, food, clothing, shelter and transport are basic necessities of life. People have been seeking a perfect transport solution that is convenient, fast, safe, reliable and economical. In ancient times, people looked for horses that run a thousand miles a day, while in current times, we look to MRTs and high speed trains.",
+      "SPEECH"
     ]
   ]
 }

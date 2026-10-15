@@ -10,91 +10,113 @@
   "expected_rows": [
     [
       null,
-      "Head 53 -"
+      "Head 53 -",
+      "HEADING"
     ],
     [
       null,
-      "The following amendments stood in the name of Inche Ahmad Jabri bin Mohammad Akib -"
+      "The following amendments stood in the name of Inche Ahmad Jabri bin Mohammad Akib -",
+      "PROCEDURAL"
     ],
     [
       null,
-      "That the sum to be allocated for Head 53 be reduced by $10 in respect of item (2) of subhead 1."
+      "That the sum to be allocated for Head 53 be reduced by $10 in respect of item (2) of subhead 1.",
+      "DOCUMENT_TEXT"
     ],
     [
       null,
-      "That the sum to be allocated for Head 53 be reduced by $10 in respect of subhead 4."
+      "That the sum to be allocated for Head 53 be reduced by $10 in respect of subhead 4.",
+      "DOCUMENT_TEXT"
     ],
     [
       "The Chairman",
-      "Inche Ahmad Jabri?"
+      "Inche Ahmad Jabri?",
+      "SPEECH"
     ],
     [
       "Inche Ahmad Jabri",
-      "I am not moving both my amendments."
+      "I am not moving both my amendments.",
+      "SPEECH"
     ],
     [
       "Dr Thio Chan Bee (Tanglin)",
-      "Mr Speaker, Sir, I beg to move,"
+      "Mr Speaker, Sir, I beg to move,",
+      "SPEECH"
     ],
     [
       "Dr Thio Chan Bee (Tanglin)",
-      "That the total sum to be allocated for Head 53 be reduced by $100."
+      "That the total sum to be allocated for Head 53 be reduced by $100.",
+      "SPEECH"
     ],
     [
       "Dr Thio Chan Bee (Tanglin)",
-      "Sir, at the time of the Bukit Ho Swee Fire many people were asking themselves this question: Why should Government have to wait for a big fire before building houses to rehouse these attap-house dwellers? The Fire Brigade cannot control a fire that breaks out in an attap-house area if the wind is blowing strongly. Therefore, it would be a pity if the Fire Brigade is unable to prevent an occurrence like this once in three years, because if the money that has to be spent to relieve these fire victims could be spent before the fire, it would save the fire victims, the public and the Fire Brigade too, a large expenditure of money and effort."
+      "Sir, at the time of the Bukit Ho Swee Fire many people were asking themselves this question: Why should Government have to wait for a big fire before building houses to rehouse these attap-house dwellers? The Fire Brigade cannot control a fire that breaks out in an attap-house area if the wind is blowing strongly. Therefore, it would be a pity if the Fire Brigade is unable to prevent an occurrence like this once in three years, because if the money that has to be spent to relieve these fire victims could be spent before the fire, it would save the fire victims, the public and the Fire Brigade too, a large expenditure of money and effort.",
+      "SPEECH"
     ],
     [
       "Dr Thio Chan Bee (Tanglin)",
-      "Another suggestion made is this, If the Fire Brigade could suggest preventive measures to reduce the fire risks in these areas, that would be another way to prevent a tragedy like this from happening regularly. I have been told, Sir, that in these attap-house areas if they changed the roofings of attap to zinc or aluminum roofings, then the Finance Ministry would come along and say that the property tax must be increased."
+      "Another suggestion made is this, If the Fire Brigade could suggest preventive measures to reduce the fire risks in these areas, that would be another way to prevent a tragedy like this from happening regularly. I have been told, Sir, that in these attap-house areas if they changed the roofings of attap to zinc or aluminum roofings, then the Finance Ministry would come along and say that the property tax must be increased.",
+      "SPEECH"
     ],
     [
       "The Chairman",
-      "We are now on the Fire Brigade and not on housing. Let us not talk about attap houses as against zinc houses. I should imagine that if the Member wishes to speak about the Fire Brigade on this vote, he should indicate how the Fire Brigade has failed, whether expansion is necessary and 50 on and so forth-not on housing."
+      "We are now on the Fire Brigade and not on housing. Let us not talk about attap houses as against zinc houses. I should imagine that if the Member wishes to speak about the Fire Brigade on this vote, he should indicate how the Fire Brigade has failed, whether expansion is necessary and 50 on and so forth-not on housing.",
+      "SPEECH"
     ],
     [
       "Dr Thio Chan Bee",
-      "Mr Speaker. Sir, the vote for the Fire Brigade comes to nearly $2½ million. If by preventive measures fire risks could be reduced, then we could reduce the expenditure. All this tragedy would not have happened. Simple measures like the Fire Brigade people going round to advise the people on changing their roofing would be of greater help. But there is one obstacle, Sir. The property tax people say this thing cannot be done without increasing the property tax. This is where perhaps one Ministry could help another."
+      "Mr Speaker. Sir, the vote for the Fire Brigade comes to nearly $2½ million. If by preventive measures fire risks could be reduced, then we could reduce the expenditure. All this tragedy would not have happened. Simple measures like the Fire Brigade people going round to advise the people on changing their roofing would be of greater help. But there is one obstacle, Sir. The property tax people say this thing cannot be done without increasing the property tax. This is where perhaps one Ministry could help another.",
+      "SPEECH"
     ],
     [
       "The Chairman",
-      "The Question is, \"That the total sum to be allocated for Head 53 be reduced by $100.\" I do not know whether the Minister has anything to answer there."
+      "The Question is, \"That the total sum to be allocated for Head 53 be reduced by $100.\" I do not know whether the Minister has anything to answer there.",
+      "SPEECH"
     ],
     [
       "Mr Ong Pang Boon",
-      "Mr Speaker, Sir, actually it is more a question of housing than the Fire Brigade. However, I wish to inform the Member for Tanglin that it is precisely because of these fire hazards that the Government is spending millions of dollars each year to build new flats, which will be more tire-proof, and we hope with the successful conclusion of the Four-Year Development Plan on housing, such large fires as the Bukit Ho Swee fire will not occur again."
+      "Mr Speaker, Sir, actually it is more a question of housing than the Fire Brigade. However, I wish to inform the Member for Tanglin that it is precisely because of these fire hazards that the Government is spending millions of dollars each year to build new flats, which will be more tire-proof, and we hope with the successful conclusion of the Four-Year Development Plan on housing, such large fires as the Bukit Ho Swee fire will not occur again.",
+      "SPEECH"
     ],
     [
       "Mr Ong Pang Boon",
-      "Mr Speaker, Sir, the Fire Brigade may be in a position to suggest ways and means of preventing fire, such as the use of inflammable materials for houses and so forth. But all this, Mr Speaker, Sir, is -"
+      "Mr Speaker, Sir, the Fire Brigade may be in a position to suggest ways and means of preventing fire, such as the use of inflammable materials for houses and so forth. But all this, Mr Speaker, Sir, is -",
+      "SPEECH"
     ],
     [
       "The Chairman",
-      "Non-inflammable."
+      "Non-inflammable.",
+      "SPEECH"
     ],
     [
       "Mr Ong Pang Boon",
-      "- non-inflammable materials for houses and so forth. But, Mr Speaker, all this is to a large extent tied up with the economic conditions of the people. I mean, all the non-inflammable materials invariably are more expensive than attap and planks. Therefore, many of the suggestions of the Fire Brigade are just not within the means of these attap-house dwellers to carry out. That is where the Housing Board has come in to build low-cost houses for these attap-house dwellers."
+      "- non-inflammable materials for houses and so forth. But, Mr Speaker, all this is to a large extent tied up with the economic conditions of the people. I mean, all the non-inflammable materials invariably are more expensive than attap and planks. Therefore, many of the suggestions of the Fire Brigade are just not within the means of these attap-house dwellers to carry out. That is where the Housing Board has come in to build low-cost houses for these attap-house dwellers.",
+      "SPEECH"
     ],
     [
       "Mrs Seow Peck Leng",
-      "Mr Speaker, Sir, I wonder whether the Minister could give some consideration to this suggestion. During the life of the previous Government some kampongs has fire extinguishers provided together with one or two firemen going round and forming a squad of about 20 kampong people depending on the size of the kampong, to teach them how to use these fire extinguishers and to be on call should there be a fire to prevent the fire spreading. I find that these fire extinguishers have now gone dry; the 20 people have gone off the list, and nobody knows who they are because the list has not been renewed. If the Assemblyman concerned for that area were to approach the Minister and give him the details, could we get help along those lines?"
+      "Mr Speaker, Sir, I wonder whether the Minister could give some consideration to this suggestion. During the life of the previous Government some kampongs has fire extinguishers provided together with one or two firemen going round and forming a squad of about 20 kampong people depending on the size of the kampong, to teach them how to use these fire extinguishers and to be on call should there be a fire to prevent the fire spreading. I find that these fire extinguishers have now gone dry; the 20 people have gone off the list, and nobody knows who they are because the list has not been renewed. If the Assemblyman concerned for that area were to approach the Minister and give him the details, could we get help along those lines?",
+      "SPEECH"
     ],
     [
       "Mr Ong Pang Boon",
-      "Mr Speaker, Sir, if the Member for Mountbatten were to make a request to the Fire Brigade for the setting up of a fire-fighting squad in whichever kampong she thinks necessary, I am sure the Fire Brigade would only be too glad to do so. In fact, there are at the moment 72 kampong fire-fighting squads in 28 kampongs. These squads have all received training and equipment from the Fire Brigade. They were recruited in order to fight fires in the incipient stage within their own kampongs before the arrival of the Singapore Fire Brigade. I can assure the Member for Mountbatten that if she were to put up a request, it would be favourably considered."
+      "Mr Speaker, Sir, if the Member for Mountbatten were to make a request to the Fire Brigade for the setting up of a fire-fighting squad in whichever kampong she thinks necessary, I am sure the Fire Brigade would only be too glad to do so. In fact, there are at the moment 72 kampong fire-fighting squads in 28 kampongs. These squads have all received training and equipment from the Fire Brigade. They were recruited in order to fight fires in the incipient stage within their own kampongs before the arrival of the Singapore Fire Brigade. I can assure the Member for Mountbatten that if she were to put up a request, it would be favourably considered.",
+      "SPEECH"
     ],
     [
       "Dr Thio Chan Bee",
-      "Mr Speaker, Sir, I shall discuss this in the Development Estimates. I withdraw this amendment."
+      "Mr Speaker, Sir, I shall discuss this in the Development Estimates. I withdraw this amendment.",
+      "SPEECH"
     ],
     [
       null,
-      "Amendment, by leave, withdrawn."
+      "Amendment, by leave, withdrawn.",
+      "PROCEDURAL"
     ],
     [
       null,
-      "The sum of $2,449,510 for Head 53 ordered to stand part of the Estimates."
+      "The sum of $2,449,510 for Head 53 ordered to stand part of the Estimates.",
+      "PROCEDURAL"
     ]
   ]
 }

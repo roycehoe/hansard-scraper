@@ -10,23 +10,28 @@
   "expected_rows": [
     [
       "Mr Deputy Speaker",
-      "Order. Pursuant to Standing Order No 2(5)(d), I propose to extend the time of this day's Sitting beyond the moment of interruption for a period of up to 30 minutes. Mr Edwin Tong, you have another two minutes. If you are unlikely to finish within two minutes, then I will ask for an exemption of Standing Order 48 for you."
+      "Order. Pursuant to Standing Order No 2(5)(d), I propose to extend the time of this day's Sitting beyond the moment of interruption for a period of up to 30 minutes. Mr Edwin Tong, you have another two minutes. If you are unlikely to finish within two minutes, then I will ask for an exemption of Standing Order 48 for you.",
+      "SPEECH"
     ],
     [
       "Mr Edwin Tong Chun Fai",
-      "I thought you said five minutes."
+      "I thought you said five minutes.",
+      "SPEECH"
     ],
     [
       "Mr Deputy Speaker",
-      "Time is moving"
+      "Time is moving",
+      "SPEECH"
     ],
     [
       null,
-      "[_Laughter_]."
+      "[_Laughter_].",
+      "CHAMBER_EVENT"
     ],
     [
       "Mr Deputy Speaker",
-      "Order. Minister Desmond Lee can apply for exemption."
+      "Order. Minister Desmond Lee can apply for exemption.",
+      "SPEECH"
     ]
   ]
 }

@@ -10,47 +10,58 @@
   "expected_rows": [
     [
       "Mr T. M. Hart",
-      "Sir, I have His Excellency the Governor's authority to move,"
+      "Sir, I have His Excellency the Governor's authority to move,",
+      "SPEECH"
     ],
     [
       "Mr T. M. Hart",
-      "Intoxicating Liquors.                  Duty."
+      "Intoxicating Liquors.                  Duty.",
+      "SPEECH"
     ],
     [
       "Mr T. M. Hart",
-      "$  c."
+      "$  c.",
+      "SPEECH"
     ],
     [
       "Mr T. M. Hart",
-      "(a) Samsu (including Medicated Samsu)  27 00 per proof gallon."
+      "(a) Samsu (including Medicated Samsu)  27 00 per proof gallon.",
+      "SPEECH"
     ],
     [
       "Mr T. M. Hart",
-      "(b) Ale, Beer, Stout, Porter, Cider"
+      "(b) Ale, Beer, Stout, Porter, Cider",
+      "SPEECH"
     ],
     [
       "Mr T. M. Hart",
-      "and Perry                           4 80 per gallon."
+      "and Perry                           4 80 per gallon.",
+      "SPEECH"
     ],
     [
       "Mr T. M. Hart",
-      "II. The duty payable upon intoxicating liquors distilled, fermented, made or prepared in any place licensed under the Liquors Revenue Ordinance for the distillation, fermentation, making or preparation of intoxicating liquors shall be: -"
+      "II. The duty payable upon intoxicating liquors distilled, fermented, made or prepared in any place licensed under the Liquors Revenue Ordinance for the distillation, fermentation, making or preparation of intoxicating liquors shall be: -",
+      "SPEECH"
     ],
     [
       "Mr T. M. Hart",
-      "Governments  in the Dominions under Trusteeship or the British Pro-tectorates and Protected States, the Trust"
+      "Governments  in the Dominions under Trusteeship or the British Pro-tectorates and Protected States, the Trust",
+      "SPEECH"
     ],
     [
       "Mr T. M. Hart",
-      "Territories shall be levied thereon."
+      "Territories shall be levied thereon.",
+      "SPEECH"
     ],
     [
       "Mr T. M. Hart",
-      "No duty shall be levied."
+      "No duty shall be levied.",
+      "SPEECH"
     ],
     [
       "Mr T. M. Hart",
-      "The increases in duty have been in force since that date."
+      "The increases in duty have been in force since that date.",
+      "SPEECH"
     ]
   ]
 }
