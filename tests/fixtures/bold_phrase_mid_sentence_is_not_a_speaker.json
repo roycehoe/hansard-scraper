@@ -1,0 +1,24 @@
+{
+  "why": "A bold phrase in mid-sentence ('... the explosion in **Sembawang Bethlehem Pte Ltd on 9th August 1994**.') was taken as a speaker label: the text before it was lost and the answer went to the phrase.",
+  "source_report_id": 28253,
+  "report_version": "sprs2",
+  "report_type": "written-answer",
+  "title": "SEMBAWANG SHIPYARD EXPLOSION",
+  "subtitle": null,
+  "original_title": "SEMBAWANG SHIPYARD EXPLOSION",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n\n<head>\n\n\n\n<meta http-equiv=\"Content-Type\" content=\"text/html;charset=iso-8859-1\">\n\n<meta name=\"Parl_No\" content=\"8\">\n\n<meta name=\"Sess_No\" content=\"2\">\n\n<meta name=\"Vol_No\" content=\"65\">\n\n<meta name=\"Sit_No\" content=\"1\">\n\n<meta name=\"Sit_Date\" content=\"1995-11-01\">\n\n<meta name=\"Sect_Name\" content=\"WRITTEN ANSWERS TO QUESTIONS\">\n\n<meta name=\"Title\" content=\"SEMBAWANG SHIPYARD EXPLOSION\">\n\n<meta name=\"MP_Speak\" content=\"Dr Lee Boon Yang (Minister for Labour); Mr Cheo Chai Chen;\">\n\n<meta name=\"Start_Col\" content=\"151\">\n\n<meta name=\"End_Col\" content=\"151\">\n\n</head>\n\n<body>\n\n\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\"><tr><td>\n\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">8</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">2</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">65</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">01-11-1995</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">WRITTEN ANSWERS TO QUESTIONS</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">SEMBAWANG SHIPYARD EXPLOSION</font></td></tr>\n\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Dr Lee Boon Yang (Minister for Labour); Mr Cheo Chai Chen;</font></td></tr>\n\n</table></td></tr>\n\n</table>\n\n<br><br><font size=\"1\"><b>Column: 151</b></font><br><br>\n\n\n\n<div align=\"center\"><b>SEMBAWANG SHIPYARD EXPLOSION</b></div>\n\n<br><br><!-- Mr Cheo Chai Chen -->&nbsp;&nbsp;&nbsp;&nbsp;12. <b>Mr Cheo Chai Chen</b> asked the Minister for Labour whether the\n\ninvestigation into the explosion at the Sembawang Shipyard on 9th\n\nAugust 1994 is completed and, if so, what are the findings.\n\n\n\n<br><br><!-- Dr Lee Boon Yang -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Dr Lee Boon Yang:</b>\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;I presume that the Member of Parliament for Nee Soon Central\n\nis referring to the explosion in <b>Sembawang Bethlehem Pte Ltd on\n\n9th August 1994</b>.\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;The Committee of Inquiry appointed by the Minister for\n\nLabour to inquire into the cause and circumstances of the\n\nexplosion had completed the inquiry and submitted its report on\n\n3rd December 1994. The findings of the Committee were released\n\nand published in the press on 17th December 1994.\n\n\n\n\n\n</body>\n\n</html>\n\n",
+  "expected_rows": [
+    [
+      "Mr Cheo Chai Chen",
+      "asked the Minister for Labour whether the investigation into the explosion at the Sembawang Shipyard on 9th August 1994 is completed and, if so, what are the findings."
+    ],
+    [
+      "Dr Lee Boon Yang",
+      "I presume that the Member of Parliament for Nee Soon Central is referring to the explosion in **Sembawang Bethlehem Pte Ltd on 9th August 1994**."
+    ],
+    [
+      "Dr Lee Boon Yang",
+      "The Committee of Inquiry appointed by the Minister for Labour to inquire into the cause and circumstances of the explosion had completed the inquiry and submitted its report on 3rd December 1994. The findings of the Committee were released and published in the press on 17th December 1994."
+    ]
+  ]
+}
