@@ -30,6 +30,7 @@ _PROC_TEXT_PAIR_PATTERN = r"\[\s*\(proc text\)\s*(.*?)\s*\(proc text\)\s*\]"
 _PROC_TEXT_LONE_PATTERN = r"\[?\s*\(proc text\)\s*\]?"
 _ESCAPED_TEXT_CHARACTER_PATTERN = r"\\([\\.+\-])"
 _DATA_IMAGE_PATTERN = r"<img[^>]*src=\"data:[^\"]*\"[^>]*>"
+_SPACE_BEFORE_ANCHOR_PATTERN = r"(\s+)(<a\b[^>]*>)"
 
 
 def _replace_nbsp_only_emphasis_with_space(html: str) -> str:
@@ -38,6 +39,11 @@ def _replace_nbsp_only_emphasis_with_space(html: str) -> str:
 
 def _replace_nbsp_with_space(html: str) -> str:
     return html.replace(_NBSP_ENTITY, " ")
+
+
+def _move_space_into_anchor(html: str) -> str:
+    # NOTE: html2text strips the space ending the first text inside emphasis, so "to <a>" glued as "toAppendix".
+    return re.sub(_SPACE_BEFORE_ANCHOR_PATTERN, r"\2\1", html, flags=re.IGNORECASE)
 
 
 def _unescape_text_characters(markdown: str) -> str:
@@ -119,7 +125,7 @@ def get_cleaned_report_markdown(html: str, report_version: str) -> str:
         html = _prepare_newer_system_html(html)
     converter = html2text.HTML2Text(bodywidth=0)
     converter.ignore_links = True
-    markdown = _postprocess_markdown_base(converter.handle(_preprocess_html(html)))
+    markdown = _postprocess_markdown_base(converter.handle(_move_space_into_anchor(_preprocess_html(html))))
     markdown = _flatten_leading_nested_bold(markdown)
     return _unescape_text_characters(markdown)
 
