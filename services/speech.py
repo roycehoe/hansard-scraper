@@ -70,8 +70,10 @@ _NEWER_SYSTEM_NAME_TRAILING_CHARS = ". "
 _NEWER_SYSTEM_START_LINE = -1
 
 _SPEAKER_HONORIFIC_RE = re.compile(
-    r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|Inche|Tuan|Haji|The|Er|Encik|BG|MG|RAdm|Maj|Cdre|Tun|Dato)\b"
+    r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|Inche|Tuan|Haji|The|Er)\b"
 )
+# NOTE: these titles count only at the start of a label, because a report title or an amendment note names members after them ("BG LEE HSIEN LOONG (Statement ...)").
+_LEADING_TITLE_RE = re.compile(r"^(?:Encik|BG|MG|RAdm|Maj|Cdre|Tun|Dato)\b")
 
 _PROCEDURAL_STAGE_RE = re.compile(
     r"^(First|Second|Third)\s+Reading$|^Committee$|^,$|^Year$",
@@ -322,7 +324,7 @@ def _is_section_header_speaker(name: str) -> bool:
     stripped = name.strip()
     if not stripped:
         return False
-    if _SPEAKER_HONORIFIC_RE.search(stripped):
+    if _has_speaker_honorific(stripped):
         return False
     if _SPEAKER_ROLE_WORD_RE.search(stripped):
         return False
@@ -569,8 +571,14 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
     return speeches
 
 
+def _has_speaker_honorific(text: str) -> bool:
+    return _SPEAKER_HONORIFIC_RE.search(text) is not None or _LEADING_TITLE_RE.match(text) is not None
+
+
 def _is_speaker_name(name: str) -> bool:
     honorifics = _SPEAKER_HONORIFIC_RE.findall(name)
+    if _LEADING_TITLE_RE.match(name) is not None:
+        return True
     if not honorifics:
         return False
     if any(honorific != _DEFINITE_ARTICLE for honorific in honorifics):
@@ -585,7 +593,7 @@ def _is_bold_mid_sentence(line: str) -> bool:
     if bold_match is None:
         return False
     bold_text = bold_match.group(0).replace("*", "").strip()
-    if _SPEAKER_HONORIFIC_RE.search(bold_text) or _MISS_RE.search(bold_text) or _DROP_CAP_RE.fullmatch(bold_text):
+    if _has_speaker_honorific(bold_text) or _MISS_RE.search(bold_text) or _DROP_CAP_RE.fullmatch(bold_text):
         return False
     text_before_bold = _LIST_ENUMERATOR_RE.sub("", _LANGUAGE_NOTE_RE.sub("", line[: bold_match.start()]))
     return _LETTER_RE.search(text_before_bold) is not None
@@ -757,14 +765,14 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 "$" in new_speaker
                 or "%" in new_speaker
                 or not _LETTER_RE.search(new_speaker)
-                or (len(new_speaker) > _MAX_SPEAKER_NAME_LENGTH and not _SPEAKER_HONORIFIC_RE.search(new_speaker))
+                or (len(new_speaker) > _MAX_SPEAKER_NAME_LENGTH and not _has_speaker_honorific(new_speaker))
             ):
                 continue
             # NOTE: a parenthesised annotation resets the speaker but an italic subheading sits inside a speech; the check must run before the section-title skip below.
             is_parenthesised_annotation = _PARENTHESISED_RE.match(new_speaker) is not None
             is_section_annotation = (
                 (is_parenthesised_annotation or _ITALIC_HEADING_RE.match(new_speaker) is not None)
-                and not _SPEAKER_HONORIFIC_RE.search(new_speaker)
+                and not _has_speaker_honorific(new_speaker)
             )
             if is_section_annotation:
                 if is_parenthesised_annotation:
