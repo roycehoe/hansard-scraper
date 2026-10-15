@@ -1,0 +1,28 @@
+{
+  "why": "An oath roll ('The following Member took and subscribed the Oath of Allegiance:' and the member's name) was credited to Mdm Speaker.",
+  "source_report_id": 16398,
+  "report_version": "sprs3",
+  "report_type": "admin-oaths",
+  "title": "Administration of Oath",
+  "subtitle": null,
+  "original_title": "Administration of Oath",
+  "html": "<p><strong> Mdm Speaker</strong>: Order. Oath of Allegiance. The hon Member, present to take his seat, will please come forward when his name is called.</p><p>[(proc text) The following Member took and subscribed the Oath of Allegiance: (proc text)]</p><p>[(proc text) Mr Murali Pillai (Bukit Batok) (proc text)]</p><p><strong> Mdm Speaker</strong>:\t<span style=\"color: rgb(51, 51, 51);\">Order. Questions for Oral Answer.</span>&nbsp;&nbsp;&nbsp;&nbsp;</p>",
+  "expected_rows": [
+    [
+      "Mdm Speaker",
+      "Order. Oath of Allegiance. The hon Member, present to take his seat, will please come forward when his name is called."
+    ],
+    [
+      null,
+      "The following Member took and subscribed the Oath of Allegiance:"
+    ],
+    [
+      null,
+      "Mr Murali Pillai (Bukit Batok)"
+    ],
+    [
+      "Mdm Speaker",
+      "Order. Questions for Oral Answer."
+    ]
+  ]
+}
