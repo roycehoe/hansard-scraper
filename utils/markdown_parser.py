@@ -10,6 +10,7 @@ _MAX_ADJOURNMENT_CONTINUATIONS = 6
 _BOLD_MARKER_LENGTH = 2
 _EMPHASIS_MARK = "_"
 _OPENING_BRACKET = "["
+_HYPHEN = "-"
 _CLOSING_BRACKET = "]"
 _COLUMN_MARKER_PATTERN = r"Column(?:\s+No)?\s*:\s*\d+"
 _PAGE_TEXT_PATTERN = r"Page:\s*\d+"
@@ -162,6 +163,12 @@ def _get_page_break_separator(before: str, after: str) -> str:
     return " "
 
 
+def _join_across_emphasis_pair(before: str, after: str) -> str:
+    left = before[:-1]
+    separator = "" if left[-1:].isspace() or left.endswith(_HYPHEN) else " "
+    return left + separator + after[1:].lstrip()
+
+
 def _join_paragraphs_across_page_breaks(markdown: str) -> str:
     lines = []
     is_after_page_break = False
@@ -173,7 +180,7 @@ def _join_paragraphs_across_page_breaks(markdown: str) -> str:
             before = lines[-1].rstrip()
             after = line.lstrip()
             if before.endswith(_EMPHASIS_MARK) and after.startswith(_EMPHASIS_MARK) and _has_unclosed_bracket(before):
-                lines[-1] = before[:-1] + after[1:]
+                lines[-1] = _join_across_emphasis_pair(before, after)
             else:
                 lines[-1] = before + _get_page_break_separator(before, after) + after
         else:
