@@ -41,6 +41,8 @@ _TIME_ABBREVIATION_END_PATTERN = r"[ap]\.m\.[\"')\]*_\s]*$"
 _BLOCK_START_PATTERN = r"^(\*\*|#{1,6}|\* \* \*)"
 _BYTE_ORDER_MARK = "\ufeff"
 _NBSP_ENTITY = "&nbsp;"
+_STRAY_CLOSING_TAG = "</p />"
+_STRAY_OPENING_ANGLE = "<"
 _FOOTNOTE_HASH_MARKER_PATTERN = r"#(?:&nbsp;)+(</sup>)?\s*"
 _AMPERSAND_PATTERN = r"&([A-Za-z][A-Za-z0-9]*|#)?"
 _AMPERSAND_ENTITY = "&amp;"
@@ -315,6 +317,20 @@ def _merge_split_direction_lines(markdown: str) -> str:
     return "\n".join(merged_lines)
 
 
+def _drop_paragraph_repeated_after_stray_tag(markdown: str) -> str:
+    # NOTE: report 24516 prints one paragraph twice around a literal closing tag; only an exact repeat of the paragraph before the tag is dropped.
+    lines = []
+    for line in markdown.splitlines():
+        before, tag, after = line.partition(_STRAY_CLOSING_TAG)
+        repeated_text = after.strip()
+        if not tag or not repeated_text or not before.rstrip().endswith(repeated_text):
+            lines.append(line)
+            continue
+        label = before.rstrip()[: -len(repeated_text)].rstrip().removesuffix(_STRAY_OPENING_ANGLE).rstrip()
+        lines.append(f"{label} {repeated_text}")
+    return "\n".join(lines)
+
+
 def _flatten_leading_nested_bold(markdown: str) -> str:
     return re.sub(_LEADING_NESTED_BOLD_PATTERN, r"**\1\2**", markdown, flags=re.MULTILINE)
 
@@ -344,6 +360,7 @@ def get_cleaned_report_markdown(html: str, report_version: str) -> str:
     markdown = _postprocess_markdown_base(converter.handle(_mark_footnote_section(_move_space_into_anchor(_preprocess_html(_glue_footnote_hash_markers(html))))))
     markdown = _merge_split_direction_lines(markdown)
     markdown = _flatten_leading_nested_bold(markdown)
+    markdown = _drop_paragraph_repeated_after_stray_tag(markdown)
     return _unescape_text_characters(markdown)
 
 
