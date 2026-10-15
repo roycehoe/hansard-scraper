@@ -174,6 +174,13 @@ _LABELLED_STAGE_DIRECTION_RE = re.compile(
     r"(?:rose(?: in (?:his|her) place| and then resumed his seat)?|left the Chamber|entered the Chamber(?: and took his seat)?)"
     r"[\s_*]*[-–—.]*[\s_*]*(?:\[Interruption\])?[\s_*.]*$"
 )
+# NOTE: unlike "rose -", these end the turn: the unlabelled lines after them are procedural records, not the last speaker's words.
+_LABELLED_TURN_ENDING_DIRECTION_RE = re.compile(
+    r"^[\s_*]*(?:and \*\*[^*]+\*\* )?"
+    r"(?:indicated (?:assent|dissent|agreement)|resumed (?:his|her) seat|_?went to the Chair(?: and sat down)?"
+    r"|(?:, _?standing at the Table, )?_?(?:took(?: and subscribed)? (?:the|an|his|her) Oath|made (?:an |the )?Affirmation) of Allegiance)"
+    r"[\s_*]*[-–—.]*[\s_*]*$"
+)
 
 _PLAIN_HONORIFIC = r"(?:Mr|Mrs|Ms|Miss|Mdm|Madam|Dr|Prof|Assoc\.? Prof|Inche|Encik|Tuan|Haji|Che|Er|BG|RAdm|LG|MG|COL)\.?"
 _PLAIN_ROLE_WORD = r"(?:[A-Z][A-Za-z'’.,&-]*|of|for|the|and|to)"
@@ -607,7 +614,8 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                     current_speaker = None
                 continue
             # NOTE: a bold name before "rose -" is a stage direction, not a speaker label, so the current speaker stays and the name stays in the text.
-            if _LABELLED_STAGE_DIRECTION_RE.match(transcript):
+            is_turn_ending_direction = _LABELLED_TURN_ENDING_DIRECTION_RE.match(transcript) is not None
+            if is_turn_ending_direction or _LABELLED_STAGE_DIRECTION_RE.match(transcript):
                 is_in_preamble = False
                 text_before_bold = parsed_line[: bold_match.start()]
                 is_lead_with_letters = _LETTER_RE.search(text_before_bold) is not None
@@ -618,6 +626,8 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 name_separator = " " if bold_text != bold_text.rstrip() else ""
                 direction_lead = text_before_bold if is_lead_with_letters else ""
                 speeches.append(ParsedSpeech(speaker=None, transcript=direction_lead + bold_text.strip() + name_separator + transcript))
+                if is_turn_ending_direction:
+                    current_speaker = None
                 continue
             if new_speaker:
                 current_speaker = new_speaker
