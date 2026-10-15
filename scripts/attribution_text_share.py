@@ -8,7 +8,11 @@ from crud.speech import CRUDSpeech, SpeechRow
 from database.init import engine
 from database.report import Report
 from logs import logger
-from services.speech import _is_artifact_line, get_start_of_speech_line
+from services.speech import (
+    _REPORT_HEADER_FIELD_RE,
+    _is_artifact_line,
+    get_start_of_speech_line,
+)
 
 _HEADLINE_MAX_PARLIAMENT = 11
 _REPORTED_PARLIAMENTS = (12, 13, 14)
@@ -44,7 +48,7 @@ def _get_body_character_count(report: Report) -> int:
     total = 0
     for line in lines[start + 1:]:
         stripped = line.strip()
-        if _is_artifact_line(stripped) or stripped.startswith(_RULE_LINE_PREFIX):
+        if _is_artifact_line(stripped) or stripped.startswith(_RULE_LINE_PREFIX) or _REPORT_HEADER_FIELD_RE.match(stripped):
             continue
         total += _get_countable_character_count(_LEADING_BOLD_LABEL_RE.sub("", stripped, count=1) if "**" in stripped else stripped)
     return total
