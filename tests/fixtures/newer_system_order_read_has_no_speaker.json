@@ -1,0 +1,40 @@
+{
+  "why": "A newer-system bill debate opens with Order for Second Reading read before the first label; it was dropped and is now a row with no speaker.",
+  "source_report_id": 1893,
+  "report_version": "sprs3",
+  "report_type": "bill",
+  "title": "Companies and Limited Liability Partnerships (Miscellaneous Amendments) Bill",
+  "subtitle": null,
+  "original_title": "Companies and Limited Liability Partnerships (Miscellaneous Amendments) Bill",
+  "html": "<p>[(proc text) Order for Second Reading read. (proc text)]</p><h6>6.38 pm</h6><p><strong>The Second Minister for Finance (Ms Indranee Rajah)&nbsp;(for the Minister for Finance)</strong>: Mr Speaker, I beg to move, \"That the Bill be now read a Second time.\"</p><p>The Companies and Limited Liability Partnerships CLLP (Miscellaneous Amendments) Bill, or the CLLP Bill, is associated with the previous Bill on the Order Paper, The Corporate Services Providers Bill (CSP Bill). The main amendments of the CLLP Bill were explained in my Second Reading speech of the CSP Bill earlier and the substance of this Bill was debated concurrently with the CSP Bill earlier.&nbsp;Mr Speaker, I beg to move.</p><p>[(proc text) Question put, and agreed to. (proc text)]</p><p>[(proc text) Bill accordingly read a Second time and committed to a Committee of the whole House. (proc text)]</p><p>[(proc text) The House immediately resolved itself into a Committee on the Bill. – [Ms Indranee Rajah]. (proc text)]</p><p>[(proc text) Bill considered in Committee; reported without amendment; read a Third time and passed. (proc text)]</p>",
+  "expected_rows": [
+    [
+      null,
+      "Order for Second Reading read."
+    ],
+    [
+      "The Second Minister for Finance (Ms Indranee Rajah) (for the Minister for Finance)",
+      "Mr Speaker, I beg to move, \"That the Bill be now read a Second time.\""
+    ],
+    [
+      "The Second Minister for Finance (Ms Indranee Rajah) (for the Minister for Finance)",
+      "The Companies and Limited Liability Partnerships CLLP (Miscellaneous Amendments) Bill, or the CLLP Bill, is associated with the previous Bill on the Order Paper, The Corporate Services Providers Bill (CSP Bill). The main amendments of the CLLP Bill were explained in my Second Reading speech of the CSP Bill earlier and the substance of this Bill was debated concurrently with the CSP Bill earlier. Mr Speaker, I beg to move."
+    ],
+    [
+      null,
+      "Question put, and agreed to."
+    ],
+    [
+      null,
+      "Bill accordingly read a Second time and committed to a Committee of the whole House."
+    ],
+    [
+      null,
+      "The House immediately resolved itself into a Committee on the Bill. – [Ms Indranee Rajah]."
+    ],
+    [
+      null,
+      "Bill considered in Committee; reported without amendment; read a Third time and passed."
+    ]
+  ]
+}

@@ -639,9 +639,19 @@ def _get_footnote_line_indexes(lines: list[str]) -> set[int]:
     return footnote_line_indexes
 
 
+def _is_preamble_title_line(line: str) -> bool:
+    return (
+        _REPORT_HEADER_FIELD_RE.match(line) is not None
+        or line.startswith(_BOLD_MARKER)
+        or _PARENTHESISED_RE.match(line.strip(_EMPHASIS_MARK_CHARACTERS)) is not None
+        or _ITALIC_HEADING_RE.match(line) is not None
+    )
+
+
 def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str = "") -> list[ParsedSpeech]:
     current_speaker = None
     is_in_preamble = True
+    preamble_speeches: list[ParsedSpeech] = []
     speeches: list[ParsedSpeech] = []
     lines = _merge_wrapped_bold_lines(markdown.splitlines()[start_of_speech_line + 1 :])
     footnote_line_indexes = _get_footnote_line_indexes(lines)
@@ -668,6 +678,8 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                     speeches.append(ParsedSpeech(speaker=current_speaker, transcript=label_match.group(2)))
                 continue
             if is_in_preamble:
+                if not _is_preamble_title_line(parsed_line):
+                    preamble_speeches.append(ParsedSpeech(speaker=None, transcript=parsed_line))
                 continue
             # NOTE: a footnote between rules sits inside a speech, so it gets no speaker and the turn carries on after it.
             if line_index in footnote_line_indexes:
@@ -708,8 +720,9 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 prefix = parsed_line[: bold_match.start()]
                 bold_text = bold_match.group(0).replace("*", "").strip()
                 body = bold_text + transcript if is_drop_cap else f"{bold_text} {transcript}"
-                if not is_in_preamble:
-                    speeches.append(ParsedSpeech(speaker=current_speaker, transcript=(prefix + body).strip()))
+                (preamble_speeches if is_in_preamble else speeches).append(
+                    ParsedSpeech(speaker=current_speaker, transcript=(prefix + body).strip())
+                )
                 continue
             if _PROCEDURAL_STAGE_RE.match(new_speaker):
                 continue
@@ -732,7 +745,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 if is_parenthesised_annotation:
                     current_speaker = None
                 if transcript:
-                    speeches.append(ParsedSpeech(speaker=current_speaker, transcript=transcript))
+                    (preamble_speeches if is_in_preamble else speeches).append(ParsedSpeech(speaker=current_speaker, transcript=transcript))
                 continue
             if (not transcript.strip(_EMPHASIS_MARK_CHARACTERS)
                     and not _is_speaker_name(raw_speaker)
@@ -763,14 +776,18 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 speeches.append(ParsedSpeech(speaker=current_speaker, transcript=transcript))
             continue
 
-        if not is_in_preamble:
-            speeches.append(ParsedSpeech(
-                speaker=None if _is_non_speech_line(parsed_line) else current_speaker,
-                transcript=parsed_line,
-            ))
-            if _is_turn_ending_line(parsed_line):
-                current_speaker = None
+        if is_in_preamble and _is_preamble_title_line(parsed_line):
+            continue
+        (preamble_speeches if is_in_preamble else speeches).append(ParsedSpeech(
+            speaker=None if _is_non_speech_line(parsed_line) else current_speaker,
+            transcript=parsed_line,
+        ))
+        if _is_turn_ending_line(parsed_line):
+            current_speaker = None
 
+    # NOTE: text before the first speaker keeps its row only when a speaker follows; a report with no label at all falls through to the single-speaker path.
+    if not is_in_preamble:
+        speeches = preamble_speeches + speeches
     for speech in speeches:
         if (match := _LANGUAGE_NOTE_RE.match(speech.transcript)) is not None:
             speech.transcript = speech.transcript[match.end() :]
@@ -816,8 +833,8 @@ def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type:
     if speech_type == ParsedSpeechType.PARSED:
         if ((report_type == ReportType.PRESIDENT_ADDRESS or report_type == ReportType.ATBP)
                 and not speakers
-                and parsed_speeches
-                and _is_section_header_speaker(parsed_speeches[0].speaker)):
+                and (first_speaker := next((speech.speaker for speech in parsed_speeches if speech.speaker is not None), None)) is not None
+                and _is_section_header_speaker(first_speaker)):
             speaker = _extract_body_attribution(markdown, report_type, report_version)
             if speaker:
                 return _get_single_speaker_speeches(markdown, start_of_speech_line, speaker)
