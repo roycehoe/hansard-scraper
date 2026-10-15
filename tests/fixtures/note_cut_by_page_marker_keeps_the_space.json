@@ -1,0 +1,20 @@
+{
+  "why": "A page marker cut the note \"[Pursuant to Standing Order No 22(3) ... withdrawn, / written answers ...]\" between two emphasis runs; the join dropped the space (\"withdrawn,written\").",
+  "source_report_id": 17685,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Reverse Mortgages for Elderly HDB Flat Owners",
+  "subtitle": null,
+  "original_title": "Reverse Mortgages for Elderly HDB Flat Owners",
+  "html": "<p><strong> Mdm Speaker </strong>:Order. End of Question Time.</p><p>[<em>Pursuant to Standing Order No 22(3), provided that Members had not asked for questions standing in their names to be postponed to a later Sitting day or withdrawn, </em></p><p>\t<span style=\"color: rgb(51, 51, 51);\">Page: 40</span></p><p><em>written answers to questions not reached by the end of Question Time are reproduced in the Appendix</em>.]",
+  "expected_rows": [
+    [
+      "Mdm Speaker",
+      "Order. End of Question Time."
+    ],
+    [
+      null,
+      "[_Pursuant to Standing Order No 22(3), provided that Members had not asked for questions standing in their names to be postponed to a later Sitting day or withdrawn, written answers to questions not reached by the end of Question Time are reproduced in the Appendix_.]"
+    ]
+  ]
+}
