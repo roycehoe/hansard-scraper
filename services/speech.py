@@ -243,6 +243,9 @@ _QUESTION_NUMBER_PREFIX_RE = re.compile(r"^\d+\\?\.\s+")
 _UNSPACED_HONORIFIC_RE = re.compile(r"^(Mr|Mrs|Ms|Dr|Prof|Mdm|The|BG|RAdm|Er)([A-Z])")
 _DROP_CAP_RE = re.compile(r"[A-Za-z]{1,2}")
 _PARENTHESISED_RE = re.compile(r"^\(.*\)$")
+_HONOURABLE_MEMBERS_RE = re.compile(r"^(?:Some |The )?[Hh]on(?:ourable|\.)? Members?$")
+_LOWERCASE_START_RE = re.compile(r"^[a-z]")
+_STAGE_DIRECTION_VERB_RE = re.compile(r"^(?:indicated|rose|resumed|say|said|signified|left|entered|took|made|stood|went|remained|again|later|and)\b")
 _ITALIC_HEADING_RE = re.compile(r"^_[^_].*_$")
 _SENTENCE_FINAL_RE = re.compile(r"[.?!][\"'”’)\]_*]*$")
 
@@ -523,6 +526,18 @@ def _is_bold_without_letters(line: str) -> bool:
     )
 
 
+def _is_honourable_members_phrase(line: str) -> bool:
+    bold_match = _BOLD_RUN_RE.search(line)
+    if bold_match is None:
+        return False
+    if line[: bold_match.start()].strip():
+        return False
+    if _HONOURABLE_MEMBERS_RE.match(bold_match.group(0).replace("*", "").strip()) is None:
+        return False
+    text_after_bold = line[bold_match.end():]
+    return _LOWERCASE_START_RE.match(text_after_bold) is not None and _STAGE_DIRECTION_VERB_RE.match(text_after_bold) is None
+
+
 def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str = "") -> list[ParsedSpeech]:
     current_speaker = None
     is_in_preamble = True
@@ -532,7 +547,12 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
         parsed_line = _LEADING_BOLD_ARTIFACT_RE.sub("", parsed_line)
         if _is_artifact_line(parsed_line):
             continue
-        if "**" not in parsed_line or _is_bold_mid_sentence(parsed_line) or _is_bold_without_letters(parsed_line):
+        if (
+            "**" not in parsed_line
+            or _is_bold_mid_sentence(parsed_line)
+            or _is_bold_without_letters(parsed_line)
+            or (current_speaker is not None and _is_honourable_members_phrase(parsed_line))
+        ):
             if _TIME_MARKER_RE.match(parsed_line):
                 continue
             if _MARKDOWN_HEADING_RE.match(parsed_line):
