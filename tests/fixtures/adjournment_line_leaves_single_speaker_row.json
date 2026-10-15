@@ -1,0 +1,24 @@
+{
+  "why": "An adjournment report collapsed into one row for the mover glued the 'Adjournment' heading to the front and 'Adjourned accordingly at 6.49 pm.' to the end.",
+  "source_report_id": 20899,
+  "report_version": "sprs2",
+  "report_type": "motion",
+  "title": "Adjournment",
+  "subtitle": null,
+  "original_title": "Adjournment",
+  "html": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\r\n<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><head></head><body><div class=\"hansardContent\"><table bgcolor=\"#FFFFFF\" border=\"1\" bordercolor=\"#000000\" cellpadding=\"1\" cellspacing=\"0\" width=\"100%\"><tr><td><table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">12</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">88</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">3</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">18-10-2011</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">Motions</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">Adjournment</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Dr Ng Eng Hen</font></td></tr></table></td></tr></table><p class=\"column\">Page: 226</p><h1 class=\"title topictitle1\">Adjournment<!--topictitle--></h1>\r\n<div class=\"body hansardBaseBody hansardContenteBody\" id=\"id-9280daef-5b07-4bd2-9867-1cc18e88f650\"><a name=\"id-9280daef-5b07-4bd2-9867-1cc18e88f650\"><!--a--></a><div class=\"section hcSection hcAdjournment\" id=\"id-f9024e75-3903-4e5d-b4d4-1e0c9aeba9d0\"><a name=\"motion__id-f9024e75-3903-4e5d-b4d4-1e0c9aeba9d0\"><!--a--></a><p class=\"p hcParagraph hcProceduralText\" id=\"id-ba8fa32a-6027-456e-96f6-a3c9a8feef70\"><a name=\"motion__id-ba8fa32a-6027-456e-96f6-a3c9a8feef70\"><!--a--></a>Resolved, \"That Parliament\r\ndo now adjourn.\" − [<span class=\"ph hcInline hcMember\">Dr\r\nNg Eng Hen</span>].</p>\r\n<p class=\"p hcParagraph hcAdjournmentText\" id=\"id-2bf74333-0e44-4349-9ddc-0685011d9785\"><a name=\"motion__id-2bf74333-0e44-4349-9ddc-0685011d9785\"><!--a--></a><em class=\"ph i\">Adjourned accordingly\r\nat 6.49 pm.</em></p>\r\n<p class=\"p hcParagraph hcAdjournmentText\" id=\"id-88da46a3-36bf-4bef-8121-363e5b7255b4\"><a name=\"motion__id-88da46a3-36bf-4bef-8121-363e5b7255b4\"><!--a--></a></p>\r\n<p class=\"p hcParagraph hcAdjournmentText\" id=\"id-9c744b4b-64a5-4c6a-a2fc-b41b7dcb2069\"><a name=\"motion__id-9c744b4b-64a5-4c6a-a2fc-b41b7dcb2069\"><!--a--></a></p>\r\n</div>\r\n</div>\r\n</div></body></html>",
+  "expected_rows": [
+    [
+      null,
+      "Adjournment"
+    ],
+    [
+      "Dr Ng Eng Hen",
+      "Resolved, \"That Parliament do now adjourn.\" − [Dr Ng Eng Hen]."
+    ],
+    [
+      null,
+      "_Adjourned accordingly at 6.49 pm._"
+    ]
+  ]
+}
