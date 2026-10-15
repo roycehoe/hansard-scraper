@@ -310,7 +310,7 @@ The kind migration revises `e5a9c3b7d216`. Another session's uncommitted `transc
 
 The ADRs are [0007](../adr/0007-non-speech-lines-get-no-speaker.md) (reworked), [0008](../adr/0008-text-before-the-first-speaker-kept.md) (new, supersedes 0005) and [0009](../adr/0009-speech-kind-column.md) (new). The register, the stopping rule and `docs/vision.md` carry the figures. The stale lines the review found are fixed: "rows deleted: not measured" and "stored rows: not yet rewritten" after write 2, and the single-speaker report count, where 1,193, 3,032 and 4,209 count different things.
 
-A report write 3 does not rebuild gets a kind only on rows that equal a parsed row, and the rest stay NULL: 4,176 rows in 170 reports.
+A report write 3 does not rebuild gets a kind only on rows that equal a parsed row, and the rest stay NULL: 4,146 rows in 162 reports.
 
 ### Figures after changes A to E
 
@@ -325,14 +325,14 @@ The rehearsal ran on scratch copies of the replica, never on the remote. Parliam
 | Scope and metric | Stored | Plan v2 | Write 3 rehearsal |
 |---|---|---|---|
 | Parliament 12, ADR 0001 rate | 98.89% | 98.90% | 82,170 / 83,077 = 98.91% |
-| Parliament 12, all-rows rate | 96.70% | 95.46% | 82,170 / 86,479 = 95.02% |
+| Parliament 12, all-rows rate | 96.70% | 95.46% | 82,170 / 86,480 = 95.02% |
 | Parliament 12, text share | 98.95% | 98.84% | 29,041,974 / 29,443,992 = 98.63% |
-| Parliament 13, ADR 0001 rate | 98.19% | 98.21% | 132,208 / 134,550 = 98.26% |
-| Parliament 13, all-rows rate | 96.28% | 95.18% | 132,208 / 139,512 = 94.76% |
-| Parliament 13, text share | 99.06% | 98.95% | 41,810,359 / 42,329,130 = 98.77% |
-| Parliament 14, ADR 0001 rate | 99.03% | 99.04% | 206,961 / 208,894 = 99.07% |
-| Parliament 14, all-rows rate | 97.60% | 96.60% | 206,961 / 214,962 = 96.28% |
-| Parliament 14, text share | 99.21% | 99.11% | 59,402,698 / 60,051,708 = 98.92% |
+| Parliament 13, ADR 0001 rate | 98.19% | 98.21% | 132,205 / 134,547 = 98.26% |
+| Parliament 13, all-rows rate | 96.28% | 95.18% | 132,205 / 139,516 = 94.76% |
+| Parliament 13, text share | 99.06% | 98.95% | 41,810,025 / 42,329,130 = 98.77% |
+| Parliament 14, ADR 0001 rate | 99.03% | 99.04% | 206,946 / 208,878 = 99.08% |
+| Parliament 14, all-rows rate | 97.60% | 96.60% | 206,946 / 214,976 = 96.26% |
+| Parliament 14, text share | 99.21% | 99.11% | 59,399,644 / 60,051,708 = 98.91% |
 
 | Where the body text goes | Stored | Plan v2 | Write 3 rehearsal |
 |---|---|---|---|
@@ -378,9 +378,9 @@ Detectors, pipeline hits per million tokens, against the source typo rate:
 
 Both detectors are now under their source typo rates; the punctuation detector was over it before. Pipeline hits fall from 2,038 to 632 (dictionary) and from 812 to 235 (punctuation) on 64.2 million tokens.
 
-The rehearsed write is plan v3 on `72d4d64`: 12,325 reports applied, 174 held, 626,820 speech updates (599,073 of them ordinal and kind only), 405,345 kind-only updates, 8,253 deletes, 12,368 inserts, 5,572 report and 44 sitting markdowns, and 45 junk attendance rows. Twelve of the held reports wait for `4174a7c`, which trims a space left inside a proc text tag. Over the 41,697 cached reports, before change E, the parser gives SPEECH 968,296 rows, PROCEDURAL 43,089, UNCLASSIFIED about 25,000, CHAMBER_EVENT 6,133, EDITORIAL_NOTE 2,534, DOCUMENT_TEXT 1,793 and HEADING 1,429. The largest UNCLASSIFIED classes are division lists, oath-roll names and unanchored procedural lines. `2eef141` changed no speaker and no transcript on any of those reports.
+The ship candidate is plan v4 on `4174a7c`: 12,337 reports applied, 162 held, 627,303 speech updates (599,528 of them ordinal and kind only), 404,891 kind-only updates, 8,254 deletes, 12,388 inserts, 5,584 report and 44 sitting markdowns, and 45 junk attendance rows. It equals plan v3 on `72d4d64` plus the 12 newer-system reports that `4174a7c` fixes (it trims a space left inside a proc text tag). Both plans were rehearsed in full; the figures above are v4's, the detectors and the cause tables v3's, which differ by those 12 reports at most. The plan and the morning commands are in `plans/speech-fidelity-loop/write3/`. Over the 41,697 cached reports, before change E, the parser gives SPEECH 968,296 rows, PROCEDURAL 43,089, UNCLASSIFIED about 25,000, CHAMBER_EVENT 6,133, EDITORIAL_NOTE 2,534, DOCUMENT_TEXT 1,793 and HEADING 1,429. The largest UNCLASSIFIED classes are division lists, oath-roll names and unanchored procedural lines. `2eef141` changed no speaker and no transcript on any of those reports.
 
-Rows by kind, whole table, after the rehearsal: SPEECH with a speaker 963,399, SPEECH with no speaker 488, PROCEDURAL 46,833, CHAMBER_EVENT 5,794, EDITORIAL_NOTE 2,286, DOCUMENT_TEXT 2,584, HEADING 2,570, UNCLASSIFIED 20,579 and NULL 4,176.
+Rows by kind, whole table, after the rehearsal of plan v4: SPEECH with a speaker 963,407, SPEECH with no speaker 488, PROCEDURAL 46,868, CHAMBER_EVENT 5,800, EDITORIAL_NOTE 2,286, DOCUMENT_TEXT 2,584, HEADING 2,570, UNCLASSIFIED 20,579 and NULL 4,146.
 
 Round 2 re-aggregated under both rules (details in the [stopping rule](../speech-fidelity-stopping-rule.md)): Tier A by rows 1.97% (bound 2.58%) and by characters 0.77% (1.04%); Tier B by rows 1.72% (2.60%) and by characters 0.88% (1.48%).
 
