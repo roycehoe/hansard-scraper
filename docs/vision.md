@@ -86,15 +86,15 @@ Rows by kind ([ADR 0009](adr/0009-speech-kind-column.md)), whole speech table, a
 
 | Kind | Rows |
 |---|---|
-| SPEECH, speaker known | 963,399 |
+| SPEECH, speaker known | 963,407 |
 | SPEECH, speaker NULL | 488 |
-| PROCEDURAL | 46,833 |
-| CHAMBER_EVENT | 5,794 |
+| PROCEDURAL | 46,868 |
+| CHAMBER_EVENT | 5,800 |
 | EDITORIAL_NOTE | 2,286 |
 | DOCUMENT_TEXT | 2,584 |
 | HEADING | 2,570 |
 | UNCLASSIFIED | 20,579 |
-| kind NULL (reports write #3 did not rebuild) | 4,176 |
+| kind NULL (reports write #3 did not rebuild) | 4,146 |
 
 ### What "parsed" means in each check
 
@@ -120,9 +120,9 @@ The 14 October load added text from 10 September 2012 on. Same filter as the ADR
 | Parliament 12 from 10 Sep 2012, before the non-speech repair | 72,013 / 72,778 = 98.95% | | |
 | Parliament 13, stored after write #2 | 133,188 / 135,645 = 98.19% | 133,188 / 138,337 = 96.28% | 99.06% |
 | Parliament 14, stored after write #2 | 208,195 / 210,228 = 99.03% | 208,195 / 213,322 = 97.60% | 99.21% |
-| Parliament 12, write #3 rehearsal | 82,170 / 83,077 = 98.91% | 82,170 / 86,479 = 95.02% | 29,041,974 / 29,443,992 = 98.63% |
-| Parliament 13, write #3 rehearsal | 132,208 / 134,550 = 98.26% | 132,208 / 139,512 = 94.76% | 41,810,359 / 42,329,130 = 98.77% |
-| Parliament 14, write #3 rehearsal | 206,961 / 208,894 = 99.07% | 206,961 / 214,962 = 96.28% | 59,402,698 / 60,051,708 = 98.92% |
+| Parliament 12, write #3 rehearsal | 82,170 / 83,077 = 98.91% | 82,170 / 86,480 = 95.02% | 29,041,974 / 29,443,992 = 98.63% |
+| Parliament 13, write #3 rehearsal | 132,205 / 134,547 = 98.26% | 132,205 / 139,516 = 94.76% | 41,810,025 / 42,329,130 = 98.77% |
+| Parliament 14, write #3 rehearsal | 206,946 / 208,878 = 99.08% | 206,946 / 214,976 = 96.26% | 59,399,644 / 60,051,708 = 98.91% |
 
 The plan projected 99.1 to 99.3 for Parliament 12 from the cutoff, 98.1 to 99.1 for Parliament 13 and 98.6 for Parliament 14. Parliament 12 from the cutoff is about 110 rows short: "The Chairman" leaves 566 rows unlinked there, and 61 "[Deputy Speaker" parse-noise rows stay in the denominator (77 across Parliaments 12 and 13, where the plan expected 16). Across the new rows the largest unlinked groups are "The Chairman" with 4,018 (no chair named in the report), bare "Mr Deputy Speaker" with 1,119 on days with two holders ([ADR 0002](adr/0002-role-holder-attribution.md) leaves them), "[Deputy Speaker" with 77, "Mr Chairman" with 44, and 5 "Mdm Speaker" rows that are Hansard misprints for "Mdm Deputy Speaker" and stay unlinked. No hand audit covers these rows yet.
 
