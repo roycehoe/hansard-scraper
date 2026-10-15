@@ -494,7 +494,10 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
         bold_match = _BOLD_RUN_RE.search(parsed_line)
         if bold_match is not None:
             transcript = _LEADING_COLON_RE.sub("", parsed_line.split(bold_match.group(0))[-1].strip())
-            if transcript.startswith("|"):
+            # NOTE: a bold cell next to a pipe is a table row, not a label, so the whole line stays with the current speaker.
+            if transcript.startswith("|") or "|" in parsed_line[: bold_match.start()]:
+                if not is_in_preamble:
+                    speeches.append(ParsedSpeech(speaker=current_speaker, transcript=parsed_line))
                 continue
             raw_speaker = bold_match.group(0).replace("*", "").replace(":", "").strip()
             # NOTE: A bold line holding only a language note keeps its text so it stays a section annotation.
