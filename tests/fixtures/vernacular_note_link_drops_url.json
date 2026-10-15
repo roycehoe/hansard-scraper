@@ -1,0 +1,20 @@
+{
+  "why": "A vernacular-speech link kept its URL in the text instead of only the link text.",
+  "source_report_id": 16889,
+  "report_version": "sprs3",
+  "report_type": "tribute",
+  "title": "Election of Speaker",
+  "subtitle": null,
+  "original_title": "Election of Speaker",
+  "html": "<h6>3.59 pm</h6><p><strong>Mr Zainal Sapari (Pasir Ris-Punggol)</strong>:&nbsp;<span style=\"color: rgb(51, 51, 51);\">Mdm Speaker, please allow me to address in Malay.</span></p><p>(<em>In Malay</em>)<em>: </em>[<em>Please refer to <a  href =\"/search/search/download?value=20160115/vernacular-Zainal Sapari(1).pdf\" target=\"_blank\"> Vernacular Speech</a></em>.]<em>&nbsp;</em>Mdm Speaker, I am, indeed, heartened that you have been unanimously re-elected once again as the Speaker of Parliament. When you first became the Speaker of Parliament, it was a proud moment for many, including the Malay/Muslim community, women and also your friends in the Labour Movement.</p>",
+  "expected_rows": [
+    [
+      "Mr Zainal Sapari (Pasir Ris-Punggol)",
+      "Mdm Speaker, please allow me to address in Malay."
+    ],
+    [
+      "Mr Zainal Sapari (Pasir Ris-Punggol)",
+      "_[_Please refer to Vernacular Speech_.] Mdm Speaker, I am, indeed, heartened that you have been unanimously re-elected once again as the Speaker of Parliament. When you first became the Speaker of Parliament, it was a proud moment for many, including the Malay/Muslim community, women and also your friends in the Labour Movement."
+    ]
+  ]
+}
