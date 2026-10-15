@@ -529,15 +529,17 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 or (len(new_speaker) > _MAX_SPEAKER_NAME_LENGTH and not _SPEAKER_HONORIFIC_RE.search(new_speaker))
             ):
                 continue
-            # NOTE: A section annotation resets the speaker, and the check must run before the section-title skip below.
+            # NOTE: a parenthesised annotation resets the speaker but an italic subheading sits inside a speech; the check must run before the section-title skip below.
+            is_parenthesised_annotation = _PARENTHESISED_RE.match(new_speaker) is not None
             is_section_annotation = (
-                bool(_PARENTHESISED_RE.match(new_speaker) or _ITALIC_HEADING_RE.match(new_speaker))
+                (is_parenthesised_annotation or _ITALIC_HEADING_RE.match(new_speaker) is not None)
                 and not _SPEAKER_HONORIFIC_RE.search(new_speaker)
             )
             if is_section_annotation:
-                current_speaker = None
+                if is_parenthesised_annotation:
+                    current_speaker = None
                 if transcript:
-                    speeches.append(ParsedSpeech(speaker=None, transcript=transcript))
+                    speeches.append(ParsedSpeech(speaker=current_speaker, transcript=transcript))
                 continue
             if (not transcript.strip(_EMPHASIS_MARK_CHARACTERS)
                     and not _is_speaker_name(raw_speaker)
