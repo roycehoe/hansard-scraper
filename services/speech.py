@@ -279,13 +279,21 @@ _ITALIC_HEADING_RE = re.compile(r"^_[^_].*_$")
 _SENTENCE_FINAL_RE = re.compile(r"[.?!][\"'”’)\]_*]*$")
 _BRACKET_SPAN_RE = re.compile(r"(?:(?<=\s)[_*]+|^[_*]+)?\[([^\[\]]{1,250})\](?:[_*]*\.)?(?:[_*]+(?=\s|$))?")
 _BRACKET_INNER_EDGE_CHARACTERS = " _*."
+_AUDIENCE_EVENT_PATTERN = r"(?i:(?:more |loud )?(?:applause|laughter|interruptions?|interjections?|pauses?|silence|background noise)\b(?:[ .][^\[\]]{0,60})?$)"
+_DOCUMENT_ACTION_PATTERN = (
+    r"(?:[A-Z(]"
+    r"|(?=[^\[\]]*(?:(?i:\b(?:hon\.? members?|members?|house|screen|slides?|handouts?|photos?|charts?|cop(?:y|ies))\b)|\b(?:Mr|Mdm|Mrs|Ms|Dr|Prof) [A-Z])))"
+    r"[^\[\]]*\b(?:shown|showed|distributed|circulated|handed(?: in| out| over)?|displayed)\b"
+)
+_MEMBER_ACTION_PATTERN = (
+    r"(?:Mr|Mrs|Ms|Mdm|Madam|Dr|Prof|Assoc\.? Prof|Encik|Inche|[Hh]on\.?|[Tt]he hon\.?|The|Some|An?|Members?)\b[^\[\]]{0,80}?"
+    r"\b(?:interrupted|interjected|rose|enters? the Chamber|entered the Chamber|left the Chamber|resumed (?:his|her) seat|took (?:his|her) seat"
+    r"|indicated|raised (?:his|her) hand|stood up|walked|holds? up|pointed|gestured|waved|nodded)\b"
+)
+_SEAT_ACTION_PATTERN = r"(?:and )?(?:resumed (?:his|her) seat|remained seated|entered the Chamber)"
+_GESTURE_PATTERN = r"(?i:(?:and )?(?:indicat(?:ing|ion)|gestur(?:ing|ed)|pointing|pointed|showing|shows|exhibiting|holds? up|holding up|waving|displaying)\b)"
 _STAGE_DIRECTION_INNER_RE = re.compile(
-    r"^(?:More |Loud )?(?:Applause|Laughter|Interruptions?|Pauses?|Silence)\b(?:[ .][^\[\]]{0,60})?$"
-    r"|^[A-Z(][^\[\]]*\b(?:shown|distributed|circulated|handed(?: in| out| over)?)\b"
-    r"|^(?:Mr|Mrs|Ms|Mdm|Madam|Dr|Prof|Assoc\.? Prof|Encik|Inche|Hon\.?|The|Some|An?)\b[^\[\]]{0,80}?"
-    r"\b(?:interrupted|rose|entered the Chamber|left the Chamber|resumed (?:his|her) seat|took (?:his|her) seat|indicated|raised (?:his|her) hand|stood up|walked)\b"
-    r"|^(?:and )?(?:resumed (?:his|her) seat|remained seated|entered the Chamber)"
-    r"|^[Ii]ndicat(?:ing|ion)\b|^[Gg]esturing\b|^[Ss]how(?:ing|s)\b|^The hon\.? Member gestured"
+    "^(?:" + "|".join((_AUDIENCE_EVENT_PATTERN, _DOCUMENT_ACTION_PATTERN, _MEMBER_ACTION_PATTERN, _SEAT_ACTION_PATTERN, _GESTURE_PATTERN)) + ")"
 )
 
 
@@ -775,6 +783,15 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
     return [speech for speech in speeches if speech.transcript.strip() != ""]
 
 
+def _append_speech_segment(split_speeches: list[ParsedSpeech], segment: str, speaker: Optional[str], is_after_direction: bool) -> None:
+    # NOTE: punctuation left after a direction ("[Interruption]-") belongs to the interrupted speech, so it stays on the direction row.
+    if is_after_direction and _ALPHANUMERIC_RE.search(segment) is None:
+        split_speeches[-1].transcript += segment.rstrip()
+        return
+    if segment.strip():
+        split_speeches.append(ParsedSpeech(speaker=speaker, transcript=segment.strip()))
+
+
 def _split_stage_directions(speeches: list[ParsedSpeech]) -> list[ParsedSpeech]:
     split_speeches: list[ParsedSpeech] = []
     for speech in speeches:
@@ -790,14 +807,10 @@ def _split_stage_directions(speeches: list[ParsedSpeech]) -> list[ParsedSpeech]:
             continue
         position = 0
         for match in direction_matches:
-            text_before = speech.transcript[position:match.start()].strip()
-            if text_before:
-                split_speeches.append(ParsedSpeech(speaker=speech.speaker, transcript=text_before))
+            _append_speech_segment(split_speeches, speech.transcript[position:match.start()], speech.speaker, position > 0)
             split_speeches.append(ParsedSpeech(speaker=None, transcript=match.group(0)))
             position = match.end()
-        text_after = speech.transcript[position:].strip()
-        if text_after:
-            split_speeches.append(ParsedSpeech(speaker=speech.speaker, transcript=text_after))
+        _append_speech_segment(split_speeches, speech.transcript[position:], speech.speaker, True)
     return split_speeches
 
 
