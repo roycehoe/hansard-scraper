@@ -30,3 +30,13 @@ class ReportType(StrEnum):
 class ReportVersion(StrEnum):
     SPRS2 = "sprs2"  # older system, sittings before 10 September 2012
     SPRS3 = "sprs3"  # newer system, sittings from 10 September 2012
+
+
+class SpeechKind(StrEnum):
+    SPEECH = "SPEECH"
+    PROCEDURAL = "PROCEDURAL"
+    CHAMBER_EVENT = "CHAMBER_EVENT"
+    EDITORIAL_NOTE = "EDITORIAL_NOTE"
+    DOCUMENT_TEXT = "DOCUMENT_TEXT"
+    HEADING = "HEADING"
+    UNCLASSIFIED = "UNCLASSIFIED"
