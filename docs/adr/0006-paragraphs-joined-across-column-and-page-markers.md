@@ -1,12 +1,12 @@
 # 0006. Paragraphs joined across column and page markers
 
-Status: accepted, 15 October 2026. Stored rows are not rewritten yet.
+Status: accepted, 15 October 2026. Shipped in write #2 on 15 October 2026 at 15:46.
 
 Context. The HTML puts a Column or Page marker in a paragraph of its own, and the parser removes it. When the marker falls in mid-sentence, the two halves of one paragraph became two speech rows: "55% and 54%" in one row and "respectively." in the next. The speech fidelity loop calls this F4. It is the largest Tier B class, because it breaks word and phrase search. The cut rule A (row i does not end a sentence, row i+1 has the same speaker and starts lowercase) flags 33,815 pairs in 6,182 reports, 64,417 rows or 6.03% of rows. It read 50 of 60 flagged pairs as true cuts, 83.3% precision. 401 reports hold 19,195 of the pairs. Among 50 true cuts, 21 sat at a column marker, 17 at a page marker, 8 at a preformatted line wrap, 3 at a chunk boundary and 1 at a line break. About 5% of rows is the estimate, so F4 alone fails the 2% Tier B gate.
 
 Decision. `_mark_paragraph_page_breaks` replaces a marker paragraph with a sentinel paragraph before the markers are removed. `_join_paragraphs_across_page_breaks` then joins the paragraph before the sentinel to the one after it when the first does not end a sentence (`c33e922`). It does not join when the next paragraph opens with emphasis, a heading, a rule or an image, when either side is a bare time of day, when the first ends in `]`, `_` or `*` or is a column range, or when the first is a bold-only line. The join uses one space, or none after a hyphenated fragment before a lowercase letter.
 
-Consequences. Each join leaves one row where there were two, so one speech row id is deleted per joined pair. How many rows: not measured, because the write has not run. The handoff plans it as part of write 2 on 15 October 2026. The write plan keeps `speaker_id` on a row where the speaker string is unchanged. Anything outside the repo that holds a deleted id loses it, and only the `pg_dump` taken before the write holds the old rows. The markdown change is reversible from the raw HTML, and the id loss is not.
+Consequences. Each join leaves one row where there were two, so one speech row id is deleted per joined pair. Write 2 deleted 24,402 rows, the F4 joins and 52 addenda rows. The write plan kept `speaker_id` on a row where the speaker string is unchanged. Anything outside the repo that holds a deleted id loses it, and only the `pg_dump` taken before the write holds the old rows. The markdown change is reversible from the raw HTML, and the id loss is not.
 
 The rule joins only cuts at a marker. In the 50 true cuts read, 38 sat at a marker and 12 did not: preformatted wraps, chunk boundaries and line breaks stay cut. A paragraph that really ends without punctuation and starts a new one after a marker joins by mistake. That rate is not measured.
 
