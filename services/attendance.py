@@ -20,8 +20,9 @@ from utils.names import (
 )
 
 # Derived from each sitting's Parliament No header
+# NOTE: volumes 1 to 11 print Parliament No 1 in the sitting header, but their reports carry Parliament 0, so they map to 0.
 VOLUME_TO_PARLIAMENT: dict[int, int] = {
-    1: 1, 2: 1, 3: 1, 4: 1, 6: 1, 7: 1, 8: 1, 9: 1, 11: 1,
+    1: 0, 2: 0, 3: 0, 4: 0, 6: 0, 7: 0, 8: 0, 9: 0, 11: 0,
     12: 0, 13: 0, 14: 0, 15: 0, 16: 0, 17: 0, 18: 0, 19: 0,
     20: 0, 21: 0, 22: 0, 23: 0,
     24: 1, 25: 1, 26: 1,
@@ -249,24 +250,25 @@ _OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
 }
 
 # NOTE: surname-only forms and inverted canonicals go here; OCR character errors belong in _OCR_FORM_TO_CORRECTED_NAME.
+# NOTE: a key of Parliament 0 names a member who sat only in the Legislative Assembly; a key of 1 names one who also sat in Parliament 1.
 _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
-    ("d s marshall", 1): "David Marshall",
+    ("d s marshall", 0): "David Marshall",
     # Mrs Devan Nair, not C. V. Devan Nair
     ("c v devan nair", 1): "Devan Nair, Mrs",
-    ("william goode, k c m g", 1): "William Goode",
-    ("g e n oehlers", 1): "George Oehlers",
+    ("william goode, k c m g", 0): "William Goode",
+    ("g e n oehlers", 0): "George Oehlers",
     ("rahamat bin kenap", 1): "Rahmat Bin Kenap",
     ("koo young", 1): "Koo Yong",
     ("chew chin han", 1): "Chew Chin Harn",
-    ("hart", 1): "Hart, T.M.",
-    ("goode", 1): "Goode, W.A.C.",
-    ("butterfield", 1): "Butterfield, C.H.",
-    ("shanks", 1): "Shanks, E.P.",
-    ("david", 1): "David, E.B.",
-    ("sutherland", 1): "Sutherland, G.A.P.",
-    ("stewart", 1): "Stewart, S.T.",
-    ("davies", 1): "Davies, E.J.",
-    ("higham", 1): "Higham, J.D.",
+    ("hart", 0): "Hart, T.M.",
+    ("goode", 0): "Goode, W.A.C.",
+    ("butterfield", 0): "Butterfield, C.H.",
+    ("shanks", 0): "Shanks, E.P.",
+    ("david", 0): "David, E.B.",
+    ("sutherland", 0): "Sutherland, G.A.P.",
+    ("stewart", 0): "Stewart, S.T.",
+    ("davies", 0): "Davies, E.J.",
+    ("higham", 0): "Higham, J.D.",
     # NOTE: the Speaker table spells it Gahni
     ("ahmad khalis bin abdul ghani", 10): "Ahmad Khalis bin Abdul Gahni",
     ("masagos zulkifli b m m", 11): "Masagos Zulkifli Bin Masagos Mohamad",

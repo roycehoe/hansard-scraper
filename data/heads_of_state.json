@@ -1,7 +1,7 @@
 [
-  {"name": "John Nicoll",            "parliament_number": 1,  "comments": "Governor 1952 to 1955"},
-  {"name": "Robert Black",           "parliament_number": 1,  "comments": "Governor 1955 to 1957"},
-  {"name": "William Goode",          "parliament_number": 1,  "comments": "Governor 1957 to 1959, Yang di-Pertuan Negara June to December 1959"},
+  {"name": "John Nicoll",            "parliament_number": 0,  "comments": "Governor 1952 to 1955"},
+  {"name": "Robert Black",           "parliament_number": 0,  "comments": "Governor 1955 to 1957"},
+  {"name": "William Goode",          "parliament_number": 0,  "comments": "Governor 1957 to 1959, Yang di-Pertuan Negara June to December 1959"},
   {"name": "Yusof bin Ishak",        "parliament_number": 1,  "comments": "Yang di-Pertuan Negara 1959 to 1965, President 1965 to 1970"},
   {"name": "Yusof bin Ishak",        "parliament_number": 2,  "comments": "Yang di-Pertuan Negara 1959 to 1965, President 1965 to 1970"},
   {"name": "Benjamin Henry Sheares", "parliament_number": 2,  "comments": "President 1971 to 1981"},

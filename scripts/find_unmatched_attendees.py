@@ -28,7 +28,7 @@ _COUNT_COLUMN_WIDTH = 6
 _NAME_COLUMN_WIDTH = 50
 _TEMPLATE_PARTY = "Unknown"
 _CONSTITUENCY_NAMES_FILE = Path(__file__).parent.parent / "data" / "constituency_names.json"
-_TEMPLATE_PARLIAMENT_NUMBER = 1
+_TEMPLATE_PARLIAMENT_NUMBER = 0
 
 _OFFICIAL_TITLE_RE = re.compile(
     r",\s*(?:Financial|Chief|Colonial|Acting\s+Chief)\s+Secretary"
