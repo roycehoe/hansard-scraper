@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from sqlalchemy import text
-from sqlmodel import Session, col, func, select
+from sqlmodel import Session, col, delete, func, select
 
 from database.attendance import Attendance
 from database.sitting import Sitting
@@ -55,6 +55,14 @@ class CRUDAttendance:
         self.session.add_all(attendances)
         self.session.flush()
 
+    def get_by_ids(self, ids: list[int]) -> list[Attendance]:
+        statement = select(Attendance).where(col(Attendance.id).in_(ids))
+        return list(self.session.exec(statement).all())
+
+    def get_by_sitting_ids(self, sitting_ids: list[int]) -> list[Attendance]:
+        statement = select(Attendance).where(col(Attendance.sitting_id).in_(sitting_ids))
+        return list(self.session.exec(statement).all())
+
     def get_distinct_sitting_ids(self) -> set[int]:
         statement = select(Attendance.sitting_id).distinct()
         sitting_ids = self.session.exec(statement).all()
@@ -86,6 +94,14 @@ class CRUDAttendance:
             .where(col(Attendance.location_name).is_not(None))
         )
         return [AttendanceLocationRow(*row) for row in self.session.exec(statement).all()]
+
+    def update_many(self, attendances: list[Attendance]) -> None:
+        self.session.add_all(attendances)
+        self.session.flush()
+
+    def delete_by_ids(self, ids: list[int]) -> int:
+        statement = delete(Attendance).where(col(Attendance.id).in_(ids))
+        return self.session.exec(statement).rowcount
 
     def set_location_names_bulk(self, updates: dict[int, str]) -> int:
         if not updates:

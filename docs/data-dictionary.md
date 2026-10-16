@@ -138,14 +138,14 @@ One row per person per sitting, parsed from the PRESENT/ABSENT sections of `Sitt
 
 | Field | Type | Meaning |
 |---|---|---|
-| `speaker_name` | str | The registry name where the attendance name resolves to a `Speaker` row at build time, otherwise the name as listed after title stripping. |
+| `speaker_name` | str | The registry name where the attendance name resolves to a `Speaker` row at build time, otherwise the name as listed after title stripping. A list line that names no member (a heading, a table row, procedural text, a wrapped office title) gets no row, and a member listed twice in a sitting has one row, the present one. |
 | `is_present` | bool | `True` = present, `False` = absent. |
 | `location_name` | str | The constituency in parentheses after the name, in every era, spelled as the Elections Department spells it: `data/constituency_names.json` replaces typos and variant spellings, and seat types ("Nominated Member", "ex-officio") and any other bracket text stay as printed. The newer API's `locationName`, which marks where a member sat during a hybrid sitting, stays inside `Sitting.attendance_list`. |
 | `speaker_id` | int | FK → `Speaker.id`. `NULL` where the match has not been resolved. |
 
 ### Speaker
 
-Identities scraped from parliament.gov.sg, plus the colonial Legislative Assembly list (`data/colonial_la_members.json`) and the heads of state (`data/heads_of_state.json`). One row per person per parliament — the same person appears multiple times across parliaments, and `person_id` groups those rows. The name "Speaker" is used because the table includes colonial Legislative Assembly members who were not MPs, and Governors, the Yang di-Pertuan Negara and Presidents, who are not members at all.
+Identities scraped from parliament.gov.sg, plus the colonial Legislative Assembly list (`data/colonial_la_members.json`) the heads of state (`data/heads_of_state.json`) and the members the scrape omits (`data/unscraped_members.json`). One row per person per parliament — the same person appears multiple times across parliaments, and `person_id` groups those rows. The name "Speaker" is used because the table includes colonial Legislative Assembly members who were not MPs, and Governors, the Yang di-Pertuan Negara and Presidents, who are not members at all.
 
 | Field | Type | Meaning |
 |---|---|---|
