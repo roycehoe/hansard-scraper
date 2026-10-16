@@ -390,11 +390,51 @@ Round 3 reads against a scratch copy with write 3 applied: the round 2 reports w
 
 Tier A fails on one cluster. Report 22149, a Budget statement whose bold-italic headings were read as speaker labels, carries 0.55 of the 0.79 points. The classes to fix next, by weight: headings or footnote lines taken as speaker labels (22149; the `*Cols.` footnote rows in 21548; a division list credited to the Prime Minister in 39514); first readings credited to their presenter in older-system reports, which carry no proc text tag (17 reports); and procedural lines that miss an anchor ("Amendment by leave, withdrawn." without its comma, "Amendments, by leave, withdrawn.", a supply-head "ordered to stand part" line). Three older-system adjournment motions credited to their mover from the "- [Name]" tag were scored as accepted, as round 2 did; scored as Tier A they add little. Tier B passes on the sample (bound 1.42%, gate 2%) and on both detectors; its classes are paragraphs cut across rows inside `<pre>` blocks or at markers, and footnote digits glued to a word. Kind was not scored: readers flagged 184 of 6,672 round 3 rows, mostly UNCLASSIFIED rows that could be PROCEDURAL, DOCUMENT_TEXT or HEADING, and headings stored as SPEECH.
 
+### The ship of write 3 (16 October)
+
+The user approved the ship of plan v4 on the morning of 16 October. It shipped on the fifth attempt, committed on the remote at 16:03. Plan v4 went onto the replica once, at 09:36. `apply_fix4` committed it with 0 unexplained rows, and its figures equal the rehearsal's. Every attempt ran a delta shipper against the same before and after snapshots of the replica.
+
+| Attempt | Outcome |
+|---|---|
+| 1, 09:37 | The rehearse's 404,891-row kind-only UPDATE hit the shipper's 600 s statement timeout and rolled back |
+| 2, 10:15 | The user approved a 3,600 s timeout. The permission system refused the edit to the shipper, so nothing ran |
+| 3, 10:47 | With the user's 3,600 s timeout the rehearse passed (51 checks, lock 3,004 s). The commit's connection closed 34 minutes into the lock, during the ordinal-and-kind UPDATE, and the server rolled it back. A read-only session minutes later ended with "terminating connection due to administrator command". The cause is not known |
+| 4, 12:48 | The user stopped the ship during the rehearse, to shrink the lock first. The rehearse rolled back on its own (51 checks, lock 2,606 s) |
+| 5, 14:07 | Shipped with `ship_delta6.py` |
+
+The remote equaled its pre-ship hashes before every attempt and after every rollback.
+
+`ship_delta6.py` takes kind out of the locked transaction. The 1,004,419 rows whose only changes are kind, or ordinal and kind, get their final kind first, in 201 batches of 5,000 rows, each its own short transaction. A batch writes kind only where the stored row has kind NULL and its other columns still have the before md5. It writes no row that fails that test, and any failure stops the run before the lock. The locked transaction then writes only the ordinal of the ordinal-and-kind rows. It checks that both classes carry the pre-step kind over unchanged content, and it verifies every touched row against the replica, kind included. Text, speakers, deletes, inserts, markdown and attendance all stayed inside the lock. The tool also sets TCP keepalives and times each check inside the lock. Before it touched the remote, it passed eight drift tests on a 1,028-report subset of the replica. Between the pre-step and the commit, the web app's kind filter saw about 1.0M rows with their final kind, while the 27,775 rewritten rows had none and the 12,388 new rows did not exist yet.
+
+| Step on the remote | Result |
+|---|---|
+| Pre-step, 201 batches, each committed | 1,698 s, median 7.2 s a batch, longest 30.2 s; 0 rows failed the guard |
+| Kind counts after the pre-step | As expected: 1,004,419 rows with a kind, 40,175 NULL |
+| Rehearse | 54 checks, lock 1,717 s, rolled back |
+| Gate before the commit | Every table equal to the pre-ship hashes, speech compared with kind read as NULL |
+| Commit | 54 checks, lock 1,944 s, committed |
+
+Inside the commit's lock, the drift checks took 72 s and the deletes and the 27,775 rewrites 68 s. The 599,528 ordinal writes took 1,494 s. The inserts, markdown and attendance took 62 s, and the verify 244 s, 138 s of it the final row counts. The ordinal writes are three quarters of the lock. Each one rewrites the row and its index entries, the full-text index on the transcript included. The old shipper held the lock 3,004 s in its rehearse.
+
+After the ship:
+
+- The replica equals the remote by `table_hashes.sql` on every table and sequence: speech 1,048,728 rows, attendance 135,027, alembic `7c1d4e9a2b60`.
+- Rows by kind on the remote: SPEECH 963,895, PROCEDURAL 46,868, UNCLASSIFIED 20,579, CHAMBER_EVENT 5,800, DOCUMENT_TEXT 2,584, HEADING 2,570, EDITORIAL_NOTE 2,286 and NULL 4,146.
+- The figures equal the rehearsal's in the tables above, now as stored. Parliaments 0 to 11: ADR 0001 rate 526,807 / 538,255 = 97.87%, all-rows rate 526,807 / 607,756 = 86.68%, text share 181,359,552 / 186,290,919 = 97.35%. The detectors give 632 dictionary hits (9.84 per million tokens) and 235 punctuation hits (3.66).
+- The cache markdown was refreshed from the replica: 5,584 reports and 44 sittings.
+
+### The user's rulings, 16 October
+
+- Report 42017's seven rows keep kind UNCLASSIFIED. They are a notice of motion that no member spoke.
+- The three older-system adjournment motions credited to their mover through the "- [Name]" tag (21168, 37767, 33560) count as accepted, as rounds 2 and 3 scored them.
+- `hansard_w3`, the round 3 reading copy, is kept until round 4 is aggregated.
+- Cycle 4 fixes these classes in this order: headings and footnote lines read as speaker labels, then procedural lines that miss an anchor, then older-system first readings credited to the presenter.
+- Write 4 may rebuild the 41 held reports in the 22149 class. Their stored rows match no parser version, every row was checked against the source, and none shows a hand edit.
+
 ### Still open
 
-- The user's go to ship write 3 with the delta shipper. Nothing was written to the remote speech table and nothing was pushed.
+- Push: the write 3 commits are on master and not pushed.
 - Review findings 6 to 13, including finding 11 on the 1,568-report rebuild.
-- Report 42017's seven rows are a notice of motion that no member spoke. They take kind UNCLASSIFIED, against brief decision 7, which said SPEECH ([ADR 0009](../adr/0009-speech-kind-column.md)). One 7-row UPDATE to SPEECH reverses the call.
 - How a wrong `kind`, and a SPEECH row with no speaker, score under the stopping rule.
 - A NOT NULL constraint on `kind`, an override file with the right speakers for the 465 rows, and round 3 tranche 2.
 - The "Still open" list at the end of the Round 1 section above is out of date: write 2 fixed F5 and F4.
