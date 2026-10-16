@@ -152,7 +152,7 @@ Identities scraped from parliament.gov.sg, plus the colonial Legislative Assembl
 | `name` | str | Name without title prefix. |
 | `party` | str | Political party. |
 | `parliament_number` | int | Parliament they served in. |
-| `is_legislative_assembly` | bool | `True` for colonial Legislative Assembly members (pre-independence). |
+| `is_legislative_assembly` | bool | `True` on a row that holds a Legislative Assembly membership (1955 to 1965). parliament.gov.sg flags a person, not a row, so `data/speaker_overrides.json` corrects it per row. |
 | `comments` | str | Footnote annotations from the source page, e.g. appointment dates or name changes. |
 | `is_member` | bool | `False` for heads of state, who speak in the House (the Address) but are not members. |
 | `person_id` | int | FK → `Person.id`. Set for every row by `populate_persons`. |

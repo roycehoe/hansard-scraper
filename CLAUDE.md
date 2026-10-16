@@ -81,7 +81,7 @@ Each folder has a strict responsibility boundary. `populate/` is the only layer 
 
 8. **Wire Speaker foreign keys** (`populate/speaker_links.py`) — resolves speaker/attendee names against the `Speaker` table and sets `speaker_id` on `Attendance` and `Speech` rows. Depends on the `Speaker` table being populated first (see out-of-band step below).
 
-**Out-of-band:** `scripts/scrape_speakers_by_parliament.py` scrapes `parliament.gov.sg` for the full list of speakers per parliament and stores them in the `Speaker` table. This must be run before step 8; it is not part of `script.py`. For colonial-era Legislative Assembly members, run `scripts/load_colonial_la_speakers.py` first.
+**Out-of-band:** `scripts/scrape_speakers_by_parliament.py` scrapes `parliament.gov.sg` for the full list of speakers per parliament and stores them in the `Speaker` table. This must be run before step 8; it is not part of `script.py`. The source gives one party and one Assembly flag per person, so `data/speaker_overrides.json` corrects the flag per Parliament row, both at scrape time (`services/speaker.py`) and on stored rows (`scripts/apply_speaker_overrides.py`). For colonial-era Legislative Assembly members, run `scripts/load_colonial_la_speakers.py` first.
 
 ### Sitting date API — two formats
 
@@ -138,6 +138,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `scrape_speakers_by_parliament.py` — populates the `Speaker` table from parliament.gov.sg
 - `fill_sitting_numbers.py`: fills empty `report.sitting_number`, `sitting.session_no` and `sitting.sitting_no` from the stored header tables; a dry run unless `--commit`
 - `apply_report_titles.py`: rewrites stored titles and subtitles that the current title rule would change; a dry run unless `--commit`
+- `apply_speaker_overrides.py`: applies `data/speaker_overrides.json` to stored speaker rows; a dry run unless `--commit`
 - `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech rows, after checking each against its kept copy; a dry run unless `--commit`
 - `find_presiding_officers.py`: tallies the most common Speaker and Deputy Speaker per parliament from the PRESENT sections
 - `trace_speaker_links.py`: read-only regression guard for stage 8 speech links: re-runs the resolver per key and compares with stored `speaker_id`
@@ -163,6 +164,7 @@ hansard-scraper/
 │   ├── hansard_topic_response.py   # HansardTopicResponse: the getHansardTopic body (three shapes)
 │   ├── hansard_report_response.py  # HansardReportOldResponse / HansardReportNewResponse / HansardReportMetadata / HansardReportAttendanceEntry
 │   ├── excluded_report_id.py       # ExcludedReportId: data/excluded_report_ids.json entries
+│   ├── speaker_override.py         # SpeakerOverrides: data/speaker_overrides.json
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata
 │
 ├── gateway/                         # HTTP API clients
@@ -248,5 +250,6 @@ hansard-scraper/
     ├── scrape_speakers_by_parliament.py
     ├── remove_excluded_reports.py
     ├── fill_sitting_numbers.py
-    └── apply_report_titles.py
+    ├── apply_report_titles.py
+    └── apply_speaker_overrides.py
 ```
