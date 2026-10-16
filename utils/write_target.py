@@ -2,7 +2,7 @@ from sqlalchemy.engine import make_url
 
 from exceptions import HansardWriteTargetError
 
-_PROTECTED_DATABASES = frozenset({"hansard_replica", "hansard_w3", "hansard_w4"})
+_PROTECTED_DATABASES = frozenset({"hansard_w3", "hansard_w4"})
 _LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 _PROTECTED_LOCAL_PORT = 5432
 
