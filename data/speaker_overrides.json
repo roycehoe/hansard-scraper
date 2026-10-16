@@ -1,0 +1,676 @@
+{
+  "legislative_assembly_overrides": [
+    {
+      "name": "A. Rahim Ishak",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Barker, E.W.",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Bernard Rodrigues",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Chia Thye Poh",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Chio Cheng Thun",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Chow Chiok Hock",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Fong Kim Heng",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Fong Sip Chee",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 24 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Gonzales, R.A.",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Govindaswamy, P.",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Ho Cheng Choon",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Ho Kah Leong",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "No Assembly sitting: first attendance 5 Dec 1966, after the Jurong by-election of 2 Nov 1966; ELD 1963 Jurong winner was Chia Thye Poh; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Jek Yeun Thong",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Koo Yong",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Kow Kee Seng",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Lee Tee Tong",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 14 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Lim Kim San",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Loh Miaw Gong",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Mahmud Awang",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Ng Kah Ting",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Ng Yeow Chong",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Ong Lian Teng",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 24 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Othman Bin Wok",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Poh Ber Liak",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Rahmat Bin Kenap",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Sia Kah Hui",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Sim Boon Woo",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Teong Eng Siong",
+      "parliament_number": 1,
+      "source_is_legislative_assembly": false,
+      "is_legislative_assembly": true,
+      "reason": "Won a seat at the 1963 general election (ELD) and is on 25 attendance lists of 1963 to 1965 Assembly sittings; the source does not flag this Membership."
+    },
+    {
+      "name": "Buang Bin Omar Junid",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Chan Chee Seng",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Chan Choy Siong",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Chor Yeok Eng",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Goh Keng Swee",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ho Kah Leong",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ho See Beng",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Khoon Choy",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Kuan Yew",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Teck Him",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lim Cheng Lock",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Mohd Ariff Bin Suradi, Haji",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ong Pang Boon",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Rajaratnam, S",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ramaswamy, S.",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Toh Chin Chye",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Wee Toon Boon",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Yaacob Bin Mohamed",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Yong Nyuk Lin",
+      "parliament_number": 2,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 2 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Chan Chee Seng",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Chor Yeok Eng",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Goh Keng Swee",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ho Kah Leong",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ho See Beng",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Khoon Choy",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Kuan Yew",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Mohd Ariff Bin Suradi, Haji",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ong Pang Boon",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Rajaratnam, S",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Toh Chin Chye",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Wee Toon Boon",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Yaacob Bin Mohamed",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Yong Nyuk Lin",
+      "parliament_number": 3,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 3 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Chan Chee Seng",
+      "parliament_number": 4,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 4 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Chor Yeok Eng",
+      "parliament_number": 4,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 4 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Goh Keng Swee",
+      "parliament_number": 4,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 4 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ho Kah Leong",
+      "parliament_number": 4,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 4 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ho See Beng",
+      "parliament_number": 4,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 4 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Khoon Choy",
+      "parliament_number": 4,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 4 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Kuan Yew",
+      "parliament_number": 4,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 4 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ong Pang Boon",
+      "parliament_number": 4,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 4 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Rajaratnam, S",
+      "parliament_number": 4,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 4 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Toh Chin Chye",
+      "parliament_number": 4,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 4 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Yaacob Bin Mohamed",
+      "parliament_number": 4,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 4 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Yong Nyuk Lin",
+      "parliament_number": 4,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 4 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Chan Chee Seng",
+      "parliament_number": 5,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 5 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Chor Yeok Eng",
+      "parliament_number": 5,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 5 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Goh Keng Swee",
+      "parliament_number": 5,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 5 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ho Kah Leong",
+      "parliament_number": 5,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 5 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ho See Beng",
+      "parliament_number": 5,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 5 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Khoon Choy",
+      "parliament_number": 5,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 5 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Kuan Yew",
+      "parliament_number": 5,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 5 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ong Pang Boon",
+      "parliament_number": 5,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 5 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Rajaratnam, S",
+      "parliament_number": 5,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 5 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Toh Chin Chye",
+      "parliament_number": 5,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 5 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ho Kah Leong",
+      "parliament_number": 6,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 6 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Kuan Yew",
+      "parliament_number": 6,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 6 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ong Pang Boon",
+      "parliament_number": 6,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 6 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Rajaratnam, S",
+      "parliament_number": 6,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 6 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Toh Chin Chye",
+      "parliament_number": 6,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 6 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ho Kah Leong",
+      "parliament_number": 7,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 7 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Kuan Yew",
+      "parliament_number": 7,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 7 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Ho Kah Leong",
+      "parliament_number": 8,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 8 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Kuan Yew",
+      "parliament_number": 8,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 8 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Kuan Yew",
+      "parliament_number": 9,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 9 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Kuan Yew",
+      "parliament_number": 10,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 10 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Kuan Yew",
+      "parliament_number": 11,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 11 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    },
+    {
+      "name": "Lee Kuan Yew",
+      "parliament_number": 12,
+      "source_is_legislative_assembly": true,
+      "is_legislative_assembly": false,
+      "reason": "Parliament 12 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
+    }
+  ]
+}
