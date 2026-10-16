@@ -1,0 +1,27 @@
+{
+  "why": "The record line 'Thereupon, Mr Deputy Speaker left the Chair ...' (comma after Thereupon) stayed with the Chairman instead of having no speaker.",
+  "source_report_id": 25103,
+  "report_version": "sprs2",
+  "report_type": "budget",
+  "title": "BUDGET, MINISTRY OF DEFENCE",
+  "subtitle": null,
+  "original_title": "BUDGET, MINISTRY OF DEFENCE",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\r\n\r\n<head>\r\n\r\n\r\n\r\n<meta http-equiv=\"Content-Type\" content=\"text/html;charset=iso-8859-1\">\r\n\r\n<meta name=\"Parl_No\" content=\"10\">\r\n\r\n<meta name=\"Sess_No\" content=\"1\">\r\n\r\n<meta name=\"Vol_No\" content=\"76\">\r\n\r\n<meta name=\"Sit_No\" content=\"5\">\r\n\r\n<meta name=\"Sit_Date\" content=\"2003-03-13\">\r\n\r\n<meta name=\"Sect_Name\" content=\"BUDGET\">\r\n\r\n<meta name=\"Title\" content=\"BUDGET, MINISTRY OF DEFENCE\">\r\n\r\n<meta name=\"MP_Speak\" content=\"Dr Tony Tan Keng Yam (Minister for Defence); Dr Ong Chit Chung; Mr Low Thia Khiang; Mr R. Ravindran; Mr Sin Boon Ann; Ms Irene Ng Phek Hoong; Mr Chew Heng Ching (Mr Deputy Speaker);\">\r\n\r\n<meta name=\"Start_Col\" content=\"719\">\r\n\r\n<meta name=\"End_Col\" content=\"728\">\r\n\r\n</head>\r\n\r\n<body>\r\n\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\"><tr><td>\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">10</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">76</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">5</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">13-03-2003</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">BUDGET</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">BUDGET, MINISTRY OF DEFENCE</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Dr Tony Tan Keng Yam (Minister for Defence); Dr Ong Chit Chung; Mr Low Thia Khiang; Mr R. Ravindran; Mr Sin Boon Ann; Ms Irene Ng Phek Hoong; Mr Chew Heng Ching (Mr Deputy Speaker);</font></td></tr>\r\n\r\n</table></td></tr>\r\n\r\n</table>\r\n\r\n<br><br><font size=\"1\"><b>Column: 719</b></font><br><br>\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n<br><br><!-- Mr Chew Heng Ching (Mr Deputy Speaker) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>The Chairman:</b> Order. It is 6.30 pm.\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;Thereupon, Mr Deputy Speaker left the Chair of the\r\n\r\nCommittee and took the Chair of the House.\r\n\r\n<div align=\"center\"><h4></h4></div>\r\n\r\n<br><br><!-- Dr Tony Tan Keng Yam -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Dr Tony Tan Keng Yam:</b> Mr Deputy Speaker, Sir, I\r\n\r\nwould  like  to report that the Committee of  Supply  has\r\n\r\nmade progress\r\n\r\n<br><br><font size=\"1\"><b>Column: 728</b></font>\r\n\r\n</body>\r\n\r\n</html>",
+  "expected_rows": [
+    [
+      "The Chairman",
+      "Order. It is 6.30 pm.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "Thereupon, Mr Deputy Speaker left the Chair of the Committee and took the Chair of the House.",
+      "PROCEDURAL"
+    ],
+    [
+      "Dr Tony Tan Keng Yam",
+      "Mr Deputy Speaker, Sir, I would like to report that the Committee of Supply has made progress",
+      "SPEECH"
+    ]
+  ]
+}

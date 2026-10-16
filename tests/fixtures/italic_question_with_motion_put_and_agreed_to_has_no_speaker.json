@@ -1,0 +1,37 @@
+{
+  "why": "A record decision whose Question and motion words are in separate italic runs ('Question, \"That ...\", put and agreed to.') stayed with Mdm Speaker instead of having no speaker; the turn carries on after it.",
+  "source_report_id": 19347,
+  "report_version": "sprs3",
+  "report_type": "motion",
+  "title": "A Sustainable Population for a Dynamic Singapore",
+  "subtitle": null,
+  "original_title": "A Sustainable Population for a Dynamic Singapore",
+  "html": "<p><strong>Mdm Speaker</strong>: We have now come to the conclusion of the debate, and I shall put the necessary Questions to the House for a decision. There are two amendments proposed by Mr Liang Eng Hwa as indicated in the Order Paper.</p><p>I shall put the Questions on the amendments in the order in which they relate to the text of the original Motion. The first amendment by Mr Liang Eng&nbsp;</p><p><span style=\"color: rgb(51, 51, 51);\">Page: 108</span></p><p>Hwa is that, in line 3, to leave out the words \"population policy\".</p><p><em>Question</em>, <em>\"That the words proposed to be left out, be left out\",&nbsp;put and agreed to.</em></p><p>I now come to the second amendment by Mr Liang Eng Hwa. The second amendment is that the words proposed by the Member be added at the end of the Motion.</p><p><em>Question</em>, <em>\"That the words proposed to be added, be added\",&nbsp;put and agreed to.</em></p>",
+  "expected_rows": [
+    [
+      "Mdm Speaker",
+      "We have now come to the conclusion of the debate, and I shall put the necessary Questions to the House for a decision. There are two amendments proposed by Mr Liang Eng Hwa as indicated in the Order Paper.",
+      "SPEECH"
+    ],
+    [
+      "Mdm Speaker",
+      "I shall put the Questions on the amendments in the order in which they relate to the text of the original Motion. The first amendment by Mr Liang Eng Hwa is that, in line 3, to leave out the words \"population policy\".",
+      "SPEECH"
+    ],
+    [
+      null,
+      "_Question_ , _\"That the words proposed to be left out, be left out\", put and agreed to._",
+      "PROCEDURAL"
+    ],
+    [
+      "Mdm Speaker",
+      "I now come to the second amendment by Mr Liang Eng Hwa. The second amendment is that the words proposed by the Member be added at the end of the Motion.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "_Question_ , _\"That the words proposed to be added, be added\", put and agreed to._",
+      "PROCEDURAL"
+    ]
+  ]
+}

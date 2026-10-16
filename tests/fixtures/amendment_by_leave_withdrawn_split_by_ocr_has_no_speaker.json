@@ -1,0 +1,32 @@
+{
+  "why": "The record line 'A mendment, by leave, withdrawn.' (a space cut the word in the source) stayed with the member who withdrew the amendment instead of having no speaker.",
+  "source_report_id": 37157,
+  "report_version": "sprs2",
+  "report_type": "budget",
+  "title": "BUDGET, NATIONAL DEVELOPMENT DIVISION - GENERAL",
+  "subtitle": null,
+  "original_title": "BUDGET, NATIONAL DEVELOPMENT DIVISION - GENERAL",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\r\n\r\n<head>\r\n\r\n\r\n\r\n<meta http-equiv=\"Content-Type\" content=\"text/html;charset=iso-8859-1\">\r\n\r\n<meta name=\"Parl_No\" content=\"1\">\r\n\r\n<meta name=\"Sess_No\" content=\"1\">\r\n\r\n<meta name=\"Vol_No\" content=\"26\">\r\n\r\n<meta name=\"Sit_No\" content=\"14\">\r\n\r\n<meta name=\"Sit_Date\" content=\"1967-12-20\">\r\n\r\n<meta name=\"Sect_Name\" content=\"BUDGET\">\r\n\r\n<meta name=\"Title\" content=\"BUDGET, NATIONAL DEVELOPMENT DIVISION - GENERAL\">\r\n\r\n<meta name=\"MP_Speak\" content=\"Mr E. W. Barker (Minister for Law and National Development); Madam Chan Choy Siong; Mr Ng Kah Ting; Mr Ng Yeow Chong; Mr Tang See Chim; Mr P. Coomaraswamy (Mr Speaker);\">\r\n\r\n<meta name=\"Start_Col\" content=\"968\">\r\n\r\n<meta name=\"End_Col\" content=\"974\">\r\n\r\n</head>\r\n\r\n<body>\r\n\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\"><tr><td>\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">26</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">14</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">20-12-1967</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">BUDGET</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">BUDGET, NATIONAL DEVELOPMENT DIVISION - GENERAL</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Mr E. W. Barker (Minister for Law and National Development); Madam Chan Choy Siong; Mr Ng Kah Ting; Mr Ng Yeow Chong; Mr Tang See Chim; Mr P. Coomaraswamy (Mr Speaker);</font></td></tr>\r\n\r\n</table></td></tr>\r\n\r\n</table>\r\n\r\n<br><br><font size=\"1\"><b>Column: 968</b></font><br><br>\r\n\r\n\r\n\r\n<br><br><!-- Mr Ng Yeow Chong -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Ng Yeow Chong:</b> I beg leave to\r\n\r\nwithdraw the amendment.\r\n\r\n\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;A mendment, by leave, withdrawn.\r\n\r\n\r\n\r\n<br><br><!-- Mr Tang See Chim -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Tang See Chim:</b> Sir, I beg to\r\n\r\nmove,\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;That the sum to be allocated for Head 62 be\r\n\r\nreduced by the whole sum in respect of item (003)\r\n\r\nof subhead 310.\r\n\r\n\r\n\r\n\r\n\r\n</body>\r\n\r\n</html>",
+  "expected_rows": [
+    [
+      "Mr Ng Yeow Chong",
+      "I beg leave to withdraw the amendment.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "A mendment, by leave, withdrawn.",
+      "PROCEDURAL"
+    ],
+    [
+      "Mr Tang See Chim",
+      "Sir, I beg to move,",
+      "SPEECH"
+    ],
+    [
+      "Mr Tang See Chim",
+      "That the sum to be allocated for Head 62 be reduced by the whole sum in respect of item (003) of subhead 310.",
+      "SPEECH"
+    ]
+  ]
+}
