@@ -159,11 +159,11 @@ Identities scraped from parliament.gov.sg, plus the colonial Legislative Assembl
 
 ### Person
 
-One row per individual, grouping the per-parliament `Speaker` rows. Derived and rebuildable: rows join on identical names, then on names equal after title and inversion normalisation, subject to the hand decisions in `data/person_decisions.json` (`merge` and `distinct` entries with a cited source). A person holds at most one speaker row per parliament.
+One row per individual, grouping the per-parliament `Speaker` rows. Derived and rebuildable: rows join on identical names, then on names equal after title and inversion normalisation, subject to the hand decisions in `data/person_decisions.json` (`merge`, `distinct` and `name` entries with a cited source). A person holds at most one speaker row per parliament.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `canonical_name` | str | The most common spelling among the person's speaker rows, or the name a `merge` decision gives. |
+| `canonical_name` | str | Display name in "Given Surname" order. Stage 9 takes the most common spelling among the person's speaker rows, inverts a comma form ("Rajaratnam, S" becomes "S Rajaratnam"), and drops honorifics and the decorations BPM and BBM. A `merge` or `name` decision gives the name instead. `speaker.name` keeps the source form. A rerun of stage 9 renames existing persons. |
 | `basis` | str | Which rule formed the group: `auto:exact`, `auto:normalised`, `review:merge` or `single`. |
 | `notes` | str | Free text; unused so far. |
 
