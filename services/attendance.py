@@ -3,9 +3,11 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
+from crud.attendance import AttendanceLocationRow
 from database.attendance import Attendance
 from database.sitting import Sitting
 from database.speaker import Speaker
+from schemas.constituency_names import ConstituencyNames
 from schemas.hansard_report_response import HansardReportAttendanceEntry
 from utils.names import (
     invert_to_natural,
@@ -689,7 +691,67 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
     return None
 
 
-def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups) -> list[Attendance]:
+@dataclass(frozen=True)
+class ConstituencyLookups:
+    printed_parliament_to_constituency: dict[tuple[str, Optional[int]], str]
+    printed_to_constituency: dict[str, str]
+    sitting_speaker_printed_to_constituency: dict[tuple[Optional[str], Optional[str], str], str]
+
+
+@dataclass(frozen=True)
+class LocationChange:
+    id: int
+    speaker_name: Optional[str]
+    sitting_date: Optional[str]
+    location_name_before: str
+    location_name_after: str
+
+
+def build_constituency_lookups(constituency_names: ConstituencyNames) -> ConstituencyLookups:
+    return ConstituencyLookups(
+        printed_parliament_to_constituency={
+            (name.printed, name.parliament_number): name.constituency
+            for name in constituency_names.names
+            if name.parliament_number is not None
+        },
+        printed_to_constituency={name.printed: name.constituency for name in constituency_names.names if name.parliament_number is None},
+        sitting_speaker_printed_to_constituency={
+            (row.sitting_date, row.speaker_name, row.printed): row.constituency for row in constituency_names.rows
+        },
+    )
+
+
+def get_constituency_name(
+    printed: Optional[str],
+    parliament: Optional[int],
+    sitting_date: Optional[str],
+    speaker_name: Optional[str],
+    lookups: ConstituencyLookups,
+) -> Optional[str]:
+    if printed is None:
+        return None
+    row_constituency = lookups.sitting_speaker_printed_to_constituency.get((sitting_date, speaker_name, printed))
+    if row_constituency is not None:
+        return row_constituency
+    parliament_constituency = lookups.printed_parliament_to_constituency.get((printed, parliament))
+    if parliament_constituency is not None:
+        return parliament_constituency
+    return lookups.printed_to_constituency.get(printed, printed)
+
+
+def get_location_changes(rows: list[AttendanceLocationRow], lookups: ConstituencyLookups) -> list[LocationChange]:
+    location_changes = []
+    for row in rows:
+        location_name_after = get_constituency_name(
+            row.location_name, infer_parliament(row.parlement_no, row.volume_no), row.sitting_date, row.speaker_name, lookups
+        )
+        if location_name_after == row.location_name:
+            continue
+        location_changes.append(LocationChange(row.id, row.speaker_name, row.sitting_date, row.location_name, location_name_after))
+    return location_changes
+
+
+def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
     if not sitting.markdown_content:
         return []
 
@@ -706,17 +768,18 @@ def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups) -> list[At
                 continue
             name = normalize_name(parsed.name)
             canonical = None if parliament is None else resolve_canonical_name(name, parliament, lookups)
+            speaker_name = canonical or name
             records.append(Attendance(
                 sitting_id=sitting.id,
-                speaker_name=canonical or name,
+                speaker_name=speaker_name,
                 is_present=is_present,
-                location_name=parsed.constituency,
+                location_name=get_constituency_name(parsed.constituency, parliament, sitting.sitting_date, speaker_name, constituency_lookups),
             ))
 
     return records
 
 
-def get_sitting_attendance_from_list(sitting: Sitting, lookups: SpeakerLookups) -> list[Attendance]:
+def get_sitting_attendance_from_list(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
     if sitting.attendance_list is None:
         return []
 
@@ -736,11 +799,12 @@ def get_sitting_attendance_from_list(sitting: Sitting, lookups: SpeakerLookups) 
             continue
         name = normalize_name(parsed.name)
         canonical = None if parliament is None else resolve_canonical_name(name, parliament, lookups)
+        speaker_name = canonical or name
         records.append(Attendance(
             sitting_id=sitting.id,
-            speaker_name=canonical or name,
+            speaker_name=speaker_name,
             is_present=entry.attendance,
-            location_name=parsed.constituency,
+            location_name=get_constituency_name(parsed.constituency, parliament, sitting.sitting_date, speaker_name, constituency_lookups),
         ))
 
     return records

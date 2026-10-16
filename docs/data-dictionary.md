@@ -140,7 +140,7 @@ One row per person per sitting, parsed from the PRESENT/ABSENT sections of `Sitt
 |---|---|---|
 | `speaker_name` | str | The registry name where the attendance name resolves to a `Speaker` row at build time, otherwise the name as listed after title stripping. |
 | `is_present` | bool | `True` = present, `False` = absent. |
-| `location_name` | str | The constituency in parentheses after the name, in every era. The newer API's `locationName`, which marks where a member sat during a hybrid sitting, stays inside `Sitting.attendance_list`. |
+| `location_name` | str | The constituency in parentheses after the name, in every era, spelled as the Elections Department spells it: `data/constituency_names.json` replaces typos and variant spellings, and seat types ("Nominated Member", "ex-officio") and any other bracket text stay as printed. The newer API's `locationName`, which marks where a member sat during a hybrid sitting, stays inside `Sitting.attendance_list`. |
 | `speaker_id` | int | FK → `Speaker.id`. `NULL` where the match has not been resolved. |
 
 ### Speaker

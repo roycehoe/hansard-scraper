@@ -24,6 +24,16 @@ class AttendancePresenceRow:
 
 
 @dataclass(frozen=True)
+class AttendanceLocationRow:
+    id: int
+    speaker_name: Optional[str]
+    location_name: str
+    sitting_date: Optional[str]
+    parlement_no: Optional[int]
+    volume_no: Optional[int]
+
+
+@dataclass(frozen=True)
 class AttendanceSittingCount:
     sitting_id: int
     row_count: int
@@ -68,6 +78,27 @@ class CRUDAttendance:
             .where(col(Attendance.speaker_id).is_(None))
         )
         return [AttendanceSpeakerRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_location_rows_by_location_name_not_null(self) -> list[AttendanceLocationRow]:
+        statement = (
+            select(Attendance.id, Attendance.speaker_name, Attendance.location_name, Sitting.sitting_date, Sitting.parlement_no, Sitting.volume_no)
+            .join(Sitting)
+            .where(col(Attendance.location_name).is_not(None))
+        )
+        return [AttendanceLocationRow(*row) for row in self.session.exec(statement).all()]
+
+    def set_location_names_bulk(self, updates: dict[int, str]) -> int:
+        if not updates:
+            return 0
+        update_result = self.session.execute(
+            text(
+                "UPDATE attendance SET location_name = v.location_name "
+                "FROM UNNEST(:ids, :location_names) AS v(id, location_name) "
+                "WHERE attendance.id = v.id"
+            ),
+            {"ids": list(updates.keys()), "location_names": list(updates.values())},
+        )
+        return update_result.rowcount
 
     def set_speaker_ids_bulk(self, updates: dict[int, int]) -> None:
         if not updates:

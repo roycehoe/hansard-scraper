@@ -2,6 +2,7 @@ import argparse
 import json
 import re
 from collections import Counter
+from pathlib import Path
 
 from sqlmodel import Session, select
 
@@ -9,8 +10,10 @@ from crud.speaker import CRUDSpeaker
 from database.init import engine
 from database.sitting import Sitting
 from logs import logger
+from schemas.constituency_names import ConstituencyNames
 from services.attendance import (
     SpeakerLookups,
+    build_constituency_lookups,
     build_speaker_lookups,
     get_sitting_attendance,
     infer_parliament,
@@ -24,6 +27,7 @@ _COLONIAL_PARLIAMENT_FALLBACKS = (1, 2, 3)
 _COUNT_COLUMN_WIDTH = 6
 _NAME_COLUMN_WIDTH = 50
 _TEMPLATE_PARTY = "Unknown"
+_CONSTITUENCY_NAMES_FILE = Path(__file__).parent.parent / "data" / "constituency_names.json"
 _TEMPLATE_PARLIAMENT_NUMBER = 1
 
 _OFFICIAL_TITLE_RE = re.compile(
@@ -74,6 +78,7 @@ def find_unmatched(is_verbose: bool = False) -> dict[str, Counter]:
         speakers = CRUDSpeaker(session).get_all()
 
     lookups = build_speaker_lookups(speakers)
+    constituency_lookups = build_constituency_lookups(ConstituencyNames.model_validate(json.loads(_CONSTITUENCY_NAMES_FILE.read_text())))
 
     category_to_counter: dict[str, Counter] = {
         "candidate": Counter(),
@@ -91,7 +96,7 @@ def find_unmatched(is_verbose: bool = False) -> dict[str, Counter]:
         parliament = infer_parliament(sitting.parlement_no, sitting.volume_no)
         if parliament is None:
             continue
-        for attendance_record in get_sitting_attendance(sitting, lookups):
+        for attendance_record in get_sitting_attendance(sitting, lookups, constituency_lookups):
             if not attendance_record.speaker_name:
                 continue
             if _is_resolved(attendance_record.speaker_name, parliament, lookups):
