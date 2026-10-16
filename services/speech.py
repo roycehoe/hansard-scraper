@@ -90,38 +90,39 @@ _DIVISION_RECORD_ANCHOR = r"(?:On question put, the|`?The) (?:[Hh]ouse|Assembly|
 _DIVISION_LIST_HEADING_ANCHOR = r"Ayes\.?\s+Noes\.?$"
 _DIVISION_RECORD_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=" + _DIVISION_RECORD_ANCHOR + ":)")
 _PROCEDURAL_LINE_ANCHORS = (
-    r"Question (?:put,? and agreed to|proposed|again proposed)",
+    r"Question (?:put[.,]? and agreed to|proposed|again proposed)",
+    r"Question put[.,]?[\s*_]*$",
     r"Question put,? and negatived",
-    r"Amendment, by leave, withdrawn",
+    r"A ?m{1,2}endments?(?: to the amendment)?,? by,? leave[.,]? [Ww]ithdrawn",
     r"The sum of \$?[0-9,]+ .*ordered to stand part",  # Committee of Supply head
-    r"Clauses? [0-9A-Za-z, to and]{1,30} ordered to stand part",
+    r"Clauses?_? [0-9A-Za-z_, to and]{1,30} ordered to stand part",
     r"Bill (?:accordingly )?read a (?:Second|Third|second|third) time",
-    r"Bill reported without amendment",
+    r"Bill reported,? without [Aa]mendment",
     r"Bill considered in Committee",
     r"(?:(?:First|Second|Third) [Rr]esolution|Resolutions?) (?:to be )?reported",
     r"Resolved(?:,|[\s*_]*$)",
     r"Order for Second Reading read",
     r"Order read for",
     r"Adjourned accordingly",
-    r"Thereupon (?:Mr|Mdm) (?:Deputy )?Speaker",
+    r"Thereupon,? (?:Mr|Mdm) (?:Deputy )?(?:Speaker|SPEAKER)",
     r"(?:Sitting|Debate) (?:according(?:ly)? )?(?:suspended|resumed)",
     r"Suspension of Sitting",
     r"resumed at \d",  # second half of a split suspension line
     r"\d{1,2}\.\d{2} [ap]\.?m\.? until \d|_\d{1,2}\.\d{2} [ap]\.?m\.? to \d",
     r"[A-Z][a-z]+(?:-[a-z]+)? minutes? (?:past|to) [A-Z][a-z]+ o'clock",
-    r"(?:Amendment|Notice of motion|Copies of [^.]{0,80}) handed in(?: to the Clerk| and distributed to hon\. Members)?\.?$",
+    r"(?:Amendments?|Notice of motion|Copies of [^.]{0,80}) handed in(?: to the Clerk| and distributed to hon\. Members)?[.,]?$",
     r"No Member rising",
     r"\*\s*The same amendment",
     _DIVISION_RECORD_ANCHOR,
     _DIVISION_LIST_HEADING_ANCHOR,
     r"Division taken",
     r"The following amendments? stood on the Order Paper",
-    r"(?:The )?(?:Clause|Schedule)(?:, as amended,)? ordered to stand part",
+    r"(?:The )?(?:Clause|Schedule)_?(?:, as amended,)? ordered to stand part",
     r"There being only one proposal, the Clerk",
     r"(?:Mr|Mdm|Madam) (?:Deputy )?Speaker,? _?went to the Chair",
     r"_?Then,? the Mace",
     r"Question negatived",
-    r"Bill read the First time",
+    r"Bill read the First [Tt]ime",
     r"With the consent of (?:Mr|Mdm|Madam) (?:Deputy )?Speaker",
     r"Question, put,? and agreed to",
     r"The Question having been proposed at",
@@ -129,20 +130,20 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"The (?:Assembly|House|Council) resumed its sitting",
     r"The following amendments? (?:also )?stood in the names? of",
     r"The time allotted for .{1,80}? having expired",
-    r"Amendments? agreed to",
+    r"Amendments? (?:accordingly )?(?:agreed to|negatived)",
     r"[*+#]{1,2}\s*(?:The (?:amendments?|motion)(?:, [^:]{1,200},)? reads? as follows|Consequential amendments?:)",
     r"Amendments? made: In (?:page|line|clause)",
     r"(?:First|Second|Third|Fourth|Fifth|Sixth|New) Schedule(?:, as amended,)? ordered to stand part",
     r"Parts? [IVXL]+\b.{0,80}ordered to stand part",
-    r"Bill reported with (?:an )?amendments?",
+    r"Bill reported,? with (?:an )?[Aa]mendments?",
     r"Consideration of [Cc]lauses? [\dA-Za-z, ()]{1,30} postponed",
 )
 _QUESTION_DECISION_ANCHORS = (
-    r"Question,? [\"“'‘]?That\b.*(?:\bput\b|, agreed to\.?$|,? and negatived\.?$)",
+    r"Question_?[\s,.]{1,3}_?[\"“'‘]?That\b.*(?:(?:\b|_)put\b|, agreed to\.?$|,? and negatived\.?$)",
     r"(?:Main |Original )?Question,? as amended,? .*(?:\bput\b|accordingly)",
-    r"Question on the [^.]{1,60}? (?:put\b|accordingly)",
+    r"Questions? on the [^.]{1,60}? (?:put\b|accordingly)",
     r"Question accordingly (?:agreed|aggreed|negatived)",
-    r"Question put,? [\"“'‘]That\b",
+    r"Question put[.,]?\s*[\"“'‘]\s*That\b",
     r"(?:Main |Original )Motion,? as amended,? agreed to",
 )
 _PROCEDURAL_LINE_RE = re.compile(r"^[\s*_]*(?:" + "|".join(_PROCEDURAL_LINE_ANCHORS + _QUESTION_DECISION_ANCHORS) + ")")
@@ -154,7 +155,7 @@ _TURN_KEEPING_PROCEDURAL_LINE_RE = re.compile(
 
 _AMENDMENT_TEXT_RE = re.compile(r"^[\s_*]*(?:\(\d+\) )?In page \d+(?:, (?:after )?lines? [\d, and]+)?: (?:after|to|leave)")
 _STOOD_IN_NAMES_NOTE_RE = re.compile(
-    r"^[\s_]*[*+#]{1,2}\s*The (?:[Mm]otion|amendment|same (?:motion|amendment)) (?:also )?stood in the names? of"
+    r"^[\s_(]*[*+#]{1,2}\s*The (?:[Mm]otion|amendment|same (?:motion|amendment)) (?:also )?stood in the names? of"
 )
 _AMENDMENT_FOLLOWS_NOTE_RE = re.compile(
     r"^[\s*_]*[*+#]{1,2}\s*(?:The (?:amendments?|motion)(?:, [^:]{1,200},)? reads? as follows|Consequential amendments?:)"

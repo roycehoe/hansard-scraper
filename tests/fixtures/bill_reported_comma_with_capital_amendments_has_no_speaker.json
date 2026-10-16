@@ -1,0 +1,32 @@
+{
+  "why": "The record line 'Bill reported, with Amendments.' (comma and capital A) stayed with the Chairman instead of having no speaker.",
+  "source_report_id": 41964,
+  "report_version": "sprs2",
+  "report_type": "budget",
+  "title": "BUDGET, COLONIAL DEVELOPMENT AND WELFARE SCHEMES",
+  "subtitle": null,
+  "original_title": "BUDGET, COLONIAL DEVELOPMENT AND WELFARE SCHEMES",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\r\n\r\n<head>\r\n\r\n\r\n\r\n<meta http-equiv=\"Content-Type\" content=\"text/html;charset=iso-8859-1\">\r\n\r\n<meta name=\"Parl_No\" content=\"0\">\r\n\r\n<meta name=\"Sess_No\" content=\"1\">\r\n\r\n<meta name=\"Vol_No\" content=\"1\">\r\n\r\n<meta name=\"Sit_No\" content=\"23\">\r\n\r\n<meta name=\"Sit_Date\" content=\"1955-11-25\">\r\n\r\n<meta name=\"Sect_Name\" content=\"BUDGET\">\r\n\r\n<meta name=\"Title\" content=\"BUDGET, COLONIAL DEVELOPMENT AND WELFARE SCHEMES\">\r\n\r\n<meta name=\"MP_Speak\" content=\"Mr Chew Swee Kee (Minister for Education); Mr D. S. Marshall (Chief Minister and Minister for Commerce and Industry); Mr T. M. Hart (Financial Secretary); Mr G. E. N. Oehlers (Mr Speaker);\">\r\n\r\n<meta name=\"Start_Col\" content=\"1367\">\r\n\r\n<meta name=\"End_Col\" content=\"1370\">\r\n\r\n</head>\r\n\r\n<body>\r\n\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\"><tr><td>\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">0</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">23</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">25-11-1955</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">BUDGET</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">BUDGET, COLONIAL DEVELOPMENT AND WELFARE SCHEMES</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Mr Chew Swee Kee (Minister for Education); Mr D. S. Marshall (Chief Minister and Minister for Commerce and Industry); Mr T. M. Hart (Financial Secretary); Mr G. E. N. Oehlers (Mr Speaker);</font></td></tr>\r\n\r\n</table></td></tr>\r\n\r\n</table>\r\n\r\n<br><br><font size=\"1\"><b>Column: 1367</b></font><br><br>\r\n\r\n\r\n\r\n<br><br><!-- Mr G. E. N. Oehlers (Mr Speaker) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>The Chairman:</b> I am very grateful for the kind\r\n\r\nwords, Mr Chief Minister.\r\n\r\n\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;Question, \"That the Bill, as amended, be reported\r\n\r\nto the Assembly\", put, and agreed to.\r\n\r\n\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;Bill reported, with Amendments.\r\n\r\n\r\n\r\n<div align=\"center\"><b>Third Reading</b></div>\r\n\r\n\r\n\r\n<br><br><!-- Mr G. E. N. Oehlers (Mr Speaker) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Speaker:</b> Mr Hart, will you now move the\r\n\r\nThird Reading?\r\n\r\n\r\n\r\n\r\n\r\n</body>\r\n\r\n</html>",
+  "expected_rows": [
+    [
+      "The Chairman",
+      "I am very grateful for the kind words, Mr Chief Minister.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "Question, \"That the Bill, as amended, be reported to the Assembly\", put, and agreed to.",
+      "PROCEDURAL"
+    ],
+    [
+      null,
+      "Bill reported, with Amendments.",
+      "PROCEDURAL"
+    ],
+    [
+      "Mr Speaker",
+      "Mr Hart, will you now move the Third Reading?",
+      "SPEECH"
+    ]
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "why": "A record decision printed as 'Question put. \"That ...\"' (full stop for the comma) stayed with the member who spoke last instead of having no speaker.",
+  "source_report_id": 38785,
+  "report_version": "sprs2",
+  "report_type": "bill",
+  "title": "RUBBER DEALERS (AMENDMENT) BILL",
+  "subtitle": null,
+  "original_title": "RUBBER DEALERS (AMENDMENT) BILL",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\r\n\r\n<head>\r\n\r\n\r\n\r\n<meta http-equiv=\"Content-Type\" content=\"text/html;charset=iso-8859-1\">\r\n\r\n<meta name=\"Parl_No\" content=\"0\">\r\n\r\n<meta name=\"Sess_No\" content=\"3\">\r\n\r\n<meta name=\"Vol_No\" content=\"17\">\r\n\r\n<meta name=\"Sit_No\" content=\"8\">\r\n\r\n<meta name=\"Sit_Date\" content=\"1962-04-17\">\r\n\r\n<meta name=\"Sect_Name\" content=\"BILLS\">\r\n\r\n<meta name=\"Title\" content=\"RUBBER DEALERS (AMENDMENT) BILL\">\r\n\r\n<meta name=\"MP_Speak\" content=\"Dr Goh Keng Swee (Minister for Finance); Mr A. P. Rajah; Mr David Marshall; Sir George Oehlers (Mr Speaker);\">\r\n\r\n<meta name=\"Start_Col\" content=\"724\">\r\n\r\n<meta name=\"End_Col\" content=\"764\">\r\n\r\n</head>\r\n\r\n<body>\r\n\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\"><tr><td>\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">0</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">3</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">17</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">8</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">17-04-1962</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">BILLS</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">RUBBER DEALERS (AMENDMENT) BILL</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Dr Goh Keng Swee (Minister for Finance); Mr A. P. Rajah; Mr David Marshall; Sir George Oehlers (Mr Speaker);</font></td></tr>\r\n\r\n</table></td></tr>\r\n\r\n</table>\r\n\r\n<br><br><font size=\"1\"><b>Column: 724</b></font><br><br>\r\n\r\n\r\n\r\n<div align=\"center\"><b>RUBBER DEALERS (AMENDMENT) BILL</b></div>\r\n\r\n\r\n\r\n<br><br>3.27 p.m.\r\n\r\n\r\n\r\n<br><br><!-- Dr Goh Keng Swee (Minister for Finance) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>The Minister for Finance (Dr Goh Keng Swee):</b> Mr\r\n\r\nSpeaker, Sir, I beg to move,\r\n\r\n\r\n\r\n<br><br><!-- Dr Goh Keng Swee -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Dr Goh Keng Swee:</b> Sir, I do not intend to waste the\r\n\r\nvaluable   time   of  this  House  in   answering   the\r\n\r\ncontemptible  allegations of the Member  for  Anson.  I\r\n\r\nhave  already explained, and I have quoted  you  as  an\r\n\r\nauthority, Mr Speaker, Sir, that the procedure adopted\r\n\r\nby  the  Government  is  quite  constitutional  and  in\r\n\r\nkeeping with the traditions of parliamentary democracy.\r\n\r\n\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;Question put. \"That on this Assembly proceeding to the\r\n\r\nOrders of the Day, the Rubber Dealers (Amendment)  Bill\r\n\r\nhe ordered to be read a third time.\"\r\n\r\n\r\n\r\n<br><br><!-- Mr David Marshall -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr David Marshall:</b> Division, Sir\r\n\r\n\r\n\r\n\r\n\r\n</body>\r\n\r\n</html>",
+  "expected_rows": [
+    [
+      "The Minister for Finance (Dr Goh Keng Swee)",
+      "Mr Speaker, Sir, I beg to move,",
+      "SPEECH"
+    ],
+    [
+      "Dr Goh Keng Swee",
+      "Sir, I do not intend to waste the valuable time of this House in answering the contemptible allegations of the Member for Anson. I have already explained, and I have quoted you as an authority, Mr Speaker, Sir, that the procedure adopted by the Government is quite constitutional and in keeping with the traditions of parliamentary democracy.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "Question put. \"That on this Assembly proceeding to the Orders of the Day, the Rubber Dealers (Amendment) Bill he ordered to be read a third time.\"",
+      "PROCEDURAL"
+    ],
+    [
+      "Mr David Marshall",
+      "Division, Sir",
+      "SPEECH"
+    ]
+  ]
+}
