@@ -41,6 +41,10 @@ class CRUDAttendance:
         self.session.add_all(attendances)
         self.session.commit()
 
+    def add_many(self, attendances: list[Attendance]) -> None:
+        self.session.add_all(attendances)
+        self.session.flush()
+
     def get_distinct_sitting_ids(self) -> set[int]:
         statement = select(Attendance.sitting_id).distinct()
         sitting_ids = self.session.exec(statement).all()

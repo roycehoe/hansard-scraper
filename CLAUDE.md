@@ -139,6 +139,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `fill_sitting_numbers.py`: fills empty `report.sitting_number`, `sitting.session_no` and `sitting.sitting_no` from the stored header tables; a dry run unless `--commit`
 - `apply_report_titles.py`: rewrites stored titles and subtitles that the current title rule would change; a dry run unless `--commit`
 - `apply_speaker_overrides.py`: applies `data/speaker_overrides.json` to stored speaker rows; a dry run unless `--commit`
+- `complete_truncated_attendance.py`: inserts the attendance rows an interrupted stage 7 run never wrote for sittings 5941, 5988 and 6009, parsed from the stored sitting markdown; checks the per-sitting counts before it commits; a dry run unless `--commit`
 - `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech rows, after checking each against its kept copy; a dry run unless `--commit`
 - `find_presiding_officers.py`: tallies the most common Speaker and Deputy Speaker per parliament from the PRESENT sections
 - `trace_speaker_links.py`: read-only regression guard for stage 8 speech links: re-runs the resolver per key and compares with stored `speaker_id`
@@ -251,5 +252,6 @@ hansard-scraper/
     ├── remove_excluded_reports.py
     ├── fill_sitting_numbers.py
     ├── apply_report_titles.py
-    └── apply_speaker_overrides.py
+    ├── apply_speaker_overrides.py
+    └── complete_truncated_attendance.py
 ```
