@@ -1,0 +1,22 @@
+{
+  "why": "A proc text pair cut by a page marker paragraph lost its tag, and the first reading was credited to the presenter; it has no speaker.",
+  "source_report_id": 17726,
+  "report_version": "sprs3",
+  "report_type": "bill-intro",
+  "title": "Constitution of the Republic of Singapore (Amendment) Bill",
+  "subtitle": null,
+  "original_title": "Constitution of the Republic of Singapore (Amendment) Bill",
+  "html": "<p>[(proc text) \"to\tamend the Constitution of the Republic of Singapore (1999 Reprint) \", (proc text)]</p><p>[(proc text) recommendation of President signified; presented by the Senior Minister of State for Law (Ms Indranee Rajah); read the First time; to be read a Second time on the next available Sitting of </p><p>\t<span style=\"color: rgb(51, 51, 51);\">Page: 48</span></p><p>Parliament, and to be printed. (proc text)]</p>",
+  "expected_rows": [
+    [
+      null,
+      "\"to amend the Constitution of the Republic of Singapore (1999 Reprint) \",",
+      "PROCEDURAL"
+    ],
+    [
+      null,
+      "recommendation of President signified; presented by the Senior Minister of State for Law (Ms Indranee Rajah); read the First time; to be read a Second time on the next available Sitting of Parliament, and to be printed.",
+      "PROCEDURAL"
+    ]
+  ]
+}

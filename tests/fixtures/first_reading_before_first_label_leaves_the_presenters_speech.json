@@ -1,0 +1,27 @@
+{
+  "why": "In a report with several speakers the first reading comes before the first label: its row is PROCEDURAL and the presenter's own speech after it keeps the presenter.",
+  "source_report_id": 38661,
+  "report_version": "sprs2",
+  "report_type": "bill",
+  "title": "AUCTIONEERS' LICENCES (AMENDMENT) BILL",
+  "subtitle": null,
+  "original_title": "AUCTIONEERS' LICENCES (AMENDMENT) BILL",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\r\n\r\n<head>\r\n\r\n\r\n\r\n<meta http-equiv=\"Content-Type\" content=\"text/html;charset=iso-8859-1\">\r\n\r\n<meta name=\"Parl_No\" content=\"0\">\r\n\r\n<meta name=\"Sess_No\" content=\"4\">\r\n\r\n<meta name=\"Vol_No\" content=\"20\">\r\n\r\n<meta name=\"Sit_No\" content=\"2\">\r\n\r\n<meta name=\"Sit_Date\" content=\"1963-04-05\">\r\n\r\n<meta name=\"Sect_Name\" content=\"BILLS\">\r\n\r\n<meta name=\"Title\" content=\"AUCTIONEERS' LICENCES (AMENDMENT) BILL\">\r\n\r\n<meta name=\"MP_Speak\" content=\"Dr Toh Chin Chye (Deputy Prime Minister and Leader of the House); Sir George Oehlers (Mr Speaker);\">\r\n\r\n<meta name=\"Start_Col\" content=\"88\">\r\n\r\n<meta name=\"End_Col\" content=\"88\">\r\n\r\n</head>\r\n\r\n<body>\r\n\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\"><tr><td>\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">0</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">4</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">20</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">2</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">05-04-1963</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">BILLS</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">AUCTIONEERS' LICENCES (AMENDMENT) BILL</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Dr Toh Chin Chye (Deputy Prime Minister and Leader of the House); Sir George Oehlers (Mr Speaker);</font></td></tr>\r\n\r\n</table></td></tr>\r\n\r\n</table>\r\n\r\n<br><br><font size=\"1\"><b>Column: 88</b></font><br><br>\r\n\r\n\r\n\r\n<div align=\"center\"><b>AUCTIONEERS' LICENCES (AMENDMENT) BILL</b></div>\r\n\r\n\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;\"to amend the Auctioneers' Licences Ordinance (Chapter\r\n\r\n190 of the Revised Edition)\",\r\n\r\n\r\n\r\npresented by Dr Toh Chin Chye; read the First time, to\r\n\r\nbe read a Second time on Friday, 7th June, 1963, and to\r\n\r\nbe printed.\r\n\r\n\r\n\r\n<br><br><!-- Dr Toh Chin Chye -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Dr Toh Chin Chye:</b> Mr Speaker, can item 14 be taken\r\n\r\nafter  the  completion of proceedings on item  15?  The\r\n\r\nreason is that ---\r\n\r\n\r\n\r\n<br><br><!-- Sir George Oehlers (Mr Speaker) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Speaker:</b> Order. I think the easiest way is for the\r\n\r\nDeputy Prime Minister to introduce that Bill, and  when\r\n\r\nI  say,  \"Second  Reading,  what  day?\",  he  can  say,\r\n\r\n\"Immediately after item 15\".\r\n\r\n\r\n\r\n</body>\r\n\r\n</html>\r\n\r\n",
+  "expected_rows": [
+    [
+      null,
+      "\"to amend the Auctioneers' Licences Ordinance (Chapter 190 of the Revised Edition)\", presented by Dr Toh Chin Chye; read the First time, to be read a Second time on Friday, 7th June, 1963, and to be printed.",
+      "PROCEDURAL"
+    ],
+    [
+      "Dr Toh Chin Chye",
+      "Mr Speaker, can item 14 be taken after the completion of proceedings on item 15? The reason is that ---",
+      "SPEECH"
+    ],
+    [
+      "Mr Speaker",
+      "Order. I think the easiest way is for the Deputy Prime Minister to introduce that Bill, and when I say, \"Second Reading, what day?\", he can say, \"Immediately after item 15\".",
+      "SPEECH"
+    ]
+  ]
+}

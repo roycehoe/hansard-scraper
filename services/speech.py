@@ -60,6 +60,11 @@ _BILL_PRESENTER_RE = re.compile(
     re.IGNORECASE,
 )
 
+_FIRST_READING_RE = re.compile(
+    r"\bpresented\s+(?:for\s+.{1,150}?\s+)?by\b.{1,400}?\bread\s+(?:for\s+)?(?:the|a)\s+First\s+time\b",
+    re.IGNORECASE,
+)
+
 _NEWER_ADJOURNMENT_MOVER_RE = re.compile(
     r"[−–—‒\-]\s*\[(?:\()?((?:Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc\s+Prof)[^]()]+)\)?\]",
     re.IGNORECASE,
@@ -86,6 +91,7 @@ _PROCEDURAL_STAGE_RE = re.compile(
 
 _TABLE_CAPTION_RE = re.compile(r"^_?Table\b")
 
+_BROUGHT_UP_ANCHOR = r"Brought up, and read the First [Tt]ime"
 _DIVISION_RECORD_ANCHOR = r"(?:On question put, the|`?The) (?:[Hh]ouse|Assembly|Council|Committee) divided"
 _DIVISION_LIST_HEADING_ANCHOR = r"Ayes\.?\s+Noes\.?$"
 _DIVISION_RECORD_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=" + _DIVISION_RECORD_ANCHOR + ":)")
@@ -122,7 +128,8 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"(?:Mr|Mdm|Madam) (?:Deputy )?Speaker,? _?went to the Chair",
     r"_?Then,? the Mace",
     r"Question negatived",
-    r"Bill read the First [Tt]ime",
+    r"Bill (?:presented and )?read the First [Tt]ime",
+    _BROUGHT_UP_ANCHOR,
     r"With the consent of (?:Mr|Mdm|Madam) (?:Deputy )?Speaker",
     r"Question, put,? and agreed to",
     r"The Question having been proposed at",
@@ -150,7 +157,7 @@ _PROCEDURAL_LINE_RE = re.compile(r"^[\s*_]*(?:" + "|".join(_PROCEDURAL_LINE_ANCH
 
 # NOTE: these procedural lines keep the current speaker, because the lines after them were often the mover's or the chair's own speech.
 _TURN_KEEPING_PROCEDURAL_LINE_RE = re.compile(
-    r"^[\s*_]*(?:Question (?:again )?proposed|\*\s*The same amendment|" + "|".join(_QUESTION_DECISION_ANCHORS) + ")"
+    r"^[\s*_]*(?:Question (?:again )?proposed|\*\s*The same amendment|" + _BROUGHT_UP_ANCHOR + "|" + "|".join(_QUESTION_DECISION_ANCHORS) + ")"
 )
 
 _AMENDMENT_TEXT_RE = re.compile(r"^[\s_*]*(?:\(\d+\) )?In page \d+(?:, (?:after )?lines? [\d, and]+)?: (?:after|to|leave)")
@@ -643,6 +650,7 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
             continue
         proc_text = _get_proc_text(edge_unmarked)
         unmarked = edge_unmarked if proc_text is None else proc_text
+        is_first_reading = proc_text is None and _FIRST_READING_RE.search(unmarked) is not None
         if adjournment_continuations > 0:
             speeches[-1].transcript += " " + unmarked
             adjournment_continuations = 0 if _SENTENCE_END_RE.search(unmarked) else adjournment_continuations - 1
@@ -653,13 +661,17 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
         non_speech_kind = _get_non_speech_kind(unmarked)
         if is_resolved_line or non_speech_kind is None:
             is_body_started = True
-            if proc_text is None:
+            if proc_text is None and not is_first_reading:
                 speaker_lines.append(unmarked)
                 continue
+        # NOTE: the bill's title quote, and any time stamp and heading before it, belong to the first reading, so they join its row.
+        if is_first_reading:
+            unmarked = " ".join(speaker_lines + [unmarked])
+            speaker_lines = []
         if speaker_lines:
             speeches.append(ParsedSpeech(speaker=speaker, transcript=" ".join(speaker_lines), kind=SpeechKind.SPEECH))
             speaker_lines = []
-        speeches.append(ParsedSpeech(speaker=None, transcript=unmarked, kind=SpeechKind.PROCEDURAL if proc_text is not None else non_speech_kind))
+        speeches.append(ParsedSpeech(speaker=None, transcript=unmarked, kind=SpeechKind.PROCEDURAL if proc_text is not None or is_first_reading else non_speech_kind))
         if _ADJOURNMENT_LINE_RE.match(unmarked) and not _SENTENCE_END_RE.search(unmarked):
             adjournment_continuations = _MAX_ADJOURNMENT_CONTINUATIONS
     if speaker_lines:
@@ -793,6 +805,9 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
         if _is_artifact_line(parsed_line):
             continue
         proc_text = _get_proc_text(parsed_line)
+        # NOTE: the older system does not tag a first reading, so its formula stands in for the tag.
+        if proc_text is None and _FIRST_READING_RE.search(parsed_line) is not None:
+            proc_text = parsed_line
         # NOTE: the source tags this block as a step in the House's business, so it gets no speaker; the turn ends exactly as the untagged line would end it.
         if proc_text is not None:
             if not is_in_preamble or not _is_preamble_title_line(proc_text):
