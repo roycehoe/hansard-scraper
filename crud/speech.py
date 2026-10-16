@@ -149,6 +149,10 @@ class CRUDSpeech:
         self.session.commit()
         return delete_result.rowcount
 
+    def delete_by_report_ids(self, report_ids: list[int]) -> int:
+        statement = delete(Speech).where(col(Speech.report_id).in_(report_ids))
+        return self.session.exec(statement).rowcount
+
     def set_speaker_ids_bulk(self, updates: dict[int, Optional[int]]) -> None:
         if not updates:
             return

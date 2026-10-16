@@ -67,7 +67,7 @@ Each folder has a strict responsibility boundary. `populate/` is the only layer 
 
 1. **Fetch search index** (`gateway/hansard_search.py`): POST to the Hansard search API, paginate through all results, return `list[HansardSearchResult]` (Pydantic model in `schemas/hansard_search_result.py`); a non-list body is an empty page.
 
-2. **Fetch report HTML** (`populate/hansard_responses.py` + `gateway/hansard_topic.py` + `services/hansard_website.py`): for each search result, `populate` calls `gateway` to POST to `getHansardTopic` with a JSON body, which returns a `HansardTopicResponse` (`schemas/hansard_topic_response.py`). The fetch picks the id and the field by system (`services/hansard_website.py::get_topic_id` and `get_topic_html_content`): an older-system hit (`report_version` sprs2, sittings before 10 September 2012) is fetched by `html_file_name` and read from `htmlContent`; a newer-system hit (sprs3) is fetched by `report_id` without its trailing `#` and read from `resultHTML.content`. Both land in `HansardWebsiteResponse.content` through `build_hansard_website_response` (see `docs/adr/0003-newer-system-raw-mapping.md`). Newer-system atbp reports return no text and keep `content` null. Hits listed in `data/excluded_report_ids.json` (a stored report returned again under another id) are never inserted. `populate/hansard_response_contents.py` and `populate/report_contents.py` fill `content` and `markdown_content` in place on rows stored without text.
+2. **Fetch report HTML** (`populate/hansard_responses.py` + `gateway/hansard_topic.py` + `services/hansard_website.py`): for each search result, `populate` calls `gateway` to POST to `getHansardTopic` with a JSON body, which returns a `HansardTopicResponse` (`schemas/hansard_topic_response.py`). The fetch picks the id and the field by system (`services/hansard_website.py::get_topic_id` and `get_topic_html_content`): an older-system hit (`report_version` sprs2, sittings before 10 September 2012) is fetched by `html_file_name` and read from `htmlContent`; a newer-system hit (sprs3) is fetched by `report_id` without its trailing `#` and read from `resultHTML.content`. Both land in `HansardWebsiteResponse.content` through `build_hansard_website_response` (see `docs/adr/0003-newer-system-raw-mapping.md`). Newer-system atbp reports return no text and keep `content` null. Hits listed in `data/excluded_report_ids.json` (a stored report returned again under another id, with the id of the copy kept) are never inserted, and stage 3 builds no report from their raw rows. `populate/hansard_response_contents.py` and `populate/report_contents.py` fill `content` and `markdown_content` in place on rows stored without text.
 
 3. **Parse into Report** (`services/report.py`) — converts `HansardWebsiteResponse` → `Report`. Parses the `title` field to split off a `subtitle` (parenthetical content that is not an acronym). Also converts HTML content to cleaned markdown via `utils/markdown_parser.py`.
 
@@ -136,6 +136,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `load_colonial_la_speakers.py` — idempotent load of `data/colonial_la_members.json` into the `Speaker` table; must be run before `populate_speaker_links`
 - `load_heads_of_state.py`: idempotent load of `data/heads_of_state.json` (Governors, the Yang di-Pertuan Negara, Presidents) into the `Speaker` table as non-member rows; run after `load_colonial_la_speakers.py` and before `populate_speaker_links`
 - `scrape_speakers_by_parliament.py` — populates the `Speaker` table from parliament.gov.sg
+- `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech rows, after checking each against its kept copy; a dry run unless `--commit`
 - `find_presiding_officers.py`: tallies the most common Speaker and Deputy Speaker per parliament from the PRESENT sections
 - `trace_speaker_links.py`: read-only regression guard for stage 8 speech links: re-runs the resolver per key and compares with stored `speaker_id`
 - `expand_sample.py`: expands the stratified speech sample in `docs/speech-speaker/sample.json`
@@ -152,7 +153,7 @@ hansard-scraper/
 ├── script.py                        # Pipeline orchestrator — runs all populate stages in order
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
 ├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system)
-├── exceptions.py                    # HansardError / HansardGatewayError
+├── exceptions.py                    # HansardError / HansardGatewayError / HansardWriteTargetError / HansardWriteCheckError
 ├── logs.py                          # Loguru logger initialisation
 │
 ├── schemas/                         # Pydantic validation models (API shapes, not DB)
@@ -220,7 +221,8 @@ hansard-scraper/
 │   ├── markdown_parser.py           # HTML → clean markdown; merges split bold lines
 │   ├── names.py                     # Pure name helpers shared by services/attendance.py and services/person.py
 │   ├── sitting_dates.py             # Sitting-date parsing and the old/new format cutoff test
-│   └── text.py                      # Mojibake fix (cp1252 → UTF-8) and NUL stripping
+│   ├── text.py                      # Mojibake fix (cp1252 → UTF-8) and NUL stripping
+│   └── write_target.py              # validate_can_write: the guard every write script calls before --commit
 │
 └── scripts/                         # One-off diagnostics (not part of pipeline)
     ├── diagnose.py
@@ -240,5 +242,6 @@ hansard-scraper/
     ├── run_pilot_assessment.py
     ├── load_colonial_la_speakers.py
     ├── load_heads_of_state.py
-    └── scrape_speakers_by_parliament.py
+    ├── scrape_speakers_by_parliament.py
+    └── remove_excluded_reports.py
 ```

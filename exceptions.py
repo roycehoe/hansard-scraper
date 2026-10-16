@@ -8,3 +8,11 @@ class HansardGatewayError(HansardError):
 
 class HansardUnattributedSpeechError(HansardError):
     pass
+
+
+class HansardWriteTargetError(HansardError):
+    pass
+
+
+class HansardWriteCheckError(HansardError):
+    pass

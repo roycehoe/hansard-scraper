@@ -98,7 +98,7 @@ What this means for the plan:
 ## Outside the loop
 
 These came out of the sweep study. They are separate changes, made after the loop and not by it:
-- Add the 9 sets of byte-identical reports (26 reports) to `data/excluded_report_ids.json`.
+- Add the 9 sets of byte-identical reports (26 reports) to `data/excluded_report_ids.json`. Recomputed on 17 October 2026 in the data sanity fix run: every byte-identical pair of one topic in one sitting is a DS-04 duplicate and is listed there. The other sets repeat source text under different questions, topics or sittings, and stay.
 - Link "The Chief Minister" on 7 June 1956 (82 rows, probably David Marshall) by date, in the next stage 8 change.
 
 ## Amendments

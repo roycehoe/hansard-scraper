@@ -1,1 +1,52 @@
-[]
+[
+  {
+    "report_id": "00069034-ZZ.00050649-ZZ_1#id006_19611130_S0005_T00052-motion#",
+    "kept_report_id": "00069034-ZZ.00050644-ZZ_1#id002_19611130_S0006_T00051-speaker#",
+    "reason": "30 Nov 1961: same html_file_name 002_19611130_S0006_T0005 and identical text. The kept id names that file and its type, a Speaker's announcement."
+  },
+  {
+    "report_id": "00004663-WA.00000937-WA_1##",
+    "kept_report_id": "00075515-WA.00070101-ZZ_1##",
+    "reason": "17 Mar 2004: same html_file_name 005_20040317_S0004_T0004 and identical text. The kept copy has the lower report id and keeps the subtitle (cont.)."
+  },
+  {
+    "report_id": "00075693-WA.00074705-ZZ_1##",
+    "kept_report_id": "00004818-WA.00004561-WA_1##",
+    "reason": "14 Feb 2011: same html_file_name 009_20110214_S0006_T0003 and identical text. The kept copy holds the full title; this one is cut to DEATH AT RECENT."
+  },
+  {
+    "report_id": "00077053-WA.00077057-WA_12#budget#",
+    "kept_report_id": "00077053-WA.00077058-WA_11#budget#",
+    "reason": "6 Mar 2012: same html_file_name 010_20120306_S0004_T0001 and identical text. The kept copy has the lower report id."
+  },
+  {
+    "report_id": "00169088-ZZ.00051388-ZZ_1#id013_19630409_S0003_T0004-budget#",
+    "kept_report_id": "#013_19630409_S0003_T0004.htm-budget#",
+    "reason": "9 Apr 1963: same html_file_name 013_19630409_S0003_T0004 and identical text. The kept copy has the lower report id."
+  },
+  {
+    "report_id": "00004688-WA.00001507-WA_1##",
+    "kept_report_id": "00075539-WA.00070689-ZZ_1##",
+    "reason": "28 Feb 2005: same html_file_name 021_20050228_S0004_T0001; neither copy has text. The kept copy has the lower report id."
+  },
+  {
+    "report_id": "00076180-WA.00076632-WA_8#id-f8ee1819-646d-47b3-9e05-bdbbed80eae6#",
+    "kept_report_id": "00076180-WA.00076648-WA_8#id-dad3aad4-6dab-44be-b752-a2657c252087#",
+    "reason": "21 Nov 2011: same html_file_name 022_20111121_S0003_T0001 and identical text. The kept copy has the lower report id."
+  },
+  {
+    "report_id": "00004740-WA.00002521-WA_1##",
+    "kept_report_id": "00075603-WA.00072129-ZZ_1##",
+    "reason": "22 May 2007: same html_file_name 023_20070522_S0003_T0001 and identical text. The kept copy has the lower report id."
+  },
+  {
+    "report_id": "#032_10031016_S0003_T0009.html-#",
+    "kept_report_id": "#030_20031016_S0003_T0008.html-#",
+    "reason": "16 Oct 2003: a textless hit whose file name has the year typed as 1003, for the Martial Arts Instruction (Repeal) Bill that the kept report holds."
+  },
+  {
+    "report_id": "#018_10031016_S0004_T0002.html-#",
+    "kept_report_id": "#017_20031016_S0004_T0001.html-#",
+    "reason": "16 Oct 2003: a textless hit whose file name has the year typed as 1003, for the statement on the recent deaths of three SAF servicemen that the kept report holds."
+  }
+]

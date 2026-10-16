@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col, delete, select
 
 from database.report import Report
 
@@ -47,6 +47,10 @@ class CRUDReport:
         statement = select(Report).where(col(Report.id).in_(report_ids))
         return list(self.session.exec(statement).all())
 
+    def get_by_report_ids(self, report_ids: list[str]) -> list[Report]:
+        statement = select(Report).where(col(Report.report_id).in_(report_ids))
+        return list(self.session.exec(statement).all())
+
     def get_by_sitting_dates(self, dates: list[datetime]) -> list[Report]:
         statement = select(Report).where(col(Report.sitting_date).in_(dates))
         return list(self.session.exec(statement).all())
@@ -58,3 +62,7 @@ class CRUDReport:
     def get_header_rows(self) -> list[ReportHeaderRow]:
         statement = select(Report.id, Report.report_type, Report.parliament_number, Report.sitting_date, Report.title)
         return [ReportHeaderRow(*row) for row in self.session.exec(statement).all()]
+
+    def delete_by_ids(self, report_ids: list[int]) -> int:
+        statement = delete(Report).where(col(Report.id).in_(report_ids))
+        return self.session.exec(statement).rowcount
