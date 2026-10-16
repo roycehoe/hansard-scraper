@@ -12,6 +12,10 @@ The goal is in `docs/vision.md`. Its "Measuring progress" section holds the curr
 - A passing `diagnose.py` or `run_sanity_check.py` does not mean speeches are correct; see the table in that section.
 - When a figure there moves, update the section in the same change.
 
+## Data loss register
+
+`docs/data-loss-register.md` records everything the pipeline loses between the raw API responses and any derived table. Any change that cleans data adds or updates a row there in the same change, or it is not done. Cleaning means dropping, merging, deduplicating, trimming, normalising, overriding, reclassifying or deleting anything the source holds. It covers parsing and speech rows, and also attendance, persons, memberships, sittings, report titles and the hand overrides in `data/`. The row says what is lost, where in code, why, the cost in counts, whether it can be rebuilt from the raw tables, and who decided.
+
 ## Commands
 
 ```bash
