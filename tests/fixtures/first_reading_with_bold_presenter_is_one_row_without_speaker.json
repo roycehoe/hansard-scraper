@@ -1,0 +1,17 @@
+{
+  "why": "A newer-system first reading with no proc text tag and the presenter in bold: the bold name was read as a speaker and the words 'presented by the' were dropped; the row is whole and has no speaker.",
+  "source_report_id": 17273,
+  "report_version": "sprs3",
+  "report_type": "bill-intro",
+  "title": "Housing and Development (Amendment) Bill",
+  "subtitle": null,
+  "original_title": "Housing and Development (Amendment) Bill",
+  "html": "<p>\"to <span style=\"background-color: transparent; color: rgb(0, 0, 0);\">amend the Housing and Development Act (Chapter 129 of the 2004 Revised Edition)'</span>,</p><p><span style=\"color: rgb(51, 51, 51);\">presented by the&nbsp;</span><strong style=\"color: rgb(51, 51, 51);\">Minister of State for National Development (Mr Desmond Lee)</strong><span style=\"color: rgb(51, 51, 51);\">; read the First time; to be read a Second time on the next available Sitting of Parliament, and to be printed.</span></p><p>\t<span style=\"color: rgb(51, 51, 51);\">Page: 9</span></p>",
+  "expected_rows": [
+    [
+      null,
+      "\"to amend the Housing and Development Act (Chapter 129 of the 2004 Revised Edition)', presented by the Minister of State for National Development (Mr Desmond Lee) ; read the First time; to be read a Second time on the next available Sitting of Parliament, and to be printed.",
+      "PROCEDURAL"
+    ]
+  ]
+}
