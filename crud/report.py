@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
 
+from sqlalchemy import text
 from sqlmodel import Session, col, delete, select
 
 from database.report import Report
@@ -13,6 +15,13 @@ class ReportHeaderRow:
     parliament_number: int
     sitting_date: datetime
     title: str
+
+
+@dataclass(frozen=True)
+class ReportMarkdownRow:
+    id: int
+    sitting_date: datetime
+    markdown_content: Optional[str]
 
 
 class CRUDReport:
@@ -66,3 +75,24 @@ class CRUDReport:
     def delete_by_ids(self, report_ids: list[int]) -> int:
         statement = delete(Report).where(col(Report.id).in_(report_ids))
         return self.session.exec(statement).rowcount
+
+    def get_markdown_rows_by_sitting_number_null(self) -> list[ReportMarkdownRow]:
+        statement = (
+            select(Report.id, Report.sitting_date, Report.markdown_content)
+            .where(col(Report.sitting_number).is_(None))
+            .order_by(Report.id)
+        )
+        return [ReportMarkdownRow(*row) for row in self.session.exec(statement).all()]
+
+    def set_sitting_numbers_bulk(self, updates: dict[int, int]) -> int:
+        if not updates:
+            return 0
+        update_result = self.session.execute(
+            text(
+                "UPDATE report SET sitting_number = v.sitting_number "
+                "FROM UNNEST(:ids, :sitting_numbers) AS v(id, sitting_number) "
+                "WHERE report.id = v.id"
+            ),
+            {"ids": list(updates.keys()), "sitting_numbers": list(updates.values())},
+        )
+        return update_result.rowcount

@@ -37,7 +37,7 @@ One row per parliamentary item. A report is the smallest unit of parliamentary b
 |---|---|---|
 | `parliament_number` | int | Parliament session number. 0 = colonial era (1955–1963). |
 | `volume_number` | int | Hansard volume number. Volumes span multiple sessions. |
-| `sitting_number` | int | Which sitting within the session. |
+| `sitting_number` | int | Which sitting within the session. From the search hit, or, where the hit has none (older system, 2003 to 2011), from the `Sitting No` line of the report's header table. |
 | `sitting_date` | datetime | Date of the sitting. |
 | `speech_number` | int | Sequential number of this item within the sitting (the `sno` field from the API). The 1,691 rows added on 13 October 2026 (refetch) store `sno` as the position within their monthly search window, not the global position, so `sno` is not comparable across those rows and the earlier ones. |
 | `report_id` | str | The SPRS identifier for this report. Unique in `Report`; the raw `HansardWebsiteResponse` table keeps every search hit, so it can hold the same id twice. |
@@ -68,9 +68,9 @@ One row per sitting date. A sitting is a full day of parliamentary proceedings, 
 | Field | Type | Meaning |
 |---|---|---|
 | `parlement_no` | int | Parliament number. Intentional typo from the API (`parlimentNO`). |
-| `session_no` | int | Session number within the parliament. |
+| `session_no` | int | Session number within the parliament. For an older-format sitting, read from the header table of its HTML, because the response leaves it out. |
 | `volume_no` | int | Hansard volume number. |
-| `sitting_no` | int | Sitting number within the session. |
+| `sitting_no` | int | Sitting number within the session. Read from the header table of the HTML where the older-format response leaves it out. |
 | `sitting_date` | str | Date string as returned by the API. |
 | `online_pdf_file_name` | str | Filename of the online PDF for this sitting. |
 | `html_full_content` | str | Raw HTML of the full sitting proceedings. `NULL` from 10 September 2012: the newer system serves none. |

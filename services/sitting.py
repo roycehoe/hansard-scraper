@@ -1,6 +1,21 @@
+from typing import Optional
+
 from database.hansard_sitting_date_response import HansardSittingDateResponse
 from database.sitting import Sitting
+from utils.markdown_header import (
+    SESSION_NUMBER_FIELD,
+    SITTING_NUMBER_FIELD,
+    get_header_number,
+)
 from utils.markdown_parser import get_cleaned_sitting_markdown
+
+
+def _get_number(stored_number: Optional[int], markdown: Optional[str], field_name: str) -> Optional[int]:
+    if stored_number is not None:
+        return stored_number
+    if markdown is None:
+        return None
+    return get_header_number(markdown, field_name)
 
 
 def build_sitting(hansard_sitting_date_response: HansardSittingDateResponse) -> Sitting:
@@ -16,4 +31,7 @@ def build_sitting(hansard_sitting_date_response: HansardSittingDateResponse) -> 
         else None
     )
     data["markdown_content"] = markdown
+    # NOTE: the older-system response leaves these numbers out, so they are read from the header table its HTML prints.
+    data["session_no"] = _get_number(data["session_no"], markdown, SESSION_NUMBER_FIELD)
+    data["sitting_no"] = _get_number(data["sitting_no"], markdown, SITTING_NUMBER_FIELD)
     return Sitting.model_validate(data)
