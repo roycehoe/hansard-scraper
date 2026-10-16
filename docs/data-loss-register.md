@@ -1,6 +1,6 @@
 # Data loss register
 
-Every step that changes or drops source content between the Hansard HTML and the stored markdown or speech rows, with its cost and the reason for it. Written 15 October 2026, updated 16 October 2026 for write #3 and for the rehearsal of write #4. Update a row in the same change that moves its figure.
+Every step that changes or drops source content between the raw API responses and any derived table, with its cost and the reason for it. Since 17 October 2026 this is a project requirement (`CLAUDE.md`, "Data loss register"): it covers attendance, persons, memberships, sittings, report titles and the hand overrides in `data/`, as well as markdown and speech rows. Written 15 October 2026, updated 16 October 2026 for write #3 and for the rehearsal of write #4. Update a row in the same change that moves its figure.
 
 ## Principle
 
