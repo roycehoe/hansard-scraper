@@ -11,11 +11,18 @@ from database.init import engine
 from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
 from logs import logger
-from schemas.speaker_override import LegislativeAssemblyOverride, SpeakerOverrides
+from schemas.speaker import SpeakerResult
+from schemas.speaker_override import (
+    LegislativeAssemblyOverride,
+    PartyOverride,
+    SpeakerOverrides,
+)
+from services.speaker import PartyChange, get_party_changes
 from settings import settings
 from utils.write_target import validate_can_write
 
 _SPEAKER_OVERRIDES_FILE = Path(__file__).parent.parent / "data" / "speaker_overrides.json"
+_COLONIAL_LA_MEMBERS_FILE = Path(__file__).parent.parent / "data" / "colonial_la_members.json"
 
 
 @dataclass(frozen=True)
@@ -54,27 +61,51 @@ def _write_flags(session: Session, flag_changes: list[FlagChange], overrides: li
         raise HansardWriteCheckError("Overrides not applied after the update")
 
 
+def _write_party(
+    session: Session, party_changes: list[PartyChange], overrides: list[PartyOverride], colonial_members: list[SpeakerResult]
+) -> None:
+    updated_count = CRUDSpeaker(session).set_party_bulk({party_change.id: party_change.party_after for party_change in party_changes})
+    if updated_count != len(party_changes):
+        raise HansardWriteCheckError(f"Updated {updated_count} speaker rows, planned {len(party_changes)}")
+    session.expire_all()
+    if get_party_changes(CRUDSpeaker(session).get_all(), overrides, colonial_members):
+        raise HansardWriteCheckError("Party overrides not applied after the update")
+
+
 def apply_speaker_overrides(is_commit: bool, plan_path: Optional[Path]) -> None:
     if is_commit:
         validate_can_write(settings.database_url)
-    overrides = SpeakerOverrides.model_validate(json.loads(_SPEAKER_OVERRIDES_FILE.read_text())).legislative_assembly_overrides
+    speaker_overrides = SpeakerOverrides.model_validate(json.loads(_SPEAKER_OVERRIDES_FILE.read_text()))
+    colonial_members = [SpeakerResult.model_validate(record) for record in json.loads(_COLONIAL_LA_MEMBERS_FILE.read_text())]
     with Session(engine) as session:
-        flag_changes = _get_flag_changes(CRUDSpeaker(session).get_all(), overrides)
+        speakers = CRUDSpeaker(session).get_all()
+        flag_changes = _get_flag_changes(speakers, speaker_overrides.legislative_assembly_overrides)
+        party_changes = get_party_changes(speakers, speaker_overrides.party_overrides, colonial_members)
         for flag_change in flag_changes:
             logger.info(
                 f"Speaker {flag_change.id} {flag_change.name}, Parliament {flag_change.parliament_number}: "
                 f"is_legislative_assembly {flag_change.is_legislative_assembly_before} -> {flag_change.is_legislative_assembly_after}"
             )
-        logger.info(f"Plan: {len(flag_changes)} speaker rows")
+        for party_change in party_changes:
+            logger.info(
+                f"Speaker {party_change.id} {party_change.name}, Parliament {party_change.parliament_number}: "
+                f"party {party_change.party_before!r} -> {party_change.party_after!r}"
+            )
+        logger.info(f"Plan: {len(flag_changes)} flag changes, {len(party_changes)} party changes")
         if plan_path is not None:
-            plan_path.write_text(json.dumps([asdict(flag_change) for flag_change in flag_changes], indent=1, ensure_ascii=False))
+            plan = {
+                "flag_changes": [asdict(flag_change) for flag_change in flag_changes],
+                "party_changes": [asdict(party_change) for party_change in party_changes],
+            }
+            plan_path.write_text(json.dumps(plan, indent=1, ensure_ascii=False))
         if not is_commit:
             logger.info("Dry run: nothing written")
             return
 
-        _write_flags(session, flag_changes, overrides)
+        _write_flags(session, flag_changes, speaker_overrides.legislative_assembly_overrides)
+        _write_party(session, party_changes, speaker_overrides.party_overrides, colonial_members)
         session.commit()
-        logger.info(f"Committed: {len(flag_changes)} speaker rows")
+        logger.info(f"Committed: {len(flag_changes)} flag changes, {len(party_changes)} party changes")
 
 
 if __name__ == "__main__":

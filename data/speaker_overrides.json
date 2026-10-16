@@ -672,5 +672,70 @@
       "is_legislative_assembly": false,
       "reason": "Parliament 12 is not the 1955 to 1965 Legislative Assembly; parliament.gov.sg gives one Assembly flag per person and the scraper copied it to every Parliament row."
     }
+  ],
+  "party_overrides": [
+    {
+      "name": "A.P. Rajah",
+      "parliament_number": 1,
+      "source_party": "Independent Singapore Party Alliance",
+      "party": "Independent",
+      "reason": "Won Farrer Park as an Independent at the 1959 general election (ELD). The source value joins that to the Singapore Alliance, which he stood for in 1963 and lost; he was appointed Speaker in 1964, not elected."
+    },
+    {
+      "name": "Chan Sun Wing",
+      "parliament_number": 1,
+      "source_party": "People's Action Party, Barisan Sosialis",
+      "party": "Barisan Sosialis",
+      "reason": "Elected for the People's Action Party in 1959, joined Barisan Sosialis on 29 July 1961 and won Nee Soon for it in 1963 (ELD). The source lists both parties; one party is stored per Membership."
+    },
+    {
+      "name": "Lee Tee Tong",
+      "parliament_number": 1,
+      "source_party": "People's Action Party",
+      "party": "Barisan Sosialis",
+      "reason": "Won Bukit Timah for Barisan Sosialis at the 1963 general election (ELD). The source swaps his party with S. Rajoo's."
+    },
+    {
+      "name": "Rajoo, S.",
+      "parliament_number": 1,
+      "source_party": "Barisan Sosialis",
+      "party": "People's Action Party",
+      "reason": "Won Farrer Park for the People's Action Party at the 1963 general election, beating the Barisan Sosialis candidate (ELD). The source swaps his party with Lee Tee Tong's."
+    },
+    {
+      "name": "Chiam See Tong",
+      "parliament_number": 6,
+      "source_party": "Singapore Democratic Alliance",
+      "party": "Singapore Democratic Party",
+      "reason": "Won Potong Pasir for the Singapore Democratic Party at the 1984 general election (ELD). parliament.gov.sg gives one party per person, and the scraper copied the Singapore Democratic Alliance, formed in 2001, to every Parliament row."
+    },
+    {
+      "name": "Chiam See Tong",
+      "parliament_number": 7,
+      "source_party": "Singapore Democratic Alliance",
+      "party": "Singapore Democratic Party",
+      "reason": "Won Potong Pasir for the Singapore Democratic Party at the 1988 general election (ELD). parliament.gov.sg gives one party per person, and the scraper copied the Singapore Democratic Alliance, formed in 2001, to every Parliament row."
+    },
+    {
+      "name": "Chiam See Tong",
+      "parliament_number": 8,
+      "source_party": "Singapore Democratic Alliance",
+      "party": "Singapore Democratic Party",
+      "reason": "Won Potong Pasir for the Singapore Democratic Party at the 1991 general election (ELD). parliament.gov.sg gives one party per person, and the scraper copied the Singapore Democratic Alliance, formed in 2001, to every Parliament row."
+    },
+    {
+      "name": "Chiam See Tong",
+      "parliament_number": 9,
+      "source_party": "Singapore Democratic Alliance",
+      "party": "Singapore People's Party",
+      "reason": "Won Potong Pasir for the Singapore People's Party at the 1997 general election (ELD). parliament.gov.sg gives one party per person, and the scraper copied the Singapore Democratic Alliance, formed in 2001, to every Parliament row."
+    },
+    {
+      "name": "Chia Kiah Hong, Steve",
+      "parliament_number": 10,
+      "source_party": "Non-Constituency Member of Parliament",
+      "party": "Singapore Democratic Alliance",
+      "reason": "Stood for the Singapore Democratic Alliance at the 2001 general election (ELD) and became a Non-Constituency Member on 5 November 2001. The source holds the seat type, not a party."
+    }
   ]
 }
