@@ -69,7 +69,7 @@ Each folder has a strict responsibility boundary. `populate/` is the only layer 
 
 2. **Fetch report HTML** (`populate/hansard_responses.py` + `gateway/hansard_topic.py` + `services/hansard_website.py`): for each search result, `populate` calls `gateway` to POST to `getHansardTopic` with a JSON body, which returns a `HansardTopicResponse` (`schemas/hansard_topic_response.py`). The fetch picks the id and the field by system (`services/hansard_website.py::get_topic_id` and `get_topic_html_content`): an older-system hit (`report_version` sprs2, sittings before 10 September 2012) is fetched by `html_file_name` and read from `htmlContent`; a newer-system hit (sprs3) is fetched by `report_id` without its trailing `#` and read from `resultHTML.content`. Both land in `HansardWebsiteResponse.content` through `build_hansard_website_response` (see `docs/adr/0003-newer-system-raw-mapping.md`). Newer-system atbp reports return no text and keep `content` null. Hits listed in `data/excluded_report_ids.json` (a stored report returned again under another id, with the id of the copy kept) are never inserted, and stage 3 builds no report from their raw rows. `populate/hansard_response_contents.py` and `populate/report_contents.py` fill `content` and `markdown_content` in place on rows stored without text.
 
-3. **Parse into Report** (`services/report.py`) — converts `HansardWebsiteResponse` → `Report`. Parses the `title` field to split off a `subtitle` (parenthetical content that is not an acronym). Also converts HTML content to cleaned markdown via `utils/markdown_parser.py`. An older-system hit of 2003 to 2011 carries no sitting number, so it is read from the `Sitting No` line of the report's header table (`utils/markdown_header.py`).
+3. **Parse into Report** (`services/report.py`) — converts `HansardWebsiteResponse` → `Report`. Parses the `title` field to split off a `subtitle` (parenthetical content that is not an acronym). The title is trimmed, loses HTML tags, and a title repeated around commas keeps one copy; `original_title` keeps the source form. Also converts HTML content to cleaned markdown via `utils/markdown_parser.py`. An older-system hit of 2003 to 2011 carries no sitting number, so it is read from the `Sitting No` line of the report's header table (`utils/markdown_header.py`).
 
 4. **Parse into Speeches** (`services/speech.py`) — walks the markdown line-by-line to find where speeches begin (by matching the report title in bold), then splits the transcript into `Speech` records by detecting bold speaker names (`**Name:**`). Newer-system reports (sprs3) start at the top of the body, because their text never repeats the title; `utils/markdown_parser.py` also cleans their HTML differently (empty emphasis tags and `(proc text)` markers go). Every such branch is guarded by `report_version`, so older-system output is unchanged.
 
@@ -137,6 +137,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `load_heads_of_state.py`: idempotent load of `data/heads_of_state.json` (Governors, the Yang di-Pertuan Negara, Presidents) into the `Speaker` table as non-member rows; run after `load_colonial_la_speakers.py` and before `populate_speaker_links`
 - `scrape_speakers_by_parliament.py` — populates the `Speaker` table from parliament.gov.sg
 - `fill_sitting_numbers.py`: fills empty `report.sitting_number`, `sitting.session_no` and `sitting.sitting_no` from the stored header tables; a dry run unless `--commit`
+- `apply_report_titles.py`: rewrites stored titles and subtitles that the current title rule would change; a dry run unless `--commit`
 - `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech rows, after checking each against its kept copy; a dry run unless `--commit`
 - `find_presiding_officers.py`: tallies the most common Speaker and Deputy Speaker per parliament from the PRESENT sections
 - `trace_speaker_links.py`: read-only regression guard for stage 8 speech links: re-runs the resolver per key and compares with stored `speaker_id`
@@ -246,5 +247,6 @@ hansard-scraper/
     ├── load_heads_of_state.py
     ├── scrape_speakers_by_parliament.py
     ├── remove_excluded_reports.py
-    └── fill_sitting_numbers.py
+    ├── fill_sitting_numbers.py
+    └── apply_report_titles.py
 ```
