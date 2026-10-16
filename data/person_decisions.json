@@ -34,5 +34,37 @@
     ],
     "decision": "merge",
     "source": "Sir William Allmond Codrington Goode, Chief Secretary 1953 to 1957, Governor 1957 to 1959, Yang di-Pertuan Negara 1959 (https://en.wikipedia.org/wiki/William_Goode_(colonial_administrator))"
+  },
+  {
+    "person_name": "George Yong-Boon Yeo",
+    "members": [
+      {"name": "Yeo Yong-Boon, George", "parliament_number": 7}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"George Yeo Yong-Boon\". The Elections Department prints \"George Yong-Boon Yeo\" for 1988, 1991 and 1997 (https://www.eld.gov.sg/elections_past_parliamentary1988.html), and the Official Report prints \"George Yong-Boon Yeo\" in its speech labels."
+  },
+  {
+    "person_name": "David T. E. Lim",
+    "members": [
+      {"name": "Lim T E, David", "parliament_number": 9}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"David Lim T E\". The Official Report prints \"Mr David T. E. Lim\" in over 300 speech labels; the Elections Department gives the full name Lim Tik En David in 1997 (https://www.eld.gov.sg/elections_past_parliamentary1997.html)."
+  },
+  {
+    "person_name": "Simon S. C. Tay",
+    "members": [
+      {"name": "Tay S C, Simon, Assoc Prof", "parliament_number": 9}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"Simon Tay S C\". The Official Report prints \"Mr Simon S C Tay\" and \"Mr Simon S. C. Tay\" in over 400 speech labels, and \"Mr Simon Tay\" in over 600."
+  },
+  {
+    "person_name": "Mrs Devan Nair",
+    "members": [
+      {"name": "Devan Nair, Mrs", "parliament_number": 1}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"Devan Nair\", the name of her husband C. V. Devan Nair (another person). She sat as \"Mrs Devan Nair\" in the Elections Department's 1963 list (https://www.eld.gov.sg/elections_past_parliamentary1963.html) and in 24 speech labels of the Official Report."
   }
 ]
