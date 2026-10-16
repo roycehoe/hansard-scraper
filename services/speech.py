@@ -86,6 +86,9 @@ _PROCEDURAL_STAGE_RE = re.compile(
 
 _TABLE_CAPTION_RE = re.compile(r"^_?Table\b")
 
+_DIVISION_RECORD_ANCHOR = r"(?:On question put, the|`?The) (?:[Hh]ouse|Assembly|Council|Committee) divided"
+_DIVISION_LIST_HEADING_ANCHOR = r"Ayes\.?\s+Noes\.?$"
+_DIVISION_RECORD_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=" + _DIVISION_RECORD_ANCHOR + ":)")
 _PROCEDURAL_LINE_ANCHORS = (
     r"Question (?:put,? and agreed to|proposed|again proposed)",
     r"Question put,? and negatived",
@@ -109,7 +112,8 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"(?:Amendment|Notice of motion|Copies of [^.]{0,80}) handed in(?: to the Clerk| and distributed to hon\. Members)?\.?$",
     r"No Member rising",
     r"\*\s*The same amendment",
-    r"The (?:House|Assembly|Council|Committee) divided",
+    _DIVISION_RECORD_ANCHOR,
+    _DIVISION_LIST_HEADING_ANCHOR,
     r"Division taken",
     r"The following amendments? stood on the Order Paper",
     r"(?:The )?(?:Clause|Schedule)(?:, as amended,)? ordered to stand part",
@@ -177,6 +181,7 @@ _MAX_CLOSED_FOOTNOTE_LINES = 10
 _MIN_SPEECH_LINE_LENGTH = 120
 _SPEECH_START_RE = re.compile(r"^(?!In page\b|That\b)[A-Z]")
 _FOOTNOTE_REFERENCE_RE = re.compile(r"\b(?:Appendix|Annex|cols?\.?|columns?|See|reproduced|Letter)\b", re.IGNORECASE)
+_COLUMN_REFERENCE_NOTE_RE = re.compile(r"^[*#\s]*(?:Cols?|Vol)\b\.?(?:\s*\d|\s*$)|^\*\s*\d{3,5}-\d{3,5}\.?$")
 _HORIZONTAL_RULE = "* * *"
 _UNDERSCORE_RULE_RE = re.compile(r"^_{20,}$")
 
@@ -522,6 +527,11 @@ def _merge_wrapped_bold_lines(lines: list[str]) -> list[str]:
     return merged
 
 
+def _split_division_records(lines: list[str]) -> list[str]:
+    # NOTE: the source prints the record right after the member's words with no paragraph break, so the converter joined them into one line.
+    return [part for line in lines for part in _DIVISION_RECORD_SPLIT_RE.split(line)]
+
+
 def _get_bracketed_note_kind(note: str) -> Optional[SpeechKind]:
     if _WHOLE_BRACKETED_LINE_RE.match(note) is None:
         return None
@@ -709,7 +719,11 @@ def _is_honourable_members_phrase(line: str) -> bool:
 
 
 def _is_note_line(line: str) -> bool:
-    return _FOOTNOTE_LINE_RE.match(line) is not None or _CLOSED_FOOTNOTE_START_RE.match(line) is not None
+    return (
+        _FOOTNOTE_LINE_RE.match(line) is not None
+        or _CLOSED_FOOTNOTE_START_RE.match(line) is not None
+        or _COLUMN_REFERENCE_NOTE_RE.match(line) is not None
+    )
 
 
 def _is_closed_footnote_block(lines: list[str], block: list[int], is_closed: bool) -> bool:
@@ -718,7 +732,8 @@ def _is_closed_footnote_block(lines: list[str], block: list[int], is_closed: boo
     if any(_BOLD_OPENING_RE.match(lines[index].strip()) for index in block):
         return False
     first_line = lines[block[0]].strip()
-    return _is_note_line(first_line)
+    # NOTE: a column reference is a whole note, so what follows it may be unlabelled speech; its block is read line by line instead.
+    return _is_note_line(first_line) and _COLUMN_REFERENCE_NOTE_RE.match(first_line) is None
 
 
 def _get_speech_start_position(lines: list[str], block: list[int]) -> int:
@@ -728,12 +743,10 @@ def _get_speech_start_position(lines: list[str], block: list[int]) -> int:
         if _is_note_line(line):
             continue
         previous_line = lines[block[position - 1]].strip() if position > 0 else ""
-        is_speech = (
-            len(line) >= _MIN_SPEECH_LINE_LENGTH
-            and _SPEECH_START_RE.match(line) is not None
-            and _SENTENCE_END_RE.search(previous_line) is not None
-            and _FOOTNOTE_REFERENCE_RE.search(previous_line) is None
+        is_after_finished_note = _COLUMN_REFERENCE_NOTE_RE.match(previous_line) is not None or (
+            _SENTENCE_END_RE.search(previous_line) is not None and _FOOTNOTE_REFERENCE_RE.search(previous_line) is None
         )
+        is_speech = len(line) >= _MIN_SPEECH_LINE_LENGTH and _SPEECH_START_RE.match(line) is not None and is_after_finished_note
         return position if is_speech else len(block)
     return len(block)
 
@@ -751,7 +764,7 @@ def _get_footnote_line_indexes(lines: list[str]) -> set[int]:
             footnote_line_indexes.update(block[: _get_speech_start_position(lines, block)])
             continue
         for index in block:
-            if _FOOTNOTE_LINE_RE.match(lines[index].strip()) is None:
+            if not _is_note_line(lines[index].strip()):
                 break
             footnote_line_indexes.add(index)
     return footnote_line_indexes
@@ -771,7 +784,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
     is_in_preamble = True
     preamble_speeches: list[ParsedSpeech] = []
     speeches: list[ParsedSpeech] = []
-    lines = _merge_wrapped_bold_lines(markdown.splitlines()[start_of_speech_line + 1 :])
+    lines = _split_division_records(_merge_wrapped_bold_lines(markdown.splitlines()[start_of_speech_line + 1 :]))
     footnote_line_indexes = _get_footnote_line_indexes(lines)
     for line_index, line in enumerate(lines):
         parsed_line = line.strip()
