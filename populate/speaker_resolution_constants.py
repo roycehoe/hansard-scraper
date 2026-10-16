@@ -52,10 +52,10 @@ DEPUTY_SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
 # NOTE: Hansard addresses these Deputy Speakers as "Mdm"; the parliament.gov.sg list for 1955 to 2011 and the Wikipedia Deputy Speaker page name no other woman.
 DEPUTY_SPEAKER_WOMEN: frozenset[str] = frozenset({"Lim Hwee Hua", "Indranee Rajah", "Jessica Tan Soon Neo"})
 
-# NOTE: sources disagree on whether Lim Yew Hock took over on 7 or 8 June 1956, so that sitting stays unlinked. Prime Minister handovers fell on days without a sitting.
+# NOTE: sources disagree on whether Lim Yew Hock took over on 7 or 8 June 1956. The sitting of 7 June names David Marshall as Chief Minister throughout (its attendance list and the header of every report he speaks in), so his term runs through that day. Prime Minister handovers fell on days without a sitting.
 DATED_ROLE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
     "The Chief Minister": (
-        (date(1955, 4, 6), date(1956, 6, 6), "David Marshall"),
+        (date(1955, 4, 6), date(1956, 6, 7), "David Marshall"),
         (date(1956, 6, 8), date(1959, 6, 3), "Lim Yew Hock"),
     ),
     "The Prime Minister": (

@@ -29,8 +29,8 @@
   {
     "person_name": "William Goode",
     "members": [
-      {"name": "Goode, W.A.C.", "parliament_number": 1},
-      {"name": "William Goode", "parliament_number": 1}
+      {"name": "Goode, W.A.C.", "parliament_number": 0},
+      {"name": "William Goode", "parliament_number": 0}
     ],
     "decision": "merge",
     "source": "Sir William Allmond Codrington Goode, Chief Secretary 1953 to 1957, Governor 1957 to 1959, Yang di-Pertuan Negara 1959 (https://en.wikipedia.org/wiki/William_Goode_(colonial_administrator))"

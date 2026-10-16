@@ -57,3 +57,16 @@ class CRUDSpeaker:
             {"ids": list(updates.keys()), "parties": list(updates.values())},
         )
         return update_result.rowcount
+
+    def set_parliament_numbers_bulk(self, updates: dict[int, int]) -> int:
+        if not updates:
+            return 0
+        update_result = self.session.execute(
+            text(
+                "UPDATE speaker SET parliament_number = v.parliament_number "
+                "FROM UNNEST(:ids, :parliament_numbers) AS v(id, parliament_number) "
+                "WHERE speaker.id = v.id"
+            ),
+            {"ids": list(updates.keys()), "parliament_numbers": list(updates.values())},
+        )
+        return update_result.rowcount
