@@ -10,6 +10,8 @@ from utils.markdown_parser import get_cleaned_report_markdown
 from utils.text import fix_mojibake
 
 _BRACKET_PATTERN = r"\(([^)]*)\)"
+_HTML_TAG_PATTERN = r"<[^>]+>"
+_TITLE_PART_SEPARATOR = ","
 _SITTING_DATE_FORMAT = "%d-%m-%Y"
 
 
@@ -25,17 +27,24 @@ def _replace_bracket(match: re.Match) -> str:
     return ""
 
 
-def _get_db_report_header(raw_title: str) -> ReportHeader:
-    raw_title = raw_title.replace("\n", " ")
+def _get_collapsed_title(title: str) -> str:
+    parts = {part.strip() for part in title.split(_TITLE_PART_SEPARATOR)}
+    if len(parts) == 1:
+        return parts.pop()
+    return title
+
+
+def build_report_header(raw_title: str) -> ReportHeader:
+    raw_title = re.sub(_HTML_TAG_PATTERN, " ", raw_title.replace("\n", " ")).strip()
     if raw_title[-1] != ")":
-        return ReportHeader(title=raw_title)
+        return ReportHeader(title=_get_collapsed_title(raw_title))
 
     contents = [
         match.group(1)
         for match in re.finditer(_BRACKET_PATTERN, raw_title)
         if not match.group(1).isupper()
     ]
-    title = re.sub(_BRACKET_PATTERN, _replace_bracket, raw_title).strip()
+    title = _get_collapsed_title(re.sub(_BRACKET_PATTERN, _replace_bracket, raw_title).strip())
     if not contents:
         return ReportHeader(title=title)
     return ReportHeader(title=title, subtitle=f"({contents[-1]})")
@@ -52,7 +61,7 @@ def _get_sitting_number(raw_sitting_number: Optional[str], markdown_content: Opt
 def build_report(hansard_website_response: HansardWebsiteResponse) -> Report:
     sitting_date = datetime.strptime(hansard_website_response.sitting_date, _SITTING_DATE_FORMAT)
     raw_title = fix_mojibake(hansard_website_response.title)
-    db_report_header = _get_db_report_header(raw_title)
+    db_report_header = build_report_header(raw_title)
     markdown_content = (
         get_cleaned_report_markdown(hansard_website_response.content, hansard_website_response.report_version)
         if hansard_website_response.content is not None

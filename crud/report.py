@@ -24,6 +24,14 @@ class ReportMarkdownRow:
     markdown_content: Optional[str]
 
 
+@dataclass(frozen=True)
+class ReportTitleRow:
+    id: int
+    original_title: str
+    title: str
+    subtitle: Optional[str]
+
+
 class CRUDReport:
     def __init__(self, session: Session):
         self.session = session
@@ -75,6 +83,10 @@ class CRUDReport:
     def delete_by_ids(self, report_ids: list[int]) -> int:
         statement = delete(Report).where(col(Report.id).in_(report_ids))
         return self.session.exec(statement).rowcount
+
+    def get_title_rows(self) -> list[ReportTitleRow]:
+        statement = select(Report.id, Report.original_title, Report.title, Report.subtitle).order_by(Report.id)
+        return [ReportTitleRow(*row) for row in self.session.exec(statement).all()]
 
     def get_markdown_rows_by_sitting_number_null(self) -> list[ReportMarkdownRow]:
         statement = (
