@@ -210,7 +210,6 @@ _OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
     "p coomaraswam": "P. Coomaraswamy",  # 1968 header, parl 2
     "fang kim heng": "Fong Kim Heng",  # 1964 bracket, parl 0
     "absent: mr ahmad mohd magad": "Ahmad Mohd Magad",  # parl 9, vol 70
-    "**mr ng kah ting": "Ng Kah Ting",  # parl 2, vol 27
     # Found in the October 2026 attribution pass
     "wan hussin bin hj zoohri": "Wan Hussin Zoohri",
     "mohamed maliki bin osman": "Mohamad Maliki Bin Osman",
@@ -247,6 +246,12 @@ _OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
     "ang kok pong": "Ang Kok Peng",
     "tan eng hang": "Tan Eng Liang",
     "ellen lee geck hoon": "Ellen Lee",
+    "wong lm ken": "Wong Lin Ken",  # parl 2, vol 27
+    "phek hoong": "Irene Ng Phek Hoong",  # parl 12, vol 88
+    "the hounourable mr a j braga": "Braga, A.J.",  # parl 0, vol 9
+    "too chong tee": "Teo Chong Tee",  # parl 4, vol 39
+    "tan cheng sen": "Tan Cheng San",  # parl 4, vol 38
+    "tay bon too": "Tay Boon Too",  # parl 1, vol 25
 }
 
 # NOTE: surname-only forms and inverted canonicals go here; OCR character errors belong in _OCR_FORM_TO_CORRECTED_NAME.
@@ -346,6 +351,9 @@ _MIN_REARRANGEABLE_WORD_COUNT = 3
 _MIN_WORDSET_SUBSET_WORDS = 3
 
 _LEAVE_NOTE_PREFIX = "For information on permission given to Members for leave of absence"
+
+_SECTION_END_RE = re.compile(r"#|\||\*\*|\*[^\s*]|\d{1,2}(?:st|nd|rd|th) [A-Za-z]+,? \d{4}$")
+_MARKUP_RE = re.compile(r"[*|#_\[\]]")
 
 
 def _normalize_for_lookup(name: str) -> str:
@@ -575,6 +583,9 @@ def _parse_speaker_line(line: str) -> ParsedAttendee:
     if match is None:
         return ParsedAttendee("SPEAKER", None)
     inner = match.group(1).strip()
+    name_before_constituency = line[: match.start()].partition("SPEAKER")[2].strip()
+    if name_before_constituency:
+        return ParsedAttendee(_strip_name_decorations(name_before_constituency), inner)
     inner_stripped = strip_title(inner)
     return _parse_name_and_location(inner_stripped)
 
@@ -594,10 +605,14 @@ def _parse_entry_line(line: str) -> Optional[ParsedAttendee]:
         return None
     line = re.sub(r"^\d+(?=[A-Z])", "", line)
 
-    if "SPEAKER" in line:
-        return _parse_speaker_line(line)
+    # NOTE: a name entry carries a title or a bracketed constituency; office fragments and prose have neither.
+    if strip_title(line) == line and "(" not in line:
+        return None
 
-    return _parse_name_and_location(strip_title(line))
+    parsed = _parse_speaker_line(line) if "SPEAKER" in line else _parse_name_and_location(strip_title(line))
+    if _MARKUP_RE.search(parsed.name):
+        return None
+    return parsed
 
 
 def _extract_section_lines(content: str, section: str) -> list[str]:
@@ -616,13 +631,16 @@ def _extract_section_lines(content: str, section: str) -> list[str]:
 
         if re.match(rf"^(?:\*{{2}}|#+)?\s*{other_section}\s*:(?:\*{{2}})?\s*$", stripped, re.IGNORECASE):
             break
-        if stripped.startswith("####") or stripped.startswith("# ") or stripped == "* * *":
+        if _SECTION_END_RE.match(stripped) or stripped == "* * *":
             break
         if re.match(r"^\d+\\\.?\s", stripped):
             break
 
         if stripped:
             entry_lines.append(line)
+            # NOTE: a heading glued to the end of an entry line starts the text that follows the list.
+            if "**" in stripped:
+                break
 
     return entry_lines
 
@@ -753,6 +771,15 @@ def get_location_changes(rows: list[AttendanceLocationRow], lookups: Constituenc
     return location_changes
 
 
+def _drop_repeated_attendees(records: list[Attendance]) -> list[Attendance]:
+    speaker_name_to_record: dict[Optional[str], Attendance] = {}
+    for record in records:
+        kept_record = speaker_name_to_record.get(record.speaker_name)
+        if kept_record is None or (record.is_present and not kept_record.is_present):
+            speaker_name_to_record[record.speaker_name] = record
+    return list(speaker_name_to_record.values())
+
+
 def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
     if not sitting.markdown_content:
         return []
@@ -778,7 +805,7 @@ def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups, constituen
                 location_name=get_constituency_name(parsed.constituency, parliament, sitting.sitting_date, speaker_name, constituency_lookups),
             ))
 
-    return records
+    return _drop_repeated_attendees(records)
 
 
 def get_sitting_attendance_from_list(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
@@ -809,4 +836,4 @@ def get_sitting_attendance_from_list(sitting: Sitting, lookups: SpeakerLookups, 
             location_name=get_constituency_name(parsed.constituency, parliament, sitting.sitting_date, speaker_name, constituency_lookups),
         ))
 
-    return records
+    return _drop_repeated_attendees(records)

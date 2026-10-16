@@ -8,11 +8,12 @@ from database.init import engine
 from database.speaker import Speaker
 from logs import logger
 
-_DATA_FILE = Path(__file__).parent.parent / "data" / "colonial_la_members.json"
+_DATA_DIRECTORY = Path(__file__).parent.parent / "data"
+_DATA_FILES = (_DATA_DIRECTORY / "colonial_la_members.json", _DATA_DIRECTORY / "unscraped_members.json")
 
 
 def load_colonial_la_speakers() -> None:
-    records = json.loads(_DATA_FILE.read_text())
+    records = [record for data_file in _DATA_FILES for record in json.loads(data_file.read_text())]
 
     with Session(engine) as session:
         existing = {(speaker.name, speaker.parliament_number) for speaker in CRUDSpeaker(session).get_all()}
@@ -26,7 +27,7 @@ def load_colonial_la_speakers() -> None:
             existing.add(key)
             inserted += 1
 
-        logger.info(f"Inserted {inserted} colonial LA speakers ({len(records) - inserted} already existed)")
+        logger.info(f"Inserted {inserted} hand-typed speakers ({len(records) - inserted} already existed)")
 
 
 if __name__ == "__main__":

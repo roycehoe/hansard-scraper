@@ -77,11 +77,11 @@ Each folder has a strict responsibility boundary. `populate/` is the only layer 
 
 6. **Parse into Sittings** (`services/sitting.py` + `populate/sittings.py`) — converts `HansardSittingDateResponse` → `Sitting`, adding a `markdown_content` field parsed from `html_full_content`. Also carries the nested JSON columns (sections, annexures, vernaculars, a2b) from the raw response. An older-system response has no session number and sometimes no sitting number; both are read from the header table of the sitting's HTML.
 
-7. **Extract attendance** (`services/attendance.py` + `populate/attendances.py`) — for each `Sitting`, parses the PRESENT/ABSENT sections from `markdown_content` and writes one `Attendance` row per name found. Sittings with no markdown (every sitting from 10 September 2012) take their rows from the structured `attendance_list` instead, with the same name cleaning and resolution. The constituency in each row's bracket goes through `data/constituency_names.json`, which turns typos and variant spellings into the Elections Department's name and leaves seat types and other text as printed. Skips sittings already processed.
+7. **Extract attendance** (`services/attendance.py` + `populate/attendances.py`) — for each `Sitting`, parses the PRESENT/ABSENT sections from `markdown_content` and writes one `Attendance` row per name found. Sittings with no markdown (every sitting from 10 September 2012) take their rows from the structured `attendance_list` instead, with the same name cleaning and resolution. The constituency in each row's bracket goes through `data/constituency_names.json`, which turns typos and variant spellings into the Elections Department's name and leaves seat types and other text as printed. A list ends at the first line that is not a name entry (a heading, a table row, a line that opens with bold or an asterisk, a date line, or an entry that carries a heading glued to its end). A line in the list with neither a title nor a bracketed constituency is skipped, a name that holds markup is never kept, and a member listed twice in a sitting keeps one row, the present one. Skips sittings already processed.
 
 8. **Wire Speaker foreign keys** (`populate/speaker_links.py`) — resolves speaker/attendee names against the `Speaker` table and sets `speaker_id` on `Attendance` and `Speech` rows. Depends on the `Speaker` table being populated first (see out-of-band step below).
 
-**Out-of-band:** `scripts/scrape_speakers_by_parliament.py` scrapes `parliament.gov.sg` for the full list of speakers per parliament and stores them in the `Speaker` table. This must be run before step 8; it is not part of `script.py`. The source gives one party and one Assembly flag per person, so `data/speaker_overrides.json` corrects the flag and the party per Parliament row, both at scrape time (`services/speaker.py`) and on stored rows (`scripts/apply_speaker_overrides.py`). For colonial-era Legislative Assembly members, run `scripts/load_colonial_la_speakers.py` first. A member who sat only in the Assembly is a Parliament 0 row, and one who sat in both bodies has one row in Parliament 1; `scripts/apply_speaker_parliaments.py` moves stored rows to the Parliament the two colonial data files give them, and runs before the loaders and `apply_speaker_overrides.py` read the changed files.
+**Out-of-band:** `scripts/scrape_speakers_by_parliament.py` scrapes `parliament.gov.sg` for the full list of speakers per parliament and stores them in the `Speaker` table. This must be run before step 8; it is not part of `script.py`. The source gives one party and one Assembly flag per person, so `data/speaker_overrides.json` corrects the flag and the party per Parliament row, both at scrape time (`services/speaker.py`) and on stored rows (`scripts/apply_speaker_overrides.py`). For colonial-era Legislative Assembly members, run `scripts/load_colonial_la_speakers.py` first. A member who sat only in the Assembly is a Parliament 0 row, and one who sat in both bodies has one row in Parliament 1; `scripts/apply_speaker_parliaments.py` moves stored rows to the Parliament the two colonial data files give them, and runs before the loaders and `apply_speaker_overrides.py` read the changed files. `data/unscraped_members.json` holds the Parliament 13 row of Lee Li Lian, who declined the seat the Hansard still lists her for, so the scrape omits her; `scripts/load_colonial_la_speakers.py` reads it with the colonial file and inserts it after the Parliament moves, and `scripts/clean_attendance.py` needs it to link her six attendance rows.
 
 ### Sitting date API — two formats
 
@@ -133,7 +133,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `find_unmatched_attendees.py` — finds attendance names with no match in the Speaker table, grouped by frequency; outputs a JSON template for `colonial_la_members.json`
 - `attribution_text_share.py` — the three attribution numbers in `docs/vision.md`: ADR 0001 rate, all-rows rate, and share of body text in a linked speech
 - `speech_speaker_match_rate.py` — samples speeches stratified by report type, applies the full `SpeakerLookups` name-resolution pipeline via `resolve_canonical_name`, reports match rate overall and by type
-- `load_colonial_la_speakers.py` — idempotent load of `data/colonial_la_members.json` into the `Speaker` table; must be run before `populate_speaker_links`
+- `load_colonial_la_speakers.py` — idempotent load of `data/colonial_la_members.json` and `data/unscraped_members.json` into the `Speaker` table; must be run before `populate_speaker_links`
 - `load_heads_of_state.py`: idempotent load of `data/heads_of_state.json` (Governors, the Yang di-Pertuan Negara, Presidents) into the `Speaker` table as non-member rows; run after `load_colonial_la_speakers.py` and before `populate_speaker_links`
 - `scrape_speakers_by_parliament.py` — populates the `Speaker` table from parliament.gov.sg
 - `fill_sitting_numbers.py`: fills empty `report.sitting_number`, `sitting.session_no` and `sitting.sitting_no` from the stored header tables; a dry run unless `--commit`
@@ -141,6 +141,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `apply_speaker_overrides.py`: applies `data/speaker_overrides.json` and the party values of `data/colonial_la_members.json` to stored speaker rows, and straightens the apostrophe in party; a dry run unless `--commit`
 - `complete_truncated_attendance.py`: inserts the attendance rows an interrupted stage 7 run never wrote for sittings 5941, 5988 and 6009, parsed from the stored sitting markdown; checks the per-sitting counts before it commits; a dry run unless `--commit`
 - `apply_constituency_names.py`: rewrites stored attendance location names that `data/constituency_names.json` would change; a dry run unless `--commit`
+- `clean_attendance.py`: deletes the attendance rows of `data/attendance_cleanup.json` that the stage 7 parser no longer builds, renames and links its corrections, and links each `Speaker` role row to the presiding officer of its date or deletes it when he has another row; a dry run unless `--commit`
 - `apply_speaker_parliaments.py`: moves the stored Assembly-only speaker rows to the Parliament that `data/colonial_la_members.json` and `data/heads_of_state.json` give them; a dry run unless `--commit`
 - `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech rows, after checking each against its kept copy; a dry run unless `--commit`
 - `find_presiding_officers.py`: tallies the most common Speaker and Deputy Speaker per parliament from the PRESENT sections
@@ -167,6 +168,7 @@ hansard-scraper/
 │   ├── hansard_topic_response.py   # HansardTopicResponse: the getHansardTopic body (three shapes)
 │   ├── hansard_report_response.py  # HansardReportOldResponse / HansardReportNewResponse / HansardReportMetadata / HansardReportAttendanceEntry
 │   ├── excluded_report_id.py       # ExcludedReportId: data/excluded_report_ids.json entries
+│   ├── attendance_cleanup.py       # AttendanceCleanup: data/attendance_cleanup.json entries
 │   ├── speaker_override.py         # SpeakerOverrides: data/speaker_overrides.json
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata
 │
@@ -184,6 +186,7 @@ hansard-scraper/
 │   ├── speech.py                    # Report markdown → Speech list (speaker detection)
 │   ├── sitting.py                   # HansardSittingDateResponse → Sitting
 │   ├── attendance.py                # Sitting markdown → Attendance; build_speaker_lookups(list[Speaker]) → SpeakerLookups
+│   ├── attendance_cleanup.py        # Plan for scripts/clean_attendance.py: checks the listed rows, then links or deletes each
 │   ├── person.py                    # Speaker rows → person clusters (name normalisation + review decisions)
 │   ├── role_context.py              # Chairman, Deputy Speaker and carried-role names per speech row
 │   └── speaker.py                   # SpeakerResult → Speaker DB entity
@@ -257,5 +260,6 @@ hansard-scraper/
     ├── apply_speaker_overrides.py
     ├── complete_truncated_attendance.py
     ├── apply_constituency_names.py
+    ├── clean_attendance.py
     └── apply_speaker_parliaments.py
 ```
