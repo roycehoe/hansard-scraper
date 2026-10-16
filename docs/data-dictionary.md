@@ -150,7 +150,7 @@ Identities scraped from parliament.gov.sg, plus the colonial Legislative Assembl
 | Field | Type | Meaning |
 |---|---|---|
 | `name` | str | Name without title prefix. |
-| `party` | str | Political party. |
+| `party` | str | Political party, one value per Membership. It is the party on the ballot at the last election, general or by-election, that seated the member in it. On the 1955 to 1965 Assembly rows, Speakers and nominated members hold `Non-partisan` and ex-officio officials hold `Colonial Government`; scraped nominated members keep the source value (`Nominated Member of Parliament` on 125 rows, `NA` on 2). The apostrophe is always straight. parliament.gov.sg gives one party per person, so `data/speaker_overrides.json` (`party_overrides`) and `data/colonial_la_members.json` correct it per row. The switch history of a hand-typed row is in the `comments` field of `data/colonial_la_members.json`; the apply script does not write `speaker.comments`. |
 | `parliament_number` | int | Parliament they served in. |
 | `is_legislative_assembly` | bool | `True` on a row that holds a Legislative Assembly membership (1955 to 1965). parliament.gov.sg flags a person, not a row, so `data/speaker_overrides.json` corrects it per row. |
 | `comments` | str | Footnote annotations from the source page, e.g. appointment dates or name changes. |
