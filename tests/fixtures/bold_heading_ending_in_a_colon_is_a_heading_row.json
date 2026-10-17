@@ -1,0 +1,27 @@
+{
+  "why": "A bold heading that ends in a colon and has no text after it is a HEADING row with no speaker; the speaker carries on after it.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr A</strong>: Intro.</p><p><strong>Suggestions to improve our Health Care Services:</strong></p><p>Body text of the speech.</p>",
+  "expected_rows": [
+    [
+      "Mr A",
+      "Intro.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "Suggestions to improve our Health Care Services:",
+      "HEADING"
+    ],
+    [
+      "Mr A",
+      "Body text of the speech.",
+      "SPEECH"
+    ]
+  ]
+}

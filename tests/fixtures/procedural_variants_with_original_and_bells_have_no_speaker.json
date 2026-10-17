@@ -1,0 +1,32 @@
+{
+  "why": "Original Question put and agreed to, Division Bells rung and Question again proposed are procedural rows with no speaker.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "motion",
+  "title": "Sample Motion",
+  "subtitle": null,
+  "original_title": "Sample Motion",
+  "html": "<p><strong>Mr A</strong>: I beg to move.</p><p>Original Question put, and agreed to.</p><p>Division Bells rung.</p><p>Original Question again proposed.</p>",
+  "expected_rows": [
+    [
+      "Mr A",
+      "I beg to move.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "Original Question put, and agreed to.",
+      "PROCEDURAL"
+    ],
+    [
+      null,
+      "Division Bells rung.",
+      "PROCEDURAL"
+    ],
+    [
+      null,
+      "Original Question again proposed.",
+      "PROCEDURAL"
+    ]
+  ]
+}

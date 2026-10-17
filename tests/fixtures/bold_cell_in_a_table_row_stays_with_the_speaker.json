@@ -1,0 +1,22 @@
+{
+  "why": "A table row whose first cell is bold stays with the current speaker.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr A</strong>: See the table.</p><p><strong>Non-Residents</strong> 2 |  311,300 (10.2%) |  754,500 (18.7%)</p>",
+  "expected_rows": [
+    [
+      "Mr A",
+      "See the table.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "Non-Residents 2 | 311,300 (10.2%) | 754,500 (18.7%)",
+      "SPEECH"
+    ]
+  ]
+}

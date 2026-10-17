@@ -1,0 +1,27 @@
+{
+  "why": "A bold Question at the head of a procedural line is no label: the line is a PROCEDURAL row with no speaker.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr A</strong>: Intro.</p><p><strong>Question</strong> , \"That clause 15 stand part of the Bill\", put, and negatived.</p><p>Clause 15 accordingly disagreed to.</p>",
+  "expected_rows": [
+    [
+      "Mr A",
+      "Intro.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "Question , \"That clause 15 stand part of the Bill\", put, and negatived.",
+      "PROCEDURAL"
+    ],
+    [
+      "Mr A",
+      "Clause 15 accordingly disagreed to.",
+      "SPEECH"
+    ]
+  ]
+}

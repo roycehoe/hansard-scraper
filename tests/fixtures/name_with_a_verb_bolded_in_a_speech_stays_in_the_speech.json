@@ -1,0 +1,27 @@
+{
+  "why": "A bold phrase that opens with a member's name and a verb (Dr X asked yesterday:) is part of the current speaker's speech, not a new speaker.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr A</strong>: Intro.</p><p><strong>Dr Wang Kai Yuen asked yesterday:</strong> Why is it so long?</p><p>I assure him that it is not.</p>",
+  "expected_rows": [
+    [
+      "Mr A",
+      "Intro.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "Dr Wang Kai Yuen asked yesterday: Why is it so long?",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "I assure him that it is not.",
+      "SPEECH"
+    ]
+  ]
+}
