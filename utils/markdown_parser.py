@@ -26,6 +26,7 @@ _COLUMN_RANGE_LINE_PATTERN = r"\*Cols?\."
 _TIME_OF_DAY_LINE_PATTERN = r"\d{1,2}[.:]\d{2}\s*[ap]m\s*"
 _HYPHENATED_FRAGMENT_PATTERN = r"[A-Za-z]-$"
 _PAGE_BREAK_ARTIFACT_PATTERN = r"   \n  \n\*\*\*\*  \n  \n"
+_TWO_SPACE_PAGE_BREAK_ARTIFACT_PATTERN = r"^([^\n|]*[^\s.?!:;\"'\u201d\u2019)\]_*|])  \n  \n\*\*\*\*  \n  \n"
 _BOLD_ONLY_LINE_PATTERN = r"\*\*[^\n*].*\*\*"
 _CONCATENATED_PART_PATTERN = r"\bPART([IVX]+)OF\b"
 _CONCATENATED_VOLUME_PATTERN = r"\bVOLUME(\d+)\b"
@@ -164,7 +165,8 @@ def _remove_page_text(html: str) -> str:
 
 
 def _strip_page_break_artifacts(markdown: str) -> str:
-    return re.sub(_PAGE_BREAK_ARTIFACT_PATTERN, " ", markdown)
+    markdown = re.sub(_PAGE_BREAK_ARTIFACT_PATTERN, " ", markdown)
+    return re.sub(_TWO_SPACE_PAGE_BREAK_ARTIFACT_PATTERN, r"\1 ", markdown, flags=re.MULTILINE)
 
 
 def _remove_empty_lines(markdown: str) -> str:
