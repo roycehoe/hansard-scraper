@@ -594,3 +594,44 @@ Kind is not scored. Readers flagged 199 of 9,043 round 3 and round 4 rows (2.20%
 - Tier B and C classes in the table above that write 4 did not touch.
 - `hansard_w3` stays until round 4 is aggregated, by the user's ruling. `hansard_w4` stays for the round 4 readers.
 - The "Still open" lists above are out of date: write 2 fixed F5 and F4, and write 3 shipped.
+
+## Write 5 (17 October)
+
+Write 5 is the w5 parser patches on master, from `167e2e8` (01a) to `1c71189` (09), and the 188 stage 8 links of patch 05 (`2368a38`). The plan was built against the replica after write 4 and the ten fix-run writes, with the tree at `git archive 1c71189`. It was rehearsed on scratch clones of the replica from 08:52 to 09:10: 0 unexplained rows, every drift test aborted and rolled back, and the clones ended equal by table hashes. It shipped to the remote at 09:29 (lock 124 s, 56 checks ok), and the replica equals the remote by table hashes. The stored figures equal the rehearsal's.
+
+It applies 2,910 reports and writes 11,523 row updates (11,335 planned content updates plus the 188 links), 30,769 ordinal-only updates, 145 kind-only rows, 12 ordinal_kind rows, 325 deletes, 3,511 inserts, 1,014 report markdowns and 7 sitting markdowns. No attendance row changes.
+
+| Group | Measure | Before | After |
+|---|---|---|---|
+| P0-11 | ADR 0001 rate | 522,517 / 533,183 = 98.00% | 513,404 / 523,420 = 98.09% |
+| P0-11 | All-rows rate | 522,517 / 606,746 = 86.12% | 513,404 / 609,701 = 84.21% |
+| P0-11 | Text share | 180,732,303 / 186,092,895 = 97.12% | 180,788,738 / 186,092,945 = 97.15% |
+| P12 | ADR / all-rows / text | 98.91%; 94.96%; 98.58% | 99.00%; 94.91%; 98.64% |
+| P13 | ADR / all-rows / text | 98.26%; 94.76%; 98.77% | 98.28%; 94.74%; 98.79% |
+| P14 | ADR / all-rows / text | 99.08%; 96.26%; 98.91% | 99.08%; 96.24%; 98.92% |
+
+By cause, P0-11. Columns are linked rows, all rows, ADR denominator and linked characters, then the cause's share of the change in all-rows and text-share points.
+
+| Cause | Linked rows | All rows | ADR denominator | Linked characters | All-rows / text-share points |
+|---|---|---|---|---|---|
+| p01a | -39 | -46 | -40 | -371 | 0.000 / 0.000 |
+| p01a+p07 | -11 | -1 | -15 | -277 | -0.002 / 0.000 |
+| p01a+p09 | -10 | -10 | -10 | -30 | 0.000 / 0.000 |
+| p04 | +115 | +11 | -58 | +80,901 | +0.017 / +0.043 |
+| p04+p07 | +38 | +1 | -7 | +5,928 | +0.006 / +0.003 |
+| p05 (links) | +142 | 0 | 0 | +163,847 | +0.023 / +0.088 |
+| p06 | 0 | 0 | 0 | +42 | 0.000 / 0.000 |
+| p06+p07 | -3 | 0 | -3 | -157 | 0.000 / 0.000 |
+| p07 | -9,175 | 0 | -9,461 | -244,459 | -1.505 / -0.131 |
+| p07+p09 | -2 | -1 | -2 | -17 | 0.000 / 0.000 |
+| p08 | +4 | +3,172 | +5 | +16,225 | -0.447 / +0.009 |
+| p09 | -252 | -252 | -252 | 0 | -0.006 / 0.000 |
+| title rebase (22789, 23760, 43147) | +80 | +81 | +80 | +34,803 | +0.002 / +0.019 |
+
+Patch 02 changes no row. Ordinal shifts change no figure.
+
+Detectors, pipeline hits per million tokens: dictionary 4.269 (274 hits) before and 4.282 (275 hits) after, against a source rate of 106.45; punctuation 1.979 (127 hits) and 1.977 (127 hits), against 6.23.
+
+Rows by kind, whole table, before and after: SPEECH 960,290 to 950,502 (488 with no speaker, unchanged), HEADING 2,569 to 12,358, DOCUMENT_TEXT 2,615 to 5,388, PROCEDURAL 49,817 to 50,381, UNCLASSIFIED 20,937 to 20,784, CHAMBER_EVENT 5,837 to 5,838. EDITORIAL_NOTE stays at 3,186 and NULL at 2,275. The speech table goes from 1,047,526 to 1,050,712 rows.
+
+The plan holds 181 reports. 121 are the write 3 and write 4 holds, still held with no write of any kind. 60 are new, each refused by a checker: 56 for patch 06 (the marker takes the space next to the superscript and glues words, a defect in the patch), 3 for patch 04 (the widened table-row test reads a label line with a "|" as a table row in 15632 and 46541, and 38222 folds a heading, a time stamp and a bill title into a first-reading row) and 1 for patch 09 (38147). 172 sitting markdowns that change are held and 7 are applied; attendance is the same in all 179.
