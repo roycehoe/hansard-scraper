@@ -56,7 +56,7 @@ Bold speaker labels come first. For a report with none, attribution follows a fa
 3. If neither applies, the report stays unattributed. Multi-speaker appendix documents and authorless procedural orders get no invented speaker.
 
 ### Diagnostic tooling as a first-class concern
-Targeted validation and inspection tools live alongside the main pipeline. Nothing exports statistics automatically. `scripts/attribution_text_share.py` prints the attribution figures when it is run, and `CLAUDE.md` asks for it before and after every parsing or linking change. These tools make it possible to audit specific failure categories without re-running the full pipeline.
+Targeted validation and inspection tools live alongside the main pipeline. Nothing exports statistics automatically. `scripts/attribution_text_share.py` prints the attribution figures by Parliament group and by report type when it is run, with the zero-row reports and single-speaker collapses, and `--output` keeps a copy in a file. `CLAUDE.md` asks for it before and after every parsing or linking change. These tools make it possible to audit specific failure categories without re-running the full pipeline.
 
 ---
 
