@@ -1,0 +1,27 @@
+{
+  "why": "A member whose paragraph contains the first-reading formula still becomes the speaker; the formula line only counts when it is not a labelled speech.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr A</strong>: Hello there.</p><p><strong>Mr B</strong>: Sir, this Bill was presented by the Minister for Law in March and read a first time then; I support it.</p><p>My second paragraph.</p>",
+  "expected_rows": [
+    [
+      "Mr A",
+      "Hello there.",
+      "SPEECH"
+    ],
+    [
+      "Mr B",
+      "Sir, this Bill was presented by the Minister for Law in March and read a first time then; I support it.",
+      "SPEECH"
+    ],
+    [
+      "Mr B",
+      "My second paragraph.",
+      "SPEECH"
+    ]
+  ]
+}

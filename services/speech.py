@@ -638,6 +638,22 @@ def _get_proc_text(line: str) -> Optional[str]:
     return match.group(1) + match.group(2).strip() + match.group(3)
 
 
+def _is_first_reading_formula(line: str) -> bool:
+    if _FIRST_READING_RE.search(line) is None:
+        return False
+    return not line.startswith(_BOLD_MARKER) or _WHOLE_BOLD_LINE_RE.match(line) is not None
+
+
+def _is_first_reading_lead_line(stripped: str, unmarked: str) -> bool:
+    return (
+        _TIME_MARKER_RE.match(unmarked.strip(_EMPHASIS_MARK_CHARACTERS)) is not None
+        or _MARKDOWN_HEADING_RE.match(stripped) is not None
+        or _WHOLE_BOLD_LINE_RE.match(stripped) is not None
+        or _SENTENCE_END_RE.search(unmarked) is None
+        or not unmarked[:1].isupper()
+    )
+
+
 def _build_speaker_lines_speeches(speaker: str, speaker_lines: list[str]) -> list[ParsedSpeech]:
     transcript = " ".join(speaker_lines)
     if _TIME_MARKER_RE.match(transcript):
@@ -650,6 +666,7 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
     speaker_lines: list[str] = []
     is_body_started = False
     adjournment_continuations = 0
+    trailing_lead_line_count = 0
     for line in markdown.splitlines()[start_of_speech_line + 1:]:
         stripped = line.strip()
         if _REPORT_HEADER_FIELD_RE.match(stripped):
@@ -672,11 +689,14 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
             is_body_started = True
             if proc_text is None and not is_first_reading:
                 speaker_lines.append(unmarked)
+                trailing_lead_line_count = trailing_lead_line_count + 1 if _is_first_reading_lead_line(stripped, unmarked) else 0
                 continue
-        # NOTE: the bill's title quote, and any time stamp and heading before it, belong to the first reading, so they join its row.
+        # NOTE: only the bill's title quote, and the time stamp and heading just before it, belong to the first reading, so they join its row; earlier lines are speech.
         if is_first_reading:
-            unmarked = " ".join(speaker_lines + [unmarked])
-            speaker_lines = []
+            lead_start = len(speaker_lines) - trailing_lead_line_count
+            unmarked = " ".join(speaker_lines[lead_start:] + [unmarked])
+            speaker_lines = speaker_lines[:lead_start]
+        trailing_lead_line_count = 0
         if speaker_lines:
             speeches.extend(_build_speaker_lines_speeches(speaker, speaker_lines))
             speaker_lines = []
@@ -815,11 +835,12 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             continue
         proc_text = _get_proc_text(parsed_line)
         # NOTE: the older system does not tag a first reading, so its formula stands in for the tag.
-        if proc_text is None and _FIRST_READING_RE.search(parsed_line) is not None:
+        is_first_reading_formula = proc_text is None and _is_first_reading_formula(parsed_line)
+        if is_first_reading_formula:
             proc_text = parsed_line
         # NOTE: the source tags this block as a step in the House's business, so it gets no speaker; the turn ends exactly as the untagged line would end it.
         if proc_text is not None:
-            if not is_in_preamble or not _is_preamble_title_line(proc_text):
+            if not is_in_preamble or is_first_reading_formula or not _is_preamble_title_line(proc_text):
                 (preamble_speeches if is_in_preamble else speeches).append(
                     ParsedSpeech(speaker=None, transcript=proc_text, kind=SpeechKind.PROCEDURAL)
                 )
