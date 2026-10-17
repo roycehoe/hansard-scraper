@@ -1,0 +1,27 @@
+{
+  "why": "A report whose body has no speaker label and no usable attribution keeps one no-speaker row per paragraph (procedural lines PROCEDURAL, the rest DOCUMENT_TEXT) instead of losing all of its text.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "budget",
+  "title": "Estimates of Expenditure",
+  "subtitle": null,
+  "original_title": "Estimates of Expenditure",
+  "html": "<p>Order read for consideration in Committee of Supply [2nd Allotted Day].</p><p><strong>[Mdm Speaker in the Chair]</strong></p><p>The Ministry will continue to invest in training and in new facilities.</p>",
+  "expected_rows": [
+    [
+      null,
+      "Order read for consideration in Committee of Supply [2nd Allotted Day].",
+      "PROCEDURAL"
+    ],
+    [
+      null,
+      "[Mdm Speaker in the Chair]",
+      "PROCEDURAL"
+    ],
+    [
+      null,
+      "The Ministry will continue to invest in training and in new facilities.",
+      "DOCUMENT_TEXT"
+    ]
+  ]
+}

@@ -34,9 +34,9 @@ _ATBP_SPEAKER_RE = re.compile(
 )
 
 _ADDENDA_MINISTER_RE = re.compile(
-    r"\*\*[^\n*]*(?:MINISTRY|PRIME MINISTER)[^\n*]*\*\*\n"
-    r"((?:Mr|Mrs|Ms|Dr|Prof|Mdm|MR|DR|MDM|PROF|Assoc)\s+[A-Z][A-Za-z '.()\-]+)\n"
-    r"(?:Minister|Deputy|Senior|Acting|Second|Secretary|Permanent|Political|Director)",
+    r"\*\*[^\n]*(?:MINISTRY|PRIME MINISTER)[^\n]*\*\*[ \t]*\n(?:[ \t]*\n)*"
+    r"[ \t]*((?:Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|RAdm|BG|LG|MG|COL)\s+[A-Z][A-Za-z '.()\-]+?)[ \t]*\n"
+    r"(?:Minister|Deputy|Senior|Acting|Second|Secretary|Permanent|Political|Director|Prime)",
     re.MULTILINE | re.IGNORECASE,
 )
 
@@ -1089,6 +1089,24 @@ def _split_chamber_events(speeches: list[ParsedSpeech]) -> list[ParsedSpeech]:
     ]
 
 
+def _get_unlabelled_speeches(markdown: str, start_of_speech_line: int) -> list[ParsedSpeech]:
+    speeches: list[ParsedSpeech] = []
+    for line in markdown.splitlines()[start_of_speech_line + 1:]:
+        stripped = line.strip()
+        if _REPORT_HEADER_FIELD_RE.match(stripped):
+            continue
+        edge_unmarked = _LINE_EDGE_MARKUP_RE.sub("", stripped)
+        if not edge_unmarked.strip(_MARKUP_ONLY_CHARACTERS):
+            continue
+        proc_text = _get_proc_text(edge_unmarked)
+        if proc_text is not None:
+            speeches.append(ParsedSpeech(speaker=None, transcript=proc_text, kind=SpeechKind.PROCEDURAL))
+            continue
+        kind = _get_no_speaker_kind(edge_unmarked)
+        speeches.append(ParsedSpeech(speaker=None, transcript=edge_unmarked, kind=SpeechKind.DOCUMENT_TEXT if kind == SpeechKind.UNCLASSIFIED else kind))
+    return speeches
+
+
 def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
     parsed_speeches = _parse_speeches(markdown, start_of_speech_line, report_type)
     speakers = _extract_mps_speaking(markdown)
@@ -1113,7 +1131,7 @@ def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type:
         if speaker:
             return _get_single_speaker_speeches(markdown, start_of_speech_line, speaker)
 
-    return []
+    return _get_unlabelled_speeches(markdown, start_of_speech_line)
 
 
 def get_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
