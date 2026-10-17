@@ -45,10 +45,8 @@ _MINISTRY_HEADING_RE = re.compile(
     re.IGNORECASE,
 )
 
-_LANGUAGE_NOTE_RE = re.compile(
-    r"[_*]*\(\s*[_*]*\s*(?:in|dalam)\s+(?:Mandar\w+|Malay|English|Tamil|Hokkien|Cantonese|Teochew|Hakka)\s*[_*]*\s*\)[_*]*\s*:?\s*",
-    re.IGNORECASE,
-)
+_LANGUAGE_NOTE = r"[_*]*\(\s*[_*]*\s*(?:in|dalam)\s+(?:Mandar\w+|Malay|English|Tamil|Hokkien|Cantonese|Teochew|Hakka)\s*[_*]*\s*\)[_*]*"
+_LANGUAGE_NOTE_RE = re.compile(_LANGUAGE_NOTE + r"\s*:?\s*", re.IGNORECASE)
 
 _ADJOURNMENT_MOVER_RE = re.compile(
     r"[−\-]\s*\[((?:Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc\s+Prof)[^]]+)\]",
@@ -258,11 +256,20 @@ _LABELLED_PROCEDURAL_DIRECTION_RE = re.compile(
 
 _PLAIN_HONORIFIC = r"(?:Mr|Mrs|Ms|Miss|Mdm|Madam|Dr|Prof|Assoc\.? Prof|Inche|Encik|Tuan|Haji|Che|Er|BG|RAdm|LG|MG|COL)\.?"
 _PLAIN_ROLE_WORD = r"(?:[A-Z][A-Za-z'’.,&-]*|of|for|the|and|to)"
+_PLAIN_ROLE = (
+    r"The (?=[^:()]*\b(?:Minister|Secretary|Chairman|President|Leader|Attorney|Speaker)\b)"
+    + _PLAIN_ROLE_WORD + r"(?: " + _PLAIN_ROLE_WORD + r"){0,15}"
+)
 # NOTE: A bare name label such as "Mr Tan:" is not matched: it is often a line quoted inside another speech.
 _PLAIN_ROLE_LABEL_RE = re.compile(
-    r"^(The (?=[^:()]*\b(?:Minister|Secretary|Chairman|President|Leader|Attorney|Speaker)\b)"
-    + _PLAIN_ROLE_WORD + r"(?: " + _PLAIN_ROLE_WORD + r"){0,15} \(" + _PLAIN_HONORIFIC + r" [^()]{2,50}\)"
+    r"^(" + _PLAIN_ROLE + r" \(" + _PLAIN_HONORIFIC + r" [^()]{2,50}\)"
     r"(?:\s*\([^()]{1,100}\))*)\s*:\s*(.*)$"
+)
+# NOTE: a quoted line never carries a language note, so a bare name or an office without a name is a label when the note and a colon follow it; the optional ")" is a stray bracket the source prints after an office.
+_PLAIN_LANGUAGE_NOTE_LABEL_RE = re.compile(
+    r"^((?:" + _PLAIN_HONORIFIC + r" [A-Z][\w.'’-]*(?: [\w.'’-]+){0,7}"
+    r"|" + _PLAIN_ROLE + r"(?:\)?\s*\(" + _PLAIN_HONORIFIC + r" [^()]{2,50}\))?)"
+    r"(?:\s*\([^()]{2,60}\))?\s*(?i:" + _LANGUAGE_NOTE + r"))\s*:\s*(.*)$"
 )
 
 # NOTE: The list is explicit on purpose: other headings sit inside a member's speech.
@@ -859,6 +866,13 @@ def _is_preamble_title_line(line: str) -> bool:
     )
 
 
+def _get_plain_label_match(line: str) -> Optional[re.Match]:
+    role_label_match = _PLAIN_ROLE_LABEL_RE.match(line)
+    if role_label_match is not None:
+        return role_label_match
+    return _PLAIN_LANGUAGE_NOTE_LABEL_RE.match(line)
+
+
 def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str = "") -> list[ParsedSpeech]:
     current_speaker = None
     is_in_preamble = True
@@ -895,7 +909,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
         ):
             if _MARKDOWN_HEADING_RE.match(parsed_line):
                 continue
-            label_match = _PLAIN_ROLE_LABEL_RE.match(parsed_line)
+            label_match = _get_plain_label_match(parsed_line)
             if label_match is not None:
                 current_speaker = _LANGUAGE_NOTE_RE.sub("", label_match.group(1)).strip()
                 is_in_preamble = False

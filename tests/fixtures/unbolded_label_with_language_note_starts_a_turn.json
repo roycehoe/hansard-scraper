@@ -1,0 +1,57 @@
+{
+  "why": "An unbolded label with a language note, such as \"Mr Chan Sun Wing (In Mandarin):\", starts that member's turn; a bare \"Mr Tan:\" without the note stays inside the speech.",
+  "source_report_id": 38830,
+  "report_version": "sprs2",
+  "report_type": "motion",
+  "title": "INDUSTRIAL UNREST",
+  "subtitle": null,
+  "original_title": "INDUSTRIAL UNREST",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><head></head><body><table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">19-03-1962</font></td></tr>\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">INDUSTRIAL UNREST</font></td></tr>\n</table>\n<br><br><font size=\"1\"><b>Column: 322</b></font><br><br>\n\n<div align=\"center\"><b>INDUSTRIAL UNREST</b></div>\n<br><br><!-- Dr Lee Siew Choh -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Dr Lee Siew Choh (Rochore):</b> Mr Speaker, Sir, I support the amendment.\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;Mr Chan Sun Wing (Upper Serangoon) (In Mandarin): Mr Speaker, Sir, looking at the amendment\n\nput forward by the Government, I feel that it is rather ridiculous.\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;They have been enchanted according to the Chinese.\n\n<br><br><!-- Sir George Oehlers (Mr Speaker) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Speaker:</b> Order. Mr Serjeant-at-Arms, will\n\nyou see that order is kept in the Gallery?\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;Mr Chan Sun Wing (In Mandarin): I believe that\n\nif  the  Government accept my suggestion they will then calm down.\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;Mr Speaker, Sir, now I am going back to the motion itself. A worker told me:\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;Mr Tan: \"We will not go back.\"\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;Inche Rahamat(In Malay): This is related to my question.\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;The Prime Minister (In Mandarin): I am an elected Prime Minister.\n\n</body></html>",
+  "expected_rows": [
+    [
+      "Dr Lee Siew Choh (Rochore)",
+      "Mr Speaker, Sir, I support the amendment.",
+      "SPEECH"
+    ],
+    [
+      "Mr Chan Sun Wing (Upper Serangoon)",
+      "Mr Speaker, Sir, looking at the amendment put forward by the Government, I feel that it is rather ridiculous.",
+      "SPEECH"
+    ],
+    [
+      "Mr Chan Sun Wing (Upper Serangoon)",
+      "They have been enchanted according to the Chinese.",
+      "SPEECH"
+    ],
+    [
+      "Mr Speaker",
+      "Order. Mr Serjeant-at-Arms, will you see that order is kept in the Gallery?",
+      "SPEECH"
+    ],
+    [
+      "Mr Chan Sun Wing",
+      "I believe that if the Government accept my suggestion they will then calm down.",
+      "SPEECH"
+    ],
+    [
+      "Mr Chan Sun Wing",
+      "Mr Speaker, Sir, now I am going back to the motion itself. A worker told me:",
+      "SPEECH"
+    ],
+    [
+      "Mr Chan Sun Wing",
+      "Mr Tan: \"We will not go back.\"",
+      "SPEECH"
+    ],
+    [
+      "Inche Rahamat",
+      "This is related to my question.",
+      "SPEECH"
+    ],
+    [
+      "The Prime Minister",
+      "I am an elected Prime Minister.",
+      "SPEECH"
+    ]
+  ]
+}
