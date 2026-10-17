@@ -126,10 +126,6 @@ class CRUDSpeech:
         )
         return [SpeechRow(*row) for row in self.session.exec(statement).all()]
 
-    def get_speaker_ids_by_ids(self, speech_ids: list[int]) -> dict[int, Optional[int]]:
-        statement = select(Speech.id, Speech.speaker_id).where(col(Speech.id).in_(speech_ids))
-        return {speech_id: speaker_id for speech_id, speaker_id in self.session.exec(statement).all()}
-
     def get_speaker_ids_by_ids_for_update(self, speech_ids: list[int]) -> dict[int, Optional[int]]:
         statement = select(Speech.id, Speech.speaker_id).where(col(Speech.id).in_(speech_ids)).with_for_update()
         return {speech_id: speaker_id for speech_id, speaker_id in self.session.exec(statement).all()}
