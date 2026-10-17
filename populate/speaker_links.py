@@ -504,11 +504,11 @@ def _build_sitting_text(markdown: Optional[str], sections: Optional[str]) -> Opt
 
 
 # NOTE: the record does not print a bracket at every change of chair, so this pass can credit the wrong one of two Deputies; ADR 0002 accepts that risk for the rows the report-level pass leaves unlinked.
-def _populate_sitting_deputy_speaker_links(
+def get_sitting_deputy_speaker_ids(
     session: Session,
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
-) -> None:
+) -> dict[int, int]:
     report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(BARE_DEPUTY_RE.pattern)
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
@@ -548,10 +548,19 @@ def _populate_sitting_deputy_speaker_links(
                 found = _get_speaker_ids_for_names([speech_id_to_deputy_name[speech_row.id]], report.parliament_number, lookups, speaker_id_lookup) & male_holder_ids
                 if len(found) == 1:
                     speech_id_to_speaker_id[speech_row.id] = next(iter(found))
+    logger.info(f"Sitting-level deputy speaker: {len(speech_id_to_speaker_id)}/{total} bare records resolved")
+    return speech_id_to_speaker_id
 
+
+def _populate_sitting_deputy_speaker_links(
+    session: Session,
+    lookups: SpeakerLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+) -> None:
+    speech_id_to_speaker_id = get_sitting_deputy_speaker_ids(session, lookups, speaker_id_lookup)
     _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, speech_id_to_speaker_id)
     session.commit()
-    logger.info(f"Speech: set speaker_id on {len(speech_id_to_speaker_id)}/{total} sitting-level deputy-speaker records")
+    logger.info(f"Speech: set speaker_id on {len(speech_id_to_speaker_id)} sitting-level deputy-speaker records")
 
 
 def populate_speaker_links(session: Session) -> None:
