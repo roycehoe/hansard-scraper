@@ -79,10 +79,10 @@ _NEWER_SYSTEM_NAME_TRAILING_CHARS = ". "
 _NEWER_SYSTEM_START_LINE = -1
 
 _SPEAKER_HONORIFIC_RE = re.compile(
-    r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|Inche|Tuan|Haji|The|Er)\b"
+    r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|Inche|Tuan|Haji|The|Er|Miss|Madam|Che)\b"
 )
 # NOTE: these titles count only at the start of a label, because a report title or an amendment note names members after them ("BG LEE HSIEN LOONG (Statement ...)").
-_LEADING_TITLE_RE = re.compile(r"^(?:Encik|BG|MG|RAdm|Maj|Cdre|Tun|Dato)\b")
+_LEADING_TITLE_RE = re.compile(r"^(?:Encik|BG|MG|LG|COL|RAdm|Maj|Cdre|Tun|Dato)\b")
 
 _PROCEDURAL_STAGE_RE = re.compile(
     r"^(First|Second|Third)\s+Reading$|^Committee$|^,$|^Year$",
