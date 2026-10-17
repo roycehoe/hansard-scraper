@@ -378,11 +378,11 @@ def _get_day_speaker_ids(
     return text_key_to_speaker_ids[key]
 
 
-def _populate_role_context_links(
+def get_role_context_speaker_ids(
     session: Session,
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
-) -> None:
+) -> dict[int, int]:
     pattern = "|".join(
         [CHAIRMAN_RE.pattern] + [f"^{re.escape(role)}$" for role in (*CARRIED_ROLES, *HEAD_OF_STATE_TERMS)]
     )
@@ -413,17 +413,26 @@ def _populate_role_context_links(
                     )
                 if key_to_speaker_id[key] is not None:
                     speech_id_to_speaker_id[speech_id] = key_to_speaker_id[key]
-    _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, speech_id_to_speaker_id)
-    session.commit()
     logger.info(f"Speech: set speaker_id on {len(speech_id_to_speaker_id)}/{total} role-context records")
+    return speech_id_to_speaker_id
 
 
-# NOTE: with one man and one woman in office the "Mr" row goes to the man unless the report shows the woman taking part. With two men the row links only when the report names one of them and nothing else printed that day names the other.
-def _populate_deputy_speaker_links(
+def _populate_role_context_links(
     session: Session,
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> None:
+    speech_id_to_speaker_id = get_role_context_speaker_ids(session, lookups, speaker_id_lookup)
+    _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, speech_id_to_speaker_id)
+    session.commit()
+
+
+# NOTE: with one man and one woman in office the "Mr" row goes to the man unless the report shows the woman taking part. With two men the row links only when the report names one of them and nothing else printed that day names the other.
+def get_deputy_speaker_ids(
+    session: Session,
+    lookups: SpeakerLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+) -> dict[int, int]:
     report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(BARE_DEPUTY_RE.pattern)
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
@@ -490,9 +499,18 @@ def _populate_deputy_speaker_links(
             for speech_id, candidate in speech_id_to_candidate_id.items():
                 if not (named_today & valid_holder_ids) - {candidate}:
                     speech_id_to_speaker_id[speech_id] = candidate
+    logger.info(f"Speech: set speaker_id on {len(speech_id_to_speaker_id)}/{total} deputy-speaker records")
+    return speech_id_to_speaker_id
+
+
+def _populate_deputy_speaker_links(
+    session: Session,
+    lookups: SpeakerLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+) -> None:
+    speech_id_to_speaker_id = get_deputy_speaker_ids(session, lookups, speaker_id_lookup)
     _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, speech_id_to_speaker_id)
     session.commit()
-    logger.info(f"Speech: set speaker_id on {len(speech_id_to_speaker_id)}/{total} deputy-speaker records")
 
 
 def _build_sitting_text(markdown: Optional[str], sections: Optional[str]) -> Optional[SittingText]:

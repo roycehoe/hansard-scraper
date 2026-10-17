@@ -145,6 +145,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `clean_attendance.py`: deletes the attendance rows of `data/attendance_cleanup.json` that the stage 7 parser no longer builds, renames and links its corrections, and links each `Speaker` role row to the presiding officer of its date or deletes it when he has another row; a dry run unless `--commit`
 - `apply_speaker_parliaments.py`: moves the stored Assembly-only speaker rows to the Parliament that `data/colonial_la_members.json` and `data/heads_of_state.json` give them; a dry run unless `--commit`
 - `apply_sitting_deputy_links.py`: links the stored bare "Mr Deputy Speaker" rows that the stage 8 sitting-level pass resolves from the whole sitting's chair marks (ADR 0002); checks each planned row is still unlinked before it writes; a dry run unless `--commit`
+- `apply_speaker_links.py`: links the stored speech and attendance rows that stage 8 would link; a dry run writes the plan file, and `--commit` locks the planned rows, checks they are still unlinked, builds the plan again and refuses unless it equals the reviewed file
 - `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech rows, after checking each against its kept copy; a dry run unless `--commit`
 - `find_presiding_officers.py`: tallies the most common Speaker and Deputy Speaker per parliament from the PRESENT sections
 - `trace_speaker_links.py`: read-only regression guard for stage 8 speech links: re-runs the resolver per key and compares with stored `speaker_id`
@@ -265,5 +266,6 @@ hansard-scraper/
     ├── apply_attendance_names.py
     ├── clean_attendance.py
     ├── apply_speaker_parliaments.py
-    └── apply_sitting_deputy_links.py
+    ├── apply_sitting_deputy_links.py
+    └── apply_speaker_links.py
 ```
