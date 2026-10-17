@@ -31,10 +31,14 @@ from services.role_context import (
     BARE_DEPUTY_RE,
     CARRIED_ROLES,
     CHAIRMAN_RE,
+    SittingText,
+    build_sitting_text_from_markdown,
+    build_sitting_text_from_sections,
     carried_role_names,
     chairman_names,
     deputy_speaker_names,
     deputy_speaker_names_in_text,
+    sitting_deputy_speaker_names,
 )
 from utils.names import (
     normalize_name,
@@ -491,6 +495,65 @@ def _populate_deputy_speaker_links(
     logger.info(f"Speech: set speaker_id on {len(speech_id_to_speaker_id)}/{total} deputy-speaker records")
 
 
+def _build_sitting_text(markdown: Optional[str], sections: Optional[str]) -> Optional[SittingText]:
+    if markdown is not None:
+        return build_sitting_text_from_markdown(markdown)
+    if sections is not None:
+        return build_sitting_text_from_sections(sections)
+    return None
+
+
+# NOTE: the record does not print a bracket at every change of chair, so this pass can credit the wrong one of two Deputies; ADR 0002 accepts that risk for the rows the report-level pass leaves unlinked.
+def _populate_sitting_deputy_speaker_links(
+    session: Session,
+    lookups: SpeakerLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+) -> None:
+    report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(BARE_DEPUTY_RE.pattern)
+    speech_id_to_speaker_id: dict[int, int] = {}
+    total = 0
+
+    for start in range(0, len(report_ids), _REPORT_BATCH):
+        batch = report_ids[start : start + _REPORT_BATCH]
+        report_id_to_report = {report.id: report for report in CRUDReport(session).get_by_ids(batch)}
+        report_id_to_speech_rows: dict[int, list[SpeechRow]] = {}
+        for speech_row in CRUDSpeech(session).get_rows_by_report_ids(batch):
+            report_id_to_speech_rows.setdefault(speech_row.report_id, []).append(speech_row)
+        date_keys = list({_get_sitting_date_key(report.sitting_date) for report in report_id_to_report.values()})
+        date_key_to_markdown = CRUDSitting(session).get_markdown_by_dates(date_keys)
+        date_key_to_sections = CRUDSitting(session).get_sections_by_dates(date_keys)
+        date_key_to_sitting_text: dict[str, Optional[SittingText]] = {}
+        for report_id, speech_rows in report_id_to_speech_rows.items():
+            report = report_id_to_report[report_id]
+            bare_deputy_rows = [speech_row for speech_row in speech_rows if speech_row.speaker_id is None and BARE_DEPUTY_RE.match(speech_row.speaker or "")]
+            day = report.sitting_date.date()
+            holders = [name for first, last, name in DEPUTY_SPEAKER_TERMS if first <= day <= last]
+            if not bare_deputy_rows or len(holders) != _DEPUTY_SPEAKER_PAIR_SIZE:
+                continue
+            total += len(bare_deputy_rows)
+            holder_to_speaker_id = {holder: _get_speaker_id_for_name(holder, report.parliament_number, lookups, speaker_id_lookup) for holder in holders}
+            if None in holder_to_speaker_id.values():
+                continue
+            male_holder_ids = {speaker_id for holder, speaker_id in holder_to_speaker_id.items() if holder not in DEPUTY_SPEAKER_WOMEN}
+            date_key = _get_sitting_date_key(report.sitting_date)
+            if date_key not in date_key_to_sitting_text:
+                date_key_to_sitting_text[date_key] = _build_sitting_text(date_key_to_markdown.get(date_key), date_key_to_sections.get(date_key))
+            sitting_text = date_key_to_sitting_text[date_key]
+            if sitting_text is None:
+                continue
+            speech_id_to_deputy_name = sitting_deputy_speaker_names(sitting_text, report.title, speech_rows)
+            for speech_row in bare_deputy_rows:
+                if speech_row.id not in speech_id_to_deputy_name:
+                    continue
+                found = _get_speaker_ids_for_names([speech_id_to_deputy_name[speech_row.id]], report.parliament_number, lookups, speaker_id_lookup) & male_holder_ids
+                if len(found) == 1:
+                    speech_id_to_speaker_id[speech_row.id] = next(iter(found))
+
+    _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, speech_id_to_speaker_id)
+    session.commit()
+    logger.info(f"Speech: set speaker_id on {len(speech_id_to_speaker_id)}/{total} sitting-level deputy-speaker records")
+
+
 def populate_speaker_links(session: Session) -> None:
     speakers = CRUDSpeaker(session).get_all()
     speaker_id_lookup = {
@@ -511,3 +574,4 @@ def populate_speaker_links(session: Session) -> None:
     session.commit()
     _populate_role_context_links(session, lookups, speaker_id_lookup)
     _populate_deputy_speaker_links(session, lookups, speaker_id_lookup)
+    _populate_sitting_deputy_speaker_links(session, lookups, speaker_id_lookup)

@@ -69,6 +69,15 @@ class CRUDSitting:
         sitting_markdown_rows = self.session.exec(statement).all()
         return {sitting_date: markdown for sitting_date, markdown in sitting_markdown_rows}
 
+    def get_sections_by_dates(self, dates: list[str]) -> dict[str, str]:
+        statement = (
+            select(Sitting.sitting_date, Sitting.sections)
+            .where(col(Sitting.sitting_date).in_(dates))
+            .where(Sitting.sections.is_not(None))
+        )
+        sitting_sections_rows = self.session.exec(statement).all()
+        return {sitting_date: sections for sitting_date, sections in sitting_sections_rows}
+
     def get_date_rows(self) -> list[SittingDateRow]:
         statement = select(Sitting.id, Sitting.sitting_date, Sitting.parlement_no, Sitting.volume_no)
         return [SittingDateRow(*row) for row in self.session.exec(statement).all()]

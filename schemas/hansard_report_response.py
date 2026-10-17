@@ -1,4 +1,4 @@
-# NOTE: every field here, including HansardReportAttendanceEntry, is Optional with a None default, which STYLE.md forbids on a response schema.
+# NOTE: every field here, including HansardReportAttendanceEntry and HansardReportSection, is Optional with a None default, which STYLE.md forbids on a response schema.
 # This is a licensed exception: getHansardReport returns an old, a new or an error body, and the builders read all three.
 from typing import Optional
 
@@ -85,6 +85,13 @@ class HansardReportAttendanceEntry(BaseModel):
     mp_name: Optional[str] = None
     attendance: Optional[bool] = None
     location_name: Optional[str] = None
+
+
+class HansardReportSection(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    title: Optional[str] = None
+    content: Optional[str] = None
 
 
 class HansardReportNewResponse(BaseModel):
