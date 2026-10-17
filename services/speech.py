@@ -337,6 +337,8 @@ _HONOURABLE_MEMBERS_RE = re.compile(r"^(?:Some |The )?[Hh]on(?:ourable|\.)? Memb
 _LOWERCASE_START_RE = re.compile(r"^[a-z]")
 _CHAMBER_EVENT_VERB_RE = re.compile(r"^(?:indicated|rose|resumed|say|said|signified|left|entered|took|made|stood|went|remained|again|later|and)\b")
 _ITALIC_HEADING_RE = re.compile(r"^_[^_].*_$")
+_MAX_ITALIC_TITLE_LENGTH = 150
+_ITALIC_TITLE_RE = re.compile(rf"^_[^_\n]{{1,{_MAX_ITALIC_TITLE_LENGTH}}}(?<!!)_$")
 _SENTENCE_FINAL_RE = re.compile(r"[.?!][\"'”’)\]_*]*$")
 _BRACKET_SPAN_RE = re.compile(r"(?:(?<=\s)[_*]+|^[_*]+)?\[([^\[\]]{1,250})\](?:[_*]*\.)?(?:[_*]+(?=\s|$))?")
 _BRACKET_INNER_EDGE_CHARACTERS = " _*."
@@ -619,6 +621,8 @@ def _get_no_speaker_kind(line: str) -> SpeechKind:
 
 
 def _build_current_speaker_speech(current_speaker: Optional[str], transcript: str) -> ParsedSpeech:
+    if _ITALIC_TITLE_RE.match(transcript) is not None:
+        return ParsedSpeech(speaker=None, transcript=transcript, kind=SpeechKind.HEADING)
     if current_speaker is None:
         return ParsedSpeech(speaker=None, transcript=transcript, kind=_get_no_speaker_kind(transcript))
     return ParsedSpeech(speaker=current_speaker, transcript=transcript, kind=SpeechKind.SPEECH)
