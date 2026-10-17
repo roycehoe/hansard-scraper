@@ -52,6 +52,8 @@ _BLOCK_TAG_PATTERN = r"</?(?:p|div|br|li|ul|ol|h[1-6]|table|tr|td|th|hr|blockquo
 _PRECEDING_HTML_LENGTH = 600
 _EXPONENT_BASE_PATTERN = r"(?:^|[^A-Za-z])(?:[A-Za-z]|CO|NO|SO|km|cm|mm)$"
 _LIST_COMMA_PATTERN = r"\s*,\s*"
+_CLOSING_EMPHASIS_END_PATTERN = r"</(?:i|em|u|b|strong)\s*>$"
+_ANCHOR_TAG_PATTERN = r"<a\b"
 _AMPERSAND_PATTERN = r"&([A-Za-z][A-Za-z0-9]*|#)?"
 _AMPERSAND_ENTITY = "&amp;"
 _NBSP_ONLY_EMPHASIS_PATTERN = r"<(i|b|u|em|strong)\b[^>]*>\s*(?:&nbsp;\s*)+</\1\s*>"
@@ -99,13 +101,22 @@ def _glue_footnote_hash_markers(html: str) -> str:
 
 
 def _render_footnote_superscript(match: re.Match) -> str:
-    preceding_html = re.sub(_BLOCK_TAG_PATTERN, "\n", match.string[max(0, match.start() - _PRECEDING_HTML_LENGTH) : match.start()], flags=re.IGNORECASE)
+    preceding_window = match.string[max(0, match.start() - _PRECEDING_HTML_LENGTH) : match.start()]
+    preceding_html = re.sub(_BLOCK_TAG_PATTERN, "\n", preceding_window, flags=re.IGNORECASE)
     preceding = re.sub(_HTML_TAG_PATTERN, "", preceding_html)
     if not preceding.strip() or preceding[-1].isspace():
         return match.group(0)
+    # NOTE: the converter writes a space between closing emphasis and a digit outside a link, so that digit was never glued.
+    if (
+        re.search(_CLOSING_EMPHASIS_END_PATTERN, preceding_window, flags=re.IGNORECASE) is not None
+        and re.search(_ANCHOR_TAG_PATTERN, match.group(0), flags=re.IGNORECASE) is None
+    ):
+        return match.group(0)
     if re.search(_EXPONENT_BASE_PATTERN, preceding) is not None:
         return match.group(0)
-    return _OPENING_BRACKET + re.sub(_LIST_COMMA_PATTERN, ",", match.group(1)) + _CLOSING_BRACKET
+    marker = _OPENING_BRACKET + re.sub(_LIST_COMMA_PATTERN, ",", match.group(1)) + _CLOSING_BRACKET
+    # NOTE: the marker replaces only the digits, so the converter treats the tags and spaces around it as it did before.
+    return match.string[match.start() : match.start(1)] + marker + match.string[match.end(1) : match.end()]
 
 
 def _mark_footnote_superscripts(html: str) -> str:
