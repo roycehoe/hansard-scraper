@@ -121,6 +121,7 @@ def chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int, str
     annotations = [(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalised)]
     events = [(match.start(), match.group(1).lower()) for match in _CHAIR_EVENT_RE.finditer(normalised)]
     role_to_holder_names = _get_header_holders(markdown)
+    is_header_present = _HEADER_RE.search(markdown) is not None
     positions = _get_positions(normalised, speech_rows)
     speech_id_to_name: dict[int, str] = {}
     for index, speech_row in enumerate(speech_rows):
@@ -145,6 +146,9 @@ def chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int, str
                 holders = role_to_holder_names.get("speaker", set())
                 if after_roles == {"speaker"} and not before_roles and len(holders) == 1:
                     speech_id_to_name[speech_row.id] = next(iter(holders))
+                # NOTE: with no MPs Speaking header to name the Speaker, the annotation goes to stage 8, which finds the Speaker of the day in SPEAKER_TERMS.
+                elif not is_header_present and not any(annotation_position < event_position < position for event_position, _ in events):
+                    speech_id_to_name[speech_row.id] = text
             continue
         if len(after_roles) != 1:
             continue
