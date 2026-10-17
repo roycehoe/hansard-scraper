@@ -7,6 +7,7 @@ from crud.attendance import AttendanceLocationRow
 from database.attendance import Attendance
 from database.sitting import Sitting
 from database.speaker import Speaker
+from exceptions import HansardWriteCheckError
 from schemas.constituency_names import ConstituencyNames
 from schemas.hansard_report_response import HansardReportAttendanceEntry
 from utils.names import (
@@ -751,6 +752,17 @@ class ConstituencyLookups:
 
 
 @dataclass(frozen=True)
+class AttendanceNameChange:
+    id: int
+    sitting_id: int
+    speaker_name_before: Optional[str]
+    speaker_name_after: Optional[str]
+    is_present: Optional[bool]
+    location_name: Optional[str]
+    speaker_id: Optional[int]
+
+
+@dataclass(frozen=True)
 class LocationChange:
     id: int
     speaker_name: Optional[str]
@@ -869,3 +881,27 @@ def get_sitting_attendance_from_list(sitting: Sitting, lookups: SpeakerLookups, 
         ))
 
     return _drop_repeated_attendees(records)
+
+
+def build_sitting_attendances(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
+    if sitting.markdown_content is not None:
+        return get_sitting_attendance(sitting, lookups, constituency_lookups)
+    return get_sitting_attendance_from_list(sitting, lookups, constituency_lookups)
+
+
+def get_attendance_name_changes(sitting_id: int, stored_rows: list[Attendance], built_rows: list[Attendance]) -> list[AttendanceNameChange]:
+    if len(stored_rows) != len(built_rows):
+        raise HansardWriteCheckError(f"Sitting {sitting_id}: {len(stored_rows)} stored attendance rows, stage 7 builds {len(built_rows)}")
+    name_changes = []
+    for stored_row, built_row in zip(stored_rows, built_rows):
+        if stored_row.is_present != built_row.is_present:
+            raise HansardWriteCheckError(f"Attendance row {stored_row.id}: presence {stored_row.is_present}, stage 7 builds {built_row.is_present}")
+        if stored_row.location_name != built_row.location_name:
+            raise HansardWriteCheckError(f"Attendance row {stored_row.id}: location {stored_row.location_name!r}, stage 7 builds {built_row.location_name!r}")
+        if stored_row.speaker_name == built_row.speaker_name:
+            continue
+        name_changes.append(AttendanceNameChange(
+            stored_row.id, sitting_id, stored_row.speaker_name, built_row.speaker_name,
+            stored_row.is_present, stored_row.location_name, stored_row.speaker_id,
+        ))
+    return name_changes

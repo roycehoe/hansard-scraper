@@ -141,6 +141,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `apply_speaker_overrides.py`: applies `data/speaker_overrides.json` and the party values of `data/colonial_la_members.json` to stored speaker rows, and straightens the apostrophe in party; a dry run unless `--commit`
 - `complete_truncated_attendance.py`: inserts the attendance rows an interrupted stage 7 run never wrote for sittings 5941, 5988 and 6009, parsed from the stored sitting markdown; checks the per-sitting counts before it commits; a dry run unless `--commit`
 - `apply_constituency_names.py`: rewrites stored attendance location names that `data/constituency_names.json` would change; a dry run unless `--commit`
+- `apply_attendance_names.py`: sets stored attendance names to the names stage 7 builds, on rows where nothing else differs; refuses a sitting whose rows differ in more than a name; a dry run unless `--commit`
 - `clean_attendance.py`: deletes the attendance rows of `data/attendance_cleanup.json` that the stage 7 parser no longer builds, renames and links its corrections, and links each `Speaker` role row to the presiding officer of its date or deletes it when he has another row; a dry run unless `--commit`
 - `apply_speaker_parliaments.py`: moves the stored Assembly-only speaker rows to the Parliament that `data/colonial_la_members.json` and `data/heads_of_state.json` give them; a dry run unless `--commit`
 - `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech rows, after checking each against its kept copy; a dry run unless `--commit`
@@ -260,6 +261,7 @@ hansard-scraper/
     ├── apply_speaker_overrides.py
     ├── complete_truncated_attendance.py
     ├── apply_constituency_names.py
+    ├── apply_attendance_names.py
     ├── clean_attendance.py
     └── apply_speaker_parliaments.py
 ```
