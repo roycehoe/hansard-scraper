@@ -71,6 +71,10 @@ class CRUDSpeech:
         self.session.add_all(speeches)
         self.session.commit()
 
+    def add_many(self, speeches: list[Speech]) -> None:
+        self.session.add_all(speeches)
+        self.session.flush()
+
     def get_distinct_report_ids(self) -> set[int]:
         statement = select(Speech.report_id).distinct()
         return set(self.session.exec(statement).all()) - {None}

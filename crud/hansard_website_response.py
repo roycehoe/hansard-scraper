@@ -15,6 +15,10 @@ class CRUDHansardWebsiteResponse:
         self.session.add_all(responses)
         self.session.commit()
 
+    def add_many(self, responses: list[HansardWebsiteResponse]) -> None:
+        self.session.add_all(responses)
+        self.session.flush()
+
     def get_all(self) -> list[HansardWebsiteResponse]:
         statement = select(HansardWebsiteResponse)
         return list(self.session.exec(statement).all())

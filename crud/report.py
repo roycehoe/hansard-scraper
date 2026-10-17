@@ -44,6 +44,10 @@ class CRUDReport:
         self.session.add_all(reports)
         self.session.commit()
 
+    def add_many(self, reports: list[Report]) -> None:
+        self.session.add_all(reports)
+        self.session.flush()
+
     def get_all(self) -> list[Report]:
         statement = select(Report)
         return list(self.session.exec(statement).all())
@@ -62,6 +66,10 @@ class CRUDReport:
 
     def get_by_ids(self, report_ids: list[int]) -> list[Report]:
         statement = select(Report).where(col(Report.id).in_(report_ids))
+        return list(self.session.exec(statement).all())
+
+    def get_by_ids_for_update(self, report_ids: list[int]) -> list[Report]:
+        statement = select(Report).where(col(Report.id).in_(report_ids)).with_for_update()
         return list(self.session.exec(statement).all())
 
     def get_by_report_ids(self, report_ids: list[str]) -> list[Report]:

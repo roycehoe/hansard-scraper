@@ -146,6 +146,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `clean_attendance.py`: deletes the attendance rows of `data/attendance_cleanup.json` that the stage 7 parser no longer builds, renames and links its corrections, and links each `Speaker` role row to the presiding officer of its date or deletes it when he has another row; a dry run unless `--commit`
 - `apply_speaker_parliaments.py`: moves the stored Assembly-only speaker rows to the Parliament that `data/colonial_la_members.json` and `data/heads_of_state.json` give them; a dry run unless `--commit`
 - `apply_speaker_links.py`: links the stored speech and attendance rows that stage 8 would link; a dry run writes the plan file, and `--commit` locks the planned rows, checks they are still unlinked, builds the plan again and refuses unless it equals the reviewed file
+- `apply_coverage_refill.py`: stores the hits SPRS lists that the database lacks and fills reports stored with empty text, with their speech rows; a dry run fetches the text into the plan file, and `--commit` checks the hits are still unstored and the reports still empty, writes the plan's text and checks the speech counts; run `apply_speaker_links.py` after it
 - `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech rows, after checking each against its kept copy; a dry run unless `--commit`
 - `find_presiding_officers.py`: tallies the most common Speaker and Deputy Speaker per parliament from the PRESENT sections
 - `trace_speaker_links.py`: read-only regression guard for stage 8 speech links: re-runs the resolver per key and compares with stored `speaker_id`
@@ -257,6 +258,7 @@ hansard-scraper/
     ├── load_colonial_la_speakers.py
     ├── load_heads_of_state.py
     ├── scrape_speakers_by_parliament.py
+    ├── apply_coverage_refill.py
     ├── remove_excluded_reports.py
     ├── fill_sitting_numbers.py
     ├── apply_report_titles.py
