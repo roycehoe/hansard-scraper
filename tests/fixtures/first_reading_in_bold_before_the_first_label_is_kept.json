@@ -1,0 +1,22 @@
+{
+  "why": "A bold first-reading formula line before the first label is kept as a no-speaker row, not dropped as a title.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "bill",
+  "title": "Widgets Bill",
+  "subtitle": null,
+  "original_title": "Widgets Bill",
+  "html": "<p><strong>\"Widgets Bill\" presented by the Minister (Mr X); read the First time; to be read a Second time.</strong></p><p><strong>Mr A</strong>: Sir, I beg to move.</p>",
+  "expected_rows": [
+    [
+      null,
+      "\"Widgets Bill\" presented by the Minister (Mr X); read the First time; to be read a Second time.",
+      "PROCEDURAL"
+    ],
+    [
+      "Mr A",
+      "Sir, I beg to move.",
+      "SPEECH"
+    ]
+  ]
+}
