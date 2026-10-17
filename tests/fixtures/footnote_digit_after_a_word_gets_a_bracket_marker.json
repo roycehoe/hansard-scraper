@@ -1,0 +1,22 @@
+{
+  "why": "A superscript footnote number glued to the word or number before it is written as [N], so 248 with footnote 1 no longer reads 2481; exponents (m3), single-letter bases, markers after a space and footnote lines that open a block are left alone.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr A</strong>: There are about 248<sup>1</sup>&nbsp;psychiatrists and 473<sup>2, 3</sup> nurses in 2023<sup>1</sup>. Air at 12 &micro;g/m<sup>3</sup>, staff <sup>4</sup> and the<sup><a href=\"#x\">5</a></sup> house.</p><p><sup>17</sup> bizSAFE is a programme.</p>",
+  "expected_rows": [
+    [
+      "Mr A",
+      "There are about 248[1] psychiatrists and 473[2,3] nurses in 2023[1]. Air at 12 µg/m3, staff 4 and the[5] house.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "17 bizSAFE is a programme.",
+      "SPEECH"
+    ]
+  ]
+}

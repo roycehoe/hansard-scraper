@@ -45,6 +45,12 @@ _NBSP_ENTITY = "&nbsp;"
 _STRAY_CLOSING_TAG = "</p />"
 _STRAY_OPENING_ANGLE = "<"
 _FOOTNOTE_HASH_MARKER_PATTERN = r"#(?:&nbsp;)+(</sup>)?\s*"
+_SUPERSCRIPT_FOOTNOTE_PATTERN = r"<sup\b[^>]*>\s*(?:<a\b[^>]*>)?\s*(\d{1,3}(?:\s*,\s*\d{1,3})*)\s*(?:</a>)?\s*</sup>"
+_HTML_TAG_PATTERN = r"<[^>]*>"
+_BLOCK_TAG_PATTERN = r"</?(?:p|div|br|li|ul|ol|h[1-6]|table|tr|td|th|hr|blockquote|pre)\b[^>]*>"
+_PRECEDING_HTML_LENGTH = 600
+_EXPONENT_BASE_PATTERN = r"(?:^|[^A-Za-z])(?:[A-Za-z]|CO|NO|SO|km|cm|mm)$"
+_LIST_COMMA_PATTERN = r"\s*,\s*"
 _AMPERSAND_PATTERN = r"&([A-Za-z][A-Za-z0-9]*|#)?"
 _AMPERSAND_ENTITY = "&amp;"
 _NBSP_ONLY_EMPHASIS_PATTERN = r"<(i|b|u|em|strong)\b[^>]*>\s*(?:&nbsp;\s*)+</\1\s*>"
@@ -89,6 +95,20 @@ def _replace_nbsp_with_space(html: str) -> str:
 def _glue_footnote_hash_markers(html: str) -> str:
     # NOTE: a marker followed by a space would read as a markdown heading, so it stays glued to its note like the other markers.
     return re.sub(_FOOTNOTE_HASH_MARKER_PATTERN, r"#\1", html)
+
+
+def _render_footnote_superscript(match: re.Match) -> str:
+    preceding_html = re.sub(_BLOCK_TAG_PATTERN, "\n", match.string[max(0, match.start() - _PRECEDING_HTML_LENGTH) : match.start()], flags=re.IGNORECASE)
+    preceding = re.sub(_HTML_TAG_PATTERN, "", preceding_html)
+    if not preceding.strip() or preceding[-1].isspace():
+        return match.group(0)
+    if re.search(_EXPONENT_BASE_PATTERN, preceding) is not None:
+        return match.group(0)
+    return _OPENING_BRACKET + re.sub(_LIST_COMMA_PATTERN, ",", match.group(1)) + _CLOSING_BRACKET
+
+
+def _mark_footnote_superscripts(html: str) -> str:
+    return re.sub(_SUPERSCRIPT_FOOTNOTE_PATTERN, _render_footnote_superscript, html, flags=re.IGNORECASE)
 
 
 def _move_space_into_anchor(html: str) -> str:
@@ -370,6 +390,7 @@ def _flatten_leading_nested_bold(markdown: str) -> str:
 def _preprocess_html(html: str) -> str:
     html = _replace_nbsp_only_emphasis_with_space(html)
     html = _replace_nbsp_with_space(html)
+    html = _mark_footnote_superscripts(html)
     html = _escape_bare_ampersands(html)
     html = _mark_paragraph_page_breaks(html)
     html = _remove_column_markers(html)
