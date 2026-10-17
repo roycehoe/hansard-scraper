@@ -19,6 +19,7 @@ _SPEAKERS = (
     Speaker(id=8, name="Masagos Zulkifli Bin Masagos Mohamad", party=_PARTY, is_legislative_assembly=False, parliament_number=15),
     Speaker(id=9, name="Kenneth Tiong", party="Workers' Party", is_legislative_assembly=False, parliament_number=15),
     Speaker(id=10, name="Tan Chuan-Jin", party=_PARTY, is_legislative_assembly=False, parliament_number=13),
+    Speaker(id=11, name="Rahmat Bin Kenap", party=_PARTY, is_legislative_assembly=True, parliament_number=1),
 )
 _LOOKUPS = build_speaker_lookups(list(_SPEAKERS))
 _NAME_AND_PARLIAMENT_TO_SPEAKER_ID = {(speaker.name, speaker.parliament_number): speaker.id for speaker in _SPEAKERS}
@@ -37,6 +38,7 @@ _NAME_AND_PARLIAMENT_TO_SPEAKER_ID = {(speaker.name, speaker.parliament_number):
         ("The Minister for Social and Family Development (Mr Masagos Zulkifli B M M)", 15, 8),
         ("Mr Kenneth Tiong Boon Kiat (Aljunied)", 15, 9),
         ("Mr Kenneth Tiong Boon Kiat", 15, 9),
+        ("Inche Rahamat", 1, 11),
     ],
 )
 def test_label_that_names_a_member_links_to_that_member(label: str, parliament: int, expected_speaker_id: Optional[int]) -> None:

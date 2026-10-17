@@ -276,6 +276,7 @@ _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
     ("william goode, k c m g", 0): "William Goode",
     ("g e n oehlers", 0): "George Oehlers",
     ("rahamat bin kenap", 1): "Rahmat Bin Kenap",
+    ("rahamat", 1): "Rahmat Bin Kenap",
     ("koo young", 1): "Koo Yong",
     ("chew chin han", 1): "Chew Chin Harn",
     ("hart", 0): "Hart, T.M.",
