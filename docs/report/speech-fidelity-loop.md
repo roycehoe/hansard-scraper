@@ -663,3 +663,35 @@ The detectors read dictionary 4.282 and punctuation 1.977 per million tokens, un
 - A NOT NULL constraint on `kind`, and an override file with the right speakers for the 465 rows.
 - Tier B and C classes that no write has touched.
 - Push: the write 6 commits (`d20cb43`, `5515de4`, `7d6f305` and this record) are on master and not pushed.
+
+## Census of speaker labels, after write 6 (17 October)
+
+Two detectors count speaker labels in the speech table. DS-05 counts labels that are not a person, an office or a group. DS-09 counts unlinked labels that name a person who exists as a Person or Speaker row. `label_census.py` in the fix run's census folder runs both on the replica; it is not in the repository. The run was read-only, from an export of master at `1e069f3`, and counted on 17 October 2026 after write 6. Every unlinked label was read by hand with its first transcript words: 94 strings on 17,371 rows, and so were the 6 linked strings that a DS-05 shape flags. The readings of 16 October carried over for every label that still exists. Four labels were new and were read again: "RADM LUI TUCK YEW" and three bracketed office labels whose nested bracket the parser now closes. Characters are countable characters, as in `scripts/attribution_text_share.py`.
+
+The first census, on 16 October, counted the write 3 data. The fix run held its figures under the 5% rule, because the counts on the write 4 rehearsal had already moved: 431 DS-05 rows in 50 reports and 254 DS-09 rows in 152 reports. After write 6 they have moved again.
+
+| Class | Rows | Strings | Reports | Characters | Rows, 16 Oct |
+|---|---|---|---|---|---|
+| DS-05 heading | 79 | 14 | 11 | 20,872 | 788 |
+| DS-05 sentence fragment | 13 | 4 | 5 | 3,044 | 162 |
+| DS-05 table caption or cell | 40 | 8 | 3 | 1,496 | 81 |
+| DS-05 junk | 4 | 2 | 2 | 559 | 38 |
+| DS-05 total | 136 | 28 | 20 | 25,971 | 1,069 |
+| DS-09 total | 67 | 25 | 24 | 29,907 | 268 |
+
+By group, P0-11, P12, P13 and P14, DS-05 holds 132, 3, 0 and 1 rows, and DS-09 holds 63, 1, 0 and 3. Rows with kind NULL are rows of reports that no write has rebuilt. They number 86 for DS-05 and 0 for DS-09, and every other counted row has kind SPEECH. Eight DS-05 rows are linked to the right person. Their label carries a stage direction, as in "The Leader of the House (Mr Wong Kan Seng) stood up, and addressing himself to the Clerk of Parliament said". Every other counted row is unlinked. Offices and groups, which are valid labels, hold 17,167 of the 17,371 unlinked rows. Nine more rows name two men who have no Person: Andrew Fong and A. V. Winslow.
+
+The personas findings counted three DS-05 shapes and three DS-09 shapes on production before write 3. The same SQL gives these figures today, on the unlinked rows.
+
+| Shape | Before write 3 | Write 3 data | After write 6 |
+|---|---|---|---|
+| DS-05 label with a finite verb | 174 | 174 | 31 |
+| DS-05 label in capitals | 192 | 36 | 2 |
+| DS-05 label starting with `[`, `(`, `_`, `*` or a quote | 395 | 229 | 39 |
+| DS-09 bracketed titled name | 96 | 69 | 35 |
+| DS-09 "Name (Mr Speaker)", counted inside the line above | 59 | 34 | 0 |
+| DS-09 leading quote before a titled name | 35 | 35 | 0 |
+
+The drop follows write 5, which carried the label fixes `e5b602e` and `2368a38`, and the report rebuilds of writes 4 to 6. It is not traced row by row.
+
+Of the 67 DS-09 rows, 66 would link to the named person. The other one is a "Resolved" line, so a link would credit a line no member spoke. The resolver links none of the 67 today. The Person of every DS-09 string except the four with no Person sat in the Parliament of each of its reports, checked against the Speaker rows. A report of the colonial era is checked against Parliaments 0 to 3, as the resolver does since write 9 moved the Assembly-only members to Parliament 0.
