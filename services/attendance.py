@@ -366,6 +366,7 @@ _LEAVE_NOTE_PREFIX = "For information on permission given to Members for leave o
 
 _SECTION_END_RE = re.compile(r"#|\||\*\*|\*[^\s*]|\d{1,2}(?:st|nd|rd|th) [A-Za-z]+,? \d{4}$|(?:Mr|Mdm) Speaker, preceded by")
 _MARKUP_RE = re.compile(r"[*|#_\[\]]")
+_SPEAKER_OFFICE_NAME = "speaker"
 
 # NOTE: the source lost the start of this entry; the line is the sitting of 10 June 1963.
 _TRUNCATED_LINE_TO_ENTRY_LINE: dict[str, str] = {
@@ -636,7 +637,7 @@ def _parse_entry_line(line: str, sitting_date: str) -> Optional[ParsedAttendee]:
     parsed = _parse_speaker_line(line) if "SPEAKER" in line else _parse_name_and_location(strip_title(line))
     if _MARKUP_RE.search(parsed.name):
         return None
-    if parsed.name.lower() != "speaker":
+    if parsed.name.lower() != _SPEAKER_OFFICE_NAME:
         return parsed
 
     # NOTE: a bare "Speaker" entry names the office; the dated table of Speakers names the person.
