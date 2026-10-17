@@ -695,3 +695,33 @@ The personas findings counted three DS-05 shapes and three DS-09 shapes on produ
 The drop follows write 5, which carried the label fixes `e5b602e` and `2368a38`, and the report rebuilds of writes 4 to 6. It is not traced row by row.
 
 Of the 67 DS-09 rows, 66 would link to the named person. The other one is a "Resolved" line, so a link would credit a line no member spoke. The resolver links none of the 67 today. The Person of every DS-09 string except the four with no Person sat in the Parliament of each of its reports, checked against the Speaker rows. A report of the colonial era is checked against Parliaments 0 to 3, as the resolver does since write 9 moved the Assembly-only members to Parliament 0.
+
+## Write 7 (17 October)
+
+Write 7 is DS2-01 (`7ce66a3`, an unbolded label that carries a language note starts that member's turn) and DS2-02 (`27d6c5e`, older-system entity characters are kept), with the register rows in `5184a2e`. It was rehearsed on scratch clones, and the rehearsal and the commit each logged 52 checks ok. The speech ship started at 15:44, the speech part finished at 15:58 and the whole ship at 16:03 on 17 October (lock held 108.1 s, total 135.3 s, with 73.8 MB uploaded before the lock).
+
+It rebuilt 1,132 reports and wrote 8,001 speech row updates. 7,868 change characters only. 36 DS2-01 label rows change speaker and lose the label from their text, and 97 rows after a label change speaker. It wrote no insert, delete, kind or ordinal change, so the speech table stays at 1,050,712 rows. It also wrote 1,118 report markdowns and 131 sitting markdowns. Stage 7 re-derived on the replica gives the same 135,083 attendance rows, so no attendance write was made. Stage 8 linked 132 of the 133 rows whose speaker changed, each to the member the label names. "Inche Rahamat" (38006) has no Speaker row under that short name and stays unlinked. The plan holds 126 reports: 37959, 20889 and 43635 are new and none of the older 123 was released. After the ship the remote and the replica hash equal, and the cache refresh changed 1,118 report and 131 sitting markdowns and nothing else.
+
+| Group | Measure | Before | After |
+|---|---|---|---|
+| P0-11 | ADR 0001 rate | 513,398 / 523,414 = 98.09% | 513,405 / 523,415 = 98.09% |
+| P0-11 | All-rows rate | 513,398 / 609,701 = 84.20% | 513,405 / 609,701 = 84.21% |
+| P0-11 | Text share | 180,788,469 / 186,092,971 = 97.15% | 180,790,066 / 186,092,963 = 97.15% |
+| P12 | ADR / all-rows / text | 99.00%; 94.91%; 98.64% | 99.00%; 94.91%; 98.64% |
+| P13 | ADR / all-rows / text | 98.28%; 94.74%; 98.79% | 98.28%; 94.74%; 98.79% |
+| P14 | ADR / all-rows / text | 99.08%; 96.24%; 98.92% | 99.08%; 96.24%; 98.92% |
+
+The dictionary detector reads 4.266 per million tokens (274 hits), down from 4.282 (275 hits). The punctuation detector stays at 1.977 (127 hits).
+
+### Still open
+
+- The 126 held reports keep their older rows.
+- 750 sitting-level Deputy Speaker speech links from another session's `fbf4397` and `0520da9` are not shipped. They need a separate write.
+- Unbolded bare-name labels with no language note, about 89 rows. Reading them as turns would release 37959.
+- The adjournment-mover shape with an en dash in 20889 and 43635. Both are held.
+- "Inche Rahamat" in 38006, which has no Speaker row under that short name.
+- Review findings 6 to 13, including finding 11 on the 1,568-report rebuild.
+- How a wrong `kind`, and a SPEECH row with no speaker, score under the stopping rule.
+- A NOT NULL constraint on `kind`, and an override file with the right speakers for the 465 rows.
+- Tier B and C classes that no write has touched.
+- Push: the write 7 commits (`7ce66a3`, `27d6c5e`, `5184a2e` and this record) are on master and not pushed.
