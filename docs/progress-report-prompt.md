@@ -8,15 +8,6 @@ Paste this prompt into Claude along with the files listed in each section. The o
 
 You are reviewing the refine-loop logs for a Singapore Parliament Hansard scraper. There are five refine loops, each improving a different pipeline stage.
 
-**Before reading any files**, run the following two commands to get live metrics for the speech-speaker loop (the only ACTIVE loop). Use these results — not the numbers in `progress.txt` — as the current state for that loop.
-
-```bash
-PYTHONPATH=. poetry run python3 scripts/run_pilot_assessment.py
-PYTHONPATH=. poetry run python3 scripts/run_regression_check.py
-```
-
-The pilot assessment prints `Pilot (N IDs): X/N = X.X%` plus a per-group breakdown and a list of top unmatched strings. The regression check prints `Regression set: X/53 passing`. Record these numbers before reading any files.
-
 For the four other loops (attendance-speaker, attendance, sitting, report), the log files are authoritative — no scripts need to run.
 
 Then read the files listed below and produce a structured progress report.

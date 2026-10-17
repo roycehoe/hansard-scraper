@@ -82,6 +82,13 @@ Two things are not recoverable from the raw layer alone, and each says so below:
 
 Not covered: attendance speaker-name cleaning (stage 7) and name resolution (stage 8). Both derive from the sitting markdown and the structured attendance list. They change names to match the `Speaker` table and are not text lost from speeches.
 
+## Limits of the record
+
+- Column numbers ("Column: 293" markers) are removed from every report before the row exists: 153,919 markers in 24,630 reports. A researcher cannot cite a column from a stored row. Keeping them needs a column and a rebuild of those reports (decision memo 02, finding 8).
+- `speech.id` and (report, ordinal) are not stable across writes. Write #2 deleted 24,402 rows, write #3 shifted about 600,000 ordinals, and write #4 deletes 443 rows, inserts 66 and updates 3,234 ordinals. Only `pg_dump` files outside git hold the old ids. A citation to a row id is valid for one database state only.
+- The rebuild of 1,568 near-match stale reports rested on a sample of 30 read against the source, none of which showed a hand edit. A sample of 30 with no hits bounds the hand-edit rate at under 9.5% (95% confidence); it does not show the rate is zero. Write #3 shipped and the pre-write dump is outside git, so the check cannot be repeated.
+- The ADR 0002 misprint rate is unmeasured: 5 "Mdm Speaker" rows are known. The Knesset and GermaParl figures quoted in `vision.md` are point estimates on other units, not like-for-like rates.
+
 ## Exceptions to raw first
 
 Two places where the raw layer is not the response as received.

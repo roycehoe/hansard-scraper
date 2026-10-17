@@ -102,7 +102,7 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 
 - `HansardWebsiteResponse` — raw API response, one row per Hansard entry
 - `Report` — entity table extending `HansardWebsiteResponse`; has a one-to-many to `Speech`
-- `Speech` — individual utterance with `speaker`, `transcript`, and `ordinal` within the report; has a `speaker_id` FK to `Speaker` (populated in stage 8)
+- `Speech` — individual utterance with `speaker`, `transcript`, and `ordinal` within the report; has a `speaker_id` FK to `Speaker` (populated in stage 8) and a `kind` (`SpeechKind` enum, Postgres type `speechkind`) saying what the row's text is: SPEECH, PROCEDURAL, CHAMBER_EVENT, EDITORIAL_NOTE, DOCUMENT_TEXT, HEADING or UNCLASSIFIED (see `docs/adr/0009-speech-kind-column.md`)
 - `HansardSittingDateResponse` — raw API response, one row per sitting date; handles both old and new API formats with all fields `Optional`
 - `Sitting` — entity table extending `HansardSittingDateResponse`; adds `markdown_content` parsed from `html_full_content`, plus four JSON TEXT columns (`sections`, `annexures`, `vernaculars`, `a2b`) serialised from the API nested lists
 - `Attendance` — one row per name per sitting, parsed from `Sitting.markdown_content` in stage 7; has a `speaker_id` FK to `Speaker` (set in stage 8)
@@ -148,7 +148,8 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `trace_speaker_links.py`: read-only regression guard for stage 8 speech links: re-runs the resolver per key and compares with stored `speaker_id`
 - `expand_sample.py`: expands the stratified speech sample in `docs/speech-speaker/sample.json`
 - `validate_api_field_mapping.py`: checks that every non-null field in a live or synthetic API body survives the schema and the ORM mapping
-- `run_regression_check.py`, `run_pilot_assessment.py`: fail at import today (they import constants that no longer exist); see `plans/style-behaviour-findings.md`
+
+`plans/speech-fidelity-loop/bin/` holds the tools for rewriting stored speech rows: `dryrun_fix.py` and `dryrun_subset.py` compare the parser against a frozen previous copy, `plan_*.py` build the update plan, `apply_fix*.py` and `ship_delta*.py` write it. Run them only for a planned write.
 
 Scripts log through `logs.logger`; the one script whose stdout is data (`find_presiding_officers.py`, a paste-ready dict literal) prints that output under `# noqa: T201`. `find_unmatched_attendees.py` writes its JSON template to the path given by `--json`.
 
@@ -249,8 +250,6 @@ hansard-scraper/
     ├── trace_speaker_links.py
     ├── expand_sample.py
     ├── validate_api_field_mapping.py
-    ├── run_regression_check.py
-    ├── run_pilot_assessment.py
     ├── load_colonial_la_speakers.py
     ├── load_heads_of_state.py
     ├── scrape_speakers_by_parliament.py
