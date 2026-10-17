@@ -293,6 +293,8 @@ _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
     ("masagos zulkifli b m m", 12): "Masagos Zulkifli Bin Masagos Mohamad",
     ("masagos zulkifli b m m", 13): "Masagos Zulkifli Bin Masagos Mohamad",
     ("masagos zulkifli b m m", 14): "Masagos Zulkifli Bin Masagos Mohamad",
+    ("masagos zulkifli b m m", 15): "Masagos Zulkifli Bin Masagos Mohamad",
+    ("kenneth tiong boon kiat", 15): "Kenneth Tiong",
     ("lim chun leng, michael", 8): "Lim Chun Leng, Michael, Dr",
     ("lim chun leng, michael", 9): "Lim Chun Leng, Michael, Dr",
     ("lim chun leng, michael", 10): "Lim Chun Leng, Michael, Dr",
