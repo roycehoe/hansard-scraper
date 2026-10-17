@@ -296,7 +296,7 @@ _TABLE_RULE_RE = re.compile(r"^-{3}(\|-{2,})+\s*$")
 _BOLD_ONLY_LINE_RE = re.compile(r"^\*\*([^*]+)\*\*\s*$")
 _BOLD_OPENING_RE = re.compile(r"^\*\*(?!\*)")
 _LEADING_BOLD_ARTIFACT_RE = re.compile(r"^(\*{4})+")
-_TIME_MARKER_RE = re.compile(r"^\d{1,2}\.\d{2}\s*[ap]\.?m\.?$", re.IGNORECASE)
+_TIME_MARKER_RE = re.compile(r"^\d{1,2}(?:\s*[.:]\s*\d{2})?\s*(?:[ap]\.?m|noon|midnight)\.?$", re.IGNORECASE)
 _MARKDOWN_HEADING_RE = re.compile(r"^#{1,6}(\s|$)")
 _REPORT_HEADER_FIELD_RE = re.compile(r"^\|?\s*(?:Parliament No|Session No|Volume No|Sitting No|Sitting Date|Section Name|Title|MPs? Speaking):\|")
 _LINE_EDGE_MARKUP_RE = re.compile(r"^(?:#{1,6}|\|)\s*|\s*\|$")
@@ -304,6 +304,8 @@ _MARKUP_ONLY_CHARACTERS = "* _|-"
 _EMPHASIS_MARK_CHARACTERS = "*_ "
 _BOLD_RUN_RE = re.compile(r"((?:\*\*[^*]+?\*\*\s*)+)")
 _LEADING_COLON_RE = re.compile(r"^:\s*")
+_OPENING_PARENTHESIS = "("
+_CLOSING_PARENTHESIS = ")"
 _CHAIR_ANNOTATION_FULL_RE = re.compile(r"[\[(]?\s*.+?\s*in the [Cc]hair\s*[.\])]*")
 _CHAIR_ANNOTATION_PREFIX_RE = re.compile(r"[\[(]\s*.+?\s*in the [Cc]hair\s*[.\])]")
 _ALPHANUMERIC_RE = re.compile(r"[A-Za-z0-9]")
@@ -636,6 +638,13 @@ def _get_proc_text(line: str) -> Optional[str]:
     return match.group(1) + match.group(2).strip() + match.group(3)
 
 
+def _build_speaker_lines_speeches(speaker: str, speaker_lines: list[str]) -> list[ParsedSpeech]:
+    transcript = " ".join(speaker_lines)
+    if _TIME_MARKER_RE.match(transcript):
+        return []
+    return [ParsedSpeech(speaker=speaker, transcript=transcript, kind=SpeechKind.SPEECH)]
+
+
 def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speaker: str) -> list[ParsedSpeech]:
     speeches: list[ParsedSpeech] = []
     speaker_lines: list[str] = []
@@ -669,13 +678,13 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
             unmarked = " ".join(speaker_lines + [unmarked])
             speaker_lines = []
         if speaker_lines:
-            speeches.append(ParsedSpeech(speaker=speaker, transcript=" ".join(speaker_lines), kind=SpeechKind.SPEECH))
+            speeches.extend(_build_speaker_lines_speeches(speaker, speaker_lines))
             speaker_lines = []
         speeches.append(ParsedSpeech(speaker=None, transcript=unmarked, kind=SpeechKind.PROCEDURAL if proc_text is not None or is_first_reading else non_speech_kind))
         if _ADJOURNMENT_LINE_RE.match(unmarked) and not _SENTENCE_END_RE.search(unmarked):
             adjournment_continuations = _MAX_ADJOURNMENT_CONTINUATIONS
     if speaker_lines:
-        speeches.append(ParsedSpeech(speaker=speaker, transcript=" ".join(speaker_lines), kind=SpeechKind.SPEECH))
+        speeches.extend(_build_speaker_lines_speeches(speaker, speaker_lines))
     return speeches
 
 
@@ -817,14 +826,14 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             if not is_in_preamble and _is_turn_ending_line(proc_text):
                 current_speaker = None
             continue
+        if _TIME_MARKER_RE.match(parsed_line.strip(_EMPHASIS_MARK_CHARACTERS)):
+            continue
         if (
             "**" not in parsed_line
             or _is_bold_mid_sentence(parsed_line)
             or _is_bold_without_letters(parsed_line)
             or (current_speaker is not None and _is_honourable_members_phrase(parsed_line))
         ):
-            if _TIME_MARKER_RE.match(parsed_line):
-                continue
             if _MARKDOWN_HEADING_RE.match(parsed_line):
                 continue
             label_match = _PLAIN_ROLE_LABEL_RE.match(parsed_line)
@@ -858,6 +867,10 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             raw_speaker = bold_match.group(0).replace("*", "").replace(":", "").strip()
             # NOTE: A bold line holding only a language note keeps its text so it stays a section annotation.
             raw_speaker = _LANGUAGE_NOTE_RE.sub("", raw_speaker).strip() or raw_speaker
+            # NOTE: the source bolds a label up to the constituency's last word and leaves its closing bracket outside the bold, or drops it.
+            if raw_speaker.count(_OPENING_PARENTHESIS) > raw_speaker.count(_CLOSING_PARENTHESIS):
+                raw_speaker += _CLOSING_PARENTHESIS
+                transcript = _LEADING_COLON_RE.sub("", transcript.removeprefix(_CLOSING_PARENTHESIS).lstrip())
             # NOTE: A chair annotation names who presides, not a speaker, so text after it continues the current speaker.
             if (_CHAIR_ANNOTATION_FULL_RE.fullmatch(raw_speaker)
                     or _CHAIR_ANNOTATION_PREFIX_RE.match(raw_speaker)):
@@ -1025,10 +1038,10 @@ def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type:
 def get_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
     speeches = _split_chamber_events(_get_unsplit_speeches(markdown, start_of_speech_line, report_type, report_version))
     unmarked_speeches = [
-        ParsedSpeech(speaker=speech.speaker, transcript=speech.transcript.replace(_BOLD_MARKER, ""), kind=speech.kind)
+        ParsedSpeech(speaker=speech.speaker, transcript=speech.transcript.replace(_BOLD_MARKER, "").strip(), kind=speech.kind)
         for speech in speeches
     ]
-    return [speech for speech in unmarked_speeches if speech.transcript.strip() != ""]
+    return [speech for speech in unmarked_speeches if speech.transcript != ""]
 
 
 def _get_unattributed_range_start(speeches: list[ParsedSpeech], speech_range: UnattributedSpeechRange) -> int:

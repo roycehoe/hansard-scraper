@@ -1,0 +1,22 @@
+{
+  "why": "A transcript with a leading space keeps no space at either edge.",
+  "source_report_id": 13025,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr Lim</strong>:  Sir, I rise to ask.</p><p>Second line. </p>",
+  "expected_rows": [
+    [
+      "Mr Lim",
+      "Sir, I rise to ask.",
+      "SPEECH"
+    ],
+    [
+      "Mr Lim",
+      "Second line.",
+      "SPEECH"
+    ]
+  ]
+}

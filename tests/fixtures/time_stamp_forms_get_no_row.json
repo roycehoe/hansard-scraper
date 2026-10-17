@@ -1,0 +1,22 @@
+{
+  "why": "Bare time stamps in noon, midnight, colon and bare-hour forms are dropped, not credited to the speaker.",
+  "source_report_id": 20406,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr Lim</strong>: I thank the Member for the question.</p><p>12.00 noon</p><p>4:37 pm</p><p>11 a.m.</p><p>12.00 midnight.</p><p>The answer is no.</p>",
+  "expected_rows": [
+    [
+      "Mr Lim",
+      "I thank the Member for the question.",
+      "SPEECH"
+    ],
+    [
+      "Mr Lim",
+      "The answer is no.",
+      "SPEECH"
+    ]
+  ]
+}

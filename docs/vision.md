@@ -199,7 +199,7 @@ The stopping rule needs every remaining class listed with its corpus count. Thes
 | Reports still held after write #4 (22806, 23038, 23268, 23627, 24839, 41804, the hand-edited 22647 and 22650, and the rest of write #3's 162; 24248 gets no write) | kind NULL on 2,275 | 121 | not counted | Stored rows from an older parser |
 | Latent: `_SPEAKER_HONORIFIC_RE` does not know Miss, Madam, Che, LG or COL; "Miss Penny Low (Pasir Ris-Punggol" cut at a bracket (24708) | 0 today; 14 | 0; 1 | 0; 4,436 | None until a bold-only line with no colon appears. 6,828 "Miss" and "Madam" rows (2,461,263 characters) depend on the colon |
 | Group labels ("An hon. Member" and 16 spellings) and real people whose label lacks an honorific the regexes know | 2,241 and 7,533 | 922 and 1,391 | 70,238 and 2,815,754 | Not errors; the ADR 0001 rate already excludes the "hon. Member(s)" forms |
-| Markup residue: `**` in 3,066 rows and `__` in 274 rows (15 October; the strip rule `27f6d46` is committed and not written) | 3,066 and 274 | 2,904 and 180 | not counted | Tier C |
+| Markup residue: `**` in 50 rows and `__` in 247 rows (write #4 replica, 16 October recount; the strip rule `27f6d46` has been written) | 50 and 247 | 22 and 164 | not counted | Tier C |
 | Rows of kind UNCLASSIFIED, many of them PROCEDURAL, DOCUMENT_TEXT or HEADING in fact; readers flagged 199 of 9,043 round 3 and round 4 rows | 20,944 | not counted | not counted | None; kind gates nothing |
 | Text dropped inside reports that have rows: headings, time stamps, chair annotations, question numbers | not counted | not counted | 0.19% of body text | Tier C (decision review, finding 7, open) |
 
