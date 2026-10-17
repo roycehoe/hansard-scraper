@@ -433,7 +433,7 @@ After the ship:
 
 ### Still open
 
-- Push: the write 3 commits are on master and not pushed.
+- Push: the write 3 commits are on master and pushed.
 - Review findings 6 to 13, including finding 11 on the 1,568-report rebuild.
 - How a wrong `kind`, and a SPEECH row with no speaker, score under the stopping rule.
 - A NOT NULL constraint on `kind`, an override file with the right speakers for the 465 rows, and round 3 tranche 2.
@@ -587,12 +587,12 @@ Kind is not scored. Readers flagged 199 of 9,043 round 3 and round 4 rows (2.20%
 ### Still open
 
 - Write 4 shipped at 07:48 on 17 October. The replica and the remote hash equal by `table_hashes.sql`, and `build_r4.py verify` found no touched window.
-- Push: the write 3 commits and the three fix commits are on master and not pushed.
+- Push: the write 3 commits and the three fix commits are on master and pushed.
 - Review findings 6 to 13, including finding 11 on the 1,568-report rebuild.
 - How a wrong `kind`, and a SPEECH row with no speaker, score under the stopping rule.
 - A NOT NULL constraint on `kind`, and an override file with the right speakers for the 465 rows.
 - Tier B and C classes in the table above that write 4 did not touch.
-- `hansard_w3` stays until round 4 is aggregated, by the user's ruling. `hansard_w4` stays for the round 4 readers.
+- `hansard_w3` stays until round 4 is aggregated, by the user's ruling. `hansard_w4` was dropped after the round 4 readers finished.
 - The "Still open" lists above are out of date: write 2 fixed F5 and F4, and write 3 shipped.
 
 ## Write 5 (17 October)
@@ -635,3 +635,31 @@ Detectors, pipeline hits per million tokens: dictionary 4.269 (274 hits) before 
 Rows by kind, whole table, before and after: SPEECH 960,290 to 950,502 (488 with no speaker, unchanged), HEADING 2,569 to 12,358, DOCUMENT_TEXT 2,615 to 5,388, PROCEDURAL 49,817 to 50,381, UNCLASSIFIED 20,937 to 20,784, CHAMBER_EVENT 5,837 to 5,838. EDITORIAL_NOTE stays at 3,186 and NULL at 2,275. The speech table goes from 1,047,526 to 1,050,712 rows.
 
 The plan holds 181 reports. 121 are the write 3 and write 4 holds, still held with no write of any kind. 60 are new, each refused by a checker: 56 for patch 06 (the marker takes the space next to the superscript and glues words, a defect in the patch), 3 for patch 04 (the widened table-row test reads a label line with a "|" as a table row in 15632 and 46541, and 38222 folds a heading, a time stamp and a bill title into a first-reading row) and 1 for patch 09 (38147). 172 sitting markdowns that change are held and 7 are applied; attendance is the same in all 179.
+
+## Write 6 (17 October)
+
+Write 6 is the two parser fixes `d20cb43` (keep the space next to a footnote marker) and `5515de4` (keep a member's label when the speech holds a pipe), and the stage 7 attendance names of `7d6f305`. The plan was built against the replica after write 5. It was rehearsed on scratch clones from 10:42 to 11:04: 0 unexplained rows, every drift test that applies aborted and rolled back, and the clones ended equal by table hashes. The speech ship ran from 11:16 to 11:19 on 17 October (lock 10.0 s, total 13.1 s). The rehearsal and the commit each logged 52 checks ok.
+
+It rebuilt 55 reports and wrote 131 speech row updates, 55 report markdowns and 5 sitting markdowns. It wrote no delete, insert, kind change or link, so the speech table stays at 1,050,712 rows. 3 more reports parse the same as stored. The plan holds 123 reports: the 121 older holds and 2 new ones (38147, refused by the p09 checker, and 38222, where the parse folds a heading, a time stamp and a bill title into a first-reading row).
+
+`scripts/apply_attendance_names.py` then set 496 stored names in 79 spellings in 227 sittings, on the remote at 11:25 and on the replica at 11:27. A second run planned 0 on each, every row kept its `speaker_id`, and attendance stays at 135,083 rows. After the ship the remote and the replica hash equal by `table_hashes.sql` (11:30), and the cache refresh changed 55 report and 5 sitting markdowns and nothing else.
+
+| Group | Measure | Before | After |
+|---|---|---|---|
+| P0-11 | ADR 0001 rate | 513,404 / 523,420 = 98.09% | 513,398 / 523,414 = 98.09% |
+| P0-11 | All-rows rate | 513,404 / 609,701 = 84.21% | 513,398 / 609,701 = 84.20% |
+| P0-11 | Text share | 180,788,738 / 186,092,945 = 97.15% | 180,788,469 / 186,092,971 = 97.15% |
+| P12 | ADR / all-rows / text | 99.00%; 94.91%; 98.64% | 99.00%; 94.91%; 98.64% |
+| P13 | ADR / all-rows / text | 98.28%; 94.74%; 98.79% | 98.28%; 94.74%; 98.79% |
+| P14 | ADR / all-rows / text | 99.08%; 96.24%; 98.92% | 99.08%; 96.24%; 98.92% |
+
+The detectors read dictionary 4.282 and punctuation 1.977 per million tokens, unchanged.
+
+### Still open
+
+- The 123 held reports keep their older rows.
+- Review findings 6 to 13, including finding 11 on the 1,568-report rebuild.
+- How a wrong `kind`, and a SPEECH row with no speaker, score under the stopping rule.
+- A NOT NULL constraint on `kind`, and an override file with the right speakers for the 465 rows.
+- Tier B and C classes that no write has touched.
+- Push: the write 6 commits (`d20cb43`, `5515de4`, `7d6f305` and this record) are on master and not pushed.
