@@ -233,6 +233,7 @@ hansard-scraper/
 │   ├── markdown_parser.py           # HTML → clean markdown; merges split bold lines
 │   ├── names.py                     # Pure name helpers shared by services/attendance.py and services/person.py
 │   ├── sitting_dates.py             # Sitting-date parsing and the old/new format cutoff test
+│   ├── speaker_terms.py             # SPEAKER_TERMS: who presided as Speaker on which dates (stages 7 and 8)
 │   ├── text.py                      # Mojibake fix (cp1252 → UTF-8) and NUL stripping
 │   └── write_target.py              # validate_can_write: the guard every write script calls before --commit
 │

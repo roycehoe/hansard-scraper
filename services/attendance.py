@@ -18,6 +18,8 @@ from utils.names import (
     strip_middle_haji,
     strip_title,
 )
+from utils.sitting_dates import parse_sitting_date
+from utils.speaker_terms import SPEAKER_TERMS
 
 # Derived from each sitting's Parliament No header
 # NOTE: volumes 1 to 11 print Parliament No 1 in the sitting header, but their reports carry Parliament 0, so they map to 0.
@@ -362,8 +364,13 @@ _MIN_WORDSET_SUBSET_WORDS = 3
 
 _LEAVE_NOTE_PREFIX = "For information on permission given to Members for leave of absence"
 
-_SECTION_END_RE = re.compile(r"#|\||\*\*|\*[^\s*]|\d{1,2}(?:st|nd|rd|th) [A-Za-z]+,? \d{4}$")
+_SECTION_END_RE = re.compile(r"#|\||\*\*|\*[^\s*]|\d{1,2}(?:st|nd|rd|th) [A-Za-z]+,? \d{4}$|(?:Mr|Mdm) Speaker, preceded by")
 _MARKUP_RE = re.compile(r"[*|#_\[\]]")
+
+# NOTE: the source lost the start of this entry; the line is the sitting of 10 June 1963.
+_TRUNCATED_LINE_TO_ENTRY_LINE: dict[str, str] = {
+    "Tunah), Parliamentary Secretary to the Prime Minister.": "Inche Yaacob Bin Mohamed (Bukit Timah), Parliamentary Secretary to the Prime Minister.",
+}
 
 
 def _normalize_for_lookup(name: str) -> str:
@@ -600,8 +607,15 @@ def _parse_speaker_line(line: str) -> ParsedAttendee:
     return _parse_name_and_location(inner_stripped)
 
 
-def _parse_entry_line(line: str) -> Optional[ParsedAttendee]:
+def _get_presiding_officer_name(sitting_date: str) -> Optional[str]:
+    day = parse_sitting_date(sitting_date).date()
+    names = [name for first, last, name in SPEAKER_TERMS if first <= day <= last]
+    return names[0] if len(names) == 1 else None
+
+
+def _parse_entry_line(line: str, sitting_date: str) -> Optional[ParsedAttendee]:
     line = line.strip()
+    line = _TRUNCATED_LINE_TO_ENTRY_LINE.get(line, line)
     if not line:
         return None
     if line.startswith("* "):
@@ -622,7 +636,14 @@ def _parse_entry_line(line: str) -> Optional[ParsedAttendee]:
     parsed = _parse_speaker_line(line) if "SPEAKER" in line else _parse_name_and_location(strip_title(line))
     if _MARKUP_RE.search(parsed.name):
         return None
-    return parsed
+    if parsed.name.lower() != "speaker":
+        return parsed
+
+    # NOTE: a bare "Speaker" entry names the office; the dated table of Speakers names the person.
+    presiding_officer_name = _get_presiding_officer_name(sitting_date)
+    if presiding_officer_name is None:
+        return parsed
+    return ParsedAttendee(presiding_officer_name, None)
 
 
 def _extract_section_lines(content: str, section: str) -> list[str]:
@@ -800,7 +821,7 @@ def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups, constituen
 
     for section, is_present in [("PRESENT", True), ("ABSENT", False)]:
         for line in _extract_section_lines(content, section):
-            parsed = _parse_entry_line(line)
+            parsed = _parse_entry_line(line, sitting.sitting_date)
             if parsed is None:
                 continue
             if not parsed.name:
@@ -831,7 +852,7 @@ def get_sitting_attendance_from_list(sitting: Sitting, lookups: SpeakerLookups, 
             continue
         if entry.mp_name.startswith(_LEAVE_NOTE_PREFIX):
             continue
-        parsed = _parse_entry_line(entry.mp_name)
+        parsed = _parse_entry_line(entry.mp_name, sitting.sitting_date)
         if parsed is None:
             continue
         if not parsed.name:

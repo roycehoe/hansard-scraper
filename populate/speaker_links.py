@@ -19,7 +19,6 @@ from populate.speaker_resolution_constants import (
     HEAD_OF_STATE_TERMS,
     NON_SPEAKERS,
     ROLE_ONLY_SPEAKERS,
-    SPEAKER_TERMS,
     SPEAKER_WOMEN,
 )
 from services.attendance import (
@@ -41,6 +40,7 @@ from utils.names import (
     normalize_name,
     strip_title,
 )
+from utils.speaker_terms import SPEAKER_TERMS
 
 _WRITE_BATCH = 50_000
 _REPORT_BATCH = 200

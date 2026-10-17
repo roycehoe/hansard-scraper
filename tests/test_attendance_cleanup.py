@@ -7,7 +7,6 @@ import pytest
 from database.attendance import Attendance
 from enums import AttendanceCleanupReason
 from exceptions import HansardWriteCheckError
-from populate.speaker_resolution_constants import SPEAKER_TERMS
 from schemas.attendance_cleanup import (
     AttendanceCleanup,
     AttendanceCorrection,
@@ -17,6 +16,7 @@ from schemas.attendance_cleanup import (
 from schemas.speaker import SpeakerResult
 from services.attendance_cleanup import AttendanceUpdate, build_attendance_cleanup_plan
 from utils.sitting_dates import parse_sitting_date
+from utils.speaker_terms import SPEAKER_TERMS
 
 _DATA_FILE = Path(__file__).parent.parent / "data" / "attendance_cleanup.json"
 _REMOVAL_COUNT = 91
