@@ -172,17 +172,17 @@ From the third independent audit on 17 October 2026, after write #7 and the 750 
 
 | Test | Verdict |
 |---|---|
-| 1. Coverage: every SPRS hit to the cutoff stored, textless records named | Fail. A crawl of SPRS finds 41,839 hits. 37 are not stored, from 22 Nov 2010 and 17 Oct to 22 Nov 2011, and 6 more were counted by the engine but never returned. 17 of the 19 textless reports other than atbp are not named. `settings.search_to_date` is 8 April 2025. |
+| 1. Coverage: every SPRS hit to the cutoff stored, textless records named | Fail. A crawl of SPRS finds 41,839 hits. 37 are not stored, from 22 Nov 2010 and 17 Oct to 22 Nov 2011, and 6 more were counted by the engine but never returned. The 19 textless reports other than atbp are now named in Appendix A of the [data loss register](data-loss-register.md): 18 are source failures, and SPRS now serves text for 1 (20612), which is to refetch. `settings.search_to_date` is 8 April 2025. |
 | 2. Speaker index: stopping rule holds, Parliaments 0 to 11 and 12 to 14 separately | Fail. On the numbers both groups are inside the gates: round 4 bounds for Parliaments 0 to 11 are Tier A 0.095% and Tier B 1.099%, and a 36-report pilot for Parliaments 12 to 14 gives Tier A 0.039% (bound 0.090%). The gate is stale, because writes #5 and #7 changed 56 pooled reports inside their windows, and Parliaments 12 to 14 have had no full round. |
 | 3. Sitting metadata: attendance everywhere, every newer-format list filled | Pass. The older format provides no sections, annexures, vernaculars or a2b list, so those are not gaps. |
 | 4. Linking: Wilson lower bound of 95% on a fresh hand check | Pass. 404 of 406 linked rows right across Parliaments 0 to 14 (99.5%, Wilson 98.2% to 99.9%), none linked to the wrong person. |
-| 5. Markdown: stopping rule holds, reports losing over 5% of tokens fixed or listed | Fail. The stopping rule half is stale, as in test 2. 18 of the 19 reports above 5% are not listed. |
-| 6. Tracking: per report type figures after every write, kept in the repo | Fail. `scripts/attribution_text_share.py` groups by Parliament only. |
+| 5. Markdown: stopping rule holds, reports losing over 5% of tokens fixed or listed | Fail. The stopping rule half is stale, as in test 2. The listing half passes: the 19 reports above 5% are listed with their loss in Appendix B of the [data loss register](data-loss-register.md). One is a parser defect (22103, 97.7%, a stray `<` before a heading), 16 lose only the HTML head title and 2 are count artefacts. |
+| 6. Tracking: per report type figures after every write, kept in the repo | Pass. `scripts/attribution_text_share.py` prints the three numbers, the zero-row count and the single-speaker collapse share per report type within each Parliament group, `CLAUDE.md` makes every write end with a run, and the output is kept in `docs/figures/`, starting with `2026-10-17-round8.txt`. |
 | Stored rows equal a fresh parse | Fail. 2,511 reports differ: 125 held reports in content, 2,386 only in ordinal numbering. In 53 held reports a re-parse would lose 1,630 words. |
 | Strategies section true of the code | Fail. 6 claims are false and 4 partly true. |
 | App served publicly over the whole corpus | Fail. No hosting or production config, and relevance search for "government" runs past the 30-second timeout. |
 
-Overall: not done. The data is close to its gates. The largest gaps are the app launch, the pre-launch re-parse, and the tracking script.
+Overall: not done. The data is close to its gates. The largest gaps are the app launch and the pre-launch re-parse.
 
 ### Verdict against the objectives, records before 10 September 2012
 
