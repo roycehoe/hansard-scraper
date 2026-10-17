@@ -1,0 +1,32 @@
+{
+  "why": "A bold label with no text after it sets the speaker when it starts with Miss, Madam or COL; those honorifics were missing from the speaker pattern, so the line was skipped and the speech went to the previous member.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr A</strong>: Hi there.</p><p><strong>Miss Cheng Li Hui</strong></p><p>Speech by Miss Cheng.</p><p><strong>COL Tan Boon Huat</strong></p><p>Speech by the colonel.</p><p><strong>Madam Hoe Puay Choo</strong></p><p>And madam.</p>",
+  "expected_rows": [
+    [
+      "Mr A",
+      "Hi there.",
+      "SPEECH"
+    ],
+    [
+      "Miss Cheng Li Hui",
+      "Speech by Miss Cheng.",
+      "SPEECH"
+    ],
+    [
+      "COL Tan Boon Huat",
+      "Speech by the colonel.",
+      "SPEECH"
+    ],
+    [
+      "Madam Hoe Puay Choo",
+      "And madam.",
+      "SPEECH"
+    ]
+  ]
+}
