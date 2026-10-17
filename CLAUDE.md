@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 The goal is in `docs/vision.md`. Its "Measuring progress" section holds the current verdict per objective, the open gaps, and where more work stops paying. Read it before planning work or reporting results.
 
 - Run `python scripts/attribution_text_share.py` before and after any change to parsing or linking, and quote all three numbers it logs: the ADR 0001 rate, the all-rows rate, and text share. The ADR 0001 rate alone rises when the parser sets rows to NULL, so it can hide a regression.
+- Every write to the speech table, and every round of links, ends with `python scripts/attribution_text_share.py --output docs/figures/YYYY-MM-DD-<write>.txt`, run on the replica after the write, and the file is committed. The file holds the same lines with the figures by report type and Parliament, the zero-row count and the single-speaker collapse share.
 - A passing `diagnose.py` or `run_sanity_check.py` does not mean speeches are correct; see the table in that section.
 - When a figure there moves, update the section in the same change.
 
@@ -131,7 +132,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `run_sanity_check.py`, `run_no_speech_validation.py`, `run_single_speaker_check.py` — targeted validation runs
 - `run_exclusion_sanity_check.py` — analyses zero-speech (excluded) documents by checking HTML bold tags vs markdown speaker patterns
 - `find_unmatched_attendees.py` — finds attendance names with no match in the Speaker table, grouped by frequency; outputs a JSON template for `colonial_la_members.json`
-- `attribution_text_share.py` — the three attribution numbers in `docs/vision.md`: ADR 0001 rate, all-rows rate, and share of body text in a linked speech
+- `attribution_text_share.py` — the three attribution numbers in `docs/vision.md`: ADR 0001 rate, all-rows rate, and share of body text in a linked speech; also per report type within each Parliament group, with the zero-row count and the single-speaker collapse share; `--output PATH` keeps the lines in `docs/figures/`, one file per write
 - `speech_speaker_match_rate.py` — samples speeches stratified by report type, applies the full `SpeakerLookups` name-resolution pipeline via `resolve_canonical_name`, reports match rate overall and by type
 - `load_colonial_la_speakers.py` — idempotent load of `data/colonial_la_members.json` and `data/unscraped_members.json` into the `Speaker` table; must be run before `populate_speaker_links`
 - `load_heads_of_state.py`: idempotent load of `data/heads_of_state.json` (Governors, the Yang di-Pertuan Negara, Presidents) into the `Speaker` table as non-member rows; run after `load_colonial_la_speakers.py` and before `populate_speaker_links`
