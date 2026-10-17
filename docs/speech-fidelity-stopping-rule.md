@@ -80,7 +80,7 @@ The "about 7%" quoted for round 1 was the unweighted share. Weighted, it is 6.00
 
 Corpus-wide, from `sweep-ideas/report.md` on the replica after round 1's combined write:
 - F4: the cut rule flags 64,417 rows (6.03%) at 83% precision on a 60-row read, so about 5% of rows (estimated). F4 alone fails the 2% Tier B gate.
-- Unlinked labels: about 1,320 rows (0.12%) are a heading or caption credited as a speaker (counted).
+- Unlinked labels: about 1,320 rows (0.12%) are a heading or caption credited as a speaker (counted). Counted again on 16 October 2026 on the write 3 data, the same class is 907 rows (0.09%), and on 17 October after write 6 it is 123 rows (0.01%); see "Census of speaker labels, after write 6" in [speech-fidelity-loop.md](report/speech-fidelity-loop.md).
 
 Detectors after round 0, per million tokens:
 
