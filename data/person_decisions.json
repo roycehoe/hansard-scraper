@@ -66,5 +66,21 @@
     ],
     "decision": "name",
     "source": "The rule would give \"Devan Nair\", the name of her husband C. V. Devan Nair (another person). She sat as \"Mrs Devan Nair\" in the Elections Department's 1963 list (https://www.eld.gov.sg/elections_past_parliamentary1963.html) and in 24 speech labels of the Official Report."
+  },
+  {
+    "person_name": "Seet Ai Mee",
+    "members": [
+      {"name": "Seet Ai Mei, Dr", "parliament_number": 7}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"Seet Ai Mei\", the scraped spelling. The Official Report prints \"Dr Seet Ai Mee\" in 365 speech labels and \"Mei\" in none; royce ruled on 17 Oct 2026 to take the Official Report form."
+  },
+  {
+    "person_name": "Mohamad Maidin",
+    "members": [
+      {"name": "Mohamed Maidin BPM", "parliament_number": 8}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"Mohamed Maidin\", the scraped spelling. The Official Report prints \"Encik Mohamad Maidin\" in 644 speech labels and \"Mohamed\" in none; royce ruled on 17 Oct 2026 to take the Official Report form."
   }
 ]

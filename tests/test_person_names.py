@@ -15,7 +15,7 @@ from populate.persons import populate_persons
 from services.person import Decision, cluster_speakers
 
 _DECISIONS_FILE = Path(__file__).parent.parent / "data" / "person_decisions.json"
-_NAME_DECISION_COUNT = 4
+_NAME_DECISION_COUNT = 6
 
 
 def _get_speaker(speaker_id: int, name: str, parliament_number: int, person_id: Optional[int] = None) -> Speaker:
@@ -60,6 +60,20 @@ def test_name_decision_replaces_the_rule_for_its_person() -> None:
     decisions = [Decision(members=[("Devan Nair, Mrs", 1)], decision="name", person_name="Mrs Devan Nair")]
 
     assert _get_canonical_names(speakers, decisions) == ["Mrs Devan Nair", "Simon Tay S C"]
+
+
+def test_spelling_decisions_give_the_official_report_form() -> None:
+    speakers = [
+        _get_speaker(1, "Seet Ai Mei, Dr", 7),
+        _get_speaker(2, "Mohamed Maidin BPM", 8),
+        _get_speaker(3, "Mohamed Maidin BPM", 9),
+    ]
+    decisions = [
+        Decision(members=[("Seet Ai Mei, Dr", 7)], decision="name", person_name="Seet Ai Mee"),
+        Decision(members=[("Mohamed Maidin BPM", 8)], decision="name", person_name="Mohamad Maidin"),
+    ]
+
+    assert _get_canonical_names(speakers, decisions) == ["Seet Ai Mee", "Mohamad Maidin"]
 
 
 def test_name_decision_does_not_merge_or_split_clusters() -> None:
