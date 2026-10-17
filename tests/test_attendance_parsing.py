@@ -14,8 +14,8 @@ from services.attendance import (
 _CONSTITUENCY_LOOKUPS = build_constituency_lookups(ConstituencyNames(names=[], rows=[]))
 
 
-def _get_rows(markdown: str) -> list[tuple[str, bool, str | None]]:
-    sitting = Sitting(id=1, sitting_date="1-1-1970", volume_no=29, markdown_content=markdown)
+def _get_rows(markdown: str, sitting_date: str = "1-1-1970") -> list[tuple[str, bool, str | None]]:
+    sitting = Sitting(id=1, sitting_date=sitting_date, volume_no=29, markdown_content=markdown)
     records = get_sitting_attendance(sitting, build_speaker_lookups([]), _CONSTITUENCY_LOOKUPS)
     return [(record.speaker_name, record.is_present, record.location_name) for record in records]
 
@@ -57,7 +57,7 @@ def test_a_wrapped_office_title_gives_no_row_and_the_list_goes_on() -> None:
     markdown = (
         "PRESENT:\nDr Lee Chiaw Meng (Farrer Park), Minister for Science and Technology.\nTechnology.\n"
         "Mr Phua Bah Lee (Tampines), Senior Parliamentary Secretary to the Minister of Defence.\n"
-        "Parliamentary Secretary to the Minister for Culture.\nTunah), Parliamentary Secretary to the Prime Minister.\n"
+        "Parliamentary Secretary to the Minister for Culture.\n"
         "Mr Rohan bin Kamis (Telok Blangah).\n"
     )
 
@@ -149,3 +149,31 @@ def test_three_more_ocr_forms_resolve_to_their_speakers() -> None:
     assert resolve_canonical_name("Too Chong Tee", 4, lookups) == "Teo Chong Tee"
     assert resolve_canonical_name("Tan Cheng Sen", 4, lookups) == "Tan Cheng San"
     assert resolve_canonical_name("Tay Bon Too", 1, lookups) == "Tay Boon Too"
+
+
+def test_a_procession_line_ends_the_list_and_gives_no_row() -> None:
+    markdown = (
+        "PRESENT:\nMr SPEAKER (Sir George Oehlers, O.B.E.).\nMr Wong Foo Nam (Pasir Panjang).\nABSENT:\nMiss Fung Yin Ching (Stamford).\n"
+        "Mr Speaker, preceded by the Serjeant at Arms (with Mace) and followed by the Clerk, entered the Chamber.\n"
+    )
+
+    assert _get_rows(markdown, "20-7-1960") == [("George Oehlers", True, None), ("Wong Foo Nam", True, "Pasir Panjang"), ("Fung Yin Ching", False, "Stamford")]
+
+
+def test_a_speaker_entry_that_names_no_one_takes_the_name_of_the_presiding_officer_on_that_date() -> None:
+    for line in ("Mr Speaker (Sir George Oehlers, O.B.E.).", "Mr Speaker (Dr Yeoh Ghim Seng) (Joo Chiat).", "Mr SPEAKER (Dr Yeoh Ghim Seng, B.B.M., J.P. (Joo Chiat)"):
+        assert _get_rows(f"PRESENT:\n{line}\n", "3-8-1971") == [("Yeoh Ghim Seng", True, None)], line
+
+
+def test_a_speaker_entry_stays_when_no_one_presided_on_that_date() -> None:
+    assert _get_rows("PRESENT:\nMr Speaker (Sir George Oehlers, O.B.E.).\n", "1-1-1989") == [("Speaker", True, "Sir George Oehlers, O.B.E.")]
+
+
+def test_a_wrapped_entry_whose_start_the_source_lost_becomes_the_member_it_belongs_to() -> None:
+    markdown = "PRESENT:\nMr Wong Soon Fong (Toa Payoh).\nTunah), Parliamentary Secretary to the Prime Minister.\nMr Yong Nyuk Lin (Geylang West), Minister for Education.\n"
+
+    assert _get_rows(markdown, "10-6-1963") == [
+        ("Wong Soon Fong", True, "Toa Payoh"),
+        ("Yaacob Bin Mohamed", True, "Bukit Timah"),
+        ("Yong Nyuk Lin", True, "Geylang West"),
+    ]

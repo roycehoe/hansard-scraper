@@ -15,7 +15,6 @@ from database.init import engine
 from exceptions import HansardWriteCheckError
 from logs import logger
 from populate.speaker_links import resolve_attendance_rows
-from populate.speaker_resolution_constants import SPEAKER_TERMS
 from schemas.attendance_cleanup import AttendanceCleanup
 from services.attendance import build_speaker_lookups
 from services.attendance_cleanup import (
@@ -24,6 +23,7 @@ from services.attendance_cleanup import (
 )
 from settings import settings
 from utils.sitting_dates import parse_sitting_date
+from utils.speaker_terms import SPEAKER_TERMS
 from utils.write_target import validate_can_write
 
 _ATTENDANCE_CLEANUP_FILE = Path(__file__).parent.parent / "data" / "attendance_cleanup.json"
