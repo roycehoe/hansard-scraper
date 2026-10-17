@@ -1,6 +1,6 @@
 from datetime import date
 
-# Sources: parliament.gov.sg Speaker page, Wikipedia dates; Seah Kian Peng from the Hansard sitting of 2 August 2023 ("Election of Speaker") and the Wikipedia Speaker page
+# Sources: parliament.gov.sg Speaker page, Wikipedia dates; Seah Kian Peng from the Hansard sittings of 2 August 2023 and 5 September 2025 ("Election of Speaker") and the Wikipedia Speaker page
 SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(1955, 4, 22), date(1963, 9, 3), "George Oehlers"),
     (date(1963, 10, 22), date(1964, 10, 30), "E.W. Barker"),
@@ -13,4 +13,6 @@ SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(2013, 1, 14), date(2017, 8, 7), "Halimah Yacob"),
     (date(2017, 9, 11), date(2023, 7, 17), "Tan Chuan-Jin"),
     (date(2023, 8, 2), date(2025, 4, 15), "Seah Kian Peng"),
+    # TODO: set the end date when the 15th Parliament is dissolved
+    (date(2025, 9, 5), date.max, "Seah Kian Peng"),
 )
