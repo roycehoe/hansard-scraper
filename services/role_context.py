@@ -53,9 +53,16 @@ class ChairMark:
 
 
 @dataclass(frozen=True)
+class SectionSpan:
+    title: str
+    start: int
+    end: int
+
+
+@dataclass(frozen=True)
 class SittingText:
     text: str
-    title_to_offset: dict[str, int]
+    section_spans: list[SectionSpan]
     chair_marks: list[ChairMark]
 
 
@@ -196,23 +203,23 @@ def _get_chair_marks(text: str) -> list[ChairMark]:
 
 def build_sitting_text_from_markdown(markdown: str) -> SittingText:
     text = _normalise(markdown)
-    return SittingText(text, {}, _get_chair_marks(text))
+    return SittingText(text, [], _get_chair_marks(text))
 
 
 def build_sitting_text_from_sections(sections: str) -> SittingText:
     parts = []
-    title_to_offset: dict[str, int] = {}
+    section_spans = []
     length = 0
     for raw_section in json.loads(sections):
         section = HansardReportSection.model_validate(raw_section)
         title = "" if section.title is None else _normalise(section.title)
         body = "" if section.content is None else _normalise(get_cleaned_report_markdown(section.content, ReportVersion.SPRS3))
-        title_to_offset.setdefault(title.lower(), length)
         part = f"{title} {body} "
+        section_spans.append(SectionSpan(title.lower(), length, length + len(part)))
         parts.append(part)
         length += len(part)
     text = "".join(parts)
-    return SittingText(text, title_to_offset, _get_chair_marks(text))
+    return SittingText(text, section_spans, _get_chair_marks(text))
 
 
 def _get_chair_deputy_name(sitting_text: SittingText, chair_mark_positions: list[int], position: int) -> Optional[str]:
@@ -232,9 +239,29 @@ def _get_chair_deputy_name(sitting_text: SittingText, chair_mark_positions: list
     return last_chair_mark.deputy_name
 
 
+def _get_section_positions(sitting_text: SittingText, section_span: SectionSpan, speech_rows: list[SpeechRow]) -> list[Optional[int]]:
+    section_text = sitting_text.text[section_span.start : section_span.end]
+    return [None if position is None else position + section_span.start for position in _get_positions(section_text, speech_rows)]
+
+
+# NOTE: two sections of a sitting can share a title, one per reading, so the report is aligned in the one that places most of its rows, and in none on a tie.
+def _get_sitting_positions(sitting_text: SittingText, report_title: str, speech_rows: list[SpeechRow]) -> Optional[list[Optional[int]]]:
+    title = _normalise(report_title).lower()
+    section_spans = [section_span for section_span in sitting_text.section_spans if section_span.title == title]
+    if not section_spans:
+        return _get_positions(sitting_text.text, speech_rows)
+    section_positions = [_get_section_positions(sitting_text, section_span, speech_rows) for section_span in section_spans]
+    aligned_counts = [sum(position is not None for position in positions) for positions in section_positions]
+    most_aligned = max(aligned_counts)
+    if aligned_counts.count(most_aligned) > 1:
+        return None
+    return section_positions[aligned_counts.index(most_aligned)]
+
+
 def sitting_deputy_speaker_names(sitting_text: SittingText, report_title: str, speech_rows: list[SpeechRow]) -> dict[int, str]:
-    offset = sitting_text.title_to_offset.get(_normalise(report_title).lower(), 0)
-    positions = [None if position is None else position + offset for position in _get_positions(sitting_text.text[offset:], speech_rows)]
+    positions = _get_sitting_positions(sitting_text, report_title, speech_rows)
+    if positions is None:
+        return {}
     chair_mark_positions = [chair_mark.position for chair_mark in sitting_text.chair_marks]
     chair_mark_annotations = [(chair_mark.position, "") for chair_mark in sitting_text.chair_marks]
     speech_id_to_deputy_name = {}
