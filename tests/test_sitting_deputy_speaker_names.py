@@ -73,3 +73,31 @@ def test_bracket_in_an_earlier_section_carries_into_the_report() -> None:
     names = sitting_deputy_speaker_names(build_sitting_text_from_sections(sections), _REPORT_TITLE, _SPEECH_ROWS)
 
     assert names == {2: "Mr Lim Biow Chuan"}
+
+
+_PERERA_SPEECH = "Thank you, Mr Deputy Speaker. I have three points to make on the Bill."
+_TWO_READING_SPEECH_ROWS = [*_SPEECH_ROWS, SpeechRow(3, 3, "Mr Leon Perera", _PERERA_SPEECH, _REPORT_ID, 11)]
+_BRACKET_HTML = "<p><strong>[Deputy Speaker (Mr Lim Biow Chuan) in the Chair]</strong></p>"
+_GAN_AND_CALL_HTML = "<p><strong>Mr Gan Thiam Poh (Ang Mo Kio)</strong>: I rise in support of the Bill before the House today.</p><p><strong>Mr Deputy Speaker</strong>: Mr Leon Perera, please proceed with your speech.</p>"
+_REPORT_SECTION = f"{_GAN_AND_CALL_HTML}<p><strong>Mr Leon Perera</strong>: {_PERERA_SPEECH}</p>"
+
+
+def _get_two_reading_names(first_reading_content: str, second_reading_content: str) -> dict[int, str]:
+    sections = json.dumps([
+        {"title": _REPORT_TITLE, "content": first_reading_content},
+        {"title": "Extension of a Sitting", "content": "<p><strong>[Deputy Speaker (Mr Charles Chong) in the Chair]</strong></p>"},
+        {"title": _REPORT_TITLE, "content": second_reading_content},
+    ])
+    return sitting_deputy_speaker_names(build_sitting_text_from_sections(sections), _REPORT_TITLE, _TWO_READING_SPEECH_ROWS)
+
+
+def test_report_is_aligned_in_the_same_titled_section_that_holds_its_rows() -> None:
+    names = _get_two_reading_names(_BRACKET_HTML + _GAN_AND_CALL_HTML, _REPORT_SECTION)
+
+    assert names == {2: "Mr Charles Chong"}
+
+
+def test_report_whose_rows_fit_two_same_titled_sections_gets_no_name() -> None:
+    names = _get_two_reading_names(_BRACKET_HTML + _REPORT_SECTION, _REPORT_SECTION)
+
+    assert names == {}
