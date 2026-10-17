@@ -29,34 +29,9 @@ The engine's total for a window is higher than the distinct hits it returns, aft
 
 The database keeps them. `bill-intro-1318#` and `ministerial-statement-1902#` are stored again under the new ids `budget-1318#` and `clarification-1902#`. The other seven are `oral-answer-1730#`, five `written-statement-` ids from 2022 to 2025, and one 1970 budget id.
 
-## Records with no text at the source: 18
+## Records with no text
 
-Every record except an atbp report should have text. These 18 do not, because SPRS returns none: the newer system answers with no `resultHTML`, and the older system with an empty `htmlContent`. Each was requested again on 17 October 2026. The 106 newer-system atbp records have no text by design and are not listed.
-
-| Report | Id | Type | Sitting date |
-|---|---|---|---|
-| 203 | `written-statement-2644#` | written statement | 6 Mar 2025 |
-| 1337 | `written-statement-2498#` | written statement | 15 Oct 2024 |
-| 3943 | `written-statement-2244#` | written statement | 3 Aug 2023 |
-| 3945 | `written-statement-2243#` | written statement | 3 Aug 2023 |
-| 6640 | `written-statement-1963#` | written statement | 12 Sep 2022 |
-| 7423 | `ministerial-statement-1902#` | ministerial statement, stored with text as `clarification-1902#` | 10 Mar 2022 |
-| 11663 | `bill-intro-1318#` | bill introduction, stored with text as `budget-1318#` | 3 Mar 2020 |
-| 15040 | `oral-answer-1730#` | oral answer | 3 Jul 2017 |
-| 22165 | `00075639-WA.00073202-ZZ_1##` | oral answer | 19 Jan 2009 |
-| 23534 | `00004830-WA.00001562-WA_1##` | budget | 9 Mar 2006 |
-| 24080 | `00075527-WA.00070504-ZZ_1##` | bill | 16 Nov 2004 |
-| 24165 | `00075539-WA.00070689-ZZ_1##` | budget | 28 Feb 2005 |
-| 24298 | `00075528-WA.00070522-ZZ_1##` | oral answer | 17 Nov 2004 |
-| 24300 | `00004674-WA.00000676-WA_1##` | bill | 16 Nov 2004 |
-| 24678 | `00004662-WA.00000928-WA_1##` | budget | 16 Mar 2004 |
-| 24679 | `00004662-WA.00000930-WA_1##` | budget | 16 Mar 2004 |
-| 24681 | `00004662-WA.00000931-WA_1##` | budget | 16 Mar 2004 |
-| 24905 | `#011_10031016_S0006_T0005.html-#` | motion | 16 Oct 2003 |
-
-## Stored without text, but SPRS has it now: 1
-
-Report 20612 (`00076464-WA.00076461-WA_11#motion#`, a motion of 16 January 2012) is stored with an empty `htmlContent`. SPRS now returns 48,228 characters for it. The refill waits for Royce's go, with the 37 hits above.
+19 stored reports other than atbp have no text. 18 are source failures, and SPRS now serves text for report 20612 (48,228 characters), which waits for a refetch with the 37 hits above. The named list is Appendix A of the [data loss register](data-loss-register.md).
 
 ## The end date
 
