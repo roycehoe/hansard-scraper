@@ -1,0 +1,37 @@
+{
+  "why": "An older-system report keeps the characters its entities name (en dash, curly quotes, accented letters) instead of ASCII folds; an italic run after an entity keeps the spacing it had, and a title written with a hyphen still matches its heading written with an en dash.",
+  "source_report_id": 21567,
+  "report_version": "sprs2",
+  "report_type": "budget",
+  "title": "HEAD L - MINISTRY OF THE ENVIRONMENT AND WATER RESOURCES",
+  "subtitle": null,
+  "original_title": "HEAD L - MINISTRY OF THE ENVIRONMENT AND WATER RESOURCES",
+  "html": "<HTML><HEAD><META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\"></HEAD><body><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\"><tr><td>\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">08-03-2010</font></td></tr>\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">BUDGET</font></td>\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">HEAD L - MINISTRY OF THE ENVIRONMENT AND WATER RESOURCES</font></td>\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Mr Cedric Foo Chee Keng</font></td>\n</table></td></tr>\n</table>\n<div align=center><b>\n<!--TITLE_NAME:HEAD L - MINISTRY OF THE ENVIRONMENT AND WATER RESOURCES--><p align=left>Column No : 3398<p>\n</b>\n<p><em>&nbsp;&nbsp;&nbsp;&nbsp; Head L&nbsp;&ndash; Ministry of the Environment and Water Resources</em></p>\n<p><B>The Chairman:</B> Head L&nbsp;&ndash; Ministry of the Environment and Water Resources. Mr Cedric Foo.</p>\n<p><B>Mr Cedric Foo Chee Keng:</B> Sir, the Government&rsquo;s plan grew last year &ndash; or by 5.4% &ndash; and the Caf&eacute; owners call it &ldquo;<i>pin pin korori</i>&rdquo;.</p>\n<p><i>Helping the needy &ndash;</i><i>enhancing ComCare</i></p>\n<p><em>Water resources</em></p>\n<p><B>Mr Ang Mong Seng:</B> I would also like to know Singapore&rsquo;s role.</p>\n</body></HTML>",
+  "expected_rows": [
+    [
+      "The Chairman",
+      "Head L – Ministry of the Environment and Water Resources. Mr Cedric Foo.",
+      "SPEECH"
+    ],
+    [
+      "Mr Cedric Foo Chee Keng",
+      "Sir, the Government’s plan grew last year – or by 5.4% – and the Café owners call it “_pin pin korori_ ”.",
+      "SPEECH"
+    ],
+    [
+      "Mr Cedric Foo Chee Keng",
+      "_Helping the needy –__enhancing ComCare_",
+      "SPEECH"
+    ],
+    [
+      null,
+      "_Water resources_",
+      "HEADING"
+    ],
+    [
+      "Mr Ang Mong Seng",
+      "I would also like to know Singapore’s role.",
+      "SPEECH"
+    ]
+  ]
+}

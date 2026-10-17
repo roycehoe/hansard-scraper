@@ -6,7 +6,11 @@ from typing import Optional
 from enums import ReportType, ReportVersion, SpeechKind
 from exceptions import HansardUnattributedSpeechError
 from schemas.unattributed_speech import UnattributedSpeechRange
-from utils.markdown_parser import PROC_TEXT_CLOSE_TAG, PROC_TEXT_OPEN_TAG
+from utils.markdown_parser import (
+    ASCII_FOLDED_CHARACTERS,
+    PROC_TEXT_CLOSE_TAG,
+    PROC_TEXT_OPEN_TAG,
+)
 from utils.text import fix_mojibake
 
 
@@ -49,7 +53,7 @@ _LANGUAGE_NOTE = r"[_*]*\(\s*[_*]*\s*(?:in|dalam)\s+(?:Mandar\w+|Malay|English|T
 _LANGUAGE_NOTE_RE = re.compile(_LANGUAGE_NOTE + r"\s*:?\s*", re.IGNORECASE)
 
 _ADJOURNMENT_MOVER_RE = re.compile(
-    r"[−\-]\s*\[((?:Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc\s+Prof)[^]]+)\]",
+    r"[−–—\-]\s*\[((?:Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc\s+Prof)[^]]+)\]",
     re.IGNORECASE,
 )
 
@@ -454,8 +458,8 @@ def _extract_markdown_title(markdown_content: str) -> Optional[str]:
 
 
 def _is_line_matching_title(line: str, candidate: str) -> bool:
-    line = _QUOTE_MARKS_RE.sub("", line)
-    candidate = _QUOTE_MARKS_RE.sub("", candidate)
+    line = _QUOTE_MARKS_RE.sub("", line.translate(ASCII_FOLDED_CHARACTERS))
+    candidate = _QUOTE_MARKS_RE.sub("", candidate.translate(ASCII_FOLDED_CHARACTERS))
     if f"{candidate}**" in line:
         return True
 
