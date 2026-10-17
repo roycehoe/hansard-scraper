@@ -85,6 +85,25 @@ _MIN_WRAPPED_LINE_LENGTH = 20
 _MIN_WRAPPED_LINE_RATIO = 0.6
 _PARAGRAPH_GAP_SINGLE_SPACED = 1
 _PARAGRAPH_GAP_DOUBLE_SPACED = 2
+_NO_BREAK_SPACE = "\u00a0"
+ASCII_FOLDED_CHARACTERS = str.maketrans(
+    {html5[name + ";"]: folded for name, folded in html2text.config.UNIFIABLE.items() if name != "nbsp"}
+)
+
+
+# NOTE: html2text puts a space between an emphasis mark and the letter before it but not after ASCII punctuation, so a character from an entity is judged by its ASCII fold, as it was when the converter folded it; a no-break space stays a space, as "&nbsp;" does.
+class _SourceCharacterConverter(html2text.HTML2Text):
+    def __init__(self):
+        super().__init__(bodywidth=0)
+        self.unicode_snob = True
+
+    def handle_data(self, data: str, entity_char: bool = False) -> None:
+        super().handle_data(data, entity_char)
+        if entity_char:
+            self.preceding_data = self.preceding_data.translate(ASCII_FOLDED_CHARACTERS)
+
+    def handle(self, data: str) -> str:
+        return super().handle(data).replace(_NO_BREAK_SPACE, " ")
 
 
 def _replace_nbsp_only_emphasis_with_space(html: str) -> str:
@@ -421,7 +440,7 @@ def get_cleaned_report_markdown(html: str, report_version: str) -> str:
     if report_version == ReportVersion.SPRS3:
         html = _prepare_newer_system_html(html)
     html = _join_wrapped_preformatted_lines(html)
-    converter = html2text.HTML2Text(bodywidth=0)
+    converter = _SourceCharacterConverter()
     converter.ignore_links = True
     markdown = _postprocess_markdown_base(converter.handle(_mark_footnote_section(_move_space_into_anchor(_preprocess_html(_glue_footnote_hash_markers(html))))))
     markdown = _merge_split_direction_lines(markdown)
@@ -522,7 +541,7 @@ def _merge_sitting_adjournment_lines(markdown: str) -> str:
 
 
 def get_cleaned_sitting_markdown(html: str) -> str:
-    converter = html2text.HTML2Text(bodywidth=0)
+    converter = _SourceCharacterConverter()
     preprocessed = _fix_sitting_concat_headers(_preprocess_html(html))
     markdown = _postprocess_markdown_base(converter.handle(preprocessed))
     markdown = _fix_sitting_split_bold(markdown)
