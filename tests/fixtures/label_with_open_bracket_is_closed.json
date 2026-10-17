@@ -1,0 +1,22 @@
+{
+  "why": "A bold label that leaves its bracket open gets the bracket closed and the stray bracket leaves the transcript.",
+  "source_report_id": 24708,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Miss Penny Low (Pasir Ris-Punggol</strong>): Sir, I beg to move.</p><p>That the sum be reduced.</p>",
+  "expected_rows": [
+    [
+      "Miss Penny Low (Pasir Ris-Punggol)",
+      "Sir, I beg to move.",
+      "SPEECH"
+    ],
+    [
+      "Miss Penny Low (Pasir Ris-Punggol)",
+      "That the sum be reduced.",
+      "SPEECH"
+    ]
+  ]
+}
