@@ -441,7 +441,7 @@ After the ship:
 
 ## Write 4 and round 4
 
-Cycle 4 began on 16 October while write 3 waited to ship, and finished after it landed at 16:03. It fixed the three classes round 3 named, prepared the rebuild of 42 held reports as the user ruled, and re-read what the writes touched. The fixes are committed on master as `2ec5fe8`, `73ed1d6` and `1220161`. Write 4 is built, verified and rehearsed on clones of the replica. It is not shipped and waits for the user's go. Round 4 passes both gates. It is provisional until write 4 ships unchanged: it was read on `hansard_w4`, the clone with the plan applied, and, for 114 tranche 2 reports, early on the replica. The verdict is under "Round 4" below.
+Cycle 4 began on 16 October while write 3 waited to ship, and finished after it landed at 16:03. It fixed the three classes round 3 named, prepared the rebuild of 42 held reports as the user ruled, and re-read what the writes touched. The fixes are committed on master as `2ec5fe8`, `73ed1d6` and `1220161`. Write 4 was built, verified and rehearsed on clones of the replica. It shipped to the remote at 07:48 on 17 October (54 checks ok, lock 14 s). Round 4 passes both gates. It was read on `hansard_w4`, the clone with the plan applied, and, for 114 tranche 2 reports, early on the replica. After the ship, `build_r4.py verify` on the replica found the 672 pooled reports unchanged, so the verdict is final. It is under "Round 4" below.
 
 ### Why 22149 was a stale-row problem
 
@@ -477,17 +477,17 @@ Write 4 is a delta on the write 3 state, built on master `1220161` against the r
 
 The plan applies 2,923 reports (2,881 by the fixes and 42 released) and holds 121, none of them a new write 4 hold. The 121 are the 120 of write 3's 162 that are not released, and 24248. It writes 8,729 speech updates (3,234 of them ordinal only), 361 kind-only updates, 443 deletes, 66 inserts and 25 report markdowns. Of the 5,495 updates that change content, fix 1 accounts for 1,061, fix 2 for 767, fix 3 for 2,089, fix 1 and fix 2 together for 86, fix 2 and fix 3 together for 8, and the release for 1,484. The release also writes 3,205 ordinal-only updates, 414 deletes, 54 inserts and all 25 markdowns. In the plan fix 1 is a cause in 405 reports, fix 2 in 428 and fix 3 in 2,141. `verify_stack4.py` finds no problems, and 1,048,351 speech rows remain, 2,275 of them with kind NULL.
 
-The rehearsal ran on clones of the replica on 16 October (17:40 to 22:37). `apply_fix4` committed with 0 unexplained rows. All eight drift tests (delete, insert, kind content, kind third kind, ordinal, report markdown, update, row count) aborted and rolled back. The shipper rehearse and commit passed 56 checks each, the two clones ended equal by `table_hashes.sql` with 0 diff lines, the replica was unchanged, and the applied clone equals `hansard_w4`. The shipper is `bin/ship_delta6_stack4.py`, a copy of `ship_delta6.py` that stages each row's before kind, because write 4 moves 361 rows from one kind to another and `ship_delta6.py` assumes NULL before kinds. The upload is 4.7 MB against 375 MB for write 3. The lock held 0.9 s on commit and 2.9 s on rehearse on a local clone. The planner expects about 40 s on the remote from write 3's measured rates, and under two minutes with the hotspot's latency. The run needs about 1 GB of disk and peaked at 1.4 GB of memory. Nothing has run against the remote. The commands are in `plans/speech-fidelity-loop/cycle4/SHIP_w4.md`.
+The rehearsal ran on clones of the replica on 16 October (17:40 to 22:37). `apply_fix4` committed with 0 unexplained rows. All eight drift tests (delete, insert, kind content, kind third kind, ordinal, report markdown, update, row count) aborted and rolled back. The shipper rehearse and commit passed 56 checks each, the two clones ended equal by `table_hashes.sql` with 0 diff lines, the replica was unchanged, and the applied clone equals `hansard_w4`. The shipper is `bin/ship_delta6_stack4.py`, a copy of `ship_delta6.py` that stages each row's before kind, because write 4 moves 361 rows from one kind to another and `ship_delta6.py` assumes NULL before kinds. The upload is 4.7 MB against 375 MB for write 3. The lock held 0.9 s on commit and 2.9 s on rehearse on a local clone. The planner expects about 40 s on the remote from write 3's measured rates, and under two minutes with the hotspot's latency. The run needs about 1 GB of disk and peaked at 1.4 GB of memory. It shipped at 07:48 on 17 October with 54 checks ok and a 14 s lock. The commands are in `plans/speech-fidelity-loop/cycle4/SHIP_w4.md`.
 
 Parliaments 0 to 11 first, then 12 to 14, with write 3 as stored beside the write 4 rehearsal.
 
-| Metric | Stored, after write 3 | Write 4 rehearsal, not shipped |
+| Metric | Stored, after write 3 | Write 4 rehearsal |
 |---|---|---|
 | ADR 0001 rate | 526,807 / 538,255 = 97.87% | 523,056 / 533,817 = 97.98% |
 | All-rows rate | 526,807 / 607,756 = 86.68% | 523,056 / 607,408 = 86.11% |
 | Text share | 181,359,552 / 186,290,919 = 97.35% | 180,926,723 / 186,290,255 = 97.12% |
 
-| Scope and metric | Stored, after write 3 | Write 4 rehearsal, not shipped |
+| Scope and metric | Stored, after write 3 | Write 4 rehearsal |
 |---|---|---|
 | Parliament 12, ADR 0001 rate | 82,170 / 83,077 = 98.91% | 82,102 / 83,004 = 98.91% |
 | Parliament 12, all-rows rate | 82,170 / 86,480 = 95.02% | 82,102 / 86,458 = 94.96% |
@@ -499,7 +499,7 @@ Parliaments 0 to 11 first, then 12 to 14, with write 3 as stored beside the writ
 | Parliament 14, all-rows rate | 206,946 / 214,976 = 96.26% | unchanged |
 | Parliament 14, text share | 59,399,644 / 60,051,708 = 98.91% | unchanged |
 
-| Where the body text goes | Stored, after write 3 | Write 4 rehearsal, not shipped |
+| Where the body text goes | Stored, after write 3 | Write 4 rehearsal |
 |---|---|---|
 | Linked rows | 97.35% | 97.12% |
 | Rows with an unlinked speaker string | 0.67% | 0.58% |
@@ -526,7 +526,7 @@ The ADR 0001 rate rises because rows that are not speech lose their speaker and 
 
 Detectors, pipeline hits per million tokens, against the source typo rate:
 
-| Test | Stored, after write 3 | Source typos | Write 4 rehearsal, not shipped |
+| Test | Stored, after write 3 | Source typos | Write 4 rehearsal |
 |---|---|---|---|
 | Dictionary | 9.84 (632 hits) | 106.54 | 4.27 (274 hits) |
 | Punctuation | 3.66 (235 hits) | 6.23 | 1.98 (127 hits) |
@@ -551,7 +551,7 @@ A pooled report counts as touched, and its old verdict is dropped, when its wind
 
 The pooled view holds 672 reports and 12,122 rows. On tranche 1 alone (548 reports, 9,824 rows) Tier A is 0.06% (bound 0.09%) by rows and 0.05% (0.09%) by characters, and Tier B is 0.83% (1.21%) and 0.68% (1.03%). The heaviest reports for Tier A by character points are 38079 (0.018), 497 (0.010), 15646 (0.004), 258 (0.004), 37684 (0.003) and 38610 (0.002). Tier B among round 4's own reads is split words (7 rows in 6 reports, 0.179 points), glued words (6 rows in 4 reports, 0.081) and paragraphs cut at column markers (14 rows in 4 reports, 0.018). Readers flagged 199 of 9,043 round 3 and round 4 rows for kind (2.20%), which gates nothing. The aggregate is `plans/speech-fidelity-loop/cycle4/r4/aggregate_r4.md`.
 
-Done, provisionally. The stopping rule's three conditions hold on round 4. Tier A's weighted upper bound by characters is 0.08%, under the 1% gate. Tier B's is 1.03%, under the 2% gate, and both detectors are under their source rates (4.27 and 1.98 per million tokens against 106.54 and 6.23). Every remaining class is listed with its corpus count under "Found and not fixed" below and in `docs/vision.md`. The verdict is provisional because the readers worked on the write 4 rehearsal copy, and on the replica for 114 tranche 2 reports. It stands once write 4 ships unchanged and `build_r4.py verify` on the replica finds the pooled windows unchanged.
+Done. The stopping rule's three conditions hold on round 4. Tier A's weighted upper bound by characters is 0.08%, under the 1% gate. Tier B's is 1.03%, under the 2% gate, and both detectors are under their source rates (4.27 and 1.98 per million tokens against 106.54 and 6.23). Every remaining class is listed with its corpus count under "Found and not fixed" below and in `docs/vision.md`. The readers worked on the write 4 rehearsal copy, and on the replica for 114 tranche 2 reports. Write 4 shipped unchanged, and `build_r4.py verify` on the replica then found the 672 pooled reports unchanged.
 
 ### Found and not fixed
 
@@ -586,7 +586,7 @@ Kind is not scored. Readers flagged 199 of 9,043 round 3 and round 4 rows (2.20%
 
 ### Still open
 
-- The ship of write 4 waits for the user's go. After a ship: equal `table_hashes.sql` on the replica and the remote, the cache markdown refreshed, the three numbers and both detectors taken again, and `build_r4.py verify` finding no touched window.
+- Write 4 shipped at 07:48 on 17 October. The replica and the remote hash equal by `table_hashes.sql`, and `build_r4.py verify` found no touched window.
 - Push: the write 3 commits and the three fix commits are on master and not pushed.
 - Review findings 6 to 13, including finding 11 on the 1,568-report rebuild.
 - How a wrong `kind`, and a SPEECH row with no speaker, score under the stopping rule.
