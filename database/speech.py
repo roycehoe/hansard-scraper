@@ -1,6 +1,7 @@
 from typing import Optional
 
-from sqlalchemy import Index, text
+from sqlalchemy import Column, Computed, Index, text
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlmodel import Field, Relationship, SQLModel
 
 from database.report import Report
@@ -10,6 +11,7 @@ from enums import SpeechKind
 class Speech(SQLModel, table=True):
     __table_args__ = (
         Index("ix_speech_transcript_fts", text("to_tsvector('english', transcript)"), postgresql_using="gin"),
+        Index("ix_speech_transcript_tsv", "transcript_tsv", postgresql_using="gin"),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -18,6 +20,10 @@ class Speech(SQLModel, table=True):
     speaker: Optional[str]
     transcript: str
     kind: Optional[SpeechKind] = None
+    transcript_tsv: Optional[str] = Field(
+        default=None,
+        sa_column=Column(TSVECTOR, Computed("to_tsvector('english'::regconfig, transcript)", persisted=True)),
+    )
 
     report_id: Optional[int] = Field(default=None, foreign_key="report.id", index=True)
     report: Report = Relationship(back_populates="speeches")
