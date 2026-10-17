@@ -1,0 +1,32 @@
+{
+  "why": "A member's label with a colon stays a label when the speech after it holds a pipe, so the Minister's answer is not credited to the asker (reports 46541 and 15632); a bold cell before a pipe is still a table row.",
+  "source_report_id": 46541,
+  "report_version": "sprs3",
+  "report_type": "written-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p>17 <strong>Ms A</strong> asked the Minister for Health how many therapists are registered.</p><p><strong>Mr Ong Ye Kung</strong>:&nbsp;The data can be found on the website: AHPC | Announcements.</p><p><strong>The Minister for Social and Family Development (Mr B)</strong> : My Ministry launched the \"Break the Silence | Against Family Violence\" campaign.</p><p><strong>Non-Residents</strong> 2 |  311,300 (10.2%)</p>",
+  "expected_rows": [
+    [
+      "Ms A",
+      "asked the Minister for Health how many therapists are registered.",
+      "SPEECH"
+    ],
+    [
+      "Mr Ong Ye Kung",
+      "The data can be found on the website: AHPC | Announcements.",
+      "SPEECH"
+    ],
+    [
+      "The Minister for Social and Family Development (Mr B)",
+      "My Ministry launched the \"Break the Silence | Against Family Violence\" campaign.",
+      "SPEECH"
+    ],
+    [
+      "The Minister for Social and Family Development (Mr B)",
+      "Non-Residents 2 | 311,300 (10.2%)",
+      "SPEECH"
+    ]
+  ]
+}

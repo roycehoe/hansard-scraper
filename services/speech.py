@@ -753,6 +753,16 @@ def _is_name_fragment(label: str) -> bool:
     return len(lowercase_words) >= _MIN_FRAGMENT_LOWERCASE_WORDS or any(word in _REPORTING_VERBS or word.endswith("'s") for word in words)
 
 
+def _is_person_label_before_pipe(parsed_line: str, bold_match: re.Match) -> bool:
+    label = bold_match.group(0).replace(_BOLD_MARKER, "").strip()
+    after_label = parsed_line[bold_match.end() :].lstrip()
+    if "|" in parsed_line[: bold_match.end()] or after_label.startswith("|"):
+        return False
+    if not label.endswith(":") and not after_label.startswith(":"):
+        return False
+    return _is_speaker_name(label.removesuffix(":").strip())
+
+
 def _is_bold_mid_sentence(line: str) -> bool:
     bold_match = _BOLD_RUN_RE.search(line)
     if bold_match is None:
@@ -912,8 +922,8 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             if parsed_line.startswith(_BRACKETED_BOLD_OPENINGS) and _CHAIR_ANNOTATION_FULL_RE.fullmatch(unbolded_line) is not None:
                 continue
             transcript = _LEADING_COLON_RE.sub("", parsed_line.split(bold_match.group(0))[-1].strip())
-            # NOTE: a bold cell next to a pipe is a table row, not a label, so the whole line stays with the current speaker.
-            if "|" in parsed_line:
+            # NOTE: a bold cell next to a pipe is a table row, not a label, so the whole line stays with the current speaker; a person's label with a colon may still have a pipe in its speech.
+            if "|" in parsed_line and not _is_person_label_before_pipe(parsed_line, bold_match):
                 if not is_in_preamble:
                     speeches.append(_build_current_speaker_speech(current_speaker, parsed_line))
                 continue
