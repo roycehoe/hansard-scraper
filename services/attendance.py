@@ -252,6 +252,16 @@ _OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
     "too chong tee": "Teo Chong Tee",  # parl 4, vol 39
     "tan cheng sen": "Tan Cheng San",  # parl 4, vol 38
     "tay bon too": "Tay Boon Too",  # parl 1, vol 25
+    "teh cheang won": "Teh Cheang Wan",
+    "wong kan song": "Wong Kan Seng",
+    "hon sui sea": "Hon Sui Sen",
+    "tang see chum": "Tang See Chim",
+    "tan cheng sock": "Tan Cheng Bock",
+    "ngeow pack hue": "Ngeow Pack Hua",
+    "ong teng choong": "Ong Teng Cheong",
+    "lim boon hong": "Lim Boon Heng",
+    "yeo ning yong": "Yeo Ning Hong",
+    "chiam see chiam": "Chiam See Tong",
 }
 
 # NOTE: surname-only forms and inverted canonicals go here; OCR character errors belong in _OCR_FORM_TO_CORRECTED_NAME.
