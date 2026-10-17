@@ -35,28 +35,28 @@ Track parsing success rates per report type across the full corpus so regression
 ## Strategies
 
 ### Raw first, derive second
-Every external API response is stored in a raw response table before any transformation occurs. Entity tables (Report, Speech, Sitting) are pure extensions of their raw counterparts — no fields dropped, no values changed. The source of truth is always recoverable, and re-parsing is cheap: drop the derived rows, rerun the populate step.
+Every external API response is stored in a raw response table before any transformation occurs. Entity tables (Report, Sitting) keep every field of their raw counterparts, and the values they change are listed in [data-loss-register.md](data-loss-register.md): cleaned titles, sitting and session numbers filled from the header table, and empty strings stored as NULL. The source of truth is always recoverable. Re-parsing is not cheap, though. A stage skips rows that already exist, and dropping speech rows would lose their ids and links, so stored reports are rebuilt through planned, rehearsed writes (`plans/speech-fidelity-loop/bin/`).
 
 ### Staged, incremental population
-The pipeline runs in discrete stages: fetch → parse → enrich. Each stage can be re-run independently. Skip logic at each stage makes the pipeline idempotent and resumable after failures or interruptions.
+The pipeline runs in discrete stages, listed in `CLAUDE.md`. `script.py` runs stages 5 to 9, the sitting, attendance, linking and person stages. Stages 1 to 4 (search, report fetch, reports, speeches) have no entry point there and run from the fill and rebuild tools. Each stage skips what is already stored, so a run resumes after an interruption. The same skip means a parser change never reaches stored rows on a rerun.
 
 ### Async HTTP with rate-limit resilience
 Fetching thousands of records requires concurrent HTTP. The gateway layer uses async requests with exponential backoff and jitter on 429 responses, so the pipeline self-throttles under load rather than failing hard or hammering the server.
 
 ### Iterative parsing refinement
-Parsing improvements follow a structured loop: inspect failure categories, apply a targeted fix, check per-report-type statistics, and commit. Each cycle is reviewed before merging to keep regressions visible across the ~22,000-document corpus.
+Parsing improvements follow a structured loop: inspect failure categories, apply a targeted fix, add a golden fixture, measure the attribution figures before and after, and commit to master. The speech fidelity loop ([speech-fidelity-loop.md](report/speech-fidelity-loop.md)) adds hand reads against the source and a stopping rule. The corpus holds 41,801 reports.
 
 ### Format-aware artifact removal
-The raw HTML spans three document eras with different artifacts. Fixes are applied as targeted transformations scoped to the artifact each addresses — stripping known separator patterns, merging bold lines split across page breaks, normalising whitespace — rather than globally, which limits blast radius when the source HTML varies.
+The raw HTML comes from two systems: the older one (sprs2, sittings before 10 September 2012) and the newer one (sprs3). `utils/markdown_parser.py` and `services/speech.py` branch on `report_version` where the two differ. Most cleaning steps, such as turning `&nbsp;` into a space and merging bold lines split across page breaks, run on every report. A step that applies to one system only is guarded by `report_version`, so the other system's output does not change.
 
 ### Principled attribution hierarchy
-For documents that contain no bold speaker markup, attribution follows a deliberate fallback chain:
-1. If the `MPs Speaking` header lists exactly one name, attribute the entire body to that speaker (adjournment motions, bill first readings, procedural resolutions).
-2. If the body follows a known ministerial attribution pattern (ministry heading + name + title), extract the minister from the body.
-3. If neither applies, leave unattributed — do not fabricate attribution for multi-speaker appendix documents or structurally authorless procedural orders.
+Bold speaker labels come first. For a report with none, attribution follows a fallback chain in `services/speech.py`:
+1. If the `MPs Speaking` header lists exactly one name, the body goes to that speaker as one row.
+2. Otherwise the report type decides: the speaker line of an atbp report, the minister of a President's Address addendum (or the President when no ministry heading appears), the mover of an adjournment motion, and the presenter of a bill or, in the newer system, a bill introduction.
+3. If neither applies, the report stays unattributed. Multi-speaker appendix documents and authorless procedural orders get no invented speaker.
 
 ### Diagnostic tooling as a first-class concern
-Targeted validation and inspection tools live alongside the main pipeline. Parsing statistics are exported after every run. These tools make it possible to audit specific failure categories by report type without re-running the full pipeline, keeping the feedback loop short.
+Targeted validation and inspection tools live alongside the main pipeline. Nothing exports statistics automatically. `scripts/attribution_text_share.py` prints the attribution figures when it is run, and `CLAUDE.md` asks for it before and after every parsing or linking change. These tools make it possible to audit specific failure categories without re-running the full pipeline.
 
 ---
 
