@@ -99,6 +99,13 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"Question (?:put[.,]? and agreed to|proposed|again proposed)",
     r"Question put[.,]?[\s*_]*$",
     r"Question put,? and negatived",
+    r"(?:Original |Main )?[Qq]uestion (?:again )?(?:put|proposed)[.,]?[\s*_]*$",
+    r"(?:Original |Main )?[Qq]uestion put,? (?:and|an|arid|anti) (?:agreed|disagreed|negatived|resolved)",
+    r"Question put: Ayes",
+    r"Division [Bb]ells? rung",
+    r"Motion made,? and Question proposed",
+    r"Bill accordingly read the (?:Second|Third) time",
+    r"Clause read a Second time and added to the Bill",
     r"A ?m{1,2}endments?(?: to the amendment)?,? by,? leave[.,]? [Ww]ithdrawn",
     r"The sum of \$?[0-9,]+ .*ordered to stand part",  # Committee of Supply head
     r"Clauses?_? [0-9A-Za-z_, to and]{1,30} ordered to stand part",
@@ -304,6 +311,15 @@ _MARKUP_ONLY_CHARACTERS = "* _|-"
 _EMPHASIS_MARK_CHARACTERS = "*_ "
 _BOLD_RUN_RE = re.compile(r"((?:\*\*[^*]+?\*\*\s*)+)")
 _LEADING_COLON_RE = re.compile(r"^:\s*")
+_PERSONAL_TITLE_RE = re.compile(r"^(?:Mr|Mrs|Ms|Dr|Prof|Mdm|Miss|Madam|Assoc ?Prof|Encik|Inche|Haji|Tuan|Tun|Che|Er)\b")
+_PARENTHESISED_GROUP_RE = re.compile(r"\([^)]*\)?")
+_NAME_PARTICLES = frozenset({"bin", "binte", "binti", "bte", "bt", "b", "s/o", "d/o", "a/l", "a/p", "van", "de", "der", "di"})
+_REPORTING_VERBS = frozenset({"asked", "says", "said", "echoes", "raised", "stood", "remained"})
+_MIN_FRAGMENT_LOWERCASE_WORDS = 2
+_COLLECTIVE_LABEL_RE = re.compile(r"\b(?:hon\.?|Members?|Speaker|Chairman|Chair|Clerk|Interpreter)\b", re.IGNORECASE)
+_CONTINUATION_NOTE_RE = re.compile(r"^_?\(cont", re.IGNORECASE)
+_QUESTION_NUMBER_ONLY_RE = re.compile(r"^\d+\s*$")
+_BRACKETED_BOLD_OPENINGS = ("**[", "**(")
 _OPENING_PARENTHESIS = "("
 _CLOSING_PARENTHESIS = ")"
 _CHAIR_ANNOTATION_FULL_RE = re.compile(r"[\[(]?\s*.+?\s*in the [Cc]hair\s*[.\])]*")
@@ -725,6 +741,14 @@ def _is_speaker_name(name: str) -> bool:
     return _SPEAKER_ROLE_WORD_RE.search(name) is not None or _OFFICE_WORD_RE.search(name) is not None
 
 
+def _is_name_fragment(label: str) -> bool:
+    if _PERSONAL_TITLE_RE.match(label) is None:
+        return False
+    words = _PARENTHESISED_GROUP_RE.sub("", label).split()[1:]
+    lowercase_words = [word for word in words if word[:1].islower() and word not in _NAME_PARTICLES]
+    return len(lowercase_words) >= _MIN_FRAGMENT_LOWERCASE_WORDS or any(word in _REPORTING_VERBS or word.endswith("'s") for word in words)
+
+
 def _is_bold_mid_sentence(line: str) -> bool:
     bold_match = _BOLD_RUN_RE.search(line)
     if bold_match is None:
@@ -879,9 +903,13 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
 
         bold_match = _BOLD_RUN_RE.search(parsed_line)
         if bold_match is not None:
+            unbolded_line = parsed_line.replace(_BOLD_MARKER, "").strip()
+            # NOTE: the source splits a bracketed chair annotation into several bold runs, so only the whole line shows it is no label.
+            if parsed_line.startswith(_BRACKETED_BOLD_OPENINGS) and _CHAIR_ANNOTATION_FULL_RE.fullmatch(unbolded_line) is not None:
+                continue
             transcript = _LEADING_COLON_RE.sub("", parsed_line.split(bold_match.group(0))[-1].strip())
             # NOTE: a bold cell next to a pipe is a table row, not a label, so the whole line stays with the current speaker.
-            if transcript.startswith("|") or "|" in parsed_line[: bold_match.start()]:
+            if "|" in parsed_line:
                 if not is_in_preamble:
                     speeches.append(_build_current_speaker_speech(current_speaker, parsed_line))
                 continue
@@ -898,8 +926,36 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
                 if _ALPHANUMERIC_RE.search(transcript) and current_speaker is not None:
                     speeches.append(_build_current_speaker_speech(current_speaker, transcript))
                 continue
-            new_speaker = raw_speaker
+            # NOTE: a bold name with a verb after it opens a sentence about that member, so the whole line is the current speaker's speech.
+            if current_speaker is not None and _is_name_fragment(raw_speaker):
+                speeches.append(_build_current_speaker_speech(current_speaker, unbolded_line))
+                continue
+            is_non_label_bold = (
+                not _is_speaker_name(raw_speaker)
+                and _PERSONAL_TITLE_RE.match(raw_speaker) is None
+                and _COLLECTIVE_LABEL_RE.search(raw_speaker) is None
+            )
             is_bold_ending_with_colon = bold_match.group(0).rstrip().endswith(":**")
+            is_heading_line = (
+                (_MARKDOWN_HEADING_RE.match(parsed_line) is not None and bool(transcript))
+                or _CONTINUATION_NOTE_RE.match(transcript) is not None
+                or (is_bold_ending_with_colon and not transcript.strip(_EMPHASIS_MARK_CHARACTERS))
+            )
+            non_speech_kind = _get_non_speech_kind(unbolded_line)
+            is_question_stub = _QUESTION_NUMBER_ONLY_RE.match(parsed_line[: bold_match.start()]) is not None
+            # NOTE: a bold heading, a bold word inside a procedural line or a question's "To ask" is no label; its text keeps a row with no speaker.
+            if is_non_label_bold and (is_heading_line or non_speech_kind is not None or is_question_stub):
+                if non_speech_kind is not None:
+                    kind = non_speech_kind
+                elif is_heading_line:
+                    kind = SpeechKind.HEADING
+                else:
+                    kind = _get_no_speaker_kind(unbolded_line)
+                (preamble_speeches if is_in_preamble else speeches).append(ParsedSpeech(speaker=None, transcript=unbolded_line, kind=kind))
+                if non_speech_kind is not None and not is_in_preamble and _is_turn_ending_line(unbolded_line):
+                    current_speaker = None
+                continue
+            new_speaker = raw_speaker
             new_speaker = _QUESTION_NUMBER_PREFIX_RE.sub("", new_speaker)
             new_speaker = _UNSPACED_HONORIFIC_RE.sub(r"\1 \2", new_speaker)
             # NOTE: A bold drop cap, or in motions a bold line opening with a quote mark, continues the current speaker; the whole line is speech.

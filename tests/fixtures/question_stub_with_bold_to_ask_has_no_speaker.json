@@ -1,0 +1,22 @@
+{
+  "why": "A numbered question stub with a bold To ask is a row with no speaker.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p>1 <strong>To ask</strong> the Minister for Transport whether new measures are being considered.</p><p><strong>Mr A</strong>: Sir, the answer is yes.</p>",
+  "expected_rows": [
+    [
+      null,
+      "1 To ask the Minister for Transport whether new measures are being considered.",
+      "UNCLASSIFIED"
+    ],
+    [
+      "Mr A",
+      "Sir, the answer is yes.",
+      "SPEECH"
+    ]
+  ]
+}

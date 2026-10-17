@@ -1,0 +1,22 @@
+{
+  "why": "A chair annotation split across bold runs sets no speaker; the next lines stay with the current speaker.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr A</strong>: Intro.</p><p><strong>[Deputy Speaker</strong> (<strong>Mr Charles Chong) in the Chair]</strong></p><p>Carrying on.</p>",
+  "expected_rows": [
+    [
+      "Mr A",
+      "Intro.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "Carrying on.",
+      "SPEECH"
+    ]
+  ]
+}
