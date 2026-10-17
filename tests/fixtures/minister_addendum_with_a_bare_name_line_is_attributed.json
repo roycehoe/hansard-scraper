@@ -1,0 +1,17 @@
+{
+  "why": "An addendum whose ministry heading is followed by a bare name line in capitals (PROF S. JAYAKUMAR) is attributed to that minister; the pattern accepted only a line of the shape Mr Name and a heading with no inner bold.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "president-address",
+  "title": "ADDENDA, MINISTRY OF LAW",
+  "subtitle": null,
+  "original_title": "ADDENDA, MINISTRY OF LAW",
+  "html": "<p><strong>MINISTRY OF LAW</strong></p><p>  </p><p>PROF S. JAYAKUMAR  </p><p>Deputy Prime Minister and Minister for Law</p><p>MinLaw will strengthen the legal infrastructure.</p><p><em>Legal</em></p><p>We will work closely with the profession.</p>",
+  "expected_rows": [
+    [
+      "PROF S. JAYAKUMAR",
+      "PROF S. JAYAKUMAR Deputy Prime Minister and Minister for Law MinLaw will strengthen the legal infrastructure. _Legal_ We will work closely with the profession.",
+      "SPEECH"
+    ]
+  ]
+}
