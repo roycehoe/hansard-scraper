@@ -1,0 +1,22 @@
+{
+  "why": "The space next to a footnote superscript survives: members<sup>2&nbsp;</sup>who reads 'members[2] who', not 'members[2]who' (report 493), and a superscript straight after closing emphasis, which the converter already spaced off, stays as it was (report 24634).",
+  "source_report_id": 493,
+  "report_version": "sprs3",
+  "report_type": "written-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr A</strong>: The number of active<sup>1</sup> CPF members<sup>2&nbsp;</sup>who have balances, questions from Ms Joan Pereira<sup>1 </sup>and others, and the total<sup><a href=\"#x\">3</a>&nbsp;</sup>.</p><p>Table 3. Annual intake to <I>local universities</I><sup>2&nbsp;</sup> <I>in 2003</I></p>",
+  "expected_rows": [
+    [
+      "Mr A",
+      "The number of active[1] CPF members[2] who have balances, questions from Ms Joan Pereira[1] and others, and the total[3] .",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "Table 3. Annual intake to _local universities_ 2  _in 2003_",
+      "SPEECH"
+    ]
+  ]
+}
