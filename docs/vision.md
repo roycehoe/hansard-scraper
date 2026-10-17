@@ -166,6 +166,24 @@ Across the whole table on 14 October, before the writes of 15 October: 1,068,887
 
 The decisions, run order, judgement calls and evidence for this load are in [post-2012-load.md](report/post-2012-load.md).
 
+### Verdict against the done tests, whole corpus
+
+From the third independent audit on 17 October 2026, after write #7 and the 750 sitting-level Deputy Speaker links ([north-star-audit-2026-10-17.md](report/north-star-audit-2026-10-17.md)). The done tests were agreed with the user that day. They cover every record up to 15 April 2025, the end of Parliament 14, and count the hansard app as part of the goal, because a researcher must be able to reach the record. Before launch every report is re-parsed with the current parser.
+
+| Test | Verdict |
+|---|---|
+| 1. Coverage: every SPRS hit to the cutoff stored, textless records named | Fail. A crawl of SPRS finds 41,839 hits. 37 are not stored, from 22 Nov 2010 and 17 Oct to 22 Nov 2011, and 6 more were counted by the engine but never returned. 17 of the 19 textless reports other than atbp are not named. `settings.search_to_date` is 8 April 2025. |
+| 2. Speaker index: stopping rule holds, Parliaments 0 to 11 and 12 to 14 separately | Fail. On the numbers both groups are inside the gates: round 4 bounds for Parliaments 0 to 11 are Tier A 0.095% and Tier B 1.099%, and a 36-report pilot for Parliaments 12 to 14 gives Tier A 0.039% (bound 0.090%). The gate is stale, because writes #5 and #7 changed 56 pooled reports inside their windows, and Parliaments 12 to 14 have had no full round. |
+| 3. Sitting metadata: attendance everywhere, every newer-format list filled | Pass. The older format provides no sections, annexures, vernaculars or a2b list, so those are not gaps. |
+| 4. Linking: Wilson lower bound of 95% on a fresh hand check | Pass. 404 of 406 linked rows right across Parliaments 0 to 14 (99.5%, Wilson 98.2% to 99.9%), none linked to the wrong person. |
+| 5. Markdown: stopping rule holds, reports losing over 5% of tokens fixed or listed | Fail. The stopping rule half is stale, as in test 2. 18 of the 19 reports above 5% are not listed. |
+| 6. Tracking: per report type figures after every write, kept in the repo | Fail. `scripts/attribution_text_share.py` groups by Parliament only. |
+| Stored rows equal a fresh parse | Fail. 2,511 reports differ: 125 held reports in content, 2,386 only in ordinal numbering. In 53 held reports a re-parse would lose 1,630 words. |
+| Strategies section true of the code | Fail. 6 claims are false and 4 partly true. |
+| App served publicly over the whole corpus | Fail. No hosting or production config, and relevance search for "government" runs past the 30-second timeout. |
+
+Overall: not done. The data is close to its gates. The largest gaps are the app launch, the pre-launch re-parse, and the tracking script.
+
 ### Verdict against the objectives, records before 10 September 2012
 
 From two independent audits on 13 October 2026. The second ran after that day's fixes (22 zero-row debates parsed, 1,691 skipped records refetched, 6,615 stale reports re-parsed); its findings are in [north-star-audit-2026-10-13.md](report/north-star-audit-2026-10-13.md).
