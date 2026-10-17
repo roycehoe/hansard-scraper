@@ -1,0 +1,42 @@
+{
+  "why": "A paragraph that is one short italic span is a title: HEADING with no speaker, and the member carries on after it. An italic exclamation stays with the speaker.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr A</strong>: First paragraph.</p><p><em>Privatisation programme</em></p><p>Second paragraph under the title.</p><p><em>Wen ti pu da!</em></p><p><strong>Mr B</strong>: Hello.</p><p><em>Rental of HDB flats</em></p>",
+  "expected_rows": [
+    [
+      "Mr A",
+      "First paragraph.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "_Privatisation programme_",
+      "HEADING"
+    ],
+    [
+      "Mr A",
+      "Second paragraph under the title.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "_Wen ti pu da!_",
+      "SPEECH"
+    ],
+    [
+      "Mr B",
+      "Hello.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "_Rental of HDB flats_",
+      "HEADING"
+    ]
+  ]
+}
