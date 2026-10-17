@@ -11,17 +11,11 @@ from crud.report import CRUDReport
 from crud.speech import CRUDSpeech, SpeechRow
 from database.init import engine
 from database.report import Report
-from enums import ReportType
 from logs import logger
 from services.speech import (
     _REPORT_HEADER_FIELD_RE,
-    ParsedSpeechType,
-    _classify_speech_type,
-    _extract_body_attribution,
-    _extract_mps_speaking,
     _is_artifact_line,
-    _is_section_header_speaker,
-    _parse_speeches,
+    get_fallback_speaker,
     get_start_of_speech_line,
 )
 from utils.markdown_parser import PROC_TEXT_CLOSE_TAG, PROC_TEXT_OPEN_TAG
@@ -80,27 +74,13 @@ def _get_body_character_count(report: Report) -> int:
 
 
 def _is_single_speaker_collapse(report: Report) -> bool:
-    start = get_start_of_speech_line(
+    start_of_speech_line = get_start_of_speech_line(
         report.markdown_content, report.title, report.subtitle, report.original_title, report.report_type,
         report.report_version,
     )
-    if start is None:
+    if start_of_speech_line is None:
         return False
-    parsed_speeches = _parse_speeches(report.markdown_content, start, report.report_type)
-    speakers = _extract_mps_speaking(report.markdown_content)
-    speech_type = _classify_speech_type(parsed_speeches, len(speakers))
-    if speech_type == ParsedSpeechType.SINGLE_SPEAKER:
-        return True
-    if speech_type == ParsedSpeechType.NO_SPEAKER:
-        return bool(_extract_body_attribution(report.markdown_content, report.report_type, report.report_version))
-    if speech_type == ParsedSpeechType.PARSED:
-        first_speaker = next((speech.speaker for speech in parsed_speeches if speech.speaker is not None), None)
-        return ((report.report_type == ReportType.PRESIDENT_ADDRESS or report.report_type == ReportType.ATBP)
-                and not speakers
-                and first_speaker is not None
-                and _is_section_header_speaker(first_speaker)
-                and bool(_extract_body_attribution(report.markdown_content, report.report_type, report.report_version)))
-    return False
+    return get_fallback_speaker(report.markdown_content, start_of_speech_line, report.report_type, report.report_version) is not None
 
 
 def _get_group(parliament_number: int) -> str:

@@ -1135,30 +1135,38 @@ def _get_unlabelled_speeches(markdown: str, start_of_speech_line: int) -> list[P
     return speeches
 
 
+def _get_fallback_speaker_from_parsed(
+    markdown: str, parsed_speeches: list[ParsedSpeech], speakers: list[str], report_type: str, report_version: str
+) -> Optional[str]:
+    speech_type = _classify_speech_type(parsed_speeches, len(speakers))
+    if speech_type == ParsedSpeechType.SINGLE_SPEAKER:
+        return speakers[0]
+    if speech_type == ParsedSpeechType.NO_SPEAKER:
+        return _extract_body_attribution(markdown, report_type, report_version) or None
+    if speech_type != ParsedSpeechType.PARSED:
+        return None
+    first_speaker = next((speech.speaker for speech in parsed_speeches if speech.speaker is not None), None)
+    if ((report_type == ReportType.PRESIDENT_ADDRESS or report_type == ReportType.ATBP)
+            and not speakers
+            and first_speaker is not None
+            and _is_section_header_speaker(first_speaker)):
+        return _extract_body_attribution(markdown, report_type, report_version) or None
+    return None
+
+
+def get_fallback_speaker(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> Optional[str]:
+    parsed_speeches = _parse_speeches(markdown, start_of_speech_line, report_type)
+    return _get_fallback_speaker_from_parsed(markdown, parsed_speeches, _extract_mps_speaking(markdown), report_type, report_version)
+
+
 def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
     parsed_speeches = _parse_speeches(markdown, start_of_speech_line, report_type)
     speakers = _extract_mps_speaking(markdown)
-    speech_type = _classify_speech_type(parsed_speeches, len(speakers))
-
-    if speech_type == ParsedSpeechType.PARSED:
-        first_speaker = next((speech.speaker for speech in parsed_speeches if speech.speaker is not None), None)
-        if ((report_type == ReportType.PRESIDENT_ADDRESS or report_type == ReportType.ATBP)
-                and not speakers
-                and first_speaker is not None
-                and _is_section_header_speaker(first_speaker)):
-            speaker = _extract_body_attribution(markdown, report_type, report_version)
-            if speaker:
-                return _get_single_speaker_speeches(markdown, start_of_speech_line, speaker)
+    fallback_speaker = _get_fallback_speaker_from_parsed(markdown, parsed_speeches, speakers, report_type, report_version)
+    if fallback_speaker is not None:
+        return _get_single_speaker_speeches(markdown, start_of_speech_line, fallback_speaker)
+    if parsed_speeches:
         return parsed_speeches
-
-    if speech_type == ParsedSpeechType.SINGLE_SPEAKER:
-        return _get_single_speaker_speeches(markdown, start_of_speech_line, speakers[0])
-
-    if speech_type == ParsedSpeechType.NO_SPEAKER:
-        speaker = _extract_body_attribution(markdown, report_type, report_version)
-        if speaker:
-            return _get_single_speaker_speeches(markdown, start_of_speech_line, speaker)
-
     return _get_unlabelled_speeches(markdown, start_of_speech_line)
 
 
