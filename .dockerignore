@@ -7,12 +7,10 @@
 .pytest_cache
 .ruff_cache
 .claude
-__pycache__
 **/__pycache__
 plans
 tests
 docs
-pipeline.log
 *.log
 statistics.csv
 sample.json

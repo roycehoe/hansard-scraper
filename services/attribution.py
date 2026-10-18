@@ -50,14 +50,14 @@ def get_countable_character_count(text: str) -> int:
     return len(_MARKUP_AND_SPACE_RE.sub("", _PROC_TEXT_TAG_RE.sub("", text)))
 
 
-def is_adr_excluded(speaker: str) -> bool:
+def _is_adr_excluded(speaker: str) -> bool:
     return bool(_ADR_EXCLUDED_SPEAKER_RE.search(speaker)) or speaker.startswith(("(", "_"))
 
 
 def get_speech_category(speaker: Optional[str], speaker_id: Optional[int]) -> str:
     if speaker is None:
         return NO_SPEAKER_CATEGORY
-    if is_adr_excluded(speaker):
+    if _is_adr_excluded(speaker):
         return ADR_EXCLUDED_CATEGORY
     if speaker_id is None:
         return NAMED_UNLINKED_CATEGORY

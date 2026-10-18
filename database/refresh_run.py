@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from typing import Optional
 
-from sqlalchemy import CheckConstraint, Column, Date, DateTime, Index, Text
+from sqlalchemy import CheckConstraint, Column, DateTime, Index, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
@@ -34,7 +34,7 @@ class RefreshRun(SQLModel, table=True):
     reports_without_speech_rows: int = 0
     reports_rechecked: int = 0
     reports_changed: int = 0
-    latest_sitting_date_with_text: Optional[date] = Field(default=None, sa_column=Column(Date, nullable=True))
+    latest_sitting_date_with_text: Optional[date] = None
     figures: Optional[dict[str, object]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
     halt_reason: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
     failure_reason: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))

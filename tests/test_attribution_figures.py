@@ -81,11 +81,11 @@ def test_parliament_15_has_its_own_group(scratch_session: Session) -> None:
     ])
     scratch_session.commit()
 
-    group_figures_list = get_attribution_figures(scratch_session).groups
+    all_group_figures = get_attribution_figures(scratch_session).groups
 
-    groups = [group_figures.group for group_figures in group_figures_list]
-    new_parliament_figures = group_figures_list[groups.index(_NEW_PARLIAMENT_GROUP)]
-    assert groups.index(_NEW_PARLIAMENT_GROUP) == groups.index(_PREVIOUS_PARLIAMENT_GROUP) + 1
+    group_names = [group_figures.group for group_figures in all_group_figures]
+    new_parliament_figures = all_group_figures[group_names.index(_NEW_PARLIAMENT_GROUP)]
+    assert group_names.index(_NEW_PARLIAMENT_GROUP) == group_names.index(_PREVIOUS_PARLIAMENT_GROUP) + 1
     assert new_parliament_figures.report_count == _NEW_PARLIAMENT_REPORT_COUNT
     assert new_parliament_figures.category_to_row_count[LINKED_CATEGORY] == _NEW_PARLIAMENT_LINKED_ROW_COUNT
 
@@ -105,4 +105,4 @@ def test_figures_json_carries_the_stable_fields(scratch_session: Session) -> Non
         assert all("collapse_report_count" in report_type_json for report_type_json in report_types_json)
     headline_json = next(group_json for group_json in groups_json if group_json["group"] == HEADLINE_GROUP)
     assert headline_json["zero_row_report_count"] == _HEADLINE_ZERO_ROW_REPORT_COUNT
-    json.dumps(figures_json)
+    assert json.loads(json.dumps(figures_json)) == figures_json

@@ -62,7 +62,7 @@ def test_add_many_flushes_without_commit(scratch_session: Session) -> None:
     assert scratch_session.exec(select(HansardSittingDateResponse.id)).all() == []
 
 
-def test_max_reads(scratch_session: Session) -> None:
+def test_max_and_sitting_date_from_reads(scratch_session: Session) -> None:
     assert CRUDReport(scratch_session).get_max_parliament_number() is None
     assert CRUDSitting(scratch_session).get_max_parlement_no() is None
     assert CRUDReport(scratch_session).get_max_sitting_date_by_content_not_null_and_content_not_empty() is None

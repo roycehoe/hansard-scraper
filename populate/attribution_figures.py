@@ -77,8 +77,9 @@ def get_attribution_figures(session: Session) -> AttributionFigures:
         reports_with_rows.add(speech_row.report_id)
         category = get_speech_category(speech_row.speaker, speech_row.speaker_id)
         character_count = get_countable_character_count(speech_row.transcript)
-        group_to_row_count[report_id_to_group[speech_row.report_id]][category] += 1
-        group_to_character_count[report_id_to_group[speech_row.report_id]][category] += character_count
+        group = report_id_to_group[speech_row.report_id]
+        group_to_row_count[group][category] += 1
+        group_to_character_count[group][category] += character_count
         figures = group_and_type_to_figures[report_id_to_group_and_type[speech_row.report_id]]
         figures.category_to_row_count[category] += 1
         figures.category_to_character_count[category] += character_count
@@ -88,14 +89,14 @@ def get_attribution_figures(session: Session) -> AttributionFigures:
     group_to_report_ids: defaultdict[str, set] = defaultdict(set)
     for report in reports:
         body_character_count = _get_body_character_count(report)
-        group_to_body_total[report_id_to_group[report.id]] += body_character_count
-        group_to_report_ids[report_id_to_group[report.id]].add(report.id)
-        if report.id not in reports_with_rows:
-            group_to_body_in_zero_row_reports[report_id_to_group[report.id]] += body_character_count
+        group = report_id_to_group[report.id]
         figures = group_and_type_to_figures[report_id_to_group_and_type[report.id]]
+        group_to_body_total[group] += body_character_count
+        group_to_report_ids[group].add(report.id)
         figures.report_count += 1
         figures.body_total += body_character_count
         if report.id not in reports_with_rows:
+            group_to_body_in_zero_row_reports[group] += body_character_count
             figures.zero_row_report_count += 1
         if _is_single_speaker_collapse(report):
             figures.collapse_report_count += 1
