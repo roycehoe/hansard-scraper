@@ -285,9 +285,9 @@ def _start_refresh_run(session: Session, now: datetime) -> int:
 def _get_started_refresh_run_id(session: Session, now: datetime) -> int:
     try:
         return _start_refresh_run(session, now)
-    except Exception as unexpected_failure:  # noqa: BLE001 a run that cannot start still alerts and pings before the error propagates
-        logger.error(f"Refresh run could not start: {type(unexpected_failure).__name__}")
-        _send_alert(build_failure_message(_get_alert_failure_reason(unexpected_failure, False)))
+    except Exception as error:  # noqa: BLE001 a run that cannot start still alerts and pings before the error propagates
+        logger.error(f"Refresh run could not start: {type(error).__name__}")
+        _send_alert(build_failure_message(_get_alert_failure_reason(error, False)))
         _send_failure_ping()
         raise
 
@@ -335,7 +335,7 @@ def _get_stored_parliament_maximum(session: Session) -> Optional[int]:
     return max((stored_maximum for stored_maximum in stored_maximums if stored_maximum is not None), default=None)
 
 
-def _validate_parliament_numbers(
+def _validate_can_accept_parliament_numbers(
     parliament_numbers: set[int],
     stored_maximum: Optional[int],
     allowed_parliament_number: Optional[int],
@@ -423,7 +423,7 @@ def _fetch_window(
         if search_result.report_id not in stored_refresh_state.stored_report_ids
         and search_result.report_id not in stored_refresh_state.excluded_report_ids
     ]
-    _validate_parliament_numbers(
+    _validate_can_accept_parliament_numbers(
         {int(search_result.parl_no) for search_result in new_search_results},
         stored_refresh_state.stored_parliament_maximum,
         allowed_parliament_number,
@@ -447,7 +447,7 @@ def _fetch_window(
     )
 
 
-def _validate_fetched(fetched_window: FetchedWindow, allowed_parliament_number: Optional[int]) -> None:
+def _validate_can_store_fetched_window(fetched_window: FetchedWindow, allowed_parliament_number: Optional[int]) -> None:
     field_losses = []
     for search_result in fetched_window.new_search_results:
         html_content = fetched_window.report_id_to_fetched_topic[search_result.report_id].html_content
@@ -467,7 +467,7 @@ def _validate_fetched(fetched_window: FetchedWindow, allowed_parliament_number: 
         field_losses.extend(get_sitting_date_field_losses(hansard_report_response, hansard_sitting_date_response))
     if field_losses:
         raise HansardRefreshHaltError(build_field_mapping_reason(field_losses))
-    _validate_parliament_numbers(sitting_parliament_numbers, fetched_window.stored_parliament_maximum, allowed_parliament_number)
+    _validate_can_accept_parliament_numbers(sitting_parliament_numbers, fetched_window.stored_parliament_maximum, allowed_parliament_number)
 
 
 def _set_sitting_detail_columns(sitting: Sitting, hansard_report_response: HansardReportNewResponse) -> None:
@@ -477,7 +477,7 @@ def _set_sitting_detail_columns(sitting: Sitting, hansard_report_response: Hansa
     sitting.a2b = _get_json_column(hansard_report_response.a2b_list)
 
 
-def _write(session: Session, fetched_window: FetchedWindow, window_result: RunResult, today: date) -> NewRowIds:
+def _write_window_rows(session: Session, fetched_window: FetchedWindow, window_result: RunResult, today: date) -> NewRowIds:
     hansard_website_responses = []
     website_report_ids = []
     for search_result in fetched_window.new_search_results:
@@ -551,7 +551,7 @@ def _get_new_row_counts(session: Session, report_ids: list[int]) -> NewRowCounts
     return NewRowCounts(category_to_row_count[LINKED_CATEGORY], category_to_row_count[NAMED_UNLINKED_CATEGORY], dict(label_to_row_count))
 
 
-def _finish(
+def _finish_refresh_run(
     session: Session,
     refresh_run_id: int,
     run_result: RunResult,
@@ -583,11 +583,11 @@ def _record_finish(
 ) -> None:
     try:
         session.rollback()
-        _finish(session, refresh_run_id, run_result, status, halt_reason, failure_reason)
-    except SQLAlchemyError as error_to_record:
-        logger.error(f"Run {refresh_run_id} not recorded: {type(error_to_record).__name__}")
-    except HansardRefreshRunError as error_to_record:
-        logger.error(f"Run {refresh_run_id} not recorded: {error_to_record}")
+        _finish_refresh_run(session, refresh_run_id, run_result, status, halt_reason, failure_reason)
+    except SQLAlchemyError as error:
+        logger.error(f"Run {refresh_run_id} not recorded: {type(error).__name__}")
+    except HansardRefreshRunError as error:
+        logger.error(f"Run {refresh_run_id} not recorded: {error}")
 
 
 def _add_window_result(run_result: RunResult, window_result: RunResult) -> None:
@@ -624,14 +624,14 @@ def _record_failure(
     session: Session,
     refresh_run_id: int,
     run_result: RunResult,
-    unexpected_failure: Exception,
+    error: Exception,
     is_data_committed: bool,
     is_run_finished: bool,
 ) -> None:
     if is_run_finished:
         logger.error(f"Run {refresh_run_id} failed after it was recorded as succeeded")
         return
-    error_text = f"{type(unexpected_failure).__name__}: {unexpected_failure}"
+    error_text = f"{type(error).__name__}: {error}"
     failure_reason = f"{_AFTER_DATA_COMMIT}{error_text}" if is_data_committed else error_text
     _record_finish(
         session,
@@ -659,8 +659,8 @@ def populate_refresh_runs(session: Session, now: datetime, allowed_parliament_nu
         for month_window in get_month_windows(probe_start_date, today):
             window_result = RunResult()
             fetched_window = _fetch_window(stored_refresh_state, month_window, allowed_parliament_number)
-            _validate_fetched(fetched_window, allowed_parliament_number)
-            new_row_ids = _write(session, fetched_window, window_result, today)
+            _validate_can_store_fetched_window(fetched_window, allowed_parliament_number)
+            new_row_ids = _write_window_rows(session, fetched_window, window_result, today)
             new_row_counts = _get_new_row_counts(session, new_row_ids.report_ids)
             window_result.speeches_linked = new_row_counts.linked_row_count
             window_result.speeches_named_unlinked = new_row_counts.named_unlinked_row_count
@@ -677,7 +677,7 @@ def populate_refresh_runs(session: Session, now: datetime, allowed_parliament_nu
             run_result.figures = build_attribution_figures_json(get_attribution_figures(session), datetime.now(timezone.utc))
         latest_sitting_date = CRUDReport(session).get_max_sitting_date_by_content_not_null_and_content_not_empty()
         run_result.latest_sitting_date_with_text = None if latest_sitting_date is None else latest_sitting_date.date()
-        _finish(session, refresh_run_id, run_result, RefreshRunStatus.SUCCEEDED, None, None)
+        _finish_refresh_run(session, refresh_run_id, run_result, RefreshRunStatus.SUCCEEDED, None, None)
         is_run_finished = True
         _send_success_alerts(run_result)
         _send_success_ping()

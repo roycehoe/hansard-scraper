@@ -1,6 +1,5 @@
 import re
 from collections import Counter, defaultdict
-from operator import attrgetter
 
 from sqlmodel import Session
 
@@ -72,7 +71,7 @@ def get_attribution_figures(session: Session) -> AttributionFigures:
     group_to_report_ids: defaultdict[str, set] = defaultdict(set)
     for start in range(0, len(report_ids), _REPORT_BATCH):
         batch_report_ids = report_ids[start:start + _REPORT_BATCH]
-        reports = sorted(CRUDReport(session).get_by_ids(batch_report_ids), key=attrgetter("id"))
+        reports = CRUDReport(session).get_by_ids(batch_report_ids)
         reported_parliaments.update(report.parliament_number for report in reports if report.parliament_number > HEADLINE_MAX_PARLIAMENT)
         report_id_to_group = {report.id: get_group(report.parliament_number) for report in reports}
         report_id_to_group_and_type = {report.id: (report_id_to_group[report.id], report.report_type) for report in reports}

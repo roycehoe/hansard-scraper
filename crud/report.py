@@ -69,7 +69,7 @@ class CRUDReport:
         return list(self.session.exec(statement).all())
 
     def get_by_ids(self, report_ids: list[int]) -> list[Report]:
-        statement = select(Report).where(col(Report.id).in_(report_ids))
+        statement = select(Report).where(col(Report.id).in_(report_ids)).order_by(col(Report.id))
         return list(self.session.exec(statement).all())
 
     def get_by_ids_for_update(self, report_ids: list[int]) -> list[Report]:

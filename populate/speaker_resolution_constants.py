@@ -41,7 +41,7 @@ DEPUTY_SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
 DEPUTY_SPEAKER_WOMEN: frozenset[str] = frozenset({"Lim Hwee Hua", "Indranee Rajah", "Jessica Tan Soon Neo"})
 
 # NOTE: sources disagree on whether Lim Yew Hock took over on 7 or 8 June 1956. The sitting of 7 June names David Marshall as Chief Minister throughout (its attendance list and the header of every report he speaks in), so his term runs through that day. Prime Minister handovers fell on days without a sitting.
-# Sources: Prime Minister from 15 May 2024 from Al Jazeera of that day and the pmo.gov.sg newsroom of October 2026
+# Sources: Al Jazeera 15 May 2024; pmo.gov.sg
 DATED_ROLE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
     "The Chief Minister": (
         (date(1955, 4, 6), date(1956, 6, 7), "David Marshall"),
@@ -56,7 +56,7 @@ DATED_ROLE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
     ),
 }
 
-# Sources: Wikipedia day-level dates, citing NewspaperSG; President from 14 September 2023 from the Wikipedia page citing The Straits Times of that day
+# Sources: Wikipedia day-level dates citing NewspaperSG, Straits Times
 HEAD_OF_STATE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
     "His Excellency the Governor": (
         (date(1952, 4, 21), date(1955, 6, 1), "John Nicoll"),
