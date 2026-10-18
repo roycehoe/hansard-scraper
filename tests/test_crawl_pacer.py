@@ -6,8 +6,12 @@ from typing import Optional
 
 import httpx
 import pytest
+import requests
 
 import gateway.http
+from gateway.hansard_report import get_hansard_report_response
+from gateway.hansard_search import get_hansard_search_results
+from gateway.hansard_topic import get_hansard_topic_response
 from gateway.http import (
     CRAWL_GAP_SECONDS,
     CRAWL_PACER,
@@ -15,6 +19,11 @@ from gateway.http import (
     async_post_with_retry,
     paced_request,
 )
+from gateway.speakers_by_parliament import (
+    _PARLIAMENT_NUMBER_TO_PAGE_ID,
+    get_all_speakers,
+)
+from settings import settings
 
 _REQUEST_SECONDS = 0.25
 _URL = "https://pacer.test/topic"
@@ -24,6 +33,13 @@ _GATHERED_REQUEST_COUNT = 5
 _SYNC_REQUEST_COUNT = 3
 _FIXED_JITTER_SECONDS = 0.5
 _RETRY_STATUS_CODES = (_HTTP_TOO_MANY_REQUESTS, _HTTP_TOO_MANY_REQUESTS, _HTTP_OK)
+_SEARCH_START_INDEX = 0
+_SEARCH_END_INDEX = 19
+_REPORT_ID = "x"
+_SITTING_DATE = "8-4-2025"
+_SYNC_GATEWAY_REQUEST_COUNT = 3
+_SPEAKER_SESSION_REQUEST_COUNT = 2
+_ANTIFORGERY_BODY = {"Value": "token"}
 
 
 class _FakeClock:
@@ -46,6 +62,20 @@ class _RecordedRequest:
     started_at: float
     ended_at: float
     user_agent: Optional[str]
+
+
+class _FakeSyncResponse:
+    status_code = _HTTP_OK
+
+    def __init__(self, body: object):
+        self.body = body
+        self.text = ""
+
+    def raise_for_status(self) -> None:
+        pass
+
+    def json(self) -> object:
+        return self.body
 
 
 _AsyncHandler = Callable[[httpx.Request], Coroutine[None, None, httpx.Response]]
@@ -147,3 +177,46 @@ def test_async_requests_send_the_user_agent(fake_clock: _FakeClock) -> None:
 
     assert len(recorded_requests) == _GATHERED_REQUEST_COUNT
     assert all(recorded_request.user_agent == CRAWL_USER_AGENT for recorded_request in recorded_requests)
+
+
+def test_sync_gateways_send_the_user_agent_and_are_paced(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+    recorded_requests: list[_RecordedRequest] = []
+
+    def fake_post(url: str, json: object, headers: dict) -> _FakeSyncResponse:
+        started_at = fake_clock.now
+        fake_clock.sleep(_REQUEST_SECONDS)
+        recorded_requests.append(_RecordedRequest(started_at, fake_clock.now, headers["User-Agent"]))
+        if url == settings.hansard_search_url:
+            return _FakeSyncResponse([])
+        return _FakeSyncResponse({})
+
+    monkeypatch.setattr(requests, "post", fake_post)
+
+    get_hansard_search_results(_SEARCH_START_INDEX, _SEARCH_END_INDEX)
+    get_hansard_topic_response(_REPORT_ID)
+    get_hansard_report_response(_SITTING_DATE)
+
+    assert len(recorded_requests) == _SYNC_GATEWAY_REQUEST_COUNT
+    assert all(recorded_request.user_agent == CRAWL_USER_AGENT for recorded_request in recorded_requests)
+    _assert_paced(recorded_requests)
+
+
+def test_speaker_requests_send_the_user_agent_and_are_paced(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+    recorded_requests: list[_RecordedRequest] = []
+
+    def fake_session_send(self: requests.Session, url: str, headers: Optional[dict] = None, **kwargs: object) -> _FakeSyncResponse:
+        started_at = fake_clock.now
+        fake_clock.sleep(_REQUEST_SECONDS)
+        request_headers = {**self.headers, **({} if headers is None else headers)}
+        recorded_requests.append(_RecordedRequest(started_at, fake_clock.now, request_headers["User-Agent"]))
+        return _FakeSyncResponse(_ANTIFORGERY_BODY)
+
+    monkeypatch.setattr(requests.Session, "get", fake_session_send)
+    monkeypatch.setattr(requests.Session, "post", fake_session_send)
+
+    speaker_results = get_all_speakers()
+
+    assert speaker_results == []
+    assert len(recorded_requests) == len(_PARLIAMENT_NUMBER_TO_PAGE_ID) + _SPEAKER_SESSION_REQUEST_COUNT
+    assert all(recorded_request.user_agent == CRAWL_USER_AGENT for recorded_request in recorded_requests)
+    _assert_paced(recorded_requests)

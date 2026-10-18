@@ -1,16 +1,15 @@
 import re
-import time
 
 import requests
 from bs4 import BeautifulSoup
 
 from exceptions import HansardGatewayError
+from gateway.http import CRAWL_HEADERS, paced_request
 from schemas.speaker import SpeakerResult
 from settings import settings
 
 _ANTIFORGERY_TIMEOUT_SECONDS = 10
 _SPEAKERS_TIMEOUT_SECONDS = 15
-_PARLIAMENT_REQUEST_DELAY_SECONDS = 0.5
 _PARLIAMENT_NUMBER_TO_PAGE_ID = {
     1: 1, 2: 2, 3: 5, 4: 8, 5: 11, 6: 13, 7: 16,
     8: 20, 9: 23, 10: 26, 11: 29, 12: 32, 13: 35, 14: 38, 15: 41,
@@ -19,11 +18,12 @@ _PARLIAMENT_NUMBER_TO_PAGE_ID = {
 
 def _get_antiforgery_token(session: requests.Session) -> str:
     try:
-        response = session.get(
-            settings.parliament_anticsrf_url,
-            headers={"X-SF-ANTIFORGERY-REQUEST": "true"},
-            timeout=_ANTIFORGERY_TIMEOUT_SECONDS,
-        )
+        with paced_request():
+            response = session.get(
+                settings.parliament_anticsrf_url,
+                headers={"X-SF-ANTIFORGERY-REQUEST": "true"},
+                timeout=_ANTIFORGERY_TIMEOUT_SECONDS,
+            )
         response.raise_for_status()
         return response.json()["Value"]
     except requests.exceptions.RequestException as error:
@@ -61,9 +61,10 @@ def _parse_speakers(html: str, parliament_number: int) -> list[SpeakerResult]:
 
 def get_all_speakers() -> list[SpeakerResult]:
     session = requests.Session()
-    session.headers.update({"User-Agent": "Mozilla/5.0"})
+    session.headers.update(CRAWL_HEADERS)
     try:
-        session.get(settings.parliament_speakers_url, timeout=_SPEAKERS_TIMEOUT_SECONDS)
+        with paced_request():
+            session.get(settings.parliament_speakers_url, timeout=_SPEAKERS_TIMEOUT_SECONDS)
     except requests.exceptions.RequestException as error:
         raise HansardGatewayError("Failed to establish parliament session") from error
 
@@ -71,15 +72,15 @@ def get_all_speakers() -> list[SpeakerResult]:
     all_speakers = []
     for parliament_number, parliament_page_id in _PARLIAMENT_NUMBER_TO_PAGE_ID.items():
         try:
-            response = session.post(
-                settings.parliament_speakers_url,
-                data={"Parliament": parliament_page_id, "sf_antiforgery": antiforgery_token},
-                headers={"X-SF-ANTIFORGERY-REQUEST": antiforgery_token},
-                timeout=_SPEAKERS_TIMEOUT_SECONDS,
-            )
+            with paced_request():
+                response = session.post(
+                    settings.parliament_speakers_url,
+                    data={"Parliament": parliament_page_id, "sf_antiforgery": antiforgery_token},
+                    headers={"X-SF-ANTIFORGERY-REQUEST": antiforgery_token},
+                    timeout=_SPEAKERS_TIMEOUT_SECONDS,
+                )
             response.raise_for_status()
         except requests.exceptions.RequestException as error:
             raise HansardGatewayError(f"Failed to fetch speakers for parliament {parliament_number}") from error
         all_speakers.extend(_parse_speakers(response.text, parliament_number))
-        time.sleep(_PARLIAMENT_REQUEST_DELAY_SECONDS)
     return all_speakers

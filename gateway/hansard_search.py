@@ -7,6 +7,7 @@ from typing import Optional
 import requests
 
 from exceptions import HansardGatewayError
+from gateway.http import CRAWL_HEADERS, paced_request
 from logs import logger
 from schemas.hansard_search_result import HansardSearchResult
 from settings import settings
@@ -51,7 +52,8 @@ def get_hansard_search_results(
     }
     page = start_index // settings.search_page_size + 1
     try:
-        response = requests.post(url=settings.hansard_search_url, json=query_dict)
+        with paced_request():
+            response = requests.post(url=settings.hansard_search_url, json=query_dict, headers=CRAWL_HEADERS)
         if (
             response.status_code == _HTTP_BAD_REQUEST or response.status_code == _HTTP_INTERNAL_SERVER_ERROR
         ) and "No Results Found" in response.text:
