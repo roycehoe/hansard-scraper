@@ -82,7 +82,7 @@ Each folder has a strict responsibility boundary. `populate/` is the only layer 
 
 8. **Wire Speaker foreign keys** (`populate/speaker_links.py`) — resolves speaker/attendee names against the `Speaker` table and sets `speaker_id` on `Attendance` and `Speech` rows. Depends on the `Speaker` table being populated first (see out-of-band step below).
 
-**Out-of-band:** `scripts/scrape_speakers_by_parliament.py` scrapes `parliament.gov.sg` for the full list of speakers per parliament and stores them in the `Speaker` table. This must be run before step 8; it is not part of `script.py`. The source gives one party and one Assembly flag per person, so `data/speaker_overrides.json` corrects the flag and the party per Parliament row, both at scrape time (`services/speaker.py`) and on stored rows (`scripts/apply_speaker_overrides.py`). For colonial-era Legislative Assembly members, run `scripts/load_colonial_la_speakers.py` first. A member who sat only in the Assembly is a Parliament 0 row, and one who sat in both bodies has one row in Parliament 1; `scripts/apply_speaker_parliaments.py` moves stored rows to the Parliament the two colonial data files give them, and runs before the loaders and `apply_speaker_overrides.py` read the changed files. `data/unscraped_members.json` holds the Parliament 13 row of Lee Li Lian, who declined the seat the Hansard still lists her for, so the scrape omits her; `scripts/load_colonial_la_speakers.py` reads it with the colonial file and inserts it after the Parliament moves, and `scripts/clean_attendance.py` needs it to link her six attendance rows.
+**Out-of-band:** `scripts/scrape_speakers_by_parliament.py` scrapes `parliament.gov.sg` for the full list of speakers per parliament and stores them in the `Speaker` table. This must be run before step 8; it is not part of `script.py`. The source gives one party and one Assembly flag per person, so `data/speaker_overrides.json` corrects the flag and the party per Parliament row, both at scrape time (`services/speaker.py`) and on stored rows (`scripts/apply_speaker_overrides.py`). For colonial-era Legislative Assembly members, run `scripts/load_colonial_la_speakers.py` first. A member who sat only in the Assembly is a Parliament 0 row, and one who sat in both bodies has one row in Parliament 1; `scripts/apply_speaker_parliaments.py` moves stored rows to the Parliament the two colonial data files give them, and runs before the loaders and `apply_speaker_overrides.py` read the changed files. `data/unscraped_members.json` holds the Parliament 13 row of Lee Li Lian, who declined the seat the Hansard still lists her for, so the scrape omits her; `scripts/load_colonial_la_speakers.py` reads it with the colonial file and inserts it after the Parliament moves, and `scripts/clean_attendance.py` needs it to link her six attendance rows. A few members changed party inside one Parliament while a `Speaker` row holds only the ballot party, so `data/party_affiliations.json` records their dated party history; run `python -m scripts.load_party_affiliations` once the `Speaker` table is final (after `apply_speaker_parliaments.py`, the loaders and `apply_speaker_overrides.py`), because it finds each Membership by name and Parliament and refuses unless the first span's party is the stored party.
 
 ### Sitting date API — two formats
 
@@ -108,6 +108,7 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 - `Sitting` — entity table extending `HansardSittingDateResponse`; adds `markdown_content` parsed from `html_full_content`, plus four JSON TEXT columns (`sections`, `annexures`, `vernaculars`, `a2b`) serialised from the API nested lists
 - `Attendance` — one row per name per sitting, parsed from `Sitting.markdown_content` in stage 7; has a `speaker_id` FK to `Speaker` (set in stage 8)
 - `Speaker` — everyone who appears in the Hansard record, scraped from parliament.gov.sg; keyed by name, party, parliament number, and whether they are a Legislative Assembly member (not all are MPs)
+- `PartyAffiliation` — one row per party a Membership sat for, with the date it began (`started_on`, and `started_on_precision`, a `DatePrecision` of DAY or MONTH, Postgres type `dateprecision`; a MONTH date is stored as the first of the month), one plain sentence for the footnote (`event`), a `source_url`, and a `speaker_id` FK to `Speaker`; the `Speaker` row keeps the ballot party and this table adds the history
 
 ### Key parsing logic
 
@@ -147,6 +148,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `apply_speaker_parliaments.py`: moves the stored Assembly-only speaker rows to the Parliament that `data/colonial_la_members.json` and `data/heads_of_state.json` give them; a dry run unless `--commit`
 - `apply_speaker_links.py`: links the stored speech and attendance rows that stage 8 would link; a dry run writes the plan file, and `--commit` locks the planned rows, checks they are still unlinked, builds the plan again and refuses unless it equals the reviewed file
 - `apply_coverage_refill.py`: stores the hits SPRS lists that the database lacks and fills reports stored with empty text, with their speech rows; a dry run fetches the text into the plan file, and `--commit` checks the hits are still unstored and the reports still empty, writes the plan's text and checks the speech counts; run `apply_speaker_links.py` after it
+- `load_party_affiliations.py`: idempotent load of `data/party_affiliations.json` into the `PartyAffiliation` table, run as a module; skips rows already stored and refuses when a stored row for the same speaker differs from the file; a dry run unless `--commit`
 - `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech rows, after checking each against its kept copy; a dry run unless `--commit`
 - `find_presiding_officers.py`: tallies the most common Speaker and Deputy Speaker per parliament from the PRESENT sections
 - `trace_speaker_links.py`: read-only regression guard for stage 8 speech links: re-runs the resolver per key and compares with stored `speaker_id`
@@ -165,7 +167,7 @@ hansard-scraper/
 ├── script.py                        # Pipeline orchestrator — runs all populate stages in order
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
 ├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system)
-├── exceptions.py                    # HansardError / HansardGatewayError / HansardWriteTargetError / HansardWriteCheckError
+├── exceptions.py                    # HansardError / HansardGatewayError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError
 ├── logs.py                          # Loguru logger initialisation
 │
 ├── schemas/                         # Pydantic validation models (API shapes, not DB)
@@ -174,6 +176,7 @@ hansard-scraper/
 │   ├── hansard_report_response.py  # HansardReportOldResponse / HansardReportNewResponse / HansardReportMetadata / HansardReportAttendanceEntry
 │   ├── excluded_report_id.py       # ExcludedReportId: data/excluded_report_ids.json entries
 │   ├── attendance_cleanup.py       # AttendanceCleanup: data/attendance_cleanup.json entries
+│   ├── party_affiliation.py        # MembershipPartyAffiliations / PartyAffiliationSpan: data/party_affiliations.json entries
 │   ├── speaker_override.py         # SpeakerOverrides: data/speaker_overrides.json
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata
 │
@@ -194,6 +197,7 @@ hansard-scraper/
 │   ├── attendance_cleanup.py        # Plan for scripts/clean_attendance.py: checks the listed rows, then links or deletes each
 │   ├── person.py                    # Speaker rows → person clusters (name normalisation + review decisions)
 │   ├── role_context.py              # Chairman, Deputy Speaker and carried-role names per speech row
+│   ├── party_affiliation.py         # Party affiliation file + Speaker rows → PartyAffiliation rows; picks the rows not yet stored
 │   └── speaker.py                   # SpeakerResult → Speaker DB entity
 │
 ├── database/                        # SQLModel table definitions
@@ -205,6 +209,7 @@ hansard-scraper/
 │   ├── sitting.py                   # Entity: extends HansardSittingDateResponse + markdown + JSON columns
 │   ├── attendance.py                # One row per name per sitting + speaker_id FK
 │   ├── person.py                    # Person: one row per clustered identity
+│   ├── party_affiliation.py         # PartyAffiliation: dated party history within a Membership + speaker_id FK
 │   └── speaker.py                   # Speaker: name, party, parliament number, LA flag, person_id FK
 │
 ├── crud/                            # DB read/write helpers (one file per table)
@@ -215,6 +220,7 @@ hansard-scraper/
 │   ├── sitting.py
 │   ├── attendance.py
 │   ├── person.py
+│   ├── party_affiliation.py
 │   └── speaker.py
 │
 ├── populate/                        # Pipeline stages — fetch + persist each entity type
@@ -268,5 +274,6 @@ hansard-scraper/
     ├── apply_attendance_names.py
     ├── clean_attendance.py
     ├── apply_speaker_parliaments.py
-    └── apply_speaker_links.py
+    ├── apply_speaker_links.py
+    └── load_party_affiliations.py
 ```
