@@ -54,6 +54,7 @@ python scripts/load_colonial_la_speakers.py   # for pre-independence LA members
 - [Data Dictionary](docs/data-dictionary.md) — entity semantics, field meanings, report types, data quality caveats.
 - [Parsing Internals](docs/parsing.md) — HTML artifact details and edge cases. Read before touching parsing code.
 - [Vision](docs/vision.md) — project goals and strategy.
+- [Daily refresh](docs/refresh.md): what the scheduled job fetches, its alerts and its halts.
 
 ## Data source
 

@@ -41,9 +41,15 @@ python -m alembic downgrade -1          # roll back one migration
 
 # Scrape speakers by parliament (run separately, not part of script.py)
 python scripts/scrape_speakers_by_parliament.py
+
+# Daily refresh: adds new sittings, reports and speech rows (--allow-parliament N accepts one new Parliament, for a supervised backfill)
+python refresh.py
+
+# Load one Parliament's members into the Speaker table (a dry run unless --commit)
+python scripts/load_parliament_speakers.py --parliament N
 ```
 
-`poetry run pytest` runs the golden fixtures in `tests/`: each is a trimmed source HTML excerpt plus the speech rows the parser must produce. Each parser fix adds a fixture for the defect it closes.
+`poetry run pytest` runs the golden fixtures in `tests/`: each is a trimmed source HTML excerpt plus the speech rows the parser must produce. Each parser fix adds a fixture for the defect it closes. Tests run only against the scratch database on port 5435 (`hansard_launch`), and build their own schema there; `tests/conftest.py` refuses any other target.
 
 ## Architecture
 
@@ -64,6 +70,8 @@ Each folder has a strict responsibility boundary. `populate/` is the only layer 
 | `utils/` | Shared pure functions | DB access, HTTP |
 | `scripts/` | One-off diagnostics: use Session + crud + services | Raw SQL, direct `select()`/`session.add()` bypassing crud |
 
+Every request to SPRS or parliament.gov.sg goes through `paced_request()` or `paced_request_async()` in `gateway/http.py` and sends `CRAWL_HEADERS`.
+
 ### Data flow
 
 1. **Fetch search index** (`gateway/hansard_search.py`): POST to the Hansard search API, paginate through all results, return `list[HansardSearchResult]` (Pydantic model in `schemas/hansard_search_result.py`); a non-list body is an empty page.
@@ -83,6 +91,10 @@ Each folder has a strict responsibility boundary. `populate/` is the only layer 
 8. **Wire Speaker foreign keys** (`populate/speaker_links.py`) — resolves speaker/attendee names against the `Speaker` table and sets `speaker_id` on `Attendance` and `Speech` rows. Depends on the `Speaker` table being populated first (see out-of-band step below).
 
 **Out-of-band:** `scripts/scrape_speakers_by_parliament.py` scrapes `parliament.gov.sg` for the full list of speakers per parliament and stores them in the `Speaker` table. This must be run before step 8; it is not part of `script.py`. The source gives one party and one Assembly flag per person, so `data/speaker_overrides.json` corrects the flag and the party per Parliament row, both at scrape time (`services/speaker.py`) and on stored rows (`scripts/apply_speaker_overrides.py`). For colonial-era Legislative Assembly members, run `scripts/load_colonial_la_speakers.py` first. A member who sat only in the Assembly is a Parliament 0 row, and one who sat in both bodies has one row in Parliament 1; `scripts/apply_speaker_parliaments.py` moves stored rows to the Parliament the two colonial data files give them, and runs before the loaders and `apply_speaker_overrides.py` read the changed files. `data/unscraped_members.json` holds the Parliament 13 row of Lee Li Lian, who declined the seat the Hansard still lists her for, so the scrape omits her; `scripts/load_colonial_la_speakers.py` reads it with the colonial file and inserts it after the Parliament moves, and `scripts/clean_attendance.py` needs it to link her six attendance rows. A few members changed party inside one Parliament while a `Speaker` row holds only the ballot party, so `data/party_affiliations.json` records their dated party history; run `python -m scripts.load_party_affiliations` once the `Speaker` table is final (after `apply_speaker_parliaments.py`, the loaders and `apply_speaker_overrides.py`), because it finds each Membership by name and Parliament and refuses unless the stored party is one of the spans' parties.
+
+### Daily refresh
+
+`refresh.py` runs `populate/refresh_runs.py` once a day. It only adds rows: new raw report and sitting rows, their reports, speech rows, sittings and attendance, with stage 8 run on the new rows only. It never re-parses or rewrites a stored row. It halts, writing no data, on a new Parliament number, on a field the mapping loses, or when more than 5% of the new named speech rows have no registry link. Each run is one `refresh_run` row with its counts and status. A scheduled run cannot commit a `docs/figures/` file, so a run that adds speech rows stores the figures in `refresh_run.figures` instead; supervised writes still commit theirs. See `docs/refresh.md`.
 
 ### Sitting date API — two formats
 
@@ -155,6 +167,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `trace_speaker_links.py`: read-only regression guard for stage 8 speech links: re-runs the resolver per key and compares with stored `speaker_id`
 - `expand_sample.py`: expands the stratified speech sample in `docs/speech-speaker/sample.json`
 - `validate_api_field_mapping.py`: checks that every non-null field in a live or synthetic API body survives the schema and the ORM mapping
+- `load_parliament_speakers.py`: stores the members of one Parliament (`--parliament N`) that the `Speaker` table lacks, from parliament.gov.sg, with the overrides of `data/speaker_overrides.json`; a dry run unless `--commit`
 
 `plans/speech-fidelity-loop/bin/` holds the tools for rewriting stored speech rows: `dryrun_fix.py` and `dryrun_subset.py` compare the parser against a frozen previous copy, `plan_*.py` build the update plan, `apply_fix*.py` and `ship_delta*.py` write it. Run them only for a planned write.
 
@@ -166,10 +179,12 @@ Scripts log through `logs.logger`; the one script whose stdout is data (`find_pr
 hansard-scraper/
 │
 ├── script.py                        # Pipeline orchestrator — runs all populate stages in order
+├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
-├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system)
-├── exceptions.py                    # HansardError / HansardGatewayError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError
+├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus
+├── exceptions.py                    # HansardError / HansardGatewayError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshRunError
 ├── logs.py                          # Loguru logger initialisation
+├── Dockerfile                       # Image for the scheduled refresh job; runs python refresh.py
 │
 ├── schemas/                         # Pydantic validation models (API shapes, not DB)
 │   ├── hansard_search_result.py    # HansardSearchResult — camelCase alias support
@@ -186,7 +201,9 @@ hansard-scraper/
 │   ├── hansard_search.py           # Paginated Hansard full-text search
 │   ├── hansard_topic.py            # Fetch report HTML by ID (sync + async)
 │   ├── hansard_report.py           # Fetch sitting metadata by date (sync + async)
-│   └── speakers_by_parliament.py    # Scrape speaker roster from parliament.gov.sg
+│   ├── speakers_by_parliament.py    # Scrape speaker roster from parliament.gov.sg, all Parliaments or one
+│   ├── telegram.py                  # Send one Telegram alert message
+│   └── healthchecks.py              # Send one healthchecks.io ping
 │
 ├── services/                        # Business logic — transforms raw data into entities
 │   ├── hansard_website.py          # Pure transform: (HansardSearchResult, html_content) → HansardWebsiteResponse
@@ -199,6 +216,9 @@ hansard-scraper/
 │   ├── person.py                    # Speaker rows → person clusters (name normalisation + review decisions)
 │   ├── role_context.py              # Chairman, Deputy Speaker and carried-role names per speech row
 │   ├── party_affiliation.py         # Party affiliation file + Speaker rows → PartyAffiliation rows; picks the rows not yet stored
+│   ├── api_field_mapping.py         # Fields an API body loses on its way to a row (the refresh halt and validate_api_field_mapping.py)
+│   ├── attribution.py               # Speech row categories and the figures JSON for refresh_run.figures
+│   ├── refresh.py                   # Refresh rules: dates, halt checks and alert text
 │   └── speaker.py                   # SpeakerResult → Speaker DB entity
 │
 ├── database/                        # SQLModel table definitions
@@ -211,6 +231,7 @@ hansard-scraper/
 │   ├── attendance.py                # One row per name per sitting + speaker_id FK
 │   ├── person.py                    # Person: one row per clustered identity
 │   ├── party_affiliation.py         # PartyAffiliation: dated party history within a Membership + speaker_id FK
+│   ├── refresh_run.py               # RefreshRun: one row per refresh run, its counts, figures and status
 │   └── speaker.py                   # Speaker: name, party, parliament number, LA flag, person_id FK
 │
 ├── crud/                            # DB read/write helpers (one file per table)
@@ -222,6 +243,7 @@ hansard-scraper/
 │   ├── attendance.py
 │   ├── person.py
 │   ├── party_affiliation.py
+│   ├── refresh_run.py               # Run rows, with a row lock for the finish
 │   └── speaker.py
 │
 ├── populate/                        # Pipeline stages — fetch + persist each entity type
@@ -237,6 +259,8 @@ hansard-scraper/
 │   ├── speaker_links.py             # Stage 8: resolve names → set speaker_id on Speech + Attendance
 │   ├── speaker_resolution_constants.py  # Reference tables for stage 8 (role terms, office holders)
 │   ├── persons.py                   # Stage 9: cluster Speaker rows into Person rows
+│   ├── attribution_figures.py       # Reads report and speech rows into the attribution figures
+│   ├── refresh_runs.py              # Daily refresh: fetch, check, add rows, link, record the run, alert
 │   └── speakers.py                  # Out-of-band: persist scraped Speaker records
 │
 ├── utils/                           # Shared pure utilities (no DB, no HTTP)
@@ -277,5 +301,6 @@ hansard-scraper/
     ├── clean_attendance.py
     ├── apply_speaker_parliaments.py
     ├── apply_speaker_links.py
-    └── load_party_affiliations.py
+    ├── load_party_affiliations.py
+    └── load_parliament_speakers.py
 ```
