@@ -130,6 +130,7 @@ def test_gathered_requests_go_one_at_a_time_two_seconds_apart(fake_clock: _FakeC
     asyncio.run(_post_gathered_requests(_get_async_handler(fake_clock, recorded_requests, [_HTTP_OK])))
 
     assert len(recorded_requests) == _GATHERED_REQUEST_COUNT
+    assert all(recorded_request.user_agent == CRAWL_USER_AGENT for recorded_request in recorded_requests)
     _assert_paced(recorded_requests)
 
 
@@ -168,15 +169,6 @@ def test_a_failed_request_still_counts_toward_the_gap(fake_clock: _FakeClock) ->
     with paced_request():
         started_at = fake_clock.now
     assert started_at - _REQUEST_SECONDS >= CRAWL_GAP_SECONDS
-
-
-def test_async_requests_send_the_user_agent(fake_clock: _FakeClock) -> None:
-    recorded_requests: list[_RecordedRequest] = []
-
-    asyncio.run(_post_gathered_requests(_get_async_handler(fake_clock, recorded_requests, [_HTTP_OK])))
-
-    assert len(recorded_requests) == _GATHERED_REQUEST_COUNT
-    assert all(recorded_request.user_agent == CRAWL_USER_AGENT for recorded_request in recorded_requests)
 
 
 def test_sync_gateways_send_the_user_agent_and_are_paced(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
