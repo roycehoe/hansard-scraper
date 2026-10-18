@@ -12,7 +12,7 @@ from services.speaker import build_speaker
 _SPEAKER_OVERRIDES_FILE = Path(__file__).parent.parent / "data" / "speaker_overrides.json"
 
 
-def _load_name_parliament_to_is_legislative_assembly() -> dict[tuple[str, int], bool]:
+def load_name_parliament_to_is_legislative_assembly() -> dict[tuple[str, int], bool]:
     speaker_overrides = SpeakerOverrides.model_validate(json.loads(_SPEAKER_OVERRIDES_FILE.read_text()))
     return {
         (override.name, override.parliament_number): override.is_legislative_assembly
@@ -20,15 +20,15 @@ def _load_name_parliament_to_is_legislative_assembly() -> dict[tuple[str, int], 
     }
 
 
-def _load_name_parliament_to_party() -> dict[tuple[str, int], str]:
+def load_name_parliament_to_party() -> dict[tuple[str, int], str]:
     speaker_overrides = SpeakerOverrides.model_validate(json.loads(_SPEAKER_OVERRIDES_FILE.read_text()))
     return {(override.name, override.parliament_number): override.party for override in speaker_overrides.party_overrides}
 
 
 def populate_speakers(session: Session) -> None:
     speakers = get_all_speakers()
-    name_parliament_to_is_legislative_assembly = _load_name_parliament_to_is_legislative_assembly()
-    name_parliament_to_party = _load_name_parliament_to_party()
+    name_parliament_to_is_legislative_assembly = load_name_parliament_to_is_legislative_assembly()
+    name_parliament_to_party = load_name_parliament_to_party()
     for i, speaker_result in enumerate(speakers, start=1):
         logger.info(f"{i}/{len(speakers)}: {speaker_result.name} (Parliament {speaker_result.parliament_number})")
         CRUDSpeaker(session).create(
