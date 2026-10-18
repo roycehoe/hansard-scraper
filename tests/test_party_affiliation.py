@@ -135,7 +135,7 @@ def test_data_file_builds_chiam_two_spans() -> None:
         for party_affiliation in party_affiliations
     ] == [
         (_ALLIANCE, date(2006, 5, 6), DatePrecision.DAY, _CHIAM_SPEAKER_ID),
-        (_PEOPLES_PARTY, date(2011, 3, 1), DatePrecision.MONTH, _CHIAM_SPEAKER_ID),
+        (_PEOPLES_PARTY, date(2011, 3, 2), DatePrecision.DAY, _CHIAM_SPEAKER_ID),
     ]
     assert all(party_affiliation.event != "" for party_affiliation in party_affiliations)
     assert all(party_affiliation.is_started_on_upper_bound is False for party_affiliation in party_affiliations)
