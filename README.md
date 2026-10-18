@@ -2,6 +2,10 @@
 
 Pipeline and database for Singapore's parliamentary record, from the colonial Legislative Assembly (1955) to the present. Records are fetched from SPRS, parsed into individual speeches with speaker attribution, and stored in PostgreSQL.
 
+## Status
+
+The data ends on 8 April 2025. Parliament 15 is not loaded yet. Once it is, a scheduled job will add new sittings every day at 04:00 Singapore time and re-check the last 14 days of reports. If a stored report has changed, the job sends an alert and leaves the stored copy as it is. It only adds rows.
+
 ## Coverage
 
 All figures below were queried from the database on 14 October 2026, after the load of report text and sitting details from 10 September 2012 on (16,123 newer-system reports filled with text, 3,880 skipped search hits inserted, 386 sittings filled, 38,572 attendance rows built from the structured list), then stage 8 and the person stage. The database itself is not published.
@@ -53,7 +57,7 @@ python scripts/load_colonial_la_speakers.py   # for pre-independence LA members
 
 ## Data source
 
-Records come from the Parliament of Singapore's Parliament Reports search system (SPRS) and the MP lists on parliament.gov.sg. The content belongs to Parliament. This project is not affiliated with or endorsed by Parliament. Parliament's [terms of use](https://www.parliament.gov.sg/terms-of-use) require written permission to reproduce its content, so check them before republishing anything the pipeline fetches. The fetcher caps concurrent requests and backs off on HTTP 429.
+Records come from the Parliament of Singapore's Parliament Reports search system (SPRS) and the MP lists on parliament.gov.sg. The content belongs to Parliament. This project is not affiliated with or endorsed by Parliament. Parliament's [terms of use](https://www.parliament.gov.sg/terms-of-use) require written permission to reproduce its content, so check them before republishing anything the pipeline fetches. The fetcher sends one request at a time and waits at least 2 seconds between requests, retries included. It identifies itself as `hansard-scraper (+hansard@fancybinary.sg)` and backs off further on HTTP 429.
 
 ## Citation
 
