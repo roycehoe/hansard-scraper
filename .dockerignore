@@ -1,0 +1,16 @@
+.env
+.envrc
+.git
+.github
+.venv
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.claude
+**/__pycache__
+plans
+tests
+docs
+*.log
+statistics.csv
+sample.json

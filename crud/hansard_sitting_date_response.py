@@ -13,6 +13,10 @@ class CRUDHansardSittingDateResponse:
         self.session.add(response)
         self.session.commit()
 
+    def add_many(self, responses: list[HansardSittingDateResponse]) -> None:
+        self.session.add_all(responses)
+        self.session.flush()
+
     def update(self, response: HansardSittingDateResponse) -> None:
         self.session.add(response)
         self.session.flush()

@@ -1,0 +1,98 @@
+Parliaments 0 to 11: 4 reports with markdown, 3 with speech rows, 10 speech rows
+1. ADR 0001 rate:  3 / 5 = 60.00%
+2. All-rows rate:  3 / 10 = 30.00%
+3. Text share:     157 / 395 chars = 39.75%
+Where the body text goes (chars, share of body):
+  linked rows                                                               157  39.75%
+  named but unlinked rows                                                    57  14.43%
+  ADR-excluded rows (hon. Members, stage directions)                         38   9.62%
+  rows with no speaker                                                       74  18.73%
+  reports with no rows                                                       41  10.38%
+  dropped inside reports with rows (preamble, headings, labels)              28   7.09%
+Rows by category: {'linked': 3, 'named_unlinked': 2, 'adr_excluded': 2, 'no_speaker': 3}
+Parliament 12, beside the headline:
+1. ADR 0001 rate:  3 / 5 = 60.00%
+2. All-rows rate:  3 / 9 = 33.33%
+3. Text share:     199 / 369 chars = 53.93%
+Parliament 13, beside the headline:
+1. ADR 0001 rate:  2 / 4 = 50.00%
+2. All-rows rate:  2 / 8 = 25.00%
+3. Text share:     123 / 293 chars = 41.98%
+Parliament 14, beside the headline:
+1. ADR 0001 rate:  2 / 4 = 50.00%
+2. All-rows rate:  2 / 8 = 25.00%
+3. Text share:     118 / 250 chars = 47.20%
+Parliaments 0 to 11, by report type:
+  motion: 2 reports
+    1. ADR 0001 rate:  2 / 3 = 66.67%
+    2. All-rows rate:  2 / 6 = 33.33%
+    3. Text share:     89 / 195 = 45.64% chars
+    Zero-row reports:  0 / 2 = 0.00%
+    Single-speaker collapses, reports: 0 / 2 = 0.00%
+    Single-speaker collapses, body chars: 0 / 195 = 0.00%
+  oral-answer: 1 reports
+    1. ADR 0001 rate:  1 / 2 = 50.00%
+    2. All-rows rate:  1 / 4 = 25.00%
+    3. Text share:     68 / 159 = 42.77% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 159 = 0.00%
+  written-answer: 1 reports
+    1. ADR 0001 rate:  0 / 0 = n/a
+    2. All-rows rate:  0 / 0 = n/a
+    3. Text share:     0 / 41 = 0.00% chars
+    Zero-row reports:  1 / 1 = 100.00%
+    Single-speaker collapses, reports: 0 / 0 = n/a
+    Single-speaker collapses, body chars: 0 / 41 = 0.00%
+Parliament 12, by report type:
+  motion: 1 reports
+    1. ADR 0001 rate:  1 / 2 = 50.00%
+    2. All-rows rate:  1 / 4 = 25.00%
+    3. Text share:     64 / 169 = 37.87% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 169 = 0.00%
+  oral-answer: 1 reports
+    1. ADR 0001 rate:  1 / 2 = 50.00%
+    2. All-rows rate:  1 / 4 = 25.00%
+    3. Text share:     65 / 130 = 50.00% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 130 = 0.00%
+  written-answer: 1 reports
+    1. ADR 0001 rate:  1 / 1 = 100.00%
+    2. All-rows rate:  1 / 1 = 100.00%
+    3. Text share:     70 / 70 = 100.00% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 1 / 1 = 100.00%
+    Single-speaker collapses, body chars: 70 / 70 = 100.00%
+Parliament 13, by report type:
+  motion: 1 reports
+    1. ADR 0001 rate:  1 / 2 = 50.00%
+    2. All-rows rate:  1 / 4 = 25.00%
+    3. Text share:     46 / 148 = 31.08% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 148 = 0.00%
+  oral-answer: 1 reports
+    1. ADR 0001 rate:  1 / 2 = 50.00%
+    2. All-rows rate:  1 / 4 = 25.00%
+    3. Text share:     77 / 145 = 53.10% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 145 = 0.00%
+Parliament 14, by report type:
+  motion: 1 reports
+    1. ADR 0001 rate:  1 / 2 = 50.00%
+    2. All-rows rate:  1 / 4 = 25.00%
+    3. Text share:     61 / 121 = 50.41% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 121 = 0.00%
+  oral-answer: 1 reports
+    1. ADR 0001 rate:  1 / 2 = 50.00%
+    2. All-rows rate:  1 / 4 = 25.00%
+    3. Text share:     57 / 129 = 44.19% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 129 = 0.00%

@@ -1,0 +1,793 @@
+[
+ {
+  "name": "Abdul Samad",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Alex Yam Ziming",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Syed Harun Alhabsyi",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Alvin Tan",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Janet Ang",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Ang Wei Neng",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Baey Yam Keng",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Cheryl Chan Wei Ling",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Chan Chun Sing",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Usha Chandradas",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Mark Chay",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Chee Hong Tat",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Cheng Hsing Yao",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Cheng Li Hui",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Chong Kee Hiong",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Christopher de Souza",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Keith Chua",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Chua Kheng Wee Louis",
+  "party": "Workers' Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Darryl David",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Denise Phua Lay Peng",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Dennis Tan Lip Fong",
+  "party": "Workers' Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Desmond Choo",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Desmond Lee",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Desmond Tan",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Edward Chia Bing Hui",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Edwin Tong Chun Fai",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Eric Chua",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Foo Mee Har",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Gan Thiam Poh",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Gan Kim Yong",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Gan Siow Huang",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Gerald Giam Yean Song",
+  "party": "Workers' Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Derrick Goh",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Grace Fu Hai Yien",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Hany Soh",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "He Ting Ru",
+  "party": "Workers' Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Heng Chee How",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Heng Swee Keat",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Hoon Hian Teck",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Indranee Rajah",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "S Iswaran",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Jamus Jerome Lim",
+  "party": "Workers' Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Janil Puthucheary",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Jessica Tan Soon Neo",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Joan Pereira",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Josephine Teo",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "K Shanmugam",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Amy Khor Lean Suan",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Koh Lian Pin",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Koh Poh Koon",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Kwek Hian Chuan Henry",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Lawrence Wong",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Lee Hsien Loong",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Leong Mun Wai",
+  "party": "Progress Singapore Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Liang Eng Hwa",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Lim Biow Chuan",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Lim Wee Kiak",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Low Yen Ling",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Mariam Jaafar",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Mark Lee",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Masagos Zulkifli Bin Masagos Mohamad",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Melvin Yong Yik Chye",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Mohamad Maliki Bin Osman",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Mohd Fahmi Bin Aliman",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Muhamad Faisal Bin Abdul Manap",
+  "party": "Workers' Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Muhammad Faishal Ibrahim",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Murali Pillai",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Nadia Ahmad Samdin",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Ng Eng Hen",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Ng Ling Ling",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Louis Ng Kok Kwang",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Ong Hua Han",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Ong Ye Kung",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Neil Parekh Nimil Rajnikant",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Patrick Tay Teck Guan",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Leon Perera",
+  "party": "Workers' Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Hazel Poa",
+  "party": "Progress Singapore Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Poh Li San",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Pritam Singh",
+  "party": "Workers' Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Rachel Ong",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Raeesah Khan",
+  "party": "Workers' Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Rahayu Mahzam",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Razwana Begum Abdul Rahim",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Saktiandi Supaat",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Seah Kian Peng",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "See Jinli Jean",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Shahira Abdullah",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Sharael Taha",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Shawn Huang Wei Zhong",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Sim Ann",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Sitoh Yih Pin",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Sun Xueling",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Sylvia Lim",
+  "party": "Workers' Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Carrie Tan",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Tan Chuan-Jin",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Tan Wu Meng",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Tan Yia Swam",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Tan Kiat How",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Tan See Leng",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Teo Chee Hean",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Tharman Shanmugaratnam",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Raj Joshua Thomas",
+  "party": "Nominated Member of Parliament",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Tin Pei Ling",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Vikram Nair",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Vivian Balakrishnan",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Wan Rizal",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Don Wee",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Xie Yao Quan",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Yeo Wan Ling",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Yip Hon Weng",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Zaqy Mohamad",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Zhulkarnain Abdul Rahim",
+  "party": "People's Action Party",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": true
+ },
+ {
+  "name": "Halimah Yacob",
+  "party": "Non-partisan",
+  "is_legislative_assembly": false,
+  "parliament_number": 14,
+  "is_member": false
+ }
+]

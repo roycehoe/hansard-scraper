@@ -41,6 +41,7 @@ DEPUTY_SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
 DEPUTY_SPEAKER_WOMEN: frozenset[str] = frozenset({"Lim Hwee Hua", "Indranee Rajah", "Jessica Tan Soon Neo"})
 
 # NOTE: sources disagree on whether Lim Yew Hock took over on 7 or 8 June 1956. The sitting of 7 June names David Marshall as Chief Minister throughout (its attendance list and the header of every report he speaks in), so his term runs through that day. Prime Minister handovers fell on days without a sitting.
+# Sources: Al Jazeera 15 May 2024; pmo.gov.sg
 DATED_ROLE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
     "The Chief Minister": (
         (date(1955, 4, 6), date(1956, 6, 7), "David Marshall"),
@@ -50,10 +51,12 @@ DATED_ROLE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
         (date(1959, 6, 5), date(1990, 11, 27), "Lee Kuan Yew"),
         (date(1990, 11, 28), date(2004, 8, 11), "Goh Chok Tong"),
         (date(2004, 8, 12), date(2024, 5, 14), "Lee Hsien Loong"),
+        # TODO: set the end date when the term ends
+        (date(2024, 5, 15), date.max, "Lawrence Wong"),
     ),
 }
 
-# Sources: Wikipedia day-level dates, citing NewspaperSG
+# Sources: Wikipedia day-level dates citing NewspaperSG, Straits Times
 HEAD_OF_STATE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
     "His Excellency the Governor": (
         (date(1952, 4, 21), date(1955, 6, 1), "John Nicoll"),
@@ -74,6 +77,8 @@ HEAD_OF_STATE_TERMS: dict[str, tuple[tuple[date, date, str], ...]] = {
         (date(1999, 9, 1), date(2011, 8, 31), "S R Nathan"),
         (date(2011, 9, 1), date(2017, 8, 31), "Tan Keng Yam, Tony"),
         (date(2017, 9, 14), date(2023, 9, 13), "Halimah Yacob"),
+        # TODO: set the end date when the term ends
+        (date(2023, 9, 14), date.max, "Tharman Shanmugaratnam"),
     ),
 }
 

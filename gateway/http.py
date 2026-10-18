@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager, contextmanager
 from typing import Optional
 
 import httpx
+import requests
 
 CRAWL_GAP_SECONDS = 2.0
 CRAWL_USER_AGENT = "hansard-scraper (+hansard@fancybinary.sg)"
@@ -84,13 +85,35 @@ def _is_transient_failure(response: httpx.Response) -> bool:
     return response.status_code == _HTTP_BAD_REQUEST and _TRANSIENT_BAD_REQUEST_TEXT in response.text
 
 
+def _get_backoff_seconds(attempt: int) -> float:
+    return _BASE_DELAY * (2 ** attempt) + random.uniform(0, 1)
+
+
 async def async_post_with_retry(client: httpx.AsyncClient, url: str, json: Optional[dict] = None) -> httpx.Response:
     for attempt in range(_MAX_RETRIES + 1):
-        async with paced_request_async():
-            response = await client.post(url, json=json, headers=CRAWL_HEADERS)
+        try:
+            async with paced_request_async():
+                response = await client.post(url, json=json, headers=CRAWL_HEADERS)
+        except httpx.TransportError:
+            if attempt == _MAX_RETRIES:
+                raise
+            await CRAWL_PACER.async_sleep(_get_backoff_seconds(attempt))
+            continue
         if not _is_transient_failure(response):
             return response
         if attempt == _MAX_RETRIES:
             response.raise_for_status()
-        delay = _BASE_DELAY * (2 ** attempt) + random.uniform(0, 1)
-        await CRAWL_PACER.async_sleep(delay)
+        await CRAWL_PACER.async_sleep(_get_backoff_seconds(attempt))
+
+
+def send_with_retry(send_request: Callable[[], requests.Response]) -> requests.Response:
+    for attempt in range(_MAX_RETRIES):
+        try:
+            with paced_request():
+                return send_request()
+        except requests.exceptions.ConnectionError:
+            CRAWL_PACER.sleep(_get_backoff_seconds(attempt))
+        except requests.exceptions.Timeout:
+            CRAWL_PACER.sleep(_get_backoff_seconds(attempt))
+    with paced_request():
+        return send_request()

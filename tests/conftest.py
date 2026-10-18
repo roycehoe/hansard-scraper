@@ -1,11 +1,13 @@
 import os
 import socket
-from collections.abc import Callable
+import uuid
+from collections.abc import Callable, Iterator
 from typing import cast
 
 import pytest
-from sqlalchemy import event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import Engine, make_url
+from sqlmodel import Session, SQLModel
 
 from exceptions import HansardTestGuardError
 
@@ -22,11 +24,23 @@ os.environ["no_proxy"] = "*"
 os.environ["DATABASE_URL"] = _SCRATCH_DATABASE_URL
 
 # NOTE: settings is imported below the assignment so it reads the scratch URL and never a .env URL
+import database.attendance  # noqa: F401 registers the table for create_all
+import database.hansard_sitting_date_response  # noqa: F401 registers the table for create_all
+import database.hansard_website_response  # noqa: F401 registers the table for create_all
+import database.party_affiliation  # noqa: F401 registers the table for create_all
+import database.person  # noqa: F401 registers the table for create_all
+import database.refresh_run  # noqa: F401 registers the table for create_all
+import database.report  # noqa: F401 registers the table for create_all
+import database.sitting  # noqa: F401 registers the table for create_all
+import database.speaker  # noqa: F401 registers the table for create_all
+import database.speech  # noqa: F401 registers the table for create_all
 from settings import settings
 
 _LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 _SCRATCH_PORT = 5435
 _SCRATCH_DATABASE = "hansard_launch"
+_TEST_SCHEMA_PREFIX = "test_"
+_TEST_SCHEMA_SUFFIX_LENGTH = 12
 
 
 def _validate_can_use_database_url(database_url: str) -> None:
@@ -99,3 +113,43 @@ socket.socket.connect = _connect_to_loopback
 socket.socket.connect_ex = _connect_ex_to_loopback
 socket.create_connection = _create_loopback_connection
 socket.getaddrinfo = _get_loopback_address_info
+
+
+def _validate_can_use_test_schema(engine: Engine, schema: str) -> None:
+    with engine.connect() as connection:
+        statement = text("SELECT table_name FROM information_schema.tables WHERE table_schema = :schema")
+        table_names = set(connection.execute(statement, {"schema": schema}).scalars())
+    if table_names != {table.name for table in SQLModel.metadata.sorted_tables}:
+        raise HansardTestGuardError(f"Test schema {schema} does not hold every table")
+
+
+@pytest.fixture(scope="session")
+def scratch_engine() -> Iterator[Engine]:
+    schema = f"{_TEST_SCHEMA_PREFIX}{uuid.uuid4().hex[:_TEST_SCHEMA_SUFFIX_LENGTH]}"
+    admin_engine = create_engine(_SCRATCH_DATABASE_URL)
+    with admin_engine.begin() as connection:
+        connection.execute(text("CREATE EXTENSION IF NOT EXISTS rum"))
+        connection.execute(text(f'CREATE SCHEMA "{schema}"'))
+    engine = create_engine(_SCRATCH_DATABASE_URL, connect_args={"options": f"-csearch_path={schema},public"})
+    try:
+        # NOTE: a checked create sees public's tables through the search path and would create nothing
+        SQLModel.metadata.create_all(engine, checkfirst=False)
+        _validate_can_use_test_schema(engine, schema)
+        yield engine
+    finally:
+        engine.dispose()
+        with admin_engine.begin() as connection:
+            connection.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
+        admin_engine.dispose()
+
+
+@pytest.fixture
+def scratch_session(scratch_engine: Engine) -> Iterator[Session]:
+    with Session(scratch_engine) as session:
+        yield session
+    with scratch_engine.begin() as connection:
+        schema = connection.execute(text("SELECT current_schema()")).scalar_one()
+        if not schema.startswith(_TEST_SCHEMA_PREFIX):
+            raise HansardTestGuardError(f"Tests refuse to empty schema {schema}")
+        table_names = ", ".join(f'"{schema}"."{table.name}"' for table in SQLModel.metadata.sorted_tables)
+        connection.execute(text(f"TRUNCATE {table_names} RESTART IDENTITY CASCADE"))

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Iterable, Optional
 
 from sqlalchemy import text
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col, func, select
 
 from database.sitting import Sitting
 
@@ -39,6 +39,10 @@ class CRUDSitting:
         self.session.add_all(sittings)
         self.session.commit()
 
+    def add_many(self, sittings: list[Sitting]) -> None:
+        self.session.add_all(sittings)
+        self.session.flush()
+
     def update(self, sitting: Sitting) -> None:
         self.session.add(sitting)
         self.session.flush()
@@ -59,6 +63,10 @@ class CRUDSitting:
         statement = select(Sitting.sitting_date)
         sitting_dates = self.session.exec(statement).all()
         return {sitting_date for sitting_date in sitting_dates if sitting_date is not None}
+
+    def get_max_parlement_no(self) -> Optional[int]:
+        statement = select(func.max(Sitting.parlement_no))
+        return self.session.exec(statement).one()
 
     def get_markdown_by_dates(self, dates: list[str]) -> dict[str, str]:
         statement = (

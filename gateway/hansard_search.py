@@ -2,12 +2,13 @@ import calendar
 import time
 from collections.abc import Iterator
 from datetime import date
+from functools import partial
 from typing import Optional
 
 import requests
 
 from exceptions import HansardGatewayError
-from gateway.http import CRAWL_HEADERS, paced_request
+from gateway.http import CRAWL_HEADERS, send_with_retry
 from logs import logger
 from schemas.hansard_search_result import HansardSearchResult
 from settings import settings
@@ -18,6 +19,7 @@ _MAX_PASSES = 25
 _HTTP_BAD_REQUEST = 400
 _HTTP_INTERNAL_SERVER_ERROR = 500
 _DECEMBER = 12
+_REQUEST_TIMEOUT_SECONDS = 60
 
 
 def get_hansard_search_results(
@@ -52,8 +54,15 @@ def get_hansard_search_results(
     }
     page = start_index // settings.search_page_size + 1
     try:
-        with paced_request():
-            response = requests.post(url=settings.hansard_search_url, json=query_dict, headers=CRAWL_HEADERS)
+        response = send_with_retry(
+            partial(
+                requests.post,
+                url=settings.hansard_search_url,
+                json=query_dict,
+                headers=CRAWL_HEADERS,
+                timeout=_REQUEST_TIMEOUT_SECONDS,
+            )
+        )
         if (
             response.status_code == _HTTP_BAD_REQUEST or response.status_code == _HTTP_INTERNAL_SERVER_ERROR
         ) and "No Results Found" in response.text:
@@ -113,11 +122,11 @@ def get_window_hansard_search_results(from_date: date, to_date: date) -> list[Ha
     return list(report_id_to_hit.values())
 
 
-def get_all_hansard_search_results() -> list[HansardSearchResult]:
+def get_all_hansard_search_results(from_date: date, to_date: date) -> list[HansardSearchResult]:
     all_hansard_search_results = []
-    for from_date, to_date in _get_months(settings.search_from_date, settings.search_to_date):
-        window_hansard_search_results = get_window_hansard_search_results(from_date, to_date)
+    for window_from_date, window_to_date in _get_months(from_date, to_date):
+        window_hansard_search_results = get_window_hansard_search_results(window_from_date, window_to_date)
         all_hansard_search_results.extend(window_hansard_search_results)
-        logger.info(f"Fetched {from_date:%Y-%m}: {len(window_hansard_search_results)} distinct hits")
+        logger.info(f"Fetched {window_from_date:%Y-%m}: {len(window_hansard_search_results)} distinct hits")
     logger.info(f"Search done: {len(all_hansard_search_results)} distinct hits")
     return all_hansard_search_results

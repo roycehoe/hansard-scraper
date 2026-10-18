@@ -22,5 +22,13 @@ class HansardPartyAffiliationError(HansardError):
     pass
 
 
+class HansardRefreshHaltError(HansardError):
+    pass
+
+
+class HansardRefreshRunError(HansardError):
+    pass
+
+
 class HansardTestGuardError(HansardError):
     pass

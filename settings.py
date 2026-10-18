@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,6 +22,10 @@ class AppSettings(BaseSettings):
 
     search_from_date: date = date(2012, 1, 1)
     search_to_date: date = date(2025, 4, 8)
+
+    telegram_bot_token: Optional[str] = None
+    telegram_chat_id: Optional[str] = None
+    healthchecks_ping_url: Optional[str] = None
 
 
 settings = AppSettings()

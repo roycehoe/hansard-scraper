@@ -21,6 +21,7 @@ from services.hansard_website import (
     get_topic_html_content,
     get_topic_id,
 )
+from settings import settings
 
 _HTTP_TIMEOUT_SECONDS = 60
 _EXCLUDED_REPORT_IDS_FILE = Path(__file__).parent.parent / "data" / "excluded_report_ids.json"
@@ -75,7 +76,7 @@ async def _fetch_all(search_results: list[HansardSearchResult]) -> list[HansardW
 
 
 def populate_hansard_responses(session: Session) -> None:
-    all_search_results = get_all_hansard_search_results()
+    all_search_results = get_all_hansard_search_results(settings.search_from_date, settings.search_to_date)
     existing_report_ids = CRUDHansardWebsiteResponse(session).get_all_report_ids()
     # NOTE: the search can return one hit twice, so keep the first hit per report_id.
     report_id_to_first_search_result = {}

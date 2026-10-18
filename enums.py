@@ -56,3 +56,10 @@ class AttendanceCleanupReason(StrEnum):
 class DatePrecision(StrEnum):
     DAY = "DAY"
     MONTH = "MONTH"
+
+
+class RefreshRunStatus(StrEnum):
+    RUNNING = "RUNNING"
+    SUCCEEDED = "SUCCEEDED"
+    HALTED = "HALTED"
+    FAILED = "FAILED"
