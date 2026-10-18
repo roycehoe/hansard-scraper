@@ -1,5 +1,953 @@
 [
   {
+    "name": "Ahmad Bin Ibrahim",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Independent",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Sembawang as an Independent Candidate at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "People's Action Party",
+        "started_on": "1957-09-12",
+        "started_on_precision": "DAY",
+        "event": "Called the People's Action Party his party in the House on 12 September 1957.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 40719
+      }
+    ]
+  },
+  {
+    "name": "Chew Swee Kee",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Labour Front",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Whampoa for the Labour Front at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Singapore People's Alliance",
+        "started_on": "1959-03-19",
+        "started_on_precision": "DAY",
+        "event": "Francis Thomas told the House on 19 March 1959 that Chew Swee Kee had been Minister for Education of the Singapore People's Alliance and a member of the party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39918
+      }
+    ]
+  },
+  {
+    "name": "David Marshall",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Labour Front",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Cairnhill for the Labour Front at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Workers' Party",
+        "started_on": "1961-07-15",
+        "started_on_precision": "DAY",
+        "event": "Resigned the Cairnhill seat in a letter the Speaker received on 30 April 1957, then won Anson for the Workers' Party at the by-election of 15 July 1961.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_by1961a.html"
+      },
+      {
+        "party": "Independent",
+        "started_on": "1963-07-31",
+        "started_on_precision": "DAY",
+        "event": "Left the Workers' Party, as Tun Lim Yew Hock told the House on 31 July 1963.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 38392
+      }
+    ]
+  },
+  {
+    "name": "Fung Yin Ching",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Stamford for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Barisan Sosialis",
+        "started_on": "1961-11-29",
+        "started_on_precision": "DAY",
+        "event": "Spoke for the Barisan Sosialis as her own party in the House on 29 November 1961, after leaving the People's Action Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39107
+      }
+    ]
+  },
+  {
+    "name": "Goh Tong Liang",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Singapore Progressive Party",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Bukit Panjang for the Singapore Progressive Party at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Liberal Socialist Party",
+        "started_on": "1956-02-08",
+        "started_on_precision": "DAY",
+        "event": "The Singapore Progressive Party and the Democratic Party merged into the Liberal Socialist Party, as Lim Choon Mong told the House on 8 February 1956.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 41410
+      },
+      {
+        "party": "Singapore People's Alliance",
+        "started_on": "1959-04-25",
+        "started_on_precision": "DAY",
+        "event": "Was nominated for the Singapore People's Alliance at Choa Chu Kang on 25 April 1959 for the 1959 general election.",
+        "is_started_on_upper_bound": true,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      }
+    ]
+  },
+  {
+    "name": "Hoe Puay Choo",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Bras Basah for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Independent",
+        "started_on": "1962-07-04",
+        "started_on_precision": "DAY",
+        "event": "Told the House on 4 July 1962 that she had conveyed her intention to leave the People's Action Party to its Chairman the day before.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 38717
+      }
+    ]
+  },
+  {
+    "name": "John Ede",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Singapore Progressive Party",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Tanglin for the Singapore Progressive Party at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Liberal Socialist Party",
+        "started_on": "1956-02-08",
+        "started_on_precision": "DAY",
+        "event": "The Singapore Progressive Party and the Democratic Party merged into the Liberal Socialist Party, as Lim Choon Mong told the House on 8 February 1956.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 41410
+      }
+    ]
+  },
+  {
+    "name": "Jumabhoy, J.M.",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Labour Front",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Stamford for the Labour Front at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Singapore People's Alliance",
+        "started_on": "1959-04-25",
+        "started_on_precision": "DAY",
+        "event": "Was nominated for the Singapore People's Alliance at Stamford on 25 April 1959 for the 1959 general election.",
+        "is_started_on_upper_bound": true,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      }
+    ]
+  },
+  {
+    "name": "Jumabhoy, R.",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Independent",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Telok Ayer as an Independent Candidate at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Liberal Socialist Party",
+        "started_on": "1956-02-08",
+        "started_on_precision": "DAY",
+        "event": "Told the House on 8 February 1956 that he was one of the members of the Liberal Socialist Party, formed by the merger of the Singapore Progressive Party and the Democratic Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 41410
+      }
+    ]
+  },
+  {
+    "name": "Koh, C.H.",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Singapore People's Alliance",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Joo Chiat for the Singapore People's Alliance at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Independent",
+        "started_on": "1960-08-03",
+        "started_on_precision": "DAY",
+        "event": "The Prime Minister called him the former Singapore People's Alliance Member for Joo Chiat on 3 August 1960.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39548
+      }
+    ]
+  },
+  {
+    "name": "Lazarous, A.R.",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Labour Front",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Farrer Park for the Labour Front at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Independent",
+        "started_on": "1956-11-06",
+        "started_on_precision": "DAY",
+        "event": "Francis Thomas told the House on 6 November 1956 that he had left the Labour Front and crossed to the Opposition.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 41191
+      }
+    ]
+  },
+  {
+    "name": "Lee Choon Eng",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Labour Front",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Queenstown for the Labour Front at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Independent",
+        "started_on": "1957-03-05",
+        "started_on_precision": "DAY",
+        "event": "Spoke in the House on 5 March 1957 of the five Independents and of his own claim for a place at the All-Party Conference.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 40942
+      },
+      {
+        "party": "Singapore People's Alliance",
+        "started_on": "1958-12-12",
+        "started_on_precision": "DAY",
+        "event": "Lee Kuan Yew told the House on 12 December 1958 that the Member for Queenstown had just joined the Singapore People's Alliance.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 40110
+      },
+      {
+        "party": "Independent",
+        "started_on": "1959-04-25",
+        "started_on_precision": "DAY",
+        "event": "Was nominated as an Independent Candidate at Bukit Merah on 25 April 1959 for the 1959 general election.",
+        "is_started_on_upper_bound": true,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      }
+    ]
+  },
+  {
+    "name": "Lee Siew Choh",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Queenstown for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Barisan Sosialis",
+        "started_on": "1961-11-20",
+        "started_on_precision": "DAY",
+        "event": "Spoke as a member of the Barisan Sosialis in the House on 20 November 1961, after leaving the People's Action Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39138
+      }
+    ]
+  },
+  {
+    "name": "Leong Keng Seng",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Serangoon Gardens for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Barisan Sosialis",
+        "started_on": "1961-11-27",
+        "started_on_precision": "DAY",
+        "event": "Yong Nyuk Lin named him in the House on 27 November 1961 among the Barisan Sosialis representatives, after he left the People's Action Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39116
+      }
+    ]
+  },
+  {
+    "name": "Lim Cher Kheng",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Democratic Party",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Changi for the Democratic Party at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Liberal Socialist Party",
+        "started_on": "1956-02-08",
+        "started_on_precision": "DAY",
+        "event": "The Singapore Progressive Party and the Democratic Party merged into the Liberal Socialist Party, as Lim Choon Mong told the House on 8 February 1956.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 41410
+      },
+      {
+        "party": "Independent",
+        "started_on": "1956-06-06",
+        "started_on_precision": "DAY",
+        "event": "Told the House on 6 June 1956 that from that day he belonged to no political party.",
+        "is_started_on_upper_bound": false,
+        "source_report_id": 41309
+      }
+    ]
+  },
+  {
+    "name": "Lim Choon Mong",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Singapore Progressive Party",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Serangoon for the Singapore Progressive Party at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Liberal Socialist Party",
+        "started_on": "1956-02-08",
+        "started_on_precision": "DAY",
+        "event": "The Singapore Progressive Party and the Democratic Party merged into the Liberal Socialist Party, and he told the House on 8 February 1956 that he stood for the new party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 41410
+      },
+      {
+        "party": "Singapore People's Alliance",
+        "started_on": "1959-04-25",
+        "started_on_precision": "DAY",
+        "event": "Was nominated for the Singapore People's Alliance at Upper Serangoon on 25 April 1959 for the 1959 general election.",
+        "is_started_on_upper_bound": true,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      }
+    ]
+  },
+  {
+    "name": "Lim Koon Teck",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Singapore Progressive Party",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Paya Lebar for the Singapore Progressive Party at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Liberal Socialist Party",
+        "started_on": "1956-02-08",
+        "started_on_precision": "DAY",
+        "event": "The Singapore Progressive Party and the Democratic Party merged into the Liberal Socialist Party, as Lim Choon Mong told the House on 8 February 1956.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 41410
+      },
+      {
+        "party": "Singapore People's Alliance",
+        "started_on": "1959-03-19",
+        "started_on_precision": "DAY",
+        "event": "Called the Singapore People's Alliance \"our Party\" in the House on 19 March 1959.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39918
+      }
+    ]
+  },
+  {
+    "name": "Lim Yew Hock",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Labour Front",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Havelock for the Labour Front at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Singapore People's Alliance",
+        "started_on": "1959-02-11",
+        "started_on_precision": "DAY",
+        "event": "As Chief Minister, told the House on 11 February 1959 that the Singapore People's Alliance was bound to win the election.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 34816
+      }
+    ]
+  },
+  {
+    "name": "Lin You Eng",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Moulmein for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Barisan Sosialis",
+        "started_on": "1961-11-27",
+        "started_on_precision": "DAY",
+        "event": "S. Ramaswamy named him in the House on 27 November 1961 among the present Barisan Sosialis Assemblymen, after he left the People's Action Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39115
+      }
+    ]
+  },
+  {
+    "name": "Low Por Tuck",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Havelock for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Barisan Sosialis",
+        "started_on": "1961-11-27",
+        "started_on_precision": "DAY",
+        "event": "S. Ramaswamy named him in the House on 27 November 1961 among the present Barisan Sosialis Assemblymen, after he left the People's Action Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39115
+      }
+    ]
+  },
+  {
+    "name": "Mak Pak Shee",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Labour Front",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Geylang for the Labour Front at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Independent",
+        "started_on": "1959-04-25",
+        "started_on_precision": "DAY",
+        "event": "Was nominated as an Independent Candidate at Geylang East on 25 April 1959 for the 1959 general election.",
+        "is_started_on_upper_bound": true,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      }
+    ]
+  },
+  {
+    "name": "Nair, M.P.D.",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Independent",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Seletar as an Independent Candidate at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Singapore People's Alliance",
+        "started_on": "1959-04-25",
+        "started_on_precision": "DAY",
+        "event": "Was nominated for the Singapore People's Alliance at Jalan Kayu on 25 April 1959 for the 1959 general election.",
+        "is_started_on_upper_bound": true,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      }
+    ]
+  },
+  {
+    "name": "Ng Teng Kian",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Punggol for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Independent",
+        "started_on": "1960-08-04",
+        "started_on_precision": "DAY",
+        "event": "The Speaker told the House on 4 August 1960 that the Members for Hong Lim, Punggol and Aljunied were no longer members of the Government party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 34339
+      },
+      {
+        "party": "United People's Party",
+        "started_on": "1961-12-05",
+        "started_on_precision": "DAY",
+        "event": "Spoke in the House on 5 December 1961 for the United People's Party, saying one of its platforms was merger and that its members wanted a genuine merger.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39090
+      }
+    ]
+  },
+  {
+    "name": "Ong Chang Sam",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Choa Chu Kang for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Barisan Sosialis",
+        "started_on": "1961-11-28",
+        "started_on_precision": "DAY",
+        "event": "Spoke as a member of the Barisan Sosialis in the House on 28 November 1961, after leaving the People's Action Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39113
+      }
+    ]
+  },
+  {
+    "name": "Ong Eng Guan",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Hong Lim for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Independent",
+        "started_on": "1960-08-04",
+        "started_on_precision": "DAY",
+        "event": "The Speaker told the House on 4 August 1960 that the Members for Hong Lim, Punggol and Aljunied were no longer members of the Government party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 34339
+      },
+      {
+        "party": "Independent",
+        "started_on": "1961-04-29",
+        "started_on_precision": "DAY",
+        "event": "Resigned the Hong Lim seat by letter on 29 December 1960, then won it back as an Independent Candidate at the by-election of 29 April 1961.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_by1961b.html"
+      },
+      {
+        "party": "United People's Party",
+        "started_on": "1961-07-20",
+        "started_on_precision": "DAY",
+        "event": "Goh Keng Swee told the House on 20 July 1961 that Ong Eng Guan had formed the United People's Party and applied to register it.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39219
+      }
+    ]
+  },
+  {
+    "name": "Seah Peng Chuan",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Labour Front",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Kampong Kapor for the Labour Front at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Independent",
+        "started_on": "1957-12-17",
+        "started_on_precision": "DAY",
+        "event": "Described himself in the House on 17 December 1957 as one of the Independent Members.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 40578
+      },
+      {
+        "party": "Citizens' Party",
+        "started_on": "1959-04-25",
+        "started_on_precision": "DAY",
+        "event": "Was nominated for the Citizens' Party at Kallang on 25 April 1959 for the 1959 general election.",
+        "is_started_on_upper_bound": true,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      }
+    ]
+  },
+  {
+    "name": "Sheng Nam Chin",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Nee Soon for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Barisan Sosialis",
+        "started_on": "1961-11-17",
+        "started_on_precision": "DAY",
+        "event": "Spoke as a member of the Barisan Sosialis in the House on 17 November 1961, after leaving the People's Action Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39169
+      }
+    ]
+  },
+  {
+    "name": "Soh Ghee Soon",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Liberal Socialist Party",
+        "started_on": "1957-06-29",
+        "started_on_precision": "DAY",
+        "event": "Won the Cairnhill by-election of 29 June 1957 for the Liberal Socialist Party.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_by1957.html"
+      },
+      {
+        "party": "Singapore People's Alliance",
+        "started_on": "1959-03-19",
+        "started_on_precision": "DAY",
+        "event": "Said in the House on 19 March 1959 that he was a member of the Singapore People's Alliance.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39918
+      }
+    ]
+  },
+  {
+    "name": "Tan Theng Chiang",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Labour Front",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Rochore for the Labour Front at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Singapore People's Alliance",
+        "started_on": "1959-04-25",
+        "started_on_precision": "DAY",
+        "event": "Was nominated for the Singapore People's Alliance at Havelock on 25 April 1959 for the 1959 general election.",
+        "is_started_on_upper_bound": true,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      }
+    ]
+  },
+  {
+    "name": "Tee Kim Leng",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Pasir Panjang for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Barisan Sosialis",
+        "started_on": "1961-12-01",
+        "started_on_precision": "DAY",
+        "event": "Spoke as a member of the Barisan Sosialis in the House on 1 December 1961, after leaving the People's Action Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39097
+      }
+    ]
+  },
+  {
+    "name": "Teo Hock Guan",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Changi for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Barisan Sosialis",
+        "started_on": "1961-11-24",
+        "started_on_precision": "DAY",
+        "event": "Spoke as a member of the Barisan Sosialis in the House on 24 November 1961, after leaving the People's Action Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39119
+      }
+    ]
+  },
+  {
+    "name": "William Tan",
+    "parliament_number": 0,
+    "affiliations": [
+      {
+        "party": "Democratic Party",
+        "started_on": "1955-04-02",
+        "started_on_precision": "DAY",
+        "event": "Won Tiong Bahru for the Democratic Party at the 1955 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1955.html"
+      },
+      {
+        "party": "Liberal Socialist Party",
+        "started_on": "1956-02-08",
+        "started_on_precision": "DAY",
+        "event": "The Singapore Progressive Party and the Democratic Party merged into the Liberal Socialist Party, as Lim Choon Mong told the House on 8 February 1956.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 41410
+      },
+      {
+        "party": "Independent",
+        "started_on": "1959-04-25",
+        "started_on_precision": "DAY",
+        "event": "Was nominated as an Independent Candidate at Tiong Bahru on 25 April 1959 for the 1959 general election.",
+        "is_started_on_upper_bound": true,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      }
+    ]
+  },
+  {
+    "name": "A.P. Rajah",
+    "parliament_number": 1,
+    "affiliations": [
+      {
+        "party": "Independent",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Farrer Park as an Independent Candidate at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Singapore People's Alliance",
+        "started_on": "1960-06-01",
+        "started_on_precision": "DAY",
+        "event": "Spoke in the House on 1 June 1960 on behalf of the Singapore People's Alliance, which he called his party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39558
+      }
+    ]
+  },
+  {
+    "name": "Bani, S.T.",
+    "parliament_number": 1,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Thomson for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Barisan Sosialis",
+        "started_on": "1961-11-22",
+        "started_on_precision": "DAY",
+        "event": "Spoke as a member of the Barisan Sosialis in the House on 22 November 1961, after leaving the People's Action Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 41998
+      }
+    ]
+  },
+  {
+    "name": "Chan Sun Wing",
+    "parliament_number": 1,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Upper Serangoon for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Barisan Sosialis",
+        "started_on": "1961-11-27",
+        "started_on_precision": "DAY",
+        "event": "The Prime Minister named him in the House on 27 November 1961 as Editor-in-chief of the Barisan Sosialis party organ, after he left the People's Action Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39116
+      }
+    ]
+  },
+  {
+    "name": "Lingam, S.V.",
+    "parliament_number": 1,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Aljunied for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Independent",
+        "started_on": "1960-08-04",
+        "started_on_precision": "DAY",
+        "event": "The Speaker told the House on 4 August 1960 that the Members for Hong Lim, Punggol and Aljunied were no longer members of the Government party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 34339
+      },
+      {
+        "party": "United People's Party",
+        "started_on": "1961-12-20",
+        "started_on_precision": "DAY",
+        "event": "Spoke in the House on 20 December 1961 for the United People's Party, saying its representatives were consistent and disciplined.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 38966
+      },
+      {
+        "party": "People's Action Party",
+        "started_on": "1963-07-31",
+        "started_on_precision": "DAY",
+        "event": "Rajah told the House on 31 July 1963 that the Member for Aljunied had left the People's Action Party, crossed to his side and gone back, and was now in the party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 38392
+      }
+    ]
+  },
+  {
+    "name": "Tan Cheng Tong",
+    "parliament_number": 1,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Jalan Kayu for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Barisan Sosialis",
+        "started_on": "1961-11-28",
+        "started_on_precision": "DAY",
+        "event": "Spoke as a member of the Barisan Sosialis in the House on 28 November 1961, after leaving the People's Action Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39113
+      }
+    ]
+  },
+  {
+    "name": "Wong Soon Fong",
+    "parliament_number": 1,
+    "affiliations": [
+      {
+        "party": "People's Action Party",
+        "started_on": "1959-05-30",
+        "started_on_precision": "DAY",
+        "event": "Won Toa Payoh for the People's Action Party at the 1959 general election.",
+        "is_started_on_upper_bound": false,
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary1959.html"
+      },
+      {
+        "party": "Barisan Sosialis",
+        "started_on": "1961-11-27",
+        "started_on_precision": "DAY",
+        "event": "S. Ramaswamy named him in the House on 27 November 1961 among the present Barisan Sosialis Assemblymen, after he left the People's Action Party.",
+        "is_started_on_upper_bound": true,
+        "source_report_id": 39115
+      }
+    ]
+  },
+  {
     "name": "Chiam See Tong",
     "parliament_number": 11,
     "affiliations": [
