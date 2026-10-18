@@ -276,6 +276,9 @@ _PLAIN_LANGUAGE_NOTE_LABEL_RE = re.compile(
     r"(?:\s*\([^()]{2,60}\))?\s*(?i:" + _LANGUAGE_NOTE + r"))\s*:\s*(.*)$"
 )
 
+# NOTE: the chair's own label is matched bare, unlike "Mr Tan:", because in the newer system no quoted line opens with it and its call starts the chair's turn.
+_PLAIN_CHAIR_LABEL_RE = re.compile(r"^((?:Mr|Mdm|Madam) (?:Deputy )?Speaker)\s*:\s*(.*)$")
+
 # NOTE: The list is explicit on purpose: other headings sit inside a member's speech.
 _SECTION_BOUNDARY_HEADINGS = frozenset({
     "ADJOURNMENT",
@@ -873,10 +876,14 @@ def _is_preamble_title_line(line: str) -> bool:
     )
 
 
-def _get_plain_label_match(line: str) -> Optional[re.Match]:
+def _get_plain_label_match(line: str, report_version: str) -> Optional[re.Match]:
     role_label_match = _PLAIN_ROLE_LABEL_RE.match(line)
     if role_label_match is not None:
         return role_label_match
+    if report_version == ReportVersion.SPRS3:
+        chair_label_match = _PLAIN_CHAIR_LABEL_RE.match(line)
+        if chair_label_match is not None:
+            return chair_label_match
     return _PLAIN_LANGUAGE_NOTE_LABEL_RE.match(line)
 
 
@@ -916,7 +923,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
         ):
             if _MARKDOWN_HEADING_RE.match(parsed_line):
                 continue
-            label_match = _get_plain_label_match(parsed_line)
+            label_match = _get_plain_label_match(parsed_line, report_version)
             if label_match is not None:
                 current_speaker = _LANGUAGE_NOTE_RE.sub("", label_match.group(1)).strip()
                 is_in_preamble = False

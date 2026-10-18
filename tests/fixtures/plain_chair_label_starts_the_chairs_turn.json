@@ -1,0 +1,42 @@
+{
+  "why": "In the newer system an unbolded 'Mr Speaker: Mr Louis Chua.' line after a minister's motion was credited to the minister; the chair label now starts the chair's turn.",
+  "source_report_id": 10745,
+  "report_version": "sprs3",
+  "report_type": "bill",
+  "title": "Goods and Services Tax (Amendment) Bill",
+  "subtitle": null,
+  "original_title": "Goods and Services Tax (Amendment) Bill",
+  "html": "<p>[(proc text) Order for Second Reading read. (proc text)]</p><h6>2.31 pm</h6><p><strong>The Second Minister for Finance (Mr Lawrence Wong)</strong>: Mr Speaker, I beg to move, \"That the Bill be now read a Second time.\"</p><p>Finally, the fifth amendment seeks to enable IRAS to effectively carry out its official duties in administering public schemes, such as the Jobs Support Scheme. The amendment allows the Comptroller of GST to disclose information to the CEO of IRAS, or officers authorised by the CEO of IRAS for that purpose and allow these officers to access any records or documents where necessary for the purpose of these duties. This amendment is found in clauses 3, 21 and 24 in the Bill. A similar amendment was proposed for the Income Tax (Amendment) Bill just now. Mr Speaker, I beg to move.</p><p>[(proc text) Question proposed. (proc text)]</p><p>Mr Speaker: Mr Louis Chua.</p><h6>2.40 pm</h6><p><strong>Mr Chua Kheng Wee Louis (Sengkang)</strong>: Mr Speaker, it has been said that in this world, nothing can be said to be certain except for death and taxes and of all the forms of taxation in the market, the Goods and Services Tax being a broad-based consumption tax is perhaps one that is most inescapable to the everyday person.</p></span></div></body></html>",
+  "expected_rows": [
+    [
+      null,
+      "Order for Second Reading read.",
+      "PROCEDURAL"
+    ],
+    [
+      "The Second Minister for Finance (Mr Lawrence Wong)",
+      "Mr Speaker, I beg to move, \"That the Bill be now read a Second time.\"",
+      "SPEECH"
+    ],
+    [
+      "The Second Minister for Finance (Mr Lawrence Wong)",
+      "Finally, the fifth amendment seeks to enable IRAS to effectively carry out its official duties in administering public schemes, such as the Jobs Support Scheme. The amendment allows the Comptroller of GST to disclose information to the CEO of IRAS, or officers authorised by the CEO of IRAS for that purpose and allow these officers to access any records or documents where necessary for the purpose of these duties. This amendment is found in clauses 3, 21 and 24 in the Bill. A similar amendment was proposed for the Income Tax (Amendment) Bill just now. Mr Speaker, I beg to move.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "Question proposed.",
+      "PROCEDURAL"
+    ],
+    [
+      "Mr Speaker",
+      "Mr Louis Chua.",
+      "SPEECH"
+    ],
+    [
+      "Mr Chua Kheng Wee Louis (Sengkang)",
+      "Mr Speaker, it has been said that in this world, nothing can be said to be certain except for death and taxes and of all the forms of taxation in the market, the Goods and Services Tax being a broad-based consumption tax is perhaps one that is most inescapable to the everyday person.",
+      "SPEECH"
+    ]
+  ]
+}
