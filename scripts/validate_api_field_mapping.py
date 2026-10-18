@@ -9,6 +9,10 @@ from schemas.hansard_report_response import (
     HansardReportNewResponse,
     HansardReportOldResponse,
 )
+from services.api_field_mapping import (
+    get_search_result_field_losses,
+    get_sitting_date_field_losses,
+)
 from services.hansard_sitting_date_response import (
     build_new_hansard_sitting_date_response,
     build_old_hansard_sitting_date_response,
@@ -89,10 +93,6 @@ _SYNTHETIC_NEW_FORMAT = {
 }
 
 
-def _get_orm_field_to_value(orm_object: object) -> dict[str, object]:
-    return {key: value for key, value in vars(orm_object).items() if not key.startswith("_")}
-
-
 def validate_search_and_topic() -> bool:
     logger.info("API 1 — searchResult  →  HansardSearchResult  →  HansardWebsiteResponse")
     search_results = get_hansard_search_results(0, 0)
@@ -101,33 +101,9 @@ def validate_search_and_topic() -> bool:
         return True
 
     hansard_search_result = search_results[0]
-    raw = hansard_search_result.model_dump(by_alias=True)
     logger.info(f"  INFO  report_id={hansard_search_result.report_id}  title={hansard_search_result.title[:_VALUE_PREVIEW_LENGTH]}")
     hansard_website_response = build_hansard_website_response(hansard_search_result, content=None)
-    orm_field_to_value = _get_orm_field_to_value(hansard_website_response)
-    raw_key_to_orm_field = {
-        "volumeNo": "volume_number",
-        "parlNo": "parliament_number",
-        "sittingNo": "sitting_number",
-        "sittingDate": "sitting_date",
-        "sno": "speech_number",
-        "title": "title",
-        "subtitle": "subtitle",
-        "reportId": "report_id",
-        "reportType": "report_type",
-        "htmlFileName": "html_file_name",
-        "reportVersion": "report_version",
-    }
-    orm_failures = []
-    for raw_key, orm_field in raw_key_to_orm_field.items():
-        raw_value = raw.get(raw_key)
-        if raw_value is None or raw_value == "":
-            continue
-        orm_value = orm_field_to_value.get(orm_field)
-        if orm_value is None:
-            orm_failures.append(
-                f"  FAIL  raw[{raw_key!r}]={str(raw_value)[:_VALUE_PREVIEW_LENGTH]!r}  →  HansardWebsiteResponse.{orm_field}=None"
-            )
+    orm_failures = get_search_result_field_losses(hansard_search_result, hansard_website_response)
 
     if orm_failures:
         logger.info("  HansardWebsiteResponse field losses:")
@@ -170,7 +146,6 @@ def _validate_sitting_payload(
     hansard_report_response: Union[HansardReportOldResponse, HansardReportNewResponse], sitting_date: str, source: str
 ) -> Optional[bool]:
     is_new = is_new_sitting_date_format(sitting_date)
-    raw = hansard_report_response.model_dump(by_alias=True)
 
     if hansard_report_response.error_code is not None:
         logger.info(f"  WARN  API returned error: {hansard_report_response.description} — using synthetic payload instead")
@@ -178,99 +153,9 @@ def _validate_sitting_payload(
 
     if is_new:
         hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
-        metadata = raw["metadata"] or {}
-        metadata_key_to_orm_field = {
-            "parlimentNO": "parlement_no",
-            "sessionNO": "session_no",
-            "volumeNO": "volume_no",
-            "sittingNO": "sitting_no",
-            "partSessionStr": "part_session_str",
-            "startTimeStr": "start_time_str",
-            "speaker": "speaker",
-            "attendancePreviewText": "attendance_preview_text",
-            "ptbaPreviewText": "ptba_preview_text",
-            "atbPreviewText": "atb_preview_text",
-            "dateToDisplay": "date_to_display",
-            "pdfNotes": "pdf_notes",
-            "waText": "wa_text",
-            "ptbaFrom": "ptba_from",
-            "ptbaTo": "ptba_to",
-            "locationText": "location_text",
-        }
-        raw_key_to_orm_field = {
-            "attStartPgNo": "att_start_pg_no",
-            "ptbaStartPgNo": "ptba_start_pg_no",
-            "atbpStartPgNo": "atbp_start_pg_no",
-            "onlinePDFFileName": "online_pdf_file_name",
-        }
-        orm_field_to_value = _get_orm_field_to_value(hansard_sitting_date_response)
-        failures = []
-        for metadata_key, orm_field in metadata_key_to_orm_field.items():
-            value = metadata.get(metadata_key)
-            if value is None or value == "":
-                continue
-            if orm_field_to_value.get(orm_field) is None:
-                failures.append(f"  FAIL  metadata[{metadata_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None")
-        for raw_key, orm_field in raw_key_to_orm_field.items():
-            value = raw.get(raw_key)
-            if value is None or value == "":
-                continue
-            if orm_field_to_value.get(orm_field) is None:
-                failures.append(f"  FAIL  raw[{raw_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None")
     else:
         hansard_sitting_date_response = build_old_hansard_sitting_date_response(hansard_report_response, sitting_date)
-        raw_key_to_orm_field = {
-            "parlNo": "parlement_no",
-            "sessionNo": "session_no",
-            "volumeNo": "volume_no",
-            "sittingNo": "sitting_no",
-            "onlinePDFFileName": "online_pdf_file_name",
-            "htmlFullContent": "html_full_content",
-            "ptbaFrom": "ptba_from",
-            "ptbaTo": "ptba_to",
-            "memberId": "member_id",
-            "reportType": "report_type",
-            "portfolio": "portfolio",
-            "memberName": "member_name",
-            "reportVersion": "report_version",
-            "reportStartCol": "report_start_col",
-            "reportEndCol": "report_end_col",
-            "title": "title",
-            "columnStart": "column_start",
-            "reportContent": "report_content",
-            "columnEnd": "column_end",
-            "reportId": "report_id",
-            "maxResult": "max_result",
-            "sno": "sno",
-            "fullContentFlag": "full_content_flag",
-            "fromMonth": "from_month",
-            "fromDay": "from_day",
-            "fromYear": "from_year",
-            "htmlContent": "html_content",
-            "subtitle": "subtitle",
-            "content": "content",
-            "mpNames": "speaker_names",
-            "htmlFileName": "html_file_name",
-            "verPdf": "ver_pdf",
-            "footNotes": "foot_notes",
-            "footNoteQuestion": "foot_note_question",
-            "footNoteQuestions": "foot_note_questions",
-            "pdfNodes": "pdf_nodes",
-            "clarificationText": "clarification_text",
-            "clarificationTitle": "clarification_title",
-            "clarificationSubTitle": "clarification_sub_title",
-            "questionCount": "question_count",
-        }
-        orm_field_to_value = _get_orm_field_to_value(hansard_sitting_date_response)
-        failures = []
-        for raw_key, orm_field in raw_key_to_orm_field.items():
-            value = raw.get(raw_key)
-            if value is None or value == "" or value == []:
-                continue
-            if orm_field_to_value.get(orm_field) is None:
-                failures.append(
-                    f"  FAIL  raw[{raw_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None"
-                )
+    failures = get_sitting_date_field_losses(hansard_report_response, hansard_sitting_date_response)
 
     format_label = "new" if is_new else "old"
     if failures:
