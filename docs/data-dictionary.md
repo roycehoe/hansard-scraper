@@ -175,15 +175,15 @@ One row per individual, grouping the per-parliament `Speaker` rows. Derived and 
 | `report_type` | What it contains |
 |---|---|
 | `oral-answer` | A question asked in the chamber and answered verbally by a minister. The most common type. |
-| `written-answer` | A question submitted in writing with a written ministerial reply. |
-| `written-answer-na` | A question for which no written answer was available. |
-| `clarification` | A follow-up clarification to an oral or written answer. |
+| `written-answer` | A question filed for written answer, with the written reply. SPRS calls the section "Written Answers to Questions". Before 22 December 1981 it also holds 21 oral questions of 1957 to 1969 that were answered in writing, because Question Time ran out or the minister or the member was absent. 19 of them open "The following Question for Oral Answer stood on the Order Paper"; the other two sit under such an opening in another report of 7 June 1963. |
+| `written-answer-na` | A question filed for oral answer that Question Time did not reach, so the minister's reply is printed in writing. SPRS calls the section "Written Answers to Questions for Oral Answer not Answered by End of Question Time". Older-system headers print "Oral Answers to Questions Not Reached" from December 1981 to February 2011 and "... for Oral Answer not Answered by 3.00 pm" (5.00 pm on 14 May 2012) from October 2011. The type starts on 22 December 1981. |
+| `clarification` | A clarification spoken in the chamber. Most are an office holder correcting or adding to something said earlier, by them or by a member, in the same sitting or a later one. Of the 54 stored, 4 are members clarifying their own words, 2 are points of order and 1 is the Government Whip on the speaking order. The type starts on 21 November 2011. |
 | `motion` | A formal motion debated in the chamber, including adjournment motions. |
 | `matter-adj` | An adjournment matter raised at the end of a sitting. |
 | `bill` | A bill reading (first, second, or third). Procedural readings are often single-line entries with no speeches. |
 | `bill-intro` | A bill introduction notice. No speeches. |
 | `ministerial-statement` | A statement delivered by a minister, not in response to a question. |
-| `written-statement` | A written ministerial statement tabled in the chamber. |
+| `written-statement` | A written correction of an office holder's earlier words, circulated with the leave of the Speaker or Deputy Speaker under Standing Order 29(5). SPRS calls the section "Corrections by Written Statements". Every title reads "Clarification by ...", the same form most `clarification` titles take, so only the type tells a written correction from a spoken one. The type starts on 7 October 2019. |
 | `budget` | Budget debates and Committee of Supply proceedings. Also covers procedural budget orders, which have no speeches. |
 | `speaker` | Statements or rulings from the Speaker of the House. |
 | `deputy-speaker` | Statements from the Deputy Speaker. |
@@ -197,6 +197,8 @@ One row per individual, grouping the per-parliament `Speaker` rows. Derived and 
 | `yang-di-message` | A message from the Yang di-Pertuan Negara (head of state in the colonial/early independence period). |
 | `misc` | Miscellaneous parliamentary records that do not fit other categories. |
 | `atbp` | Assent to Bills Passed — the formal record of presidential assent. No speeches. |
+
+SPRS types 39 reports `oral-answer` that hold no spoken exchange, only a numbered question and its written reply: 29 of 1 June 1998 and 5 of 16 October and 10 November 2003 whose header reads "Oral Answers to Questions Not Reached", and 5 of 16 October 2003 headed "Written Answers to Questions". On 10 November 2003 the question "Internet Chatrooms" is stored twice, and the types are swapped: the written reply (24876) is `oral-answer` and the spoken exchange (24867) is `written-answer-na`. We keep SPRS's types, so the data loss register has no row for them. A change that reclassifies them adds one.
 
 ---
 
