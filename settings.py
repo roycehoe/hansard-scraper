@@ -12,7 +12,6 @@ class AppSettings(BaseSettings):
     sitting_date_format_change: datetime = datetime(2015, 8, 18)
 
     parliament_speakers_url: str = "https://www.parliament.gov.sg/history/list-of-mps-by-parliament"
-    parliament_anticsrf_url: str = "https://www.parliament.gov.sg/sitefinity/anticsrf"
 
     hansard_search_url: str = "https://sprs.parl.gov.sg/search/searchResult"
     hansard_topic_url: str = "https://sprs.parl.gov.sg/search/getHansardTopic"

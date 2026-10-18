@@ -2,6 +2,7 @@ import asyncio
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from itertools import pairwise
+from pathlib import Path
 from typing import Optional
 
 import httpx
@@ -22,8 +23,8 @@ from gateway.http import (
     send_with_retry,
 )
 from gateway.speakers_by_parliament import (
-    _PARLIAMENT_NUMBER_TO_PAGE_ID,
     get_all_speakers,
+    get_speakers_by_parliament_number,
 )
 from settings import settings
 
@@ -40,8 +41,9 @@ _SEARCH_END_INDEX = 19
 _REPORT_ID = "x"
 _SITTING_DATE = "8-4-2025"
 _SYNC_GATEWAY_REQUEST_COUNT = 3
-_SPEAKER_SESSION_REQUEST_COUNT = 2
-_ANTIFORGERY_BODY = {"Value": "token"}
+_SPEAKER_REQUEST_COUNT = 2
+_SPEAKER_PARLIAMENT_NUMBER = 15
+_MEMBER_LIST_PAGE_FILE = Path(__file__).parent / "fixtures" / "parliament_member_list_page.html"
 _FAILED_SEND_COUNT = 2
 _ASYNC_ATTEMPT_COUNT = 2
 
@@ -200,20 +202,22 @@ def test_sync_gateways_send_the_user_agent_and_are_paced(fake_clock: _FakeClock,
 def test_speaker_requests_send_the_user_agent_and_are_paced(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
     recorded_requests: list[_RecordedRequest] = []
 
-    def fake_session_send(self: requests.Session, url: str, headers: Optional[dict] = None, **kwargs: object) -> _FakeSyncResponse:
+    member_list_page = _MEMBER_LIST_PAGE_FILE.read_text()
+
+    def fake_get(url: str, headers: dict, **kwargs: object) -> _FakeSyncResponse:
         started_at = fake_clock.now
         fake_clock.sleep(_REQUEST_SECONDS)
-        request_headers = {**self.headers, **({} if headers is None else headers)}
-        recorded_requests.append(_RecordedRequest(started_at, fake_clock.now, request_headers["User-Agent"]))
-        return _FakeSyncResponse(_ANTIFORGERY_BODY)
+        recorded_requests.append(_RecordedRequest(started_at, fake_clock.now, headers["User-Agent"]))
+        member_list_response = _FakeSyncResponse(None)
+        member_list_response.text = member_list_page
+        return member_list_response
 
-    monkeypatch.setattr(requests.Session, "get", fake_session_send)
-    monkeypatch.setattr(requests.Session, "post", fake_session_send)
+    monkeypatch.setattr(requests, "get", fake_get)
 
-    all_speakers = get_all_speakers()
+    get_all_speakers()
+    get_speakers_by_parliament_number(_SPEAKER_PARLIAMENT_NUMBER)
 
-    assert all_speakers == []
-    assert len(recorded_requests) == len(_PARLIAMENT_NUMBER_TO_PAGE_ID) + _SPEAKER_SESSION_REQUEST_COUNT
+    assert len(recorded_requests) == _SPEAKER_REQUEST_COUNT
     assert all(recorded_request.user_agent == CRAWL_USER_AGENT for recorded_request in recorded_requests)
     _assert_paced(recorded_requests)
 
