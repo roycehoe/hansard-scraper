@@ -33,6 +33,8 @@ def get_hansard_report_response(sitting_date: str) -> Union[HansardReportOldResp
         raise HansardGatewayError(f"Report request failed for {sitting_date}") from error
     except ValueError as error:
         raise HansardGatewayError(f"Report request failed for {sitting_date}") from error
+    except TypeError as error:
+        raise HansardGatewayError(f"Report request failed for {sitting_date}") from error
 
 
 async def get_hansard_report_response_async(
@@ -47,4 +49,6 @@ async def get_hansard_report_response_async(
     except httpx.HTTPStatusError as error:
         raise HansardGatewayError(f"Report request failed for {sitting_date}") from error
     except ValueError as error:
+        raise HansardGatewayError(f"Report request failed for {sitting_date}") from error
+    except TypeError as error:
         raise HansardGatewayError(f"Report request failed for {sitting_date}") from error
