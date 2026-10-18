@@ -1,16 +1,27 @@
+from functools import partial
+
 import httpx
 import requests
 
 from exceptions import HansardGatewayError
-from gateway.http import CRAWL_HEADERS, async_post_with_retry, paced_request
+from gateway.http import CRAWL_HEADERS, async_post_with_retry, send_with_retry
 from schemas.hansard_topic_response import HansardTopicResponse
 from settings import settings
+
+_REQUEST_TIMEOUT_SECONDS = 60
 
 
 def get_hansard_topic_response(report_id: str) -> HansardTopicResponse:
     try:
-        with paced_request():
-            response = requests.post(url=settings.hansard_topic_url, json={"id": report_id}, headers=CRAWL_HEADERS)
+        response = send_with_retry(
+            partial(
+                requests.post,
+                url=settings.hansard_topic_url,
+                json={"id": report_id},
+                headers=CRAWL_HEADERS,
+                timeout=_REQUEST_TIMEOUT_SECONDS,
+            )
+        )
         return HansardTopicResponse(**response.json())
     except requests.exceptions.RequestException as error:
         raise HansardGatewayError(f"Topic request failed for {report_id}") from error

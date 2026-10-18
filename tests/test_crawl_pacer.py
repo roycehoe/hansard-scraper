@@ -9,6 +9,7 @@ import pytest
 import requests
 
 import gateway.http
+from exceptions import HansardGatewayError
 from gateway.hansard_report import get_hansard_report_response
 from gateway.hansard_search import get_hansard_search_results
 from gateway.hansard_topic import get_hansard_topic_response
@@ -18,6 +19,7 @@ from gateway.http import (
     CRAWL_USER_AGENT,
     async_post_with_retry,
     paced_request,
+    send_with_retry,
 )
 from gateway.speakers_by_parliament import (
     _PARLIAMENT_NUMBER_TO_PAGE_ID,
@@ -40,6 +42,8 @@ _SITTING_DATE = "8-4-2025"
 _SYNC_GATEWAY_REQUEST_COUNT = 3
 _SPEAKER_SESSION_REQUEST_COUNT = 2
 _ANTIFORGERY_BODY = {"Value": "token"}
+_FAILED_SEND_COUNT = 2
+_ASYNC_ATTEMPT_COUNT = 2
 
 
 class _FakeClock:
@@ -174,7 +178,7 @@ def test_a_failed_request_still_counts_toward_the_gap(fake_clock: _FakeClock) ->
 def test_sync_gateways_send_the_user_agent_and_are_paced(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
     recorded_requests: list[_RecordedRequest] = []
 
-    def fake_post(url: str, json: object, headers: dict) -> _FakeSyncResponse:
+    def fake_post(url: str, json: object, headers: dict, **kwargs: object) -> _FakeSyncResponse:
         started_at = fake_clock.now
         fake_clock.sleep(_REQUEST_SECONDS)
         recorded_requests.append(_RecordedRequest(started_at, fake_clock.now, headers["User-Agent"]))
@@ -211,4 +215,70 @@ def test_speaker_requests_send_the_user_agent_and_are_paced(fake_clock: _FakeClo
     assert all_speakers == []
     assert len(recorded_requests) == len(_PARLIAMENT_NUMBER_TO_PAGE_ID) + _SPEAKER_SESSION_REQUEST_COUNT
     assert all(recorded_request.user_agent == CRAWL_USER_AGENT for recorded_request in recorded_requests)
+    _assert_paced(recorded_requests)
+
+
+def _remove_backoff_delay(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(gateway.http, "_BASE_DELAY", 0.0)
+    monkeypatch.setattr(gateway.http.random, "uniform", _get_fixed_jitter)
+
+
+def test_sync_transport_error_is_retried_through_the_pacer(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+    _remove_backoff_delay(monkeypatch)
+    recorded_requests: list[_RecordedRequest] = []
+    sync_response = requests.Response()
+
+    def fake_send() -> requests.Response:
+        started_at = fake_clock.now
+        fake_clock.sleep(_REQUEST_SECONDS)
+        recorded_requests.append(_RecordedRequest(started_at, fake_clock.now, None))
+        if len(recorded_requests) <= _FAILED_SEND_COUNT:
+            raise requests.exceptions.ConnectionError("connection refused")
+        return sync_response
+
+    assert send_with_retry(fake_send) is sync_response
+    assert len(recorded_requests) == _FAILED_SEND_COUNT + 1
+    _assert_paced(recorded_requests)
+
+
+def test_sync_transport_error_gives_up_after_the_last_attempt(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+    _remove_backoff_delay(monkeypatch)
+    recorded_requests: list[_RecordedRequest] = []
+
+    def fake_send() -> requests.Response:
+        started_at = fake_clock.now
+        fake_clock.sleep(_REQUEST_SECONDS)
+        recorded_requests.append(_RecordedRequest(started_at, fake_clock.now, None))
+        raise requests.exceptions.Timeout("timed out")
+
+    def fake_post(**kwargs: object) -> requests.Response:
+        raise requests.exceptions.ConnectionError("connection refused")
+
+    with pytest.raises(requests.exceptions.Timeout):
+        send_with_retry(fake_send)
+    assert len(recorded_requests) == gateway.http._MAX_RETRIES + 1
+    _assert_paced(recorded_requests)
+
+    monkeypatch.setattr(requests, "post", fake_post)
+    with pytest.raises(HansardGatewayError):
+        get_hansard_topic_response(_REPORT_ID)
+
+
+def test_async_transport_error_is_retried_through_the_pacer(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+    _remove_backoff_delay(monkeypatch)
+    recorded_requests: list[_RecordedRequest] = []
+
+    async def handle_request(request: httpx.Request) -> httpx.Response:
+        started_at = fake_clock.now
+        fake_clock.sleep(_REQUEST_SECONDS)
+        await asyncio.sleep(0)
+        recorded_requests.append(_RecordedRequest(started_at, fake_clock.now, request.headers.get("User-Agent")))
+        if len(recorded_requests) == 1:
+            raise httpx.ConnectError("connection refused", request=request)
+        return httpx.Response(_HTTP_OK)
+
+    response = asyncio.run(_post_one_request(handle_request))
+
+    assert response.status_code == _HTTP_OK
+    assert len(recorded_requests) == _ASYNC_ATTEMPT_COUNT
     _assert_paced(recorded_requests)
