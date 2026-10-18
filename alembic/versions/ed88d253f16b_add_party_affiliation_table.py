@@ -34,15 +34,21 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column('event', sa.Text(), nullable=False),
-        sa.Column('source_url', sa.Text(), nullable=False),
+        sa.Column('source_url', sa.Text(), nullable=True),
+        sa.Column('is_started_on_upper_bound', sa.Boolean(), nullable=False),
+        sa.Column('source_report_id', sa.Integer(), nullable=True),
         sa.Column('speaker_id', sa.Integer(), nullable=False),
+        sa.CheckConstraint('num_nonnulls(source_url, source_report_id) = 1', name='ck_partyaffiliation_exactly_one_source'),
+        sa.ForeignKeyConstraint(['source_report_id'], ['report.id']),
         sa.ForeignKeyConstraint(['speaker_id'], ['speaker.id']),
         sa.PrimaryKeyConstraint('id'),
     )
+    op.create_index('ix_partyaffiliation_source_report_id', 'partyaffiliation', ['source_report_id'])
     op.create_index('ix_partyaffiliation_speaker_id', 'partyaffiliation', ['speaker_id'])
 
 
 def downgrade() -> None:
     op.drop_index('ix_partyaffiliation_speaker_id', table_name='partyaffiliation')
+    op.drop_index('ix_partyaffiliation_source_report_id', table_name='partyaffiliation')
     op.drop_table('partyaffiliation')
     postgresql.ENUM(name='dateprecision').drop(op.get_bind())
