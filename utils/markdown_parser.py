@@ -28,6 +28,7 @@ _HYPHENATED_FRAGMENT_PATTERN = r"[A-Za-z]-$"
 _PAGE_BREAK_ARTIFACT_PATTERN = r"   \n  \n\*\*\*\*  \n  \n"
 _TWO_SPACE_PAGE_BREAK_ARTIFACT_PATTERN = r"^([^\n|]*[^\s.?!:;\"'\u201d\u2019)\]_*|])  \n  \n\*\*\*\*  \n  \n"
 _BOLD_ONLY_LINE_PATTERN = r"\*\*[^\n*].*\*\*"
+_SPLIT_BOLD_LABEL_PATTERN = r"(\*\*[^\n*][^\n*]*\([^)\n*]*)\*\*\n(?:\*\*\n)?([^*\n]*\))\*\*"
 _CONCATENATED_PART_PATTERN = r"\bPART([IVX]+)OF\b"
 _CONCATENATED_VOLUME_PATTERN = r"\bVOLUME(\d+)\b"
 _TABLE_SEPARATOR_LINE_PATTERN = r"-{3}\s*"
@@ -368,6 +369,11 @@ def _merge_consecutive_bold_only_lines(markdown: str) -> str:
     return "\n".join(lines)
 
 
+def _join_bold_label_split_across_lines(markdown: str) -> str:
+    # NOTE: the source breaks a label inside its bracket, "(Dr Mohamad Maliki Bin" then "Osman)", and the bold run closes on the second line.
+    return re.sub(_SPLIT_BOLD_LABEL_PATTERN, r"\1 \2**", markdown)
+
+
 def _join_emphasised_lines(before: str, after: str) -> str:
     before = before.rstrip()
     after = after.lstrip()
@@ -452,6 +458,8 @@ def get_cleaned_report_markdown(html: str, report_version: str) -> str:
     converter = _SourceCharacterConverter()
     converter.ignore_links = True
     markdown = _postprocess_markdown_base(converter.handle(_mark_footnote_section(_move_space_into_anchor(_preprocess_html(_glue_footnote_hash_markers(html))))))
+    if report_version == ReportVersion.SPRS2:
+        markdown = _join_bold_label_split_across_lines(markdown)
     markdown = _merge_split_direction_lines(markdown)
     markdown = _flatten_leading_nested_bold(markdown)
     markdown = _drop_paragraph_repeated_after_stray_tag(markdown)
