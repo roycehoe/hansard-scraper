@@ -3,9 +3,11 @@ import socket
 import httpx
 import pytest
 import requests
-from sqlalchemy import create_engine
-from sqlalchemy.engine import make_url
+from sqlalchemy import create_engine, func, text
+from sqlalchemy.engine import Engine, make_url
+from sqlmodel import Session, select
 
+from database.speaker import Speaker
 from exceptions import HansardTestGuardError
 from settings import settings
 
@@ -90,3 +92,12 @@ def test_settings_point_at_the_scratch_database() -> None:
 
     assert url.port == _SCRATCH_PORT
     assert url.database == _SCRATCH_DATABASE
+
+
+def test_scratch_engine_uses_a_test_schema(scratch_engine: Engine) -> None:
+    with scratch_engine.connect() as connection:
+        assert connection.execute(text("SELECT current_schema()")).scalar_one().startswith("test_")
+
+
+def test_scratch_session_does_not_read_public(scratch_session: Session) -> None:
+    assert scratch_session.exec(select(func.count()).select_from(Speaker)).one() == 0
