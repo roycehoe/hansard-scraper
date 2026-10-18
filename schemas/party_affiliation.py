@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Optional
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -11,7 +12,9 @@ class PartyAffiliationSpan(BaseModel):
     started_on_precision: DatePrecision
     started_on: date
     event: str
-    source_url: str
+    is_started_on_upper_bound: bool
+    source_url: Optional[str] = None
+    source_report_id: Optional[int] = None
 
     @field_validator("started_on", mode="before")
     @classmethod

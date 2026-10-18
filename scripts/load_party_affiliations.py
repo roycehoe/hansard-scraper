@@ -31,7 +31,8 @@ def load_party_affiliations(is_commit: bool) -> None:
         for party_affiliation in unstored_party_affiliations:
             logger.info(
                 f"Insert speaker {party_affiliation.speaker_id}: {party_affiliation.party!r} "
-                f"from {party_affiliation.started_on} ({party_affiliation.started_on_precision})"
+                f"from {party_affiliation.started_on} ({party_affiliation.started_on_precision}), "
+                f"upper bound {party_affiliation.is_started_on_upper_bound}"
             )
         logger.info(
             f"Plan: {len(unstored_party_affiliations)} rows to insert, "
