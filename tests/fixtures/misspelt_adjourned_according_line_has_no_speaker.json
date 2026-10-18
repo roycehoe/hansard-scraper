@@ -1,0 +1,22 @@
+{
+  "why": "'Adjourned according at Twenty One Minutes to Eight o'clock pm.' drops the 'ly', so the adjournment rule missed it and the collapsed report credited it to the mover. It is a procedural row with no speaker.",
+  "source_report_id": 22593,
+  "report_version": "sprs2",
+  "report_type": "motion",
+  "title": "ADJOURNMENT",
+  "subtitle": null,
+  "original_title": "ADJOURNMENT",
+  "html": "\t\t\t\t<HTML>\r\n        \t\t\t<HEAD>\r\n\t\t\t\t\r\n        \t\t\t<META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\">\r\n\t\t\t\t<meta name=\"Parl_No\" content=\"11\">\r\n\t\t\t\t<meta name=\"Sess_No\" content=\"1\">\r\n\t\t\t\t<meta name=\"Vol_No\" content=\"84\">\r\n\t\t\t\t<meta name=\"Sit_Date\" content=\"2008-03-05\">\r\n\t\t\t\t<meta name=\"Sect_Name\" content=\"MOTIONS\">\r\n\t\t\t\t<meta name=\"Title\" content=\"ADJOURNMENT\">\r\n\t\t\t\t<meta name=\"MP_Speak\" content=\"\">\r\n\t\t\t\t<meta name=\"Start_Col\" content=\"2274\">\r\n\t\t\t\t<meta name=\"End_Col\" content=\"2274\">\r\n        \t</HEAD>\r\n        \t<body>\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\" bgcolor=\"#FFFFFF\"><tr><td>\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">11</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">84</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">11</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">05-03-2008</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">MOTIONS</font></td>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">ADJOURNMENT</font></td>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\"></font></td>\r\n</table></td></tr>\r\n</table>\r\n<p align=left>Column: 2274<p>\r\n<div align=center><b>\r\n<!--TITLE_NAME:ADJOURNMENT-->\r\n<!--END_COL_TITLE:ADJOURNMENT:::2274-->\r\n</b>\r\n<div align=center><span style=\"FONT-SIZE: 13pt; FONT-FAMILY: 'Times New Roman'\"><B>ADJOURNMENT<BR></B></span><div><BR>\r\n\r\n\t\t\r\n\t\t\t\r\n\t\t\t\r\n\t\t\t </span></div> \r\n\t\t\t\t\r\n\t\t\t\t\t\r\n<!--MP_NAME:-->\r\n<div align=left><span style=\"FONT-SIZE: 13pt; FONT-FAMILY: 'Times New Roman'\"><p>&nbsp;</p><p></p><p>&nbsp;</p><p>&nbsp;&nbsp;&nbsp;&nbsp; Resolved,</p>\r\n\r\n<p>&nbsp;</p>\r\n\r\n<p>&nbsp;&nbsp;&nbsp;&nbsp; \"That Parliament do now adjourn.\"&nbsp;&nbsp;&ndash;&nbsp; [Dr Vivian Balakrishnan].</p>\r\n\r\n<p>&nbsp;</p>\r\n\r\n<p>&nbsp;</p>\r\n\r\n<p align=\"right\">Adjourned according at Twenty One</p>\r\n\r\n<p align=\"right\">Minutes to Eight o'clock pm.</p>\r\n</span></div>\r\n\t\t\t\t\r\n\t\t\t\r\n\t\t\r\n       \r\n   <!-- Begin CDATA tag -->\r\n   <!-- End CDATA tag -->\r\n\r\n\r\n\r\n\t<HTML> \r\n \t<!-- HTML stuff is enclosed in CDATA tag -->\r\n\r\n  \t<HEAD>\r\n\t<META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\">\r\n  \t</HEAD> \r\n  \t<body bgcolor=\"#FFFFFF\" link=\"#0033CC\" vlink=\"#0033CC\" alink=\"0000FF\">\r\n\r\n\r\n\r\n</body></html>\r\n",
+  "expected_rows": [
+    [
+      null,
+      "Resolved, \"That Parliament do now adjourn.\" – [Dr Vivian Balakrishnan].",
+      "PROCEDURAL"
+    ],
+    [
+      null,
+      "Adjourned according at Twenty One Minutes to Eight o'clock pm.",
+      "PROCEDURAL"
+    ]
+  ]
+}

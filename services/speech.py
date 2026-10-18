@@ -101,6 +101,7 @@ _BROUGHT_UP_ANCHOR = r"Brought up, and read the First [Tt]ime"
 _DIVISION_RECORD_ANCHOR = r"(?:On question put, the|`?The) (?:[Hh]ouse|Assembly|Council|Committee) divided"
 _DIVISION_LIST_HEADING_ANCHOR = r"Ayes\.?\s+Noes\.?$"
 _DIVISION_RECORD_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=" + _DIVISION_RECORD_ANCHOR + ":)")
+_CONSENT_ANCHOR = r"With the consent of (?:Mr|Mdm|Madam|the) (?:Deputy )?Speaker"
 _PROCEDURAL_LINE_ANCHORS = (
     r"Question (?:put[.,]? and agreed to|proposed|again proposed)",
     r"Question put[.,]?[\s*_]*$",
@@ -119,10 +120,10 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"Bill reported,? without [Aa]mendment",
     r"Bill considered in Committee",
     r"(?:(?:First|Second|Third) [Rr]esolution|Resolutions?) (?:to be )?reported",
-    r"Resolved(?:,|[\s*_]*$)",
+    r"Resolved(?:[,.]|[\s*_]*$)",
     r"Order for Second Reading read",
     r"Order read for",
-    r"Adjourned accordingly",
+    r"Adjourned according(?:ly)?\b",
     r"Thereupon,? (?:Mr|Mdm) (?:Deputy )?(?:Speaker|SPEAKER)",
     r"(?:Sitting|Debate) (?:according(?:ly)? )?(?:suspended|resumed)",
     r"Suspension of Sitting",
@@ -143,7 +144,7 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"Question negatived",
     r"Bill (?:presented and )?read the First [Tt]ime",
     _BROUGHT_UP_ANCHOR,
-    r"With the consent of (?:Mr|Mdm|Madam) (?:Deputy )?Speaker",
+    _CONSENT_ANCHOR,
     r"Question, put,? and agreed to",
     r"The Question having been proposed at",
     r"At the conclusion of .{1,60}?(?:Address|speech), Mr (?:SPEAKER|Speaker), preceded by",
@@ -295,11 +296,15 @@ _SECTION_BOUNDARY_HEADINGS = frozenset({
 
 _WHOLE_BOLD_LINE_RE = re.compile(r"^\*\*[^*].*\*\*$")
 _PROC_TEXT_LINE_RE = re.compile(r"^([_*]*)" + re.escape(PROC_TEXT_OPEN_TAG) + r"(.*)" + re.escape(PROC_TEXT_CLOSE_TAG) + r"([_*]*)$")
-_RESOLVED_LINE_RE = re.compile(r"^[\s*_]*Resolved(?:,|[\s*_]*$)")
-_ADJOURNMENT_LINE_RE = re.compile(r"^[\s*_]*Adjourned accordingly")
+_RESOLVED_LINE_RE = re.compile(r"^[\s*_]*Resolved(?:[,.]|[\s*_]*$)")
+_ADJOURNMENT_LINE_RE = re.compile(r"^[\s*_]*Adjourned according(?:ly)?\b")
+_CONSENT_LINE_RE = re.compile(r"^[\s*_]*" + _CONSENT_ANCHOR)
+_BARE_RESOLVED_LINE_RE = re.compile(r"^[\s*_]*Resolved[,.]?[\s*_]*$")
+_QUOTE_MARK_RE = re.compile(r"[\"“]")
+_MOVER_BRACKET_RE = re.compile(r"\[[^\]]+\]")
 _SENTENCE_END_RE = re.compile(r"\.[\s_*]*$")
 _RECORD_END_RE = re.compile(r"[.\]][\"'”’]*[\s_*]*$")
-_MAX_RECORD_CONTINUATIONS = 6
+_MAX_RECORD_CONTINUATIONS = 12
 _MIN_SPEECH_SENTENCE_WORDS = 8
 _SENTENCE_BREAK_RE = re.compile(r"[.?!]")
 
@@ -708,13 +713,23 @@ def _build_speaker_lines_speeches(speaker: str, speaker_lines: list[str]) -> lis
     return [ParsedSpeech(speaker=speaker, transcript=transcript, kind=SpeechKind.SPEECH)]
 
 
+# NOTE: a quoted motion may hold whole sentences, so only the mover's bracket ends it.
+def _is_record_end(record: str, line: str) -> bool:
+    if _QUOTE_MARK_RE.search(record) is not None:
+        return _MOVER_BRACKET_RE.search(line) is not None
+    return _RECORD_END_RE.search(line) is not None
+
+
 def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speaker: str) -> list[ParsedSpeech]:
     speeches: list[ParsedSpeech] = []
     speaker_lines: list[str] = []
     is_body_started = False
+    is_adjourned = False
     record_continuations = 0
     trailing_lead_line_count = 0
-    for line in markdown.splitlines()[start_of_speech_line + 1:]:
+    lines = markdown.splitlines()[start_of_speech_line + 1:]
+    footnote_line_indexes = _get_footnote_line_indexes(lines)
+    for line_index, line in enumerate(lines):
         stripped = line.strip()
         if _REPORT_HEADER_FIELD_RE.match(stripped):
             continue
@@ -724,17 +739,27 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
         proc_text = _get_proc_text(edge_unmarked)
         unmarked = edge_unmarked if proc_text is None else proc_text
         is_first_reading = proc_text is None and _FIRST_READING_RE.search(unmarked) is not None
-        if record_continuations > 0:
+        is_heading_line = _MARKDOWN_HEADING_RE.match(stripped) is not None or _WHOLE_BOLD_LINE_RE.match(stripped) is not None
+        if record_continuations > 0 and not is_heading_line and _get_non_speech_kind(unmarked) is None:
             speeches[-1].transcript += " " + unmarked
-            record_continuations = 0 if _RECORD_END_RE.search(unmarked) else record_continuations - 1
+            record_continuations = 0 if _is_record_end(speeches[-1].transcript, unmarked) else record_continuations - 1
             continue
+        record_continuations = 0
         is_resolved_line = _RESOLVED_LINE_RE.match(unmarked) is not None
-        if not is_body_started and not is_resolved_line and (_MARKDOWN_HEADING_RE.match(stripped) or _WHOLE_BOLD_LINE_RE.match(stripped)):
+        if not is_body_started and not is_resolved_line and is_heading_line:
             continue
         non_speech_kind = _get_non_speech_kind(unmarked)
         if is_resolved_line or non_speech_kind is None:
             is_body_started = True
-            if proc_text is None and not is_first_reading and not is_resolved_line:
+            is_speaker_line = proc_text is None and not is_first_reading and not is_resolved_line
+            # NOTE: a footnote, or anything printed after the sitting adjourned, is not the speaker's.
+            if is_speaker_line and (line_index in footnote_line_indexes or is_adjourned):
+                if speaker_lines:
+                    speeches.extend(_build_speaker_lines_speeches(speaker, speaker_lines))
+                    speaker_lines = []
+                speeches.append(_build_footnote_speech(unmarked) if line_index in footnote_line_indexes else _build_current_speaker_speech(None, unmarked))
+                continue
+            if is_speaker_line:
                 speaker_lines.append(unmarked)
                 trailing_lead_line_count = trailing_lead_line_count + 1 if _is_first_reading_lead_line(stripped, unmarked) else 0
                 continue
@@ -748,7 +773,10 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
             speeches.extend(_build_speaker_lines_speeches(speaker, speaker_lines))
             speaker_lines = []
         speeches.append(ParsedSpeech(speaker=None, transcript=unmarked, kind=SpeechKind.PROCEDURAL if proc_text is not None or is_first_reading or is_resolved_line else non_speech_kind))
-        if (_ADJOURNMENT_LINE_RE.match(unmarked) or is_resolved_line) and _RECORD_END_RE.search(unmarked) is None:
+        is_adjournment_line = _ADJOURNMENT_LINE_RE.match(unmarked) is not None
+        is_adjourned = is_adjourned or is_adjournment_line
+        is_record_line = is_adjournment_line or _CONSENT_LINE_RE.match(unmarked) is not None or is_resolved_line
+        if is_record_line and (_BARE_RESOLVED_LINE_RE.match(unmarked) is not None or _RECORD_END_RE.search(unmarked) is None):
             record_continuations = _MAX_RECORD_CONTINUATIONS
     if speaker_lines:
         speeches.extend(_build_speaker_lines_speeches(speaker, speaker_lines))
@@ -1202,7 +1230,10 @@ def get_fallback_speaker(markdown: str, start_of_speech_line: int, report_type: 
 
 
 def _has_speech_sentence(transcript: str) -> bool:
-    return any(len(sentence.split()) >= _MIN_SPEECH_SENTENCE_WORDS for sentence in _SENTENCE_BREAK_RE.split(transcript))
+    return any(
+        sum(1 for word in sentence.split() if not word.isupper()) >= _MIN_SPEECH_SENTENCE_WORDS
+        for sentence in _SENTENCE_BREAK_RE.split(transcript)
+    )
 
 
 def _is_resolved_record_without_speech(speeches: list[ParsedSpeech]) -> bool:
