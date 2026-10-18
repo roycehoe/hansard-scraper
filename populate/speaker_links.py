@@ -84,6 +84,9 @@ _GLUED_TITLE_RE = re.compile(r"^(Mr|Mrs|Dr|Ms|Mdm)([A-Z])")
 _TITLED_RE = re.compile(r"^(?:Mr|Mrs|Ms|Mdm|Dr|Miss|Inche|Encik|Assoc|Prof|Er)\b")
 
 _ADDRESS_TITLES = ("GOVERNOR'S ADDRESS", "PRESIDENT'S ADDRESS", "YANG DI-PERTUAN NEGARA'S SPEECH")
+_ROLE_CONTEXT_PATTERN = "|".join(
+    [CHAIRMAN_RE.pattern] + [f"^{re.escape(role)}$" for role in (*CARRIED_ROLES, *HEAD_OF_STATE_TERMS)]
+)
 
 
 def _preclean(raw: str) -> str:
@@ -378,15 +381,12 @@ def _get_day_speaker_ids(
     return text_key_to_speaker_ids[key]
 
 
-def get_role_context_speaker_ids(
+def _get_role_context_speaker_ids_for_report_ids(
     session: Session,
+    report_ids: list[int],
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> dict[int, int]:
-    pattern = "|".join(
-        [CHAIRMAN_RE.pattern] + [f"^{re.escape(role)}$" for role in (*CARRIED_ROLES, *HEAD_OF_STATE_TERMS)]
-    )
-    report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(pattern)
     key_to_speaker_id: dict[tuple[str, int, Optional[datetime]], Optional[int]] = {}
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
@@ -417,6 +417,15 @@ def get_role_context_speaker_ids(
     return speech_id_to_speaker_id
 
 
+def get_role_context_speaker_ids(
+    session: Session,
+    lookups: SpeakerLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+) -> dict[int, int]:
+    report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(_ROLE_CONTEXT_PATTERN)
+    return _get_role_context_speaker_ids_for_report_ids(session, report_ids, lookups, speaker_id_lookup)
+
+
 def _populate_role_context_links(
     session: Session,
     lookups: SpeakerLookups,
@@ -427,13 +436,12 @@ def _populate_role_context_links(
     session.commit()
 
 
-# NOTE: with one man and one woman in office the "Mr" row goes to the man unless the report shows the woman taking part. With two men the row links only when the report names one of them and nothing else printed that day names the other.
-def get_deputy_speaker_ids(
+def _get_deputy_speaker_ids_for_report_ids(
     session: Session,
+    report_ids: list[int],
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> dict[int, int]:
-    report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(BARE_DEPUTY_RE.pattern)
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
     text_key_to_speaker_ids: dict[object, set[int]] = {}
@@ -503,6 +511,16 @@ def get_deputy_speaker_ids(
     return speech_id_to_speaker_id
 
 
+# NOTE: with one man and one woman in office the "Mr" row goes to the man unless the report shows the woman taking part. With two men the row links only when the report names one of them and nothing else printed that day names the other.
+def get_deputy_speaker_ids(
+    session: Session,
+    lookups: SpeakerLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+) -> dict[int, int]:
+    report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(BARE_DEPUTY_RE.pattern)
+    return _get_deputy_speaker_ids_for_report_ids(session, report_ids, lookups, speaker_id_lookup)
+
+
 def _populate_deputy_speaker_links(
     session: Session,
     lookups: SpeakerLookups,
@@ -521,13 +539,12 @@ def _build_sitting_text(markdown: Optional[str], sections: Optional[str]) -> Opt
     return None
 
 
-# NOTE: the record does not print a bracket at every change of chair, so this pass can credit the wrong one of two Deputies; ADR 0002 accepts that risk for the rows the report-level pass leaves unlinked.
-def get_sitting_deputy_speaker_ids(
+def _get_sitting_deputy_speaker_ids_for_report_ids(
     session: Session,
+    report_ids: list[int],
     lookups: SpeakerLookups,
     speaker_id_lookup: dict[tuple[str, int], int],
 ) -> dict[int, int]:
-    report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(BARE_DEPUTY_RE.pattern)
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
 
@@ -568,6 +585,16 @@ def get_sitting_deputy_speaker_ids(
                     speech_id_to_speaker_id[speech_row.id] = next(iter(found))
     logger.info(f"Sitting-level deputy speaker: {len(speech_id_to_speaker_id)}/{total} bare records resolved")
     return speech_id_to_speaker_id
+
+
+# NOTE: the record does not print a bracket at every change of chair, so this pass can credit the wrong one of two Deputies; ADR 0002 accepts that risk for the rows the report-level pass leaves unlinked.
+def get_sitting_deputy_speaker_ids(
+    session: Session,
+    lookups: SpeakerLookups,
+    speaker_id_lookup: dict[tuple[str, int], int],
+) -> dict[int, int]:
+    report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(BARE_DEPUTY_RE.pattern)
+    return _get_sitting_deputy_speaker_ids_for_report_ids(session, report_ids, lookups, speaker_id_lookup)
 
 
 def _populate_sitting_deputy_speaker_links(
