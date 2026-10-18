@@ -1,4 +1,6 @@
+import calendar
 import hashlib
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional, Union
 
@@ -31,6 +33,25 @@ def get_probe_start_date(latest_stored_sitting_date: date, today: date) -> date:
 
 def get_dates_between(first_date: date, last_date: date) -> list[date]:
     return [first_date + timedelta(days=day_offset) for day_offset in range((last_date - first_date).days + 1)]
+
+
+@dataclass(frozen=True)
+class MonthWindow:
+    first_date: date
+    last_date: date
+
+
+def get_month_windows(first_date: date, last_date: date) -> list[MonthWindow]:
+    month_windows = []
+    window_first_date = first_date
+    while window_first_date <= last_date:
+        month_last_date = date(
+            window_first_date.year, window_first_date.month, calendar.monthrange(window_first_date.year, window_first_date.month)[1]
+        )
+        window_last_date = min(month_last_date, last_date)
+        month_windows.append(MonthWindow(window_first_date, window_last_date))
+        window_first_date = window_last_date + timedelta(days=1)
+    return month_windows
 
 
 def get_sitting_date_key(sitting_date: date) -> str:

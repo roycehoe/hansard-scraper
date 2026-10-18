@@ -6,6 +6,7 @@ from schemas.hansard_report_response import (
 )
 from services.refresh import (
     RECHECK_WINDOW_DAYS,
+    MonthWindow,
     build_changed_report_message,
     build_failure_message,
     build_field_mapping_reason,
@@ -17,6 +18,7 @@ from services.refresh import (
     build_unlinked_reason,
     get_content_hash,
     get_dates_between,
+    get_month_windows,
     get_probe_start_date,
     get_recheck_start_date,
     get_singapore_today,
@@ -83,6 +85,25 @@ def test_recheck_starts_fourteen_days_back() -> None:
 
 def test_dates_between_are_inclusive_and_ascending() -> None:
     assert get_dates_between(_FIRST_DATE, _LAST_DATE) == [date(2025, 4, 1), date(2025, 4, 2), date(2025, 4, 3)]
+
+
+def test_month_windows_inside_one_month_is_one_window() -> None:
+    assert get_month_windows(_FIRST_DATE, _LAST_DATE) == [MonthWindow(_FIRST_DATE, _LAST_DATE)]
+
+
+def test_month_windows_split_at_each_month_end() -> None:
+    assert get_month_windows(date(2025, 11, 20), date(2026, 1, 5)) == [
+        MonthWindow(date(2025, 11, 20), date(2025, 11, 30)),
+        MonthWindow(date(2025, 12, 1), date(2025, 12, 31)),
+        MonthWindow(date(2026, 1, 1), date(2026, 1, 5)),
+    ]
+
+
+def test_month_windows_from_a_month_end_start_with_one_day() -> None:
+    assert get_month_windows(date(2024, 8, 31), date(2024, 9, 12)) == [
+        MonthWindow(date(2024, 8, 31), date(2024, 8, 31)),
+        MonthWindow(date(2024, 9, 1), date(2024, 9, 12)),
+    ]
 
 
 def test_sitting_date_key_is_unpadded() -> None:

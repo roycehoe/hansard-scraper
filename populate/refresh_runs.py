@@ -73,6 +73,7 @@ from services.hansard_website import (
     get_topic_id,
 )
 from services.refresh import (
+    MonthWindow,
     build_changed_report_message,
     build_failure_message,
     build_field_mapping_reason,
@@ -84,6 +85,7 @@ from services.refresh import (
     build_unlinked_reason,
     get_content_hash,
     get_dates_between,
+    get_month_windows,
     get_probe_start_date,
     get_recheck_start_date,
     get_singapore_today,
@@ -151,14 +153,22 @@ class FetchedTopic:
     html_content: Optional[str]
 
 
+@dataclass
+class StoredRefreshState:
+    stored_sitting_dates: set[date]
+    stored_report_ids: set[str]
+    excluded_report_ids: set[str]
+    stored_parliament_maximum: Optional[int]
+    recheck_topic_requests: list[TopicRequest]
+    report_id_to_stored_content: dict[str, str]
+    report_id_to_stored_sitting_date: dict[str, str]
+
+
 @dataclass(frozen=True)
-class FetchedRefresh:
+class FetchedWindow:
     new_search_results: list[HansardSearchResult]
     report_id_to_fetched_topic: dict[str, FetchedTopic]
     sitting_date_key_to_response: dict[str, Union[HansardReportOldResponse, HansardReportNewResponse]]
-    report_id_to_stored_content: dict[str, str]
-    report_id_to_stored_sitting_date: dict[str, str]
-    report_id_to_rechecked_topic: dict[str, FetchedTopic]
     stored_parliament_maximum: Optional[int]
 
 
@@ -166,6 +176,8 @@ class FetchedRefresh:
 class NewRowIds:
     report_ids: list[int]
     sitting_ids: list[int]
+    website_report_ids: list[str]
+    sitting_dates: list[date]
 
 
 @dataclass(frozen=True)
@@ -333,7 +345,7 @@ def _validate_parliament_numbers(
         raise HansardRefreshHaltError(build_new_parliament_reason(unexpected_parliament_numbers))
 
 
-def _fetch(session: Session, today: date, allowed_parliament_number: Optional[int]) -> FetchedRefresh:
+def _get_stored_refresh_state(session: Session, today: date) -> StoredRefreshState:
     stored_sitting_dates = {
         parse_sitting_date(sitting_date_key).date()
         for sitting_date_key in CRUDHansardSittingDateResponse(session).get_all_sitting_dates()
@@ -360,20 +372,60 @@ def _fetch(session: Session, today: date, allowed_parliament_number: Optional[in
         report_id_to_stored_sitting_date[hansard_website_response.report_id] = hansard_website_response.sitting_date
     # NOTE: nothing is pending; the commit ends the read transaction so none stays open through the crawl
     session.commit()
+    return StoredRefreshState(
+        stored_sitting_dates,
+        stored_report_ids,
+        excluded_report_ids,
+        stored_parliament_maximum,
+        recheck_topic_requests,
+        report_id_to_stored_content,
+        report_id_to_stored_sitting_date,
+    )
 
-    probe_start_date = get_probe_start_date(max(stored_sitting_dates), today)
+
+def _get_changed_reports(
+    report_id_to_rechecked_topic: dict[str, FetchedTopic],
+    stored_refresh_state: StoredRefreshState,
+) -> list[ChangedReport]:
+    changed_reports = []
+    for report_id, rechecked_topic in report_id_to_rechecked_topic.items():
+        html_content = rechecked_topic.html_content
+        if html_content is None or html_content == "":
+            logger.info(f"Re-check of {report_id} returned no text")
+            continue
+        if get_content_hash(stored_refresh_state.report_id_to_stored_content[report_id]) != get_content_hash(html_content):
+            changed_reports.append(ChangedReport(report_id, stored_refresh_state.report_id_to_stored_sitting_date[report_id]))
+    return changed_reports
+
+
+def _fetch_changed_reports(stored_refresh_state: StoredRefreshState) -> list[ChangedReport]:
+    report_id_to_rechecked_topic = asyncio.run(_fetch_topics(stored_refresh_state.recheck_topic_requests))
+    field_losses = []
+    for rechecked_topic in report_id_to_rechecked_topic.values():
+        field_losses.extend(get_topic_field_losses(rechecked_topic.hansard_topic_response, rechecked_topic.html_content))
+    if field_losses:
+        raise HansardRefreshHaltError(build_field_mapping_reason(field_losses))
+    return _get_changed_reports(report_id_to_rechecked_topic, stored_refresh_state)
+
+
+def _fetch_window(
+    stored_refresh_state: StoredRefreshState,
+    month_window: MonthWindow,
+    allowed_parliament_number: Optional[int],
+) -> FetchedWindow:
     # NOTE: the search can return one hit twice, so keep the first hit per report_id.
     report_id_to_first_search_result: dict[str, HansardSearchResult] = {}
-    for search_result in get_all_hansard_search_results(probe_start_date, today):
+    for search_result in get_all_hansard_search_results(month_window.first_date, month_window.last_date):
         report_id_to_first_search_result.setdefault(search_result.report_id, search_result)
     new_search_results = [
         search_result
         for search_result in report_id_to_first_search_result.values()
-        if search_result.report_id not in stored_report_ids and search_result.report_id not in excluded_report_ids
+        if search_result.report_id not in stored_refresh_state.stored_report_ids
+        and search_result.report_id not in stored_refresh_state.excluded_report_ids
     ]
     _validate_parliament_numbers(
         {int(search_result.parl_no) for search_result in new_search_results},
-        stored_parliament_maximum,
+        stored_refresh_state.stored_parliament_maximum,
         allowed_parliament_number,
     )
     report_id_to_fetched_topic = asyncio.run(_fetch_topics([
@@ -382,30 +434,28 @@ def _fetch(session: Session, today: date, allowed_parliament_number: Optional[in
     ]))
     dates_with_hits = {parse_sitting_date(search_result.sitting_date).date() for search_result in new_search_results}
     sitting_dates_to_probe = [
-        sitting_date for sitting_date in get_dates_between(probe_start_date, today) if sitting_date not in stored_sitting_dates
+        sitting_date
+        for sitting_date in get_dates_between(month_window.first_date, month_window.last_date)
+        if sitting_date not in stored_refresh_state.stored_sitting_dates
     ]
     sitting_date_key_to_response = _fetch_sitting_responses(sitting_dates_to_probe, dates_with_hits)
-    report_id_to_rechecked_topic = asyncio.run(_fetch_topics(recheck_topic_requests))
-    return FetchedRefresh(
+    return FetchedWindow(
         new_search_results,
         report_id_to_fetched_topic,
         sitting_date_key_to_response,
-        report_id_to_stored_content,
-        report_id_to_stored_sitting_date,
-        report_id_to_rechecked_topic,
-        stored_parliament_maximum,
+        stored_refresh_state.stored_parliament_maximum,
     )
 
 
-def _validate_fetched(fetched: FetchedRefresh, allowed_parliament_number: Optional[int]) -> None:
+def _validate_fetched(fetched_window: FetchedWindow, allowed_parliament_number: Optional[int]) -> None:
     field_losses = []
-    for search_result in fetched.new_search_results:
-        html_content = fetched.report_id_to_fetched_topic[search_result.report_id].html_content
+    for search_result in fetched_window.new_search_results:
+        html_content = fetched_window.report_id_to_fetched_topic[search_result.report_id].html_content
         field_losses.extend(get_search_result_field_losses(search_result, build_hansard_website_response(search_result, html_content)))
-    for fetched_topic in [*fetched.report_id_to_fetched_topic.values(), *fetched.report_id_to_rechecked_topic.values()]:
+    for fetched_topic in fetched_window.report_id_to_fetched_topic.values():
         field_losses.extend(get_topic_field_losses(fetched_topic.hansard_topic_response, fetched_topic.html_content))
     sitting_parliament_numbers = set()
-    for sitting_date_key, hansard_report_response in fetched.sitting_date_key_to_response.items():
+    for sitting_date_key, hansard_report_response in fetched_window.sitting_date_key_to_response.items():
         if isinstance(hansard_report_response, HansardReportNewResponse):
             hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date_key)
             if hansard_report_response.metadata is not None and hansard_report_response.metadata.parliment_no is not None:
@@ -417,7 +467,7 @@ def _validate_fetched(fetched: FetchedRefresh, allowed_parliament_number: Option
         field_losses.extend(get_sitting_date_field_losses(hansard_report_response, hansard_sitting_date_response))
     if field_losses:
         raise HansardRefreshHaltError(build_field_mapping_reason(field_losses))
-    _validate_parliament_numbers(sitting_parliament_numbers, fetched.stored_parliament_maximum, allowed_parliament_number)
+    _validate_parliament_numbers(sitting_parliament_numbers, fetched_window.stored_parliament_maximum, allowed_parliament_number)
 
 
 def _set_sitting_detail_columns(sitting: Sitting, hansard_report_response: HansardReportNewResponse) -> None:
@@ -427,16 +477,18 @@ def _set_sitting_detail_columns(sitting: Sitting, hansard_report_response: Hansa
     sitting.a2b = _get_json_column(hansard_report_response.a2b_list)
 
 
-def _write(session: Session, fetched: FetchedRefresh, run_result: RunResult, today: date) -> NewRowIds:
+def _write(session: Session, fetched_window: FetchedWindow, window_result: RunResult, today: date) -> NewRowIds:
     hansard_website_responses = []
-    for search_result in fetched.new_search_results:
-        html_content = fetched.report_id_to_fetched_topic[search_result.report_id].html_content
+    website_report_ids = []
+    for search_result in fetched_window.new_search_results:
+        html_content = fetched_window.report_id_to_fetched_topic[search_result.report_id].html_content
         if (html_content is not None and html_content != "") or search_result.report_type == ReportType.ATBP:
             hansard_website_responses.append(build_hansard_website_response(search_result, html_content))
+            website_report_ids.append(search_result.report_id)
             continue
-        run_result.reports_held_without_text += 1
+        window_result.reports_held_without_text += 1
         if is_held_report_alert_due(parse_sitting_date(search_result.sitting_date).date(), today):
-            run_result.held_reports_to_alert.append(HeldReport(search_result.report_id, search_result.sitting_date))
+            window_result.held_reports_to_alert.append(HeldReport(search_result.report_id, search_result.sitting_date))
     CRUDHansardWebsiteResponse(session).add_many(hansard_website_responses)
 
     reports = [build_report(hansard_website_response) for hansard_website_response in hansard_website_responses]
@@ -447,13 +499,13 @@ def _write(session: Session, fetched: FetchedRefresh, run_result: RunResult, tod
     for report in reports:
         report_speeches = build_report_speeches(report, report_id_to_unattributed_range)
         if not report_speeches:
-            run_result.reports_without_speech_rows += 1
+            window_result.reports_without_speech_rows += 1
         speeches.extend(report_speeches)
     CRUDSpeech(session).add_many(speeches)
 
     hansard_sitting_date_responses = []
     sittings = []
-    for sitting_date_key, hansard_report_response in fetched.sitting_date_key_to_response.items():
+    for sitting_date_key, hansard_report_response in fetched_window.sitting_date_key_to_response.items():
         if isinstance(hansard_report_response, HansardReportNewResponse):
             hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date_key)
             sitting = build_sitting(hansard_sitting_date_response)
@@ -477,14 +529,15 @@ def _write(session: Session, fetched: FetchedRefresh, run_result: RunResult, tod
     sitting_ids = [sitting.id for sitting in sittings if sitting.id is not None]
     link_speakers_by_report_ids_and_sitting_ids(session, report_ids, sitting_ids)
 
-    run_result.website_responses_added = len(hansard_website_responses)
-    run_result.reports_added = len(reports)
-    run_result.speeches_added = len(speeches)
-    run_result.sitting_date_responses_added = len(hansard_sitting_date_responses)
-    run_result.sittings_added = len(sittings)
-    run_result.attendances_added = len(attendances)
-    run_result.attendances_linked = CRUDAttendance(session).get_count_by_sitting_ids_and_speaker_id_not_null(sitting_ids)
-    return NewRowIds(report_ids, sitting_ids)
+    window_result.website_responses_added = len(hansard_website_responses)
+    window_result.reports_added = len(reports)
+    window_result.speeches_added = len(speeches)
+    window_result.sitting_date_responses_added = len(hansard_sitting_date_responses)
+    window_result.sittings_added = len(sittings)
+    window_result.attendances_added = len(attendances)
+    window_result.attendances_linked = CRUDAttendance(session).get_count_by_sitting_ids_and_speaker_id_not_null(sitting_ids)
+    sitting_dates = [parse_sitting_date(sitting_date_key).date() for sitting_date_key in fetched_window.sitting_date_key_to_response]
+    return NewRowIds(report_ids, sitting_ids, website_report_ids, sitting_dates)
 
 
 def _get_new_row_counts(session: Session, report_ids: list[int]) -> NewRowCounts:
@@ -496,18 +549,6 @@ def _get_new_row_counts(session: Session, report_ids: list[int]) -> NewRowCounts
         if category == NAMED_UNLINKED_CATEGORY and speech_row.speaker is not None:
             label_to_row_count[speech_row.speaker] += 1
     return NewRowCounts(category_to_row_count[LINKED_CATEGORY], category_to_row_count[NAMED_UNLINKED_CATEGORY], dict(label_to_row_count))
-
-
-def _get_changed_reports(fetched: FetchedRefresh) -> list[ChangedReport]:
-    changed_reports = []
-    for report_id, rechecked_topic in fetched.report_id_to_rechecked_topic.items():
-        html_content = rechecked_topic.html_content
-        if html_content is None or html_content == "":
-            logger.info(f"Re-check of {report_id} returned no text")
-            continue
-        if get_content_hash(fetched.report_id_to_stored_content[report_id]) != get_content_hash(html_content):
-            changed_reports.append(ChangedReport(report_id, fetched.report_id_to_stored_sitting_date[report_id]))
-    return changed_reports
 
 
 def _finish(
@@ -549,6 +590,23 @@ def _record_finish(
         logger.error(f"Run {refresh_run_id} not recorded: {error_to_record}")
 
 
+def _add_window_result(run_result: RunResult, window_result: RunResult) -> None:
+    run_result.website_responses_added += window_result.website_responses_added
+    run_result.sitting_date_responses_added += window_result.sitting_date_responses_added
+    run_result.sittings_added += window_result.sittings_added
+    run_result.reports_added += window_result.reports_added
+    run_result.speeches_added += window_result.speeches_added
+    run_result.speeches_linked += window_result.speeches_linked
+    run_result.speeches_named_unlinked += window_result.speeches_named_unlinked
+    run_result.attendances_added += window_result.attendances_added
+    run_result.attendances_linked += window_result.attendances_linked
+    run_result.reports_held_without_text += window_result.reports_held_without_text
+    run_result.reports_without_speech_rows += window_result.reports_without_speech_rows
+    run_result.held_reports_to_alert.extend(window_result.held_reports_to_alert)
+    for label, row_count in window_result.label_to_row_count.items():
+        run_result.label_to_row_count[label] = run_result.label_to_row_count.get(label, 0) + row_count
+
+
 def _send_success_alerts(run_result: RunResult) -> None:
     for changed_report in run_result.changed_reports:
         _send_alert(build_changed_report_message(changed_report.report_id, changed_report.sitting_date))
@@ -578,7 +636,7 @@ def _record_failure(
     _record_finish(
         session,
         refresh_run_id,
-        run_result if is_data_committed else RunResult(),
+        run_result,
         RefreshRunStatus.FAILED,
         None,
         failure_reason[:_MAX_FAILURE_REASON_LENGTH],
@@ -593,21 +651,28 @@ def populate_refresh_runs(session: Session, now: datetime, allowed_parliament_nu
     is_run_finished = False
     try:
         _validate_can_run(session, refresh_run_id, now)
-        fetched = _fetch(session, today, allowed_parliament_number)
-        _validate_fetched(fetched, allowed_parliament_number)
-        run_result.changed_reports = _get_changed_reports(fetched)
-        run_result.reports_rechecked = len(fetched.report_id_to_rechecked_topic)
+        stored_refresh_state = _get_stored_refresh_state(session, today)
+        run_result.changed_reports = _fetch_changed_reports(stored_refresh_state)
         run_result.reports_changed = len(run_result.changed_reports)
-        new_row_ids = _write(session, fetched, run_result, today)
-        new_row_counts = _get_new_row_counts(session, new_row_ids.report_ids)
-        run_result.speeches_linked = new_row_counts.linked_row_count
-        run_result.speeches_named_unlinked = new_row_counts.named_unlinked_row_count
-        run_result.label_to_row_count = new_row_counts.label_to_row_count
-        unlinked_share = get_unlinked_share(new_row_counts.linked_row_count, new_row_counts.named_unlinked_row_count)
-        if unlinked_share is not None and is_unlinked_share_over_limit(unlinked_share):
-            raise HansardRefreshHaltError(build_unlinked_reason(unlinked_share, new_row_counts.label_to_row_count))
-        session.commit()
-        is_data_committed = True
+        run_result.reports_rechecked = len(stored_refresh_state.recheck_topic_requests)
+        probe_start_date = get_probe_start_date(max(stored_refresh_state.stored_sitting_dates), today)
+        for month_window in get_month_windows(probe_start_date, today):
+            window_result = RunResult()
+            fetched_window = _fetch_window(stored_refresh_state, month_window, allowed_parliament_number)
+            _validate_fetched(fetched_window, allowed_parliament_number)
+            new_row_ids = _write(session, fetched_window, window_result, today)
+            new_row_counts = _get_new_row_counts(session, new_row_ids.report_ids)
+            window_result.speeches_linked = new_row_counts.linked_row_count
+            window_result.speeches_named_unlinked = new_row_counts.named_unlinked_row_count
+            window_result.label_to_row_count = new_row_counts.label_to_row_count
+            unlinked_share = get_unlinked_share(new_row_counts.linked_row_count, new_row_counts.named_unlinked_row_count)
+            if unlinked_share is not None and is_unlinked_share_over_limit(unlinked_share):
+                raise HansardRefreshHaltError(build_unlinked_reason(unlinked_share, new_row_counts.label_to_row_count))
+            session.commit()
+            stored_refresh_state.stored_report_ids.update(new_row_ids.website_report_ids)
+            stored_refresh_state.stored_sitting_dates.update(new_row_ids.sitting_dates)
+            _add_window_result(run_result, window_result)
+            is_data_committed = run_result.website_responses_added + run_result.sitting_date_responses_added > 0
         if run_result.speeches_added > 0:
             run_result.figures = build_attribution_figures_json(get_attribution_figures(session), datetime.now(timezone.utc))
         latest_sitting_date = CRUDReport(session).get_max_sitting_date_by_content_not_null_and_content_not_empty()
@@ -618,12 +683,16 @@ def populate_refresh_runs(session: Session, now: datetime, allowed_parliament_nu
         _send_success_ping()
         return RefreshRunStatus.SUCCEEDED
     except HansardRefreshHaltError as error:
-        _record_finish(session, refresh_run_id, RunResult(), RefreshRunStatus.HALTED, str(error), None)
+        _record_finish(session, refresh_run_id, run_result, RefreshRunStatus.HALTED, str(error), None)
         _send_alert(build_halt_message(str(error)))
+        if is_data_committed:
+            _send_success_alerts(run_result)
         _send_failure_ping()
         return RefreshRunStatus.HALTED
     except Exception as unexpected_failure:  # noqa: BLE001 a failed run is recorded, alerted and pinged before the error propagates
         _record_failure(session, refresh_run_id, run_result, unexpected_failure, is_data_committed, is_run_finished)
         _send_alert(build_failure_message(_get_alert_failure_reason(unexpected_failure, is_data_committed)))
+        if is_data_committed and not is_run_finished:
+            _send_success_alerts(run_result)
         _send_failure_ping()
         raise

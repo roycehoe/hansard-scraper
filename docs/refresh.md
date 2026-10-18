@@ -13,17 +13,24 @@ In order, a run:
 1. Marks any `RUNNING` row older than 12 hours as `FAILED` ("Run ended without finishing"), then inserts its own `RUNNING` row and commits it.
 2. Fails if another `RUNNING` row started less than 12 hours ago.
 3. Reads the stored sitting dates, report ids and the highest stored Parliament number, and the stored text of every report whose sitting falls in the last 14 days. It then commits, so no transaction stays open during the crawl.
-4. Searches SPRS from the day after the last stored sitting to today, or from 14 days ago if that is earlier. Dates are Singapore dates. It drops hits already stored and hits listed in `data/excluded_report_ids.json`.
-5. Halts if a new hit carries a Parliament number above the highest stored one.
-6. Fetches the topic text of each new hit, then asks for the sitting of every date in the search range that has no stored sitting, then fetches the topic text of each stored report in the 14-day window again.
-7. Halts if any field of a fetched body is lost on its way to a row, or if a fetched sitting carries a new Parliament number.
-8. Compares each re-fetched text with the stored one. A changed report gets an alert and keeps its stored text.
-9. Writes the raw report rows, the reports, their speech rows, the raw sitting rows, the sittings and their attendance rows. A hit whose topic has no text is not stored (see "Halts and how to clear each").
-10. Runs stage 8, the speaker links, on the new speech and attendance rows only.
-11. Halts if more than 5% of the new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
-12. Commits every data row in one transaction. A halt or a failure before this point rolls all of them back.
-13. Computes the attribution figures when the run added speech rows, records the counts and marks the row `SUCCEEDED`.
-14. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
+4. Fetches the topic text of each stored report in the 14-day window again, and halts if any field of a re-fetched body is lost on its way to a row. It compares each re-fetched text with the stored one. A changed report gets an alert and keeps its stored text.
+5. Splits the probe range into calendar months. The range runs from the day after the last stored sitting to today, or from 14 days ago if that is earlier. Dates are Singapore dates. A rerun works out its start the same way from what is stored by then, so it does not request the months an earlier run committed again, apart from the dates after the last stored sitting.
+
+Then, for each month in order, the run:
+
+6. Searches SPRS over the month. It drops hits already stored and hits listed in `data/excluded_report_ids.json`.
+7. Halts if a new hit carries a Parliament number above the highest stored one.
+8. Fetches the topic text of each new hit, then asks for the sitting of every date in the month that has no stored sitting.
+9. Halts if any field of a fetched body is lost on its way to a row, or if a fetched sitting carries a new Parliament number.
+10. Writes the raw report rows, the reports, their speech rows, the raw sitting rows, the sittings and their attendance rows. A hit whose topic has no text is not stored (see "Halts and how to clear each").
+11. Runs stage 8, the speaker links, on the new speech and attendance rows only.
+12. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
+13. Commits the month. A halt or a failure rolls back only the month in progress.
+
+After the last month, the run:
+
+14. Computes the attribution figures when the run added speech rows, records the counts and marks the row `SUCCEEDED`.
+15. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
 
 `refresh.py` exits 0 on success, 2 on a halt and 1 on a failure, after the failure's error propagates.
 
@@ -64,15 +71,26 @@ The run sends the plain ping on success and the `/fail` ping on a halt, a failur
 
 ## Halts and how to clear each
 
-A halt writes no data. The run's row is `HALTED`, `refresh_run.halt_reason` holds the reason, and the halt alert repeats it.
+A halt keeps the months committed before it and writes nothing of the month in progress. The run's row is `HALTED`, `refresh_run.halt_reason` holds the reason, and the halt alert repeats it.
 
 - **New Parliament number.** A new hit or a fetched sitting carries a Parliament number above the highest stored one. Load its members with `scripts/load_parliament_speakers.py --parliament N` (a dry run, then `--commit`), then run `python refresh.py --allow-parliament N` once, supervised, as in the backfill below. The flag accepts that one number for that one run.
 - **Field mapping.** A field present in a fetched body is missing from the row built from it, which means SPRS changed a field. Run `scripts/validate_api_field_mapping.py` by hand to see the field, fix the schema or the mapping, then run again.
-- **Unlinked share.** More than 5% of the new named speech rows have no registry link. The halt message and `halt_reason` list the unmatched labels with their row counts. Add those members to the registry, then run again.
+- **Unlinked share.** More than 5% of the month's new named speech rows have no registry link. The halt message and `halt_reason` list the unmatched labels with their row counts. Add those members to the registry, then run again.
 
 On the first supervised run, read the log's "No sitting response" lines. Each one is a probed date with no sitting, and SPRS should answer it in a shape the run reads as nothing published. If a line shows an answer that looks like a real sitting, stop and check the gateway.
 
-A failure is any other error. The row is `FAILED`, `failure_reason` holds the error type and message, and the run writes no data unless the failure came after the data commit, in which case `failure_reason` starts with "After the data commit". The next run retries.
+A failure is any other error. The row is `FAILED` and `failure_reason` holds the error type and message. A failure keeps the months committed before it, and their rows stay stored; once a month has committed rows, `failure_reason` starts with "After the data commit". The next run retries.
+
+Two cases are known and accepted:
+
+- A run swept as stale by another run keeps committing its months. Each month only adds rows, and the swept run cannot overwrite its `FAILED` status when it ends.
+- A killed supervised run leaves its row `RUNNING`, which blocks the next run for 12 hours. Mark it failed by hand:
+
+  ```sql
+  UPDATE refresh_run SET status = 'FAILED', failure_reason = 'Run ended without finishing', finished_at = now() WHERE id = <id> AND status = 'RUNNING';
+  ```
+
+  The write role's `UPDATE` grant on `refresh_run` covers it.
 
 A hit whose topic has no text yet is not stored, because a raw row cannot be filled in later. Each run fetches it again while its sitting is within the 14-day window. An atbp report is the exception. SPRS serves no text for one, so the run stores it without text, as stage 2 does.
 
@@ -82,16 +100,16 @@ Every alert goes to the one Telegram chat, cut to 4,000 characters.
 
 | Alert | Text | Sent |
 |---|---|---|
-| Summary | `2 sittings, 14 reports, 1,203 rows, 98.9% linked` | After a successful run that stored at least one raw report row or raw sitting row. The linked share is over the new named rows, and the message leaves it off when the run added none. |
-| Changed report | `Report {report id} of {sitting date} changed on SPRS since it was stored. The stored text was kept.` | After a successful run, once per stored report in the 14-day window whose text changed. |
-| Unlinked labels | `Speaker labels with no registry match: {labels}. Add the members to the registry, then link them with scripts/apply_speaker_links.py.` | After a successful run whose new rows hold labels with no registry link, at or under the 5% limit. Up to 20 labels, most rows first, then "and N more". |
-| Held report | `Report {report id} of {sitting date} still has no text after 14 days and will not be fetched again.` | After a successful run, for a held hit whose sitting date is 13 or 14 days before the run's date. The two-day span keeps one missed run from losing the alert, so a hit can alert twice. |
+| Summary | `2 sittings, 14 reports, 1,203 rows, 98.9% linked` | After a successful run, or a halted or failed run that committed rows, that stored at least one raw report row or raw sitting row. The linked share is over the new named rows, and the message leaves it off when the run added none. |
+| Changed report | `Report {report id} of {sitting date} changed on SPRS since it was stored. The stored text was kept.` | After a successful run, or a halted or failed run that committed rows, once per stored report in the 14-day window whose text changed. |
+| Unlinked labels | `Speaker labels with no registry match: {labels}. Add the members to the registry, then link them with scripts/apply_speaker_links.py.` | After a successful run, or a halted or failed run that committed rows, whose new rows hold labels with no registry link, at or under the 5% limit. Up to 20 labels, most rows first, then "and N more". |
+| Held report | `Report {report id} of {sitting date} still has no text after 14 days and will not be fetched again.` | After a successful run, or a halted or failed run that committed rows, for a held hit whose sitting date is 13 or 14 days before the run's date. The two-day span keeps one missed run from losing the alert, so a hit can alert twice. |
 | Halt | `Hansard refresh halted. {reason}` | On every halt. |
 | Failure | `Hansard refresh failed. {error}` | On every failure, including a run that cannot start. For an error the code raises on purpose, `{error}` is its type and message. For any other error it is the type alone, so a database host or user name never reaches the chat. |
 
 ## `refresh_run` columns
 
-One row per run. Every count column is `integer NOT NULL` and counts only what that run did. A halted run, and a run that failed before the data commit, keep every count at 0.
+One row per run. Every count column is `integer NOT NULL` and counts only what that run did. A halted or failed run's counts hold what its committed months stored.
 
 | Column | Type | Meaning |
 |---|---|---|
@@ -121,7 +139,7 @@ One row per run. Every count column is `integer NOT NULL` and counts only what t
 |---|---|
 | `RUNNING` | The run has started and not ended. The next run marks a row still `RUNNING` after 12 hours as `FAILED` |
 | `SUCCEEDED` | The data is committed and the counts are recorded |
-| `HALTED` | A halt check stopped the run and it wrote no data |
+| `HALTED` | A halt check stopped the run. Months committed before it stay stored |
 | `FAILED` | An error stopped the run |
 
 ## Figures and the register

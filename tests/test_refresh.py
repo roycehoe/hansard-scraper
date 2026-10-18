@@ -1,7 +1,8 @@
+import copy
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import date, datetime, timedelta, timezone
+from typing import Optional, Union
 
 import httpx
 import pytest
@@ -25,11 +26,17 @@ from database.speaker import Speaker
 from database.speech import Speech
 from enums import RefreshRunStatus
 from exceptions import HansardGatewayError, HansardRefreshRunError
-from schemas.hansard_report_response import HansardReportNewResponse
+from schemas.hansard_report_response import (
+    HansardReportNewResponse,
+    HansardReportOldResponse,
+)
+from schemas.hansard_search_result import HansardSearchResult
 from schemas.hansard_topic_response import HansardTopicResponse
+from services.hansard_website import get_topic_id
 from services.refresh import SINGAPORE_TIMEZONE, get_sitting_date_key
 from settings import settings
 from tests.refresh_fixtures import FakeParliament, load_speaker_rows, seed_stored
+from utils.sitting_dates import parse_sitting_date
 
 _BOT_TOKEN = "test-bot-token"
 _CHAT_ID = "test-chat"
@@ -38,6 +45,7 @@ _DATABASE_ERROR = "connection to server at db.example failed"
 _DATABASE_HOST = "db.example"
 _NEW_PARLIAMENT_NUMBER = 15
 _OTHER_PARLIAMENT_NUMBER = 16
+_PREVIOUS_PARLIAMENT_NUMBER = 14
 _UNREGISTERED_LABEL = "Mr Nobody Registered"
 _FRESH_RUN_AGE = timedelta(hours=1)
 _STALE_RUN_AGE = timedelta(hours=13)
@@ -46,6 +54,12 @@ _SINGAPORE_RUN_HOUR = 4
 _RECHECK_WINDOW_DAYS = 14
 _HELD_ALERT_DAY_OFFSET = 1
 _MAX_NAMED_UNLINKED_ROWS = 1
+_OCTOBER_RUN_DATE = date(2024, 10, 1)
+_OCTOBER_SITTING_DATE_KEY = "1-10-2024"
+_OCTOBER_REPORT_ID = "written-answer-na-99999#"
+_OCTOBER_MONTH = 10
+_RESUMED_PROBE_START_DATE = date(2024, 9, 11)
+_STRONG_TEXT_RE = re.compile(r"<strong>[^<]+</strong>")
 _SUMMARY_RE = re.compile(r"^\d+ sittings?, \d+ reports?, [\d,]+ rows?, \d+\.\d% linked$")
 _STRONG_LABEL_RE = re.compile(r"<strong>((?:Mr|Ms|Mrs|Dr) [^<:]+)</strong>")
 _FIRST_WORD_RE = re.compile(r"\bthe\b")
@@ -140,6 +154,13 @@ def _set_new_parliament_number(fake_parliament: FakeParliament, parliament_numbe
 
 def _get_first_new_report_id(fake_parliament: FakeParliament) -> str:
     return fake_parliament.new_search_results[0]["reportId"]
+
+
+def _get_new_topic_ids(fake_parliament: FakeParliament) -> set[str]:
+    return {
+        get_topic_id(search_result["reportId"], search_result["htmlFileName"], search_result["reportVersion"])
+        for search_result in fake_parliament.new_search_results
+    }
 
 
 def _get_new_contents(fake_parliament: FakeParliament) -> list[str]:
@@ -297,8 +318,9 @@ def test_new_parliament_number_halts(
     refresh_run = _assert_halted(scratch_engine, alerts, row_counts_before)
     assert refresh_run.halt_reason is not None
     assert str(_NEW_PARLIAMENT_NUMBER) in refresh_run.halt_reason
-    assert fake_parliament.topic_calls == []
-    assert fake_parliament.sitting_calls == []
+    new_topic_ids = _get_new_topic_ids(fake_parliament)
+    assert not any(topic_id in new_topic_ids for topic_id in fake_parliament.topic_calls)
+    assert not any(parse_sitting_date(sitting_call).month == fake_parliament.new_sitting_date.month for sitting_call in fake_parliament.sitting_calls)
 
 
 def test_new_parliament_number_in_sitting_body_halts(
@@ -563,12 +585,18 @@ def test_finish_guard_error_in_halt_still_alerts_and_pings(
     row_counts_before = _get_row_counts(scratch_engine)
     _set_new_parliament_number(fake_parliament, _NEW_PARLIAMENT_NUMBER)
 
+    is_run_marked_failed = False
+
     def mark_running_run_failed() -> None:
+        nonlocal is_run_marked_failed
+        if is_run_marked_failed:
+            return
         with Session(scratch_engine) as session:
             running_run = session.exec(select(RefreshRun).where(RefreshRun.status == RefreshRunStatus.RUNNING)).one()
             running_run.status = RefreshRunStatus.FAILED
             session.add(running_run)
             session.commit()
+        is_run_marked_failed = True
 
     fake_parliament.on_search = mark_running_run_failed
 
@@ -679,3 +707,111 @@ def test_stale_running_row_is_marked_failed(
     assert len([message for message in alerts.messages if _SUMMARY_RE.match(message)]) == 1
     _assert_success_pinged(alerts)
 
+
+
+def _get_october_now() -> datetime:
+    return datetime(
+        _OCTOBER_RUN_DATE.year, _OCTOBER_RUN_DATE.month, _OCTOBER_RUN_DATE.day, _SINGAPORE_RUN_HOUR, tzinfo=SINGAPORE_TIMEZONE,
+    ).astimezone(timezone.utc)
+
+
+def _add_october_hit(fake_parliament: FakeParliament, parliament_number: int) -> None:
+    october_search_result = copy.deepcopy(fake_parliament.new_search_results[0])
+    october_topic = copy.deepcopy(fake_parliament.report_id_to_topic[october_search_result["reportId"]])
+    october_topic["resultHTML"]["content"] = _STRONG_TEXT_RE.sub(f"<strong>{_UNREGISTERED_LABEL}</strong>", october_topic["resultHTML"]["content"])
+    october_search_result["reportId"] = _OCTOBER_REPORT_ID
+    october_search_result["sittingDate"] = _OCTOBER_SITTING_DATE_KEY
+    october_search_result["parlNo"] = str(parliament_number)
+    fake_parliament.new_search_results.append(october_search_result)
+    fake_parliament.report_id_to_topic[_OCTOBER_REPORT_ID] = october_topic
+
+
+def _get_september_report_count(fake_parliament: FakeParliament) -> int:
+    return len([search_result for search_result in fake_parliament.new_search_results if search_result["reportId"] != _OCTOBER_REPORT_ID])
+
+
+def test_halt_in_a_later_month_keeps_the_earlier_months(
+    scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament, alerts: _AlertRecorder,
+) -> None:
+    seed_stored(scratch_session)
+    row_counts_before = _get_row_counts(scratch_engine)
+    _add_october_hit(fake_parliament, _OTHER_PARLIAMENT_NUMBER)
+
+    status = refresh_runs.populate_refresh_runs(scratch_session, _get_october_now(), None)
+
+    assert status == RefreshRunStatus.HALTED
+    refresh_run = _get_only_refresh_run(scratch_engine)
+    assert refresh_run.status == RefreshRunStatus.HALTED
+    assert refresh_run.reports_added == _get_september_report_count(fake_parliament)
+    _assert_rows_added(scratch_engine, row_counts_before, refresh_run)
+    assert refresh_run.speeches_added > 0
+    assert len([message for message in alerts.messages if message.startswith("Hansard refresh halted.")]) == 1
+    assert len([message for message in alerts.messages if _SUMMARY_RE.match(message)]) == 1
+    _assert_failure_pinged(alerts)
+
+
+def test_rerun_after_a_failure_resumes_without_refetching(
+    scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament, alerts: _AlertRecorder, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    is_october_search_failed = False
+
+    def fail_the_first_october_search(from_date: date, to_date: date) -> list[HansardSearchResult]:
+        nonlocal is_october_search_failed
+        if from_date.month == _OCTOBER_MONTH and not is_october_search_failed:
+            is_october_search_failed = True
+            raise HansardGatewayError("Search request failed for page 1")
+        return fake_parliament.get_all_hansard_search_results(from_date, to_date)
+
+    monkeypatch.setattr(refresh_runs, "get_all_hansard_search_results", fail_the_first_october_search)
+
+    with pytest.raises(HansardGatewayError):
+        refresh_runs.populate_refresh_runs(scratch_session, _get_october_now(), None)
+
+    failed_run = _get_only_refresh_run(scratch_engine)
+    assert failed_run.status == RefreshRunStatus.FAILED
+    assert failed_run.reports_added == len(fake_parliament.new_search_results)
+    assert failed_run.failure_reason is not None
+    assert failed_run.failure_reason.startswith("After the data commit")
+    fake_parliament.search_calls.clear()
+    fake_parliament.sitting_calls.clear()
+    fake_parliament.topic_calls.clear()
+
+    status = refresh_runs.populate_refresh_runs(scratch_session, _get_october_now(), None)
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    second_run = _get_refresh_runs(scratch_engine)[-1]
+    assert second_run.status == RefreshRunStatus.SUCCEEDED
+    assert second_run.reports_added == 0
+    new_topic_ids = _get_new_topic_ids(fake_parliament)
+    assert not any(topic_id in new_topic_ids for topic_id in fake_parliament.topic_calls)
+    assert fake_parliament.search_calls[0][0] == _RESUMED_PROBE_START_DATE
+    assert get_sitting_date_key(fake_parliament.new_sitting_date) not in fake_parliament.sitting_calls
+
+
+def test_unlinked_share_halt_in_a_later_month_records_only_committed_counts(
+    scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament, alerts: _AlertRecorder, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    row_counts_before = _get_row_counts(scratch_engine)
+    _add_october_hit(fake_parliament, _PREVIOUS_PARLIAMENT_NUMBER)
+
+    def get_unpublished_october_sitting(sitting_date: str) -> Union[HansardReportOldResponse, HansardReportNewResponse]:
+        if sitting_date == _OCTOBER_SITTING_DATE_KEY:
+            return HansardReportNewResponse()
+        return fake_parliament.get_hansard_report_response(sitting_date)
+
+    monkeypatch.setattr(refresh_runs, "get_hansard_report_response", get_unpublished_october_sitting)
+
+    status = refresh_runs.populate_refresh_runs(scratch_session, _get_october_now(), None)
+
+    assert status == RefreshRunStatus.HALTED
+    refresh_run = _get_only_refresh_run(scratch_engine)
+    assert refresh_run.status == RefreshRunStatus.HALTED
+    assert refresh_run.halt_reason is not None
+    assert "% of new speech rows" in refresh_run.halt_reason
+    assert _UNREGISTERED_LABEL in refresh_run.halt_reason
+    assert refresh_run.reports_added == _get_september_report_count(fake_parliament)
+    _assert_rows_added(scratch_engine, row_counts_before, refresh_run)
+    with Session(scratch_engine) as session:
+        assert session.exec(select(Report).where(Report.report_id == _OCTOBER_REPORT_ID)).all() == []
