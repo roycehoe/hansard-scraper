@@ -124,7 +124,9 @@ def test_table_checks_for_exactly_one_source() -> None:
 
 
 def test_data_file_builds_chiam_two_spans() -> None:
-    memberships = [MembershipPartyAffiliations.model_validate(record) for record in json.loads(_DATA_FILE.read_text())]
+    memberships = [
+        MembershipPartyAffiliations.model_validate(record) for record in json.loads(_DATA_FILE.read_text()) if record["name"] == "Chiam See Tong"
+    ]
 
     party_affiliations = build_party_affiliations(memberships, _get_chiam_speakers())
 
