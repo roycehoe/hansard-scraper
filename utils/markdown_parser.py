@@ -25,6 +25,9 @@ _EMPHASIS_START_PATTERN = r"^\s*[_*]"
 _COLUMN_RANGE_LINE_PATTERN = r"\*Cols?\."
 _TIME_OF_DAY_LINE_PATTERN = r"\d{1,2}[.:]\d{2}\s*[ap]m\s*"
 _HYPHENATED_FRAGMENT_PATTERN = r"[A-Za-z]-$"
+_LIST_ITEM_START_PATTERN = r"^\s*(?:\(\s*(?:[a-z]{1,3}|[ivxl]{1,5}|[A-Z]|\d{1,2})\s*\)|\d{1,3}[.)])\s+\S"
+_PERSON_NAME_LINE_PATTERN = r"^(?:Mr|Mrs|Ms|Miss|Mdm|Madam|Dr|Prof|Assoc Prof|Assoc\. Prof|Er|Encik|Inche|Haji|Tuan|Che|BG|RAdm|COL|LG|MG)\.? [A-Z][^.?!:;]{2,60}$"
+_MAX_NAME_LINE_WORDS = 12
 _PAGE_BREAK_ARTIFACT_PATTERN = r"   \n  \n\*\*\*\*  \n  \n"
 _TWO_SPACE_PAGE_BREAK_ARTIFACT_PATTERN = r"^([^\n|]*[^\s.?!:;\"'\u201d\u2019)\]_*|])  \n  \n\*\*\*\*  \n  \n"
 _BOLD_ONLY_LINE_PATTERN = r"\*\*[^\n*].*\*\*"
@@ -219,11 +222,20 @@ def _is_proc_text_line(line: str) -> bool:
     return re.match(_PROC_TEXT_LINE_START_PATTERN, line) is not None
 
 
+def _is_name_line(line: str) -> bool:
+    return re.match(_PERSON_NAME_LINE_PATTERN, line.strip()) is not None and len(line.split()) <= _MAX_NAME_LINE_WORDS
+
+
 def _should_join_across_page_break(before: str, after: str) -> bool:
     if not before.strip() or not after.strip():
         return False
     # NOTE: the source tags a whole block as procedural text, so it never joins the paragraph next to it.
     if _is_proc_text_line(before) or _is_proc_text_line(after):
+        return False
+    # NOTE: a list item ends in a semicolon or a comma and a roll name has no full stop, so the sentence-end test below would call both unfinished.
+    if re.match(_LIST_ITEM_START_PATTERN, after):
+        return False
+    if _is_name_line(before) and _is_name_line(after):
         return False
     # NOTE: a marker inside a bracketed note cuts the note itself, whatever emphasis or stage-direction marks sit at the cut.
     if _has_unclosed_bracket(before) and re.match(_NON_SPEECH_BLOCK_PATTERN, after) is None:

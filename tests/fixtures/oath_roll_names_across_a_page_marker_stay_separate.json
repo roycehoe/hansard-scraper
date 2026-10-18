@@ -1,0 +1,47 @@
+{
+  "why": "Two names of an oath roll either side of a page marker, 'Mr Yaw Shin Leong (Hougang)' and 'Ms Sylvia Lim (Aljunied)', joined into one row. Each name keeps its own row.",
+  "source_report_id": 20918,
+  "report_version": "sprs2",
+  "report_type": "admin-oaths",
+  "title": "Administration of Oaths",
+  "subtitle": null,
+  "original_title": "Administration of Oaths",
+  "html": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><head></head><body><div class=\"hansardContent\"><table bgcolor=\"#FFFFFF\" border=\"1\" bordercolor=\"#000000\" cellpadding=\"1\" cellspacing=\"0\" width=\"100%\"><tr><td><table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">12</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">88</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">10-10-2011</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">Administration of Oaths</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Mr Speaker</font></td></tr></table></td></tr></table><p class=\"column\">Page: 5</p><h1 class=\"title topictitle1\">Administration of Oaths<!--topictitle--></h1>\n<div class=\"body hansardBaseBody hansardContenteBody\" id=\"id-bb7c4ee1-3fea-4069-8e0f-77822ca2cf00\"><a name=\"id-bb7c4ee1-3fea-4069-8e0f-77822ca2cf00\"><!--a--></a><div class=\"section hcSection hcSpeech\" id=\"id-76820ce0-5c75-4198-bdd4-3f75a0a43b95\"><a name=\"admin-oaths__id-76820ce0-5c75-4198-bdd4-3f75a0a43b95\"><!--a--></a><p class=\"p hcParagraph\" id=\"id-6bb363d3-f243-4789-8c89-640dff6c62bb\"><a name=\"admin-oaths__id-6bb363d3-f243-4789-8c89-640dff6c62bb\"><!--a--></a><span class=\"ph hcInline hcMember\"><strong class=\"ph b\">Mr Speaker</strong></span>: Hon. Members will\nnow proceed to take the Oath of Allegiance at the Table, commencing\nwith the Prime Minister and thereafter in the order as arranged. </p>\n<p class=\"p hcParagraph\" id=\"id-98ea7239-33f0-45b5-8876-dff50dc894cb\"><a name=\"admin-oaths__id-98ea7239-33f0-45b5-8876-dff50dc894cb\"><!--a--></a><em class=\"ph i\">Members took and subscribed\nthe Oath of Allegiance, or made Affirmation of Allegiance, in the\norder below:</em></p>\n<p class=\"p hcParagraph\"><span class=\"ph hcInline hcMember\">Mr Lee Hsien Loong (Ang Mo Kio)</span></p>\n<p class=\"p hcParagraph\"><span class=\"ph hcInline hcMember\">Mr Ong Teng Koon (Sembawang)</span></p>\n<p class=\"p hcParagraph\"><span class=\"ph hcInline hcMember\">Mr Yaw Shin Leong (Hougang)</span></p>\n<p class=\"column\">Page: 7</p><p class=\"p hcParagraph\"><span class=\"ph hcInline hcMember\">Ms Sylvia Lim (Aljunied)</span></p>\n<p class=\"p hcParagraph\"><span class=\"ph hcInline hcMember\">Mr Christopher De Souza (Holland-Bukit Timah)</span></p>\n</div></div></body></html>",
+  "expected_rows": [
+    [
+      "Mr Speaker",
+      "Hon. Members will now proceed to take the Oath of Allegiance at the Table, commencing with the Prime Minister and thereafter in the order as arranged.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "_Members took and subscribed the Oath of Allegiance, or made Affirmation of Allegiance, in the order below:_",
+      "PROCEDURAL"
+    ],
+    [
+      null,
+      "Mr Lee Hsien Loong (Ang Mo Kio)",
+      "UNCLASSIFIED"
+    ],
+    [
+      null,
+      "Mr Ong Teng Koon (Sembawang)",
+      "UNCLASSIFIED"
+    ],
+    [
+      null,
+      "Mr Yaw Shin Leong (Hougang)",
+      "UNCLASSIFIED"
+    ],
+    [
+      null,
+      "Ms Sylvia Lim (Aljunied)",
+      "UNCLASSIFIED"
+    ],
+    [
+      null,
+      "Mr Christopher De Souza (Holland-Bukit Timah)",
+      "UNCLASSIFIED"
+    ]
+  ]
+}

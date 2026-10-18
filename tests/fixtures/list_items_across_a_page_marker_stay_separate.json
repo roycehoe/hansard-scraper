@@ -1,0 +1,47 @@
+{
+  "why": "A list item opening '(c) ...' after a page marker joined the '(b) ...' item before it. Each lettered item keeps its own row.",
+  "source_report_id": 19313,
+  "report_version": "sprs3",
+  "report_type": "budget",
+  "title": "Debate on Annual Budget Statement",
+  "subtitle": null,
+  "original_title": "Debate on Annual Budget Statement",
+  "html": "<p>[(proc text) Order read for Resumption of Debate on Question [25 February 2013], (proc text)]</p><p><strong>Ms Jessica Tan Soon Neo (East Coast)</strong>:&nbsp;Mdm Speaker, thank you for allowing me to participate in the Budget Debate. For \"a better Singapore\". That is the essence of this year's Budget.</p><p>One, reduce expenditure by:</p><p>(a) Stopping the top-up of endowment funds. I think it makes little sense to take investment income from an endowment fund, the National Reserves, to start another endowment fund;</p><p>(b) Government itself going on a productivity and cost savings drive to model behaviour to the rest of the nation. Cutting Expenditure on Manpower and Development Expenditure by 5% will save nearly $1 billion;</p><p><span style=\"color: rgb(51, 51, 51);\">Page: 75</span></p><p>(c) Reducing Government's share in subsidising the wages of workers; and</p><p>(d) Increasing defence expenditure only at the rate of inflation.</p>",
+  "expected_rows": [
+    [
+      null,
+      "Order read for Resumption of Debate on Question [25 February 2013],",
+      "PROCEDURAL"
+    ],
+    [
+      "Ms Jessica Tan Soon Neo (East Coast)",
+      "Mdm Speaker, thank you for allowing me to participate in the Budget Debate. For \"a better Singapore\". That is the essence of this year's Budget.",
+      "SPEECH"
+    ],
+    [
+      "Ms Jessica Tan Soon Neo (East Coast)",
+      "One, reduce expenditure by:",
+      "SPEECH"
+    ],
+    [
+      "Ms Jessica Tan Soon Neo (East Coast)",
+      "(a) Stopping the top-up of endowment funds. I think it makes little sense to take investment income from an endowment fund, the National Reserves, to start another endowment fund;",
+      "SPEECH"
+    ],
+    [
+      "Ms Jessica Tan Soon Neo (East Coast)",
+      "(b) Government itself going on a productivity and cost savings drive to model behaviour to the rest of the nation. Cutting Expenditure on Manpower and Development Expenditure by 5% will save nearly $1 billion;",
+      "SPEECH"
+    ],
+    [
+      "Ms Jessica Tan Soon Neo (East Coast)",
+      "(c) Reducing Government's share in subsidising the wages of workers; and",
+      "SPEECH"
+    ],
+    [
+      "Ms Jessica Tan Soon Neo (East Coast)",
+      "(d) Increasing defence expenditure only at the rate of inflation.",
+      "SPEECH"
+    ]
+  ]
+}
