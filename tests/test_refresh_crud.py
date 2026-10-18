@@ -3,6 +3,7 @@ from typing import Optional
 
 import pytest
 from sqlalchemy import text
+from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
@@ -133,4 +134,24 @@ def test_refresh_run_status_check_rejects_unknown(scratch_session: Session) -> N
 
     with pytest.raises(IntegrityError, match="ck_refresh_run_status"):
         scratch_session.execute(statement)
+    scratch_session.rollback()
+
+
+def test_get_by_id_for_update_reads_the_stored_status(scratch_engine: Engine, scratch_session: Session) -> None:
+    refresh_run = RefreshRun()
+    CRUDRefreshRun(scratch_session).create(refresh_run)
+    refresh_run_id = refresh_run.id
+    assert refresh_run_id is not None
+    assert refresh_run.status == RefreshRunStatus.RUNNING
+    with Session(scratch_engine) as other_session:
+        other_refresh_run = other_session.get(RefreshRun, refresh_run_id)
+        assert other_refresh_run is not None
+        other_refresh_run.status = RefreshRunStatus.FAILED
+        other_session.add(other_refresh_run)
+        other_session.commit()
+
+    stored_refresh_run = CRUDRefreshRun(scratch_session).get_by_id_for_update(refresh_run_id)
+
+    assert stored_refresh_run is not None
+    assert stored_refresh_run.status == RefreshRunStatus.FAILED
     scratch_session.rollback()

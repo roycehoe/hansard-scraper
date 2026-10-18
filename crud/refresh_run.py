@@ -19,8 +19,14 @@ class CRUDRefreshRun:
         self.session.add(refresh_run)
         self.session.commit()
 
+    # NOTE: populate_existing, because a locked read of a row already in the session would keep its stale status
     def get_by_id_for_update(self, refresh_run_id: int) -> Optional[RefreshRun]:
-        statement = select(RefreshRun).where(RefreshRun.id == refresh_run_id).with_for_update()
+        statement = (
+            select(RefreshRun)
+            .where(RefreshRun.id == refresh_run_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
         return self.session.exec(statement).first()
 
     def get_by_status(self, status: RefreshRunStatus) -> list[RefreshRun]:
