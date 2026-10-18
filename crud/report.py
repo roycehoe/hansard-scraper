@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import text
-from sqlmodel import Session, col, delete, select
+from sqlmodel import Session, col, delete, func, select
 
 from database.report import Report
 
@@ -83,6 +83,22 @@ class CRUDReport:
     def get_all_report_ids(self) -> set[str]:
         statement = select(Report.report_id)
         return set(self.session.exec(statement).all())
+
+    def get_max_parliament_number(self) -> Optional[int]:
+        statement = select(func.max(Report.parliament_number))
+        return self.session.exec(statement).one()
+
+    def get_report_ids_by_sitting_date_from(self, first_sitting_date: datetime) -> set[str]:
+        statement = select(Report.report_id).where(col(Report.sitting_date) >= first_sitting_date)
+        return set(self.session.exec(statement).all())
+
+    def get_max_sitting_date_by_content_not_null_and_content_not_empty(self) -> Optional[datetime]:
+        statement = (
+            select(func.max(Report.sitting_date))
+            .where(col(Report.content).is_not(None))
+            .where(Report.content != "")
+        )
+        return self.session.exec(statement).one()
 
     def get_header_rows(self) -> list[ReportHeaderRow]:
         statement = select(Report.id, Report.report_type, Report.parliament_number, Report.sitting_date, Report.title)

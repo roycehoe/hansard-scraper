@@ -71,6 +71,15 @@ class CRUDAttendance:
         statement = select(Attendance).where(col(Attendance.sitting_id).in_(sitting_ids))
         return list(self.session.exec(statement).all())
 
+    def get_count_by_sitting_ids_and_speaker_id_not_null(self, sitting_ids: list[int]) -> int:
+        statement = (
+            select(func.count())
+            .select_from(Attendance)
+            .where(col(Attendance.sitting_id).in_(sitting_ids))
+            .where(col(Attendance.speaker_id).is_not(None))
+        )
+        return self.session.exec(statement).one()
+
     def get_distinct_sitting_ids(self) -> set[int]:
         statement = select(Attendance.sitting_id).distinct()
         sitting_ids = self.session.exec(statement).all()

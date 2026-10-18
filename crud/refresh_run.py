@@ -1,0 +1,28 @@
+from typing import Optional
+
+from sqlmodel import Session, select
+
+from database.refresh_run import RefreshRun
+from enums import RefreshRunStatus
+
+
+class CRUDRefreshRun:
+    def __init__(self, session: Session):
+        self.session = session
+
+    def create(self, refresh_run: RefreshRun) -> None:
+        self.session.add(refresh_run)
+        self.session.commit()
+
+    # NOTE: commits, unlike the data updates, so a run's row survives a rollback of its data
+    def update(self, refresh_run: RefreshRun) -> None:
+        self.session.add(refresh_run)
+        self.session.commit()
+
+    def get_by_id_for_update(self, refresh_run_id: int) -> Optional[RefreshRun]:
+        statement = select(RefreshRun).where(RefreshRun.id == refresh_run_id).with_for_update()
+        return self.session.exec(statement).first()
+
+    def get_by_status(self, status: RefreshRunStatus) -> list[RefreshRun]:
+        statement = select(RefreshRun).where(RefreshRun.status == status)
+        return list(self.session.exec(statement).all())
