@@ -347,6 +347,8 @@ _PARENTHESISED_RE = re.compile(r"^\(.*\)$")
 _HONOURABLE_MEMBERS_RE = re.compile(r"^(?:Some |The )?[Hh]on(?:ourable|\.)? Members?$")
 _LOWERCASE_START_RE = re.compile(r"^[a-z]")
 _CHAMBER_EVENT_VERB_RE = re.compile(r"^(?:indicated|rose|resumed|say|said|signified|left|entered|took|made|stood|went|remained|again|later|and)\b")
+_QUESTION_LEAD_IN_RE = re.compile(r"^The following questions? stood in the name of\s+(?:\*\*[^*]+\*\*\s*)+[–—-]*$")
+_TRAILING_DASH_RE = re.compile(r"\s*[–—-]+$")
 _ITALIC_HEADING_RE = re.compile(r"^_[^_].*_$")
 _MAX_ITALIC_TITLE_LENGTH = 150
 _ITALIC_TITLE_RE = re.compile(rf"^_[^_\n]{{1,{_MAX_ITALIC_TITLE_LENGTH}}}(?<!!)_$")
@@ -950,6 +952,12 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
             is_language_note_line = speaker_without_note == "" and transcript == ""
             # NOTE: A bold line holding only a language note keeps its text so it stays a section annotation.
             raw_speaker = speaker_without_note or raw_speaker
+            # NOTE: the lead-in sentence stands outside the bold name and a dash follows it, so the generic split would drop the sentence and keep the dash in the label.
+            if report_version == ReportVersion.SPRS3 and _QUESTION_LEAD_IN_RE.match(parsed_line) is not None:
+                (preamble_speeches if is_in_preamble else speeches).append(ParsedSpeech(speaker=None, transcript=unbolded_line, kind=SpeechKind.PROCEDURAL))
+                current_speaker = _TRAILING_DASH_RE.sub("", raw_speaker)
+                is_in_preamble = False
+                continue
             # NOTE: the source bolds a label up to the constituency's last word and leaves its closing bracket outside the bold, or drops it.
             if raw_speaker.count(_OPENING_PARENTHESIS) > raw_speaker.count(_CLOSING_PARENTHESIS):
                 raw_speaker += _CLOSING_PARENTHESIS

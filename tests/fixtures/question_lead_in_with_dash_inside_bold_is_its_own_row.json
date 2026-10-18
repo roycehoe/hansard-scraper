@@ -1,0 +1,32 @@
+{
+  "why": "A written answer opens with the sentence 'The following question stood in the name of **Ms Poh Li San –**'. The sentence keeps a PROCEDURAL row with no speaker, and the label is the name without the dash.",
+  "source_report_id": 46024,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Deadline for Designated Smoking Corners to be Removed from Hawker Centres and Food Establishments",
+  "subtitle": null,
+  "original_title": "Deadline for Designated Smoking Corners to be Removed from Hawker Centres and Food Establishments ",
+  "html": "<p>The following question stood in the name of <strong> Ms Poh Li San – </strong></p><p> 34 To ask the Minister for Sustainability and the Environment (a) whether there is a deadline for all designated smoking corners to be removed from hawker centres and other food establishments; and (b) if not, whether there are plans to enclose these areas and retrofit them with special air filters.</p><p><strong>\tMs Nadia Ahmad Samdin (Ang Mo Kio)</strong>:&nbsp;Question No 34, please.</p><p><strong>\tThe Senior Minister of State for Sustainability and the Environment (Dr Amy Khor Lean Suan) (for the Minister for&nbsp;Sustainability and the Environment)</strong>: Since 2015, all newly built and redeveloped hawker centres have been smoke-free. As for existing hawker centres, NEA has been engaging local stakeholders, such as the Hawkers' Associations and Town Councils, on the progressive removal of smoking corners when opportune, such as during repair and redecoration works.</p></span></div></body></html>",
+  "expected_rows": [
+    [
+      null,
+      "The following question stood in the name of Ms Poh Li San –",
+      "PROCEDURAL"
+    ],
+    [
+      "Ms Poh Li San",
+      "34 To ask the Minister for Sustainability and the Environment (a) whether there is a deadline for all designated smoking corners to be removed from hawker centres and other food establishments; and (b) if not, whether there are plans to enclose these areas and retrofit them with special air filters.",
+      "SPEECH"
+    ],
+    [
+      "Ms Nadia Ahmad Samdin (Ang Mo Kio)",
+      "Question No 34, please.",
+      "SPEECH"
+    ],
+    [
+      "The Senior Minister of State for Sustainability and the Environment (Dr Amy Khor Lean Suan) (for the Minister for Sustainability and the Environment)",
+      "Since 2015, all newly built and redeveloped hawker centres have been smoke-free. As for existing hawker centres, NEA has been engaging local stakeholders, such as the Hawkers' Associations and Town Councils, on the progressive removal of smoking corners when opportune, such as during repair and redecoration works.",
+      "SPEECH"
+    ]
+  ]
+}

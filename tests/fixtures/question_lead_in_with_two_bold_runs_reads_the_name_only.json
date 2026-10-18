@@ -1,0 +1,27 @@
+{
+  "why": "A written answer opens with 'The following question stood in the name of **Miss Cheng Li Hui** **—**'. The label is the name, not the name and the dash.",
+  "source_report_id": 45151,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Loans Offered to Private Hire Drivers by Transport Startup without Moneylender Licence",
+  "subtitle": null,
+  "original_title": "Loans Offered to Private Hire Drivers by Transport Startup without Moneylender Licence",
+  "html": "<p>The following question stood in the name of <strong> Miss Cheng Li Hui </strong>\t<strong>— </strong></p><p>5 To ask&nbsp;the Minister for Law (a) whether a transport startup without a moneylender licence is allowed to offer loans to their pool of drivers at a high admin fee; (b) how can the drivers be assured that they will not be locked in unfairly to the transport startups after obtaining the loans; and (c) whether there will be Government regulation on startups offering similar services operating within the grey area of the law.&nbsp;</p><p><strong>\tMr Lim Biow Chuan (Mountbatten)</strong>: Question No 5, Sir.</p></span></div></body></html>",
+  "expected_rows": [
+    [
+      null,
+      "The following question stood in the name of Miss Cheng Li Hui —",
+      "PROCEDURAL"
+    ],
+    [
+      "Miss Cheng Li Hui",
+      "5 To ask the Minister for Law (a) whether a transport startup without a moneylender licence is allowed to offer loans to their pool of drivers at a high admin fee; (b) how can the drivers be assured that they will not be locked in unfairly to the transport startups after obtaining the loans; and (c) whether there will be Government regulation on startups offering similar services operating within the grey area of the law.",
+      "SPEECH"
+    ],
+    [
+      "Mr Lim Biow Chuan (Mountbatten)",
+      "Question No 5, Sir.",
+      "SPEECH"
+    ]
+  ]
+}

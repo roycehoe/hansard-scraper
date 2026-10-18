@@ -1,0 +1,32 @@
+{
+  "why": "A written answer opens with 'The following questions stood in the name of **Ms Janice Koh** –'. The dash is plain text after the bold run; it was a speech row of its own.",
+  "source_report_id": 18413,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Granting of Public Entertainment Category One Licences",
+  "subtitle": null,
+  "original_title": "Granting of Public Entertainment Category One Licences",
+  "html": "<p><span style=\"color: rgb(51, 51, 51);\">The following questions stood in the name of&nbsp;</span><strong style=\"color: rgb(51, 51, 51);\">Ms Janice Koh&nbsp;</strong>–</p><p>8&nbsp;To\task the Deputy Prime Minister and Minister for Home Affairs (a) how are Public Entertainment (PE) Category One licences for music and entertainment establishments assessed, granted and renewed; (b) whether there is a quota for such licences in each precinct or neighbourhood; and (c) if so, how does the Ministry assess the relative merits of renewing the licences of incumbent businesses against awarding licences to new players.</p><p>9 To ask the Deputy Prime Minister and Minister for Home Affairs (a) why the \"live\" music venue, Broadcast HQ, is denied a Public Entertainment (PE) Category One licence while other entertainment outlets like KTV lounges are allowed to operate under such a licence on the same street; and (b) when assessing licence applications and renewals, whether consideration can be given to an establishment's potential to promote the local music industry and enhance the vibrancy and attractiveness of a precinct or neighbourhood.</p><p><strong>\tMr Nicholas Fang (Nominated Member)</strong>:&nbsp;Question No 8.</p></span></div></body></html>",
+  "expected_rows": [
+    [
+      null,
+      "The following questions stood in the name of Ms Janice Koh –",
+      "PROCEDURAL"
+    ],
+    [
+      "Ms Janice Koh",
+      "8 To ask the Deputy Prime Minister and Minister for Home Affairs (a) how are Public Entertainment (PE) Category One licences for music and entertainment establishments assessed, granted and renewed; (b) whether there is a quota for such licences in each precinct or neighbourhood; and (c) if so, how does the Ministry assess the relative merits of renewing the licences of incumbent businesses against awarding licences to new players.",
+      "SPEECH"
+    ],
+    [
+      "Ms Janice Koh",
+      "9 To ask the Deputy Prime Minister and Minister for Home Affairs (a) why the \"live\" music venue, Broadcast HQ, is denied a Public Entertainment (PE) Category One licence while other entertainment outlets like KTV lounges are allowed to operate under such a licence on the same street; and (b) when assessing licence applications and renewals, whether consideration can be given to an establishment's potential to promote the local music industry and enhance the vibrancy and attractiveness of a precinct or neighbourhood.",
+      "SPEECH"
+    ],
+    [
+      "Mr Nicholas Fang (Nominated Member)",
+      "Question No 8.",
+      "SPEECH"
+    ]
+  ]
+}

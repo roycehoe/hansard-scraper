@@ -1,0 +1,27 @@
+{
+  "why": "A written answer opens with 'The following question stood in the name of  **Mr Gan Thiam Poh** –', two spaces before the bold name. The lead-in keeps a PROCEDURAL row as printed, and the label is the name.",
+  "source_report_id": 18076,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Ridership on Downtown Line",
+  "subtitle": null,
+  "original_title": "Ridership on Downtown Line",
+  "html": "<p><span style=\"color: rgb(51, 51, 51);\">The following question stood in the name of&nbsp;</span>\t<strong style=\"color: rgb(51, 51, 51);\">Mr Gan Thiam Poh&nbsp;</strong>–</p><p>1 To ask&nbsp;<span style=\"color: rgb(51, 51, 51);\">the Minister for Transport (a) what is the average ridership on the Downtown Line during the morning and evening peak and non-peak hours since it started operations in December 2013; (b) how much has the Downtown Line helped alleviate the load on the North East Line during the morning and evening peak hours; and (c) whether the Downtown Line has also eased the load on the Circle Line during peak hours.</span></p><p><strong>\tMr Ong Teng Koon (Sembawang)</strong>:&nbsp;<span style=\"color: rgb(51, 51, 51);\">Question No 1.&nbsp;</span></p></span></div></body></html>",
+  "expected_rows": [
+    [
+      null,
+      "The following question stood in the name of  Mr Gan Thiam Poh –",
+      "PROCEDURAL"
+    ],
+    [
+      "Mr Gan Thiam Poh",
+      "1 To ask the Minister for Transport (a) what is the average ridership on the Downtown Line during the morning and evening peak and non-peak hours since it started operations in December 2013; (b) how much has the Downtown Line helped alleviate the load on the North East Line during the morning and evening peak hours; and (c) whether the Downtown Line has also eased the load on the Circle Line during peak hours.",
+      "SPEECH"
+    ],
+    [
+      "Mr Ong Teng Koon (Sembawang)",
+      "Question No 1.",
+      "SPEECH"
+    ]
+  ]
+}
