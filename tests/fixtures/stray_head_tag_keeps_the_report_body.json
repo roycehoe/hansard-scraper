@@ -1,0 +1,42 @@
+{
+  "why": "A page header printed as '<HEAD V - MINISTRY ...' was read as a head tag, so html2text dropped the whole body after it and the report had no rows.",
+  "source_report_id": 22103,
+  "report_version": "sprs2",
+  "report_type": "budget",
+  "title": "HEAD V - MINISTRY OF TRADE AND INDUSTRY",
+  "subtitle": null,
+  "original_title": "HEAD V - MINISTRY OF TRADE AND INDUSTRY",
+  "html": "\t\t\t\t<HTML>        \t\t\t<HEAD>\t\t\t\t        \t\t\t<META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\">\t\t\t\t<meta name=\"Parl_No\" content=\"11\">\t\t\t\t<meta name=\"Sess_No\" content=\"1\">\t\t\t\t<meta name=\"Vol_No\" content=\"85\">\t\t\t\t<meta name=\"Sit_Date\" content=\"2009-02-06\">\t\t\t\t<meta name=\"Sect_Name\" content=\"BUDGET\">\t\t\t\t<meta name=\"Title\" content=\"HEAD V - MINISTRY OF TRADE AND INDUSTRY\">\t\t\t\t<meta name=\"MP_Speak\" content=\"Mdm Ho Geok Choo;Mr Inderjit Singh (Ang Mo Kio);Mr Zaqy Mohamad;Ms Indranee Rajah\">\t\t\t\t<meta name=\"Start_Col\" content=\"0\">\t\t\t\t<meta name=\"End_Col\" content=\"0\">        \t</HEAD>        \t<body><table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\" bgcolor=\"#FFFFFF\"><tr><td><table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">11</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">85</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">12</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">06-02-2009</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">BUDGET</font></td><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">HEAD V - MINISTRY OF TRADE AND INDUSTRY</font></td><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Mdm Ho Geok Choo;Mr Inderjit Singh (Ang Mo Kio);Mr Zaqy Mohamad;Ms Indranee Rajah</font></td></table></td></tr></table><div align=center><p align=left>Column: 2266<p> <HEAD V - MINISTRY OF TRADE AND INDUSTRY\t\t\t </span></div> \t\t\t\t\t\t\t\t\t<!--MP_NAME:Ms Indranee Rajah--><div align=left><span style=\"FONT-SIZE: 13pt; FONT-FAMILY: 'Times New Roman'\"><p>&nbsp;</p><p>&nbsp;<b> <em>Head V - Ministry of Trade and Industry</em></p></b><p>&nbsp;</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<B>&nbsp;&nbsp;&nbsp;&nbsp; The Chairman:</B>&nbsp; Head V - Ministry of Trade and Industry.&nbsp; Mr Inderjit Singh.</p></span></div>\t\t\t\t\t\t\t\t\t<!--MP_NAME:Mr Inderjit Singh (Ang Mo Kio)--><div align=left><span style=\"FONT-SIZE: 13pt; FONT-FAMILY: 'Times New Roman'\"><p>&nbsp;</p><p><p><em>Economic Outlook and Forecast and Restructuring the Economy</em></p></p><p>&nbsp;</p><P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<B>Mr Inderjit Singh (Ang Mo Kio):</B> Madam, I beg to move,<p>&nbsp;</p><p>&nbsp;&nbsp;&nbsp;&nbsp; That the total sum to be allocated for Head V of the Estimates be reduced by $100.</p><p>&nbsp;</p><p align=left>Column: 2267<p><p>&nbsp;&nbsp;&nbsp;&nbsp; Madam, I would like to discuss two points on our economy as we move forward&nbsp;&ndash; what to expect of it and how we should restructure it.</p><p>&nbsp;</p><p>&nbsp;&nbsp;&nbsp;&nbsp; First, on the Economic Outlook and Planning.&nbsp; Madam, I do not&nbsp;expect MTI to have a crystal ball to be able to predict accurately Singapore's economic numbers and as we have seen, MTI has had to revise&nbsp;economic growth&nbsp;forecasts many times recently, but it would be useful to know the outlook that the Government has of the&nbsp;economy and which&nbsp;scenarios it is using to plan ahead.</p></span></div></body></html>",
+  "expected_rows": [
+    [
+      "The Chairman",
+      "Head V - Ministry of Trade and Industry. Mr Inderjit Singh.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "_Economic Outlook and Forecast and Restructuring the Economy_",
+      "HEADING"
+    ],
+    [
+      "Mr Inderjit Singh (Ang Mo Kio)",
+      "Madam, I beg to move,",
+      "SPEECH"
+    ],
+    [
+      "Mr Inderjit Singh (Ang Mo Kio)",
+      "That the total sum to be allocated for Head V of the Estimates be reduced by $100.",
+      "SPEECH"
+    ],
+    [
+      "Mr Inderjit Singh (Ang Mo Kio)",
+      "Madam, I would like to discuss two points on our economy as we move forward – what to expect of it and how we should restructure it.",
+      "SPEECH"
+    ],
+    [
+      "Mr Inderjit Singh (Ang Mo Kio)",
+      "First, on the Economic Outlook and Planning. Madam, I do not expect MTI to have a crystal ball to be able to predict accurately Singapore's economic numbers and as we have seen, MTI has had to revise economic growth forecasts many times recently, but it would be useful to know the outlook that the Government has of the economy and which scenarios it is using to plan ahead.",
+      "SPEECH"
+    ]
+  ]
+}

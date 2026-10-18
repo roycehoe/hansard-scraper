@@ -45,6 +45,8 @@ _BYTE_ORDER_MARK = "\ufeff"
 _NBSP_ENTITY = "&nbsp;"
 _STRAY_CLOSING_TAG = "</p />"
 _STRAY_OPENING_ANGLE = "<"
+_STRAY_HEAD_TAG_PATTERN = r"<(head)(?=\s)"
+_ESCAPED_OPENING_ANGLE = "&lt;"
 _FOOTNOTE_HASH_MARKER_PATTERN = r"#(?:&nbsp;)+(</sup>)?\s*"
 _SUPERSCRIPT_FOOTNOTE_PATTERN = r"<sup\b[^>]*>\s*(?:<a\b[^>]*>)?\s*(\d{1,3}(?:\s*,\s*\d{1,3})*)\s*(?:</a>)?\s*</sup>"
 _HTML_TAG_PATTERN = r"<[^>]*>"
@@ -173,6 +175,11 @@ def _keep_proc_text_blocks(html: str) -> str:
     html = re.sub(_PROC_TEXT_PAIR_PATTERN, r"\1", html, flags=re.DOTALL)
     html = re.sub(_PROC_TEXT_LONE_PATTERN, "", html)
     return html.replace(_PROC_TEXT_OPEN_SENTINEL, PROC_TEXT_OPEN_TAG).replace(_PROC_TEXT_CLOSE_SENTINEL, PROC_TEXT_CLOSE_TAG)
+
+
+def _escape_stray_head_tags(html: str) -> str:
+    # NOTE: a page header printed as "<HEAD V - MINISTRY ..." reads as a head tag, and html2text then drops the body after it.
+    return re.sub(_STRAY_HEAD_TAG_PATTERN, rf"{_ESCAPED_OPENING_ANGLE}\1", html, flags=re.IGNORECASE)
 
 
 def _prepare_newer_system_html(html: str) -> str:
@@ -437,6 +444,8 @@ def _postprocess_markdown_base(markdown: str) -> str:
 
 
 def get_cleaned_report_markdown(html: str, report_version: str) -> str:
+    if report_version == ReportVersion.SPRS2:
+        html = _escape_stray_head_tags(html)
     if report_version == ReportVersion.SPRS3:
         html = _prepare_newer_system_html(html)
     html = _join_wrapped_preformatted_lines(html)
