@@ -182,7 +182,7 @@ hansard-scraper/
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata
 │
 ├── gateway/                         # HTTP API clients
-│   ├── http.py                      # Async POST with exponential-backoff retry (handles 429)
+│   ├── http.py                      # Crawl pacer (one request at a time, at least 2 s apart, named user agent) and async POST with retry
 │   ├── hansard_search.py           # Paginated Hansard full-text search
 │   ├── hansard_topic.py            # Fetch report HTML by ID (sync + async)
 │   ├── hansard_report.py           # Fetch sitting metadata by date (sync + async)
@@ -225,7 +225,7 @@ hansard-scraper/
 │   └── speaker.py
 │
 ├── populate/                        # Pipeline stages — fetch + persist each entity type
-│   ├── hansard_responses.py        # Stage 2: async fetch + store HansardWebsiteResponse (4 concurrent)
+│   ├── hansard_responses.py        # Stage 2: async fetch + store HansardWebsiteResponse
 │   ├── hansard_response_contents.py # Fill: fetch text for newer-system raw rows stored without it
 │   ├── report_contents.py           # Fill: copy raw text and markdown onto reports stored without it
 │   ├── reports.py                   # Stage 3: HansardWebsiteResponse → Report

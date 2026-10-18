@@ -15,28 +15,25 @@ from settings import settings
 from utils.sitting_dates import parse_sitting_date
 
 _BATCH_SIZE = 200
-_CONCURRENCY = 4
 _HTTP_TIMEOUT_SECONDS = 60
 
 
 async def _fetch_content(
     hansard_website_response: HansardWebsiteResponse,
     client: httpx.AsyncClient,
-    semaphore: asyncio.Semaphore,
 ) -> Optional[str]:
-    async with semaphore:
-        try:
-            hansard_topic_response = await get_hansard_topic_response_async(
-                get_topic_id(
-                    hansard_website_response.report_id,
-                    hansard_website_response.html_file_name,
-                    hansard_website_response.report_version,
-                ),
-                client,
-            )
-        except HansardGatewayError as error:
-            logger.warning(f"No content for {hansard_website_response.report_id}: {error}")
-            return None
+    try:
+        hansard_topic_response = await get_hansard_topic_response_async(
+            get_topic_id(
+                hansard_website_response.report_id,
+                hansard_website_response.html_file_name,
+                hansard_website_response.report_version,
+            ),
+            client,
+        )
+    except HansardGatewayError as error:
+        logger.warning(f"No content for {hansard_website_response.report_id}: {error}")
+        return None
     content = get_topic_html_content(hansard_topic_response, hansard_website_response.report_version)
     if content is None:
         logger.warning(f"No content for {hansard_website_response.report_id}: the response holds no text")
@@ -44,13 +41,12 @@ async def _fetch_content(
 
 
 async def _fetch_all_contents(hansard_website_responses: list[HansardWebsiteResponse]) -> list[Optional[str]]:
-    semaphore = asyncio.Semaphore(_CONCURRENCY)
     contents: list[Optional[str]] = []
 
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
         for start in range(0, len(hansard_website_responses), _BATCH_SIZE):
             batch = hansard_website_responses[start : start + _BATCH_SIZE]
-            contents.extend(await asyncio.gather(*[_fetch_content(response, client, semaphore) for response in batch]))
+            contents.extend(await asyncio.gather(*[_fetch_content(response, client) for response in batch]))
     return contents
 
 

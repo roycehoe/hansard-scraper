@@ -19,7 +19,6 @@ from services.hansard_sitting_date_response import (
     build_old_hansard_sitting_date_response,
 )
 
-_CONCURRENCY = 2
 _HTTP_TIMEOUT_SECONDS = 120
 
 
@@ -32,23 +31,19 @@ class FetchedSittingDate:
 async def _fetch_sitting_date_response(
     sitting_date: str,
     client: httpx.AsyncClient,
-    semaphore: asyncio.Semaphore,
 ) -> FetchedSittingDate:
-    async with semaphore:
-        try:
-            hansard_report_response = await get_hansard_report_response_async(sitting_date, client)
-            return FetchedSittingDate(sitting_date, hansard_report_response)
-        except HansardGatewayError as error:
-            logger.warning(f"Skipping {sitting_date}: {error}")
-            return FetchedSittingDate(sitting_date, None)
+    try:
+        hansard_report_response = await get_hansard_report_response_async(sitting_date, client)
+        return FetchedSittingDate(sitting_date, hansard_report_response)
+    except HansardGatewayError as error:
+        logger.warning(f"Skipping {sitting_date}: {error}")
+        return FetchedSittingDate(sitting_date, None)
 
 
 async def _fetch_all_sitting_dates(dates: list[str]) -> list[FetchedSittingDate]:
-    semaphore = asyncio.Semaphore(_CONCURRENCY)
-
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
         return await asyncio.gather(
-            *[_fetch_sitting_date_response(sitting_date, client, semaphore) for sitting_date in dates]
+            *[_fetch_sitting_date_response(sitting_date, client) for sitting_date in dates]
         )
 
 

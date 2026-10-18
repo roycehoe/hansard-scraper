@@ -40,8 +40,8 @@ Every external API response is stored in a raw response table before any transfo
 ### Staged, incremental population
 The pipeline runs in discrete stages, listed in `CLAUDE.md`. `script.py` runs stages 5 to 9, the sitting, attendance, linking and person stages. Stages 1 to 4 (search, report fetch, reports, speeches) have no entry point there and run from the fill and rebuild tools. Each stage skips what is already stored, so a run resumes after an interruption. The same skip means a parser change never reaches stored rows on a rerun.
 
-### Async HTTP with rate-limit resilience
-Fetching thousands of records requires concurrent HTTP. The gateway layer uses async requests with exponential backoff and jitter on 429 responses, so the pipeline self-throttles under load rather than failing hard or hammering the server.
+### One request at a time, with backoff on 429
+The gateway layer sends one request at a time and waits at least 2 seconds between requests, retries included. Its user agent names the project. On HTTP 429 it backs off exponentially with jitter, so the pipeline slows down under load instead of failing or hammering the server.
 
 ### Iterative parsing refinement
 Parsing improvements follow a structured loop: inspect failure categories, apply a targeted fix, add a golden fixture, measure the attribution figures before and after, and commit to master. The speech fidelity loop ([speech-fidelity-loop.md](report/speech-fidelity-loop.md)) adds hand reads against the source and a stopping rule. The corpus holds 41,801 reports.

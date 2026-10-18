@@ -4,7 +4,7 @@ import httpx
 import requests
 
 from exceptions import HansardGatewayError
-from gateway.http import async_post_with_retry
+from gateway.http import CRAWL_HEADERS, async_post_with_retry, paced_request
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
     HansardReportOldResponse,
@@ -26,7 +26,8 @@ def _build_hansard_report_response(body: object) -> Union[HansardReportOldRespon
 def get_hansard_report_response(sitting_date: str) -> Union[HansardReportOldResponse, HansardReportNewResponse]:
     request_body = {"sittingDate": get_zero_padded_sitting_date(sitting_date)}
     try:
-        response = requests.post(url=settings.hansard_report_url, json=request_body)
+        with paced_request():
+            response = requests.post(url=settings.hansard_report_url, json=request_body, headers=CRAWL_HEADERS)
         return _build_hansard_report_response(response.json())
     except requests.exceptions.RequestException as error:
         raise HansardGatewayError(f"Report request failed for {sitting_date}") from error

@@ -20,3 +20,7 @@ class HansardWriteCheckError(HansardError):
 
 class HansardPartyAffiliationError(HansardError):
     pass
+
+
+class HansardTestGuardError(HansardError):
+    pass
