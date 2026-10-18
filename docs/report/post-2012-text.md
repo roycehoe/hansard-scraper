@@ -88,10 +88,10 @@ Either one is enough to store `content = None` without an error. The fetch logs 
 
 It was excluded in code from the start, but no written decision exists, and later docs say the opposite.
 
-- `d505062` ("chore: successfully load all parliament html into database", 26 Aug 2025) fetched topic HTML only for `Report.sitting_date < datetime(2012, 9, 10)`. That is the SPRS silo date to the day, so the cutoff was chosen knowingly.
-- `ece9787` (26 Aug 2025) narrowed the same fetch to rows that have an `html_file_name`, which also leaves out sprs3.
-- `1fe6602` (26 Aug 2025) and `49e3e66` (28 Aug 2025) applied the same cutoff to parsing (`select(Report).where(Report.sitting_date < datetime(2012, 9, 10))`).
-- Later refactors (`11b3cc1`, `26aac3e`, `4154ca7`, `afcf9af`) removed the cutoff from fetch and parse. The fetch kept the sprs2-only request shape, so sprs3 records came back empty.
+- `5a1b0f5` ("chore: successfully load all parliament html into database", 26 Aug 2025) fetched topic HTML only for `Report.sitting_date < datetime(2012, 9, 10)`. That is the SPRS silo date to the day, so the cutoff was chosen knowingly.
+- `3676dbf` (26 Aug 2025) narrowed the same fetch to rows that have an `html_file_name`, which also leaves out sprs3.
+- `5ef1558` (26 Aug 2025) and `f25c67d` (28 Aug 2025) applied the same cutoff to parsing (`select(Report).where(Report.sitting_date < datetime(2012, 9, 10))`).
+- Later refactors (`934cc92`, `c1395d2`, `698e2e7`, `11aecd7`) removed the cutoff from fetch and parse. The fetch kept the sprs2-only request shape, so sprs3 records came back empty.
 - No cutoff is left in code. The diagnostic sampler that used 10 Sep 2012, `get_strata_sample`, was removed as unreferenced in the style sweep.
 - No commit message, ADR, plan or doc gives a reason. `git log --grep` for 2012, sprs2, sprs3 and silo finds nothing.
 - `docs/vision.md` scopes the project "from the colonial Legislative Assembly through the present". The README says P12's "fetch is incomplete" and that "speeches exist only for Parliaments 0 to 12", which describes the gap but not its cause.

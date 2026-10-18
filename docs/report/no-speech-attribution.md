@@ -120,7 +120,7 @@ Exclusions (zero speeches is genuinely correct):
 
 ## Status: Implemented (two stages)
 
-### Stage 1 — `MPs Speaking` fallback (`51cdd99`)
+### Stage 1 — `MPs Speaking` fallback (`69603ea`)
 
 When `_parse_speeches` returns `[]` and `MPs Speaking` contains exactly one name, the body text is attributed to that name. Covered the 1,193 single-speaker no-speech docs.
 
