@@ -15,7 +15,6 @@ from gateway.hansard_report import get_hansard_report_response
 from gateway.hansard_search import get_hansard_search_results
 from gateway.hansard_topic import get_hansard_topic_response
 from gateway.http import (
-    CRAWL_GAP_SECONDS,
     CRAWL_PACER,
     CRAWL_USER_AGENT,
     async_post_with_retry,
@@ -26,7 +25,7 @@ from gateway.speakers_by_parliament import (
     get_all_speakers,
     get_speakers_by_parliament_number,
 )
-from settings import settings
+from settings import AppSettings, settings
 
 _REQUEST_SECONDS = 0.25
 _URL = "https://pacer.test/topic"
@@ -127,7 +126,7 @@ async def _post_one_request(handler: _AsyncHandler) -> httpx.Response:
 def _assert_paced(recorded_requests: list[_RecordedRequest]) -> None:
     for previous_request, next_request in pairwise(recorded_requests):
         assert next_request.started_at >= previous_request.ended_at
-        assert next_request.started_at - previous_request.ended_at >= CRAWL_GAP_SECONDS
+        assert next_request.started_at - previous_request.ended_at >= settings.crawl_gap_seconds
 
 
 def test_gathered_requests_go_one_at_a_time_two_seconds_apart(fake_clock: _FakeClock) -> None:
@@ -174,7 +173,7 @@ def test_a_failed_request_still_counts_toward_the_gap(fake_clock: _FakeClock) ->
     assert CRAWL_PACER.last_request_ended_at == _REQUEST_SECONDS
     with paced_request():
         started_at = fake_clock.now
-    assert started_at - _REQUEST_SECONDS >= CRAWL_GAP_SECONDS
+    assert started_at - _REQUEST_SECONDS >= settings.crawl_gap_seconds
 
 
 def test_sync_gateways_send_the_user_agent_and_are_paced(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -286,3 +285,10 @@ def test_async_transport_error_is_retried_through_the_pacer(fake_clock: _FakeClo
     assert response.status_code == _HTTP_OK
     assert len(recorded_requests) == _ASYNC_ATTEMPT_COUNT
     _assert_paced(recorded_requests)
+
+
+_LETTER_CRAWL_GAP_SECONDS = 2.0
+
+
+def test_crawl_gap_defaults_to_the_gap_the_letter_promises() -> None:
+    assert AppSettings.model_fields["crawl_gap_seconds"].default == _LETTER_CRAWL_GAP_SECONDS

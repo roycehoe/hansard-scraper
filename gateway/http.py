@@ -9,7 +9,8 @@ from typing import Optional
 import httpx
 import requests
 
-CRAWL_GAP_SECONDS = 2.0
+from settings import settings
+
 CRAWL_USER_AGENT = "hansard-scraper (+hansard@fancybinary.sg)"
 CRAWL_HEADERS = {"User-Agent": CRAWL_USER_AGENT}
 
@@ -40,7 +41,7 @@ class CrawlPacer:
     def get_wait_seconds(self) -> float:
         if self.last_request_ended_at is None:
             return 0.0
-        return max(0.0, CRAWL_GAP_SECONDS - (self.clock() - self.last_request_ended_at))
+        return max(0.0, settings.crawl_gap_seconds - (self.clock() - self.last_request_ended_at))
 
     # NOTE: each asyncio.run starts a new loop, and an asyncio.Lock cannot be shared across loops
     def get_async_lock(self) -> asyncio.Lock:

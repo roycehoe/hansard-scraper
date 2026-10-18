@@ -19,6 +19,8 @@ class AppSettings(BaseSettings):
 
     search_page_size: int = 20
 
+    crawl_gap_seconds: float = 2.0
+
     search_from_date: date = date(2012, 1, 1)
     search_to_date: date = date(2025, 4, 8)
 

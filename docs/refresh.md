@@ -44,6 +44,8 @@ Enable the schedule only after the Parliament 15 backfill (see "The Parliament 1
 
 Every request to SPRS goes through the crawl pacer in `gateway/http.py`. It sends one request at a time, at least 2 seconds apart, retries included, with the user agent `hansard-scraper (+hansard@fancybinary.sg)`.
 
+The gap is the `CRAWL_GAP_SECONDS` setting, 2 by default, which is the gap the letter to Parliament promises. The scheduled job keeps the default. The Parliament 15 backfill of 19 October 2026 ran at 1 second on Royce's instruction.
+
 A daily run sends:
 
 - the search pages for its date range
