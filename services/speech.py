@@ -877,7 +877,7 @@ def _get_plain_label_match(line: str) -> Optional[re.Match]:
     return _PLAIN_LANGUAGE_NOTE_LABEL_RE.match(line)
 
 
-def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str = "") -> list[ParsedSpeech]:
+def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
     current_speaker = None
     is_in_preamble = True
     preamble_speeches: list[ParsedSpeech] = []
@@ -1003,6 +1003,8 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str =
             if _PROCEDURAL_STAGE_RE.match(new_speaker):
                 continue
             if _TABLE_CAPTION_RE.match(new_speaker):
+                if report_version == ReportVersion.SPRS2:
+                    (preamble_speeches if is_in_preamble else speeches).append(ParsedSpeech(speaker=None, transcript=_MARKDOWN_HEADING_RE.sub("", unbolded_line), kind=SpeechKind.HEADING))
                 continue
             if (
                 "$" in new_speaker
@@ -1155,12 +1157,12 @@ def _get_fallback_speaker_from_parsed(
 
 
 def get_fallback_speaker(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> Optional[str]:
-    parsed_speeches = _parse_speeches(markdown, start_of_speech_line, report_type)
+    parsed_speeches = _parse_speeches(markdown, start_of_speech_line, report_type, report_version)
     return _get_fallback_speaker_from_parsed(markdown, parsed_speeches, _extract_mps_speaking(markdown), report_type, report_version)
 
 
 def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
-    parsed_speeches = _parse_speeches(markdown, start_of_speech_line, report_type)
+    parsed_speeches = _parse_speeches(markdown, start_of_speech_line, report_type, report_version)
     speakers = _extract_mps_speaking(markdown)
     fallback_speaker = _get_fallback_speaker_from_parsed(markdown, parsed_speeches, speakers, report_type, report_version)
     if fallback_speaker is not None:

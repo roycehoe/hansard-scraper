@@ -1,0 +1,27 @@
+{
+  "why": "A table caption that is one whole bold run ('Table 1: Number of Cases of Suicide involving Students') got no row. It now keeps a HEADING row with no speaker, and the speaker stays.",
+  "source_report_id": 22387,
+  "report_version": "sprs2",
+  "report_type": "written-answer-na",
+  "title": "INCIDENCE OF SUICIDE AMONG YOUTHS",
+  "subtitle": null,
+  "original_title": "INCIDENCE OF SUICIDE AMONG YOUTHS",
+  "html": "\t\t\t\t<HTML>        \t\t\t<HEAD>\t\t\t\t        \t\t\t<META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\">\t\t\t\t<meta name=\"Parl_No\" content=\"11\">\t\t\t\t<meta name=\"Sess_No\" content=\"1\">\t\t\t\t<meta name=\"Vol_No\" content=\"84\">\t\t\t\t<meta name=\"Sit_Date\" content=\"2008-08-26\">\t\t\t\t<meta name=\"Sect_Name\" content=\"ORAL ANSWERS TO QUESTIONS NOT REACHED\">\t\t\t\t<meta name=\"Title\" content=\"INCIDENCE OF SUICIDE AMONG YOUTHS\">\t\t\t\t<meta name=\"MP_Speak\" content=\"Dr Ng Eng Hen;Mdm Cynthia Phua\">\t\t\t\t<meta name=\"Start_Col\" content=\"3271\">\t\t\t\t<meta name=\"End_Col\" content=\"3274\">        \t</HEAD>        \t<body><table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\" bgcolor=\"#FFFFFF\"><tr><td><table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">11</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">84</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">18</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">26-08-2008</font></td></tr><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">ORAL ANSWERS TO QUESTIONS NOT REACHED</font></td><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">INCIDENCE OF SUICIDE AMONG YOUTHS</font></td><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Dr Ng Eng Hen;Mdm Cynthia Phua</font></td></table></td></tr></table><div align=center><b><!--TITLE_NAME:INCIDENCE OF SUICIDE AMONG YOUTHS--><!--END_COL_TITLE:INCIDENCE OF SUICIDE AMONG YOUTHS:::3274--></b><span style=\"FONT-SIZE: 13pt; FONT-FAMILY: 'Times New Roman'\"><p align=left>Column: 3271<p><B><P>INCIDENCE OF SUICIDE AMONG YOUTHS</P></span>\t\t</B></span></div>\t\t<div align=left>\t\t<P><span style=\"FONT-SIZE: 13pt; FONT-FAMILY: 'Times New Roman'\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;19.</span>&nbsp;&nbsp;\t        <!--MP_NAME:Mdm Cynthia Phua--><span style=\"FONT-SIZE: 13pt; FONT-FAMILY: 'Times New Roman'\"><B>Mdm Cynthia Phua </B>asked the Minister for Education (a) what is the incidence of suicide among youths between 10 and 23 years old; (b) how many of these cases involved students; (c) how many of these suicide victims had seen their school counsellors before they ended their lives; and (d) what is the Ministry doing to reduce the suicide trend among students.</P></span>                <span style=\"FONT-SIZE: 13pt; FONT-FAMILY: 'Times New Roman'\"><!--MP_NAME:Dr Ng Eng Hen--><p align=left>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<B>Dr Ng Eng Hen:</B></p><P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The incidence of suicide for all residents between ages 10 to 24&nbsp;(1) years has not shown any increasing trend over the past few years. According to data from the birth and death registry of the Immigration and Checkpoints Authority (ICA), the incidence (2)&nbsp; for this age group was 7.2 in 2003, 5.8 in 2004, 6.1 in 2005, 4.9 in 2006 and 6.7 in 2007. Among these, suicides involving students varied from 10 to 19 cases per year. The figures are given in Table 1:<p>&nbsp;</p><p></p><p class=\"MsoNormal\" style=\"MARGIN: 0in 0in 0pt; TEXT-INDENT: 1in; tab-stops: 1.0in\"><b style=\"mso-bidi-font-weight: normal\">Table 1: Number of Cases of Suicide involving Students</b></p></span></div></body></html>",
+  "expected_rows": [
+    [
+      "Mdm Cynthia Phua",
+      "asked the Minister for Education (a) what is the incidence of suicide among youths between 10 and 23 years old; (b) how many of these cases involved students; (c) how many of these suicide victims had seen their school counsellors before they ended their lives; and (d) what is the Ministry doing to reduce the suicide trend among students.",
+      "SPEECH"
+    ],
+    [
+      "Dr Ng Eng Hen",
+      "The incidence of suicide for all residents between ages 10 to 24 (1) years has not shown any increasing trend over the past few years. According to data from the birth and death registry of the Immigration and Checkpoints Authority (ICA), the incidence (2) for this age group was 7.2 in 2003, 5.8 in 2004, 6.1 in 2005, 4.9 in 2006 and 6.7 in 2007. Among these, suicides involving students varied from 10 to 19 cases per year. The figures are given in Table 1:",
+      "SPEECH"
+    ],
+    [
+      null,
+      "Table 1: Number of Cases of Suicide involving Students",
+      "HEADING"
+    ]
+  ]
+}

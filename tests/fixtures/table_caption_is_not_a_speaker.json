@@ -1,5 +1,5 @@
 {
-  "why": "A bold table caption ('**Table: Average Medisave Balances of**') was taken as a speaker label, so the Minister's answer after the table went to the caption.",
+  "why": "A bold table caption ('**Table: Average Medisave Balances of**') was taken as a speaker label, so the Minister's answer after the table went to the caption. The caption now keeps its own HEADING row with no speaker.",
   "source_report_id": 43250,
   "report_version": "sprs2",
   "report_type": "oral-answer",
@@ -22,6 +22,11 @@
       null,
       "[_Copies of table distributed to Members_.]",
       "CHAMBER_EVENT"
+    ],
+    [
+      null,
+      "Table: Average Medisave Balances of CPF Members (as at December 2006)",
+      "HEADING"
     ],
     [
       "Mr Khaw Boon Wan",
