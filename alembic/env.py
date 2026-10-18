@@ -53,16 +53,25 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def _run_migrations_on(connection: sa.Connection) -> None:
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        compare_type=_compare_type,
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+
 def run_migrations_online() -> None:
+    # NOTE: a caller that holds its own transaction passes the connection, and Alembic then neither begins nor commits
+    connection = config.attributes.get("connection")
+    if connection is not None:
+        _run_migrations_on(connection)
+        return
     connectable = create_engine(settings.database_url)
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-            compare_type=_compare_type,
-        )
-        with context.begin_transaction():
-            context.run_migrations()
+        _run_migrations_on(connection)
 
 
 if context.is_offline_mode():
