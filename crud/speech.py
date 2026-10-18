@@ -96,6 +96,15 @@ class CRUDSpeech:
         )
         return (SpeechSpeakerRow(*row) for row in self.session.exec(statement))
 
+    def get_speaker_rows_by_report_ids_and_speaker_id_null(self, report_ids: list[int]) -> list[SpeechSpeakerRow]:
+        statement = (
+            select(Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date)
+            .join(Report)
+            .where(col(Speech.report_id).in_(report_ids))
+            .where(col(Speech.speaker_id).is_(None))
+        )
+        return [SpeechSpeakerRow(*row) for row in self.session.exec(statement).all()]
+
     def get_link_rows_by_speaker_id_not_null(self) -> Iterable[SpeechLinkRow]:
         statement = (
             select(Speech.report_id, Speech.ordinal, Speech.speaker, Speech.speaker_id, Speech.transcript)
@@ -119,6 +128,16 @@ class CRUDSpeech:
             .distinct()
             .where(col(Speech.speaker_id).is_(None))
             .where(Speech.speaker.regexp_match(pattern, flags="i"))
+        )
+        return list(self.session.exec(statement).all())
+
+    def get_report_ids_by_report_ids_and_speaker_id_null_and_speaker_regex(self, report_ids: list[int], pattern: str) -> list[int]:
+        statement = (
+            select(Speech.report_id)
+            .distinct()
+            .where(col(Speech.report_id).in_(report_ids))
+            .where(col(Speech.speaker_id).is_(None))
+            .where(col(Speech.speaker).regexp_match(pattern, flags="i"))
         )
         return list(self.session.exec(statement).all())
 

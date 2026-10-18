@@ -104,6 +104,15 @@ class CRUDAttendance:
         )
         return [AttendanceSpeakerRow(*row) for row in self.session.exec(statement).all()]
 
+    def get_speaker_rows_by_sitting_ids_and_speaker_id_null(self, sitting_ids: list[int]) -> list[AttendanceSpeakerRow]:
+        statement = (
+            select(Attendance.id, Attendance.speaker_name, Sitting.parlement_no, Sitting.volume_no)
+            .join(Sitting)
+            .where(col(Attendance.speaker_id).is_(None))
+            .where(col(Attendance.sitting_id).in_(sitting_ids))
+        )
+        return [AttendanceSpeakerRow(*row) for row in self.session.exec(statement).all()]
+
     def get_location_rows_by_location_name_not_null(self) -> list[AttendanceLocationRow]:
         statement = (
             select(Attendance.id, Attendance.speaker_name, Attendance.location_name, Sitting.sitting_date, Sitting.parlement_no, Sitting.volume_no)

@@ -629,3 +629,27 @@ def populate_speaker_links(session: Session) -> None:
     _populate_role_context_links(session, lookups, speaker_id_lookup)
     _populate_deputy_speaker_links(session, lookups, speaker_id_lookup)
     _populate_sitting_deputy_speaker_links(session, lookups, speaker_id_lookup)
+
+
+def link_speakers_by_report_ids_and_sitting_ids(session: Session, report_ids: list[int], sitting_ids: list[int]) -> None:
+    speakers = CRUDSpeaker(session).get_all()
+    speaker_id_lookup = {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None}
+    lookups = build_speaker_lookups(speakers)
+
+    attendance_id_to_speaker_id = resolve_attendance_rows(
+        CRUDAttendance(session).get_speaker_rows_by_sitting_ids_and_speaker_id_null(sitting_ids), lookups, speaker_id_lookup
+    )
+    _write_in_batches(CRUDAttendance(session).set_speaker_ids_bulk, attendance_id_to_speaker_id)
+    speech_id_to_speaker_id = resolve_speech_rows(
+        CRUDSpeech(session).get_speaker_rows_by_report_ids_and_speaker_id_null(report_ids), lookups, speaker_id_lookup
+    )
+    _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, speech_id_to_speaker_id)
+    session.flush()
+    for pattern, get_pass_speaker_ids in (
+        (_ROLE_CONTEXT_PATTERN, _get_role_context_speaker_ids_for_report_ids),
+        (BARE_DEPUTY_RE.pattern, _get_deputy_speaker_ids_for_report_ids),
+        (BARE_DEPUTY_RE.pattern, _get_sitting_deputy_speaker_ids_for_report_ids),
+    ):
+        candidate_report_ids = CRUDSpeech(session).get_report_ids_by_report_ids_and_speaker_id_null_and_speaker_regex(report_ids, pattern)
+        _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, get_pass_speaker_ids(session, candidate_report_ids, lookups, speaker_id_lookup))
+        session.flush()
