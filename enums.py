@@ -63,3 +63,8 @@ class RefreshRunStatus(StrEnum):
     SUCCEEDED = "SUCCEEDED"
     HALTED = "HALTED"
     FAILED = "FAILED"
+
+
+class LegislativeAssemblyFlag(StrEnum):
+    NO = "1"  # old site left these unflagged, all 1,253 rows
+    YES = "2"  # old site flagged these, all 94 rows

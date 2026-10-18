@@ -181,7 +181,7 @@ hansard-scraper/
 ├── script.py                        # Pipeline orchestrator — runs all populate stages in order
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
-├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus
+├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag
 ├── exceptions.py                    # HansardError / HansardGatewayError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshRunError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the scheduled refresh job; runs python refresh.py
@@ -194,6 +194,7 @@ hansard-scraper/
 │   ├── attendance_cleanup.py       # AttendanceCleanup: data/attendance_cleanup.json entries
 │   ├── party_affiliation.py        # MembershipPartyAffiliations / PartyAffiliationSpan: data/party_affiliations.json entries
 │   ├── speaker_override.py         # SpeakerOverrides: data/speaker_overrides.json
+│   ├── parliament_member_list_response.py  # ParliamentMemberListResponse: the member data in the parliament.gov.sg list page
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata
 │
 ├── gateway/                         # HTTP API clients
@@ -201,7 +202,7 @@ hansard-scraper/
 │   ├── hansard_search.py           # Paginated Hansard full-text search
 │   ├── hansard_topic.py            # Fetch report HTML by ID (sync + async)
 │   ├── hansard_report.py           # Fetch sitting metadata by date (sync + async)
-│   ├── speakers_by_parliament.py    # Scrape speaker roster from parliament.gov.sg, all Parliaments or one
+│   ├── speakers_by_parliament.py    # Read the member list embedded in the parliament.gov.sg page, all Parliaments or one
 │   ├── telegram.py                  # Send one Telegram alert message
 │   └── healthchecks.py              # Send the healthchecks.io success and failure pings
 │

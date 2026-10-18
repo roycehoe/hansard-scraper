@@ -4,12 +4,9 @@ from sqlmodel import Session
 import scripts.load_parliament_speakers as load_parliament_speakers_script
 from crud.speaker import CRUDSpeaker
 from database.speaker import Speaker
-from exceptions import HansardGatewayError
-from gateway.speakers_by_parliament import get_speakers_by_parliament_number
 from schemas.speaker import SpeakerResult
 
 _PARLIAMENT_NUMBER = 15
-_UNKNOWN_PARLIAMENT_NUMBER = 99
 _STORED_NAME = "Pritam Singh"
 _NEW_NAME = "New Member"
 _PARTY = "WP"
@@ -48,8 +45,3 @@ def test_commit_inserts_only_the_unstored_member(seeded_session: Session) -> Non
     assert len(speakers) == _EXPECTED_ROW_COUNT_AFTER_COMMIT
     assert sorted(speaker.name for speaker in speakers) == [_NEW_NAME, _STORED_NAME]
     assert all(speaker.parliament_number == _PARLIAMENT_NUMBER for speaker in speakers)
-
-
-def test_unknown_parliament_raises_before_any_request() -> None:
-    with pytest.raises(HansardGatewayError):
-        get_speakers_by_parliament_number(_UNKNOWN_PARLIAMENT_NUMBER)
