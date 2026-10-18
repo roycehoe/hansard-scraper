@@ -7,6 +7,7 @@ import pytest
 from sqlalchemy.engine import Engine
 from sqlmodel import Session
 
+import populate.attribution_figures
 import scripts.attribution_text_share as attribution_text_share
 from database.report import Report
 from database.speaker import Speaker
@@ -106,3 +107,13 @@ def test_figures_json_carries_the_stable_fields(scratch_session: Session) -> Non
     headline_json = next(group_json for group_json in groups_json if group_json["group"] == HEADLINE_GROUP)
     assert headline_json["zero_row_report_count"] == _HEADLINE_ZERO_ROW_REPORT_COUNT
     assert json.loads(json.dumps(figures_json)) == figures_json
+
+
+def test_figures_do_not_depend_on_the_batch_size(scratch_session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
+    seed_attribution_rows(scratch_session)
+    default_batch_figures_json = build_attribution_figures_json(get_attribution_figures(scratch_session), _MEASURED_AT)
+    monkeypatch.setattr(populate.attribution_figures, "_REPORT_BATCH", 1)
+
+    single_report_batch_figures_json = build_attribution_figures_json(get_attribution_figures(scratch_session), _MEASURED_AT)
+
+    assert single_report_batch_figures_json == default_batch_figures_json

@@ -1,10 +1,11 @@
 import re
 from collections import Counter, defaultdict
+from operator import attrgetter
 
 from sqlmodel import Session
 
 from crud.report import CRUDReport
-from crud.speech import CRUDSpeech, SpeechRow
+from crud.speech import CRUDSpeech
 from database.report import Report
 from services.attribution import (
     HEADLINE_GROUP,
@@ -60,47 +61,46 @@ def _is_single_speaker_collapse(report: Report) -> bool:
 
 
 def get_attribution_figures(session: Session) -> AttributionFigures:
-    reports = CRUDReport(session).get_by_markdown_content_not_null()
-    reported_parliaments = sorted({report.parliament_number for report in reports if report.parliament_number > HEADLINE_MAX_PARLIAMENT})
-    speech_rows: list[SpeechRow] = []
-    report_ids = [report.id for report in reports]
-    for start in range(0, len(report_ids), _REPORT_BATCH):
-        speech_rows.extend(CRUDSpeech(session).get_rows_by_report_ids(report_ids[start:start + _REPORT_BATCH]))
-
-    report_id_to_group = {report.id: get_group(report.parliament_number) for report in reports}
+    report_ids = CRUDReport(session).get_ids_by_markdown_content_not_null()
+    reported_parliaments: set[int] = set()
     group_to_row_count: defaultdict[str, Counter[str]] = defaultdict(Counter)
     group_to_character_count: defaultdict[str, Counter[str]] = defaultdict(Counter)
     group_and_type_to_figures: defaultdict[tuple[str, str], ReportTypeFigures] = defaultdict(ReportTypeFigures)
-    report_id_to_group_and_type = {report.id: (report_id_to_group[report.id], report.report_type) for report in reports}
     reports_with_rows = set()
-    for speech_row in speech_rows:
-        reports_with_rows.add(speech_row.report_id)
-        category = get_speech_category(speech_row.speaker, speech_row.speaker_id)
-        character_count = get_countable_character_count(speech_row.transcript)
-        group = report_id_to_group[speech_row.report_id]
-        group_to_row_count[group][category] += 1
-        group_to_character_count[group][category] += character_count
-        figures = group_and_type_to_figures[report_id_to_group_and_type[speech_row.report_id]]
-        figures.category_to_row_count[category] += 1
-        figures.category_to_character_count[category] += character_count
-
     group_to_body_total: Counter[str] = Counter()
     group_to_body_in_zero_row_reports: Counter[str] = Counter()
     group_to_report_ids: defaultdict[str, set] = defaultdict(set)
-    for report in reports:
-        body_character_count = _get_body_character_count(report)
-        group = report_id_to_group[report.id]
-        figures = group_and_type_to_figures[report_id_to_group_and_type[report.id]]
-        group_to_body_total[group] += body_character_count
-        group_to_report_ids[group].add(report.id)
-        figures.report_count += 1
-        figures.body_total += body_character_count
-        if report.id not in reports_with_rows:
-            group_to_body_in_zero_row_reports[group] += body_character_count
-            figures.zero_row_report_count += 1
-        if _is_single_speaker_collapse(report):
-            figures.collapse_report_count += 1
-            figures.collapse_character_count += body_character_count
+    for start in range(0, len(report_ids), _REPORT_BATCH):
+        batch_report_ids = report_ids[start:start + _REPORT_BATCH]
+        reports = sorted(CRUDReport(session).get_by_ids(batch_report_ids), key=attrgetter("id"))
+        reported_parliaments.update(report.parliament_number for report in reports if report.parliament_number > HEADLINE_MAX_PARLIAMENT)
+        report_id_to_group = {report.id: get_group(report.parliament_number) for report in reports}
+        report_id_to_group_and_type = {report.id: (report_id_to_group[report.id], report.report_type) for report in reports}
+        for speech_row in CRUDSpeech(session).get_rows_by_report_ids(batch_report_ids):
+            reports_with_rows.add(speech_row.report_id)
+            category = get_speech_category(speech_row.speaker, speech_row.speaker_id)
+            character_count = get_countable_character_count(speech_row.transcript)
+            group = report_id_to_group[speech_row.report_id]
+            group_to_row_count[group][category] += 1
+            group_to_character_count[group][category] += character_count
+            figures = group_and_type_to_figures[report_id_to_group_and_type[speech_row.report_id]]
+            figures.category_to_row_count[category] += 1
+            figures.category_to_character_count[category] += character_count
+
+        for report in reports:
+            body_character_count = _get_body_character_count(report)
+            group = report_id_to_group[report.id]
+            figures = group_and_type_to_figures[report_id_to_group_and_type[report.id]]
+            group_to_body_total[group] += body_character_count
+            group_to_report_ids[group].add(report.id)
+            figures.report_count += 1
+            figures.body_total += body_character_count
+            if report.id not in reports_with_rows:
+                group_to_body_in_zero_row_reports[group] += body_character_count
+                figures.zero_row_report_count += 1
+            if _is_single_speaker_collapse(report):
+                figures.collapse_report_count += 1
+                figures.collapse_character_count += body_character_count
 
     return AttributionFigures(groups=[
         GroupFigures(
@@ -115,5 +115,5 @@ def get_attribution_figures(session: Session) -> AttributionFigures:
                 report_type: figures for (group_name, report_type), figures in group_and_type_to_figures.items() if group_name == group
             },
         )
-        for group in (HEADLINE_GROUP, *(get_group(parliament_number) for parliament_number in reported_parliaments))
+        for group in (HEADLINE_GROUP, *(get_group(parliament_number) for parliament_number in sorted(reported_parliaments)))
     ])
