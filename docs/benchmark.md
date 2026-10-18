@@ -13,6 +13,7 @@ How this project compares with the Singapore Hansard tools a researcher can use 
 | Presiding officers and the President | Linked to the holder of the day (ADR 0002) | No | Not stated | No, measured | Not stated |
 | Procedural lines and chamber events | Rows of their own with no speaker (ADR 0007, ADR 0009) | Printed in the text | Not stated | Folded into the last speaker's turn, measured | Not stated |
 | Published accuracy | Three attribution figures after every write; hand audit of 17 Oct 2026: 404 of 406 linked rows right (99.5%) | None | Click rank only: average 3.2 against 23 for other official search | None | None; a disclaimer of "inevitable parsing errors" |
+| Words credited to the right person, measured 18 Oct 2026 | 99.4% (98.5% with Addenda read as nobody's) | Not applicable: no member links | Not measured | 95.5% (96.8%) | Not measured |
 | Raw source kept | Every API response stored as received, with a register of what is cleaned | It is the source | Not stated | Not stated | Raw JSON kept in its repo |
 | API or download | Not yet public | Undocumented JSON endpoints; no bulk download | None public | None | Code CC0-1.0; data in BigQuery, access required |
 | Search | Full-text over speech rows; by member through `speaker_id` | Keyword; an `mpName` filter on printed names | Keyword and semantic (e5 embeddings, ColBERTv2 rerank) | Keyword, filters, LLM topic groups, similarity search | Dashboard; liveness unconfirmed |
@@ -22,7 +23,7 @@ The SMU portal for the 12th Parliament (2016) is still online at s3-ap-southeast
 
 ## Attribution measured against sgparliament.com
 
-`report/sgparliament-comparison-2026-10-18.md` compares the two record by record. On 27 debates the two credit the same member for 148,334 of 148,347 words both credit. The stratified sample with judged correctness is in the same report.
+`report/sgparliament-comparison-2026-10-18.md` compares the two record by record. On a stratified sample of 191 reports over Parliaments 0 to 14, judged blind against the source, sgparliament.com credits 95.5% of words to the right person and this project 99.4%, a gap of 3.6 to 3.9 points. With Addenda to the President's Address read as nobody's words the figures are 96.8% and 98.5%. Quote both readings, or the first with the reading named.
 
 ## Sources
 
