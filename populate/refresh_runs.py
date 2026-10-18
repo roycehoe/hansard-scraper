@@ -18,6 +18,7 @@ from crud.report import CRUDReport
 from crud.sitting import CRUDSitting
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
+from database.hansard_sitting_date_response import HansardSittingDateResponse
 from database.refresh_run import RefreshRun
 from database.sitting import Sitting
 from enums import RefreshRunStatus, ReportType
@@ -447,6 +448,14 @@ def _fetch_window(
     )
 
 
+def _build_hansard_sitting_date_response(
+    hansard_report_response: Union[HansardReportOldResponse, HansardReportNewResponse], sitting_date_key: str
+) -> HansardSittingDateResponse:
+    if isinstance(hansard_report_response, HansardReportNewResponse):
+        return build_new_hansard_sitting_date_response(hansard_report_response, sitting_date_key)
+    return build_old_hansard_sitting_date_response(hansard_report_response, sitting_date_key)
+
+
 def _validate_can_store_fetched_window(fetched_window: FetchedWindow, allowed_parliament_number: Optional[int]) -> None:
     field_losses = []
     for search_result in fetched_window.new_search_results:
@@ -456,14 +465,12 @@ def _validate_can_store_fetched_window(fetched_window: FetchedWindow, allowed_pa
         field_losses.extend(get_topic_field_losses(fetched_topic.hansard_topic_response, fetched_topic.html_content))
     sitting_parliament_numbers = set()
     for sitting_date_key, hansard_report_response in fetched_window.sitting_date_key_to_response.items():
+        hansard_sitting_date_response = _build_hansard_sitting_date_response(hansard_report_response, sitting_date_key)
         if isinstance(hansard_report_response, HansardReportNewResponse):
-            hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date_key)
             if hansard_report_response.metadata is not None and hansard_report_response.metadata.parliment_no is not None:
                 sitting_parliament_numbers.add(hansard_report_response.metadata.parliment_no)
-        else:
-            hansard_sitting_date_response = build_old_hansard_sitting_date_response(hansard_report_response, sitting_date_key)
-            if hansard_report_response.parl_no is not None:
-                sitting_parliament_numbers.add(int(str(hansard_report_response.parl_no)))
+        elif hansard_report_response.parl_no is not None:
+            sitting_parliament_numbers.add(int(str(hansard_report_response.parl_no)))
         field_losses.extend(get_sitting_date_field_losses(hansard_report_response, hansard_sitting_date_response))
     if field_losses:
         raise HansardRefreshHaltError(build_field_mapping_reason(field_losses))
@@ -506,13 +513,10 @@ def _write_window_rows(session: Session, fetched_window: FetchedWindow, window_r
     hansard_sitting_date_responses = []
     sittings = []
     for sitting_date_key, hansard_report_response in fetched_window.sitting_date_key_to_response.items():
+        hansard_sitting_date_response = _build_hansard_sitting_date_response(hansard_report_response, sitting_date_key)
+        sitting = build_sitting(hansard_sitting_date_response)
         if isinstance(hansard_report_response, HansardReportNewResponse):
-            hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date_key)
-            sitting = build_sitting(hansard_sitting_date_response)
             _set_sitting_detail_columns(sitting, hansard_report_response)
-        else:
-            hansard_sitting_date_response = build_old_hansard_sitting_date_response(hansard_report_response, sitting_date_key)
-            sitting = build_sitting(hansard_sitting_date_response)
         hansard_sitting_date_responses.append(hansard_sitting_date_response)
         sittings.append(sitting)
     CRUDHansardSittingDateResponse(session).add_many(hansard_sitting_date_responses)

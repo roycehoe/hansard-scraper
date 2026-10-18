@@ -197,7 +197,7 @@ hansard-scraper/
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata
 │
 ├── gateway/                         # HTTP API clients
-│   ├── http.py                      # Crawl pacer (one request at a time, at least 2 s apart, named user agent) and async POST with retry
+│   ├── http.py                      # Crawl pacer (one request at a time, at least 2 s apart, named user agent), async POST with retry (a transient 400 or a transport error), and sync `send_with_retry` (a connection error or timeout)
 │   ├── hansard_search.py           # Paginated Hansard full-text search
 │   ├── hansard_topic.py            # Fetch report HTML by ID (sync + async)
 │   ├── hansard_report.py           # Fetch sitting metadata by date (sync + async)

@@ -124,9 +124,9 @@ def get_window_hansard_search_results(from_date: date, to_date: date) -> list[Ha
 
 def get_all_hansard_search_results(from_date: date, to_date: date) -> list[HansardSearchResult]:
     all_hansard_search_results = []
-    for from_date, to_date in _get_months(from_date, to_date):
-        window_hansard_search_results = get_window_hansard_search_results(from_date, to_date)
+    for window_from_date, window_to_date in _get_months(from_date, to_date):
+        window_hansard_search_results = get_window_hansard_search_results(window_from_date, window_to_date)
         all_hansard_search_results.extend(window_hansard_search_results)
-        logger.info(f"Fetched {from_date:%Y-%m}: {len(window_hansard_search_results)} distinct hits")
+        logger.info(f"Fetched {window_from_date:%Y-%m}: {len(window_hansard_search_results)} distinct hits")
     logger.info(f"Search done: {len(all_hansard_search_results)} distinct hits")
     return all_hansard_search_results
