@@ -14,7 +14,7 @@ Take their revision check. Each debate page compares "our first copy of this sec
 | 2 | Offices held, by sitting | 3, 4 | Text stored, no field | Medium | Stage 7, `attendance` or a new table, loss register | Yes: printed in the attendance list |
 | 3 | Government or opposition on each date | 4 | Party by date yes, governing parties no | Small | `data/` file, table | Stated, not cited |
 | 4 | Spoken or written, by report type | 2 | `report_type` yes, no mapping | Small | `docs/data-dictionary.md`, a view | Stated |
-| 5 | The question lifecycle, and two wrong definitions in our dictionary | 2, 6 | Mostly | Small | `docs/data-dictionary.md`, parser later | SPRS's own section names |
+| 5 | The question lifecycle, and three wrong definitions in our dictionary | 2, 6 | Mostly | Small | `docs/data-dictionary.md`, parser later | SPRS's own section names |
 | 6 | Debates followed across sittings | 2 | No | Medium | New link table, script | Title rule stated, rest LLM |
 | 7 | Motion outcomes | 2 | Procedural rows only | Medium, after 6 | Derived table | Unknown |
 | 8 | Their party histories as leads | 4 | Yes, sourced | Small | `data/party_affiliations.json` | Not sourced |
@@ -95,13 +95,44 @@ Their site went up in 2023. The first newsletter post is dated 15 July 2023. So 
 
 **Risks.** Low. `president-address` is mixed: the address is spoken and the addenda are written. Mark it mixed rather than guess.
 
-## 5. The question lifecycle, and two wrong definitions in our dictionary
+## 5. The question lifecycle, and three wrong definitions in our dictionary
 
 **Evidence.** `/pq-explorer` splits questions three ways: "Filed for oral answer and answered on the floor", "Written Answers to Questions for Oral Answer" ("Questions intended for oral but answered in writing") and "Filed for written answer". It reports a "gov accession rate" ("Oral-intended questions that received oral answers") and an "MP Oral Intent Rate". Debate events carry `isQuestion` and `questionNo`, and 58 of the 64 question events in the sample had a number. It has no split for "all of the 11th Parliament and roughly a fifth of the 12th".
 
-**What we hold.** The split, for every Parliament, through `report_type`. SPRS's own section list (`/search/fetchData`, `orSectionList`) names `written-answer-na` "Written Answers to Questions for Oral Answer not Answered by End of Question Time" and `written-statement` "Corrections by Written Statements". [data-dictionary.md](../data-dictionary.md) gets both wrong. It calls the first "A question for which no written answer was available" and the second "A written ministerial statement tabled in the chamber". The earlier comparison counted `written-answer-na` with the written answers, but SPRS's label makes them oral questions. We drop question numbers ("Text dropped inside reports that have rows" in vision.md), and no row marks a question apart from its answer, though the first row of a written answer starts with "asked" (`docs/report/post-2012-load/e_verdict.md`).
+**The lifecycle.** A member files a question for oral answer or for written answer. A question filed for oral answer ends as `oral-answer` when Question Time reaches it, and as `written-answer-na` when it does not, with the minister's reply printed in writing. A question filed for written answer is `written-answer`. An office holder who corrects their earlier words does it aloud as a `clarification` or on paper as a `written-statement`.
 
-**Cost.** Small for the two definitions. Small to medium for a question flag and the question number, which change the parser and so need a rehearsed write.
+**What we hold.** The split through `report_type`, for every Parliament from the 5th, when `written-answer-na` begins. SPRS's own section list (`/search/fetchData`, `orSectionList`) names `written-answer-na` "Written Answers to Questions for Oral Answer not Answered by End of Question Time" and `written-statement` "Corrections by Written Statements". [data-dictionary.md](../data-dictionary.md) got three types wrong until 19 October 2026. It called `written-answer-na` "A question for which no written answer was available", `written-statement` "A written ministerial statement tabled in the chamber", and `clarification` "A follow-up clarification to an oral or written answer", though every clarification is spoken and most correct earlier words. The earlier comparison counted `written-answer-na` with the written answers, but SPRS's label makes them oral questions. We drop question numbers ("Text dropped inside reports that have rows" in vision.md), and no row marks a question apart from its answer, though the first row of a written answer starts with "asked" (`docs/report/post-2012-load/e_verdict.md`).
+
+**Checked against the record.** On 19 October 2026 I read the rows behind each definition on the replica, read-only. Its latest sitting is 8 April 2025.
+
+| Check | Finding | Examples |
+|---|---|---|
+| `written-statement` is a written correction | Of the 74 reports, all 69 with text open "Written statement by ... circulated with leave of the Speaker", or of the Deputy Speaker in 3, "in accordance with Standing Order No 29(5)", and give the words as they "should read". Each corrects an office holder. The other 5 have no text, because SPRS answers HTTP 400 for them (data-loss-register.md) | 178, 4240, 12246; no text: 6640 |
+| `clarification` is spoken | All 54 read as spoken in the chamber, and none cites Standing Order 29(5). 7 are not an office holder correcting the record: 3 titled "Clarification by Member", 1 "Clarification by Nominated Member of Parliament", 2 "Point of Order" (Leong Mun Wai, 2022) and the Government Whip on the speaking order | 46018, 242; members: 44377, 9045, 7392, 14353; points of order: 6990, 5692; whip: 14119 |
+| `written-answer-na`, 2003 to 2011 | The 622 reports thought to have an empty `Section Name` do not. Their header puts the section on the line of the title, and the regex that counted them read to the end of the line. 621 read "Oral Answers to Questions Not Reached", 5 of them in the singular, and 1 reads "Oral Answers to Questions" (24867, a quirk below). The 20 I read, picked by hash, are each one numbered question and one written reply | 23343, 21348, 43280 |
+| `written-answer` before 22 December 1981 | `for oral answer` matches 22 of 343. 19 open "The following Question for Oral Answer stood on the Order Paper", or its plural, from 1957 to 1969. The other 3 are addenda to oral answers of 1956 and 1957 and a 1958 question that mentions a question "not for oral answer". In the other 321, "stood on the Order Paper", "stood in the name", "not reached", "not being present" and "Standing Order" match nothing. Reading their openings found 2 more, "To ask" questions under the opening of 38545 on 7 June 1963. That makes 21: 14 cite Standing Order 16(2) or 20(2), and 7 went written because the minister or the member was absent | 37970, 38776, 39124; under 38545: 38559, 38569 |
+| `oral-answer` of 1 June 1998 headed "Oral Answers to Questions Not Reached" | 29 reports. None holds a chair call, a "Sir" or a supplementary question. Each is one numbered question, two members' in 27227, and one written reply | 27290, 27197, 42783 |
+
+**Source quirks.**
+
+- No `written-answer-na` exists before 22 December 1981. The 21 earlier oral questions answered in writing are `written-answer`.
+- 39 `oral-answer` reports hold no spoken exchange. 29 of 1 June 1998 and 5 of 16 October and 10 November 2003 are headed "Oral Answers to Questions Not Reached", and 5 of 16 October 2003 are headed "Written Answers to Questions". On 10 November 2003 the question "Internet Chatrooms" is stored twice with the types swapped: the written reply, 24876, is `oral-answer` and the spoken exchange, 24867, is `written-answer-na`. We keep SPRS's types.
+- We drop the question number. The source prints "73 **Mr Melvin Yong Yik Chye** asked the Minister ..." in report 685, and our speech row starts at "asked the Minister" (data-loss-register.md, the rows on question numbers).
+
+**Counts.** Reports and questions per Parliament, an estimate. "Questions" counts matches of `\*\*\s*asked (the|whether)` in `markdown_content`, because one report can hold several questions, and the regex misses other phrasings. The oral columns include the 39 unspoken `oral-answer` reports. "Share not reached" is not-reached questions over all oral questions.
+
+| Parliament | Oral reports | Oral questions | Not-reached reports | Not-reached questions | Share not reached | Written reports | Written questions |
+|---|---|---|---|---|---|---|---|
+| 9 | 711 | 791 | 286 | 295 | 27% | 250 | 246 |
+| 10 | 749 | 803 | 159 | 164 | 17% | 203 | 212 |
+| 11 | 800 | 1,012 | 517 | 540 | 35% | 327 | 338 |
+| 12 | 918 | 1,170 | 1,144 | 1,195 | 51% | 1,069 | 1,101 |
+| 13 | 1,127 | 1,524 | 1,639 | 1,706 | 53% | 1,634 | 1,683 |
+| 14 | 1,392 | 2,581 | 3,773 | 4,098 | 61% | 4,610 | 4,896 |
+
+From the 12th Parliament on, about half or more of the questions filed for oral answer get a written reply instead.
+
+**Cost.** Small for the three definitions, corrected on 19 October 2026. Small to medium for a question flag and the question number, which change the parser and so need a rehearsed write.
 
 **Risks.** Their quota heatmap ("Each MP may file up to 5 questions per sitting day, of which up to 3 for oral answer") applies one cap to every term and cites no Standing Order. Leave it.
 
