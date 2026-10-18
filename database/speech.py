@@ -12,6 +12,7 @@ class Speech(SQLModel, table=True):
     __table_args__ = (
         Index("ix_speech_transcript_fts", text("to_tsvector('english', transcript)"), postgresql_using="gin"),
         Index("ix_speech_transcript_tsv", "transcript_tsv", postgresql_using="gin"),
+        Index("ix_speech_transcript_tsv_rum", "transcript_tsv", postgresql_using="rum", postgresql_ops={"transcript_tsv": "rum_tsvector_ops"}),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
