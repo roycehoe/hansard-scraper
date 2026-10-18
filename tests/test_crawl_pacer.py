@@ -214,9 +214,9 @@ def test_speaker_requests_send_the_user_agent_and_are_paced(fake_clock: _FakeClo
     monkeypatch.setattr(requests.Session, "get", fake_session_send)
     monkeypatch.setattr(requests.Session, "post", fake_session_send)
 
-    speaker_results = get_all_speakers()
+    all_speakers = get_all_speakers()
 
-    assert speaker_results == []
+    assert all_speakers == []
     assert len(recorded_requests) == len(_PARLIAMENT_NUMBER_TO_PAGE_ID) + _SPEAKER_SESSION_REQUEST_COUNT
     assert all(recorded_request.user_agent == CRAWL_USER_AGENT for recorded_request in recorded_requests)
     _assert_paced(recorded_requests)

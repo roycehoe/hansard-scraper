@@ -7,6 +7,8 @@ import pytest
 from sqlalchemy import event
 from sqlalchemy.engine import Engine, make_url
 
+from exceptions import HansardTestGuardError
+
 _SCRATCH_DATABASE_URL = "postgresql://user:password@localhost:5435/hansard_launch"
 _ROUTING_ENV_VARS = (
     "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy",
@@ -27,10 +29,6 @@ _SCRATCH_PORT = 5435
 _SCRATCH_DATABASE = "hansard_launch"
 
 
-class HansardTestGuardError(RuntimeError):
-    pass
-
-
 def _validate_can_use_database_url(database_url: str) -> None:
     url = make_url(database_url)
     if url.host not in _LOOPBACK_HOSTS:
@@ -45,23 +43,23 @@ _validate_can_use_database_url(settings.database_url)
 
 
 @event.listens_for(Engine, "do_connect")
-def _refuse_non_scratch_connection(dialect: object, connection_record: object, cargs: tuple, cparams: dict) -> None:
-    if cargs:
+def _refuse_non_scratch_connection(dialect: object, connection_record: object, connection_args: tuple, connection_params: dict) -> None:
+    if connection_args:
         raise HansardTestGuardError("Tests refuse a positional database connection string")
-    if cparams.get("host") not in _LOOPBACK_HOSTS:
-        raise HansardTestGuardError(f"Tests refuse database host {cparams.get('host')}")
-    if "hostaddr" in cparams:
+    if connection_params.get("host") not in _LOOPBACK_HOSTS:
+        raise HansardTestGuardError(f"Tests refuse database host {connection_params.get('host')}")
+    if "hostaddr" in connection_params:
         raise HansardTestGuardError("Tests refuse a database hostaddr")
-    if "service" in cparams:
+    if "service" in connection_params:
         raise HansardTestGuardError("Tests refuse a database service name")
-    if "dsn" in cparams:
+    if "dsn" in connection_params:
         raise HansardTestGuardError("Tests refuse a database dsn string")
-    if cparams.get("port") is None:
+    if connection_params.get("port") is None:
         raise HansardTestGuardError("Tests refuse a database connection with no port")
-    if int(cparams["port"]) != _SCRATCH_PORT:
-        raise HansardTestGuardError(f"Tests refuse database port {cparams['port']}")
-    if cparams.get("dbname") != _SCRATCH_DATABASE:
-        raise HansardTestGuardError(f"Tests refuse database {cparams.get('dbname')}")
+    if int(connection_params["port"]) != _SCRATCH_PORT:
+        raise HansardTestGuardError(f"Tests refuse database port {connection_params['port']}")
+    if connection_params.get("dbname") != _SCRATCH_DATABASE:
+        raise HansardTestGuardError(f"Tests refuse database {connection_params.get('dbname')}")
 
 
 _ORIGINAL_SOCKET_CONNECT: Callable[..., None] = socket.socket.connect

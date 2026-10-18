@@ -6,6 +6,7 @@ import requests
 from sqlalchemy import create_engine
 from sqlalchemy.engine import make_url
 
+from exceptions import HansardTestGuardError
 from settings import settings
 
 _TEST_NET_ADDRESS = "192.0.2.1"
@@ -25,34 +26,34 @@ _TEST_NET_DSN = "hostaddr=192.0.2.1 connect_timeout=1"
 
 def _assert_connection_is_refused(database_url: str, message: str, connect_args: dict) -> None:
     engine = create_engine(database_url, connect_args=connect_args)
-    with pytest.raises(RuntimeError, match=message):
+    with pytest.raises(HansardTestGuardError, match=message):
         engine.connect()
     engine.dispose()
 
 
 def test_a_tcp_connection_outside_loopback_is_refused() -> None:
-    with pytest.raises(RuntimeError, match="Tests refuse"):
+    with pytest.raises(HansardTestGuardError, match="Tests refuse"):
         socket.create_connection((_TEST_NET_ADDRESS, _HTTP_PORT), timeout=_TIMEOUT_SECONDS)
 
 
 def test_a_socket_connect_outside_loopback_is_refused() -> None:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as test_socket:
         test_socket.settimeout(_TIMEOUT_SECONDS)
-        with pytest.raises(RuntimeError, match="Tests refuse"):
+        with pytest.raises(HansardTestGuardError, match="Tests refuse"):
             test_socket.connect((_TEST_NET_ADDRESS, _HTTP_PORT))
-        with pytest.raises(RuntimeError, match="Tests refuse"):
+        with pytest.raises(HansardTestGuardError, match="Tests refuse"):
             test_socket.connect_ex((_TEST_NET_ADDRESS, _HTTP_PORT))
 
 
 def test_an_address_lookup_outside_loopback_is_refused() -> None:
-    with pytest.raises(RuntimeError, match="Tests refuse"):
+    with pytest.raises(HansardTestGuardError, match="Tests refuse"):
         socket.getaddrinfo(_RESERVED_HOST_NAME, _HTTP_PORT)
 
 
 def test_http_requests_outside_loopback_are_refused() -> None:
-    with pytest.raises(RuntimeError, match="Tests refuse"):
+    with pytest.raises(HansardTestGuardError, match="Tests refuse"):
         requests.get(f"http://{_TEST_NET_ADDRESS}/", timeout=_TIMEOUT_SECONDS)
-    with pytest.raises(RuntimeError, match="Tests refuse"):
+    with pytest.raises(HansardTestGuardError, match="Tests refuse"):
         httpx.get(f"http://{_TEST_NET_ADDRESS}/", timeout=_TIMEOUT_SECONDS)
 
 
