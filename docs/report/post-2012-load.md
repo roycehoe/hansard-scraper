@@ -56,7 +56,7 @@ The driver, the rollback script and the golden harness lived in the session scra
 
 ## Steps and results
 
-All steps ran at commit c218743.
+All steps ran at commit bb94505.
 
 | Step | What it wrote | Rows | Ids inserted | Hand check | Links changed |
 |---|---|---|---|---|---|
@@ -68,7 +68,7 @@ All steps ran at commit c218743.
 | h | Stage 8 links, then the person stage | Speech links added 416,858; attendance links added 38,566; 5 "Mdm Speaker" rows nulled by name; 3 speaker rows joined to persons 113 and 257 | none | 30 of 30 | 0 |
 | i | Sitting sections measured against stored reports | document only | none | n/a | n/a |
 | r | Recovery of five textless reports (see judgement calls e and f) | 3 raw and 3 report rows filled in place; 2 raw and 2 report rows inserted; 48 speech rows, 43 linked | raw 47,403 and 47,404; report 47,401 and 47,402; speech 1,526,791 to 1,526,838 ([recover5/](post-2012-load/recover5/)) | 48 of 48 against the source HTML | 0 |
-| k | Coverage figures and docs refreshed (commits eb6339c, c74801a, 4fd36b9) | document only | none | n/a | n/a |
+| k | Coverage figures and docs refreshed (commits 9af11c8, 387501f, 5e6e7bb) | document only | none | n/a | n/a |
 
 Notes on the table:
 
@@ -148,7 +148,7 @@ From the verdicts and hand checks. None blocked a step.
 - 8 of the 14 procedural records that parse to zero rows name a mover after a dash, in square brackets. The mover pattern only runs for the motion type, so they get no row (e).
 - Record that the plan's row estimates were sample projections: +9.1% for Parliament 12 and +9.5% for 14 (e).
 - Name written-statement 2628, 2645 and 2646 as failures beyond the plan's named list. Done in judgement call e (b).
-- Hand check 5 to 10 production reports with empty emphasis tags, since 7978bed came after the last hand check of that kind (b).
+- Hand check 5 to 10 production reports with empty emphasis tags, since cebb32a came after the last hand check of that kind (b).
 - The driver's pre-2012 comparison zips rows by position. It is correct only because new ids sort last. A by-id comparison is safer for later loads (c).
 - `compare_pair.py` for step c covers report columns only. Raw-row equality needs a content hash per report id (c).
 - The plan's wording of Lee Li Lian's entries as "present" and of "two `ptba_to` values" (two dates, four rows) needs correcting where it is reused (f).

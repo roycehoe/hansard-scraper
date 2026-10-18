@@ -2,7 +2,7 @@ VERDICT: APPROVE
 
 # Step f verdict: sitting fill in place, then attendance
 
-Reviewer: independent gate, read-only. Repo at c218743. Rehearsal3 is local `defaultdb` (state after step h). Production was read through a read-only query script in read-only transactions. Query files: `fv_r3_counts.sql (session scratchpad)`, `fv_state.sql (session scratchpad)`, `fv_rows.sql (session scratchpad)`, `fv_speaker.sql (session scratchpad)`. The comparator is `fv_compare_api.py (session scratchpad)`. Outputs are in `fv_r3_rows.jsonl (session scratchpad)`, `fv_prod_rows.jsonl (session scratchpad)` and `fv_prod_state.out (session scratchpad)`.
+Reviewer: independent gate, read-only. Repo at bb94505. Rehearsal3 is local `defaultdb` (state after step h). Production was read through a read-only query script in read-only transactions. Query files: `fv_r3_counts.sql (session scratchpad)`, `fv_state.sql (session scratchpad)`, `fv_rows.sql (session scratchpad)`, `fv_speaker.sql (session scratchpad)`. The comparator is `fv_compare_api.py (session scratchpad)`. Outputs are in `fv_r3_rows.jsonl (session scratchpad)`, `fv_prod_rows.jsonl (session scratchpad)` and `fv_prod_state.out (session scratchpad)`.
 
 ## Code read
 

@@ -2,11 +2,11 @@ VERDICT: APPROVE
 
 # Step g verdict: resolver constants and three Speaker rows
 
-Reviewer: independent gate, read-only. Repo at c218743, clean. The constants commit is d26d37e. `git diff d26d37e HEAD` is empty for `populate/speaker_resolution_constants.py`, `populate/speaker_links.py`, `services/attendance.py`, `data/heads_of_state.json` and `scripts/load_heads_of_state.py`, so production runs exactly what was rehearsed. Production was read through a read-only query script in read-only transactions. Query files: `gv_g_sim.sql (session scratchpad)`, `gv_g_names.sql (session scratchpad)`, `gv_g_headline.sql (session scratchpad)`, `gv_g_ids.sql (session scratchpad)`. Outputs sit beside them as `.out`.
+Reviewer: independent gate, read-only. Repo at bb94505, clean. The constants commit is 0b695c6. `git diff 0b695c6 HEAD` is empty for `populate/speaker_resolution_constants.py`, `populate/speaker_links.py`, `services/attendance.py`, `data/heads_of_state.json` and `scripts/load_heads_of_state.py`, so production runs exactly what was rehearsed. Production was read through a read-only query script in read-only transactions. Query files: `gv_g_sim.sql (session scratchpad)`, `gv_g_names.sql (session scratchpad)`, `gv_g_headline.sql (session scratchpad)`, `gv_g_ids.sql (session scratchpad)`. Outputs sit beside them as `.out`.
 
 ## Code and data against the plan and the vet
 
-| Item | Plan and vet section 3 | d26d37e | Status |
+| Item | Plan and vet section 3 | 0b695c6 | Status |
 |---|---|---|---|
 | Speaker Seah Kian Peng | 2 Aug 2023 to 15 Apr 2025 | same | matches |
 | Deputy Speakers P13, Charles Chong and Lim Biow Chuan | 25 Jan 2016 to 23 Jun 2020 (vet item 1) | same | matches |
@@ -61,7 +61,7 @@ Production's speaker table, compared as `(id, name, parliament_number, is_member
 
 ## Check 5: stop rules in rehearsal3
 
-`g_check.json (session scratchpad)`: headline 564,509 of 578,359, 97.61%, all-rows 624,332, before and after. Links changed: 0 speech, 0 attendance. Links added: 0 and 0. Rehearsal4 shows the same, and `efgh_vs_r3.txt` shows g IDENTICAL (3 rows, same hash). The golden harness passes at c218743, and the rehearsal report records that every resolver file stayed unchanged.
+`g_check.json (session scratchpad)`: headline 564,509 of 578,359, 97.61%, all-rows 624,332, before and after. Links changed: 0 speech, 0 attendance. Links added: 0 and 0. Rehearsal4 shows the same, and `efgh_vs_r3.txt` shows g IDENTICAL (3 rows, same hash). The golden harness passes at bb94505, and the rehearsal report records that every resolver file stayed unchanged.
 
 ## Check 6: ids and references
 

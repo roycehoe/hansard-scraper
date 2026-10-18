@@ -34,7 +34,7 @@ No fix may make earlier work worse. Every write is diffed against a snapshot tak
 
 ## Round 0: `&nbsp;` deleted instead of spaced
 
-Commit `88f6b34`. `utils/markdown_parser.py` deleted `&nbsp;` from older-system HTML. The newer system's branch already turned it into a space. Both systems now replace it with a space before html2text runs. An emphasis tag that holds only `&nbsp;` becomes a single space, because otherwise it would render as a stray `__` or `****`.
+Commit `50cc527`. `utils/markdown_parser.py` deleted `&nbsp;` from older-system HTML. The newer system's branch already turned it into a space. Both systems now replace it with a space before html2text runs. An emphasis tag that holds only `&nbsp;` becomes a single space, because otherwise it would render as a stray `__` or `****`.
 
 A dry run found 3,464 older-system reports whose markdown changes. 606 sittings change too.
 
@@ -112,11 +112,11 @@ The Kish effective sample size is 208. Unweighted, 7.85% of rows had an error. T
 
 | Fix | Commit | Defect | Reports | Rows |
 |---|---|---|---|---|
-| F1 | `1251a7c` | The report header table (its `Title:` and `MPs Speaking:` fields) became the start of a single-speaker row | | 2,745 |
-| F7 | `91e1349` | A speaker label with nested bold lost its title, so `****Mr X** :**` was not read as a label | 3 | 26 |
-| F3 | `2f1492d` | html2text escapes such as `\.` and `\-` stayed in the text | 10,253 | 4,862 |
-| F6 | `0e5ad27` | A bare `&` came out with a `;` after the next word (`R&D.;`, `F&B;`) | 335 | 1,020 |
-| F2 | `c628314` | A link kept its URL in the text; now only the link text stays | 1,759 | 4,068 |
+| F1 | `46b1988` | The report header table (its `Title:` and `MPs Speaking:` fields) became the start of a single-speaker row | | 2,745 |
+| F7 | `215e3e8` | A speaker label with nested bold lost its title, so `****Mr X** :**` was not read as a label | 3 | 26 |
+| F3 | `32ec0eb` | html2text escapes such as `\.` and `\-` stayed in the text | 10,253 | 4,862 |
+| F6 | `49a389f` | A bare `&` came out with a `;` after the next word (`R&D.;`, `F&B;`) | 335 | 1,020 |
+| F2 | `bbf52de` | A link kept its URL in the text; now only the link text stays | 1,759 | 4,068 |
 
 The report and row counts for F7, F3, F6 and F2 are from each fix's own dry run. They overlap, so they do not sum to the combined write.
 
@@ -124,7 +124,7 @@ F1 went in at 10:33 on 15 October. It changed 2,745 rows, with 0 unexplained.
 
 ### A metric change
 
-Text share counted the `Title:|` and `MPs Speaking:|` header fields as body text the parser dropped. They were 1.72M of 188.1M characters. Commit `e1bba7d`, approved by the user, leaves them out of the denominator. On the same stored rows, text share moves from 96.59% to 97.48%. F1 then lowered it by 0.07 points, because 135,406 characters of metadata had counted as linked speech. The user accepted that. Text dropped inside reports with rows fell from 1.22% to 0.41%.
+Text share counted the `Title:|` and `MPs Speaking:|` header fields as body text the parser dropped. They were 1.72M of 188.1M characters. Commit `7ba038f`, approved by the user, leaves them out of the denominator. On the same stored rows, text share moves from 96.59% to 97.48%. F1 then lowered it by 0.07 points, because 135,406 characters of metadata had counted as linked speech. The user accepted that. Text dropped inside reports with rows fell from 1.22% to 0.41%.
 
 ### The combined write
 
@@ -183,7 +183,7 @@ The speech table holds 1,068,887 rows.
 
 ### Write 2
 
-Write 2 shipped at 15:46 on 15 October through the local replica and the delta shipper. It carried WS1 to WS6, F5, D1, D2, F2b and F4, committed as `2de9bdf` to `c33e922`, each with a golden fixture. 19 tests pass.
+Write 2 shipped at 15:46 on 15 October through the local replica and the delta shipper. It carried WS1 to WS6, F5, D1, D2, F2b and F4, committed as `19bd47d` to `d383048`, each with a golden fixture. 19 tests pass.
 
 | Item | Count |
 |---|---|
@@ -213,31 +213,31 @@ Fixing the first four leaves about 0.20% (bound 0.30%) on this sample. In Tier B
 
 ### Write 3 preparation
 
-Write 3 is the stack of parser fixes committed on master from `7fb6ce1` on, 23 commits, then the kind column and changes A to E, five more commits (see "The overnight run"). The planner built the write from them in steps: each commit has a checker, and a chain checker explains every changed row in order. The stale reports (stored rows that differ from the current parse) are rebuilt when their stored rows equal some parser version's output, the rule the user set on 15 October. The 1,568 near-match reports follow the 30-report check below.
+Write 3 is the stack of parser fixes committed on master from `89bf053` on, 23 commits, then the kind column and changes A to E, five more commits (see "The overnight run"). The planner built the write from them in steps: each commit has a checker, and a chain checker explains every changed row in order. The stale reports (stored rows that differ from the current parse) are rebuilt when their stored rows equal some parser version's output, the rule the user set on 15 October. The 1,568 near-match reports follow the 30-report check below.
 
 | Commit | What it does |
 |---|---|
-| `bcb0af2` | PA1: oath rolls and procedural one-liners get no speaker |
-| `9df9966`, `1884d53` | PA2 and PA3: a labelled "rose" line keeps the name; labelled assent, dissent and resumed-seat lines end the turn |
-| `8e876a2` | PA4: bold "Hon. Members" mid-sentence stays in the speaker's row |
-| `55e99a6` | PA5: footnotes and amendment text get no speaker |
-| `517b2c1` | PA6: procedural lines split out of single-speaker collapsed rows |
-| `d411ea9` | PA7: inline directions split out of speaker rows |
-| `4ee4713` | TB1: wrapped prose lines inside preformatted blocks are joined |
-| `ee9ff50` | TB2: adjourned and suspended directions split across blocks are joined |
-| `27f6d46` | TC1: bold markers are stripped from transcripts |
-| `8dae2fc`, `eeb4d61` | BG, Encik and other titles are accepted on long speaker labels, at the start of a label only |
-| `af6e516`, `493ef00` | A footnote that opens with a hash marker stays out of the headings; a long underscore line is read as a footnote rule |
-| `d867d90`, `e100380` | A bracketed note cut by a column marker is joined, with its space kept |
-| `a8c5ffc` | The first copy of a paragraph printed twice around a stray tag is dropped |
-| `a3c1246`, `a950b25` | Gestures and more inline directions are split out; the split stops mutating its arguments |
-| `9209f01`, `c104e58` | The leading title line leaves single-speaker collapsed rows; a "Resolved" heading stays as the body of a collapsed report |
-| `e37853a` | Text before the first speaker is kept as rows with no speaker |
-| `aca7ebe` | Speech after a closed footnote keeps its speaker |
+| `850a070` | PA1: oath rolls and procedural one-liners get no speaker |
+| `bc582ff`, `33280c2` | PA2 and PA3: a labelled "rose" line keeps the name; labelled assent, dissent and resumed-seat lines end the turn |
+| `db369d7` | PA4: bold "Hon. Members" mid-sentence stays in the speaker's row |
+| `d5958d8` | PA5: footnotes and amendment text get no speaker |
+| `6824b56` | PA6: procedural lines split out of single-speaker collapsed rows |
+| `4c2aa72` | PA7: inline directions split out of speaker rows |
+| `21264ae` | TB1: wrapped prose lines inside preformatted blocks are joined |
+| `8537c44` | TB2: adjourned and suspended directions split across blocks are joined |
+| `1fc23a3` | TC1: bold markers are stripped from transcripts |
+| `b76ee3c`, `f7ab3cf` | BG, Encik and other titles are accepted on long speaker labels, at the start of a label only |
+| `5963408`, `1d056c2` | A footnote that opens with a hash marker stays out of the headings; a long underscore line is read as a footnote rule |
+| `3810dd5`, `9d87d81` | A bracketed note cut by a column marker is joined, with its space kept |
+| `2dc520f` | The first copy of a paragraph printed twice around a stray tag is dropped |
+| `e184d36`, `b7dcff4` | Gestures and more inline directions are split out; the split stops mutating its arguments |
+| `f63200e`, `0a7297c` | The leading title line leaves single-speaker collapsed rows; a "Resolved" heading stays as the body of a collapsed report |
+| `e890946` | Text before the first speaker is kept as rows with no speaker |
+| `9e882ff` | Speech after a closed footnote keeps its speaker |
 
 The user decided on 15 October (late) to keep the preamble as rows with no speaker, to rebuild the 1,568 near-match stale reports after a reader sampled 30 and found no hand edit, to accept the 21 "repair tranche" reports, and to fix four defects the stale checker found in HEAD: the BG, Encik and RAdm titles that long labels dropped, the `#Text` footnotes in 23398 and 23401 dropped as headings, the split of 20991's vernacular note, and 24516's duplicated sentence. On 16 October the user kept the 24516 fix, approved renumbering ordinals, approved shipping with `ship_delta4.py`, accepted the fall in the all-rows rate and text share as designed, ruled that "Head NNNN -" preamble fragments are Tier C, put 24248 on the per-report Tier A list, and set round 3 as re-reads plus tranche 1.
 
-Plan v2 (on `cecfc20`, before changes A to E) applies 11,271 reports (9,502 clean and 1,769 stale rebuilt) and holds 162. It carries 628,210 speech updates (601,802 of them change the ordinal only), 8,253 deletes and 13,051 inserts, 3,210 report markdown updates, 44 sitting markdown updates and 45 junk attendance deletes. A replay of every applied report equals the final parse. The ship test ran on clones of the replica. The apply committed with 0 unexplained rows. Five drift tests all aborted before any write. The rehearsal and commit passed 49 checks, and the local and target tables had equal hashes. `ship_delta4.py` sends an ordinal-only update as `id` and `ordinal`, which cut the speech upload from 321.4 MB to 69.9 MB.
+Plan v2 (on `c94e3ee`, before changes A to E) applies 11,271 reports (9,502 clean and 1,769 stale rebuilt) and holds 162. It carries 628,210 speech updates (601,802 of them change the ordinal only), 8,253 deletes and 13,051 inserts, 3,210 report markdown updates, 44 sitting markdown updates and 45 junk attendance deletes. A replay of every applied report equals the final parse. The ship test ran on clones of the replica. The apply committed with 0 unexplained rows. Five drift tests all aborted before any write. The rehearsal and commit passed 49 checks, and the local and target tables had equal hashes. `ship_delta4.py` sends an ordinal-only update as `id` and `ordinal`, which cut the speech upload from 321.4 MB to 69.9 MB.
 
 Plan v2 changes the figures like this (Parliaments 0 to 11, the stored rows are the rows after write 2):
 
@@ -300,11 +300,11 @@ Changes A to E went in as new commits on top of master, with no history rewrite.
 
 | Change | What it does | Commit |
 |---|---|---|
-| A | `speech.kind`, a nullable Postgres enum, migration `7c1d4e9a2b60`; the parser sets it on every parsed row | `e8b8804`, `2eef141` |
-| B | A direction is cut out of its paragraph; the paragraph stays whole and keeps its row, and the direction follows as a CHAMBER_EVENT row. A parse of the cached reports changes 702 reports and leaves 1,153 fewer rows than the three-row split, with no text lost | `9050403` |
-| C | `data/unattributed_speech.json` lists ten entries: the eight chair-resumption reports, 31083 and 24248's opening speech (30 rows). The rows in a listed range that carry the listed label get no speaker and kind SPEECH. 42017 is left out | `72d4d64` |
+| A | `speech.kind`, a nullable Postgres enum, migration `7c1d4e9a2b60`; the parser sets it on every parsed row | `27fd9c7`, `0969500` |
+| B | A direction is cut out of its paragraph; the paragraph stays whole and keeps its row, and the direction follows as a CHAMBER_EVENT row. A parse of the cached reports changes 702 reports and leaves 1,153 fewer rows than the three-row split, with no text lost | `15a00e4` |
+| C | `data/unattributed_speech.json` lists ten entries: the eight chair-resumption reports, 31083 and 24248's opening speech (30 rows). The rows in a listed range that carry the listed label get no speaker and kind SPEECH. 42017 is left out | `052540d` |
 | D | The stopping rule weights Tier A and B by characters and requires a full source pass | this change |
-| E | A `(proc text)` pair that wraps a whole block stays in the markdown (10,060 of 10,107 pairs); that line becomes a no-speaker PROCEDURAL row, inside collapsed reports too. Other pairs keep the old treatment. A parse of the cached reports changes 2,762 markdowns and 941 reports' rows, and 1,132 credited rows become PROCEDURAL | `0e4a110` |
+| E | A `(proc text)` pair that wraps a whole block stays in the markdown (10,060 of 10,107 pairs); that line becomes a no-speaker PROCEDURAL row, inside collapsed reports too. Other pairs keep the old treatment. A parse of the cached reports changes 2,762 markdowns and 941 reports' rows, and 1,132 credited rows become PROCEDURAL | `efa477d` |
 
 The kind migration revises `e5a9c3b7d216`. Another session's uncommitted `transcript_tsv` migration (`f2b8d4a6c913`) was left alone, so the working tree shows two heads until that migration's `down_revision` is re-pointed when it is committed. The replica and the remote were both migrated at 22:51 on 15 October; the migration adds the column only, and no rows were written. Two calls differ from the brief or the register. Report 42017 gets kind UNCLASSIFIED, because its rows are a notice of motion that nobody spoke. The count of stored rows under a known-wrong label is 465. The register first said 471, which counted ordinal spans; write 2 deleted rows without renumbering, so the ranges for 17279 and 18272 hold 37 and 9 rows although their ordinals span 42 and 10.
 
@@ -367,7 +367,7 @@ The breakdown by cause, from the rehearsal:
 | procedural, oath, rose and label lines (PA1-4, PA6, a, e) | -835 | +52 | -868 | -54,686 | -0.201 | -0.041 |
 | stale rebuild | +0 | +28 | +0 | -769 | -0.006 | -0.0 |
 
-B is commit `9050403`, C the 465 unlinks of brief decision 7, and E commit `0e4a110`, which acts on newer-system reports only and so has no row for Parliaments 0 to 11. Points are percentage points of the all-rows rate and text share for the scope of the table.
+B is commit `15a00e4`, C the 465 unlinks of brief decision 7, and E commit `efa477d`, which acts on newer-system reports only and so has no row for Parliaments 0 to 11. Points are percentage points of the all-rows rate and text share for the scope of the table.
 
 Detectors, pipeline hits per million tokens, against the source typo rate:
 
@@ -378,7 +378,7 @@ Detectors, pipeline hits per million tokens, against the source typo rate:
 
 Both detectors are now under their source typo rates; the punctuation detector was over it before. Pipeline hits fall from 2,038 to 632 (dictionary) and from 812 to 235 (punctuation) on 64.2 million tokens.
 
-The ship candidate is plan v4 on `4174a7c`: 12,337 reports applied, 162 held, 627,303 speech updates (599,528 of them ordinal and kind only), 404,891 kind-only updates, 8,254 deletes, 12,388 inserts, 5,584 report and 44 sitting markdowns, and 45 junk attendance rows. It equals plan v3 on `72d4d64` plus the 12 newer-system reports that `4174a7c` fixes (it trims a space left inside a proc text tag). Both plans were rehearsed in full; the figures above are v4's, the detectors and the cause tables v3's, which differ by those 12 reports at most. The plan and the morning commands are in `plans/speech-fidelity-loop/write3/`. Over the 41,697 cached reports, before change E, the parser gives SPEECH 968,296 rows, PROCEDURAL 43,089, UNCLASSIFIED about 25,000, CHAMBER_EVENT 6,133, EDITORIAL_NOTE 2,534, DOCUMENT_TEXT 1,793 and HEADING 1,429. The largest UNCLASSIFIED classes are division lists, oath-roll names and unanchored procedural lines. `2eef141` changed no speaker and no transcript on any of those reports.
+The ship candidate is plan v4 on `6e1922b`: 12,337 reports applied, 162 held, 627,303 speech updates (599,528 of them ordinal and kind only), 404,891 kind-only updates, 8,254 deletes, 12,388 inserts, 5,584 report and 44 sitting markdowns, and 45 junk attendance rows. It equals plan v3 on `052540d` plus the 12 newer-system reports that `6e1922b` fixes (it trims a space left inside a proc text tag). Both plans were rehearsed in full; the figures above are v4's, the detectors and the cause tables v3's, which differ by those 12 reports at most. The plan and the morning commands are in `plans/speech-fidelity-loop/write3/`. Over the 41,697 cached reports, before change E, the parser gives SPEECH 968,296 rows, PROCEDURAL 43,089, UNCLASSIFIED about 25,000, CHAMBER_EVENT 6,133, EDITORIAL_NOTE 2,534, DOCUMENT_TEXT 1,793 and HEADING 1,429. The largest UNCLASSIFIED classes are division lists, oath-roll names and unanchored procedural lines. `0969500` changed no speaker and no transcript on any of those reports.
 
 Rows by kind, whole table, after the rehearsal of plan v4: SPEECH with a speaker 963,407, SPEECH with no speaker 488, PROCEDURAL 46,868, CHAMBER_EVENT 5,800, EDITORIAL_NOTE 2,286, DOCUMENT_TEXT 2,584, HEADING 2,570, UNCLASSIFIED 20,579 and NULL 4,146.
 
@@ -441,7 +441,7 @@ After the ship:
 
 ## Write 4 and round 4
 
-Cycle 4 began on 16 October while write 3 waited to ship, and finished after it landed at 16:03. It fixed the three classes round 3 named, prepared the rebuild of 42 held reports as the user ruled, and re-read what the writes touched. The fixes are committed on master as `2ec5fe8`, `73ed1d6` and `1220161`. Write 4 was built, verified and rehearsed on clones of the replica. It shipped to the remote at 07:48 on 17 October (54 checks ok, lock 14 s). Round 4 passes both gates. It was read on `hansard_w4`, the clone with the plan applied, and, for 114 tranche 2 reports, early on the replica. After the ship, `build_r4.py verify` on the replica found the 672 pooled reports unchanged, so the verdict is final. It is under "Round 4" below.
+Cycle 4 began on 16 October while write 3 waited to ship, and finished after it landed at 16:03. It fixed the three classes round 3 named, prepared the rebuild of 42 held reports as the user ruled, and re-read what the writes touched. The fixes are committed on master as `b33a028`, `acd8707` and `2b74a2b`. Write 4 was built, verified and rehearsed on clones of the replica. It shipped to the remote at 07:48 on 17 October (54 checks ok, lock 14 s). Round 4 passes both gates. It was read on `hansard_w4`, the clone with the plan applied, and, for 114 tranche 2 reports, early on the replica. After the ship, `build_r4.py verify` on the replica found the 672 pooled reports unchanged, so the verdict is final. It is under "Round 4" below.
 
 ### Why 22149 was a stale-row problem
 
@@ -455,9 +455,9 @@ Each fix was checked against the parser before it, first on every report that ca
 
 | Fix | Commit | Class | Credited before | After | Whole-cache check |
 |---|---|---|---|---|---|
-| 1 | `2ec5fe8` | Page-reference and numbered footnotes; division records and lists | Footnotes 721 rows in 233 reports (22,412 characters); division records and lists 527 rows in 13 reports (about 9,500) | 9 and 5 rows, correct or listed below | 421 reports change, all older system. 0 words lost or gained. 1,057 rows lose their speaker, and 185 more in the 5 reports where a record is cut out. 145 "Ayes. Noes." headings and 79 column references change kind only |
-| 2 | `73ed1d6` | Procedural lines that miss an anchor | 665 lines in 392 reports (23,984 characters) and 119 record rows after them in 39 reports (7,175) | 29 near-miss rows, listed below | 437 reports change. 0 words lost or gained. 784 rows lose their speaker and 88 change kind only |
-| 3 | `1220161` | First readings credited to their presenter | 2,090 rows, 531,677 characters: older first readings 2,018 rows and 522,792 characters, related lines 23 and 704, newer system 49 and 8,181 | None in the formula; 12 reports keep a credited row, listed below | 2,144 reports change. 355 words regained in 29 reports, none lost. 2,054 rows become no-speaker PROCEDURAL one to one, 29 pairs merge, 7 rows split, 68 change kind only |
+| 1 | `b33a028` | Page-reference and numbered footnotes; division records and lists | Footnotes 721 rows in 233 reports (22,412 characters); division records and lists 527 rows in 13 reports (about 9,500) | 9 and 5 rows, correct or listed below | 421 reports change, all older system. 0 words lost or gained. 1,057 rows lose their speaker, and 185 more in the 5 reports where a record is cut out. 145 "Ayes. Noes." headings and 79 column references change kind only |
+| 2 | `acd8707` | Procedural lines that miss an anchor | 665 lines in 392 reports (23,984 characters) and 119 record rows after them in 39 reports (7,175) | 29 near-miss rows, listed below | 437 reports change. 0 words lost or gained. 784 rows lose their speaker and 88 change kind only |
+| 3 | `2b74a2b` | First readings credited to their presenter | 2,090 rows, 531,677 characters: older first readings 2,018 rows and 522,792 characters, related lines 23 and 704, newer system 49 and 8,181 | None in the formula; 12 reports keep a credited row, listed below | 2,144 reports change. 355 words regained in 29 reports, none lost. 2,054 rows become no-speaker PROCEDURAL one to one, 29 pairs merge, 7 rows split, 68 change kind only |
 
 Fix 1 gives a page-reference note ("*Cols. 3929-3930.") and a numbered note beside it kind EDITORIAL_NOTE, and cuts a division record that the source printed straight after a member's words ("Division, Sir. The House divided: ...") into its own PROCEDURAL row. Fix 2 widens the procedural anchors to their misspellings and variants, so "Amendment by leave, withdrawn." without its comma (270 rows in 107 reports) and a bare "Question put." (48 rows in 46 reports) stop being credited. Fix 3 uses the formula of a first reading as the stand-in for the `(proc text)` tag the older system never had. The formula line, the bill's title quote and any time stamp or heading before it become one no-speaker PROCEDURAL row, and text after the formula stays with the presenter. In 29 newer-system reports the presenter was bold and read as a label, which had dropped the words "presented by"; those words come back. The sources for all counts are `plans/speech-fidelity-loop/cycle4/fix1/COUNTS.md`, `fix2/COUNTS.md` and `fix3/`.
 
@@ -467,13 +467,13 @@ Write 4 rebuilds 42 reports, as the user approved on 16 October 2026: the 41 exp
 
 22691 is in the set with a flag. Its rebuild leaves 18,706 characters of the Minister's resumed Budget speech with no speaker, because a suspension ends his turn and he resumes without a label. No linked row is lost there, since the stored rows credit those characters to heading labels. It is already a gap in `docs/vision.md`. 41804 is out of the set: its rebuild credits two procedural lines (89 characters) to Mr Lee Kuan Yew. Five more stay held with it: 22806 (a caption and a bold table cell are still read as labels), 23038 and 24839 (stored rows missing, with no recorded cause), 23268 (a footnote run swallows the speech after it) and 23627 (the parser drops a "Table 1:" caption).
 
-38719 is a bill from Parliament 0 whose stored rows come from write 2. Round 4's early read found three paragraphs in it cut at column markers, and they put Tier B over its gate. Its rebuild is explained. Parser `f7c0c3d` run on the stored markdown reproduces all 438 stored transcripts exactly, so no hand edit shows, and the speakers differ only on six rows of the registered 14 October repair. The rebuild goes from 438 rows to 372 and from 157,545 to 157,613 countable characters. It joins 71 paragraphs cut at column markers (mid-sentence cuts fall from 68 to 8, the three round 4 found among them), cuts five inline "[Interruption]" directions into chamber-event rows (73 characters leave four members), removes three escapes and two glues, and keeps one pre-speaker line. No speech changes speaker. 15 stored words differ (13 escape variants and 2 glue splits) and none is lost.
+38719 is a bill from Parliament 0 whose stored rows come from write 2. Round 4's early read found three paragraphs in it cut at column markers, and they put Tier B over its gate. Its rebuild is explained. Parser `6770752` run on the stored markdown reproduces all 438 stored transcripts exactly, so no hand edit shows, and the speakers differ only on six rows of the registered 14 October repair. The rebuild goes from 438 rows to 372 and from 157,545 to 157,613 countable characters. It joins 71 paragraphs cut at column markers (mid-sentence cuts fall from 68 to 8, the three round 4 found among them), cuts five inline "[Interruption]" directions into chamber-event rows (73 characters leave four members), removes three escapes and two glues, and keeps one pre-speaker line. No speech changes speaker. 15 stored words differ (13 escape variants and 2 glue splits) and none is lost.
 
 One change in 38719 has no checker rule and is an approved exception. A "Column: 614" marker leaves a "****" line, and the parser splits one paragraph of Mr David Marshall into two rows, both his. The stored rows joined with one space equal the new rows joined with one space. The user accepted this one new cut for the 71 the rebuild joins. The stale-rebuild checker refuses 7 of 38719's 70 blocks: that split, the five inline-direction cuts, and "Mr Rajah resumed his seat." turned from a label into a no-speaker chamber event, which fits ADR 0007. The plan records the exception, and the exception file is `plans/speech-fidelity-loop/cycle4/write4/r2/approved_exception_38719.json`.
 
 ### The plan and the rehearsal
 
-Write 4 is a delta on the write 3 state, built on master `1220161` against the replica after the write 3 ship. The plan is `cycle4/write4/r2/plan_w4_release2.pkl`; it supersedes a 41-report plan that differed only in 38719. The planner's tools build the stack from the three commits, check every changed report against a checker written from each fix's contract, and refuse a report whose stored rows or markdown differ from the write 3 parse. The checkers explain 421 of 421, 437 of 437 and 2,144 of 2,144 changed reports with no refusal, and every planted error in the mutation tests (14, 9 and 26 cases) is refused. The 162 reports write 3 held and 24248 get no write, kind included, apart from the 41 released reports, which are built in a separate plan slot and merged.
+Write 4 is a delta on the write 3 state, built on master `2b74a2b` against the replica after the write 3 ship. The plan is `cycle4/write4/r2/plan_w4_release2.pkl`; it supersedes a 41-report plan that differed only in 38719. The planner's tools build the stack from the three commits, check every changed report against a checker written from each fix's contract, and refuse a report whose stored rows or markdown differ from the write 3 parse. The checkers explain 421 of 421, 437 of 437 and 2,144 of 2,144 changed reports with no refusal, and every planted error in the mutation tests (14, 9 and 26 cases) is refused. The 162 reports write 3 held and 24248 get no write, kind included, apart from the 41 released reports, which are built in a separate plan slot and merged.
 
 The plan applies 2,923 reports (2,881 by the fixes and 42 released) and holds 121, none of them a new write 4 hold. The 121 are the 120 of write 3's 162 that are not released, and 24248. It writes 8,729 speech updates (3,234 of them ordinal only), 361 kind-only updates, 443 deletes, 66 inserts and 25 report markdowns. Of the 5,495 updates that change content, fix 1 accounts for 1,061, fix 2 for 767, fix 3 for 2,089, fix 1 and fix 2 together for 86, fix 2 and fix 3 together for 8, and the release for 1,484. The release also writes 3,205 ordinal-only updates, 414 deletes, 54 inserts and all 25 markdowns. In the plan fix 1 is a cause in 405 reports, fix 2 in 428 and fix 3 in 2,141. `verify_stack4.py` finds no problems, and 1,048,351 speech rows remain, 2,275 of them with kind NULL.
 
@@ -555,7 +555,7 @@ Done. The stopping rule's three conditions hold on round 4. Tier A's weighted up
 
 ### Found and not fixed
 
-The census, the fix surveys and the held read found these classes and left them. Counts are corpus counts on the cached reports. The second census (`cycle4/census/CENSUS2.md`) counted on master `1220161`, the three fixes included; the fix surveys counted before or after their own fix as each row says. `docs/vision.md` repeats the list under "Where more work stops paying".
+The census, the fix surveys and the held read found these classes and left them. Counts are corpus counts on the cached reports. The second census (`cycle4/census/CENSUS2.md`) counted on master `2b74a2b`, the three fixes included; the fix surveys counted before or after their own fix as each row says. `docs/vision.md` repeats the list under "Where more work stops paying".
 
 | Class | Rows | Reports | Countable characters | Tier and why it stays |
 |---|---|---|---|---|
@@ -597,7 +597,7 @@ Kind is not scored. Readers flagged 199 of 9,043 round 3 and round 4 rows (2.20%
 
 ## Write 5 (17 October)
 
-Write 5 is the w5 parser patches on master, from `167e2e8` (01a) to `1c71189` (09), and the 188 stage 8 links of patch 05 (`2368a38`). The plan was built against the replica after write 4 and the ten fix-run writes, with the tree at `git archive 1c71189`. It was rehearsed on scratch clones of the replica from 08:52 to 09:10: 0 unexplained rows, every drift test aborted and rolled back, and the clones ended equal by table hashes. It shipped to the remote at 09:29 (lock 124 s, 56 checks ok), and the replica equals the remote by table hashes. The stored figures equal the rehearsal's.
+Write 5 is the w5 parser patches on master, from `7da899c` (01a) to `e9952f6` (09), and the 188 stage 8 links of patch 05 (`9b88a95`). The plan was built against the replica after write 4 and the ten fix-run writes, with the tree at `git archive e9952f6`. It was rehearsed on scratch clones of the replica from 08:52 to 09:10: 0 unexplained rows, every drift test aborted and rolled back, and the clones ended equal by table hashes. It shipped to the remote at 09:29 (lock 124 s, 56 checks ok), and the replica equals the remote by table hashes. The stored figures equal the rehearsal's.
 
 It applies 2,910 reports and writes 11,523 row updates (11,335 planned content updates plus the 188 links), 30,769 ordinal-only updates, 145 kind-only rows, 12 ordinal_kind rows, 325 deletes, 3,511 inserts, 1,014 report markdowns and 7 sitting markdowns. No attendance row changes.
 
@@ -638,7 +638,7 @@ The plan holds 181 reports. 121 are the write 3 and write 4 holds, still held wi
 
 ## Write 6 (17 October)
 
-Write 6 is the two parser fixes `d20cb43` (keep the space next to a footnote marker) and `5515de4` (keep a member's label when the speech holds a pipe), and the stage 7 attendance names of `7d6f305`. The plan was built against the replica after write 5. It was rehearsed on scratch clones from 10:42 to 11:04: 0 unexplained rows, every drift test that applies aborted and rolled back, and the clones ended equal by table hashes. The speech ship ran from 11:16 to 11:19 on 17 October (lock 10.0 s, total 13.1 s). The rehearsal and the commit each logged 52 checks ok.
+Write 6 is the two parser fixes `53eac45` (keep the space next to a footnote marker) and `204dbff` (keep a member's label when the speech holds a pipe), and the stage 7 attendance names of `558b971`. The plan was built against the replica after write 5. It was rehearsed on scratch clones from 10:42 to 11:04: 0 unexplained rows, every drift test that applies aborted and rolled back, and the clones ended equal by table hashes. The speech ship ran from 11:16 to 11:19 on 17 October (lock 10.0 s, total 13.1 s). The rehearsal and the commit each logged 52 checks ok.
 
 It rebuilt 55 reports and wrote 131 speech row updates, 55 report markdowns and 5 sitting markdowns. It wrote no delete, insert, kind change or link, so the speech table stays at 1,050,712 rows. 3 more reports parse the same as stored. The plan holds 123 reports: the 121 older holds and 2 new ones (38147, refused by the p09 checker, and 38222, where the parse folds a heading, a time stamp and a bill title into a first-reading row).
 
@@ -662,11 +662,11 @@ The detectors read dictionary 4.282 and punctuation 1.977 per million tokens, un
 - How a wrong `kind`, and a SPEECH row with no speaker, score under the stopping rule.
 - A NOT NULL constraint on `kind`, and an override file with the right speakers for the 465 rows.
 - Tier B and C classes that no write has touched.
-- Push: the write 6 commits (`d20cb43`, `5515de4`, `7d6f305` and this record) are on master and not pushed.
+- Push: the write 6 commits (`53eac45`, `204dbff`, `558b971` and this record) are on master and not pushed.
 
 ## Census of speaker labels, after write 6 (17 October)
 
-Two detectors count speaker labels in the speech table. DS-05 counts labels that are not a person, an office or a group. DS-09 counts unlinked labels that name a person who exists as a Person or Speaker row. `label_census.py` in the fix run's census folder runs both on the replica; it is not in the repository. The run was read-only, from an export of master at `1e069f3`, and counted on 17 October 2026 after write 6. Every unlinked label was read by hand with its first transcript words: 94 strings on 17,371 rows, and so were the 6 linked strings that a DS-05 shape flags. The readings of 16 October carried over for every label that still exists. Four labels were new and were read again: "RADM LUI TUCK YEW" and three bracketed office labels whose nested bracket the parser now closes. Characters are countable characters, as in `scripts/attribution_text_share.py`.
+Two detectors count speaker labels in the speech table. DS-05 counts labels that are not a person, an office or a group. DS-09 counts unlinked labels that name a person who exists as a Person or Speaker row. `label_census.py` in the fix run's census folder runs both on the replica; it is not in the repository. The run was read-only, from an export of master at `6fbc89b`, and counted on 17 October 2026 after write 6. Every unlinked label was read by hand with its first transcript words: 94 strings on 17,371 rows, and so were the 6 linked strings that a DS-05 shape flags. The readings of 16 October carried over for every label that still exists. Four labels were new and were read again: "RADM LUI TUCK YEW" and three bracketed office labels whose nested bracket the parser now closes. Characters are countable characters, as in `scripts/attribution_text_share.py`.
 
 The first census, on 16 October, counted the write 3 data. The fix run held its figures under the 5% rule, because the counts on the write 4 rehearsal had already moved: 431 DS-05 rows in 50 reports and 254 DS-09 rows in 152 reports. After write 6 they have moved again.
 
@@ -692,13 +692,13 @@ The personas findings counted three DS-05 shapes and three DS-09 shapes on produ
 | DS-09 "Name (Mr Speaker)", counted inside the line above | 59 | 34 | 0 |
 | DS-09 leading quote before a titled name | 35 | 35 | 0 |
 
-The drop follows write 5, which carried the label fixes `e5b602e` and `2368a38`, and the report rebuilds of writes 4 to 6. It is not traced row by row.
+The drop follows write 5, which carried the label fixes `0089cc3` and `9b88a95`, and the report rebuilds of writes 4 to 6. It is not traced row by row.
 
 Of the 67 DS-09 rows, 66 would link to the named person. The other one is a "Resolved" line, so a link would credit a line no member spoke. The resolver links none of the 67 today. The Person of every DS-09 string except the four with no Person sat in the Parliament of each of its reports, checked against the Speaker rows. A report of the colonial era is checked against Parliaments 0 to 3, as the resolver does since write 9 moved the Assembly-only members to Parliament 0.
 
 ## Write 7 (17 October)
 
-Write 7 is DS2-01 (`7ce66a3`, an unbolded label that carries a language note starts that member's turn) and DS2-02 (`27d6c5e`, older-system entity characters are kept), with the register rows in `5184a2e`. It was rehearsed on scratch clones, and the rehearsal and the commit each logged 52 checks ok. The speech ship started at 15:44, the speech part finished at 15:58 and the whole ship at 16:03 on 17 October (lock held 108.1 s, total 135.3 s, with 73.8 MB uploaded before the lock).
+Write 7 is DS2-01 (`864bd22`, an unbolded label that carries a language note starts that member's turn) and DS2-02 (`cdae744`, older-system entity characters are kept), with the register rows in `f6ea861`. It was rehearsed on scratch clones, and the rehearsal and the commit each logged 52 checks ok. The speech ship started at 15:44, the speech part finished at 15:58 and the whole ship at 16:03 on 17 October (lock held 108.1 s, total 135.3 s, with 73.8 MB uploaded before the lock).
 
 It rebuilt 1,132 reports and wrote 8,001 speech row updates. 7,868 change characters only. 36 DS2-01 label rows change speaker and lose the label from their text, and 97 rows after a label change speaker. It wrote no insert, delete, kind or ordinal change, so the speech table stays at 1,050,712 rows. It also wrote 1,118 report markdowns and 131 sitting markdowns. Stage 7 re-derived on the replica gives the same 135,083 attendance rows, so no attendance write was made. Stage 8 linked 132 of the 133 rows whose speaker changed, each to the member the label names. "Inche Rahamat" (38006) has no Speaker row under that short name and stays unlinked. The plan holds 126 reports: 37959, 20889 and 43635 are new and none of the older 123 was released. After the ship the remote and the replica hash equal, and the cache refresh changed 1,118 report and 131 sitting markdowns and nothing else.
 
@@ -716,7 +716,7 @@ The dictionary detector reads 4.266 per million tokens (274 hits), down from 4.2
 ### Still open
 
 - The 126 held reports keep their older rows.
-- 750 sitting-level Deputy Speaker speech links from another session's `fbf4397` and `0520da9` are not shipped. They need a separate write.
+- 750 sitting-level Deputy Speaker speech links from another session's `b489bd6` and `b3b6c79` are not shipped. They need a separate write.
 - Unbolded bare-name labels with no language note, about 89 rows. Reading them as turns would release 37959.
 - The adjournment-mover shape with an en dash in 20889 and 43635. Both are held.
 - "Inche Rahamat" in 38006, which has no Speaker row under that short name.
@@ -724,4 +724,4 @@ The dictionary detector reads 4.266 per million tokens (274 hits), down from 4.2
 - How a wrong `kind`, and a SPEECH row with no speaker, score under the stopping rule.
 - A NOT NULL constraint on `kind`, and an override file with the right speakers for the 465 rows.
 - Tier B and C classes that no write has touched.
-- Push: the write 7 commits (`7ce66a3`, `27d6c5e`, `5184a2e` and this record) are on master and not pushed.
+- Push: the write 7 commits (`864bd22`, `cdae744`, `f6ea861` and this record) are on master and not pushed.

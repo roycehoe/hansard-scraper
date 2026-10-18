@@ -36,8 +36,8 @@ Three changes ran on the DigitalOcean database after the evening steps below. Fi
 
 | Step | Rows changed | Headline after (Parliaments 0 to 11) |
 |---|---|---|
-| Parse of 22 reports that had no speech rows, after a parser fallback (7e71bbd) | 8,188 rows inserted | 532,067 of 545,951 (from 523,988 of 537,842, 97.42%) |
-| Refetch of reports the search had skipped (2979c57, 7d6a93b): 1,692 hits found, 1,691 Parliament 0 to 11 reports added, 1 hit left out because it copied a stored report under another id | 1,691 reports, 38,074 speech rows | 567,190 of 581,626 |
+| Parse of 22 reports that had no speech rows, after a parser fallback (ea2369d) | 8,188 rows inserted | 532,067 of 545,951 (from 523,988 of 537,842, 97.42%) |
+| Refetch of reports the search had skipped (4b99295, 3d8a36d): 1,692 hits found, 1,691 Parliament 0 to 11 reports added, 1 hit left out because it copied a stored report under another id | 1,691 reports, 38,074 speech rows | 567,190 of 581,626 |
 | Guarded re-parse of stored reports: 6,615 rebuilt, 181,849 rows deleted and 177,292 inserted; 2,078 refused (1,954 because the new parse would drop a line the stored rows hold, 87 refused earlier by the role-label re-parse, 34 that would undo a hand fix, 3 that would bring back deleted rows) | outside the rebuilt reports, 0 links changed | 564,509 of 578,359 (97.61%) |
 
 5 more hits are in the engine total but cannot be fetched: 1 in April 1963 and 4 in October 2003. The topic fetch now sends a JSON body, and the search gateway now crawls month by month.
@@ -70,7 +70,7 @@ Reports with full text and no speech rows: 561 of 21,693 (552 of 20,905 in Parli
 
 Attendance was not touched: 96,350 of 96,500 (99.8%).
 
-Commits: 7e71bbd, 2979c57, 7d6a93b.
+Commits: ea2369d, 4b99295, 3d8a36d.
 
 ---
 
@@ -119,7 +119,7 @@ Reports with full text and no speech rows: 532 of 19,215 in Parliaments 0 to 11 
 
 Link precision (plans/link-precision-audit.md): the resolver was right on 613 of 613 sampled links; the row text was right on 602 of 613 (98.4%), the 11 misses being parser segmentation errors that the chair rebuild, the role-label parse and the list reset addressed. Not done: the 87 reports the text-loss guard refused, the 1,244 head-of-state rows include about 130 clock and heading fragments, and bare name labels ("Mr Tan: ...") still merge into the previous speaker.
 
-Commits: 2e4b0ed, f48817e, 5b3c00e, c524dd0, e2613fd, 05bd034, c2b9411, 971676b.
+Commits: bfd432a, 28259c7, d146cf5, 05b02dc, c06231d, e20697a, a52ef9d, 551ff24.
 
 ---
 

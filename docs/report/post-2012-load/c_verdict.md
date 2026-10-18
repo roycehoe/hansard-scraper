@@ -1,6 +1,6 @@
 VERDICT: APPROVE
 
-Review of step c (insert the skipped search hits) before it runs on production, at commit c218743 with the one-transaction driver (drive.py as of 03:42 on 14 October). All database access was read-only: `BEGIN READ ONLY` on the rehearsal3 database and through a read-only query script on production. Query files and scripts are in cv_*. (session scratchpad)
+Review of step c (insert the skipped search hits) before it runs on production, at commit bb94505 with the one-transaction driver (drive.py as of 03:42 on 14 October). All database access was read-only: `BEGIN READ ONLY` on the rehearsal3 database and through a read-only query script on production. Query files and scripts are in cv_*. (session scratchpad)
 
 ## 1. Counts against the plan (rehearsal3)
 
@@ -49,7 +49,7 @@ I read all 30 rows in c_sample30.json (session scratchpad): 4 older-system (Parl
 - `stored_content_equals_cache` is true on 30 of 30.
 - 30 of 30 markdown heads match the source text. Speaker names are bold and attributed, question numbers are kept, time headings and section headings come through, "Page: N" markers are dropped, "(proc text)" brackets are removed and their text is kept, `&nbsp;` becomes a space, and non-ASCII text (Chinese characters, curly quotes, dashes) is intact.
 - Where a source page marker splits a paragraph, the markdown keeps the two halves on separate lines with no text lost: written-answer-na-1644# ("are" / "excluded.") and oral-answer-248# ("traffic" / "updates"). This matches step b's approved output.
-- Older-system rows keep the old conversion: the metadata table, the `#` title and inline base64 images in the markdown (00076917-WA.00076933-WA_24#...). Beyond the sample, I ran the e52c020 version of `utils/markdown_parser.get_cleaned_report_markdown` on all 111 older-system inserts (cv_sprs2_md.py (session scratchpad)). Its output equals the stored markdown on 111 of 111.
+- Older-system rows keep the old conversion: the metadata table, the `#` title and inline base64 images in the markdown (00076917-WA.00076933-WA_24#...). Beyond the sample, I ran the 630c4d6 version of `utils/markdown_parser.get_cleaned_report_markdown` on all 111 older-system inserts (cv_sprs2_md.py (session scratchpad)). Its output equals the stored markdown on 111 of 111.
 
 ## Conditions
 

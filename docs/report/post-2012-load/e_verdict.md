@@ -1,13 +1,13 @@
 VERDICT: APPROVE
 
-Step e (speech rows for every report filled by step b or inserted by step c), reviewed at HEAD c218743, 14 October 2026. Read-only review: no DB writes, no repo edits. My queries are in ev_r3.sql, (session scratchpad) ev_r3_noise.sql (session scratchpad) and ev_prod_fixed_set.sql, (session scratchpad) with output in ev_r3.out (session scratchpad) and ev_prod_fixed_set.out. (session scratchpad) The sample viewer is ev_view.py. (session scratchpad)
+Step e (speech rows for every report filled by step b or inserted by step c), reviewed at HEAD bb94505, 14 October 2026. Read-only review: no DB writes, no repo edits. My queries are in ev_r3.sql, (session scratchpad) ev_r3_noise.sql (session scratchpad) and ev_prod_fixed_set.sql, (session scratchpad) with output in ev_r3.out (session scratchpad) and ev_prod_fixed_set.out. (session scratchpad) The sample viewer is ev_view.py. (session scratchpad)
 
 ## What I read
 
 - Plan sections "Step d", "Step e", "Production safety" and "Out of scope".
 - drive.py stage e. The snapshot saves the fixed set (row ids and natural keys). The production run stops unless the saved natural keys equal rehearsal3's e_fixed_set_report_ids.json. run_speeches parses each report with the repo parser, numbers ordinals from 1, and flushes in batches of 5,000. The ids files are written, then the step commits once. A failure before that commit rolls back the whole step.
 - rollback.py (session scratchpad) stage e deletes speech rows by the ids saved in e_inserted_ids.json. No table has a foreign key to speech, so the delete leaves nothing dangling.
-- `git diff e52c020 c218743 -- services/speech.py utils/markdown_parser.py`. Every new branch is gated on `report_version == ReportVersion.SPRS3`: the HTML clean-up, the start line of -1 (parse from the top), the motion mover pattern and the bill presenter pattern. The older-system path is unchanged.
+- `git diff 630c4d6 bb94505 -- services/speech.py utils/markdown_parser.py`. Every new branch is gated on `report_version == ReportVersion.SPRS3`: the HTML clean-up, the start line of -1 (parse from the top), the motion mover pattern and the bill presenter pattern. The older-system path is unchanged.
 - rehearsal3 e_check.json, e_run.log, e_zero_row_reports.json, e_fixed_set.json; rehearsal4 e_run.log, e_check.json, efgh_vs_r3.txt; the earlier rehearsal's e_REPORT.md; e_verify_r3.txt. (session scratchpad)
 
 ## Check 1. Plan counts
@@ -26,7 +26,7 @@ All counts are within 10%, but Parliaments 12 and 14 sit close to the limit. I t
 - Parliament 12: budget 26,097 against 22,751 projected, oral answers 9,670 against 7,535.
 - Parliament 14: oral answers 21,533 against 16,521, bills 37,700 against 32,733, budget 44,725 against 40,181, the Address 7,058 against 4,844. Motions offset some of this at 18,071 against 21,335.
 
-Where R1 sampled every report of a type, actual equals estimate exactly: Parliament 12 president-address (29 of 29) gives 3,128 against 3,128, and matter-adj (12 of 12) gives 710 against 710. That points to sampling error in the estimate, not a parser difference. The two later parser commits moved the total by 20 rows (427,871 at 72f2771 to 427,891).
+Where R1 sampled every report of a type, actual equals estimate exactly: Parliament 12 president-address (29 of 29) gives 3,128 against 3,128, and matter-adj (12 of 12) gives 710 against 710. That points to sampling error in the estimate, not a parser difference. The two later parser commits moved the total by 20 rows (427,871 at b56c24b to 427,891).
 
 ## Check 2. Ordinals, written answers, pre-2012 and zero-row reports
 
