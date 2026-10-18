@@ -725,3 +725,92 @@ The dictionary detector reads 4.266 per million tokens (274 hits), down from 4.2
 - A NOT NULL constraint on `kind`, and an override file with the right speakers for the 465 rows.
 - Tier B and C classes that no write has touched.
 - Push: the write 7 commits (`864bd22`, `cdae744`, `f6ea861` and this record) are on master and not pushed.
+
+## Write 8 and round 5 (18 October)
+
+Write 8 is eight parser fixes (`fee2dc3`, `4a41ec6`, `5bc99aa`, `ad0ff5b`, `02d3740`, `e5c156a`, `f178ea3` and `6100586`) and two docs commits after them (`b92f73f`, ADR 0006, and `45b0a8a`, the class C register row). The plan was built with the tree at `git archive 45b0a8a`. Royce approved it on 18 October 2026. It is the pre-launch re-parse: every report whose stored rows differ from the parser is rewritten, except the 126 held ones. Round 5 is the full fidelity round for Parliaments 12 to 14, plus the re-read of the pooled reports that earlier writes touched.
+
+| Fix | Commit | What it does | Stored by write 8 |
+|---|---|---|---|
+| Head tag | `fee2dc3` | Report 22103 prints a page header as "<HEAD V - MINISTRY ...". html2text read it as a tag and dropped the body after it. The older system now escapes it. | 1 report, 32 rows recovered |
+| Table captions | `4a41ec6` | An older-system bold table caption keeps its text as a HEADING row with no speaker. | 26 reports, 38 rows |
+| Language note line | `5bc99aa` | A bold line that holds only a language note keeps the current speaker (older system). | Held reports only, nothing stored changes |
+| Split label | `ad0ff5b` | A bold label that a column marker splits inside its bracket is joined (older system). | Held reports only, nothing stored changes |
+| Lead-in | `02d3740` | A newer-system written question's lead-in ("The following question stood in the name of") stays as a PROCEDURAL row with no speaker, and the label loses its trailing dash. | 180 reports, 183 rows updated, 115 inserted |
+| Hon Members | `e5c156a` | A bracketed "Hon Members say", "proposed" or "raised their hands" direction is cut out of the speech row as a CHAMBER_EVENT row. | 4 reports, 5 rows updated, 2 inserted |
+| Chair label | `f178ea3` | An unbolded newer-system "Mr Speaker:" starts the chair's turn. | 3 reports, 3 rows, now linked to the presiding officer |
+| Page marker | `6100586` | A page marker no longer joins a paragraph to a list item after it, or two names of an oath roll. | 71 reports, 78 rows updated, 78 inserted; 41 sitting markdowns change, none in PRESENT or ABSENT |
+
+The plan, built on the replica and checked by `verify_stack8.py` (no problems), writes 2,612 reports. 285 change content and 2,327 only get their ordinals renumbered to 1..n. It inserts 265 rows, deletes none and updates 39,258: 269 content updates (266 change text, 189 change speaker, 183 change kind, of which 180 are SPEECH to PROCEDURAL and 3 SPEECH to CHAMBER_EVENT), 10,295 ordinal-only updates in the 285 content reports and 28,694 in the 2,327 renumbered ones. It also writes 72 report markdowns (71 for the page-marker fix, 1 for the head tag) and 41 sitting markdowns. No attendance row, kind-only update or link-only update. Every report that is not held ends with ordinals 1..n (41,588 reports checked).
+
+Stage 8 links the 3 chair rows to the presiding officer (2741 to Seah Kian Peng, 10745 and 45745 to Tan Chuan-Jin). 183 rows lose their speaker and link because they no longer have one: the 180 lead-in rows and 3 Hon Members direction rows. The question text of 115 of the lead-in rows moves to an inserted row of the same member. 219 of the 221 inserted rows that have a speaker are linked, each to the member the label names, and the 2 "The Chairman" rows of 22103 stay unlinked. No word is lost: 6 words ("Mr Speaker", three times) move from the transcript to the label in 2741, 10745 and 45745, and 4,517 words are gained.
+
+The plan holds 126 reports, the same ones as before. Write 8 adds none and releases none. The fixes change the parse of 7 of them, which stay as stored: 18272 and 23921 (never-touch), 23038, 23268 and 23627 (table captions), 26696 and 30421 (language note line).
+
+It was rehearsed on scratch clones from 09:57 to 10:47. `apply_fix8.py` committed in 364 s (peak memory 1.3 GB), every speech diff was explained, the attendance diff was empty and `trace_speaker_links` exited 0. The held check found none of the 126 held reports (13,597 rows) changed, and every one of the 39,523 changed rows sits in a written report. Drift tests aborted for each write class: update, insert, ordinal under the lock, ordinal pre-step (content drift and a third ordinal), report, sitting and row count. A drifted row in the first ordinal batch stopped a commit-mode ship before any batch committed. A drifted row in the second batch stopped one after batch 1 had committed (4,945 rows), and the next run counted those rows as done and wrote the other 23,749. The party write (migration `ed88d253f16b`, table `partyaffiliation`, 92 rows) reached the replica during the rehearsal, so the hash baseline was retaken with that table. Stage 7 re-derived on the clones before and after the ship rehearsal gave the same 135,083 rows.
+
+The ship started at 10:51. The REMOTE rehearsal began at 11:01 and ended rolled back with 60 checks ok and the lock held 141.9 s. The commit began at 11:07. Its ordinal pre-step wrote 28,694 rows in 2,327 reports in 6 batches (198.5 s, the longest batch 39.3 s), the lock was held 153.5 s, the total was 367.4 s and 60 checks were ok. The speech part finished at 11:13 and the whole ship at 11:19. The lock on REMOTE ran 7.8 and 6.0 times its clone times (18.2 s and 25.7 s), above the 80 to 115 s that write 7's ratio of 4.4 had predicted. Stage 7 re-derived on the replica gives the same 135,083 rows, so no attendance row was written. A hash comparison at 11:22 finds the remote equal to the replica, with the speech table at 1,051,868 rows (1,051,603 plus 265). A link dry run on the replica plans 0 speech and 0 attendance rows, so no link write was needed. The cache refresh took the 72 report markdowns and 41 sitting markdowns of this write.
+
+| Group | Measure | Before | After |
+|---|---|---|---|
+| P0-11 | ADR 0001 rate | 513,557 / 523,473 = 98.11% | 513,633 / 523,551 = 98.11% |
+| P0-11 | All-rows rate | 513,557 / 609,759 = 84.22% | 513,633 / 609,879 = 84.22% |
+| P0-11 | Text share | 180,815,867 / 186,115,271 = 97.15% | 180,825,165 / 186,124,893 = 97.15% |
+| P12 | ADR / all-rows / text | 99.28%; 95.16%; 98.69% | 99.28%; 95.10%; 98.69% |
+| P13 | ADR / all-rows / text | 98.91%; 95.34%; 98.88% | 98.91%; 95.30%; 98.88% |
+| P14 | ADR / all-rows / text | 99.31%; 96.46%; 98.97% | 99.31%; 96.42%; 98.97% |
+
+The figures file `docs/figures/2026-10-18-write8.txt` (`5d71c8b`) equals the rehearsal's, line for line. Every movement is one of the fixes. Parliaments 0 to 11 gain 120 rows: 32 from 22103 (head tag), 38 captions, 1 chamber event and 49 from the page-marker fix. 76 are linked (27 in 22103, 49 from the page-marker fix), 2 are named and unlinked ("The Chairman" in 22103) and 42 have no speaker. Linked characters rise 9,298 and body text 9,622, both from 22103, and budget reports with no row fall from 6 to 5.
+
+In Parliaments 12 to 14 the all-rows rate falls on purpose, by 0.06, 0.04 and 0.04 points. The lead-in fix turns 180 linked rows into speakerless PROCEDURAL rows and inserts 115 linked question rows, so rows rise 115 and linked rows fall 65 (the 65 rows that held only a dash lose their speaker). The Hon Members fix turns 3 linked chair rows into chamber events and adds 1 (linked -3, rows +1). The page-marker fix adds 29 rows, 28 of them linked. The chair-label fix moves 3 rows to the chair and changes no linked count. The net is 145 more rows and 40 fewer linked, and the ADR 0001 rate holds at two decimals because its denominator falls with the linked count. Linked characters fall 581 (65 dashes, 486 of Hon Members directions and 30 of chair labels) against an unchanged body, and no group's text share moves at two decimals. By report type the oral-answer all-rows rate falls from 99.12% to 98.71% in Parliament 12, 98.33% to 98.04% in Parliament 13 and 99.31% to 99.04% in Parliament 14, and in Parliaments 0 to 11 written-answer falls from 97.26% to 97.06% and written-answer-na from 96.48% to 96.45% (the caption rows).
+
+`release/review.txt` in the write 8 folder reads, block by block, the 62 held reports outside the never-touch list whose parse at `45b0a8a` loses no word against the stored rows. 60 are strictly better and are release candidates. 23268 is mixed (the "Helping informal workers" section loses its speaker and becomes EDITORIAL_NOTE) and 38222 is not better (a heading, a time and a bill title fuse into one PROCEDURAL row). Before any release the fresh parse drops empty-string rows and "* * *" or "****" separator rows in 22806, 22919, 23038, 23325, 24839 and 25288, and the register must cover them. 38147 is held and already equals the parse.
+
+### Round 5
+
+Round 4 read 309 reports of Parliaments 12 to 14 as a side effect of a corpus-wide sample. It was never sized to bound those Parliaments on their own, and 10 of its reads went stale after writes 5 to 7. The done tests need the stopping rule to hold for Parliaments 0 to 11 and for 12 to 14 separately, so round 5 is a full round for Parliaments 12 to 14, with its own frame, strata, seed and sample.
+
+The frame is every report with a speech row in Parliaments 12 to 14: 20,813 reports and 441,844 rows on the replica, in 69 strata (report version, report type and Parliament, as in round 4). The allocation is proportional to rows, n_h = min(N_h, max(2, round(250 times rows_h / total rows))), with seed 20261019. It draws 320 reports, 204 read whole and 116 as a 41-row window that is scaled up to its report. Resampling round 4's reads into this allocation put the chance that round 5 alone clears the Tier B gate at about 0.90. Tier B is the gate that binds, and Tier A does not. Weights come from the frame rebuilt after the ship, which changes N_h and not the draw. Three views are scored by the same bootstrap (2,000 replicates that resample reports within strata, the 1,900th sorted value as the one-sided 95% bound): round 5 alone, round 4's standing verdicts pooled with round 5 for Parliaments 12 to 14, and round 4's pool for Parliaments 0 to 11 with the re-read reports in place of their stale verdicts.
+
+Sonnet readers took one batch each: a cold read of the packet, then a source pass over every row. 17 batches hold the draw (15 to 23 reports and 287 to 435 rows each). 4 hold the 56 reports of earlier rounds whose windows writes 5 to 7 changed (46 in Parliaments 0 to 11 and 10 in 12 to 14), which replace their old verdicts. 1 holds the 7 windows that write 8 changed (`rv5_01`, read twice). Batch `r5_01` holds the held report 17279, which write 8 leaves unchanged, and was read twice. Neither batch has a Tier A or Tier B row. In all, first readers read 8,760 rows, and 10 of the 22 batches were read twice against 5 planned.
+
+Three disagreements went to adjudication. 44526 (row 1479442) is a Tier A error, lost text: the lead-in "The following questions stood in the name of" sits in the source paragraph and in no stored row, and the second reader scored only the dash. `02d3740` closes it. 43359 (row 917122) is a Tier B error, f4_cut: the second half of a paragraph split at the Column 1150 marker, and each row of a cut counts, as in round 3. 32096 (row 584082) is not Tier A: a tabled-paper link caption credited to the Minister is Tier C heading_credited, as both round 3 readers scored that row.
+
+Round 5 found four shapes that write 8 then fixed. The lost lead-in (44526 and 46024) became `02d3740`. An inline "[Hon Members say aye]" kept in the Speaker's row (9956) became `e5c156a`. An unbolded "Mr Speaker:" credited to the minister (10745) became `f178ea3`. Oath-roll names fused across a page marker (20918) became `6100586`, whose exceptions also cover list items. The 6 draw reports that write 8 changed held 4 Tier A rows and 1 Tier B row, and their re-read finds none.
+
+Royce ruled on 18 October 2026 that a bracketed vernacular pointer inside the member's row ("[Please refer to Vernacular Speech]", "[For Mandarin speech, please refer to ...]") is not Tier A, and its underscores stay Tier C. Seven of the eight round 4 readers who met it had scored it Tier C, and round 5 readers mostly did the same. The ruling takes 15 reader entries on 14 rows out of Tier A, 3 of those rows in reads of earlier rounds. Without it the Tier A bounds are 0.116% (Parliaments 0 to 11), 0.166% (pooled) and 0.242% (round 5 alone), so the gates hold either way.
+
+| View | Reports | Rows read | Tier A, row rule | Tier A, character rule | Tier B, row rule | Tier B, character rule | Tier C, character rule (no gate) |
+|---|---|---|---|---|---|---|---|
+| Parliaments 0 to 11, round 4's pool with the 46 re-reads | 363 | 6,783 | 0.07% (0.12%) | 0.05% (0.095%) | 0.96% (1.33%) | 0.67% (0.984%) | 2.17% (3.38%) |
+| Parliaments 12 to 14, round 4 and round 5 pooled | 619 | 12,112 | 0.02% (0.04%) | 0.00% (0.003%) | 0.03% (0.06%) | 0.02% (0.045%) | 1.92% (2.32%) |
+| Parliaments 12 to 14, round 5 alone | 320 | 6,937 | 0.00% (0.00%) | 0.00% (0.000%) | 0.02% (0.05%) | 0.02% (0.039%) | 2.26% (2.81%) |
+
+Each cell is the point estimate and, in brackets, the one-sided 95% bound. The gates are 1% for Tier A and 2% for Tier B on the character rule, and all three views pass. The frame rebuilt after the ship moved the Parliaments 0 to 11 bounds from 0.092% to 0.095% (Tier A) and from 0.970% to 0.984% (Tier B). The two Parliament 12 to 14 views did not move. The detectors last ran on 18 October, before write 8 shipped: dictionary 275 hits (4.278 per million tokens) against a source rate of 106.4, and punctuation 127 hits (1.975) against 6.22.
+
+In Parliaments 0 to 11, round 5's 46 re-reads hold 17 Tier B rows in 7 reports where a paragraph is cut at a source block boundary (0.221 points by characters) and 3 rows in 2 reports with a split word (0.065). The heaviest Tier A report is 38079 (0.029 points), then 37684 and 40585 (0.004 each). Round 5's own Tier B finding in Parliaments 12 to 14 is one glued word, "theSecond" in 13946 (0.018 points), and it has no Tier A row.
+
+Re-reads against the verdicts they replace, in error rows within the window and unweighted:
+
+| Old verdict from | Reports re-read | Tier A before | Tier A now | Tier B before | Tier B now |
+|---|---|---|---|---|---|
+| Round 2, kept | 15 | 0 | 0 | 11 | 10 |
+| Round 2, re-read in round 3 | 11 | 0 | 0 | 10 | 2 |
+| Round 3, new | 14 | 0 | 0 | 16 | 7 |
+| Round 4, new | 13 | 1 | 1 | 5 | 1 |
+| Round 4, re-read | 4 | 0 | 0 | 0 | 0 |
+| Round 5, draw | 6 | 4 | 0 | 1 | 0 |
+
+The one Tier A row that stays is 40585 (row 721650). Single-reader recall is 90.00% for Tier A (5 adjudicated rows, found by the first reader 5 times and by the second 4) and 92.86% for Tier B (7 rows, 7 and 6), so no recall adjustment applies. In the round 5 reads, 2 Tier A entries and 3 Tier B entries were found only in the source pass (4 and 19 were found in the cold read), and none of the 330 Tier C entries.
+
+Kind is not scored. 50 of the 8,760 round 5 rows (0.57%) carry a kind issue: 22 UNCLASSIFIED rows that read as PROCEDURAL, 9 as HEADING and 5 as DOCUMENT_TEXT, 7 DOCUMENT_TEXT rows that read as HEADING, and 7 rows of other kinds. The readers named titles stored as DOCUMENT_TEXT, and oath rolls and "Group N" captions stored as UNCLASSIFIED.
+
+Done. The stopping rule's gates hold in both groups. Tier A's bound by characters is 0.095% for Parliaments 0 to 11 and 0.003% for Parliaments 12 to 14, under 1%. Tier B's is 0.984% and 0.045%, under 2%. Both detectors, as last run, are under their source rates. The aggregate is `plans/done-tests/fidelity/aggregate_r5.md`.
+
+### Still open
+
+- 60 held reports parse strictly better and are release candidates. The 126 held reports keep their older rows until a write releases them.
+- 40585 (row 721650), in Parliaments 0 to 11: a quoted "Question proposed" motion is credited to a member. Both readers scored it Tier A, and no fix exists.
+- "theSecond" glue in 13946 (Tier B).
+- Kind issues: 50 of 8,760 round 5 rows, among them titles stored as DOCUMENT_TEXT, and oath rolls and "Group N" captions stored as UNCLASSIFIED.
+- Oldest-first search on the most common words ("government" 34.7 s, "housing" 18.7 s on REMOTE) still passes the 30-second timeout. Fixing it needs the sitting date on the speech row and a rum index that carries it, which is a schema change and a write.
