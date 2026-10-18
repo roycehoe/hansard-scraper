@@ -1,0 +1,32 @@
+{
+  "why": "A bracketed 'Hon Members say \"aye\"' event in the middle of a paragraph was left inside the speaker's row; it is cut out as a CHAMBER_EVENT row.",
+  "source_report_id": 9956,
+  "report_version": "sprs3",
+  "report_type": "budget",
+  "title": "Acknowledgement to the Chair",
+  "subtitle": null,
+  "original_title": "Acknowledgement to the Chair",
+  "html": "<h6>3.56 pm</h6><p><strong>The Leader of the House (Ms Indranee Rajah)</strong>: Mr Speaker, we have come to the end of the Budget debate and the Committee of Supply but I think for Members who are new, especially the first-time Members, it should be made known to you that there are two more speeches to go through. [<em>Laughter.</em>] Just in case Members thought it was over.</p><p>As many as of the opinion say aye. [<em>Hon Members say \"aye\".</em>] To the contrary say no. I think the ayes have it; the ayes have it!</p></span></div></body></html>",
+  "expected_rows": [
+    [
+      "The Leader of the House (Ms Indranee Rajah)",
+      "Mr Speaker, we have come to the end of the Budget debate and the Committee of Supply but I think for Members who are new, especially the first-time Members, it should be made known to you that there are two more speeches to go through. Just in case Members thought it was over.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "[_Laughter._]",
+      "CHAMBER_EVENT"
+    ],
+    [
+      "The Leader of the House (Ms Indranee Rajah)",
+      "As many as of the opinion say aye. To the contrary say no. I think the ayes have it; the ayes have it!",
+      "SPEECH"
+    ],
+    [
+      null,
+      "[_Hon Members say \"aye\"._]",
+      "CHAMBER_EVENT"
+    ]
+  ]
+}

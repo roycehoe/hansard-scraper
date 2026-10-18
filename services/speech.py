@@ -369,9 +369,10 @@ _MEMBER_ACTION_PATTERN = (
     r"|indicated|raised (?:his|her) hand|stood up|walked|holds? up|pointed|gestured|waved|nodded)\b"
 )
 _SEAT_ACTION_PATTERN = r"(?:and )?(?:resumed (?:his|her) seat|remained seated|entered the Chamber)"
+_HON_MEMBERS_ACTION_PATTERN = r"[Hh]on\.? Members?\b[^\[\]]{0,250}?\b(?:say|proposed|raised their hands)\b"
 _GESTURE_PATTERN = r"(?i:(?:and )?(?:indicat(?:ing|ion)|gestur(?:ing|ed)|pointing|pointed|showing|shows|exhibiting|holds? up|holding up|waving|displaying)\b)"
 _CHAMBER_EVENT_INNER_RE = re.compile(
-    "^(?:" + "|".join((_AUDIENCE_EVENT_PATTERN, _DOCUMENT_ACTION_PATTERN, _MEMBER_ACTION_PATTERN, _SEAT_ACTION_PATTERN, _GESTURE_PATTERN)) + ")"
+    "^(?:" + "|".join((_AUDIENCE_EVENT_PATTERN, _DOCUMENT_ACTION_PATTERN, _MEMBER_ACTION_PATTERN, _SEAT_ACTION_PATTERN, _HON_MEMBERS_ACTION_PATTERN, _GESTURE_PATTERN)) + ")"
 )
 
 

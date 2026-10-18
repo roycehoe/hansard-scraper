@@ -1,0 +1,27 @@
+{
+  "why": "A whole paragraph '[Hon Members Mr Low Thia Khiang, ... raised their hands.]' over 80 characters was a SPEECH row of the presiding officer; it is a CHAMBER_EVENT row with no speaker.",
+  "source_report_id": 16807,
+  "report_version": "sprs3",
+  "report_type": "motion",
+  "title": "Non-Constituency Member",
+  "subtitle": null,
+  "original_title": "Non-Constituency Member",
+  "html": "<p><strong> </strong></p><p><strong> Mdm Speaker</strong>: Can I have a show of hands on who wants to have their dissent recorded?</p><p>[<em>Hon Members Mr Low Thia Khiang, Ms Sylvia Lim, Mr Png Eng Huat, Mr Pritam Singh, Mr Muhamad Faisal Bin Abdul Manap, Mr Leon Perera and Mr Dennis Tan raised their hands.</em>]</p><p><strong>Mr Low Thia Khiang</strong>: Madam, we would like the dissent to be recorded that we are objecting to paragraph (c) of the amended Motion.</p></span></div></body></html>",
+  "expected_rows": [
+    [
+      "Mdm Speaker",
+      "Can I have a show of hands on who wants to have their dissent recorded?",
+      "SPEECH"
+    ],
+    [
+      null,
+      "[_Hon Members Mr Low Thia Khiang, Ms Sylvia Lim, Mr Png Eng Huat, Mr Pritam Singh, Mr Muhamad Faisal Bin Abdul Manap, Mr Leon Perera and Mr Dennis Tan raised their hands._]",
+      "CHAMBER_EVENT"
+    ],
+    [
+      "Mr Low Thia Khiang",
+      "Madam, we would like the dissent to be recorded that we are objecting to paragraph (c) of the amended Motion.",
+      "SPEECH"
+    ]
+  ]
+}
