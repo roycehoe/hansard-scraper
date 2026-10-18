@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
+from database.report import Report
+from database.speech import Speech
 from enums import ReportType, ReportVersion, SpeechKind
 from exceptions import HansardUnattributedSpeechError
 from schemas.unattributed_speech import UnattributedSpeechRange
@@ -1316,4 +1318,18 @@ def apply_unattributed_speech_range(speeches: list[ParsedSpeech], speech_range: 
         ParsedSpeech(speaker=None, transcript=speech.transcript, kind=SpeechKind.SPEECH)
         if start <= index <= end and _is_unattributable(speech, speech_range.speaker) else speech
         for index, speech in enumerate(speeches)
+    ]
+
+
+def build_speeches(report: Report, parsed_speeches: list[ParsedSpeech]) -> list[Speech]:
+    return [
+        Speech(
+            ordinal=ordinal,
+            speaker=parsed_speech.speaker,
+            transcript=parsed_speech.transcript,
+            kind=parsed_speech.kind,
+            sitting_date=report.sitting_date,
+            report_id=report.id,
+        )
+        for ordinal, parsed_speech in enumerate(parsed_speeches, start=1)
     ]

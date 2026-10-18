@@ -24,7 +24,7 @@ from services.hansard_website import (
     get_topic_id,
 )
 from services.report import build_report
-from services.speech import get_speeches, get_start_of_speech_line
+from services.speech import build_speeches, get_speeches, get_start_of_speech_line
 from settings import settings
 from utils.markdown_parser import get_cleaned_report_markdown
 from utils.write_target import validate_can_write
@@ -70,11 +70,7 @@ def _build_speeches(report: Report, markdown_content: str) -> list[Speech]:
     )
     if start_of_speech_line is None:
         return []
-    speeches = get_speeches(markdown_content, start_of_speech_line, report.report_type, report.report_version)
-    return [
-        Speech(ordinal=ordinal + 1, speaker=speech.speaker, transcript=speech.transcript, kind=speech.kind, report_id=report.id)
-        for ordinal, speech in enumerate(speeches)
-    ]
+    return build_speeches(report, get_speeches(markdown_content, start_of_speech_line, report.report_type, report.report_version))
 
 
 def _validate_hits_unstored(session: Session, search_results: list[HansardSearchResult]) -> None:

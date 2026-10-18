@@ -5,11 +5,11 @@ from sqlmodel import Session
 
 from crud.report import CRUDReport
 from crud.speech import CRUDSpeech
-from database.speech import Speech
 from logs import logger
 from schemas.unattributed_speech import UnattributedSpeechRange
 from services.speech import (
     apply_unattributed_speech_range,
+    build_speeches,
     get_speeches,
     get_start_of_speech_line,
 )
@@ -50,14 +50,7 @@ def populate_speeches(session: Session) -> None:
         speeches = get_speeches(report.markdown_content, start_of_speech_line, report.report_type, report.report_version)
         unattributed_range = report_id_to_unattributed_range.get(report.id)
         speeches_to_store = speeches if unattributed_range is None else apply_unattributed_speech_range(speeches, unattributed_range)
-        for ordinal, speech in enumerate(speeches_to_store):
-            batch.append(Speech(
-                ordinal=ordinal + 1,
-                speaker=speech.speaker,
-                transcript=speech.transcript,
-                kind=speech.kind,
-                report_id=report.id,
-            ))
+        batch.extend(build_speeches(report, speeches_to_store))
         if len(batch) >= _BATCH_SIZE:
             CRUDSpeech(session).create_many(batch)
             batch.clear()

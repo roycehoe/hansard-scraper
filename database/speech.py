@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import Column, Computed, Index, text
@@ -13,6 +14,14 @@ class Speech(SQLModel, table=True):
         Index("ix_speech_transcript_fts", text("to_tsvector('english', transcript)"), postgresql_using="gin"),
         Index("ix_speech_transcript_tsv", "transcript_tsv", postgresql_using="gin"),
         Index("ix_speech_transcript_tsv_rum", "transcript_tsv", postgresql_using="rum", postgresql_ops={"transcript_tsv": "rum_tsvector_ops"}),
+        Index(
+            "ix_speech_transcript_tsv_sitting_date_rum",
+            "transcript_tsv",
+            "sitting_date",
+            postgresql_using="rum",
+            postgresql_ops={"transcript_tsv": "rum_tsvector_addon_ops"},
+            postgresql_with={"attach": "sitting_date", "to": "transcript_tsv"},
+        ),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -25,6 +34,7 @@ class Speech(SQLModel, table=True):
         default=None,
         sa_column=Column(TSVECTOR, Computed("to_tsvector('english'::regconfig, transcript)", persisted=True)),
     )
+    sitting_date: datetime
 
     report_id: Optional[int] = Field(default=None, foreign_key="report.id", index=True)
     report: Report = Relationship(back_populates="speeches")
