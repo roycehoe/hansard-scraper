@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     POETRY_VIRTUALENVS_CREATE=false
 
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y gcc libpq-dev \
+    && apt-get install --no-install-recommends -y gcc libc6-dev libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir "poetry==${POETRY_VERSION}"
