@@ -51,3 +51,8 @@ class AttendanceCleanupReason(StrEnum):
     SPEAKER_LINE = "SPEAKER_LINE"
     DECLINED_SEAT = "DECLINED_SEAT"
     PRESIDING_OFFICER = "PRESIDING_OFFICER"
+
+
+class DatePrecision(StrEnum):
+    DAY = "DAY"
+    MONTH = "MONTH"
