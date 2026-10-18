@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: hansard_launch
+        ports:
+          - 5435:5432
+        options: >-
+          --health-cmd "pg_isready -U user -d hansard_launch"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install the psycopg2 build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev gcc
+      - name: Install Poetry
+        run: pipx install poetry==2.4.1
+      - name: Install dependencies
+        run: poetry install --no-root --no-interaction
+      - name: Lint
+        run: poetry run ruff check .
+      - name: Test
+        run: poetry run pytest
