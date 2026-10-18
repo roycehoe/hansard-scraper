@@ -2,7 +2,7 @@ import re
 from typing import Optional
 
 # NOTE: longest first, so a shorter prefix never matches ahead of a longer one.
-_TITLE_PREFIXES = (
+TITLE_PREFIXES = (
     "The Honourable Mr ", "The Honourable Mrs ", "The Honourable Dr ",
     "The Honourable Miss ", "The Honourable Ms ", "The Honourable Inche ",
     "The Honourable Encik ", "The Honourable ",
@@ -20,7 +20,7 @@ _TITLE_PREFIXES = (
     "Inche ", "Encik ", "Sir ", "Dato ", "Tun Dato ", "Tun ",
     "Asst Prof ", "Asst. Prof. ",
     "Tuan Haji ", "Haji ", "Hj. ", "Hj ",
-    "Cdre ", "[NS] ", "(NS) ",
+    "Cdre (Res) ", "Cdre ", "[NS] ", "(NS) ",
 )
 
 _INVERTED_TITLE_SUFFIXES = frozenset({"Dr", "Mdm", "Mr", "Mrs", "Ms", "Prof", "Assoc Prof", "RAdm", "BG"})
@@ -62,7 +62,7 @@ def spelling_normalize(name: str) -> str:
 
 def strip_title(text: str) -> str:
     while True:
-        for prefix in _TITLE_PREFIXES:
+        for prefix in TITLE_PREFIXES:
             if text.startswith(prefix):
                 text = text[len(prefix):]
                 break

@@ -40,7 +40,7 @@ def test_an_assent_block_after_the_absent_list_gives_no_rows() -> None:
 
 
 def test_a_date_a_table_row_a_heading_and_a_bold_label_each_end_the_list() -> None:
-    for line in ("12th March, 1996", "|  _Speaker,_", "## PARLIAMENTARY DEBATES", "**Mr Speaker:** I have received a message", "*Appendix, cols. 895-900."):
+    for line in ("12th March, 1996", "|  _Speaker,_", "**Mr Speaker:** I have received a message", "*Appendix, cols. 895-900."):
         markdown = f"PRESENT:\nMr Lim Cher Kheng (Changi).\n{line}\nMr Wong Foo Nam (Pasir Panjang).\n"
 
         assert _get_rows(markdown) == [("Lim Cher Kheng", True, "Changi")], line
@@ -177,3 +177,64 @@ def test_a_wrapped_entry_whose_start_the_source_lost_becomes_the_member_it_belon
         ("Yaacob Bin Mohamed", True, "Bukit Timah"),
         ("Yong Nyuk Lin", True, "Geylang West"),
     ]
+
+
+def test_each_member_on_a_line_that_holds_several_gets_a_row() -> None:
+    markdown = (
+        "PRESENT:\nMr S. Rajoo (Farrer Park), Mr S. Ramaswamy (Crawford), Parliamentary Secretary to the Minister for Finance.\n"
+        "2Mr Ho Peng Kee (Sembawang GRC). Dr Ho Tat Kin (Toa Payoh GRC).\n"
+        "ABSENT:\nMr Heng Chiang Meng (Cheng San) Mr Lee Kuan Yew (Tanjong Pagar), Senior Minister, Prime Minister's Office.\n"
+        "Dr Ho Tat Kin (Toa Payoh GRC) Dr Hong Hai (Bedok GRC) Dr Hu Tsu Tau, Richard (Kreta Ayer), Minister for Finance.\n"
+    )
+
+    assert _get_rows(markdown) == [
+        ("S. Rajoo", True, "Farrer Park"),
+        ("S. Ramaswamy", True, "Crawford"),
+        ("Ho Peng Kee", True, "Sembawang GRC"),
+        ("Ho Tat Kin", True, "Toa Payoh GRC"),
+        ("Heng Chiang Meng", False, "Cheng San"),
+        ("Lee Kuan Yew", False, "Tanjong Pagar"),
+        ("Hong Hai", False, "Bedok GRC"),
+        ("Hu Tsu Tau, Richard", False, "Kreta Ayer"),
+    ]
+
+
+def test_a_speaker_line_whose_bracket_holds_a_titled_name_stays_one_row() -> None:
+    assert _get_rows("PRESENT:\nMr SPEAKER ( Dr Yeoh Ghim Seng, B.B.M., J.P. (Joo Chiat)).\n", "3-8-1971") == [("Yeoh Ghim Seng", True, "Joo Chiat")]
+
+
+def test_a_reserve_commodore_is_a_titled_name() -> None:
+    markdown = "PRESENT:\nCdre (Res) Teo Chee Hean (Marine Parade GRC), Minister of State, Ministry of Finance and Ministry of Communications.\n"
+
+    assert _get_rows(markdown) == [("Teo Chee Hean", True, "Marine Parade GRC")]
+
+
+def test_a_masthead_reprinted_inside_the_list_does_not_end_it() -> None:
+    markdown = (
+        "PRESENT:\nMr Ong Pang Boon (Telok Ayer).\n## PARLIAMENTARY DEBATES\n## SINGAPORE\n### OFFICIAL REPORT\n#### SIXTH PARLIAMENT\n"
+        "* * *\n**PART I OF SECOND SESSION**\n  \n**VOLUME 47**\n* * *\n  \n_Tuesday, 18th March, 1986_\n_The House met at 11:00 AM_\n  \n"
+        "Mr Ong Teng Cheong (Kim Keat), Second Deputy Prime Minister.\nABSENT:\nMr Chai Chong Yii (Bukit Batok).\n"
+    )
+
+    assert _get_rows(markdown, "18-3-1986") == [
+        ("Ong Pang Boon", True, "Telok Ayer"),
+        ("Ong Teng Cheong", True, "Kim Keat"),
+        ("Chai Chong Yii", False, "Bukit Batok"),
+    ]
+
+
+def test_a_masthead_with_no_entry_after_it_still_ends_the_list() -> None:
+    markdown = "PRESENT:\nMr Lim Cher Kheng (Changi).\n## PARLIAMENTARY DEBATES\n## SINGAPORE\n**ORAL ANSWERS TO QUESTIONS**\nThe Minister replied at length.\n"
+
+    assert _get_rows(markdown) == [("Lim Cher Kheng", True, "Changi")]
+
+
+def test_two_ocr_forms_from_lines_with_two_members_resolve_to_their_speakers() -> None:
+    speakers = [
+        Speaker(id=1, name="Sha'ari Bin Tadin", party="People's Action Party", is_legislative_assembly=False, parliament_number=4),
+        Speaker(id=2, name="Tan Soo Khoon", party="People's Action Party", is_legislative_assembly=False, parliament_number=4),
+    ]
+    lookups = build_speaker_lookups(speakers)
+
+    assert resolve_canonical_name("Sha'ari bib Tadin", 4, lookups) == "Sha'ari Bin Tadin"
+    assert resolve_canonical_name("Tan Soc Khoon", 4, lookups) == "Tan Soo Khoon"

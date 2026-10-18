@@ -11,6 +11,7 @@ from exceptions import HansardWriteCheckError
 from schemas.constituency_names import ConstituencyNames
 from schemas.hansard_report_response import HansardReportAttendanceEntry
 from utils.names import (
+    TITLE_PREFIXES,
     invert_to_natural,
     normalize_name,
     period_normalize,
@@ -48,6 +49,8 @@ _OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
     "lai tha chia": "Lai Tai Chai",
     "chin ham tong": "Chin Harn Tong",
     "lbrahim othman": "Ibrahim Othman",
+    "sha'ari bib tadin": "Sha'ari Bin Tadin",
+    "tan soc khoon": "Tan Soo Khoon",
     "yong nyuk lm": "Yong Nyuk Lin",
     "leong keng sung": "Leong Keng Seng",
     "gob keng swee": "Goh Keng Swee",
@@ -372,6 +375,14 @@ _SECTION_END_RE = re.compile(r"#|\||\*\*|\*[^\s*]|\d{1,2}(?:st|nd|rd|th) [A-Za-z
 _MARKUP_RE = re.compile(r"[*|#_\[\]]")
 _SPEAKER_OFFICE_NAME = "speaker"
 
+_TITLE_ALTERNATION = "|".join(re.escape(prefix.strip()) for prefix in TITLE_PREFIXES if prefix[0].isalpha())
+_ENTRY_LINE_RE = re.compile(rf"^(?:{_TITLE_ALTERNATION})\s+[A-Z][^()]{{0,80}}\(")
+_NEXT_ENTRY_START_RE = re.compile(rf"(?<=[\s.,;)\d])(?:{_TITLE_ALTERNATION})\s+[A-Z][^()]{{0,80}}\(")
+_SECTION_HEADER_RE = re.compile(r"^(?:\*{2}|#+)?\s*(?:PRESENT|ABSENT)\s*:(?:\*{2})?\s*$", re.IGNORECASE)
+_MASTHEAD_LINE = "## PARLIAMENTARY DEBATES"
+_SPEAKER_ENTRY_MARKER = "SPEAKER"
+_MAX_MASTHEAD_LINES = 20
+
 # NOTE: the source lost the start of this entry; the line is the sitting of 10 June 1963.
 _TRUNCATED_LINE_TO_ENTRY_LINE: dict[str, str] = {
     "Tunah), Parliamentary Secretary to the Prime Minister.": "Inche Yaacob Bin Mohamed (Bukit Timah), Parliamentary Secretary to the Prime Minister.",
@@ -651,8 +662,44 @@ def _parse_entry_line(line: str, sitting_date: str) -> Optional[ParsedAttendee]:
     return ParsedAttendee(presiding_officer_name, None)
 
 
+def _get_masthead_end_index(lines: list[str], masthead_index: int) -> Optional[int]:
+    for line_index in range(masthead_index + 1, min(masthead_index + _MAX_MASTHEAD_LINES, len(lines))):
+        stripped = lines[line_index].strip()
+        if _SECTION_HEADER_RE.match(stripped):
+            return None
+        if _ENTRY_LINE_RE.match(stripped):
+            return line_index
+    return None
+
+
+def _drop_masthead_blocks(lines: list[str]) -> list[str]:
+    kept_lines = []
+    resume_index = 0
+    for line_index, line in enumerate(lines):
+        if line_index < resume_index:
+            continue
+        if line.strip() == _MASTHEAD_LINE:
+            masthead_end_index = _get_masthead_end_index(lines, line_index)
+            if masthead_end_index is not None:
+                resume_index = masthead_end_index
+                continue
+        kept_lines.append(line)
+    return kept_lines
+
+
+def _split_entry_line(line: str) -> list[str]:
+    if _SPEAKER_ENTRY_MARKER in line:
+        return [line]
+    first_close_index = line.find(")")
+    if first_close_index == -1:
+        return [line]
+    bounds = [0, *(match.start() for match in _NEXT_ENTRY_START_RE.finditer(line, first_close_index)), len(line)]
+    return [line[start:end] for start, end in zip(bounds, bounds[1:])]
+
+
 def _extract_section_lines(content: str, section: str) -> list[str]:
-    lines = content.split("\n")
+    # NOTE: a page masthead reprinted inside a list is not its end when a member entry follows it.
+    lines = _drop_masthead_blocks(content.split("\n"))
     is_in_section = False
     other_section = "ABSENT" if section == "PRESENT" else "PRESENT"
     entry_lines = []
@@ -837,20 +884,21 @@ def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups, constituen
 
     for section, is_present in [("PRESENT", True), ("ABSENT", False)]:
         for line in _extract_section_lines(content, section):
-            parsed = _parse_entry_line(line, sitting.sitting_date)
-            if parsed is None:
-                continue
-            if not parsed.name:
-                continue
-            name = normalize_name(parsed.name)
-            canonical = None if parliament is None else resolve_canonical_name(name, parliament, lookups)
-            speaker_name = canonical or name
-            records.append(Attendance(
-                sitting_id=sitting.id,
-                speaker_name=speaker_name,
-                is_present=is_present,
-                location_name=get_constituency_name(parsed.constituency, parliament, sitting.sitting_date, speaker_name, constituency_lookups),
-            ))
+            for entry_line in _split_entry_line(line):
+                parsed = _parse_entry_line(entry_line, sitting.sitting_date)
+                if parsed is None:
+                    continue
+                if not parsed.name:
+                    continue
+                name = normalize_name(parsed.name)
+                canonical = None if parliament is None else resolve_canonical_name(name, parliament, lookups)
+                speaker_name = canonical or name
+                records.append(Attendance(
+                    sitting_id=sitting.id,
+                    speaker_name=speaker_name,
+                    is_present=is_present,
+                    location_name=get_constituency_name(parsed.constituency, parliament, sitting.sitting_date, speaker_name, constituency_lookups),
+                ))
 
     return _drop_repeated_attendees(records)
 
