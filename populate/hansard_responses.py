@@ -22,7 +22,6 @@ from services.hansard_website import (
     get_topic_id,
 )
 
-_CONCURRENCY = 4
 _HTTP_TIMEOUT_SECONDS = 60
 _EXCLUDED_REPORT_IDS_FILE = Path(__file__).parent.parent / "data" / "excluded_report_ids.json"
 
@@ -55,26 +54,23 @@ async def _fetch_html_content(
 async def _fetch_website_response(
     search_result: HansardSearchResult,
     client: httpx.AsyncClient,
-    semaphore: asyncio.Semaphore,
     progress: Iterator[int],
     total: int,
 ) -> HansardWebsiteResponse:
-    async with semaphore:
-        html_content = await _fetch_html_content(search_result, client)
-        hansard_website_response = build_hansard_website_response(search_result, html_content)
+    html_content = await _fetch_html_content(search_result, client)
+    hansard_website_response = build_hansard_website_response(search_result, html_content)
     completed = next(progress)
     logger.info(f"{completed}/{total}")
     return hansard_website_response
 
 
 async def _fetch_all(search_results: list[HansardSearchResult]) -> list[HansardWebsiteResponse]:
-    semaphore = asyncio.Semaphore(_CONCURRENCY)
     progress = itertools.count(1)
     total = len(search_results)
 
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
         return await asyncio.gather(
-            *[_fetch_website_response(search_result, client, semaphore, progress, total) for search_result in search_results]
+            *[_fetch_website_response(search_result, client, progress, total) for search_result in search_results]
         )
 
 

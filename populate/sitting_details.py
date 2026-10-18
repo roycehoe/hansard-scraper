@@ -23,7 +23,6 @@ from services.sitting import build_sitting
 from settings import settings
 from utils.sitting_dates import parse_sitting_date
 
-_CONCURRENCY = 2
 _HTTP_TIMEOUT_SECONDS = 120
 _SITTING_NESTED_COLUMNS = frozenset({"markdown_content", "sections", "annexures", "vernaculars", "a2b"})
 
@@ -31,23 +30,19 @@ _SITTING_NESTED_COLUMNS = frozenset({"markdown_content", "sections", "annexures"
 async def _fetch_report_response(
     sitting_date: str,
     client: httpx.AsyncClient,
-    semaphore: asyncio.Semaphore,
 ) -> Optional[Union[HansardReportOldResponse, HansardReportNewResponse]]:
-    async with semaphore:
-        try:
-            return await get_hansard_report_response_async(sitting_date, client)
-        except HansardGatewayError as error:
-            logger.warning(f"Skipping {sitting_date}: {error}")
-            return None
+    try:
+        return await get_hansard_report_response_async(sitting_date, client)
+    except HansardGatewayError as error:
+        logger.warning(f"Skipping {sitting_date}: {error}")
+        return None
 
 
 async def _fetch_all_report_responses(
     sitting_dates: list[str],
 ) -> list[Optional[Union[HansardReportOldResponse, HansardReportNewResponse]]]:
-    semaphore = asyncio.Semaphore(_CONCURRENCY)
-
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
-        return await asyncio.gather(*[_fetch_report_response(sitting_date, client, semaphore) for sitting_date in sitting_dates])
+        return await asyncio.gather(*[_fetch_report_response(sitting_date, client) for sitting_date in sitting_dates])
 
 
 def _get_json_column(value: object) -> Optional[str]:
