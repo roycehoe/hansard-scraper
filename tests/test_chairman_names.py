@@ -38,3 +38,39 @@ def test_chairman_under_a_speaker_annotation_in_a_report_whose_header_names_no_s
     names = chairman_names(markdown, _SPEECH_ROWS)
 
     assert names == {}
+
+
+_RULING = "I am introducing the following ruling on the time allowed for amendments."
+_NEXT_HEAD = "I shall deal first with the heads of expenditure in respect of which amendments stand."
+_CHAIRMAN_ROWS = [
+    SpeechRow(1, 1, "The Chairman", _RULING, _REPORT_ID, None),
+    SpeechRow(2, 2, "The Chairman", _NEXT_HEAD, _REPORT_ID, None),
+]
+_SPEAKER_HEADER_MARKDOWN = "\n".join((
+    "|MPs Speaking:| Dr Yeoh Ghim Seng (Mr Speaker);  ",
+    "#### [Mr Speaker in the Chair]",
+    f"**The Chairman:** {_RULING}",
+    f"**The Chairman:** {_NEXT_HEAD}",
+))
+
+
+def test_chairman_under_a_speaker_annotation_takes_the_one_speaker_the_header_tags() -> None:
+    names = chairman_names(_SPEAKER_HEADER_MARKDOWN, _CHAIRMAN_ROWS)
+
+    assert names == {1: "Yeoh Ghim Seng", 2: "Yeoh Ghim Seng"}
+
+
+def test_deputy_speaker_named_in_the_report_keeps_the_chairman_unnamed() -> None:
+    markdown = _SPEAKER_HEADER_MARKDOWN + "\nThereupon Mr Deputy Speaker left the Chair of the Committee."
+
+    names = chairman_names(markdown, _CHAIRMAN_ROWS)
+
+    assert names == {}
+
+
+def test_suspension_between_the_annotation_and_the_row_keeps_the_chairman_unnamed() -> None:
+    markdown = _SPEAKER_HEADER_MARKDOWN.replace(f"**The Chairman:** {_NEXT_HEAD}", f"_Sitting resumed at 2.30 p.m._\n**The Chairman:** {_NEXT_HEAD}")
+
+    names = chairman_names(markdown, _CHAIRMAN_ROWS)
+
+    assert names == {1: "Yeoh Ghim Seng"}
