@@ -8,6 +8,7 @@ from crud.speech import CRUDSpeech, SpeechRow
 from database.report import Report
 from services.attribution import (
     HEADLINE_GROUP,
+    HEADLINE_MAX_PARLIAMENT,
     AttributionFigures,
     GroupFigures,
     ReportTypeFigures,
@@ -22,7 +23,6 @@ from services.speech import (
     get_start_of_speech_line,
 )
 
-_REPORTED_PARLIAMENTS = (12, 13, 14)
 _REPORT_BATCH = 2_000
 _HEADER_SCAN_LINE_COUNT = 15
 _NO_HEADER_ROW_INDEX = -1
@@ -60,7 +60,8 @@ def _is_single_speaker_collapse(report: Report) -> bool:
 
 
 def get_attribution_figures(session: Session) -> AttributionFigures:
-    reports = [report for report in CRUDReport(session).get_by_markdown_content_not_null() if report.parliament_number <= _REPORTED_PARLIAMENTS[-1]]
+    reports = CRUDReport(session).get_by_markdown_content_not_null()
+    reported_parliaments = sorted({report.parliament_number for report in reports if report.parliament_number > HEADLINE_MAX_PARLIAMENT})
     speech_rows: list[SpeechRow] = []
     report_ids = [report.id for report in reports]
     for start in range(0, len(report_ids), _REPORT_BATCH):
@@ -113,5 +114,5 @@ def get_attribution_figures(session: Session) -> AttributionFigures:
                 report_type: figures for (group_name, report_type), figures in group_and_type_to_figures.items() if group_name == group
             },
         )
-        for group in (HEADLINE_GROUP, *(get_group(parliament_number) for parliament_number in _REPORTED_PARLIAMENTS))
+        for group in (HEADLINE_GROUP, *(get_group(parliament_number) for parliament_number in reported_parliaments))
     ])
