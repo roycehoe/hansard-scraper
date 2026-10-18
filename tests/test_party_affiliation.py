@@ -1,6 +1,7 @@
 import json
 from datetime import date
 from pathlib import Path
+from typing import Optional
 
 import pytest
 from pydantic import ValidationError
@@ -18,18 +19,38 @@ from services.party_affiliation import (
 _DATA_FILE = Path(__file__).parent.parent / "data" / "party_affiliations.json"
 _ALLIANCE = "Singapore Democratic Alliance"
 _PEOPLES_PARTY = "Singapore People's Party"
+_EXAMPLE_URL = "https://example.org"
 _CHIAM_SPEAKER_ID = 812
+_SOURCE_REPORT_ID = 4321
 
 
 def _get_speaker(speaker_id: int, name: str, parliament_number: int, party: str) -> Speaker:
     return Speaker(id=speaker_id, name=name, party=party, is_legislative_assembly=False, parliament_number=parliament_number)
 
 
-def _get_span(party: str, started_on: str, started_on_precision: str = "DAY") -> dict[str, str]:
-    return {"party": party, "started_on": started_on, "started_on_precision": started_on_precision, "event": "An event.", "source_url": "https://example.org"}
+def _get_span(
+    party: str,
+    started_on: str,
+    started_on_precision: str = "DAY",
+    is_started_on_upper_bound: bool = False,
+    source_url: Optional[str] = _EXAMPLE_URL,
+    source_report_id: Optional[int] = None,
+) -> dict[str, object]:
+    span: dict[str, object] = {
+        "party": party,
+        "started_on": started_on,
+        "started_on_precision": started_on_precision,
+        "event": "An event.",
+        "is_started_on_upper_bound": is_started_on_upper_bound,
+    }
+    if source_url is not None:
+        span["source_url"] = source_url
+    if source_report_id is not None:
+        span["source_report_id"] = source_report_id
+    return span
 
 
-def _get_membership(*spans: dict[str, str], name: str = "Chiam See Tong", parliament_number: int = 11) -> MembershipPartyAffiliations:
+def _get_membership(*spans: dict[str, object], name: str = "Chiam See Tong", parliament_number: int = 11) -> MembershipPartyAffiliations:
     return MembershipPartyAffiliations.model_validate({"name": name, "parliament_number": parliament_number, "affiliations": list(spans)})
 
 
@@ -41,13 +62,21 @@ def _get_chiam_speakers() -> list[Speaker]:
     ]
 
 
-def _get_party_affiliation(party: str, started_on: date, speaker_id: int = _CHIAM_SPEAKER_ID, event: str = "An event.") -> PartyAffiliation:
+def _get_party_affiliation(
+    party: str,
+    started_on: date,
+    speaker_id: int = _CHIAM_SPEAKER_ID,
+    event: str = "An event.",
+    is_started_on_upper_bound: bool = False,
+) -> PartyAffiliation:
     return PartyAffiliation(
         party=party,
         started_on=started_on,
         started_on_precision=DatePrecision.DAY,
         event=event,
-        source_url="https://example.org",
+        source_url=_EXAMPLE_URL,
+        is_started_on_upper_bound=is_started_on_upper_bound,
+        source_report_id=None,
         speaker_id=speaker_id,
     )
 
@@ -75,9 +104,23 @@ def test_month_precision_refuses_a_day_date() -> None:
         PartyAffiliationSpan.model_validate(_get_span(_ALLIANCE, "2011-03-05", "MONTH"))
 
 
+def test_span_without_the_upper_bound_flag_is_refused() -> None:
+    span = _get_span(_ALLIANCE, "2006-05-06")
+    del span["is_started_on_upper_bound"]
+
+    with pytest.raises(ValidationError):
+        PartyAffiliationSpan.model_validate(span)
+
+
 def test_membership_without_affiliations_is_refused() -> None:
     with pytest.raises(ValidationError):
         MembershipPartyAffiliations.model_validate({"name": "Chiam See Tong", "parliament_number": 11, "affiliations": []})
+
+
+def test_table_checks_for_exactly_one_source() -> None:
+    constraint_names = {constraint.name for constraint in PartyAffiliation.__table__.constraints}
+
+    assert "ck_partyaffiliation_exactly_one_source" in constraint_names
 
 
 def test_data_file_builds_chiam_two_spans() -> None:
@@ -92,7 +135,10 @@ def test_data_file_builds_chiam_two_spans() -> None:
         (_ALLIANCE, date(2006, 5, 6), DatePrecision.DAY, _CHIAM_SPEAKER_ID),
         (_PEOPLES_PARTY, date(2011, 3, 1), DatePrecision.MONTH, _CHIAM_SPEAKER_ID),
     ]
-    assert all(party_affiliation.event != "" and party_affiliation.source_url.startswith("https://") for party_affiliation in party_affiliations)
+    assert all(party_affiliation.event != "" for party_affiliation in party_affiliations)
+    assert all(party_affiliation.is_started_on_upper_bound is False for party_affiliation in party_affiliations)
+    assert all(party_affiliation.source_report_id is None for party_affiliation in party_affiliations)
+    assert all(party_affiliation.source_url.startswith("https://") for party_affiliation in party_affiliations)
 
 
 def test_data_file_names_each_membership_once() -> None:
@@ -115,6 +161,21 @@ def test_two_memberships_build_their_own_rows() -> None:
     assert [party_affiliation.speaker_id for party_affiliation in party_affiliations] == [_CHIAM_SPEAKER_ID, 5]
 
 
+def test_span_carries_the_upper_bound_flag_and_a_report_source() -> None:
+    membership = _get_membership(
+        _get_span(_ALLIANCE, "2006-05-06"),
+        _get_span(_PEOPLES_PARTY, "2008-08", "MONTH", is_started_on_upper_bound=True, source_url=None, source_report_id=_SOURCE_REPORT_ID),
+    )
+
+    party_affiliations = build_party_affiliations([membership], _get_chiam_speakers())
+
+    assert [party_affiliation.is_started_on_upper_bound for party_affiliation in party_affiliations] == [False, True]
+    assert [(party_affiliation.source_url, party_affiliation.source_report_id) for party_affiliation in party_affiliations] == [
+        (_EXAMPLE_URL, None),
+        (None, _SOURCE_REPORT_ID),
+    ]
+
+
 def test_membership_with_no_speaker_row_raises() -> None:
     membership = _get_membership(_get_span(_ALLIANCE, "2006-05-06"), parliament_number=9)
 
@@ -130,11 +191,19 @@ def test_membership_with_two_speaker_rows_raises() -> None:
         build_party_affiliations([membership], speakers)
 
 
-def test_first_span_party_that_differs_from_the_stored_party_raises() -> None:
+def test_stored_party_missing_from_the_spans_raises() -> None:
+    membership = _get_membership(_get_span("Workers' Party", "2006-05-06"), _get_span(_PEOPLES_PARTY, "2011-03-01"))
+
+    with pytest.raises(HansardPartyAffiliationError, match="not among the spans' parties"):
+        build_party_affiliations([membership], _get_chiam_speakers())
+
+
+def test_stored_party_that_is_not_the_first_span_is_allowed() -> None:
     membership = _get_membership(_get_span(_PEOPLES_PARTY, "2006-05-06"), _get_span(_ALLIANCE, "2011-03-01"))
 
-    with pytest.raises(HansardPartyAffiliationError, match="stored party"):
-        build_party_affiliations([membership], _get_chiam_speakers())
+    party_affiliations = build_party_affiliations([membership], _get_chiam_speakers())
+
+    assert [party_affiliation.party for party_affiliation in party_affiliations] == [_PEOPLES_PARTY, _ALLIANCE]
 
 
 def test_spans_out_of_date_order_raise() -> None:
@@ -151,11 +220,26 @@ def test_spans_on_the_same_date_raise() -> None:
         build_party_affiliations([membership], _get_chiam_speakers())
 
 
-def test_two_consecutive_spans_with_the_same_party_raise() -> None:
+def test_span_without_a_source_raises() -> None:
+    membership = _get_membership(_get_span(_ALLIANCE, "2006-05-06", source_url=None))
+
+    with pytest.raises(HansardPartyAffiliationError, match="has no source"):
+        build_party_affiliations([membership], _get_chiam_speakers())
+
+
+def test_span_with_two_sources_raises() -> None:
+    membership = _get_membership(_get_span(_ALLIANCE, "2006-05-06", source_report_id=_SOURCE_REPORT_ID))
+
+    with pytest.raises(HansardPartyAffiliationError, match="two sources"):
+        build_party_affiliations([membership], _get_chiam_speakers())
+
+
+def test_two_consecutive_spans_with_the_same_party_are_allowed() -> None:
     membership = _get_membership(_get_span(_ALLIANCE, "2006-05-06"), _get_span(_ALLIANCE, "2011-03-01"))
 
-    with pytest.raises(HansardPartyAffiliationError, match="consecutive"):
-        build_party_affiliations([membership], _get_chiam_speakers())
+    party_affiliations = build_party_affiliations([membership], _get_chiam_speakers())
+
+    assert [party_affiliation.party for party_affiliation in party_affiliations] == [_ALLIANCE, _ALLIANCE]
 
 
 def test_same_party_in_non_consecutive_spans_is_allowed() -> None:
@@ -195,6 +279,14 @@ def test_everything_stored_leaves_nothing_to_insert() -> None:
 def test_stored_row_that_differs_from_the_planned_row_raises() -> None:
     planned = [_get_party_affiliation(_ALLIANCE, date(2006, 5, 6), event="The new sentence.")]
     stored = [_get_party_affiliation(_ALLIANCE, date(2006, 5, 6), event="The old sentence.")]
+
+    with pytest.raises(HansardWriteCheckError, match="Speaker 812"):
+        get_unstored_party_affiliations(planned, stored)
+
+
+def test_stored_row_with_a_different_upper_bound_flag_raises() -> None:
+    planned = [_get_party_affiliation(_ALLIANCE, date(2006, 5, 6), is_started_on_upper_bound=True)]
+    stored = [_get_party_affiliation(_ALLIANCE, date(2006, 5, 6), is_started_on_upper_bound=False)]
 
     with pytest.raises(HansardWriteCheckError, match="Speaker 812"):
         get_unstored_party_affiliations(planned, stored)
