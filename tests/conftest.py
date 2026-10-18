@@ -29,6 +29,7 @@ import database.hansard_sitting_date_response  # noqa: F401 registers the table 
 import database.hansard_website_response  # noqa: F401 registers the table for create_all
 import database.party_affiliation  # noqa: F401 registers the table for create_all
 import database.person  # noqa: F401 registers the table for create_all
+import database.refresh_run  # noqa: F401 registers the table for create_all
 import database.report  # noqa: F401 registers the table for create_all
 import database.sitting  # noqa: F401 registers the table for create_all
 import database.speaker  # noqa: F401 registers the table for create_all
