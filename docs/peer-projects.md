@@ -27,6 +27,7 @@ The projects that face the same problem and solved it by matching names themselv
 | Knesset corpus | Israel | arXiv 2405.18115 |
 | legco-hansard-parser | Hong Kong LegCo | `lib/legco/hansard/filters/event_filter.rb` |
 | Par-leh-mate | Singapore | `transform/speeches.py` |
+| SGParliament (sgparliament.com) | Singapore, 1955 on | Site pages, Substack posts and debate JSON; compared turn by turn in [report/sgparliament-comparison-2026-10-18.md](report/sgparliament-comparison-2026-10-18.md) |
 
 None of the corpora that pool many parliaments (ParlSpeech V2, ParlaMint, ParlEE, the Comparative Legislators Database) covers Singapore or another Asian Commonwealth parliament. Par-leh-mate, the one earlier Singapore project, reads `<strong>` as the speaker, strips titles with one regex and matches names exactly against a member list, with no fuzzy step. This project's resolver goes further than any peer on Malay, Chinese and Indian name forms; no peer read handles Haji, bin, inverted names or OCR'd names beyond edit distance.
 

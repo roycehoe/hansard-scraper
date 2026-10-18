@@ -1,6 +1,6 @@
 # Comparison with sgparliament.com, 18 October 2026
 
-sgparliament.com is a public reader over the same SPRS record, from the first Legislative Assembly sitting on 22 April 1955 to the present. It splits each debate into speaker turns, links turns to member pages, shows party history within a membership, and adds LLM summaries, topic groups, a PQ explorer and statistics. It offers no API, no download and no source code, and it publishes no accuracy figures. Its disclaimer says the LLM content may contain "hallucinations". Its newsletter, sgparliament.substack.com, is bylined Kenneth Tiong, and the domain was registered in May 2023.
+sgparliament.com is a public reader over the same SPRS record, from the first Legislative Assembly sitting on 22 April 1955 to the present. It splits each debate into speaker turns, links turns to member pages, shows party history within a membership, and adds LLM summaries, topic groups, a PQ explorer and statistics. It offers no API, no download and no source code, and it publishes no accuracy figures. Its disclaimer says the LLM content may contain "hallucinations". The domain was registered in May 2023. Its newsletter, sgparliament.substack.com, signs posts "SGParliament team", but the Substack archive API gives every post with a byline the author Kenneth Tiong (handle `kennethtiong`). That Substack account also runs kennethtiong.com, which publishes the speeches and Parliamentary Questions of Kenneth Tiong, Workers' Party MP for Aljunied GRC. Neither site says in prose that the two share an author.
 
 This report compares its speaker attribution with our speech rows. Our figures come from the local database on 18 October 2026, after the coverage refill. Scripts and raw output are in the session scratchpad and are not kept.
 
@@ -47,3 +47,45 @@ Words that did not align (52,761 on its side, 24,553 on ours) are almost all in 
 - 27 debates is a small sample. Long debates hold most of the words: five debates over 20,000 words each make up most of the aligned text.
 - The check of text runs one way. It shows its text is in our rows, not that our text is in its debates.
 - Agreement is not correctness. Both sides could credit the same wrong member. The stratified sample in the next section asks that question.
+
+## What it says about its method
+
+A Sonnet reader went through all 10 posts on sgparliament.substack.com, all 23 posts on kennethtiong.com, and the site's About, Disclaimer, Issue Provenance, Debate Topics, PQ Explorer, Stats, Maiden Speeches, Adjournment Motions and Budget pages, with the page JavaScript where the text was thin. Its quotes were checked against the downloaded pages. The posts announce features and say little about method.
+
+| Question | What it says |
+|---|---|
+| Source | "every sitting that Parliament's own site (sprs.parl.gov.sg) publishes, from the first sitting of the Legislative Assembly on 22 April 1955" ([About](https://www.sgparliament.com/aboutus)) |
+| How it fetches, and how often | Not stated. The 6 and 7 November 2023 sittings were announced 10 days later ([post](https://sgparliament.substack.com/p/the-6th-and-7th-november-2023-parliamentary)) |
+| Coverage history | Built backwards in 2023: "We've now parsed the 11th Parliament (save the first three sittings)" ([post](https://sgparliament.substack.com/p/explore-the-11th-parliament-2006)). The About page now claims 1955 on |
+| Speaker turns and member links | Not stated. The page code keeps the printed label beside the resolved member (`mp_name` or else `raw_speaker`), as our `speech.speaker` and `speaker_id` do |
+| Presiding officers, procedural lines | Not stated. The comparison above shows presiding officers unlinked and procedural lines folded into the last turn |
+| Party history | "A member's party is shown as it was at the time of each sitting" ([About](https://www.sgparliament.com/aboutus)). Source not stated |
+| Government and opposition | "since 5 June 1959, every party but the PAP; from 1955 to 1959, every party but the Labour Front, the Alliance and the Singapore People's Alliance". Nominated and ex officio members and the Speaker are on neither side ([About](https://www.sgparliament.com/aboutus)) |
+| Oral and written PQs | Split by the "Oral Answer" and "Written Answer" section headers. It has no split for "all of the 11th Parliament and roughly a fifth of the 12th", which lack them (PQ Explorer page code) |
+| LLM use | Timelines are LLM output, built from sections of "typically >=1000 characters for each topic" chosen "based on their vector similarity to the topic", and "may contain hallucinations" ([Disclaimer](https://www.sgparliament.com/disclaimer)). Debate Topics' semantic groups are "LLM-detected topic clusters". Issue Provenance has a match threshold that defaults to 0.57. Models are not stated |
+| Maiden speeches | "The first substantive speech (≥4,000 chars, non-PQ) by each member" (Maiden Speeches page code) |
+| Accuracy | None reported: no audit, no error rate, no known-error list |
+| Stack | Next.js static export with JSON endpoints under `/api/parliament/`. Database and hosting not stated |
+
+### Worth taking
+
+1. **Government side per sitting.** Its dated rule for who was in government, including the 1955 to 1959 coalition, fits beside `PartyAffiliation`, which already holds dated party history. Small to medium.
+2. **Stated heuristics for derived tables.** The maiden speech rule is one line that a reader can check. Any derived view we publish should state its rule the same way. Small.
+3. **Oral and written PQ split.** We already have it where it does not. SPRS gives every record a report type, and our `report_type` holds 800 `oral-answer` and 844 `written-answer` or `written-answer-na` reports in the 11th Parliament, and 918 and 2,213 in the 12th. A PQ view over it is small.
+4. **Analyses over existing tables.** Speech concentration (Gini of speeches per member), vocabulary drift, co-absence pairs from leave of absence, and adjournment motions with mover and responding minister. Each is a query over `speech`, `attendance` and `speaker`. Co-absence inherits the attendance limit in the data loss register, where a line naming two members keeps only the first.
+5. **A public limits page.** Its Disclaimer names the failure and the mitigation in two sentences. Our limits live in `docs/vision.md`, which a website reader will not open.
+
+Semantic search over embeddings is the largest item and the least proven. It reports no evaluation of its similarity search or its topic clusters.
+
+### Where we are ahead
+
+- **Stated accuracy.** It publishes none. We publish three attribution figures after every write, and hand audits: the 17 October audit read 406 linked rows and found 404 right (99.5%, Wilson 98.2% to 99.9%).
+- **Presiding officers and the President**, linked to the holder of the day (ADR 0002). It leaves them unlinked.
+- **Non-speech lines** kept apart with a `kind` (ADR 0007, ADR 0009). It folds them into the last speaker's turn, so its per-member word counts, Gini and vocabulary drift include text the member did not say.
+- **The raw record**, stored as received, and a register of everything cleaned (`docs/data-loss-register.md`). It states neither.
+- **Reproducibility.** Golden fixtures for each parser fix, rehearsed writes and a stopping rule. Its method is unpublished, so its results cannot be replayed.
+- **Open access.** It has no API or download.
+
+### What its writing does not answer
+
+How it fetches and splits turns, how a turn is linked to a member, where member and party data come from, which models and embeddings it uses, how attendance is parsed, what its adjournment "respondent seniority score" and "sharpeRatio" mean, and its current update cadence.
