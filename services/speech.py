@@ -946,8 +946,10 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
                     speeches.append(_build_current_speaker_speech(current_speaker, parsed_line))
                 continue
             raw_speaker = bold_match.group(0).replace("*", "").replace(":", "").strip()
+            speaker_without_note = _LANGUAGE_NOTE_RE.sub("", raw_speaker).strip()
+            is_language_note_line = speaker_without_note == "" and transcript == ""
             # NOTE: A bold line holding only a language note keeps its text so it stays a section annotation.
-            raw_speaker = _LANGUAGE_NOTE_RE.sub("", raw_speaker).strip() or raw_speaker
+            raw_speaker = speaker_without_note or raw_speaker
             # NOTE: the source bolds a label up to the constituency's last word and leaves its closing bracket outside the bold, or drops it.
             if raw_speaker.count(_OPENING_PARENTHESIS) > raw_speaker.count(_CLOSING_PARENTHESIS):
                 raw_speaker += _CLOSING_PARENTHESIS
@@ -1019,8 +1021,10 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
                 (is_parenthesised_annotation or _ITALIC_HEADING_RE.match(new_speaker) is not None)
                 and not _has_speaker_honorific(new_speaker)
             )
+            # NOTE: in the older system a bold line that is only a language note says how the speaker goes on, so the speaker stays.
+            is_speaker_kept = is_language_note_line and report_version == ReportVersion.SPRS2
             if is_section_annotation:
-                if is_parenthesised_annotation:
+                if is_parenthesised_annotation and not is_speaker_kept:
                     current_speaker = None
                 if transcript:
                     (preamble_speeches if is_in_preamble else speeches).append(_build_current_speaker_speech(current_speaker, transcript))
