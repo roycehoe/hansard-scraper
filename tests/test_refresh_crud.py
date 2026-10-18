@@ -33,16 +33,18 @@ _COUNT_COLUMNS = tuple(name for name, field in RefreshRun.model_fields.items() i
 
 def _build_report(report_id: str, parliament_number: int, sitting_date: datetime, content: Optional[str]) -> Report:
     return Report(
-        volume_number=parliament_number,
-        parliament_number=parliament_number,
-        sitting_date=sitting_date,
-        speech_number=_SPEECH_NUMBER,
+        volumeNo=parliament_number,
+        parlNo=parliament_number,
+        sittingNo=None,
+        sittingDate=sitting_date,
+        sno=_SPEECH_NUMBER,
         original_title=report_id,
         title=report_id,
-        report_id=report_id,
-        report_type=ReportType.MOTION,
-        report_version=ReportVersion.SPRS3,
+        reportId=report_id,
+        reportType=ReportType.MOTION,
         content=content,
+        htmlFileName=None,
+        reportVersion=ReportVersion.SPRS3,
     )
 
 
