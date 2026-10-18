@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Chiam See Tong",
+    "parliament_number": 11,
+    "affiliations": [
+      {
+        "party": "Singapore Democratic Alliance",
+        "started_on": "2006-05-06",
+        "started_on_precision": "DAY",
+        "event": "Won Potong Pasir for the Singapore Democratic Alliance at the 2006 general election.",
+        "source_url": "https://www.eld.gov.sg/elections_past_parliamentary2006.html"
+      },
+      {
+        "party": "Singapore People's Party",
+        "started_on": "2011-03",
+        "started_on_precision": "MONTH",
+        "event": "His own party, the Singapore People's Party, left the alliance after the alliance removed him as chairman, and he sat for it until Parliament was dissolved.",
+        "source_url": "https://eresources.nlb.gov.sg/infopedia/articles/SIP_2018-05-16_141721.html"
+      }
+    ]
+  }
+]

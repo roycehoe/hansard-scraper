@@ -16,3 +16,7 @@ class HansardWriteTargetError(HansardError):
 
 class HansardWriteCheckError(HansardError):
     pass
+
+
+class HansardPartyAffiliationError(HansardError):
+    pass
