@@ -38,11 +38,15 @@ _ATBP_SPEAKER_RE = re.compile(
 )
 
 _ADDENDA_MINISTER_RE = re.compile(
-    r"\*\*[^\n]*(?:MINISTRY|PRIME MINISTER)[^\n]*\*\*[ \t]*\n(?:[ \t]*\n)*"
-    r"[ \t]*((?:Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|RAdm|BG|LG|MG|COL)\s+[A-Z][A-Za-z '.()\-]+?)[ \t]*\n"
+    r"\*\*[^*]+\*\*[ \t]*\n(?:[ \t]*\n)*"
+    r"[ \t]*((?:Mr|Mrs|Ms|Dr|Prof\.?|Mdm|Assoc|RAdm|BG|LG|MG|COL)\s+[A-Z][A-Za-z '.()\-]+?)[ \t]*\n"
     r"(?:Minister|Deputy|Senior|Acting|Second|Secretary|Permanent|Political|Director|Prime)",
     re.MULTILINE | re.IGNORECASE,
 )
+
+_ADDENDA_TITLE_RE = re.compile(r"Title:\|\s*ADDENDA", re.IGNORECASE)
+_ADDENDA_SIGNATURE_NAME_RE = re.compile(r"^[A-Z][A-Z .'\-]+$")
+_ADDENDA_SIGNATURE_TITLE_RE = re.compile(r"^_[^_]*Minister[^_]*_$")
 
 _MINISTRY_HEADING_RE = re.compile(
     r"\*\*[^\n*]*(?:MINISTRY|PRIME MINISTER)[^\n*]*\*\*",
@@ -424,6 +428,8 @@ def _extract_body_attribution(markdown: str, report_type: str, report_version: s
         minister = _extract_addenda_minister(markdown)
         if minister:
             return minister
+        if _ADDENDA_TITLE_RE.search(markdown) is not None:
+            return None
         if not _MINISTRY_HEADING_RE.search(markdown):
             return "The President"
         return None
@@ -1192,6 +1198,29 @@ def get_fallback_speaker(markdown: str, start_of_speech_line: int, report_type: 
     return _get_fallback_speaker_from_parsed(markdown, parsed_speeches, _extract_mps_speaking(markdown), report_type, report_version)
 
 
+def _is_addenda_signature(speeches: list[ParsedSpeech], index: int) -> bool:
+    return (
+        index + 1 < len(speeches)
+        and _ADDENDA_SIGNATURE_NAME_RE.match(speeches[index].transcript) is not None
+        and _ADDENDA_SIGNATURE_TITLE_RE.match(speeches[index + 1].transcript) is not None
+    )
+
+
+# NOTE: an Addendum signed by several ministers prints each name under the part it closes, so a part is credited back from its signature.
+def _credit_addenda_signers(speeches: list[ParsedSpeech]) -> list[ParsedSpeech]:
+    signature_indexes = [index for index in range(len(speeches)) if _is_addenda_signature(speeches, index)]
+    credited = list(speeches)
+    part_start = 0
+    for signature_index in signature_indexes:
+        signer = speeches[signature_index].transcript
+        for index in range(part_start, signature_index):
+            speech = speeches[index]
+            if speech.transcript != speech.transcript.upper():
+                credited[index] = ParsedSpeech(speaker=signer, transcript=speech.transcript, kind=SpeechKind.SPEECH)
+        part_start = signature_index + 2
+    return credited
+
+
 def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
     parsed_speeches = _parse_speeches(markdown, start_of_speech_line, report_type, report_version)
     speakers = _extract_mps_speaking(markdown)
@@ -1200,6 +1229,8 @@ def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type:
         return _get_single_speaker_speeches(markdown, start_of_speech_line, fallback_speaker)
     if parsed_speeches:
         return parsed_speeches
+    if report_type == ReportType.PRESIDENT_ADDRESS:
+        return _credit_addenda_signers(_get_unlabelled_speeches(markdown, start_of_speech_line))
     return _get_unlabelled_speeches(markdown, start_of_speech_line)
 
 
