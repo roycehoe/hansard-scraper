@@ -75,12 +75,16 @@ _ADDED_COUNT_COLUMNS = (
 class _AlertRecorder:
     messages: list[str] = field(default_factory=list)
     pings: list[str] = field(default_factory=list)
+    failure_pings: list[str] = field(default_factory=list)
 
     def send_telegram_message(self, bot_token: str, chat_id: str, text: str) -> None:
         self.messages.append(text)
 
     def send_healthchecks_ping(self, ping_url: str) -> None:
         self.pings.append(ping_url)
+
+    def send_healthchecks_failure_ping(self, ping_url: str) -> None:
+        self.failure_pings.append(ping_url)
 
 
 @pytest.fixture(autouse=True)
@@ -97,6 +101,7 @@ def alerts(monkeypatch: pytest.MonkeyPatch) -> _AlertRecorder:
     alert_recorder = _AlertRecorder()
     monkeypatch.setattr(refresh_runs, "send_telegram_message", alert_recorder.send_telegram_message)
     monkeypatch.setattr(refresh_runs, "send_healthchecks_ping", alert_recorder.send_healthchecks_ping)
+    monkeypatch.setattr(refresh_runs, "send_healthchecks_failure_ping", alert_recorder.send_healthchecks_failure_ping)
     monkeypatch.setattr(settings, "telegram_bot_token", _BOT_TOKEN)
     monkeypatch.setattr(settings, "telegram_chat_id", _CHAT_ID)
     monkeypatch.setattr(settings, "healthchecks_ping_url", _PING_URL)
@@ -148,6 +153,16 @@ def _assert_nothing_written(scratch_engine: Engine, row_counts_before: dict[str,
     assert _get_row_counts(scratch_engine) == row_counts_before
 
 
+def _assert_success_pinged(alerts: _AlertRecorder) -> None:
+    assert alerts.pings == [_PING_URL]
+    assert alerts.failure_pings == []
+
+
+def _assert_failure_pinged(alerts: _AlertRecorder) -> None:
+    assert alerts.failure_pings == [_PING_URL]
+    assert alerts.pings == []
+
+
 def _assert_halted(scratch_engine: Engine, alerts: _AlertRecorder, row_counts_before: dict[str, int]) -> RefreshRun:
     refresh_run = _get_only_refresh_run(scratch_engine)
     assert refresh_run.status == RefreshRunStatus.HALTED
@@ -157,7 +172,7 @@ def _assert_halted(scratch_engine: Engine, alerts: _AlertRecorder, row_counts_be
     _assert_nothing_written(scratch_engine, row_counts_before)
     assert len(alerts.messages) == 1
     assert alerts.messages[0].startswith("Hansard refresh halted.")
-    assert alerts.pings == [_PING_URL]
+    _assert_failure_pinged(alerts)
     return refresh_run
 
 
@@ -171,7 +186,7 @@ def _assert_failed(scratch_engine: Engine, alerts: _AlertRecorder, row_counts_be
     assert len(alerts.messages) == 1
     assert alerts.messages[0].startswith("Hansard refresh failed.")
     assert error_name in alerts.messages[0]
-    assert alerts.pings == [_PING_URL]
+    _assert_failure_pinged(alerts)
     return refresh_run
 
 
@@ -216,7 +231,7 @@ def test_clean_run_adds_rows_and_links_them(
     assert "zero_row_report_count" in parliament_group
     assert parliament_group["report_types"] != []
     assert len([message for message in alerts.messages if _SUMMARY_RE.match(message)]) == 1
-    assert alerts.pings == [_PING_URL]
+    _assert_success_pinged(alerts)
     with Session(scratch_engine) as session:
         new_sitting = session.exec(
             select(Sitting).where(Sitting.sitting_date == get_sitting_date_key(fake_parliament.new_sitting_date))
@@ -254,6 +269,7 @@ def test_run_that_adds_nothing_sends_no_message(
     row_counts_before = _get_row_counts(scratch_engine)
     alerts.messages.clear()
     alerts.pings.clear()
+    alerts.failure_pings.clear()
 
     status = refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
 
@@ -265,7 +281,7 @@ def test_run_that_adds_nothing_sends_no_message(
     assert second_run.reports_changed == 0
     _assert_nothing_written(scratch_engine, row_counts_before)
     assert alerts.messages == []
-    assert alerts.pings == [_PING_URL]
+    _assert_success_pinged(alerts)
 
 
 def test_new_parliament_number_halts(
@@ -320,7 +336,7 @@ def test_allowed_parliament_number_runs(
     assert refresh_run.status == RefreshRunStatus.SUCCEEDED
     assert refresh_run.reports_added == len(fake_parliament.new_search_results)
     assert len([message for message in alerts.messages if _SUMMARY_RE.match(message)]) == 1
-    assert alerts.pings == [_PING_URL]
+    _assert_success_pinged(alerts)
 
 
 def test_other_parliament_number_halts_when_one_is_allowed(
@@ -422,7 +438,7 @@ def test_missing_member_is_stored_unlinked(
     assert unregistered_speeches != []
     assert all(speech.speaker_id is None for speech in unregistered_speeches)
     assert any(message.startswith("Speaker labels with no registry match") and _UNREGISTERED_LABEL in message for message in alerts.messages)
-    assert alerts.pings == [_PING_URL]
+    _assert_success_pinged(alerts)
 
 
 def test_changed_report_in_window_alerts_and_keeps_text(
@@ -453,7 +469,7 @@ def test_changed_report_in_window_alerts_and_keeps_text(
             select(HansardWebsiteResponse.content).where(HansardWebsiteResponse.report_id == stored_report_id)
         ).one() == stored_content
         assert session.exec(select(Report.markdown_content).where(Report.report_id == stored_report_id)).one() == stored_markdown
-    assert alerts.pings == [_PING_URL]
+    _assert_success_pinged(alerts)
 
 
 def test_report_without_text_is_held(
@@ -474,9 +490,10 @@ def test_report_without_text_is_held(
     with Session(scratch_engine) as session:
         assert session.exec(select(HansardWebsiteResponse).where(HansardWebsiteResponse.report_id == held_report_id)).all() == []
     assert not any("still has no text" in message for message in alerts.messages)
-    assert alerts.pings == [_PING_URL]
+    _assert_success_pinged(alerts)
     alerts.messages.clear()
     alerts.pings.clear()
+    alerts.failure_pings.clear()
 
     second_day_now = _get_now(fake_parliament, _RECHECK_WINDOW_DAYS + _HELD_ALERT_DAY_OFFSET - 1)
     status = refresh_runs.populate_refresh_runs(scratch_session, second_day_now, None)
@@ -484,7 +501,7 @@ def test_report_without_text_is_held(
     assert status == RefreshRunStatus.SUCCEEDED
     assert _get_refresh_runs(scratch_engine)[-1].reports_held_without_text == 1
     assert any(message.startswith(f"Report {held_report_id} of") and "still has no text" in message for message in alerts.messages)
-    assert alerts.pings == [_PING_URL]
+    _assert_success_pinged(alerts)
 
 
 def test_gateway_failure_fails_the_run(
@@ -536,7 +553,7 @@ def test_failure_at_start_still_alerts_and_pings(
     assert alerts.messages[0].startswith("Hansard refresh failed.")
     assert "SQLAlchemyError" in alerts.messages[0]
     assert _DATABASE_HOST not in alerts.messages[0]
-    assert alerts.pings == [_PING_URL]
+    _assert_failure_pinged(alerts)
 
 
 def test_finish_guard_error_in_halt_still_alerts_and_pings(
@@ -564,7 +581,7 @@ def test_finish_guard_error_in_halt_still_alerts_and_pings(
     _assert_nothing_written(scratch_engine, row_counts_before)
     assert len(alerts.messages) == 1
     assert alerts.messages[0].startswith("Hansard refresh halted.")
-    assert alerts.pings == [_PING_URL]
+    _assert_failure_pinged(alerts)
 
 
 def test_finish_database_error_in_halt_still_alerts_and_pings(
@@ -584,7 +601,7 @@ def test_finish_database_error_in_halt_still_alerts_and_pings(
     assert len(alerts.messages) == 1
     assert alerts.messages[0].startswith("Hansard refresh halted.")
     assert _DATABASE_HOST not in alerts.messages[0]
-    assert alerts.pings == [_PING_URL]
+    _assert_failure_pinged(alerts)
 
 
 def test_unset_alert_settings_send_nothing(
@@ -603,6 +620,7 @@ def test_unset_alert_settings_send_nothing(
     _assert_rows_added(scratch_engine, row_counts_before, _get_only_refresh_run(scratch_engine))
     assert alerts.messages == []
     assert alerts.pings == []
+    assert alerts.failure_pings == []
 
 
 def _seed_running_run(scratch_session: Session, started_at: datetime) -> int:
@@ -638,7 +656,7 @@ def test_fresh_running_row_blocks_a_second_run(
     _assert_nothing_written(scratch_engine, row_counts_before)
     assert len(alerts.messages) == 1
     assert alerts.messages[0].startswith("Hansard refresh failed.")
-    assert alerts.pings == [_PING_URL]
+    _assert_failure_pinged(alerts)
 
 
 def test_stale_running_row_is_marked_failed(
@@ -659,5 +677,5 @@ def test_stale_running_row_is_marked_failed(
     assert _get_refresh_runs(scratch_engine)[-1].status == RefreshRunStatus.SUCCEEDED
     _assert_rows_added(scratch_engine, row_counts_before, _get_refresh_runs(scratch_engine)[-1])
     assert len([message for message in alerts.messages if _SUMMARY_RE.match(message)]) == 1
-    assert alerts.pings == [_PING_URL]
+    _assert_success_pinged(alerts)
 

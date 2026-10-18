@@ -203,7 +203,7 @@ hansard-scraper/
 │   ├── hansard_report.py           # Fetch sitting metadata by date (sync + async)
 │   ├── speakers_by_parliament.py    # Scrape speaker roster from parliament.gov.sg, all Parliaments or one
 │   ├── telegram.py                  # Send one Telegram alert message
-│   └── healthchecks.py              # Send one healthchecks.io ping
+│   └── healthchecks.py              # Send the healthchecks.io success and failure pings
 │
 ├── services/                        # Business logic — transforms raw data into entities
 │   ├── hansard_website.py          # Pure transform: (HansardSearchResult, html_content) → HansardWebsiteResponse

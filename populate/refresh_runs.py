@@ -30,7 +30,7 @@ from exceptions import (
 from gateway.hansard_report import get_hansard_report_response
 from gateway.hansard_search import get_all_hansard_search_results
 from gateway.hansard_topic import get_hansard_topic_response_async
-from gateway.healthchecks import send_healthchecks_ping
+from gateway.healthchecks import send_healthchecks_failure_ping, send_healthchecks_ping
 from gateway.telegram import send_telegram_message
 from logs import logger
 from populate.attribution_figures import get_attribution_figures
@@ -220,13 +220,22 @@ def _send_alert(text: str) -> None:
         logger.warning(f"Alert not sent: {error}")
 
 
-def _send_ping() -> None:
+def _send_success_ping() -> None:
     if settings.healthchecks_ping_url is None:
         return
     try:
         send_healthchecks_ping(settings.healthchecks_ping_url)
     except HansardGatewayError as error:
         logger.warning(f"Ping not sent: {error}")
+
+
+def _send_failure_ping() -> None:
+    if settings.healthchecks_ping_url is None:
+        return
+    try:
+        send_healthchecks_failure_ping(settings.healthchecks_ping_url)
+    except HansardGatewayError as error:
+        logger.warning(f"Failure ping not sent: {error}")
 
 
 def _get_alert_failure_reason(error: Exception, is_data_committed: bool) -> str:
@@ -267,7 +276,7 @@ def _get_started_refresh_run_id(session: Session, now: datetime) -> int:
     except Exception as unexpected_failure:  # noqa: BLE001 a run that cannot start still alerts and pings before the error propagates
         logger.error(f"Refresh run could not start: {type(unexpected_failure).__name__}")
         _send_alert(build_failure_message(_get_alert_failure_reason(unexpected_failure, False)))
-        _send_ping()
+        _send_failure_ping()
         raise
 
 
@@ -606,15 +615,15 @@ def populate_refresh_runs(session: Session, now: datetime, allowed_parliament_nu
         _finish(session, refresh_run_id, run_result, RefreshRunStatus.SUCCEEDED, None, None)
         is_run_finished = True
         _send_success_alerts(run_result)
-        _send_ping()
+        _send_success_ping()
         return RefreshRunStatus.SUCCEEDED
     except HansardRefreshHaltError as error:
         _record_finish(session, refresh_run_id, RunResult(), RefreshRunStatus.HALTED, str(error), None)
         _send_alert(build_halt_message(str(error)))
-        _send_ping()
+        _send_failure_ping()
         return RefreshRunStatus.HALTED
     except Exception as unexpected_failure:  # noqa: BLE001 a failed run is recorded, alerted and pinged before the error propagates
         _record_failure(session, refresh_run_id, run_result, unexpected_failure, is_data_committed, is_run_finished)
         _send_alert(build_failure_message(_get_alert_failure_reason(unexpected_failure, is_data_committed)))
-        _send_ping()
+        _send_failure_ping()
         raise

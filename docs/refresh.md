@@ -23,7 +23,7 @@ In order, a run:
 11. Halts if more than 5% of the new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
 12. Commits every data row in one transaction. A halt or a failure before this point rolls all of them back.
 13. Computes the attribution figures when the run added speech rows, records the counts and marks the row `SUCCEEDED`.
-14. Sends the alerts, then pings healthchecks.io.
+14. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
 
 `refresh.py` exits 0 on success, 2 on a halt and 1 on a failure, after the failure's error propagates.
 
@@ -60,7 +60,7 @@ Setup:
 1. Create a bot with @BotFather and keep its token. Send the bot a message, then read the chat id from the bot's `getUpdates` response.
 2. Create a healthchecks.io check with period 1 day and grace 2 hours, so it reports a missed run 26 hours after the last ping. Add its Telegram integration.
 
-The run pings on every outcome, success, halt or failure, and also when it cannot start. A healthchecks.io alert therefore means no run finished at all. A halt or a failure shows up as a Telegram alert.
+The run sends the plain ping on success and the `/fail` ping on a halt, a failure, or a run that cannot start. The check goes down at once on a `/fail` ping, and after 26 hours with no ping. A halt or a failure also shows up as a Telegram alert.
 
 ## Halts and how to clear each
 

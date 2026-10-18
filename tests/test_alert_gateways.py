@@ -6,7 +6,7 @@ import requests
 import gateway.healthchecks
 import gateway.telegram
 from exceptions import HansardGatewayError
-from gateway.healthchecks import send_healthchecks_ping
+from gateway.healthchecks import send_healthchecks_failure_ping, send_healthchecks_ping
 from gateway.telegram import send_telegram_message
 
 _BOT_TOKEN = "TOKEN"
@@ -17,6 +17,7 @@ _PING_URL = "https://hc-ping.test/check-key"
 _TELEGRAM_PATH_END = "/botTOKEN/sendMessage"
 _FAILED_TELEGRAM_URL = "https://api.telegram.org/botSECRET/sendMessage"
 _FAILED_PING_URL = "https://hc-ping.test/SECRET"
+_FAILURE_PING_URL = "https://hc-ping.test/check-key/fail"
 
 
 class _FakeResponse:
@@ -87,6 +88,28 @@ def test_healthchecks_failure_hides_the_ping_url(monkeypatch: pytest.MonkeyPatch
 
     with pytest.raises(HansardGatewayError) as error_info:
         send_healthchecks_ping(_FAILED_PING_URL)
+
+    assert _SECRET_BOT_TOKEN not in str(error_info.value)
+    assert error_info.value.__cause__ is None
+    assert error_info.value.__suppress_context__ is True
+
+
+@pytest.mark.parametrize("ping_url", [_PING_URL, f"{_PING_URL}/"])
+def test_healthchecks_failure_ping_gets_the_fail_url(ping_url: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    recorder = _RequestRecorder()
+    monkeypatch.setattr(gateway.healthchecks.requests, "get", recorder.get)
+
+    send_healthchecks_failure_ping(ping_url)
+
+    assert recorder.urls == [_FAILURE_PING_URL]
+    assert recorder.timeouts[0] is not None
+
+
+def test_healthchecks_failure_ping_failure_hides_the_ping_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(gateway.healthchecks.requests, "get", _raise_ping_connection_error)
+
+    with pytest.raises(HansardGatewayError) as error_info:
+        send_healthchecks_failure_ping(_FAILED_PING_URL)
 
     assert _SECRET_BOT_TOKEN not in str(error_info.value)
     assert error_info.value.__cause__ is None
