@@ -145,11 +145,12 @@ A local run sends live requests to SPRS at the crawl rate, so start one only whe
 The backfill runs after the letter is sent. All of it runs supervised with the owner role, not `hansard_refresh`. The member load inserts into `speaker`, and stage 9 inserts into `person` and sets `speaker.person_id`, and the write role has no grant for any of that.
 
 1. `python scripts/load_parliament_speakers.py --parliament 15`, a dry run. Review the members it lists, then run it again with `--commit`.
-2. Stage 9 for the new speakers: `populate_persons` in `populate/persons.py`.
-3. `python refresh.py --allow-parliament 15`, supervised.
-4. `python scripts/attribution_text_share.py --output docs/figures/YYYY-MM-DD-backfill-15.txt` on the replica, and a register row, as `CLAUDE.md` requires.
+2. `python -m scripts.load_heads_of_state`, supervised. It adds the President's Parliament 15 row, and stage 9 then gives that row its `person_id`.
+3. Stage 9 for the new speakers: `populate_persons` in `populate/persons.py`.
+4. `python refresh.py --allow-parliament 15`, supervised.
+5. `python scripts/attribution_text_share.py --output docs/figures/YYYY-MM-DD-backfill-15.txt` on the replica, and a register row, as `CLAUDE.md` requires.
 
-Two things affect the backfill run. The "The Prime Minister" role term ends on 14 May 2024 (`populate/speaker_resolution_constants.py:49-53`), so rows labelled "The Prime Minister" after that date stay unlinked and count toward the 5% halt. And the sitting probe covers every date from 9 April 2025, about 560 requests at the crawl rate, plus the topic requests.
+Two things affect the backfill run. The Prime Minister and President terms run to the present. A bare "The Prime Minister" row in Parliament 15 links, and a "The President" row in the Parliament 15 President's Address links once `scripts/load_heads_of_state.py` has run. And the sitting probe covers every date from 9 April 2025, about 560 requests at the crawl rate, plus the topic requests.
 
 ## Write role SQL
 
