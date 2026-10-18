@@ -351,6 +351,7 @@ _HONOURABLE_MEMBERS_RE = re.compile(r"^(?:Some |The )?[Hh]on(?:ourable|\.)? Memb
 _LOWERCASE_START_RE = re.compile(r"^[a-z]")
 _CHAMBER_EVENT_VERB_RE = re.compile(r"^(?:indicated|rose|resumed|say|said|signified|left|entered|took|made|stood|went|remained|again|later|and)\b")
 _QUESTION_LEAD_IN_RE = re.compile(r"^The following questions? stood in the name of\s+(?:\*\*[^*]+\*\*\s*)+[–—-]*$")
+_PLAIN_QUESTION_LEAD_IN_RE = re.compile(r"^The following [Qq]uestions? stood in the name of\s+([A-Z][^*]*?)\s*:?[–—-]*$")
 _TRAILING_DASH_RE = re.compile(r"\s*[–—-]+$")
 _ITALIC_HEADING_RE = re.compile(r"^_[^_].*_$")
 _MAX_ITALIC_TITLE_LENGTH = 150
@@ -923,6 +924,12 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
         ):
             if _MARKDOWN_HEADING_RE.match(parsed_line):
                 continue
+            plain_lead_in_match = _PLAIN_QUESTION_LEAD_IN_RE.match(parsed_line)
+            if plain_lead_in_match is not None:
+                (preamble_speeches if is_in_preamble else speeches).append(ParsedSpeech(speaker=None, transcript=parsed_line, kind=SpeechKind.PROCEDURAL))
+                current_speaker = plain_lead_in_match.group(1)
+                is_in_preamble = False
+                continue
             label_match = _get_plain_label_match(parsed_line, report_version)
             if label_match is not None:
                 current_speaker = _LANGUAGE_NOTE_RE.sub("", label_match.group(1)).strip()
@@ -995,6 +1002,10 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
             is_question_stub = _QUESTION_NUMBER_ONLY_RE.match(parsed_line[: bold_match.start()]) is not None
             # NOTE: a bold heading, a bold word inside a procedural line or a question's "To ask" is no label; its text keeps a row with no speaker.
             if is_non_label_bold and (is_heading_line or non_speech_kind is not None or is_question_stub):
+                # NOTE: a numbered bold phrase that is no label, such as a question's "To ask", stays in the current turn.
+                if is_question_stub and non_speech_kind is None and current_speaker is not None:
+                    speeches.append(_build_current_speaker_speech(current_speaker, unbolded_line))
+                    continue
                 if non_speech_kind is not None:
                     kind = non_speech_kind
                 elif is_heading_line:

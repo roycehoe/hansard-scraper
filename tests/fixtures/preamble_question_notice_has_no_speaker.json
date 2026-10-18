@@ -1,5 +1,5 @@
 {
-  "why": "Three questions stood in the name of a member who did not answer; the notice and the questions sat before the first speaker label and were dropped. They are kept as rows with no speaker.",
+  "why": "Three questions stood in the name of a member who did not answer; the notice and the questions sat before the first speaker label and were dropped. The notice is kept as a procedural row with no speaker, and the questions as the named member's.",
   "source_report_id": 38041,
   "report_version": "sprs2",
   "report_type": "oral-answer",
@@ -11,22 +11,22 @@
     [
       null,
       "The following Questions stood in the name of Mr Ong Lian Teng ---",
-      "UNCLASSIFIED"
+      "PROCEDURAL"
     ],
     [
-      null,
+      "Mr Ong Lian Teng",
       "17. To ask the Minister for Law and National Development when the Government will install street lights at the 11th and 12th milestones, Woodlands Road.",
-      "DOCUMENT_TEXT"
+      "SPEECH"
     ],
     [
-      null,
+      "Mr Ong Lian Teng",
       "18. To ask the Minister for Law and National Development what is the sum of money spent by the Government for rural development in the Bukit Panjang Constituency from 1st January, 1964, to 31st December, 1964, and the details of such expenditure.",
-      "DOCUMENT_TEXT"
+      "SPEECH"
     ],
     [
-      null,
+      "Mr Ong Lian Teng",
       "19. To ask the Minister for Law and National Development whether Temporary Occupation Licence fees of Crown Land in the Mandai area have been increased and by what percentage.",
-      "DOCUMENT_TEXT"
+      "SPEECH"
     ],
     [
       "Mr Speaker",
