@@ -1,0 +1,32 @@
+{
+  "why": "An adjournment report whose body is a '(Motion)' subtitle and a Resolved record credited the subtitle to the mover; with no speech in the body, no row has a speaker.",
+  "source_report_id": 22588,
+  "report_version": "sprs2",
+  "report_type": "motion",
+  "title": "EXEMPTED BUSINESS",
+  "subtitle": "(Motion)",
+  "original_title": "EXEMPTED BUSINESS (Motion)",
+  "html": "\t\t\t\t<HTML>\r\n        \t\t\t<HEAD>\r\n\t\t\t\t\r\n        \t\t\t<META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\">\r\n\t\t\t\t<meta name=\"Parl_No\" content=\"11\">\r\n\t\t\t\t<meta name=\"Sess_No\" content=\"1\">\r\n\t\t\t\t<meta name=\"Vol_No\" content=\"84\">\r\n\t\t\t\t<meta name=\"Sit_Date\" content=\"2008-03-05\">\r\n\t\t\t\t<meta name=\"Sect_Name\" content=\"MOTIONS\">\r\n\t\t\t\t<meta name=\"Title\" content=\"EXEMPTED BUSINESS (Motion)\">\r\n\t\t\t\t<meta name=\"MP_Speak\" content=\"Mr Mah Bow Tan\">\r\n\t\t\t\t<meta name=\"Start_Col\" content=\"2238\">\r\n\t\t\t\t<meta name=\"End_Col\" content=\"2238\">\r\n        \t</HEAD>\r\n        \t<body>\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\" bgcolor=\"#FFFFFF\"><tr><td>\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">11</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">84</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">11</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">05-03-2008</font></td></tr>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">MOTIONS</font></td>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">EXEMPTED BUSINESS (Motion)</font></td>\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Mr Mah Bow Tan</font></td>\r\n</table></td></tr>\r\n</table>\r\n<p align=left>Column: 2238<p>\r\n<div align=center><b>\r\n<!--TITLE_NAME:EXEMPTED BUSINESS-->\r\n<!--END_COL_TITLE:EXEMPTED BUSINESS:::2238-->\r\n</b>\r\n<div align=center><span style=\"FONT-SIZE: 13pt; FONT-FAMILY: 'Times New Roman'\"><B>EXEMPTED BUSINESS<BR></B></span><div><BR>\r\n\r\n\t\t\r\n\t\t\t\r\n\t\t\t\r\n<!--SUBTITLE_NAME:Motion-->\r\n<div align=center><span style=\"FONT-SIZE: 13pt; FONT-FAMILY: 'Times New Roman'\"><B>(Motion)<BR></B></span><div><BR>\r\n</b>\t\t\t </span></div> \r\n\t\t\t\t\r\n\t\t\t\t\t\r\n<!--MP_NAME:Mr Mah Bow Tan-->\r\n<div align=left><span style=\"FONT-SIZE: 13pt; FONT-FAMILY: 'Times New Roman'\"><p>&nbsp;</p><p></p><p>&nbsp;</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With the consent of Mdm Deputy Speaker and the general assent of Members present,</p>\r\n\r\n<p>&nbsp;</p>\r\n\r\n<p>&nbsp;&nbsp;&nbsp;&nbsp; Question put, and agreed to.</p>\r\n\r\n<p>&nbsp;</p>\r\n\r\n<p>&nbsp;&nbsp;&nbsp;&nbsp; Resolved,</p>\r\n\r\n<p>&nbsp;</p>\r\n\r\n<p>&nbsp;&nbsp;&nbsp;&nbsp; That the proceedings on the item of business under discussion be exempted at this day's sitting from the provisions of Standing Order No. 2.&nbsp;&ndash; [Mr Mah Bow Tan].</p>\r\n</span></div>\r\n\t\t\t\t\r\n\t\t\t\r\n\t\t\r\n       \r\n\t\r\n\r\n\t\r\n<!--SECTION_NAME:MOTIONS-->\r\n\r\n      \t\r\n\t\t\r\n\t\t\r\n</body></html>\r\n",
+  "expected_rows": [
+    [
+      null,
+      "(Motion)",
+      "UNCLASSIFIED"
+    ],
+    [
+      null,
+      "With the consent of Mdm Deputy Speaker and the general assent of Members present,",
+      "PROCEDURAL"
+    ],
+    [
+      null,
+      "Question put, and agreed to.",
+      "PROCEDURAL"
+    ],
+    [
+      null,
+      "Resolved, That the proceedings on the item of business under discussion be exempted at this day's sitting from the provisions of Standing Order No. 2. – [Mr Mah Bow Tan].",
+      "PROCEDURAL"
+    ]
+  ]
+}

@@ -298,7 +298,10 @@ _PROC_TEXT_LINE_RE = re.compile(r"^([_*]*)" + re.escape(PROC_TEXT_OPEN_TAG) + r"
 _RESOLVED_LINE_RE = re.compile(r"^[\s*_]*Resolved(?:,|[\s*_]*$)")
 _ADJOURNMENT_LINE_RE = re.compile(r"^[\s*_]*Adjourned accordingly")
 _SENTENCE_END_RE = re.compile(r"\.[\s_*]*$")
-_MAX_ADJOURNMENT_CONTINUATIONS = 6
+_RECORD_END_RE = re.compile(r"[.\]][\"'”’]*[\s_*]*$")
+_MAX_RECORD_CONTINUATIONS = 6
+_MIN_SPEECH_SENTENCE_WORDS = 8
+_SENTENCE_BREAK_RE = re.compile(r"[.?!]")
 
 
 _MARKDOWN_TITLE_SCAN_LINES = 12
@@ -709,7 +712,7 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
     speeches: list[ParsedSpeech] = []
     speaker_lines: list[str] = []
     is_body_started = False
-    adjournment_continuations = 0
+    record_continuations = 0
     trailing_lead_line_count = 0
     for line in markdown.splitlines()[start_of_speech_line + 1:]:
         stripped = line.strip()
@@ -721,9 +724,9 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
         proc_text = _get_proc_text(edge_unmarked)
         unmarked = edge_unmarked if proc_text is None else proc_text
         is_first_reading = proc_text is None and _FIRST_READING_RE.search(unmarked) is not None
-        if adjournment_continuations > 0:
+        if record_continuations > 0:
             speeches[-1].transcript += " " + unmarked
-            adjournment_continuations = 0 if _SENTENCE_END_RE.search(unmarked) else adjournment_continuations - 1
+            record_continuations = 0 if _RECORD_END_RE.search(unmarked) else record_continuations - 1
             continue
         is_resolved_line = _RESOLVED_LINE_RE.match(unmarked) is not None
         if not is_body_started and not is_resolved_line and (_MARKDOWN_HEADING_RE.match(stripped) or _WHOLE_BOLD_LINE_RE.match(stripped)):
@@ -731,7 +734,7 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
         non_speech_kind = _get_non_speech_kind(unmarked)
         if is_resolved_line or non_speech_kind is None:
             is_body_started = True
-            if proc_text is None and not is_first_reading:
+            if proc_text is None and not is_first_reading and not is_resolved_line:
                 speaker_lines.append(unmarked)
                 trailing_lead_line_count = trailing_lead_line_count + 1 if _is_first_reading_lead_line(stripped, unmarked) else 0
                 continue
@@ -744,9 +747,9 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
         if speaker_lines:
             speeches.extend(_build_speaker_lines_speeches(speaker, speaker_lines))
             speaker_lines = []
-        speeches.append(ParsedSpeech(speaker=None, transcript=unmarked, kind=SpeechKind.PROCEDURAL if proc_text is not None or is_first_reading else non_speech_kind))
-        if _ADJOURNMENT_LINE_RE.match(unmarked) and not _SENTENCE_END_RE.search(unmarked):
-            adjournment_continuations = _MAX_ADJOURNMENT_CONTINUATIONS
+        speeches.append(ParsedSpeech(speaker=None, transcript=unmarked, kind=SpeechKind.PROCEDURAL if proc_text is not None or is_first_reading or is_resolved_line else non_speech_kind))
+        if (_ADJOURNMENT_LINE_RE.match(unmarked) or is_resolved_line) and _RECORD_END_RE.search(unmarked) is None:
+            record_continuations = _MAX_RECORD_CONTINUATIONS
     if speaker_lines:
         speeches.extend(_build_speaker_lines_speeches(speaker, speaker_lines))
     return speeches
@@ -1198,6 +1201,15 @@ def get_fallback_speaker(markdown: str, start_of_speech_line: int, report_type: 
     return _get_fallback_speaker_from_parsed(markdown, parsed_speeches, _extract_mps_speaking(markdown), report_type, report_version)
 
 
+def _has_speech_sentence(transcript: str) -> bool:
+    return any(len(sentence.split()) >= _MIN_SPEECH_SENTENCE_WORDS for sentence in _SENTENCE_BREAK_RE.split(transcript))
+
+
+def _is_resolved_record_without_speech(speeches: list[ParsedSpeech]) -> bool:
+    is_resolved_record = any(speech.speaker is None and _RESOLVED_LINE_RE.match(speech.transcript) is not None for speech in speeches)
+    return is_resolved_record and not any(speech.speaker is not None and _has_speech_sentence(speech.transcript) for speech in speeches)
+
+
 def _is_addenda_signature(speeches: list[ParsedSpeech], index: int) -> bool:
     return (
         index + 1 < len(speeches)
@@ -1226,7 +1238,11 @@ def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type:
     speakers = _extract_mps_speaking(markdown)
     fallback_speaker = _get_fallback_speaker_from_parsed(markdown, parsed_speeches, speakers, report_type, report_version)
     if fallback_speaker is not None:
-        return _get_single_speaker_speeches(markdown, start_of_speech_line, fallback_speaker)
+        speeches = _get_single_speaker_speeches(markdown, start_of_speech_line, fallback_speaker)
+        # NOTE: a body that is only a Resolved record and its headings has no speech, so the collapse credits no one.
+        if _is_resolved_record_without_speech(speeches):
+            return [_build_current_speaker_speech(None, speech.transcript) if speech.speaker is not None else speech for speech in speeches]
+        return speeches
     if parsed_speeches:
         return parsed_speeches
     if report_type == ReportType.PRESIDENT_ADDRESS:
