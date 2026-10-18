@@ -850,4 +850,4 @@ Round 5 read after write 8, and write 9 came later. Four of its 60 reports (3786
 
 - The 66 held reports keep their older rows. 23268 is mixed and 38222 is not better, 38147 equals its parse, and each of the rest needs a parser fix or a ruling.
 - Both detectors last ran on 18 October, before write 8 and write 9 shipped.
-- The other items under write 8's "Still open" stand: 40585 (row 721650), "theSecond" glue in 13946, kind issues, and oldest-first search on the most common words.
+- The other items under write 8's "Still open" stand: 40585 (row 721650), "theSecond" glue in 13946 and kind issues. Oldest-first search on the most common words is closed: the sitting date on `speech` and its rum index reached REMOTE on 18 October ([ADR 0010](../adr/0010-speech-sitting-date-set-by-each-writer.md)), and there "government" oldest first takes 0.43 s, down from 34.7 s.

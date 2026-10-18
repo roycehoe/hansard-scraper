@@ -58,6 +58,7 @@ One row per individual utterance within a report. Speeches are extracted from `m
 | `ordinal` | int | Position of this speech within the report, starting from 0. |
 | `speaker` | str | Speaker name as it appears in the transcript, with title prefix stripped. `NULL` if attribution failed. |
 | `transcript` | str | Text of the speech in markdown. |
+| `sitting_date` | datetime | The report's `sitting_date`, set by the writer that builds the row (see [ADR 0010](adr/0010-speech-sitting-date-set-by-each-writer.md)). Never `NULL`. |
 | `report_id` | int | FK → `Report.id`. |
 | `speaker_id` | int | FK → `Speaker.id`. `NULL` where the match has not been resolved. |
 
