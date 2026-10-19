@@ -41,7 +41,7 @@ AI models did the reading. Claude Sonnet read the samples and judged the compari
 
 - A refinement loop. Each round drew about 400 speeches at random, stratified by report type, by era and by the older and newer SPRS systems, and read each one against its source page. The defects it found were fixed in the parser, the stored speeches were rebuilt, and the next round drew a fresh sample. The loop stopped after five rounds, when the 95% upper bound on text lost or credited to the wrong person fell below 1%. It now stands at about 0.1% ([loop log](docs/report/speech-fidelity-loop.md)).
 - A blind comparison. 191 reports, drawn across 49 groups of era and report type, were matched to the same debates on sgparliament.com. The judges saw the two sites as "Site A" and "Site B" in random order and said who each passage belongs to.
-- An audit of the links. On 17 October 2026 an audit read 406 linked speeches across seven eras and found 404 credited to the right person ([audit](docs/report/north-star-audit-2026-10-17.md)).
+- A check of the links. On 19 October 2026 a check read 464 linked speeches across eight eras, the 15th Parliament among them, and found 463 credited to the right person ([check](docs/report/link-check-2026-10-19.md)). The one miss is a caption no member spoke. An audit on 17 October found 404 of 406 ([audit](docs/report/north-star-audit-2026-10-17.md)).
 
 ## How it compares
 
@@ -64,7 +64,7 @@ The 99.4% and 95.5% credit each Addendum to the President's Address to the minis
 - 132 reports have no text. Most record the President's assent to bills, which SPRS lists without text from September 2012. Every other report has its speeches.
 - About 16,000 speeches have a speaker label but no link to a member. About 13,000 of them are "The Chairman" in reports that do not say who was in the chair ([decision record](docs/adr/0002-role-holder-attribution.md)). Most of the rest are collective labels such as "An hon. Member".
 - 66 reports still hold speeches split by an older version of the parser.
-- No one has checked the 15th Parliament's speeches yet.
+- The 15th Parliament's links are checked, but the refinement loop has not read how its text is split into speeches.
 - Speeches carry no Hansard column number.
 
 [docs/data-dictionary.md](docs/data-dictionary.md) has the fields and more caveats, and [docs/data-loss-register.md](docs/data-loss-register.md) lists every step that drops or changes source text.
