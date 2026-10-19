@@ -66,7 +66,6 @@ The 99.4% and 95.5% credit each Addendum to the President's Address to the minis
 - 66 reports still hold speeches split by an older version of the parser.
 - No one has checked the 15th Parliament's speeches yet.
 - Speeches carry no Hansard column number.
-- Some report titles show garbled characters copied from the source, such as `â€™` for an apostrophe. The report text is correct.
 
 [docs/data-dictionary.md](docs/data-dictionary.md) has the fields and more caveats, and [docs/data-loss-register.md](docs/data-loss-register.md) lists every step that drops or changes source text.
 
