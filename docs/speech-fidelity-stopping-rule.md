@@ -1,4 +1,4 @@
-This is the tracked copy of `plans/speech-fidelity-loop/stopping-rule.md` as of 15 October 2026. Later edits go here, not in the plans copy. Amended 16 October 2026; see "Amendments" at the end.
+This is the stopping rule as of 15 October 2026. Amended 16 October 2026; see "Amendments" at the end.
 
 # Speech fidelity loop: stopping rule
 
@@ -105,14 +105,14 @@ These came out of the sweep study. They are separate changes, made after the loo
 
 ### 16 October 2026
 
-Decisions 9 and 10 of `plans/speech-fidelity-overnight-brief.md`. The user approved them on 15 October 2026 after the independent decision review (`plans/speech-fidelity-loop/decision-review.md`, finding 3).
+The user approved these changes on 15 October 2026 after an independent review of the loop's decisions, whose finding 3 is that the Tier A gate can pass on undercounted reads.
 
 1. **Tier A and Tier B are weighted by characters.** A wrong speaker on one 3,000-word row counted the same as one on a one-line row. Plan v2 of write #3 inserts 13,051 rows, mostly short no-speaker rows that are easy to score as correct, and they dilute a row rate (decision review, finding 3). The character rate gates, and the row rate is reported beside it. Tier C stays per row and has no gate.
 2. **Every reader does a full source pass.** The rule is in "How to measure".
 3. **A first reading credited to its presenter is Tier A.** It was accepted in round 2 by the aggregator's ruling. It is now a boundary case under Tier A.
 4. **Wording.** "Stage direction" is now "chamber event", the name of the CHAMBER_EVENT kind in ADR 0009. A "Head NNNN -" preamble fragment is Tier C.
 
-Round 2 under both rules. The row columns are from `plans/speech-fidelity-loop/r2/AGGREGATE.md`. The character rows use the same sample, normalisation and bootstrap, with each row counted by its countable characters.
+Round 2 under both rules. The row columns are from the round 2 aggregate. The character rows use the same sample, normalisation and bootstrap, with each row counted by its countable characters.
 
 | Tier | Gate | Row rate as scored in round 2 | Row rate, first readings Tier A | Character rate, first readings Tier A |
 |---|---|---|---|---|

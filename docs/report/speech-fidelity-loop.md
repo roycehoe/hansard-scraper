@@ -52,7 +52,7 @@ On 14 October at 21:08, one transaction applied the change to 3,315 reports and 
 | Procedural line now has no speaker, under the existing non-speech rule | 6 |
 | Unexplained | 0 |
 
-No attendance rows changed. Stage 8 set no new links: 0 of 156 attendance records and 0 of 82,452 speech records. The 57 sittings whose markdown changed by more than whitespace are listed outside the repo, in `plans/speech-fidelity-loop/r0/sitting_other.txt`.
+No attendance rows changed. Stage 8 set no new links: 0 of 156 attendance records and 0 of 82,452 speech records. The markdown of 57 sittings changed by more than whitespace.
 
 Four groups of reports were held back. The groups overlap.
 - 121 stale reports, whose stored rows already differ from the current parse. They include the reports the 13 October guard refused and the hand-edited ones.
@@ -87,7 +87,7 @@ Source-typo hits went from 6,811 to 6,842 on the dictionary test and stayed at 3
 
 The `__Dr Teo Ho Pin` class of label (vision gap 5) is closed except for one row. After the write, 74 rows in 11 distinct speaker strings start with `_`. Ten of those strings are italic headings such as `_Annex B - Supplementary information_`, not names. The one name is `_S_ hawn Huang Wei Zhong (Jurong)`, on 2 rows.
 
-A `pg_dump` of report, speech, attendance and sitting from before the write is kept outside the repo, in `plans/speech-fidelity-loop/backup/`.
+A `pg_dump` of report, speech, attendance and sitting from before the write is kept outside the repo.
 
 ## Round 1: header tables, escapes, ampersands and link URLs
 
@@ -199,7 +199,7 @@ Attribution after the write, Parliaments 0 to 11: 537,701 / 550,163 = 97.73% (AD
 
 ### Round 2
 
-The seed is 20261016. The sample holds 332 reports and 6,277 rows. 316 reports and 5,934 rows were read now, by 20 Sonnet cold readers. 16 reports wait for write 3. The aggregate (`plans/speech-fidelity-loop/r2/AGGREGATE.md`, under the row rule of the time) put Tier A at 1.71% with an upper bound of 2.31%, Tier B at 1.72% (2.60%) and Tier C at 5.62% (7.20%). Both gates fail. The bound is the report bootstrap of the [stopping rule](../speech-fidelity-stopping-rule.md). The Method section above describes the Clopper-Pearson bound the loop started with.
+The seed is 20261016. The sample holds 332 reports and 6,277 rows. 316 reports and 5,934 rows were read now, by 20 Sonnet cold readers. 16 reports wait for write 3. The aggregate (under the row rule of the time) put Tier A at 1.71% with an upper bound of 2.31%, Tier B at 1.72% (2.60%) and Tier C at 5.62% (7.20%). Both gates fail. The bound is the report bootstrap of the [stopping rule](../speech-fidelity-stopping-rule.md). The Method section above describes the Clopper-Pearson bound the loop started with.
 
 | Tier A class | Share of Tier A |
 |---|---|
@@ -272,7 +272,7 @@ Parliaments 12 to 14 under plan v2: Parliament 12 at 98.90 / 95.46 / 98.84, Parl
 
 ### The decision review
 
-An independent review of the docs, the decisions and the parser (`plans/speech-fidelity-loop/decision-review.md`, 15 October) made 13 findings. The user approved the first five as changes A to E. Findings 6 to 13 are out of scope for write 3 and stay open.
+An independent review of the docs, the decisions and the parser (15 October) made 13 findings. The user approved the first five as changes A to E. Findings 6 to 13 are out of scope for write 3 and stay open.
 
 | Finding | Change |
 |---|---|
@@ -294,7 +294,7 @@ The user also ruled that a first reading credited to its presenter is Tier A. Un
 
 ### The overnight run
 
-The user was asleep for seven hours. One Opus orchestrator ran the night from `plans/speech-fidelity-overnight-brief.md`, with Sonnet workers for reading and implementation and Opus for checkers, plans, writes and verdicts. The brief set the limits: no speech-row ship to the remote, no push, and no waiting on the user. A call outside the brief took the conservative path and went into the morning report.
+The user was asleep for seven hours. One Opus orchestrator ran the night from a written brief, with Sonnet workers for reading and implementation and Opus for checkers, plans, writes and verdicts. The brief set the limits: no speech-row ship to the remote, no push, and no waiting on the user. A call outside the brief took the conservative path and went into the morning report.
 
 Changes A to E went in as new commits on top of master, with no history rewrite.
 
@@ -378,7 +378,7 @@ Detectors, pipeline hits per million tokens, against the source typo rate:
 
 Both detectors are now under their source typo rates; the punctuation detector was over it before. Pipeline hits fall from 2,038 to 632 (dictionary) and from 812 to 235 (punctuation) on 64.2 million tokens.
 
-The ship candidate is plan v4 on `6e1922b`: 12,337 reports applied, 162 held, 627,303 speech updates (599,528 of them ordinal and kind only), 404,891 kind-only updates, 8,254 deletes, 12,388 inserts, 5,584 report and 44 sitting markdowns, and 45 junk attendance rows. It equals plan v3 on `052540d` plus the 12 newer-system reports that `6e1922b` fixes (it trims a space left inside a proc text tag). Both plans were rehearsed in full; the figures above are v4's, the detectors and the cause tables v3's, which differ by those 12 reports at most. The plan and the morning commands are in `plans/speech-fidelity-loop/write3/`. Over the 41,697 cached reports, before change E, the parser gives SPEECH 968,296 rows, PROCEDURAL 43,089, UNCLASSIFIED about 25,000, CHAMBER_EVENT 6,133, EDITORIAL_NOTE 2,534, DOCUMENT_TEXT 1,793 and HEADING 1,429. The largest UNCLASSIFIED classes are division lists, oath-roll names and unanchored procedural lines. `0969500` changed no speaker and no transcript on any of those reports.
+The ship candidate is plan v4 on `6e1922b`: 12,337 reports applied, 162 held, 627,303 speech updates (599,528 of them ordinal and kind only), 404,891 kind-only updates, 8,254 deletes, 12,388 inserts, 5,584 report and 44 sitting markdowns, and 45 junk attendance rows. It equals plan v3 on `052540d` plus the 12 newer-system reports that `6e1922b` fixes (it trims a space left inside a proc text tag). Both plans were rehearsed in full; the figures above are v4's, the detectors and the cause tables v3's, which differ by those 12 reports at most. Over the 41,697 cached reports, before change E, the parser gives SPEECH 968,296 rows, PROCEDURAL 43,089, UNCLASSIFIED about 25,000, CHAMBER_EVENT 6,133, EDITORIAL_NOTE 2,534, DOCUMENT_TEXT 1,793 and HEADING 1,429. The largest UNCLASSIFIED classes are division lists, oath-roll names and unanchored procedural lines. `0969500` changed no speaker and no transcript on any of those reports.
 
 Rows by kind, whole table, after the rehearsal of plan v4: SPEECH with a speaker 963,407, SPEECH with no speaker 488, PROCEDURAL 46,868, CHAMBER_EVENT 5,800, EDITORIAL_NOTE 2,286, DOCUMENT_TEXT 2,584, HEADING 2,570, UNCLASSIFIED 20,579 and NULL 4,146.
 
@@ -459,7 +459,7 @@ Each fix was checked against the parser before it, first on every report that ca
 | 2 | `acd8707` | Procedural lines that miss an anchor | 665 lines in 392 reports (23,984 characters) and 119 record rows after them in 39 reports (7,175) | 29 near-miss rows, listed below | 437 reports change. 0 words lost or gained. 784 rows lose their speaker and 88 change kind only |
 | 3 | `2b74a2b` | First readings credited to their presenter | 2,090 rows, 531,677 characters: older first readings 2,018 rows and 522,792 characters, related lines 23 and 704, newer system 49 and 8,181 | None in the formula; 12 reports keep a credited row, listed below | 2,144 reports change. 355 words regained in 29 reports, none lost. 2,054 rows become no-speaker PROCEDURAL one to one, 29 pairs merge, 7 rows split, 68 change kind only |
 
-Fix 1 gives a page-reference note ("*Cols. 3929-3930.") and a numbered note beside it kind EDITORIAL_NOTE, and cuts a division record that the source printed straight after a member's words ("Division, Sir. The House divided: ...") into its own PROCEDURAL row. Fix 2 widens the procedural anchors to their misspellings and variants, so "Amendment by leave, withdrawn." without its comma (270 rows in 107 reports) and a bare "Question put." (48 rows in 46 reports) stop being credited. Fix 3 uses the formula of a first reading as the stand-in for the `(proc text)` tag the older system never had. The formula line, the bill's title quote and any time stamp or heading before it become one no-speaker PROCEDURAL row, and text after the formula stays with the presenter. In 29 newer-system reports the presenter was bold and read as a label, which had dropped the words "presented by"; those words come back. The sources for all counts are `plans/speech-fidelity-loop/cycle4/fix1/COUNTS.md`, `fix2/COUNTS.md` and `fix3/`.
+Fix 1 gives a page-reference note ("*Cols. 3929-3930.") and a numbered note beside it kind EDITORIAL_NOTE, and cuts a division record that the source printed straight after a member's words ("Division, Sir. The House divided: ...") into its own PROCEDURAL row. Fix 2 widens the procedural anchors to their misspellings and variants, so "Amendment by leave, withdrawn." without its comma (270 rows in 107 reports) and a bare "Question put." (48 rows in 46 reports) stop being credited. Fix 3 uses the formula of a first reading as the stand-in for the `(proc text)` tag the older system never had. The formula line, the bill's title quote and any time stamp or heading before it become one no-speaker PROCEDURAL row, and text after the formula stays with the presenter. In 29 newer-system reports the presenter was bold and read as a label, which had dropped the words "presented by"; those words come back.
 
 ### The release
 
@@ -469,7 +469,7 @@ Write 4 rebuilds 42 reports, as the user approved on 16 October 2026: the 41 exp
 
 38719 is a bill from Parliament 0 whose stored rows come from write 2. Round 4's early read found three paragraphs in it cut at column markers, and they put Tier B over its gate. Its rebuild is explained. Parser `6770752` run on the stored markdown reproduces all 438 stored transcripts exactly, so no hand edit shows, and the speakers differ only on six rows of the registered 14 October repair. The rebuild goes from 438 rows to 372 and from 157,545 to 157,613 countable characters. It joins 71 paragraphs cut at column markers (mid-sentence cuts fall from 68 to 8, the three round 4 found among them), cuts five inline "[Interruption]" directions into chamber-event rows (73 characters leave four members), removes three escapes and two glues, and keeps one pre-speaker line. No speech changes speaker. 15 stored words differ (13 escape variants and 2 glue splits) and none is lost.
 
-One change in 38719 has no checker rule and is an approved exception. A "Column: 614" marker leaves a "****" line, and the parser splits one paragraph of Mr David Marshall into two rows, both his. The stored rows joined with one space equal the new rows joined with one space. The user accepted this one new cut for the 71 the rebuild joins. The stale-rebuild checker refuses 7 of 38719's 70 blocks: that split, the five inline-direction cuts, and "Mr Rajah resumed his seat." turned from a label into a no-speaker chamber event, which fits ADR 0007. The plan records the exception, and the exception file is `plans/speech-fidelity-loop/cycle4/write4/r2/approved_exception_38719.json`.
+One change in 38719 has no checker rule and is an approved exception. A "Column: 614" marker leaves a "****" line, and the parser splits one paragraph of Mr David Marshall into two rows, both his. The stored rows joined with one space equal the new rows joined with one space. The user accepted this one new cut for the 71 the rebuild joins. The stale-rebuild checker refuses 7 of 38719's 70 blocks: that split, the five inline-direction cuts, and "Mr Rajah resumed his seat." turned from a label into a no-speaker chamber event, which fits ADR 0007. The plan records the exception.
 
 ### The plan and the rehearsal
 
@@ -477,7 +477,7 @@ Write 4 is a delta on the write 3 state, built on master `2b74a2b` against the r
 
 The plan applies 2,923 reports (2,881 by the fixes and 42 released) and holds 121, none of them a new write 4 hold. The 121 are the 120 of write 3's 162 that are not released, and 24248. It writes 8,729 speech updates (3,234 of them ordinal only), 361 kind-only updates, 443 deletes, 66 inserts and 25 report markdowns. Of the 5,495 updates that change content, fix 1 accounts for 1,061, fix 2 for 767, fix 3 for 2,089, fix 1 and fix 2 together for 86, fix 2 and fix 3 together for 8, and the release for 1,484. The release also writes 3,205 ordinal-only updates, 414 deletes, 54 inserts and all 25 markdowns. In the plan fix 1 is a cause in 405 reports, fix 2 in 428 and fix 3 in 2,141. `verify_stack4.py` finds no problems, and 1,048,351 speech rows remain, 2,275 of them with kind NULL.
 
-The rehearsal ran on clones of the replica on 16 October (17:40 to 22:37). `apply_fix4` committed with 0 unexplained rows. All eight drift tests (delete, insert, kind content, kind third kind, ordinal, report markdown, update, row count) aborted and rolled back. The shipper rehearse and commit passed 56 checks each, the two clones ended equal by `table_hashes.sql` with 0 diff lines, the replica was unchanged, and the applied clone equals `hansard_w4`. The shipper is `bin/ship_delta6_stack4.py`, a copy of `ship_delta6.py` that stages each row's before kind, because write 4 moves 361 rows from one kind to another and `ship_delta6.py` assumes NULL before kinds. The upload is 4.7 MB against 375 MB for write 3. The lock held 0.9 s on commit and 2.9 s on rehearse on a local clone. The planner expects about 40 s on the remote from write 3's measured rates, and under two minutes with the hotspot's latency. The run needs about 1 GB of disk and peaked at 1.4 GB of memory. It shipped at 07:48 on 17 October with 54 checks ok and a 14 s lock. The commands are in `plans/speech-fidelity-loop/cycle4/SHIP_w4.md`.
+The rehearsal ran on clones of the replica on 16 October (17:40 to 22:37). `apply_fix4` committed with 0 unexplained rows. All eight drift tests (delete, insert, kind content, kind third kind, ordinal, report markdown, update, row count) aborted and rolled back. The shipper rehearse and commit passed 56 checks each, the two clones ended equal by `table_hashes.sql` with 0 diff lines, the replica was unchanged, and the applied clone equals `hansard_w4`. The shipper is `bin/ship_delta6_stack4.py`, a copy of `ship_delta6.py` that stages each row's before kind, because write 4 moves 361 rows from one kind to another and `ship_delta6.py` assumes NULL before kinds. The upload is 4.7 MB against 375 MB for write 3. The lock held 0.9 s on commit and 2.9 s on rehearse on a local clone. The planner expects about 40 s on the remote from write 3's measured rates, and under two minutes with the hotspot's latency. The run needs about 1 GB of disk and peaked at 1.4 GB of memory. It shipped at 07:48 on 17 October with 54 checks ok and a 14 s lock.
 
 Parliaments 0 to 11 first, then 12 to 14, with write 3 as stored beside the write 4 rehearsal.
 
@@ -549,7 +549,7 @@ A pooled report counts as touched, and its old verdict is dropped, when its wind
 | Tier B | 0.84% | 1.10% | 0.75% | 1.03% | 2% or less, by characters, and both detectors under their source rates: passes |
 | Tier C | 4.26% | 5.31% | 1.92% | 2.72% | None |
 
-The pooled view holds 672 reports and 12,122 rows. On tranche 1 alone (548 reports, 9,824 rows) Tier A is 0.06% (bound 0.09%) by rows and 0.05% (0.09%) by characters, and Tier B is 0.83% (1.21%) and 0.68% (1.03%). The heaviest reports for Tier A by character points are 38079 (0.018), 497 (0.010), 15646 (0.004), 258 (0.004), 37684 (0.003) and 38610 (0.002). Tier B among round 4's own reads is split words (7 rows in 6 reports, 0.179 points), glued words (6 rows in 4 reports, 0.081) and paragraphs cut at column markers (14 rows in 4 reports, 0.018). Readers flagged 199 of 9,043 round 3 and round 4 rows for kind (2.20%), which gates nothing. The aggregate is `plans/speech-fidelity-loop/cycle4/r4/aggregate_r4.md`.
+The pooled view holds 672 reports and 12,122 rows. On tranche 1 alone (548 reports, 9,824 rows) Tier A is 0.06% (bound 0.09%) by rows and 0.05% (0.09%) by characters, and Tier B is 0.83% (1.21%) and 0.68% (1.03%). The heaviest reports for Tier A by character points are 38079 (0.018), 497 (0.010), 15646 (0.004), 258 (0.004), 37684 (0.003) and 38610 (0.002). Tier B among round 4's own reads is split words (7 rows in 6 reports, 0.179 points), glued words (6 rows in 4 reports, 0.081) and paragraphs cut at column markers (14 rows in 4 reports, 0.018). Readers flagged 199 of 9,043 round 3 and round 4 rows for kind (2.20%), which gates nothing.
 
 Done. The stopping rule's three conditions hold on round 4. Tier A's weighted upper bound by characters is 0.08%, under the 1% gate. Tier B's is 1.03%, under the 2% gate, and both detectors are under their source rates (4.27 and 1.98 per million tokens against 106.54 and 6.23). Every remaining class is listed with its corpus count under "Found and not fixed" below and in `docs/vision.md`. The readers worked on the write 4 rehearsal copy, and on the replica for 114 tranche 2 reports. Write 4 shipped unchanged, and `build_r4.py verify` on the replica then found the 672 pooled reports unchanged.
 
@@ -805,7 +805,7 @@ The one Tier A row that stays is 40585 (row 721650). Single-reader recall is 90.
 
 Kind is not scored. 50 of the 8,760 round 5 rows (0.57%) carry a kind issue: 22 UNCLASSIFIED rows that read as PROCEDURAL, 9 as HEADING and 5 as DOCUMENT_TEXT, 7 DOCUMENT_TEXT rows that read as HEADING, and 7 rows of other kinds. The readers named titles stored as DOCUMENT_TEXT, and oath rolls and "Group N" captions stored as UNCLASSIFIED.
 
-Done. The stopping rule's gates hold in both groups. Tier A's bound by characters is 0.095% for Parliaments 0 to 11 and 0.003% for Parliaments 12 to 14, under 1%. Tier B's is 0.984% and 0.045%, under 2%. Both detectors, as last run, are under their source rates. The aggregate is `plans/done-tests/fidelity/aggregate_r5.md`.
+Done. The stopping rule's gates hold in both groups. Tier A's bound by characters is 0.095% for Parliaments 0 to 11 and 0.003% for Parliaments 12 to 14, under 1%. Tier B's is 0.984% and 0.045%, under 2%. Both detectors, as last run, are under their source rates. The aggregate is a bootstrap of 2,000 replicates over the reads of rounds 2 to 5.
 
 ### Still open
 

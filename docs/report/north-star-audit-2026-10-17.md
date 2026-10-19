@@ -1,6 +1,6 @@
 # North star audit, third pass, 17 October 2026
 
-This audit tests the project against the done tests in `plans/north-star-done-brief.md` (local, gitignored). Those tests cover the whole corpus up to 15 April 2025, the end of Parliament 14, and count the hansard app as part of the goal. An Opus auditor measured the database and both repos. It wrote its verdict at 17:15 +08, before it read `docs/vision.md` "Measuring progress" or the 13 October audit, and then reconciled. Sonnet readers did the hand checks. The orchestrating session ran the SPRS crawl and checked the readers' work.
+This audit tests the project against one done test for each of the six objectives in `docs/vision.md`, plus tests for stored rows, the vision text and the app. Those tests cover the whole corpus up to 15 April 2025, the end of Parliament 14, and count the hansard app as part of the goal. An Opus auditor measured the database and both repos. It wrote its verdict at 17:15 +08, before it read `docs/vision.md` "Measuring progress" or the 13 October audit, and then reconciled. Sonnet readers did the hand checks. The orchestrating session ran the SPRS crawl and checked the readers' work.
 
 Figures come from `hansard_replica` on 17 October 2026 between 16:46 and 17:19 +08, after write #7. The 750 sitting-level Deputy Speaker links landed on the replica between about 16:48 and 17:13, so every figure that depends on links was rerun from 17:16 to 17:19. Scripts and raw output are in the session scratchpad and are not kept.
 
@@ -61,7 +61,7 @@ Ordinal-only differences come from deletes that never renumbered: 2,421 reports 
 False:
 
 1. "Entity tables ... no fields dropped, no values changed". Titles are rewritten, sitting numbers are filled from the header table, and empty strings become NULL (register rows 36, 37 and 83).
-2. "Re-parsing is cheap: drop the derived rows, rerun the populate step". Stages skip by existence (`populate/speeches.py:25-27`), dropping rows loses ids and links, and real re-parses run through `plans/speech-fidelity-loop/bin`.
+2. "Re-parsing is cheap: drop the derived rows, rerun the populate step". Stages skip by existence (`populate/speeches.py:25-27`), dropping rows loses ids and links, and real re-parses run through the speech fidelity loop's write tools.
 3. "fetch → parse → enrich". `script.py:9-15` calls none of stages 2 to 4.
 4. "Parsing statistics are exported after every run". Nothing exports them.
 5. "Each cycle is reviewed before merging". There is no merge, because commits go to master.

@@ -102,6 +102,6 @@ It was excluded in code from the start, but no written decision exists, and late
 - For sprs3 topics, send `report_id.rstrip("#")` and read `resultHTML.content`.
 - Decide where sprs3 text goes in the raw table. `htmlContent` is null in sprs3 responses, so storing `resultHTML.content` in `content` is a transformation the raw-first rule needs to allow.
 - Check the speech parser against sprs3 HTML before trusting any speech counts. The sample uses inline `<strong>Name</strong>` inside numbered question paragraphs. `docs/parsing.md` covers P12 format changes up to 2012, not this markup.
-- Optional cross-check: `takesSectionVOList[].content` from the sitting report carries the same debate text per section. The `sitting.sections` column is null in all 1,719 rows (see `plans/duplicate-reports.md`), even though the API returns sections for sprs3 dates.
+- Optional cross-check: `takesSectionVOList[].content` from the sitting report carries the same debate text per section. The `sitting.sections` column is null in all 1,719 rows, even though the API returns sections for sprs3 dates.
 
 Sample size: I probed 2 sprs3 topics (P14 8-4-2025 and P12 10-9-2012), 1 sprs2 topic, and 2 sitting dates. I did not test a long debate or a bill reading in sprs3.

@@ -169,7 +169,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `validate_api_field_mapping.py`: checks that every non-null field in a live or synthetic API body survives the schema and the ORM mapping
 - `load_parliament_speakers.py`: stores the members of one Parliament (`--parliament N`) that the `Speaker` table lacks, from parliament.gov.sg, with the overrides of `data/speaker_overrides.json`; a dry run unless `--commit`
 
-`plans/speech-fidelity-loop/bin/` holds the tools for rewriting stored speech rows: `dryrun_fix.py` and `dryrun_subset.py` compare the parser against a frozen previous copy, `plan_*.py` build the update plan, `apply_fix*.py` and `ship_delta*.py` write it. Run them only for a planned write.
+The speech fidelity loop has its own tools for rewriting stored speech rows: `dryrun_fix.py` and `dryrun_subset.py` compare the parser against a frozen previous copy, `plan_*.py` build the update plan, `apply_fix*.py` and `ship_delta*.py` write it. Run them only for a planned write.
 
 Scripts log through `logs.logger`; the one script whose stdout is data (`find_presiding_officers.py`, a paste-ready dict literal) prints that output under `# noqa: T201`. `find_unmatched_attendees.py` writes its JSON template to the path given by `--json`.
 

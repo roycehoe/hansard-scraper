@@ -2,7 +2,7 @@
 
 On 14 October 2026 the production database received the text, speeches, sitting details and attendance for sittings from 10 September 2012 to 8 April 2025 (Parliaments 12 to 14). This file records what was decided, how the writes were made safe, what each step wrote, and which judgement calls the owner approved. The evidence it cites is in [post-2012-load/](post-2012-load/).
 
-The load ran in steps b, c, e, f, g and h against the database, then steps i and k for the documents. Step a (gateways and the newer-system fetch), step d (parser change) and step j (ADRs) were code and docs commits before the first write. The plan and brief that drove the load sit in the gitignored `plans/` folder, so the decisions are repeated here. Timestamps in [RUN_LOG.txt](post-2012-load/RUN_LOG.txt) are UTC; the local date was 14 October.
+The load ran in steps b, c, e, f, g and h against the database, then steps i and k for the documents. Step a (gateways and the newer-system fetch), step d (parser change) and step j (ADRs) were code and docs commits before the first write. The decisions that drove the load are repeated here. Timestamps in [RUN_LOG.txt](post-2012-load/RUN_LOG.txt) are UTC; the local date was 14 October.
 
 Related records: [ADR 0001](../adr/0001-attribution-denominator.md), [ADR 0002](../adr/0002-role-holder-attribution.md), [ADR 0003](../adr/0003-newer-system-raw-mapping.md), [post-2012-text.md](post-2012-text.md), [post-2012-sections-gap.md](post-2012-sections-gap.md), [vision.md](../vision.md) and the "Post-2012 load, 2026-10-14" section of [speech-speaker/progress.txt](../speech-speaker/progress.txt).
 

@@ -44,7 +44,7 @@ Enable the schedule only after the Parliament 15 backfill (see "The Parliament 1
 
 Every request to SPRS goes through the crawl pacer in `gateway/http.py`. It sends one request at a time, at least 2 seconds apart, retries included, with the user agent `hansard-scraper (+hansard@fancybinary.sg)`.
 
-The gap is the `CRAWL_GAP_SECONDS` setting, 2 by default, which is the gap the letter to Parliament promises. The scheduled job keeps the default. The Parliament 15 backfill of 19 October 2026 ran at 2 seconds until September 2025 was stored, then at 1 second on Royce's instruction (`CRAWL_GAP_SECONDS=1`).
+The gap is the `CRAWL_GAP_SECONDS` setting, 2 by default, which is the crawl rate the project commits to. The scheduled job keeps the default. The Parliament 15 backfill of 19 October 2026 ran at 2 seconds until September 2025 was stored, then at 1 second on Royce's instruction (`CRAWL_GAP_SECONDS=1`).
 
 A daily run sends:
 
@@ -162,7 +162,7 @@ A local run sends live requests to SPRS at the crawl rate, so start one only whe
 
 ## The Parliament 15 backfill
 
-The backfill runs after the letter is sent. All of it runs supervised with the owner role, not `hansard_refresh`. The member load inserts into `speaker`, and stage 9 inserts into `person` and sets `speaker.person_id`, and the write role has no grant for any of that.
+The backfill runs as a separate, later step, not as part of the scheduled refresh. All of it runs supervised with the owner role, not `hansard_refresh`. The member load inserts into `speaker`, and stage 9 inserts into `person` and sets `speaker.person_id`, and the write role has no grant for any of that.
 
 1. `python scripts/load_parliament_speakers.py --parliament 15`, a dry run. Review the members it lists, then run it again with `--commit`.
 2. `python -m scripts.load_heads_of_state`, supervised. It adds the President's Parliament 15 row, and stage 9 then gives that row its `person_id`.
@@ -200,7 +200,7 @@ The API's role gets a column grant that leaves out `halt_reason` and `failure_re
 
 ## For batch E
 
-The contract the API reads, from "For batch E" in `plans/launch-build-d2a.md`, with the read grant of "Write role SQL".
+The contract the API reads, with the read grant of "Write role SQL".
 
 - **Columns.** As in "`refresh_run` columns": `id` integer primary key; the count columns, each `integer NOT NULL`: `website_responses_added`, `sitting_date_responses_added`, `sittings_added`, `reports_added`, `speeches_added`, `speeches_linked`, `speeches_named_unlinked`, `attendances_added`, `attendances_linked`, `reports_held_without_text`, `reports_without_speech_rows`, `reports_rechecked`, `reports_changed`; `latest_sitting_date_with_text` `date` NULL; `figures` `jsonb` NULL; `halt_reason` `text` NULL; `failure_reason` `text` NULL; `started_at` `timestamptz NOT NULL`; `finished_at` `timestamptz` NULL; `status` `text NOT NULL`, with the check `status IN ('RUNNING', 'SUCCEEDED', 'HALTED', 'FAILED')`; index `ix_refresh_run_started_at`.
 - **Revision.** `b8e2f4a61c03`, down revision `c93f77e499cc`.

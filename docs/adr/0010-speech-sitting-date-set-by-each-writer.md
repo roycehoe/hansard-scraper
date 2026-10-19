@@ -7,7 +7,7 @@ Context. Oldest-first word search ordered every match by its report's sitting da
 Decision. `speech.sitting_date` has the type of `report.sitting_date` (`timestamp without time zone`) and is NOT NULL. Each writer sets it from the report it builds rows for:
 
 - stage 4 and `scripts/apply_coverage_refill.py` build their rows with `services/speech.py::build_speeches`, which takes the date from the report;
-- the speech-fidelity write tools insert with raw SQL, so their next copies (`plans/speech-fidelity-loop/cycle10/bin/apply_fix10.py` and `ship_delta10.py`) read the date from `report` and carry it to the target.
+- the speech-fidelity write tools insert with raw SQL, so their next copies (`apply_fix10.py` and `ship_delta10.py`) read the date from `report` and carry it to the target.
 
 No database trigger fills it. A writer that forgets the column fails on the NOT NULL constraint at its first insert, so the mistake is loud and nothing wrong is stored. Older copies of the write tools (cycle 9 and earlier) insert without the column and now fail the same way, which is the intended outcome for a tool built against the old schema.
 
