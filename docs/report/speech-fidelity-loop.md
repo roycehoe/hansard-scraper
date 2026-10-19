@@ -851,3 +851,34 @@ Round 5 read after write 8, and write 9 came later. Four of its 60 reports (3786
 - The 66 held reports keep their older rows. 23268 is mixed and 38222 is not better, 38147 equals its parse, and each of the rest needs a parser fix or a ruling.
 - Both detectors last ran on 18 October, before write 8 and write 9 shipped.
 - The other items under write 8's "Still open" stand: 40585 (row 721650), "theSecond" glue in 13946 and kind issues. Oldest-first search on the most common words is closed: the sitting date on `speech` and its rum index reached REMOTE on 18 October ([ADR 0010](../adr/0010-speech-sitting-date-set-by-each-writer.md)), and there "government" oldest first takes 0.43 s, down from 34.7 s.
+
+## Round 6: Parliament 15 (20 October)
+
+The Parliament 15 backfill of 19 October added 4,803 reports and 63,909 speech rows on REMOTE. The write 8 parser at `45b0a8a` parsed them. They arrived after round 5 ended, so no earlier round read them. Round 6 is the first full round for Parliament 15, sized and scored as round 5 was, not a sixth cycle for Parliaments 0 to 14. It reads REMOTE, because `hansard_replica` holds no Parliament 15 rows, and it writes nothing. The tools are round 5's, copied to `plans/done-tests/fidelity6/` and pointed at REMOTE.
+
+The frame is every Parliament 15 report with a speech row: 4,803 reports and 63,909 rows in 16 strata (report type, all newer-system). The allocation is round 5's, n_h = min(N_h, max(2, round(250 times rows_h / total rows))), with seed 20261020. It draws 261 reports: 158 read whole and 103 as a 41-row window, 5,754 rows in all. The bill stratum (58 reports) and the one tribute report are censuses, held fixed in the bootstrap. Weights run from 1.0 to 73.5.
+
+Fourteen Sonnet readers took one batch each (14 to 25 reports, 313 to 468 rows). Each did a cold read and then a source pass over every row, with round 5's prompt and one changed line saying every report is a newer-system Parliament 15 report. Fresh readers read `r6_06`, `r6_10` and `r6_11` a second time. On those three batches the two readers agreed on every Tier A and Tier B row. Nothing went to adjudication, so there is no recall figure. No reader found an error in the source pass that the cold read had missed.
+
+| View | Reports | Rows read | Tier A, row rule | Tier A, character rule | Tier B, row rule | Tier B, character rule | Tier C, character rule (no gate) |
+|---|---|---|---|---|---|---|---|
+| Parliament 15, round 6 | 261 | 5,754 | 0.00% (0.00%) | 0.00% (0.000%) | 0.00% (0.00%) | 0.00% (0.000%) | 1.87% (2.54%) |
+
+Each cell is the point estimate and, in brackets, the one-sided 95% bound. No reader found a Tier B row. With no error row the bootstrap bound is zero by construction, so it says little on its own. Read as independent rows, 0 errors in 5,754 rows gives a one-sided 95% Clopper-Pearson bound of 0.052%, and about 0.10% at round 5's design effect of 2. Both are far inside the 1% and 2% gates.
+
+Readers raised 9 Tier A entries, and rulings account for all of them:
+- 8 are bracketed pointers inside a member's row: 7 "[Please refer to Vernacular Speech.]" and 1 "[Please refer to clarification made under ...]" (48750, row 1559732). The vernacular-pointer ruling of 18 October covers every bracketed "Please refer to" pointer, so these 8 are accepted.
+- 1 is 48701 (row 1558929), "[Inaudible.]" stored as SPEECH under "An hon Member". The source prints that bold label before the note. I ruled it accepted on 20 October: the member spoke, the reporter's note stands in for words no one heard, and the collective label is never linked. Royce has not confirmed this ruling. Without it, Tier A is 0.0034% (bound 0.010%) by rows and 0.0001% (0.0004%) by characters.
+
+The packet census flagged 9 rows that look like an oath roll: the nine Nominated Members' names in 49082, each stored under Mr Speaker. The source prints them as plain paragraphs inside the Speaker's announcement of the nominations, so they are his words and are correct. Two readers noted superscripts kept without brackets, "M3" for the M³ programme (50153) and "cm3" (50093). Both are part of the word, not footnotes, and neither reader scored them.
+
+Tier C holds 97 `markup_residue` entries and 2 `other`. Most are italic underscores around "[Applause.]" rows and bracketed pointers, or a stray "_" where a language note was dropped. The 2 `other` are a space before a comma where an event was cut out of a paragraph (49896) and a row under Mr Jeffrey Siow that holds only a zero-width space (47651, row 3). Kind is not scored. 2 of the 5,754 rows carry a kind issue: the "[Inaudible.]" row as SPEECH, and the zero-width row.
+
+The detectors ran on REMOTE on 20 October, the first run since write 8 and write 9 shipped. In Parliament 15 (3,375,106 tokens) both find no pipeline hit, against source rates of 151.1 (dictionary) and 2.96 (punctuation) per million. On the whole corpus the dictionary test finds 275 pipeline hits (4.064 per million) against a source rate of 119.4, and the punctuation test 122 (1.803) against 6.06. The punctuation count fell from 127 because the writes since 18 October changed Parliaments 0 to 11. These runs are in `plans/done-tests/fidelity6/detectors_p15.json`.
+
+Done for Parliament 15. Tier A's bound by characters is 0.000% (0.0004% without the 20 October ruling), under 1%. Tier B's is 0.000%, under 2%, and both detectors find no pipeline hit in Parliament 15. No new class turned up for the residue list.
+
+### Still open
+
+- Royce's confirmation of the "[Inaudible.]" ruling (48701, row 1558929).
+- Italic underscores around events and pointers in newer-system rows, Tier C as in round 5.
