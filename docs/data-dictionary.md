@@ -1,6 +1,6 @@
 # Data Dictionary
 
-Covers every parliamentary record published by SPRS, from the colonial Legislative Assembly through the present Parliament, including pre-independence proceedings when Singapore was part of Malaya.
+Covers every parliamentary record published by SPRS, from the colonial Legislative Assembly through the present Parliament, including the proceedings before independence, when Singapore was a British colony and then part of Malaysia.
 
 Each record is one parliamentary item — a question, a debate topic, a bill reading, a ministerial statement — identified by parliament number, sitting date, and a report ID. Records are parsed into individual speeches attributed to named speakers.
 
@@ -217,8 +217,8 @@ SPRS types 39 reports `oral-answer` that hold no spoken exchange, only a numbere
 ## Known limitations
 
 - Records from 1955–1965 cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament. `Speaker.is_legislative_assembly = True` marks these members.
-- 654 records with full text have no speech rows as of 14 October 2026 (552 in Parliaments 0 to 11): mostly budget procedural orders with no named author, annex and appendix documents whose body is a list of PDF links, Committee of Supply openers, and procedural records that name no speaker.
-- 131 of 41,809 records have no text (`content` is `NULL`): 106 `atbp` records, whose newer-system bill list is in `sitting.a2b`, and 25 others, 11 of them newer-system ids that SPRS no longer serves.
+- As of 19 October 2026 every record with text has speech rows. On 14 October 2026, 654 did not.
+- 132 of 46,649 records have no text, counted 19 October 2026: 122 with `content` `NULL`, 114 of them `atbp` records whose newer-system bill list is in `sitting.a2b`, and 10 with an empty `content`. 121 of the 132 are newer-system records.
 - Some `Report.title` values contain Windows-1252 mojibake (e.g. `â€™` instead of `'`). `Report.markdown_content` has correct Unicode. Affects ~382 `president-address` titles and ~2,153 `budget` titles. `Report.original_title` is the unmodified raw value.
 - Colonial-era records from 1955–1961 (Parliament 0) have no `MPs Speaking` field, so single-speaker attribution fallback cannot apply.
 - `Speech.speaker_id` is incomplete for colonial-era and early-parliament records.
