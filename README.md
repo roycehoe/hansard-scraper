@@ -1,88 +1,123 @@
-# Singapore Parliamentary Record
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/banner-dark.svg">
+  <img alt="Singapore Parliamentary Record" src="docs/images/banner-light.svg">
+</picture>
 
-Pipeline and database for Singapore's parliamentary record, from the colonial Legislative Assembly (1955) to the present. Records are fetched from SPRS, parsed into individual speeches with speaker attribution, and stored in PostgreSQL.
+A database of Singapore's parliamentary record, from the colonial Legislative Assembly of 1955 to the present Parliament. The pipeline fetches every report from SPRS, Parliament's search system, splits each report into speeches and links each speech to the member who gave it.
+
+To read the record, use [roycehoe/hansard](https://github.com/roycehoe/hansard), the website built on this database.
 
 ## Status
 
-The data runs to October 2026. Parliament 15 was loaded on 19 October 2026. Next, a scheduled job will add new sittings every day at 04:00 Singapore time and re-check the last 14 days of reports. If a stored report has changed, the job sends an alert and leaves the stored copy as it is. It only adds rows.
+The record runs from 22 April 1955 to 7 October 2026. Parliament 15 was loaded on 19 October 2026. `refresh.py` can add new sittings once a day, but it does not run on a schedule yet. The database is not published.
 
-## Coverage
+## What the record holds
 
-All figures below were queried from the database on 14 October 2026, after the load of report text and sitting details from 10 September 2012 on (16,123 newer-system reports filled with text, 3,880 skipped search hits inserted, 386 sittings filled, 38,572 attendance rows built from the structured list), then stage 8 and the person stage. They predate the Parliament 15 backfill of 19 October 2026, which added the sittings from September 2025 to October 2026 ([docs/refresh.md](docs/refresh.md#the-parliament-15-backfill)); the three rows it changes give both values. The database itself is not published.
+Counted on 19 October 2026.
 
 | | |
 |---|---|
-| Date range | 22 April 1955 to 8 April 2025; to October 2026 since the backfill |
-| Parliaments | 0 (colonial) through 14; through 15 since the backfill |
-| Sitting dates | 1,719; 1,758 since the backfill |
-| Records | 41,809 distinct records from 47,400 stored search hits (5,591 hits came back twice), 41,678 with full text |
-| Report types | 24, including oral answers, written answers, bills, motions, ministerial statements, budget debates, and more |
-| Full-text records with speeches | 41,024 of 41,678 |
-| Full-text records with no speeches | 654 of 41,678; 552 of those are in Parliaments 0 to 11, mostly budget procedural orders (266), annex and link pages, and records that name no speaker. The other 102 (35 in Parliament 12, 30 in 13, 37 in 14) are mostly Committee of Supply openers and procedural records that name no speaker |
-| Speeches linked to a registry speaker, Parliaments 0 to 11 | 564,509 of 578,359 (97.6%) under the denominator in [docs/adr/0001-attribution-denominator.md](docs/adr/0001-attribution-denominator.md): rows with a speaker string, minus collective references and stage directions |
-| Speeches linked, Parliaments 0 to 11, every row | 564,509 of 624,332 (90.4%), counting the 42,767 rows the parser gives no speaker |
-| Body text in a linked speech, Parliaments 0 to 11 | 96.81% of 188.1M characters, counting reports with no rows and text the parser drops; from `scripts/attribution_text_share.py`, see [docs/vision.md](docs/vision.md#measuring-progress) |
-| Speeches linked, all rows with a speaker string | 997,268 of 1,019,991 (97.8%) across Parliaments 0 to 14, of 1,068,620 speech rows |
-| Speeches linked, Parliaments 12 to 14 | Under the same denominator: Parliament 12 89,536 of 90,511 (98.92%), Parliament 13 134,660 of 137,182 (98.16%), Parliament 14 208,563 of 210,646 (99.01%). Counting every row: 97.37%, 96.68%, 97.89%. Text share: 98.81%, 99.14%, 99.22%. Reported beside the headline, not in it |
-| Attendance rows linked to a registry speaker | 134,916 of 135,072 (99.88%); before 10 September 2012 96,350 of 96,500, from that date 38,566 of 38,572 |
-| Sitting metadata | Attendance for all 1,719 sittings; PTBA, debate sections, annexures, vernacular speeches and assent lists for the 386 sittings from 10 September 2012 |
-| Speaker registry | 1,437 speaker rows by parliament: 1,417 members from parliament.gov.sg and the colonial list, 20 heads of state marked as non-members; grouped into 573 persons |
+| Dates | 22 April 1955 to 7 October 2026 |
+| Parliaments | 0, the colonial Legislative Assembly, to 15 |
+| Sittings | 1,758 |
+| Reports | 46,649 in 24 report types, among them oral answers, bills, motions and budget debates. 46,525 have text |
+| Speech rows | 1,115,831 |
+| Attendance rows | 139,189, all but 3 linked to a member |
+| Speaker registry | 1,439 rows by Parliament, grouped into 573 people |
 
-## Quick start
+## How well speeches are attributed
 
-Requires Python 3.11+, [Poetry](https://python-poetry.org), and Docker.
+97.9% of the body text sits in a speech linked to a member. That is 329,202,046 of 336,115,734 characters across Parliaments 0 to 15, counted by `scripts/attribution_text_share.py` on 19 October 2026 ([figures](docs/figures/2026-10-19-backfill-15.txt)). Most of the rest is text with no speaker, such as procedural lines and chamber events.
+
+The figure counts text with a member attached. It does not say the member is the right one, and the comparison below does. [docs/vision.md](docs/vision.md#measuring-progress) gives the method, the two other rates the project tracks, and an audit that found this figure about 1.7 points high.
+
+## How it compares
+
+From [docs/benchmark.md](docs/benchmark.md), surveyed 18 October 2026.
+
+| | This project | SPRS | Pair Search | sgparliament.com | Par-leh-mate |
+|---|---|---|---|---|---|
+| Unit of text | One row per utterance, marked speech or non-speech | One page per report | One report | One turn per printed speaker | One paragraph |
+| Speech linked to a member | Yes, to a registry row | No, a printed name only | Not stated | Yes, to a member page | By cleaned name match |
+| Procedural lines | Rows of their own with no speaker | Printed in the text | Not stated | Folded into the last speaker's turn | Not stated |
+| Words credited to the right person | 99.4% | Not applicable | Not measured | 95.5% | Not measured |
+| Published accuracy | Figures after every write, and a hand audit | None | Click rank only | None | None |
+| API or download | Not yet | Undocumented JSON endpoints | None public | None | BigQuery, access required |
+
+The 99.4% and 95.5% come from 191 reports sampled across Parliaments 0 to 14 and judged blind against SPRS ([comparison](docs/report/sgparliament-comparison-2026-10-18.md)). If the Addenda to the President's Address count as nobody's words, the figures are 98.5% and 96.8%. A hand audit on 17 October 2026 found 404 of 406 linked rows right.
+
+## Known limits
+
+- Records from 1955 to 1965 predate independence. They cover the colonial Legislative Assembly and the State of Singapore, not the Parliament of the Republic of Singapore.
+- 124 reports have no text. Most are assent-to-bills records, which the newer SPRS system serves without text. Their bill lists are in `sitting.a2b`. Every report with text has speech rows.
+- 15,913 speech rows have a speaker label but no link. 12,887 of them are "The Chairman" in reports that do not say who was in the chair ([ADR 0002](docs/adr/0002-role-holder-attribution.md)). Most of the rest are collective labels such as "An hon. Member".
+- 66 reports keep speech rows from an older parser. Each needs a parser fix or a ruling before it is rebuilt.
+- No hand audit covers the Parliament 15 rows yet.
+- Some `title` fields carry encoding errors from the source API. `markdown_content` has the right characters.
+
+[docs/data-dictionary.md](docs/data-dictionary.md) has the full caveats, and [docs/data-loss-register.md](docs/data-loss-register.md) lists every step that drops or changes source text.
+
+## Repository layout
+
+| Folder | What it holds |
+|---|---|
+| `gateway/` | HTTP calls to SPRS and parliament.gov.sg |
+| `schemas/` | Pydantic models of the API responses |
+| `services/` | Pure transforms, such as report text into speeches and names into members |
+| `database/` | Table definitions |
+| `crud/` | Database reads and writes |
+| `populate/` | Pipeline stages, which join the folders above |
+| `alembic/` | Database migrations |
+| `scripts/` | Diagnostics and supervised one-off writes |
+| `data/` | Hand-kept reference files, such as speaker overrides and the colonial member list |
+| `docs/` | Data dictionary, decision records, audits and figures |
+| `tests/` | Golden fixtures for the parser |
+
+## Setup
+
+Requires Python 3.11+, [Poetry](https://python-poetry.org) and Docker.
 
 ```bash
 git clone https://github.com/roycehoe/hansard-scraper.git
 cd hansard-scraper
 poetry install
 docker-compose up -d        # local PostgreSQL
-python script.py            # sitting dates, sittings, attendance, speaker links
+python script.py            # sitting dates, sittings, attendance, speaker links, persons
 ```
 
-`script.py` no longer calls the report stages. Fetching report HTML, parsing reports and splitting speeches live in `populate_hansard_responses`, `populate_reports` and `populate_speeches` under `populate/`.
+`script.py` does not run the report stages. Fetching report HTML, parsing reports and splitting speeches are `populate_hansard_responses`, `populate_reports` and `populate_speeches` under `populate/`.
 
-Populate the Speaker registry separately (needed before `speaker_id` foreign keys resolve):
+Load the speaker registry before the speaker links run:
 
 ```bash
 python scripts/scrape_speakers_by_parliament.py
-python scripts/load_colonial_la_speakers.py   # for pre-independence LA members
+python scripts/load_colonial_la_speakers.py   # Legislative Assembly members before independence
+python -m scripts.load_heads_of_state
 ```
+
+`python refresh.py` adds the sittings published since the last stored one. [docs/refresh.md](docs/refresh.md) covers its halts and alerts.
+
+`ruff check .` lints the code. `poetry run pytest` runs the parser fixtures against a scratch database named `hansard_launch` on port 5435, and `tests/conftest.py` refuses any other.
 
 ## Documentation
 
-- [Data Dictionary](docs/data-dictionary.md) — entity semantics, field meanings, report types, data quality caveats.
-- [Parsing Internals](docs/parsing.md) — HTML artifact details and edge cases. Read before touching parsing code.
-- [Vision](docs/vision.md) — project goals and strategy.
-- [Daily refresh](docs/refresh.md): what the scheduled job fetches, its alerts and its halts.
+- [Data dictionary](docs/data-dictionary.md): what each table and field means, the report types, and data caveats.
+- [Parsing internals](docs/parsing.md): quirks of the source HTML. Read it before changing the parser.
+- [Vision](docs/vision.md): the project's goals and the current figure for each.
+- [Benchmark](docs/benchmark.md): the comparison with other Singapore Hansard tools, with sources.
+- [Daily refresh](docs/refresh.md): what the refresh fetches, its alerts and its halts.
+- [Decision records](docs/adr/): why the parser and the linker work the way they do.
 
-## Data source
+## Data source and terms
 
-Records come from the Parliament of Singapore's Parliament Reports search system (SPRS) and the MP lists on parliament.gov.sg. The content belongs to Parliament. This project is not affiliated with or endorsed by Parliament. Parliament's [terms of use](https://www.parliament.gov.sg/terms-of-use) require written permission to reproduce its content, so check them before republishing anything the pipeline fetches. The fetcher sends one request at a time and waits at least 2 seconds between requests, retries included. It identifies itself as `hansard-scraper (+hansard@fancybinary.sg)` and backs off further on HTTP 429.
+Records come from the Parliament of Singapore's Parliament Reports search system (SPRS) and the member lists on parliament.gov.sg. The content belongs to Parliament. This project is not affiliated with or endorsed by Parliament. Parliament's [terms of use](https://www.parliament.gov.sg/terms-of-use) require written permission to reproduce its content, so check them before you republish anything the pipeline fetches.
+
+The fetcher sends one request at a time and waits at least 2 seconds between requests, retries included. It identifies itself as `hansard-scraper (+hansard@fancybinary.sg)` and backs off further on HTTP 429.
 
 ## Citation
 
 > Royce Hoe (2026). *Singapore Parliamentary Record*. GitHub. https://github.com/roycehoe/hansard-scraper
 
-## Known limitations
-
-- Records from 1955–1965 predate independence and cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament.
-- 654 records with full text have no speech rows in the database as of 14 October 2026. 266 are budget procedural orders; the rest are mostly annex and index documents whose body is a list of links, Committee of Supply openers, and procedural records that name no speaker. See [docs/report/learnings.md](docs/report/learnings.md).
-- 131 records have no text: 106 `atbp` records (assent to bills; the newer system gives them no topic text, and the bill list is in `sitting.a2b`) and 25 others, among them 11 newer-system ids that SPRS no longer serves.
-- Some `title` fields have encoding artifacts from the source API; `markdown_content` has correct Unicode.
-- Speaker identity linking (`speaker_id`) is incomplete. The largest unlinked group is "The Chairman" in Committee of Supply debates where the report does not say who was in the chair, followed by "Mr Deputy Speaker" on days with two Deputy Speakers (4,018 and 1,119 rows among those added by the 14 October load); see [docs/adr/0002-role-holder-attribution.md](docs/adr/0002-role-holder-attribution.md).
-
-- Stored speech rows can lag the parser. `populate_speeches` only parses reports that have no rows, so a parser fix reaches existing rows only through a targeted rebuild. A guarded re-parse on 13 October 2026 rebuilt 6,615 reports and refused 2,078 (1,954 because the new parse would drop a line the stored rows hold, 87 refused for the same reason by an earlier role-label re-parse, 34 that would undo a hand fix, 3 that would bring back deleted rows), so some stored rows still lag the parser.
-
-Full details in [docs/data-dictionary.md](docs/data-dictionary.md).
-
-## Development
-
-```bash
-ruff check .
-ruff check --fix .
-```
-
 ## License
 
-[MIT](LICENSE)
+The code is under the [MIT license](LICENSE). The license does not cover the text of the reports, which belongs to Parliament.
