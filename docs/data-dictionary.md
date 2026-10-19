@@ -219,7 +219,7 @@ SPRS types 39 reports `oral-answer` that hold no spoken exchange, only a numbere
 - Records from 1955–1965 cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament. `Speaker.is_legislative_assembly = True` marks these members.
 - As of 19 October 2026 every record with text has speech rows. On 14 October 2026, 654 did not.
 - 132 of 46,649 records have no text, counted 19 October 2026: 122 with `content` `NULL`, 114 of them `atbp` records whose newer-system bill list is in `sitting.a2b`, and 10 with an empty `content`. 121 of the 132 are newer-system records.
-- Some `Report.title` values contain Windows-1252 mojibake (e.g. `â€™` instead of `'`). `Report.markdown_content` has correct Unicode. Affects ~382 `president-address` titles and ~2,153 `budget` titles. `Report.original_title` is the unmodified raw value.
+- Some raw titles hold Windows-1252 mojibake (e.g. `â€™` instead of `’`). `Report.title` and `Report.subtitle` are fixed: since 19 October 2026 none holds it. 11 `Report.original_title` values keep it, the 7 `budget` and 4 `president-address` titles rewritten that day. The raw title is in `hansardwebsiteresponse.title`.
 - Colonial-era records from 1955–1961 (Parliament 0) have no `MPs Speaking` field, so single-speaker attribution fallback cannot apply.
 - `Speech.speaker_id` is incomplete for colonial-era and early-parliament records.
 - ~3% of modern-era sitting documents have a missing space before the time (e.g. `"The House met at3.00 pm"`). This is a defect in the raw HTML.

@@ -99,14 +99,14 @@ The layer table in `CLAUDE.md` says where code goes. These rules say what each l
 - `blocking`: **Attempt the operation and catch the failure.** In `services/`, `gateway/`, `crud/` and `populate/`, wrap the work in `try` and catch at the end. **No LBYL pre-check in front of the attempt, including a cheap deterministic one.**
 
   ```python
-  # utils/text.py:1-7: no `if` in front of the attempt
-  def fix_mojibake(text: str) -> str:
+  # utils/text.py:6-12: no `if` in front of the attempt
+  def _fix_mojibake_run(match: re.Match) -> str:
       try:
-          return text.encode("cp1252").decode("utf-8")
+          return match.group(0).encode("cp1252").decode("utf-8")
       except UnicodeDecodeError:
-          return text
+          return match.group(0)
       except UnicodeEncodeError:
-          return text
+          return match.group(0)
   ```
 
 - `expected`: **A `None` result is a result, not a pre-check, and `is None`, never a falsy check.** Read this immediately after the EAFP rule; the two are constantly confused. Checking a value you *already hold* and acting on it is legal everywhere: the operation already ran and you are handling its result. LBYL is testing a precondition *in order to avoid attempting* the operation. Use `is None` explicitly, because a SQLModel object, a regex match or a `bs4` tag can evaluate falsy in states you did not mean to test for. An emptiness check on a `str` or a `list` (`if not stripped`) is a different question and stays a falsy check.

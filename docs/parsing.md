@@ -20,11 +20,11 @@ The title-detection logic in `get_start_of_speech_line` must handle all three ol
 
 ### Mojibake in stored titles
 
-Some titles contain Windows-1252 mojibake of UTF-8 characters. The markdown content has correct Unicode; the `title` field in the DB does not. Fix: `s.encode('cp1252').decode('utf-8')` (no-op for plain ASCII; safe to call unconditionally).
+Some raw titles contain Windows-1252 mojibake of UTF-8 characters. The markdown content has correct Unicode. `utils/text.py`: `fix_mojibake` encodes each run of non-ASCII characters as cp1252 and decodes it as UTF-8, and keeps a run that fails. It works run by run because a title can hold a correct `’` beside a garbled run, as in "Committee of Supply âˆ’ Head U (Prime Minister’s Office)", and a whole-string decode fails on it.
 
 Common patterns:
-- `â€™` → `'` (curly apostrophe) — affects ~382 `president-address` titles
-- `âˆ'` → `−` (minus sign) — affects ~2,153 `budget` titles like `"Committee of Supply âˆ' Head X"`
+- `â€™` → `’` (curly apostrophe), in `president-address` titles
+- `âˆ’` → `−` (minus sign), in `budget` titles like `"Committee of Supply âˆ’ Head X"`
 
 ### HTML entity artifact in markdown headings
 
