@@ -4,17 +4,17 @@ Pipeline and database for Singapore's parliamentary record, from the colonial Le
 
 ## Status
 
-The data ends on 8 April 2025. Parliament 15 is not loaded yet. Once it is, a scheduled job will add new sittings every day at 04:00 Singapore time and re-check the last 14 days of reports. If a stored report has changed, the job sends an alert and leaves the stored copy as it is. It only adds rows.
+The data runs to October 2026. Parliament 15 was loaded on 19 October 2026. Next, a scheduled job will add new sittings every day at 04:00 Singapore time and re-check the last 14 days of reports. If a stored report has changed, the job sends an alert and leaves the stored copy as it is. It only adds rows.
 
 ## Coverage
 
-All figures below were queried from the database on 14 October 2026, after the load of report text and sitting details from 10 September 2012 on (16,123 newer-system reports filled with text, 3,880 skipped search hits inserted, 386 sittings filled, 38,572 attendance rows built from the structured list), then stage 8 and the person stage. The database itself is not published.
+All figures below were queried from the database on 14 October 2026, after the load of report text and sitting details from 10 September 2012 on (16,123 newer-system reports filled with text, 3,880 skipped search hits inserted, 386 sittings filled, 38,572 attendance rows built from the structured list), then stage 8 and the person stage. They predate the Parliament 15 backfill of 19 October 2026, which added the sittings from September 2025 to October 2026 ([docs/refresh.md](docs/refresh.md#the-parliament-15-backfill)); the three rows it changes give both values. The database itself is not published.
 
 | | |
 |---|---|
-| Date range | 22 April 1955 to 8 April 2025 |
-| Parliaments | 0 (colonial) through 14 |
-| Sitting dates | 1,719 |
+| Date range | 22 April 1955 to 8 April 2025; to October 2026 since the backfill |
+| Parliaments | 0 (colonial) through 14; through 15 since the backfill |
+| Sitting dates | 1,719; 1,758 since the backfill |
 | Records | 41,809 distinct records from 47,400 stored search hits (5,591 hits came back twice), 41,678 with full text |
 | Report types | 24, including oral answers, written answers, bills, motions, ministerial statements, budget debates, and more |
 | Full-text records with speeches | 41,024 of 41,678 |

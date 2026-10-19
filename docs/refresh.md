@@ -38,13 +38,13 @@ After the last month, the run:
 
 The run is an App Platform scheduled job, daily at 04:00 Singapore time (`0 4 * * *` in `Asia/Singapore`, which is `0 20 * * *` UTC). Batch E adds the component to `hansard/.do/app.yaml`. The image is built from `Dockerfile` at the repo root, and the command is `python refresh.py`.
 
-Enable the schedule only after the Parliament 15 backfill (see "The Parliament 15 backfill"). Until then the stored sittings end on 8 April 2025, so every run searches from 9 April 2025 and halts on Parliament 15.
+Enable the schedule only after the Parliament 15 backfill (see "The Parliament 15 backfill"). The backfill ran on 19 October 2026, and a plain run after it succeeded, so the stored data no longer blocks the schedule.
 
 ## Crawl rate
 
 Every request to SPRS goes through the crawl pacer in `gateway/http.py`. It sends one request at a time, at least 2 seconds apart, retries included, with the user agent `hansard-scraper (+hansard@fancybinary.sg)`.
 
-The gap is the `CRAWL_GAP_SECONDS` setting, 2 by default, which is the gap the letter to Parliament promises. The scheduled job keeps the default. The Parliament 15 backfill of 19 October 2026 ran at 1 second on Royce's instruction.
+The gap is the `CRAWL_GAP_SECONDS` setting, 2 by default, which is the gap the letter to Parliament promises. The scheduled job keeps the default. The Parliament 15 backfill of 19 October 2026 ran at 2 seconds until September 2025 was stored, then at 1 second on Royce's instruction (`CRAWL_GAP_SECONDS=1`).
 
 A daily run sends:
 
@@ -160,7 +160,7 @@ DATABASE_URL=postgresql://user:password@localhost:5435/hansard_launch python ref
 
 A local run sends live requests to SPRS at the crawl rate, so start one only when that is the point. Unset `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and `HEALTHCHECKS_PING_URL` first, so it sends no alert and no ping. The tests (`poetry run pytest`) send no request.
 
-## The Parliament 15 backfill (not yet run)
+## The Parliament 15 backfill
 
 The backfill runs after the letter is sent. All of it runs supervised with the owner role, not `hansard_refresh`. The member load inserts into `speaker`, and stage 9 inserts into `person` and sets `speaker.person_id`, and the write role has no grant for any of that.
 
@@ -171,6 +171,10 @@ The backfill runs after the letter is sent. All of it runs supervised with the o
 5. `python scripts/attribution_text_share.py --output docs/figures/YYYY-MM-DD-backfill-15.txt` on the replica, and a register row, as `CLAUDE.md` requires.
 
 Two things affect the backfill run. The Prime Minister and President terms run to the present. A bare "The Prime Minister" row in Parliament 15 links, and a "The President" row in the Parliament 15 President's Address links once `scripts/load_heads_of_state.py` has run. And the sitting probe covers every date from 9 April 2025, about 560 requests at the crawl rate, plus the topic requests.
+
+It ran on the remote database on 19 October 2026. Before it, `scripts/load_heads_of_state.py` inserted one `speaker` row, Tharman Shanmugaratnam for Parliament 15, and stage 9 set its `person_id`. `refresh.py --allow-parliament 15` then took four runs, `refresh_run` ids 1 to 4. Runs 1 and 2 stored nothing. Run 2 lost its database connection, and `191bd3b` added TCP keepalives and pooled-connection pings before run 3. Run 3 committed September 2025 and was then stopped. Its row is `FAILED` with zero counts, because the orchestrator closed it by hand, so its rows are counted in no `refresh_run` row. Run 4 stored October 2025 to October 2026 and `SUCCEEDED`. Across the four runs `hansardwebsiteresponse` went from 47,439 to 52,250 rows, `hansardsittingdateresponse` from 1,719 to 1,758 and `speech` from 1,051,922 to 1,115,831. The 63,909 speech rows dated from 1 September 2025 are all new, and 62,050 of them are linked. Run 5, a plain `python refresh.py`, `SUCCEEDED` with 0 rows added and 300 reports re-checked.
+
+Step 5 ran on the remote, not on the replica. `hansard_replica` holds no Parliament 15 rows and the backfill leaves it alone, and `scripts/attribution_text_share.py` only reads. The file is `docs/figures/2026-10-19-backfill-15.txt`, and the entry in `docs/vision.md` ("Measuring progress") gives its figures.
 
 ## Write role SQL
 
