@@ -162,7 +162,7 @@ From the 12th Parliament on, about half or more of the questions filed for oral 
 
 ## 8. Their party histories as leads
 
-**Evidence.** Each member page has `mp.partyHistory` with `party`, `from` and `to`, and `/mps` lists `parties` for 568 members, 42 of them with more than one. Our verification of 18 October dropped six spans for want of a readable source (`plans/done-tests-orchestration.md`). Five of them appear in their histories with day dates. A. J. Braga and Mak Pak Shee joined the SPA on 1958-11-10, where we store Mak Pak Shee as Independent from 1959-04-25. Hoe Puay Choo joined the BS on 1962-08-11. Soh Ghee Soon was Independent from 1958-11-13. David Marshall was Independent from 1957-04-17. Their histories also blur what ours keeps apart: Chiam See Tong has one "SDA/SPP" label from 2001, hiding the 2011 move to the SPP that we store. Many spans start on the first sitting of a term (1955-04-22, 1959-07-01), so their dates are snapped to sittings rather than to events.
+**Evidence.** Each member page has `mp.partyHistory` with `party`, `from` and `to`, and `/mps` lists `parties` for 568 members, 42 of them with more than one. Our verification of 18 October dropped six spans for want of a readable source. Five of them appear in their histories with day dates. A. J. Braga and Mak Pak Shee joined the SPA on 1958-11-10, where we store Mak Pak Shee as Independent from 1959-04-25. Hoe Puay Choo joined the BS on 1962-08-11. Soh Ghee Soon was Independent from 1958-11-13. David Marshall was Independent from 1957-04-17. Their histories also blur what ours keeps apart: Chiam See Tong has one "SDA/SPP" label from 2001, hiding the 2011 move to the SPP that we store. Many spans start on the first sitting of a term (1955-04-22, 1959-07-01), so their dates are snapped to sittings rather than to events.
 
 **Use.** Dated leads for a search of the Hansard for a citable line, never a source. Small, and it moves five spans.
 
@@ -177,8 +177,8 @@ From the 12th Parliament on, about half or more of the questions filed for oral 
 ## Considered and rejected
 
 - **LLM output.** Timelines, semantic topic groups, Issue Provenance (match threshold 0.57), the "AI-generated briefing" on member pages, "What does the Speaker Care Most About", and the `mp-principles`, `logical-fallacy` and `discourse-analysis` endpoints named in the page code. None reports an evaluation.
-- **`/pap-response`.** "Find and copy government front bench positions on any topic for wargaming." A campaign tool.
-- **`/sitting-predictions`.** Forecasts sitting days from past weekday slots. No research use.
+- **`/pap-response`.** "Find and copy government front bench positions on any topic for wargaming." Outside this project's scope, which is the record itself.
+- **`/sitting-predictions`.** Forecasts sitting days from past weekday slots. Not part of the record.
 - **`/language` style metrics.** Flesch-Kincaid grade, "Heylighen formality F-score" and distinctive phrases, computed on text Parliament has since copy-edited and on turns that include procedural lines.
 - **One constituency per member.** `mp.constituency` gives Marshall "Anson" only, though he sat for Cairnhill from 1955. `attendance.location_name` already gives ours by sitting.
 - **Stable links to each utterance.** Their "#" button "copies a link to it". peer-projects.md section E already lists stable ids as a gap, and I could not test whether their event ids survive a re-parse.
@@ -202,5 +202,4 @@ Fetched on 18 October 2026. Page bundles are from build `8Zil_7vxb7lmo2zPRFyyg` 
 - Member pages: https://www.sgparliament.com/mp/zaqy-mohamad, /mp/david-marshall, /mp/a-j-braga, /mp/hoe-puay-choo, /mp/mak-pak-shee, /mp/soh-ghee-soon, /mp/s-v-lingam, /mp/chiam-see-tong
 - Lists: https://www.sgparliament.com/mps, /sittings, /motions, /pqs
 - Page code under https://www.sgparliament.com/_next/static/chunks/pages/: `debate/[id]-e75f0b4f7e49ed80.js`, `sgparliament-586bd3a762d23b63.js`, `career-trajectory-5da36938757699f3.js`, `pq-explorer-3d21b538983afad6.js`, `participation-7c39da4e72e72a3c.js`, `substantive-speeches-84e736943be795d9.js`, `debate-topics-5d0ed94fd66fd3d2.js`, `stats-25a37dc3affe12be.js`, `maiden-speeches-6583299d89e031f4.js`, `adjournment-motions-1efe02d18c953929.js`, `language-2ec6b83f7d6ab08e.js`, `pap-response-338a53f062045f8d.js`, `sitting-predictions-f3f41c51d45197d5.js`
-- Newsletter archive: https://sgparliament.substack.com/api/v1/archive
 - SPRS: `searchResult` for 18-02-2019, `getHansardTopic` for `oral-answer-1923`, and `https://sprs.parl.gov.sg/search/fetchData`

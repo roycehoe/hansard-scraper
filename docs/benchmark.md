@@ -6,10 +6,10 @@ How this project compares with the Singapore Hansard tools a researcher can use 
 
 | | This project | SPRS | Pair Search | sgparliament.com | Par-leh-mate |
 |---|---|---|---|---|---|
-| Who runs it | Royce Hoe, independent | Parliament of Singapore | Open Government Products, with Parliament | Kenneth Tiong, by the Substack byline | parleh-mate, independent |
+| Who runs it | Royce Hoe, independent | Parliament of Singapore | Open Government Products, with Parliament | An individual author | parleh-mate, independent |
 | Coverage | 22 Apr 1955 to Oct 2026. 41,838 reports to 8 Apr 2025, and Parliament 15 added on 19 Oct 2026, for 1,758 sittings | Live to 7 Oct 2026. 1955 start not probed | 1955 to January 2024 at its 2024 build. Current end not stated | 22 Apr 1955 to 7 Oct 2026, 1,758 sitting days | 10 Sep 2012 to 7 Mar 2024 in its public repo |
 | Unit of text | One row per utterance, with a `kind` for non-speech lines | One HTML page per report | One report | One turn per printed speaker | One paragraph |
-| Speech linked to a member | 937,091 of 1,051,868 rows linked to a `Speaker` row | No. A bold printed name only; member fields null in the hits read | Not stated | Yes, to a member page | By cleaned name match |
+| Speech linked to a member | 999,086 of 1,115,831 rows linked to a `Speaker` row | No. A bold printed name only; member fields null in the hits read | Not stated | Yes, to a member page | By cleaned name match |
 | Presiding officers and the President | Linked to the holder of the day (ADR 0002) | No | Not stated | No, measured | Not stated |
 | Procedural lines and chamber events | Rows of their own with no speaker (ADR 0007, ADR 0009) | Printed in the text | Not stated | Folded into the last speaker's turn, measured | Not stated |
 | Published accuracy | Three attribution figures after every write; hand audit of 17 Oct 2026: 404 of 406 linked rows right (99.5%) | None | Click rank only: average 3.2 against 23 for other official search | None | None; a disclaimer of "inevitable parsing errors" |

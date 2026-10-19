@@ -1,6 +1,6 @@
 # Comparison with sgparliament.com, 18 October 2026
 
-sgparliament.com is a public reader over the same SPRS record, from the first Legislative Assembly sitting on 22 April 1955 to the present. It splits each debate into speaker turns, links turns to member pages, shows party history within a membership, and adds LLM summaries, topic groups, a PQ explorer and statistics. It offers no API, no download and no source code, and it publishes no accuracy figures. Its disclaimer says the LLM content may contain "hallucinations". The domain was registered in May 2023. Its newsletter, sgparliament.substack.com, signs posts "SGParliament team", but the Substack archive API gives every post with a byline the author Kenneth Tiong (handle `kennethtiong`). That Substack account also runs kennethtiong.com, which publishes the speeches and Parliamentary Questions of Kenneth Tiong, Workers' Party MP for Aljunied GRC. Neither site says in prose that the two share an author.
+sgparliament.com is a public reader over the same SPRS record, from the first Legislative Assembly sitting on 22 April 1955 to the present. It splits each debate into speaker turns, links turns to member pages, shows party history within a membership, and adds LLM summaries, topic groups, a PQ explorer and statistics. It offers no API, no download and no source code, and it publishes no accuracy figures. Its disclaimer says the LLM content may contain "hallucinations". The domain was registered in May 2023. Its newsletter, sgparliament.substack.com, signs posts "SGParliament team".
 
 This report compares its speaker attribution with our speech rows. Our figures come from the local database on 18 October 2026, after the coverage refill. Scripts and raw output are in the session scratchpad and are not kept.
 
@@ -109,7 +109,7 @@ Both sites miss these, so they are worth fixing:
 
 ## What it says about its method
 
-A Sonnet reader went through all 10 posts on sgparliament.substack.com, all 23 posts on kennethtiong.com, and the site's About, Disclaimer, Issue Provenance, Debate Topics, PQ Explorer, Stats, Maiden Speeches, Adjournment Motions and Budget pages, with the page JavaScript where the text was thin. Its quotes were checked against the downloaded pages. The posts announce features and say little about method.
+A Sonnet reader went through all 10 posts on sgparliament.substack.com and the site's About, Disclaimer, Issue Provenance, Debate Topics, PQ Explorer, Stats, Maiden Speeches, Adjournment Motions and Budget pages, with the page JavaScript where the text was thin. Its quotes were checked against the downloaded pages. The posts announce features and say little about method.
 
 | Question | What it says |
 |---|---|
