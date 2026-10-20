@@ -126,7 +126,6 @@ The 99.4% and 95.5% credit each Addendum to the President's Address to the minis
 
 ## Known limits
 
-- Records from 1955 to 1965 predate independence. They cover the Legislative Assembly and the State of Singapore, not the Parliament of the Republic of Singapore.
 - 132 reports have no text. 113 are the President's assent to bills from September 2012, which SPRS sends as a bill list with no report text. SPRS sends no text for the other 19, most often an empty text field or an error. Every other report has its speeches.
 - About 16,000 speeches have a speaker label but no link to a member. About 13,000 of them are "The Chairman" in reports that do not say who was in the chair ([decision record](docs/adr/0002-role-holder-attribution.md)). Most of the rest are collective labels such as "An hon. Member".
 - 66 reports still hold speeches split by an older version of the parser.
