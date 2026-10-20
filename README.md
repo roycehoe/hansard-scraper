@@ -35,13 +35,79 @@ In a blind check of 191 reports, 99.4% of the words here were credited to the ri
 
 About 98% of the text sits in a speech linked to a member ([figures](docs/figures/2026-10-19-backfill-15.txt)). Most of the rest is text no member spoke, such as "Question put, and agreed to."
 
+## How it was built
+
+Work began in 2023.
+
+```mermaid
+flowchart TD
+  store["Store every SPRS report as received"] --> extract["Extract speeches"]
+  extract --> match["Match speakers to members"]
+  match --> check["Check speeches"]
+  check -->|"fix the parser"| extract
+  check --> compare["Compare with sgparliament.com"]
+```
+
+1. To rebuild speeches without fetching again, every report is stored as received.
+2. To get speeches, the parser splits each report at bold speaker names. The Extract speeches loop fixed the reports it failed on.
+3. To know who spoke, names are matched to parliament.gov.sg's members plus hand-kept facts, like colonial Assembly members.
+4. To find what the parser got wrong, the Check speeches loop read samples against the source and fixed the parser.
+5. To compare, a blind test of 191 reports found 99.4% of words credited to the right person, against sgparliament.com's 95.5%.
+
+[How the data was checked](#how-the-data-was-checked) describes both loops.
+
 ## How the data was checked
 
-AI models did the reading. Claude Sonnet read the samples and judged the comparison, Claude Opus checked their work, and the maintainer ruled on unclear cases. Three checks back the figures above.
+Two loops built the speeches.
 
-- A refinement loop. Each round drew about 400 speeches at random, stratified by report type, by era and by the older and newer SPRS systems, and read each one against its source page. The defects it found were fixed in the parser, the stored speeches were rebuilt, and the next round drew a fresh sample. The loop stopped after five rounds, when the 95% upper bound on text lost or credited to the wrong person fell below 1%. It now stands at about 0.1% ([loop log](docs/report/speech-fidelity-loop.md)). A sixth round on 20 October read 261 reports of the 15th Parliament, added the day before, and found no text lost, split wrongly or credited to the wrong person.
-- A blind comparison. 191 reports, drawn across 49 groups of era and report type, were matched to the same debates on sgparliament.com. The judges saw the two sites as "Site A" and "Site B" in random order and said who each passage belongs to.
-- A check of the links. On 19 October 2026 a check read 464 linked speeches across eight eras, the 15th Parliament among them, and found 463 credited to the right person ([check](docs/report/link-check-2026-10-19.md)). The one miss is a caption no member spoke. An audit on 17 October found 404 of 406 ([audit](docs/report/north-star-audit-2026-10-17.md)).
+1. Extract speeches. Each round an AI ran a stratified sample of reports through the parser and fixed one reason some failed to split. A change stayed only if it broke nothing. The loop stopped when 99.9% of reports split into speeches ([loop log](docs/report/refine-loop.md)).
+2. Check speeches. Each round an AI read a stratified sample of about 400 speeches against the source pages. Each fix was run over every report on a copy of the database, and shipped only if nothing got worse. The loop stopped after five rounds, when the error bound fell below 1%, and a sixth round checked the 15th Parliament ([loop log](docs/report/speech-fidelity-loop.md)).
+
+<details>
+<summary>Extract speeches (diagram)</summary>
+
+```mermaid
+flowchart TD
+  pick["Pick a stratified sample of the reports in the database"]
+  run["An AI runs the sample through the program and finds out why some reports fail to split"]
+  fix["Change the program to fix one cause of failure"]
+  better{"Did the change fix some reports and break none that already split?"}
+  keep["Keep the change"]
+  undo["Undo the change"]
+  target{"Across the whole collection, do at least 95% of reports split into speeches yet?"}
+  done(["Stop"])
+  pick --> run --> fix --> better
+  better -->|"yes"| keep --> target
+  better -->|"no"| undo --> target
+  target -->|"yes"| done
+  target -->|"no, next round"| run
+```
+
+</details>
+
+<details>
+<summary>Check speeches (diagram)</summary>
+
+```mermaid
+flowchart TD
+  pick["Pick a stratified sample of the speeches in the database"]
+  read["An AI reads each speech against the original page on Parliament's website, checking the speaker and the words"]
+  check["A second AI checks what the first one found, and the maintainer who runs the project settles unclear cases"]
+  good{"Judging from the sample, is under 1% of all the text wrong?"}
+  done(["Stop"])
+  fix["Find out why the program that splits reports into speeches got some wrong, and fix it"]
+  copy["Run the fix over every report, on a copy of the database"]
+  worse{"Did anything get worse?"}
+  apply["The maintainer approves, and the corrected speeches go into the real database"]
+  pick --> read --> check --> good
+  good -->|"yes"| done
+  good -->|"no"| fix --> copy --> worse
+  worse -->|"yes, so rework the fix"| fix
+  worse -->|"no"| apply
+  apply -->|"next round, with new random speeches"| pick
+```
+
+</details>
 
 ## How it compares
 
@@ -60,8 +126,7 @@ The 99.4% and 95.5% credit each Addendum to the President's Address to the minis
 
 ## Known limits
 
-- Records from 1955 to 1965 predate independence. They cover the Legislative Assembly and the State of Singapore, not the Parliament of the Republic of Singapore.
-- 132 reports have no text. Most record the President's assent to bills, which SPRS lists without text from September 2012. Every other report has its speeches.
+- 132 reports have no text. 113 are the President's assent to bills from September 2012, which SPRS sends as a bill list with no report text. SPRS sends no text for the other 19, most often an empty text field or an error. Every other report has its speeches.
 - About 16,000 speeches have a speaker label but no link to a member. About 13,000 of them are "The Chairman" in reports that do not say who was in the chair ([decision record](docs/adr/0002-role-holder-attribution.md)). Most of the rest are collective labels such as "An hon. Member".
 - 66 reports still hold speeches split by an older version of the parser.
 - Speeches carry no Hansard column number.
