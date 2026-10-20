@@ -58,15 +58,13 @@ flowchart TD
 
 ## How the data was checked
 
-AI models did the reading. Claude Sonnet read the samples and judged the comparison, Claude Opus checked their work, and the maintainer ruled on unclear cases.
-
 Two loops built the speeches.
 
-- Extract speeches, May to June 2026. Each round an AI ran a stratified sample of reports through the parser and fixed one reason some failed to split. A change stayed only if it broke nothing. The loop stopped when 99.9% of reports split into speeches ([loop log](docs/report/refine-loop.md)).
-- Check speeches, from October 2026. Each round an AI read a stratified sample of about 400 speeches against the source pages. Each fix was run over every report on a copy of the database, and shipped only if nothing got worse. The loop stopped after five rounds, when the error bound fell below 1%, and a sixth round checked the 15th Parliament ([loop log](docs/report/speech-fidelity-loop.md)).
+1. Extract speeches, May to June 2026. Each round an AI ran a stratified sample of reports through the parser and fixed one reason some failed to split. A change stayed only if it broke nothing. The loop stopped when 99.9% of reports split into speeches ([loop log](docs/report/refine-loop.md)).
+2. Check speeches, from October 2026. Each round an AI read a stratified sample of about 400 speeches against the source pages. Each fix was run over every report on a copy of the database, and shipped only if nothing got worse. The loop stopped after five rounds, when the error bound fell below 1%, and a sixth round checked the 15th Parliament ([loop log](docs/report/speech-fidelity-loop.md)).
 
 <details>
-<summary>Extract speeches, as a chart</summary>
+<summary>Extract speeches (diagram)</summary>
 
 ```mermaid
 flowchart TD
@@ -88,7 +86,7 @@ flowchart TD
 </details>
 
 <details>
-<summary>Check speeches, as a chart</summary>
+<summary>Check speeches (diagram)</summary>
 
 ```mermaid
 flowchart TD
