@@ -60,8 +60,8 @@ flowchart TD
 
 Two loops built the speeches.
 
-1. Extract speeches, May to June 2026. Each round an AI ran a stratified sample of reports through the parser and fixed one reason some failed to split. A change stayed only if it broke nothing. The loop stopped when 99.9% of reports split into speeches ([loop log](docs/report/refine-loop.md)).
-2. Check speeches, from October 2026. Each round an AI read a stratified sample of about 400 speeches against the source pages. Each fix was run over every report on a copy of the database, and shipped only if nothing got worse. The loop stopped after five rounds, when the error bound fell below 1%, and a sixth round checked the 15th Parliament ([loop log](docs/report/speech-fidelity-loop.md)).
+1. Extract speeches. Each round an AI ran a stratified sample of reports through the parser and fixed one reason some failed to split. A change stayed only if it broke nothing. The loop stopped when 99.9% of reports split into speeches ([loop log](docs/report/refine-loop.md)).
+2. Check speeches. Each round an AI read a stratified sample of about 400 speeches against the source pages. Each fix was run over every report on a copy of the database, and shipped only if nothing got worse. The loop stopped after five rounds, when the error bound fell below 1%, and a sixth round checked the 15th Parliament ([loop log](docs/report/speech-fidelity-loop.md)).
 
 <details>
 <summary>Extract speeches (diagram)</summary>
@@ -108,8 +108,6 @@ flowchart TD
 ```
 
 </details>
-
-A check on 19 October 2026 read 464 linked speeches across eight eras and found 463 credited to the right person ([check](docs/report/link-check-2026-10-19.md)).
 
 ## How it compares
 
