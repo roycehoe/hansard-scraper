@@ -109,10 +109,7 @@ flowchart TD
 
 </details>
 
-Two more checks back the figures above.
-
-- A blind comparison. 191 reports, drawn across 49 groups of era and report type, were matched to the same debates on sgparliament.com. The judges saw the two sites as "Site A" and "Site B" in random order and said who each passage belongs to.
-- A check of the links. On 19 October 2026 a check read 464 linked speeches across eight eras, the 15th Parliament among them, and found 463 credited to the right person ([check](docs/report/link-check-2026-10-19.md)). The one miss is a caption no member spoke. An audit on 17 October found 404 of 406 ([audit](docs/report/north-star-audit-2026-10-17.md)).
+A check on 19 October 2026 read 464 linked speeches across eight eras and found 463 credited to the right person ([check](docs/report/link-check-2026-10-19.md)).
 
 ## How it compares
 
