@@ -6,7 +6,8 @@ if TYPE_CHECKING:
 
 from pydantic import BeforeValidator, ConfigDict
 from pydantic.alias_generators import to_camel
-from sqlalchemy import Index, text
+from sqlalchemy import Column, Computed, Index, text
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlmodel import Field, Relationship, SQLModel
 
 EmptyStrNoneInt = Annotated[
@@ -20,6 +21,7 @@ class Report(SQLModel, table=True):
     __table_args__ = (
         Index("ix_report_sitting_date_parliament_number", "sitting_date", "parliament_number"),
         Index("ix_report_title_fts", text("to_tsvector('english', title)"), postgresql_using="gin"),
+        Index("ix_report_title_tsv", "title_tsv", postgresql_using="gin"),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -33,6 +35,10 @@ class Report(SQLModel, table=True):
     original_title: str
     title: str
     subtitle: Optional[str] = None
+    title_tsv: Optional[str] = Field(
+        default=None,
+        sa_column=Column(TSVECTOR, Computed("to_tsvector('english'::regconfig, title)", persisted=True)),
+    )
     report_id: str = Field(alias="reportId", unique=True)
     report_type: str = Field(alias="reportType")
 

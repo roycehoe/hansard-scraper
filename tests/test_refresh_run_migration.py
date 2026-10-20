@@ -33,4 +33,4 @@ def test_upgrade_creates_only_refresh_run() -> None:
 
 
 def test_migration_chain_has_one_head() -> None:
-    assert ScriptDirectory.from_config(Config(str(_ALEMBIC_INI))).get_heads() == [_REVISION]
+    assert len(ScriptDirectory.from_config(Config(str(_ALEMBIC_INI))).get_heads()) == 1

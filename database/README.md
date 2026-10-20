@@ -42,6 +42,7 @@ erDiagram
         varchar subtitle
         varchar content "raw HTML"
         varchar markdown_content
+        tsvector title_tsv "generated from title"
     }
 
     speech {
