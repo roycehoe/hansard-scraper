@@ -868,7 +868,7 @@ Each cell is the point estimate and, in brackets, the one-sided 95% bound. No re
 
 Readers raised 9 Tier A entries, and rulings account for all of them:
 - 8 are bracketed pointers inside a member's row: 7 "[Please refer to Vernacular Speech.]" and 1 "[Please refer to clarification made under ...]" (48750, row 1559732). The vernacular-pointer ruling of 18 October covers every bracketed "Please refer to" pointer, so these 8 are accepted.
-- 1 is 48701 (row 1558929), "[Inaudible.]" stored as SPEECH under "An hon Member". The source prints that bold label before the note. I ruled it accepted on 20 October: the member spoke, the reporter's note stands in for words no one heard, and the collective label is never linked. Royce has not confirmed this ruling. Without it, Tier A is 0.0034% (bound 0.010%) by rows and 0.0001% (0.0004%) by characters.
+- 1 is 48701 (row 1558929), "[Inaudible.]" stored as SPEECH under "An hon Member". The source prints that bold label before the note. I ruled it accepted on 20 October: the member spoke, the reporter's note stands in for words no one heard, and the collective label is never linked. Royce confirmed the ruling on 20 October. Without it, Tier A is 0.0034% (bound 0.010%) by rows and 0.0001% (0.0004%) by characters.
 
 The packet census flagged 9 rows that look like an oath roll: the nine Nominated Members' names in 49082, each stored under Mr Speaker. The source prints them as plain paragraphs inside the Speaker's announcement of the nominations, so they are his words and are correct. Two readers noted superscripts kept without brackets, "M3" for the M³ programme (50153) and "cm3" (50093). Both are part of the word, not footnotes, and neither reader scored them.
 
@@ -876,9 +876,8 @@ Tier C holds 97 `markup_residue` entries and 2 `other`. Most are italic undersco
 
 The detectors ran on REMOTE on 20 October, the first run since write 8 and write 9 shipped. In Parliament 15 (3,375,106 tokens) both find no pipeline hit, against source rates of 151.1 (dictionary) and 2.96 (punctuation) per million. On the whole corpus the dictionary test finds 275 pipeline hits (4.064 per million) against a source rate of 119.4, and the punctuation test 122 (1.803) against 6.06. The punctuation count fell from 127 because the writes since 18 October changed Parliaments 0 to 11. These runs are in `plans/done-tests/fidelity6/detectors_p15.json`.
 
-Done for Parliament 15. Tier A's bound by characters is 0.000% (0.0004% without the 20 October ruling), under 1%. Tier B's is 0.000%, under 2%, and both detectors find no pipeline hit in Parliament 15. No new class turned up for the residue list.
+Done for Parliament 15. Tier A's bound by characters is 0.000% (0.0004% without the "[Inaudible.]" ruling), under 1%. Tier B's is 0.000%, under 2%, and both detectors find no pipeline hit in Parliament 15. No new class turned up for the residue list.
 
 ### Still open
 
-- Royce's confirmation of the "[Inaudible.]" ruling (48701, row 1558929).
 - Italic underscores around events and pointers in newer-system rows, Tier C as in round 5.
