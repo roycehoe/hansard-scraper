@@ -5,6 +5,7 @@ from html.entities import html5
 import html2text
 
 from enums import ReportVersion
+from utils.text import fix_mojibake
 
 _MAX_ADJOURNMENT_CONTINUATIONS = 6
 _BOLD_MARKER_LENGTH = 2
@@ -92,6 +93,20 @@ _MIN_WRAPPED_LINE_RATIO = 0.6
 _PARAGRAPH_GAP_SINGLE_SPACED = 1
 _PARAGRAPH_GAP_DOUBLE_SPACED = 2
 _NO_BREAK_SPACE = "\u00a0"
+# NOTE: a prefilter for stored text: a run fix_mojibake can change starts with a character from U+00C2 to U+00F4.
+REPAIRABLE_TEXT_PATTERN = "[\u00c2-\u00f4\ufffd\ufeff]"
+_LOST_CLOSING_QUOTE_PATTERN = r"(?<=[A-Za-z0-9.,;:!?')\]_*])\ufffd\?"
+_CLOSING_DOUBLE_QUOTE = "\u201d"
+# NOTE: a lost Latin-1 byte where only one character fits, checked by hand on 22 Oct 2026; "$" is ASCII and cannot be lost, so "\ufffd" before an amount is "£".
+_LOST_CHARACTER_WORDS = {
+    "entrep\ufffdt": "entrep\u00f4t",
+    "b\ufffdte noire": "b\u00eate noire",
+    "expos\ufffd earlier": "expos\u00e9 earlier",
+    "Communiqu\ufffd": "Communiqu\u00e9",
+    "Associat\ufffdon": "Association",
+}
+_LOST_POUND_SIGN_PATTERN = r"(?<![\w\ufffd])\ufffd(?=\d)"
+_POUND_SIGN = "\u00a3"
 ASCII_FOLDED_CHARACTERS = str.maketrans(
     {html5[name + ";"]: folded for name, folded in html2text.config.UNIFIABLE.items() if name != "nbsp"}
 )
@@ -160,6 +175,24 @@ def _mark_footnote_section(html: str) -> str:
 
 def _unescape_text_characters(markdown: str) -> str:
     return re.sub(_ESCAPED_TEXT_CHARACTER_PATTERN, r"\1", markdown)
+
+
+def _restore_lost_closing_quotes(markdown: str) -> str:
+    # NOTE: SPRS sends "”" as "\ufffd?": its text went through cp1252, which has no character for the last byte 0x9D. After Chinese text the same pair is a lost CJK byte, so it stays.
+    return re.sub(_LOST_CLOSING_QUOTE_PATTERN, _CLOSING_DOUBLE_QUOTE, markdown)
+
+
+def _restore_lost_characters(markdown: str) -> str:
+    for lost_word, word in _LOST_CHARACTER_WORDS.items():
+        markdown = markdown.replace(lost_word, word)
+    return re.sub(_LOST_POUND_SIGN_PATTERN, _POUND_SIGN, markdown)
+
+
+def repair_source_characters(markdown: str) -> str:
+    # NOTE: the mojibake fix runs first, because SPRS also sends a lost closing quote as "ï¿½?", the mojibake of "\ufffd?".
+    markdown = _restore_lost_closing_quotes(fix_mojibake(markdown))
+    # NOTE: an older-system report can carry a byte-order mark as an entity, which the HTML strip in _prepare_newer_system_html does not see.
+    return _restore_lost_characters(markdown).replace(_BYTE_ORDER_MARK, "")
 
 
 def _escape_bare_ampersand(match: re.Match) -> str:
@@ -475,7 +508,7 @@ def get_cleaned_report_markdown(html: str, report_version: str) -> str:
     markdown = _merge_split_direction_lines(markdown)
     markdown = _flatten_leading_nested_bold(markdown)
     markdown = _drop_paragraph_repeated_after_stray_tag(markdown)
-    return _unescape_text_characters(markdown)
+    return repair_source_characters(_unescape_text_characters(markdown))
 
 
 def _fix_sitting_concat_headers(html: str) -> str:
@@ -579,4 +612,4 @@ def get_cleaned_sitting_markdown(html: str) -> str:
     markdown = _remove_sitting_table_separators(markdown)
     markdown = _remove_sitting_orphan_italic_markers(markdown)
     markdown = _remove_sitting_empty_italic(markdown)
-    return _merge_sitting_adjournment_lines(markdown)
+    return repair_source_characters(_merge_sitting_adjournment_lines(markdown))

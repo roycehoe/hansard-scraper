@@ -152,6 +152,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `scrape_speakers_by_parliament.py` — populates the `Speaker` table from parliament.gov.sg
 - `fill_sitting_numbers.py`: fills empty `report.sitting_number`, `sitting.session_no` and `sitting.sitting_no` from the stored header tables; a dry run unless `--commit`
 - `apply_report_titles.py`: rewrites stored titles and subtitles that the current title rule would change; a dry run unless `--commit`
+- `apply_source_characters.py`: applies `repair_source_characters`, the parser's repair of the characters SPRS sends broken (mojibake, lost closing quotes and the lost characters with one answer, byte-order marks), to stored speech transcripts and labels and report and sitting markdown; a dry run unless `--commit`
 - `apply_speaker_overrides.py`: applies `data/speaker_overrides.json` and the party values of `data/colonial_la_members.json` to stored speaker rows, and straightens the apostrophe in party; a dry run unless `--commit`
 - `complete_truncated_attendance.py`: inserts the attendance rows an interrupted stage 7 run never wrote for sittings 5941, 5988 and 6009, parsed from the stored sitting markdown; checks the per-sitting counts before it commits; a dry run unless `--commit`
 - `apply_constituency_names.py`: rewrites stored attendance location names that `data/constituency_names.json` would change; a dry run unless `--commit`
@@ -270,7 +271,7 @@ hansard-scraper/
 │   ├── names.py                     # Pure name helpers shared by services/attendance.py and services/person.py
 │   ├── sitting_dates.py             # Sitting-date parsing and the old/new format cutoff test
 │   ├── speaker_terms.py             # SPEAKER_TERMS: who presided as Speaker on which dates (stages 7 and 8)
-│   ├── text.py                      # Mojibake fix (cp1252 → UTF-8) and NUL stripping
+│   ├── text.py                      # Mojibake fix (cp1252 → UTF-8, titles and markdown) and NUL stripping
 │   └── write_target.py              # validate_can_write: the guard every write script calls before --commit
 │
 └── scripts/                         # One-off diagnostics (not part of pipeline)
@@ -295,6 +296,7 @@ hansard-scraper/
     ├── remove_excluded_reports.py
     ├── fill_sitting_numbers.py
     ├── apply_report_titles.py
+    ├── apply_source_characters.py
     ├── apply_speaker_overrides.py
     ├── complete_truncated_attendance.py
     ├── apply_constituency_names.py
