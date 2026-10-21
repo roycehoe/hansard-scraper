@@ -12,6 +12,7 @@ from crud.hansard_sitting_date_response import CRUDHansardSittingDateResponse
 from crud.refresh_run import CRUDRefreshRun
 from crud.report import CRUDReport
 from crud.sitting import CRUDSitting
+from crud.speech import CRUDSpeech
 from database.attendance import Attendance
 from database.hansard_sitting_date_response import HansardSittingDateResponse
 from database.refresh_run import RefreshRun
@@ -100,6 +101,35 @@ def test_attendance_count_reads_the_database(scratch_session: Session) -> None:
 
     assert CRUDAttendance(scratch_session).get_count_by_sitting_ids_and_speaker_id_not_null([sitting.id]) == _LINKED_ATTENDANCE_COUNT
     assert first_attendance.speaker_id is None
+
+
+def _get_vacuum_counts(session: Session) -> list[int]:
+    return [
+        CRUDSpeech(session).get_vacuum_count(),
+        CRUDReport(session).get_vacuum_count(),
+        CRUDAttendance(session).get_vacuum_count(),
+    ]
+
+
+def test_vacuum_analyze_adds_one_vacuum_to_each_table(scratch_session: Session) -> None:
+    vacuum_counts_before = _get_vacuum_counts(scratch_session)
+    scratch_session.commit()
+
+    CRUDSpeech(scratch_session).vacuum_analyze()
+    CRUDReport(scratch_session).vacuum_analyze()
+    CRUDAttendance(scratch_session).vacuum_analyze()
+
+    assert _get_vacuum_counts(scratch_session) == [vacuum_count + 1 for vacuum_count in vacuum_counts_before]
+
+
+def test_vacuum_analyze_leaves_the_session_in_a_transaction(scratch_session: Session) -> None:
+    CRUDSpeech(scratch_session).vacuum_analyze()
+
+    scratch_session.add(Sitting(sitting_date=_SITTING_DATE, parlement_no=_LATEST_PARLIAMENT))
+    scratch_session.flush()
+    scratch_session.rollback()
+
+    assert scratch_session.exec(select(Sitting.id)).all() == []
 
 
 def test_refresh_run_create_and_update_commit(scratch_session: Session) -> None:

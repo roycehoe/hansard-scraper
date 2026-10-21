@@ -6,6 +6,7 @@ from typing import Optional, Union
 
 import httpx
 import pytest
+from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, col, func, select
@@ -13,6 +14,7 @@ from sqlmodel import Session, col, func, select
 import populate.refresh_runs as refresh_runs
 from crud.attendance import CRUDAttendance
 from crud.refresh_run import CRUDRefreshRun
+from crud.report import CRUDReport
 from crud.speech import CRUDSpeech
 from database.attendance import Attendance
 from database.hansard_sitting_date_response import HansardSittingDateResponse
@@ -63,6 +65,7 @@ _STRONG_TEXT_RE = re.compile(r"<strong>[^<]+</strong>")
 _SUMMARY_RE = re.compile(r"^\d+ sittings?, \d+ reports?, [\d,]+ rows?, \d+\.\d% linked$")
 _STRONG_LABEL_RE = re.compile(r"<strong>((?:Mr|Ms|Mrs|Dr) [^<:]+)</strong>")
 _FIRST_WORD_RE = re.compile(r"\bthe\b")
+_MISSING_TABLE_VACUUM = "VACUUM (ANALYZE) no_such_table"
 _DATA_TABLES = (
     HansardWebsiteResponse,
     Report,
@@ -224,6 +227,19 @@ def _raise_database_error(*args: object) -> None:
     raise SQLAlchemyError(_DATABASE_ERROR)
 
 
+def _skip_vacuum_analyze(*args: object) -> None:
+    pass
+
+
+def _get_vacuum_counts(scratch_engine: Engine) -> list[int]:
+    with Session(scratch_engine) as session:
+        return [
+            CRUDSpeech(session).get_vacuum_count(),
+            CRUDReport(session).get_vacuum_count(),
+            CRUDAttendance(session).get_vacuum_count(),
+        ]
+
+
 def test_clean_run_adds_rows_and_links_them(
     scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament, alerts: _AlertRecorder,
 ) -> None:
@@ -303,6 +319,95 @@ def test_run_that_adds_nothing_sends_no_message(
     _assert_nothing_written(scratch_engine, row_counts_before)
     assert alerts.messages == []
     _assert_success_pinged(alerts)
+
+
+def test_clean_run_vacuums_after_the_data_commit_and_before_it_succeeds(
+    scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament, alerts: _AlertRecorder, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    vacuum_counts_before = _get_vacuum_counts(scratch_engine)
+    new_report_ids = {search_result["reportId"] for search_result in fake_parliament.new_search_results}
+    vacuum_analyze_speech = CRUDSpeech.vacuum_analyze
+    run_statuses_at_vacuum: list[str] = []
+    new_report_counts_at_vacuum: list[int] = []
+
+    def record_and_vacuum_analyze_speech(crud_speech: CRUDSpeech) -> None:
+        with Session(scratch_engine) as session:
+            run_statuses_at_vacuum.append(session.exec(select(RefreshRun.status)).one())
+            new_report_counts_at_vacuum.append(
+                session.exec(select(func.count()).select_from(Report).where(col(Report.report_id).in_(new_report_ids))).one()
+            )
+        vacuum_analyze_speech(crud_speech)
+
+    monkeypatch.setattr(CRUDSpeech, "vacuum_analyze", record_and_vacuum_analyze_speech)
+
+    status = refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    assert run_statuses_at_vacuum == [RefreshRunStatus.RUNNING]
+    assert new_report_counts_at_vacuum == [len(new_report_ids)]
+    assert _get_vacuum_counts(scratch_engine) == [vacuum_count + 1 for vacuum_count in vacuum_counts_before]
+    _assert_success_pinged(alerts)
+
+
+def test_run_that_adds_nothing_still_vacuums(scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament) -> None:
+    seed_stored(scratch_session)
+    refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
+    vacuum_counts_before = _get_vacuum_counts(scratch_engine)
+
+    status = refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    assert _get_refresh_runs(scratch_engine)[-1].speeches_added == 0
+    assert _get_vacuum_counts(scratch_engine) == [vacuum_count + 1 for vacuum_count in vacuum_counts_before]
+
+
+def test_skipped_vacuum_fails_the_run_and_keeps_its_rows(
+    scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament, alerts: _AlertRecorder, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    row_counts_before = _get_row_counts(scratch_engine)
+    monkeypatch.setattr(CRUDSpeech, "vacuum_analyze", _skip_vacuum_analyze)
+
+    with pytest.raises(HansardRefreshRunError):
+        refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
+
+    refresh_run = _get_only_refresh_run(scratch_engine)
+    assert refresh_run.status == RefreshRunStatus.FAILED
+    assert refresh_run.failure_reason is not None
+    assert refresh_run.failure_reason.startswith("After the data commit: HansardRefreshRunError: VACUUM (ANALYZE) did not run on speech")
+    assert refresh_run.speeches_added > 0
+    _assert_rows_added(scratch_engine, row_counts_before, refresh_run)
+    failure_messages = [message for message in alerts.messages if message.startswith("Hansard refresh failed.")]
+    assert len(failure_messages) == 1
+    assert "did not run on speech" in failure_messages[0]
+    assert len([message for message in alerts.messages if _SUMMARY_RE.match(message)]) == 1
+    _assert_failure_pinged(alerts)
+
+
+def test_vacuum_database_error_fails_the_run_and_keeps_its_rows(
+    scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament, alerts: _AlertRecorder, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    row_counts_before = _get_row_counts(scratch_engine)
+
+    def vacuum_analyze_missing_table(crud_report: CRUDReport) -> None:
+        crud_report.session.connection(execution_options={"isolation_level": "AUTOCOMMIT"}).execute(text(_MISSING_TABLE_VACUUM))
+
+    monkeypatch.setattr(CRUDReport, "vacuum_analyze", vacuum_analyze_missing_table)
+
+    with pytest.raises(SQLAlchemyError):
+        refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
+
+    refresh_run = _get_only_refresh_run(scratch_engine)
+    assert refresh_run.status == RefreshRunStatus.FAILED
+    assert refresh_run.failure_reason is not None
+    assert refresh_run.failure_reason.startswith("After the data commit: ProgrammingError")
+    assert _MISSING_TABLE_VACUUM in refresh_run.failure_reason
+    _assert_rows_added(scratch_engine, row_counts_before, refresh_run)
+    failure_messages = [message for message in alerts.messages if message.startswith("Hansard refresh failed.")]
+    assert failure_messages == ["Hansard refresh failed. ProgrammingError after the data commit"]
+    _assert_failure_pinged(alerts)
 
 
 def test_new_parliament_number_halts(

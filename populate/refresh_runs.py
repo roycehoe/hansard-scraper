@@ -18,9 +18,12 @@ from crud.report import CRUDReport
 from crud.sitting import CRUDSitting
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
+from database.attendance import Attendance
 from database.hansard_sitting_date_response import HansardSittingDateResponse
 from database.refresh_run import RefreshRun
+from database.report import Report
 from database.sitting import Sitting
+from database.speech import Speech
 from enums import RefreshRunStatus, ReportType
 from exceptions import (
     HansardError,
@@ -555,6 +558,26 @@ def _get_new_row_counts(session: Session, report_ids: list[int]) -> NewRowCounts
     return NewRowCounts(category_to_row_count[LINKED_CATEGORY], category_to_row_count[NAMED_UNLINKED_CATEGORY], dict(label_to_row_count))
 
 
+def _get_table_name_to_vacuum_count(session: Session) -> dict[str, int]:
+    return {
+        Speech.__tablename__: CRUDSpeech(session).get_vacuum_count(),
+        Report.__tablename__: CRUDReport(session).get_vacuum_count(),
+        Attendance.__tablename__: CRUDAttendance(session).get_vacuum_count(),
+    }
+
+
+def _vacuum_analyze_tables(session: Session) -> None:
+    table_name_to_vacuum_count = _get_table_name_to_vacuum_count(session)
+    # NOTE: nothing is pending; the commit ends the read transaction, which VACUUM cannot run inside
+    session.commit()
+    CRUDSpeech(session).vacuum_analyze()
+    CRUDReport(session).vacuum_analyze()
+    CRUDAttendance(session).vacuum_analyze()
+    for table_name, vacuum_count in _get_table_name_to_vacuum_count(session).items():
+        if vacuum_count == table_name_to_vacuum_count[table_name]:
+            raise HansardRefreshRunError(f"VACUUM (ANALYZE) did not run on {table_name}; Postgres skips a table the role cannot MAINTAIN")
+
+
 def _finish_refresh_run(
     session: Session,
     refresh_run_id: int,
@@ -681,6 +704,7 @@ def populate_refresh_runs(session: Session, now: datetime, allowed_parliament_nu
             run_result.figures = build_attribution_figures_json(get_attribution_figures(session), datetime.now(timezone.utc))
         latest_sitting_date = CRUDReport(session).get_max_sitting_date_by_content_not_null_and_content_not_empty()
         run_result.latest_sitting_date_with_text = None if latest_sitting_date is None else latest_sitting_date.date()
+        _vacuum_analyze_tables(session)
         _finish_refresh_run(session, refresh_run_id, run_result, RefreshRunStatus.SUCCEEDED, None, None)
         is_run_finished = True
         _send_success_alerts(run_result)

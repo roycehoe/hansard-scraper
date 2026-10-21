@@ -191,3 +191,13 @@ class CRUDSpeech:
             ),
             {"ids": list(updates.keys()), "speaker_ids": list(updates.values())},
         )
+
+    def get_vacuum_count(self) -> int:
+        statement = text("SELECT vacuum_count FROM pg_stat_user_tables WHERE relid = 'speech'::regclass")
+        return self.session.execute(statement).scalar_one()
+
+    # NOTE: the commit hands the autocommit connection back, so the session's next statement runs in a transaction
+    def vacuum_analyze(self) -> None:
+        statement = text("VACUUM (ANALYZE) speech")
+        self.session.connection(execution_options={"isolation_level": "AUTOCOMMIT"}).execute(statement)
+        self.session.commit()
