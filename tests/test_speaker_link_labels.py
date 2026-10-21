@@ -20,6 +20,8 @@ _SPEAKERS = (
     Speaker(id=9, name="Kenneth Tiong", party="Workers' Party", is_legislative_assembly=False, parliament_number=15),
     Speaker(id=10, name="Tan Chuan-Jin", party=_PARTY, is_legislative_assembly=False, parliament_number=13),
     Speaker(id=11, name="Rahmat Bin Kenap", party=_PARTY, is_legislative_assembly=True, parliament_number=1),
+    Speaker(id=12, name="Mohd Ali Bin Alwi", party=_PARTY, is_legislative_assembly=True, parliament_number=0),
+    Speaker(id=13, name="Foo Mee Har", party=_PARTY, is_legislative_assembly=False, parliament_number=12),
 )
 _LOOKUPS = build_speaker_lookups(list(_SPEAKERS))
 _NAME_AND_PARLIAMENT_TO_SPEAKER_ID = {(speaker.name, speaker.parliament_number): speaker.id for speaker in _SPEAKERS}
@@ -28,6 +30,8 @@ _NAME_AND_PARLIAMENT_TO_SPEAKER_ID = {(speaker.name, speaker.parliament_number):
 @pytest.mark.parametrize(
     ("label", "parliament", "expected_speaker_id"),
     [
+        ("Inche Mohd. Ali Bin Alwi Kampong Kembangan)", 0, 12),
+        ("Ms Foo Mee Har West Coast)", 12, 13),
         ("Dr Yeoh Ghim Seng (Mr Speaker)", 6, 1),
         ("MR TEO CHEE HEAN", 9, 2),
         ("Mr Teh Cheang Won", 5, 3),

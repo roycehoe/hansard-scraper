@@ -89,8 +89,16 @@ _ROLE_CONTEXT_PATTERN = "|".join(
 )
 
 
+# NOTE: SPRS prints these labels without the opening bracket of the constituency; checked against the source on 22 Oct 2026.
+_LABELS_MISSING_OPENING_BRACKET = {
+    "Inche Mohd. Ali Bin Alwi Kampong Kembangan)": "Inche Mohd. Ali Bin Alwi (Kampong Kembangan)",
+    "Ms Foo Mee Har West Coast)": "Ms Foo Mee Har (West Coast)",
+}
+
+
 def _preclean(raw: str) -> str:
     raw = raw.replace("\ufeff", "").strip()
+    raw = _LABELS_MISSING_OPENING_BRACKET.get(raw, raw)
     raw = _LEADING_LIST_NUMBER_RE.sub("", raw)
     raw = _LEADING_DOT_RE.sub("", raw)
     raw = _ASSOC_PROF_RE.sub("Assoc. Prof.", raw)
