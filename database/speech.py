@@ -11,6 +11,7 @@ from enums import SpeechKind
 
 class Speech(SQLModel, table=True):
     __table_args__ = (
+        Index("ix_speech_speaker_id", "speaker_id", postgresql_include=["report_id"]),
         Index("ix_speech_transcript_fts", text("to_tsvector('english', transcript)"), postgresql_using="gin"),
         Index("ix_speech_transcript_tsv", "transcript_tsv", postgresql_using="gin"),
         Index("ix_speech_transcript_tsv_rum", "transcript_tsv", postgresql_using="rum", postgresql_ops={"transcript_tsv": "rum_tsvector_ops"}),
@@ -38,4 +39,4 @@ class Speech(SQLModel, table=True):
 
     report_id: Optional[int] = Field(default=None, foreign_key="report.id", index=True)
     report: Report = Relationship(back_populates="speeches")
-    speaker_id: Optional[int] = Field(default=None, foreign_key="speaker.id", index=True)
+    speaker_id: Optional[int] = Field(default=None, foreign_key="speaker.id")
