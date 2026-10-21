@@ -2,7 +2,7 @@
 name = "hansard-scraper"
 version = "0.1.0"
 description = ""
-authors = ["roycehoe <hansard@fancybinary.sg>"]
+authors = ["roycehoe <royceinbox@hotmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
