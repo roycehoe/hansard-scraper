@@ -5,11 +5,11 @@
 
 A database of Singapore's parliamentary record, from the Legislative Assembly of 1955 to the present Parliament. The pipeline fetches every report from SPRS, Parliament's search system. A report is one item of business in a sitting, such as a question, a bill or a motion. The pipeline splits each report into speeches and links each speech to the member who gave it.
 
-The website built on this database is [roycehoe/hansard](https://github.com/roycehoe/hansard). It is in a private beta.
+The website built on this database is [roycehoe/hansard](https://github.com/roycehoe/hansard), live at [hansard.fancybinary.sg](https://hansard.fancybinary.sg).
 
 ## Status
 
-New sittings are not yet added on a schedule, so the record stops at 7 October 2026 until the next run.
+A scheduled job runs `refresh.py` once a day and adds the sittings SPRS has published since the last stored one. It only adds rows and never re-parses a stored report. [docs/refresh.md](docs/refresh.md) describes a run.
 
 ## Getting the data
 
