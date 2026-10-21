@@ -29,8 +29,10 @@ Then, for each month in order, the run:
 
 After the last month, the run:
 
-14. Computes the attribution figures when the run added speech rows, records the counts and marks the row `SUCCEEDED`.
-15. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
+14. Computes the attribution figures when the run added speech rows.
+15. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
+16. Records the counts and marks the row `SUCCEEDED`.
+17. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
 
 `refresh.py` exits 0 on success, 2 on a halt and 1 on a failure, after the failure's error propagates.
 
@@ -82,6 +84,8 @@ A halt keeps the months committed before it and writes nothing of the month in p
 On the first supervised run, read the log's "No sitting response" lines. Each one is a probed date with no sitting, and SPRS should answer it in a shape the run reads as nothing published. If a line shows an answer that looks like a real sitting, stop and check the gateway.
 
 A failure is any other error. The row is `FAILED` and `failure_reason` holds the error type and message. A failure keeps the months committed before it, and their rows stay stored; once a month has committed rows, `failure_reason` starts with "After the data commit". The next run retries.
+
+A VACUUM that fails, or that Postgres skips, is a failure too. Postgres skips a table the role cannot `MAINTAIN` with only a warning, which the run never sees, so the run compares each table's `vacuum_count` before and after, and raises `HansardRefreshRunError` naming the table when it did not rise. A skip means the `MAINTAIN` grant in "Write role SQL" is missing on that table. The new rows are committed by then and stay, and the next run vacuums again.
 
 Two cases are known and accepted:
 
@@ -140,7 +144,7 @@ One row per run. Every count column is `integer NOT NULL` and counts only what t
 | Status | Meaning |
 |---|---|
 | `RUNNING` | The run has started and not ended. The next run marks a row still `RUNNING` after 12 hours as `FAILED` |
-| `SUCCEEDED` | The data is committed and the counts are recorded |
+| `SUCCEEDED` | The data is committed, the three tables are vacuumed and the counts are recorded |
 | `HALTED` | A halt check stopped the run. Months committed before it stay stored |
 | `FAILED` | An error stopped the run |
 
@@ -188,13 +192,14 @@ GRANT SELECT ON hansardwebsiteresponse, hansardsittingdateresponse, report, spee
 GRANT INSERT ON hansardwebsiteresponse, hansardsittingdateresponse, report, speech, sitting, attendance, refresh_run TO hansard_refresh;
 GRANT UPDATE (speaker_id) ON speech, attendance TO hansard_refresh;
 GRANT UPDATE ON refresh_run TO hansard_refresh;
+GRANT MAINTAIN ON speech, report, attendance TO hansard_refresh;
 GRANT USAGE ON SEQUENCE hansardwebsiteresponse_id_seq, hansardsittingdateresponse_id_seq, report_id_seq, speech_id_seq, sitting_id_seq, sittingattendance_id_seq, refresh_run_id_seq TO hansard_refresh;
 GRANT SELECT (id, website_responses_added, sitting_date_responses_added, sittings_added, reports_added, speeches_added, speeches_linked, speeches_named_unlinked, attendances_added, attendances_linked, reports_held_without_text, reports_without_speech_rows, reports_rechecked, reports_changed, latest_sitting_date_with_text, figures, started_at, finished_at, status) ON refresh_run TO <the API's read-only role>;
 ```
 
 The table and sequence names are those on the scratch copy. `attendance` owns `sittingattendance_id_seq`, a name kept from an older table name. Confirm each name on the remote with `\d <table>` first.
 
-The role gets no DELETE or TRUNCATE on any table. It gets no `UPDATE` on `hansardwebsiteresponse`, `hansardsittingdateresponse` or `speaker`, and no `CREATE`, so it cannot run migrations. Migrations stay supervised, with the owner role. `SELECT ... FOR UPDATE` on `refresh_run` needs the `UPDATE` grant the role has. The figures pass reads every report and speech row, which the `SELECT` grants cover.
+The role gets no DELETE or TRUNCATE on any table. It gets no `UPDATE` on `hansardwebsiteresponse`, `hansardsittingdateresponse` or `speaker`, and no `CREATE`, so it cannot run migrations. Migrations stay supervised, with the owner role. `SELECT ... FOR UPDATE` on `refresh_run` needs the `UPDATE` grant the role has. `MAINTAIN` lets the role run `VACUUM` and `ANALYZE` on the three tables, and also `REINDEX` and `CLUSTER`, which the refresh never runs. Royce granted it on the remote on 21 October 2026, as `doadmin`, the tables' owner. The figures pass reads every report and speech row, which the `SELECT` grants cover.
 
 The API's role gets a column grant that leaves out `halt_reason` and `failure_reason`, because a failure reason can carry database host and user names. Batch E's reader never selects those two columns.
 
