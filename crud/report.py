@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Iterable, Optional
 
 from sqlalchemy import text
 from sqlmodel import Session, col, delete, func, select
@@ -22,6 +22,18 @@ class ReportMarkdownRow:
     id: int
     sitting_date: datetime
     markdown_content: Optional[str]
+
+
+@dataclass(frozen=True)
+class ReportTextRow:
+    id: int
+    title: str
+    subtitle: Optional[str]
+    content: Optional[str]
+    markdown_content: Optional[str]
+
+
+_STREAM_BATCH = 200
 
 
 @dataclass(frozen=True)
@@ -123,6 +135,14 @@ class CRUDReport:
             .order_by(Report.id)
         )
         return [ReportMarkdownRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_text_rows(self) -> Iterable[ReportTextRow]:
+        statement = (
+            select(Report.id, Report.title, Report.subtitle, Report.content, Report.markdown_content)
+            .order_by(Report.id)
+            .execution_options(yield_per=_STREAM_BATCH)
+        )
+        return (ReportTextRow(*row) for row in self.session.exec(statement))
 
     def get_markdown_rows_by_markdown_content_regex(self, pattern: str) -> list[ReportMarkdownRow]:
         statement = (

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Iterable, Optional
 
 from sqlalchemy import text
 from sqlmodel import Session, col, delete, func, select
@@ -39,6 +39,16 @@ class AttendanceSittingCount:
     row_count: int
 
 
+@dataclass(frozen=True)
+class AttendanceTextRow:
+    id: int
+    speaker_name: Optional[str]
+    location_name: Optional[str]
+
+
+_STREAM_BATCH = 10_000
+
+
 class CRUDAttendance:
     def __init__(self, session: Session):
         self.session = session
@@ -58,6 +68,14 @@ class CRUDAttendance:
     def get_all(self) -> list[Attendance]:
         statement = select(Attendance).order_by(Attendance.sitting_id, Attendance.id)
         return list(self.session.exec(statement).all())
+
+    def get_text_rows(self) -> Iterable[AttendanceTextRow]:
+        statement = (
+            select(Attendance.id, Attendance.speaker_name, Attendance.location_name)
+            .order_by(Attendance.id)
+            .execution_options(yield_per=_STREAM_BATCH)
+        )
+        return (AttendanceTextRow(*row) for row in self.session.exec(statement))
 
     def get_by_ids(self, ids: list[int]) -> list[Attendance]:
         statement = select(Attendance).where(col(Attendance.id).in_(ids))

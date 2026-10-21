@@ -66,6 +66,14 @@ class SpeechLabelRow:
 
 
 @dataclass(frozen=True)
+class SpeechTextRow:
+    id: int
+    report_id: int
+    speaker: Optional[str]
+    transcript: str
+
+
+@dataclass(frozen=True)
 class SpeakerStringCount:
     speaker: str
     row_count: int
@@ -160,6 +168,14 @@ class CRUDSpeech:
             .order_by(Speech.report_id, Speech.ordinal)
         )
         return [SpeechRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_text_rows(self) -> Iterable[SpeechTextRow]:
+        statement = (
+            select(Speech.id, Speech.report_id, Speech.speaker, Speech.transcript)
+            .order_by(Speech.id)
+            .execution_options(yield_per=_STREAM_BATCH)
+        )
+        return (SpeechTextRow(*row) for row in self.session.exec(statement))
 
     def get_transcript_rows_by_transcript_regex(self, pattern: str) -> list[SpeechTranscriptRow]:
         statement = select(Speech.id, Speech.transcript).where(col(Speech.transcript).regexp_match(pattern)).order_by(Speech.id)

@@ -30,6 +30,13 @@ class SittingMarkdownRow:
     markdown_content: str
 
 
+@dataclass(frozen=True)
+class SittingTextRow:
+    id: int
+    html_full_content: Optional[str]
+    markdown_content: Optional[str]
+
+
 _STREAM_BATCH = 50
 
 
@@ -103,6 +110,14 @@ class CRUDSitting:
             .execution_options(yield_per=_STREAM_BATCH)
         )
         return (SittingNumberRow(*row) for row in self.session.exec(statement))
+
+    def get_text_rows(self) -> Iterable[SittingTextRow]:
+        statement = (
+            select(Sitting.id, Sitting.html_full_content, Sitting.markdown_content)
+            .order_by(Sitting.id)
+            .execution_options(yield_per=_STREAM_BATCH)
+        )
+        return (SittingTextRow(*row) for row in self.session.exec(statement))
 
     def get_markdown_rows_by_markdown_content_regex(self, pattern: str) -> list[SittingMarkdownRow]:
         statement = select(Sitting.id, Sitting.markdown_content).where(col(Sitting.markdown_content).regexp_match(pattern)).order_by(Sitting.id)
