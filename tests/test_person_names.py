@@ -30,7 +30,7 @@ def _get_speaker(speaker_id: int, name: str, parliament_number: int, person_id: 
 
 
 def _get_canonical_names(speakers: list[Speaker], decisions: list[Decision]) -> list[str]:
-    return cluster_speakers(speakers, decisions).names
+    return [person_cluster.canonical_name for person_cluster in cluster_speakers(speakers, decisions).clusters]
 
 
 @pytest.mark.parametrize(
@@ -82,8 +82,8 @@ def test_name_decision_does_not_merge_or_split_clusters() -> None:
 
     cluster_result = cluster_speakers(speakers, decisions)
 
-    assert [len(cluster) for cluster in cluster_result.clusters] == [2]
-    assert cluster_result.names == ["George Yong-Boon Yeo"]
+    assert [len(person_cluster.memberships) for person_cluster in cluster_result.clusters] == [2]
+    assert [person_cluster.canonical_name for person_cluster in cluster_result.clusters] == ["George Yong-Boon Yeo"]
 
 
 def test_data_file_gives_each_name_decision_one_member_and_a_name() -> None:

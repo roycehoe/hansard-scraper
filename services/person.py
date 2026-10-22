@@ -23,11 +23,16 @@ class Decision:
     person_name: Optional[str] = None
 
 
+@dataclass(frozen=True)
+class PersonCluster:
+    memberships: list[Speaker]
+    canonical_name: str
+    basis: str
+
+
 @dataclass
 class ClusterResult:
-    clusters: list[list[Speaker]] = field(default_factory=list)
-    names: list[str] = field(default_factory=list)
-    bases: list[str] = field(default_factory=list)
+    clusters: list[PersonCluster] = field(default_factory=list)
     conflicts: list[str] = field(default_factory=list)
 
 
@@ -128,8 +133,12 @@ def cluster_speakers(speakers: list[Speaker], decisions: list[Decision]) -> Clus
 
     for root, members in clusters.members.items():
         members = sorted(members, key=lambda speaker: speaker.parliament_number)
-        cluster_result.clusters.append(members)
         decided = [speaker_id_to_person_name[speaker.id] for speaker in members if speaker.id in speaker_id_to_person_name]
-        cluster_result.names.append(decided[0] if decided else _get_canonical_name(members))
-        cluster_result.bases.append(clusters.basis.get(root, "single"))
+        cluster_result.clusters.append(
+            PersonCluster(
+                memberships=members,
+                canonical_name=decided[0] if decided else _get_canonical_name(members),
+                basis=clusters.basis.get(root, "single"),
+            )
+        )
     return cluster_result

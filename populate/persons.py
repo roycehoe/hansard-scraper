@@ -36,18 +36,18 @@ def populate_persons(session: Session) -> None:
     created = 0
     renamed = 0
     speaker_id_to_person_id: dict[int, int] = {}
-    for cluster, name, basis in zip(cluster_result.clusters, cluster_result.names, cluster_result.bases):
-        existing_person_ids = sorted({speaker.person_id for speaker in cluster if speaker.person_id is not None})
+    for person_cluster in cluster_result.clusters:
+        existing_person_ids = sorted({speaker.person_id for speaker in person_cluster.memberships if speaker.person_id is not None})
         if len(existing_person_ids) > 1:
-            logger.warning(f"Person: cluster {name!r} spans persons {existing_person_ids}; keeping {existing_person_ids[0]}")
-        person_id = existing_person_ids[0] if existing_person_ids else CRUDPerson(session).create(Person(canonical_name=name, basis=basis))
+            logger.warning(f"Person: cluster {person_cluster.canonical_name!r} spans persons {existing_person_ids}; keeping {existing_person_ids[0]}")
+        person_id = existing_person_ids[0] if existing_person_ids else CRUDPerson(session).create(Person(canonical_name=person_cluster.canonical_name, basis=person_cluster.basis))
         created += not existing_person_ids
         person = person_id_to_person.get(person_id)
-        if person is not None and person.canonical_name != name:
-            logger.info(f"Person {person_id}: {person.canonical_name!r} -> {name!r}")
-            CRUDPerson(session).set_canonical_name(person, name)
+        if person is not None and person.canonical_name != person_cluster.canonical_name:
+            logger.info(f"Person {person_id}: {person.canonical_name!r} -> {person_cluster.canonical_name!r}")
+            CRUDPerson(session).set_canonical_name(person, person_cluster.canonical_name)
             renamed += 1
-        speaker_id_to_person_id.update({speaker.id: person_id for speaker in cluster if speaker.person_id != person_id})
+        speaker_id_to_person_id.update({speaker.id: person_id for speaker in person_cluster.memberships if speaker.person_id != person_id})
     CRUDSpeaker(session).set_person_ids_bulk(speaker_id_to_person_id)
     session.commit()
     logger.info(
