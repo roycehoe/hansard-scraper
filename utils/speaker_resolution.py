@@ -343,7 +343,7 @@ class SpeakerLookups:
     surname_fallback: dict[tuple[str, int], str]
 
 
-def _try_name_variant(
+def _get_variant_canonical_name(
     name: str,
     parliament: int,
     lookups: SpeakerLookups,
@@ -377,19 +377,19 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
     canonical = lookups.inverted.get((normalize_for_lookup(name), parliament))
     if canonical:
         return canonical
-    canonical = _try_name_variant(name, parliament, lookups)
+    canonical = _get_variant_canonical_name(name, parliament, lookups)
     if canonical:
         return canonical
 
     spelling_normalised_name = spelling_normalize(name)
     if spelling_normalised_name != name:
-        canonical = _try_name_variant(spelling_normalised_name, parliament, lookups)
+        canonical = _get_variant_canonical_name(spelling_normalised_name, parliament, lookups)
         if canonical:
             return canonical
 
     name_without_haji = strip_middle_haji(name)
     if name_without_haji != name:
-        canonical = _try_name_variant(name_without_haji, parliament, lookups, is_using_wordset=False)
+        canonical = _get_variant_canonical_name(name_without_haji, parliament, lookups, is_using_wordset=False)
         if canonical:
             return canonical
 
@@ -398,7 +398,7 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
         camel_split_stripped_name = strip_title(camel_split_name).strip()
         canonical = (
             NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get((period_normalize(camel_split_stripped_name), parliament))
-            or _try_name_variant(camel_split_stripped_name, parliament, lookups)
+            or _get_variant_canonical_name(camel_split_stripped_name, parliament, lookups)
         )
         if canonical:
             return canonical
