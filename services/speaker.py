@@ -8,7 +8,7 @@ from exceptions import HansardGatewayError, HansardWriteCheckError
 from schemas.head_of_state import HeadOfStateResult
 from schemas.parliament_member_list_response import ParliamentMemberListResponse
 from schemas.speaker import SpeakerResult
-from schemas.speaker_override import PartyOverride
+from schemas.speaker_override import PartyOverride, SpeakerOverrides
 from utils.speaker_resolution_constants import COLONIAL_PARLIAMENT_NUMBER
 
 _CURLY_APOSTROPHE = "\u2019"
@@ -75,6 +75,17 @@ def build_speaker_results(parliament_member_list_response: ParliamentMemberListR
             for parliament_number in parliament_numbers
         )
     return sorted(speaker_results, key=attrgetter("parliament_number"))
+
+
+def get_name_parliament_to_is_legislative_assembly(speaker_overrides: SpeakerOverrides) -> dict[tuple[str, int], bool]:
+    return {
+        (override.name, override.parliament_number): override.is_legislative_assembly
+        for override in speaker_overrides.legislative_assembly_overrides
+    }
+
+
+def get_name_parliament_to_party(speaker_overrides: SpeakerOverrides) -> dict[tuple[str, int], str]:
+    return {(override.name, override.parliament_number): override.party for override in speaker_overrides.party_overrides}
 
 
 def build_speaker(

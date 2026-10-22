@@ -7,12 +7,14 @@ from database.init import engine
 from exceptions import HansardGatewayError
 from gateway.speakers_by_parliament import get_parliament_member_list_response
 from logs import logger
-from populate.speakers import (
-    load_name_parliament_to_is_legislative_assembly,
-    load_name_parliament_to_party,
+from services.speaker import (
+    build_speaker,
+    build_speaker_results,
+    get_name_parliament_to_is_legislative_assembly,
+    get_name_parliament_to_party,
 )
-from services.speaker import build_speaker, build_speaker_results
 from settings import settings
+from utils.data_files import get_speaker_overrides
 from utils.write_target import validate_can_write
 
 
@@ -25,8 +27,9 @@ def load_parliament_speakers(session: Session, parliament_number: int, is_commit
     ]
     if not speaker_results:
         raise HansardGatewayError(f"No member list for parliament {parliament_number}")
-    name_parliament_to_is_legislative_assembly = load_name_parliament_to_is_legislative_assembly()
-    name_parliament_to_party = load_name_parliament_to_party()
+    speaker_overrides = get_speaker_overrides()
+    name_parliament_to_is_legislative_assembly = get_name_parliament_to_is_legislative_assembly(speaker_overrides)
+    name_parliament_to_party = get_name_parliament_to_party(speaker_overrides)
     new_speakers = [
         build_speaker(speaker_result, name_parliament_to_is_legislative_assembly, name_parliament_to_party)
         for speaker_result in speaker_results
