@@ -37,6 +37,18 @@ class SittingTextRow:
     markdown_content: Optional[str]
 
 
+@dataclass(frozen=True)
+class SittingDateMarkdownRow:
+    sitting_date: str
+    markdown_content: str
+
+
+@dataclass(frozen=True)
+class SittingDateSectionsRow:
+    sitting_date: str
+    sections: str
+
+
 _STREAM_BATCH = 50
 
 
@@ -81,23 +93,21 @@ class CRUDSitting:
         statement = select(func.max(Sitting.parlement_no))
         return self.session.exec(statement).one()
 
-    def get_markdown_by_sitting_dates_and_markdown_content_not_null(self, dates: list[str]) -> dict[str, str]:
+    def get_date_markdown_rows_by_sitting_dates_and_markdown_content_not_null(self, dates: list[str]) -> list[SittingDateMarkdownRow]:
         statement = (
             select(Sitting.sitting_date, Sitting.markdown_content)
             .where(col(Sitting.sitting_date).in_(dates))
             .where(Sitting.markdown_content.is_not(None))
         )
-        sitting_markdown_rows = self.session.exec(statement).all()
-        return {sitting_date: markdown for sitting_date, markdown in sitting_markdown_rows}
+        return [SittingDateMarkdownRow(*row) for row in self.session.exec(statement).all()]
 
-    def get_sections_by_sitting_dates_and_sections_not_null(self, dates: list[str]) -> dict[str, str]:
+    def get_date_sections_rows_by_sitting_dates_and_sections_not_null(self, dates: list[str]) -> list[SittingDateSectionsRow]:
         statement = (
             select(Sitting.sitting_date, Sitting.sections)
             .where(col(Sitting.sitting_date).in_(dates))
             .where(Sitting.sections.is_not(None))
         )
-        sitting_sections_rows = self.session.exec(statement).all()
-        return {sitting_date: sections for sitting_date, sections in sitting_sections_rows}
+        return [SittingDateSectionsRow(*row) for row in self.session.exec(statement).all()]
 
     def get_date_rows(self) -> list[SittingDateRow]:
         statement = select(Sitting.id, Sitting.sitting_date, Sitting.parlement_no, Sitting.volume_no)

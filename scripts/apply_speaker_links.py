@@ -41,7 +41,10 @@ def _get_speech_plan(session: Session, lookups: SpeakerLookups, speaker_id_looku
 
 
 def _validate_speech_speaker_ids(session: Session, speech_id_to_speaker_id: dict[int, Optional[int]]) -> None:
-    stored_speech_id_to_speaker_id = CRUDSpeech(session).get_speaker_ids_by_ids_for_update(list(speech_id_to_speaker_id))
+    stored_speech_id_to_speaker_id = {
+        speaker_id_row.id: speaker_id_row.speaker_id
+        for speaker_id_row in CRUDSpeech(session).get_speaker_id_rows_by_ids_for_update(list(speech_id_to_speaker_id))
+    }
     if len(stored_speech_id_to_speaker_id) != len(speech_id_to_speaker_id):
         raise HansardWriteCheckError(f"{len(stored_speech_id_to_speaker_id)} of {len(speech_id_to_speaker_id)} planned speech rows are stored")
     for speech_id, speaker_id in speech_id_to_speaker_id.items():

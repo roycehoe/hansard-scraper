@@ -30,6 +30,12 @@ class SpeechSpeakerRow:
 
 
 @dataclass(frozen=True)
+class SpeechSpeakerIdRow:
+    id: int
+    speaker_id: Optional[int]
+
+
+@dataclass(frozen=True)
 class SpeechReportTypeRow:
     speaker: str
     report_type: str
@@ -213,9 +219,9 @@ class CRUDSpeech:
         )
         return update_result.rowcount
 
-    def get_speaker_ids_by_ids_for_update(self, speech_ids: list[int]) -> dict[int, Optional[int]]:
+    def get_speaker_id_rows_by_ids_for_update(self, speech_ids: list[int]) -> list[SpeechSpeakerIdRow]:
         statement = select(Speech.id, Speech.speaker_id).where(col(Speech.id).in_(speech_ids)).with_for_update()
-        return {speech_id: speaker_id for speech_id, speaker_id in self.session.exec(statement).all()}
+        return [SpeechSpeakerIdRow(*row) for row in self.session.exec(statement).all()]
 
     def get_speaker_rows_by_ids(self, speech_ids: list[int]) -> list[SpeechSpeakerRow]:
         statement = (
