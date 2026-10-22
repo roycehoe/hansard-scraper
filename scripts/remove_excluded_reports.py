@@ -14,9 +14,8 @@ from exceptions import HansardWriteCheckError
 from logs import logger
 from schemas.excluded_report_id import ExcludedReportId
 from settings import settings
+from utils.data_files import get_excluded_report_ids
 from utils.write_target import validate_can_write
-
-_EXCLUDED_REPORT_IDS_FILE = Path(__file__).parent.parent / "data" / "excluded_report_ids.json"
 
 
 @dataclass(frozen=True)
@@ -72,7 +71,7 @@ def _remove_reports(session: Session, removals: list[ReportRemoval]) -> None:
 def remove_excluded_reports(is_commit: bool, plan_path: Optional[Path]) -> None:
     if is_commit:
         validate_can_write(settings.database_url)
-    excluded_report_ids = [ExcludedReportId.model_validate(entry) for entry in json.loads(_EXCLUDED_REPORT_IDS_FILE.read_text())]
+    excluded_report_ids = get_excluded_report_ids()
     with Session(engine) as session:
         removals = _get_removals(session, excluded_report_ids)
         for removal in removals:

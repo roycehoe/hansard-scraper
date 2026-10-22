@@ -1,6 +1,3 @@
-import json
-from pathlib import Path
-
 from sqlmodel import Session
 
 from crud.report import CRUDReport
@@ -15,14 +12,9 @@ from services.speech import (
     get_speeches,
     get_start_of_speech_line,
 )
+from utils.data_files import get_unattributed_speech_ranges
 
 _BATCH_SIZE = 1_000
-_UNATTRIBUTED_SPEECH_FILE = Path(__file__).parent.parent / "data" / "unattributed_speech.json"
-
-
-def load_report_id_to_unattributed_range() -> dict[int, UnattributedSpeechRange]:
-    speech_ranges = [UnattributedSpeechRange.model_validate(entry) for entry in json.loads(_UNATTRIBUTED_SPEECH_FILE.read_text())]
-    return {speech_range.report_id: speech_range for speech_range in speech_ranges}
 
 
 def build_report_speeches(report: Report, report_id_to_unattributed_range: dict[int, UnattributedSpeechRange]) -> list[Speech]:
@@ -50,7 +42,7 @@ def populate_speeches(session: Session) -> None:
     reports = CRUDReport(session).get_all()
     existing_report_ids = CRUDSpeech(session).get_distinct_report_ids()
     reports_to_process = [report for report in reports if report.id not in existing_report_ids]
-    report_id_to_unattributed_range = load_report_id_to_unattributed_range()
+    report_id_to_unattributed_range = {speech_range.report_id: speech_range for speech_range in get_unattributed_speech_ranges()}
     logger.info(f"Parsing speeches for {len(reports_to_process)}/{len(reports)} reports ({len(existing_report_ids)} already done)")
 
     batch = []

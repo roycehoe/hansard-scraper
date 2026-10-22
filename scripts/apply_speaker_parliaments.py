@@ -10,21 +10,17 @@ from crud.speaker import CRUDSpeaker
 from database.init import engine
 from exceptions import HansardWriteCheckError
 from logs import logger
-from schemas.head_of_state import HeadOfStateResult
-from schemas.speaker import SpeakerResult
 from services.speaker import get_parliament_changes
 from settings import settings
+from utils.data_files import get_colonial_members, get_heads_of_state
 from utils.write_target import validate_can_write
-
-_COLONIAL_LA_MEMBERS_FILE = Path(__file__).parent.parent / "data" / "colonial_la_members.json"
-_HEADS_OF_STATE_FILE = Path(__file__).parent.parent / "data" / "heads_of_state.json"
 
 
 def apply_speaker_parliaments(is_commit: bool, plan_path: Optional[Path]) -> None:
     if is_commit:
         validate_can_write(settings.database_url)
-    colonial_members = [SpeakerResult.model_validate(record) for record in json.loads(_COLONIAL_LA_MEMBERS_FILE.read_text())]
-    heads_of_state = [HeadOfStateResult.model_validate(record) for record in json.loads(_HEADS_OF_STATE_FILE.read_text())]
+    colonial_members = get_colonial_members()
+    heads_of_state = get_heads_of_state()
     with Session(engine) as session:
         parliament_changes = get_parliament_changes(CRUDSpeaker(session).get_all(), colonial_members, heads_of_state)
         for parliament_change in parliament_changes:

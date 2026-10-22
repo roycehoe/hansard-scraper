@@ -1,8 +1,6 @@
 import asyncio
 import itertools
-import json
 from collections.abc import Iterator
-from pathlib import Path
 from typing import Optional
 
 import httpx
@@ -14,7 +12,6 @@ from exceptions import HansardGatewayError
 from gateway.hansard_search import get_all_hansard_search_results
 from gateway.hansard_topic import get_hansard_topic_response_async
 from logs import logger
-from schemas.excluded_report_id import ExcludedReportId
 from schemas.hansard_search_result import HansardSearchResult
 from services.hansard_website import (
     build_hansard_website_response,
@@ -22,16 +19,9 @@ from services.hansard_website import (
     get_topic_id,
 )
 from settings import settings
+from utils.data_files import EXCLUDED_REPORT_IDS_FILE, get_excluded_report_ids
 
 _HTTP_TIMEOUT_SECONDS = 60
-_EXCLUDED_REPORT_IDS_FILE = Path(__file__).parent.parent / "data" / "excluded_report_ids.json"
-
-
-def _load_excluded_report_ids() -> set[str]:
-    return {
-        ExcludedReportId.model_validate(entry).report_id
-        for entry in json.loads(_EXCLUDED_REPORT_IDS_FILE.read_text())
-    }
 
 
 async def _fetch_html_content(
@@ -83,9 +73,9 @@ def populate_hansard_responses(session: Session) -> None:
     for search_result in all_search_results:
         report_id_to_first_search_result.setdefault(search_result.report_id, search_result)
     new_search_results = [search_result for search_result in report_id_to_first_search_result.values() if search_result.report_id not in existing_report_ids]
-    excluded_report_ids = _load_excluded_report_ids()
+    excluded_report_ids = {excluded_report_id.report_id for excluded_report_id in get_excluded_report_ids()}
     search_results_to_fetch = [search_result for search_result in new_search_results if search_result.report_id not in excluded_report_ids]
-    logger.info(f"Excluded {len(new_search_results) - len(search_results_to_fetch)} hits listed in {_EXCLUDED_REPORT_IDS_FILE.name}")
+    logger.info(f"Excluded {len(new_search_results) - len(search_results_to_fetch)} hits listed in {EXCLUDED_REPORT_IDS_FILE.name}")
     logger.info(f"Fetching {len(search_results_to_fetch)}/{len(all_search_results)} ({len(existing_report_ids)} already in DB)")
 
     hansard_website_responses = asyncio.run(_fetch_all(search_results_to_fetch))

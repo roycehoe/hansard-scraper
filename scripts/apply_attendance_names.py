@@ -16,7 +16,6 @@ from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
 from logs import logger
 from populate.speaker_links import resolve_attendance_rows
-from schemas.constituency_names import ConstituencyNames
 from services.attendance import (
     AttendanceNameChange,
     SpeakerLookups,
@@ -26,9 +25,8 @@ from services.attendance import (
     get_attendance_name_changes,
 )
 from settings import settings
+from utils.data_files import get_constituency_names
 from utils.write_target import validate_can_write
-
-_CONSTITUENCY_NAMES_FILE = Path(__file__).parent.parent / "data" / "constituency_names.json"
 
 
 def _validate_speaker_ids(
@@ -48,7 +46,7 @@ def _validate_speaker_ids(
 def _get_planned_changes(session: Session) -> list[AttendanceNameChange]:
     speakers = CRUDSpeaker(session).get_all()
     lookups = build_speaker_lookups(speakers)
-    constituency_lookups = build_constituency_lookups(ConstituencyNames.model_validate(json.loads(_CONSTITUENCY_NAMES_FILE.read_text())))
+    constituency_lookups = build_constituency_lookups(get_constituency_names())
     sitting_id_to_rows: dict[int, list[Attendance]] = defaultdict(list)
     for row in CRUDAttendance(session).get_all():
         sitting_id_to_rows[row.sitting_id].append(row)

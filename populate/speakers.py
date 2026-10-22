@@ -1,19 +1,14 @@
-import json
-from pathlib import Path
-
 from sqlmodel import Session
 
 from crud.speaker import CRUDSpeaker
 from gateway.speakers_by_parliament import get_all_speakers
 from logs import logger
-from schemas.speaker_override import SpeakerOverrides
 from services.speaker import build_speaker
-
-_SPEAKER_OVERRIDES_FILE = Path(__file__).parent.parent / "data" / "speaker_overrides.json"
+from utils.data_files import get_speaker_overrides
 
 
 def load_name_parliament_to_is_legislative_assembly() -> dict[tuple[str, int], bool]:
-    speaker_overrides = SpeakerOverrides.model_validate(json.loads(_SPEAKER_OVERRIDES_FILE.read_text()))
+    speaker_overrides = get_speaker_overrides()
     return {
         (override.name, override.parliament_number): override.is_legislative_assembly
         for override in speaker_overrides.legislative_assembly_overrides
@@ -21,7 +16,7 @@ def load_name_parliament_to_is_legislative_assembly() -> dict[tuple[str, int], b
 
 
 def load_name_parliament_to_party() -> dict[tuple[str, int], str]:
-    speaker_overrides = SpeakerOverrides.model_validate(json.loads(_SPEAKER_OVERRIDES_FILE.read_text()))
+    speaker_overrides = get_speaker_overrides()
     return {(override.name, override.parliament_number): override.party for override in speaker_overrides.party_overrides}
 
 

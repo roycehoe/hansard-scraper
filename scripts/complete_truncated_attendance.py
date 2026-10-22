@@ -1,9 +1,7 @@
 import argparse
 import hashlib
-import json
 from collections import Counter
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Optional
 
 from sqlmodel import Session
@@ -16,7 +14,6 @@ from database.init import engine
 from database.sitting import Sitting
 from exceptions import HansardWriteCheckError
 from logs import logger
-from schemas.constituency_names import ConstituencyNames
 from services.attendance import (
     SpeakerLookups,
     build_constituency_lookups,
@@ -25,11 +22,11 @@ from services.attendance import (
     infer_parliament,
     resolve_canonical_name,
 )
+from utils.data_files import get_constituency_names
 from utils.names import normalize_name, strip_title
 from utils.write_target import validate_can_write
 
 _COLONIAL_PARLIAMENT_NUMBER = 0
-_CONSTITUENCY_NAMES_FILE = Path(__file__).parent.parent / "data" / "constituency_names.json"
 
 
 @dataclass(frozen=True)
@@ -71,7 +68,7 @@ def _get_speaker_id(
 def build_completions(session: Session, sitting_ids: list[int]) -> list[SittingCompletion]:
     speakers = CRUDSpeaker(session).get_all()
     lookups = build_speaker_lookups(speakers)
-    constituency_lookups = build_constituency_lookups(ConstituencyNames.model_validate(json.loads(_CONSTITUENCY_NAMES_FILE.read_text())))
+    constituency_lookups = build_constituency_lookups(get_constituency_names())
     speaker_id_lookup = {
         (speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None
     }

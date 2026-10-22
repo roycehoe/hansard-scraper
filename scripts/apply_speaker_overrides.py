@@ -15,14 +15,11 @@ from schemas.speaker import SpeakerResult
 from schemas.speaker_override import (
     LegislativeAssemblyOverride,
     PartyOverride,
-    SpeakerOverrides,
 )
 from services.speaker import PartyChange, get_party_changes
 from settings import settings
+from utils.data_files import get_colonial_members, get_speaker_overrides
 from utils.write_target import validate_can_write
-
-_SPEAKER_OVERRIDES_FILE = Path(__file__).parent.parent / "data" / "speaker_overrides.json"
-_COLONIAL_LA_MEMBERS_FILE = Path(__file__).parent.parent / "data" / "colonial_la_members.json"
 
 
 @dataclass(frozen=True)
@@ -75,8 +72,8 @@ def _write_party(
 def apply_speaker_overrides(is_commit: bool, plan_path: Optional[Path]) -> None:
     if is_commit:
         validate_can_write(settings.database_url)
-    speaker_overrides = SpeakerOverrides.model_validate(json.loads(_SPEAKER_OVERRIDES_FILE.read_text()))
-    colonial_members = [SpeakerResult.model_validate(record) for record in json.loads(_COLONIAL_LA_MEMBERS_FILE.read_text())]
+    speaker_overrides = get_speaker_overrides()
+    colonial_members = get_colonial_members()
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
         flag_changes = _get_flag_changes(speakers, speaker_overrides.legislative_assembly_overrides)

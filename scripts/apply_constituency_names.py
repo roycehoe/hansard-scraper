@@ -11,7 +11,6 @@ from crud.attendance import CRUDAttendance
 from database.init import engine
 from exceptions import HansardWriteCheckError
 from logs import logger
-from schemas.constituency_names import ConstituencyNames
 from services.attendance import (
     ConstituencyLookups,
     LocationChange,
@@ -19,9 +18,8 @@ from services.attendance import (
     get_location_changes,
 )
 from settings import settings
+from utils.data_files import get_constituency_names
 from utils.write_target import validate_can_write
-
-_CONSTITUENCY_NAMES_FILE = Path(__file__).parent.parent / "data" / "constituency_names.json"
 
 
 def _get_planned_changes(session: Session, constituency_lookups: ConstituencyLookups) -> list[LocationChange]:
@@ -31,7 +29,7 @@ def _get_planned_changes(session: Session, constituency_lookups: ConstituencyLoo
 def apply_constituency_names(is_commit: bool, plan_path: Optional[Path]) -> None:
     if is_commit:
         validate_can_write(settings.database_url)
-    constituency_lookups = build_constituency_lookups(ConstituencyNames.model_validate(json.loads(_CONSTITUENCY_NAMES_FILE.read_text())))
+    constituency_lookups = build_constituency_lookups(get_constituency_names())
     with Session(engine) as session:
         location_changes = _get_planned_changes(session, constituency_lookups)
         pair_to_count = Counter((change.location_name_before, change.location_name_after) for change in location_changes)

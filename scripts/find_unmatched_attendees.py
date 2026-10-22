@@ -2,7 +2,6 @@ import argparse
 import json
 import re
 from collections import Counter
-from pathlib import Path
 
 from sqlmodel import Session, select
 
@@ -10,7 +9,6 @@ from crud.speaker import CRUDSpeaker
 from database.init import engine
 from database.sitting import Sitting
 from logs import logger
-from schemas.constituency_names import ConstituencyNames
 from services.attendance import (
     SpeakerLookups,
     build_constituency_lookups,
@@ -19,6 +17,7 @@ from services.attendance import (
     infer_parliament,
     resolve_canonical_name,
 )
+from utils.data_files import get_constituency_names
 
 _MIN_ALLCAPS_HEADER_LETTERS = 4
 _PROGRESS_INTERVAL = 100
@@ -27,7 +26,6 @@ _COLONIAL_PARLIAMENT_FALLBACKS = (1, 2, 3)
 _COUNT_COLUMN_WIDTH = 6
 _NAME_COLUMN_WIDTH = 50
 _TEMPLATE_PARTY = "Unknown"
-_CONSTITUENCY_NAMES_FILE = Path(__file__).parent.parent / "data" / "constituency_names.json"
 _TEMPLATE_PARLIAMENT_NUMBER = 0
 
 _OFFICIAL_TITLE_RE = re.compile(
@@ -78,7 +76,7 @@ def find_unmatched(is_verbose: bool = False) -> dict[str, Counter]:
         speakers = CRUDSpeaker(session).get_all()
 
     lookups = build_speaker_lookups(speakers)
-    constituency_lookups = build_constituency_lookups(ConstituencyNames.model_validate(json.loads(_CONSTITUENCY_NAMES_FILE.read_text())))
+    constituency_lookups = build_constituency_lookups(get_constituency_names())
 
     category_to_counter: dict[str, Counter] = {
         "candidate": Counter(),

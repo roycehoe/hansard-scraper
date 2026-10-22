@@ -13,10 +13,7 @@ from database.hansard_website_response import HansardWebsiteResponse
 from database.speaker import Speaker
 from enums import ReportVersion
 from exceptions import HansardGatewayError
-from populate.speeches import (
-    build_report_speeches,
-    load_report_id_to_unattributed_range,
-)
+from populate.speeches import build_report_speeches
 from schemas.constituency_names import ConstituencyNames
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
@@ -32,6 +29,7 @@ from services.attendance import (
 from services.hansard_website import get_topic_id
 from services.report import build_report
 from services.sitting import build_sitting
+from utils.data_files import get_unattributed_speech_ranges
 from utils.sitting_dates import parse_sitting_date
 
 _FIXTURE_DIRECTORY = Path(__file__).parent / "fixtures" / "refresh"
@@ -61,7 +59,7 @@ def seed_stored(session: Session, speaker_names_to_drop: frozenset[str] = frozen
     session.add_all([*speakers, *hansard_website_responses, *reports, hansard_sitting_date_response, sitting])
     session.flush()
 
-    report_id_to_unattributed_range = load_report_id_to_unattributed_range()
+    report_id_to_unattributed_range = {speech_range.report_id: speech_range for speech_range in get_unattributed_speech_ranges()}
     for report in reports:
         session.add_all(build_report_speeches(report, report_id_to_unattributed_range))
     constituency_lookups = build_constituency_lookups(ConstituencyNames.model_validate(json.loads(_CONSTITUENCY_NAMES_FILE.read_text())))

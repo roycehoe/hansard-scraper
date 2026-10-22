@@ -3,7 +3,6 @@ import json
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
-from pathlib import Path
 from typing import Optional, Union
 
 import httpx
@@ -39,12 +38,7 @@ from gateway.telegram import send_telegram_message
 from logs import logger
 from populate.attribution_figures import get_attribution_figures
 from populate.speaker_links import link_speakers_by_report_ids_and_sitting_ids
-from populate.speeches import (
-    build_report_speeches,
-    load_report_id_to_unattributed_range,
-)
-from schemas.constituency_names import ConstituencyNames
-from schemas.excluded_report_id import ExcludedReportId
+from populate.speeches import build_report_speeches
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
     HansardReportOldResponse,
@@ -104,13 +98,16 @@ from services.refresh import (
 from services.report import build_report
 from services.sitting import build_sitting
 from settings import settings
+from utils.data_files import (
+    get_constituency_names,
+    get_excluded_report_ids,
+    get_unattributed_speech_ranges,
+)
 from utils.sitting_dates import parse_sitting_date
 
 _STALE_RUN_HOURS = 12
 _MAX_FAILURE_REASON_LENGTH = 1_000
 _HTTP_TIMEOUT_SECONDS = 60
-_EXCLUDED_REPORT_IDS_FILE = Path(__file__).parent.parent / "data" / "excluded_report_ids.json"
-_CONSTITUENCY_NAMES_FILE = Path(__file__).parent.parent / "data" / "constituency_names.json"
 _AFTER_DATA_COMMIT = "After the data commit: "
 _RUN_RESULT_COLUMNS = (
     "website_responses_added",
@@ -129,13 +126,6 @@ _RUN_RESULT_COLUMNS = (
     "latest_sitting_date_with_text",
     "figures",
 )
-
-
-def _load_excluded_report_ids() -> set[str]:
-    return {
-        ExcludedReportId.model_validate(entry).report_id
-        for entry in json.loads(_EXCLUDED_REPORT_IDS_FILE.read_text())
-    }
 
 
 def _get_json_column(value: object) -> Optional[str]:
@@ -357,7 +347,7 @@ def _get_stored_refresh_state(session: Session, today: date) -> StoredRefreshSta
     if not stored_sitting_dates:
         raise HansardRefreshRunError("No stored sitting to start from")
     stored_report_ids = CRUDHansardWebsiteResponse(session).get_all_report_ids()
-    excluded_report_ids = _load_excluded_report_ids()
+    excluded_report_ids = {excluded_report_id.report_id for excluded_report_id in get_excluded_report_ids()}
     stored_parliament_maximum = _get_stored_parliament_maximum(session)
     recheck_report_ids = CRUDReport(session).get_report_ids_by_sitting_date_from(datetime.combine(get_recheck_start_date(today), time.min))
     recheck_topic_requests = []
@@ -504,7 +494,7 @@ def _write_window_rows(session: Session, fetched_window: FetchedWindow, window_r
     reports = [build_report(hansard_website_response) for hansard_website_response in hansard_website_responses]
     CRUDReport(session).add_many(reports)
 
-    report_id_to_unattributed_range = load_report_id_to_unattributed_range()
+    report_id_to_unattributed_range = {speech_range.report_id: speech_range for speech_range in get_unattributed_speech_ranges()}
     speeches = []
     for report in reports:
         report_speeches = build_report_speeches(report, report_id_to_unattributed_range)
@@ -526,7 +516,7 @@ def _write_window_rows(session: Session, fetched_window: FetchedWindow, window_r
     CRUDSitting(session).add_many(sittings)
 
     lookups = build_speaker_lookups(CRUDSpeaker(session).get_all())
-    constituency_lookups = build_constituency_lookups(ConstituencyNames.model_validate(json.loads(_CONSTITUENCY_NAMES_FILE.read_text())))
+    constituency_lookups = build_constituency_lookups(get_constituency_names())
     attendances = [
         attendance for sitting in sittings for attendance in build_sitting_attendances(sitting, lookups, constituency_lookups)
     ]

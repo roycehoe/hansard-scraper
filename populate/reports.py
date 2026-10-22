@@ -1,29 +1,18 @@
-import json
-from pathlib import Path
-
 from sqlmodel import Session
 
 from crud.hansard_website_response import CRUDHansardWebsiteResponse
 from crud.report import CRUDReport
 from logs import logger
-from schemas.excluded_report_id import ExcludedReportId
 from services.report import build_report
+from utils.data_files import get_excluded_report_ids
 
 _BATCH_SIZE = 500
-_EXCLUDED_REPORT_IDS_FILE = Path(__file__).parent.parent / "data" / "excluded_report_ids.json"
-
-
-def _load_excluded_report_ids() -> set[str]:
-    return {
-        ExcludedReportId.model_validate(entry).report_id
-        for entry in json.loads(_EXCLUDED_REPORT_IDS_FILE.read_text())
-    }
 
 
 def populate_reports(session: Session) -> None:
     hansard_website_responses = CRUDHansardWebsiteResponse(session).get_all()
     existing_report_ids = CRUDReport(session).get_all_report_ids()
-    excluded_report_ids = _load_excluded_report_ids()
+    excluded_report_ids = {excluded_report_id.report_id for excluded_report_id in get_excluded_report_ids()}
     # NOTE: the search can return one hit twice, so keep the first hit per report_id.
     report_id_to_first_response = {}
     for hansard_website_response in hansard_website_responses:

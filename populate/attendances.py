@@ -1,25 +1,20 @@
-import json
-from pathlib import Path
-
 from sqlmodel import Session
 
 from crud.attendance import CRUDAttendance
 from crud.sitting import CRUDSitting
 from crud.speaker import CRUDSpeaker
 from logs import logger
-from schemas.constituency_names import ConstituencyNames
 from services.attendance import (
     build_constituency_lookups,
     build_sitting_attendances,
     build_speaker_lookups,
 )
-
-_CONSTITUENCY_NAMES_FILE = Path(__file__).parent.parent / "data" / "constituency_names.json"
+from utils.data_files import get_constituency_names
 
 
 def populate_attendances(session: Session) -> None:
     lookups = build_speaker_lookups(CRUDSpeaker(session).get_all())
-    constituency_lookups = build_constituency_lookups(ConstituencyNames.model_validate(json.loads(_CONSTITUENCY_NAMES_FILE.read_text())))
+    constituency_lookups = build_constituency_lookups(get_constituency_names())
     sittings = CRUDSitting(session).get_all()
     sitting_ids_done = CRUDAttendance(session).get_distinct_sitting_ids()
     sittings_to_process = [sitting for sitting in sittings if sitting.id not in sitting_ids_done]
