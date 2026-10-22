@@ -63,8 +63,12 @@ def inspect_type(session: Session, report_type: str, max_failing: int = _MAX_FAI
         show_doc(website_response, report)
 
 
-if __name__ == "__main__":
+def inspect_failures() -> None:
     types = sys.argv[1:] if len(sys.argv) > 1 else _DEFAULT_REPORT_TYPES
     with Session(engine) as session:
         for report_type in types:
             inspect_type(session, report_type)
+
+
+if __name__ == "__main__":
+    inspect_failures()

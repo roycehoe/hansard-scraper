@@ -184,7 +184,7 @@ def is_sitting_date_mapped(sitting_date: str, label: str, synthetic: dict[str, o
     return _is_sitting_payload_mapped(response_schema.model_validate(synthetic), sitting_date, source="synthetic payload")
 
 
-if __name__ == "__main__":
+def validate_api_field_mapping() -> None:
     is_all_passed = True
     is_all_passed &= is_search_and_topic_mapped()
     is_all_passed &= is_topic_mapped(get_hansard_search_results(_FIRST_PAGE_START_INDEX, _FIRST_PAGE_END_INDEX)[0].report_id)
@@ -204,3 +204,7 @@ if __name__ == "__main__":
     else:
         logger.info("  FAIL  One or more field losses detected — see above.")
         sys.exit(_FIELD_LOSS_EXIT_CODE)
+
+
+if __name__ == "__main__":
+    validate_api_field_mapping()

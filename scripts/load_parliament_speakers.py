@@ -18,7 +18,7 @@ from utils.data_files import get_speaker_overrides
 from utils.write_target import validate_can_write
 
 
-def load_parliament_speakers(session: Session, parliament_number: int, is_commit: bool) -> None:
+def store_new_speakers(session: Session, parliament_number: int, is_commit: bool) -> None:
     stored_keys = {(speaker.name, speaker.parliament_number) for speaker in CRUDSpeaker(session).get_all()}
     speaker_results = [
         speaker_result
@@ -48,12 +48,16 @@ def load_parliament_speakers(session: Session, parliament_number: int, is_commit
     logger.info(f"Committed: {len(new_speakers)} members inserted")
 
 
+def load_parliament_speakers(parliament_number: int, is_commit: bool) -> None:
+    if is_commit:
+        validate_can_write(settings.database_url)
+    with Session(engine) as session:
+        store_new_speakers(session, parliament_number, is_commit)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Store the members of one Parliament that the speaker table lacks, from parliament.gov.sg")
     parser.add_argument("--parliament", type=int, required=True, help="the Parliament number whose member list to load")
     parser.add_argument("--commit", action="store_true", dest="is_commit", help="write; without it the script only reports the plan")
     arguments = parser.parse_args()
-    if arguments.is_commit:
-        validate_can_write(settings.database_url)
-    with Session(engine) as session:
-        load_parliament_speakers(session, arguments.parliament, arguments.is_commit)
+    load_parliament_speakers(arguments.parliament, arguments.is_commit)

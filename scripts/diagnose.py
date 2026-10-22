@@ -77,7 +77,7 @@ def run_stats_on(responses: list[HansardWebsiteResponse]) -> BaselineResults:
     return baseline_results
 
 
-if __name__ == "__main__":
+def diagnose() -> None:
     with Session(engine) as session:
         logger.info("=== Setup: report_type speech stats ===")
         report_type_to_counts = get_report_type_speech_stats(session)
@@ -107,3 +107,7 @@ if __name__ == "__main__":
         logger.info(f"  Pass: {len(baseline.passed)}/{total} ({percentage:.1f}%)")
         logger.info(f"  Fail has_start_line: {len(baseline.failed_start_line)}")
         logger.info(f"  Fail can_get_speeches: {len(baseline.failed_speeches)}")
+
+
+if __name__ == "__main__":
+    diagnose()

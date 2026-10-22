@@ -52,14 +52,14 @@ def seeded_session(scratch_session: Session, monkeypatch: pytest.MonkeyPatch) ->
 
 
 def test_dry_run_inserts_nothing(seeded_session: Session) -> None:
-    load_parliament_speakers_script.load_parliament_speakers(seeded_session, _PARLIAMENT_NUMBER, is_commit=False)
+    load_parliament_speakers_script.store_new_speakers(seeded_session, _PARLIAMENT_NUMBER, is_commit=False)
 
     seeded_session.rollback()
     assert [speaker.name for speaker in CRUDSpeaker(seeded_session).get_all()] == [_STORED_NAME]
 
 
 def test_commit_inserts_only_the_unstored_member(seeded_session: Session) -> None:
-    load_parliament_speakers_script.load_parliament_speakers(seeded_session, _PARLIAMENT_NUMBER, is_commit=True)
+    load_parliament_speakers_script.store_new_speakers(seeded_session, _PARLIAMENT_NUMBER, is_commit=True)
 
     seeded_session.rollback()
     speakers = CRUDSpeaker(seeded_session).get_all()
@@ -70,4 +70,4 @@ def test_commit_inserts_only_the_unstored_member(seeded_session: Session) -> Non
 
 def test_unknown_parliament_raises(seeded_session: Session) -> None:
     with pytest.raises(HansardGatewayError, match=f"No member list for parliament {_UNKNOWN_PARLIAMENT_NUMBER}"):
-        load_parliament_speakers_script.load_parliament_speakers(seeded_session, _UNKNOWN_PARLIAMENT_NUMBER, is_commit=False)
+        load_parliament_speakers_script.store_new_speakers(seeded_session, _UNKNOWN_PARLIAMENT_NUMBER, is_commit=False)
