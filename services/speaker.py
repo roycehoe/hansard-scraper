@@ -116,8 +116,10 @@ def get_party_changes(
             raise HansardWriteCheckError(f"Speaker {speaker.id}: stored party is neither the source value nor the override")
         name_parliament_to_party[(override.name, override.parliament_number)] = override.party
     for member in colonial_members:
-        if (member.name, member.parliament_number) not in key_to_speaker:
-            raise HansardWriteCheckError(f"No speaker row for colonial member {member.name!r}, Parliament {member.parliament_number}")
+        try:
+            key_to_speaker[(member.name, member.parliament_number)]
+        except KeyError as error:
+            raise HansardWriteCheckError(f"No speaker row for colonial member {member.name!r}, Parliament {member.parliament_number}") from error
     party_changes = []
     for speaker in speakers:
         party_after = normalize_party(name_parliament_to_party.get((speaker.name, speaker.parliament_number), speaker.party))

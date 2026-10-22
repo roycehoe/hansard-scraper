@@ -62,19 +62,22 @@ def build_attendance_cleanup_plan(
     updates = []
     for correction in cleanup.corrections:
         _validate_can_link_row(attendance_id_to_attendance, correction, correction.location_name)
-        if correction.id not in attendance_id_to_speaker_id:
-            raise HansardWriteCheckError(f"Attendance row {correction.id}: no speaker row for {correction.speaker_name_after!r}")
+        try:
+            speaker_id = attendance_id_to_speaker_id[correction.id]
+        except KeyError as error:
+            raise HansardWriteCheckError(f"Attendance row {correction.id}: no speaker row for {correction.speaker_name_after!r}") from error
         updates.append(
             AttendanceUpdate(
-                correction.id, correction.speaker_name_after, correction.location_name_after, attendance_id_to_speaker_id[correction.id], correction.reason
+                correction.id, correction.speaker_name_after, correction.location_name_after, speaker_id, correction.reason
             )
         )
 
     for role in cleanup.speaker_roles:
         _validate_can_link_row(attendance_id_to_attendance, role, role.location_name)
-        if role.id not in attendance_id_to_speaker_id:
-            raise HansardWriteCheckError(f"Attendance row {role.id}: no presiding officer for {role.sitting_date}")
-        holder_id = attendance_id_to_speaker_id[role.id]
+        try:
+            holder_id = attendance_id_to_speaker_id[role.id]
+        except KeyError as error:
+            raise HansardWriteCheckError(f"Attendance row {role.id}: no presiding officer for {role.sitting_date}") from error
         is_holder_repeated = any(
             other.id != role.id and other.id not in removal_id_to_reason and other.speaker_id == holder_id
             for other in sitting_id_to_rows[role.sitting_id]

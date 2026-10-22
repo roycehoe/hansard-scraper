@@ -86,8 +86,10 @@ def cluster_speakers(speakers: list[Speaker], decisions: list[Decision]) -> Clus
     key_to_speaker = {(speaker.name, speaker.parliament_number): speaker for speaker in speakers}
     for decision in decisions:
         for key in decision.members:
-            if key not in key_to_speaker:
-                raise ValueError(f"person decision names no speaker row: {key}")
+            try:
+                key_to_speaker[key]
+            except KeyError as error:
+                raise ValueError(f"person decision names no speaker row: {key}") from error
     distinct = {
         frozenset((key_to_speaker[left_key].id, key_to_speaker[right_key].id))
         for decision in decisions if decision.decision == "distinct"
