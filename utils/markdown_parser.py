@@ -331,13 +331,13 @@ def _get_line_indent(line: str) -> int:
 def _is_preformatted_table(lines: list[str]) -> bool:
     if any(re.search(_TABLE_MARK_PATTERN, line.rstrip()) or re.search(_NUMBER_AFTER_GAP_PATTERN, line.rstrip()) for line in lines):
         return True
-    gap_starts = Counter()
-    gap_ends = Counter()
+    gap_start_to_count = Counter()
+    gap_end_to_count = Counter()
     for line in lines:
         for gap in re.finditer(_WIDE_GAP_PATTERN, line):
-            gap_starts[gap.start()] += 1
-            gap_ends[gap.end()] += 1
-    return any(count > 1 for count in (*gap_starts.values(), *gap_ends.values()))
+            gap_start_to_count[gap.start()] += 1
+            gap_end_to_count[gap.end()] += 1
+    return any(count > 1 for count in (*gap_start_to_count.values(), *gap_end_to_count.values()))
 
 
 def _split_preformatted_paragraphs(lines: list[str]) -> list[list[int]]:
@@ -365,7 +365,7 @@ def _should_join_preformatted_lines(before: str, after: str, longest_length: int
 
 
 def _get_preformatted_join_separators(lines: list[str]) -> dict[int, str]:
-    separators = {}
+    line_index_to_separator = {}
     for paragraph in _split_preformatted_paragraphs(lines):
         paragraph_lines = [lines[index] for index in paragraph]
         if _is_preformatted_table(paragraph_lines):
@@ -373,8 +373,8 @@ def _get_preformatted_join_separators(lines: list[str]) -> dict[int, str]:
         longest_length = max(len(line.strip()) for line in paragraph_lines)
         for before_index, after_index in zip(paragraph, paragraph[1:]):
             if _should_join_preformatted_lines(lines[before_index], lines[after_index], longest_length):
-                separators[after_index] = _get_page_break_separator(lines[before_index].strip(), lines[after_index].strip())
-    return separators
+                line_index_to_separator[after_index] = _get_page_break_separator(lines[before_index].strip(), lines[after_index].strip())
+    return line_index_to_separator
 
 
 def _join_preformatted_block(match: re.Match) -> str:
@@ -382,12 +382,12 @@ def _join_preformatted_block(match: re.Match) -> str:
     if _HTML_TAG_START in text:
         return match.group(0)
     lines = text.split("\n")
-    separators = _get_preformatted_join_separators(lines)
+    line_index_to_separator = _get_preformatted_join_separators(lines)
     joined_lines = []
     pending_blank_lines = []
     for index, line in enumerate(lines):
-        if index in separators:
-            joined_lines[-1] = joined_lines[-1].rstrip() + separators[index] + line.lstrip()
+        if index in line_index_to_separator:
+            joined_lines[-1] = joined_lines[-1].rstrip() + line_index_to_separator[index] + line.lstrip()
             pending_blank_lines = []
             continue
         if not line.strip():

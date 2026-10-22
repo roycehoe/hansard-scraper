@@ -21,7 +21,7 @@ VOLUME_TO_PARLIAMENT: dict[int, int] = {
 }
 
 
-def infer_parliament(parlement_no: Optional[int], volume_no: Optional[int]) -> Optional[int]:
-    if parlement_no is not None:
-        return parlement_no
-    return VOLUME_TO_PARLIAMENT.get(volume_no)  # type: ignore[arg-type]
+def infer_parliament(parliament_number: Optional[int], volume_number: Optional[int]) -> Optional[int]:
+    if parliament_number is not None:
+        return parliament_number
+    return VOLUME_TO_PARLIAMENT.get(volume_number)  # type: ignore[arg-type]
