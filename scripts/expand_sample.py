@@ -88,7 +88,7 @@ def main() -> None:
 
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
-        rows = CRUDSpeech(session).get_speaker_rows_by_speaker_not_null_and_parliament_number(_COLONIAL_PARLIAMENT_NUMBER)
+        rows = CRUDSpeech(session).get_parliament_rows_by_speaker_not_null_and_parliament_number(_COLONIAL_PARLIAMENT_NUMBER)
 
     name_and_parliament_to_speaker_id = {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None}
     lookups = build_speaker_lookups(speakers)

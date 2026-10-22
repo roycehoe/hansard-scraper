@@ -105,7 +105,7 @@ class CRUDSpeech:
         statement = select(Speech.report_id).distinct()
         return set(self.session.exec(statement).all()) - {None}
 
-    def get_speaker_rows_by_speaker_not_null(self) -> list[SpeechReportTypeRow]:
+    def get_report_type_rows_by_speaker_not_null(self) -> list[SpeechReportTypeRow]:
         statement = (
             select(Speech.speaker, Report.report_type, Report.parliament_number)
             .join(Report, Report.id == Speech.report_id)
@@ -223,7 +223,7 @@ class CRUDSpeech:
         statement = select(Speech.id, Speech.speaker_id).where(col(Speech.id).in_(speech_ids)).with_for_update()
         return [SpeechSpeakerIdRow(*row) for row in self.session.exec(statement).all()]
 
-    def get_speaker_rows_by_speaker_not_null_and_parliament_number(self, parliament_number: int) -> list[SpeechParliamentRow]:
+    def get_parliament_rows_by_speaker_not_null_and_parliament_number(self, parliament_number: int) -> list[SpeechParliamentRow]:
         statement = (
             select(Speech.id, Speech.speaker, Report.report_type, Report.parliament_number)
             .join(Report)
