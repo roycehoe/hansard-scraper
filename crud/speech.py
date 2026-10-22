@@ -236,8 +236,8 @@ class CRUDSpeech:
         statement = delete(Speech).where(col(Speech.report_id).in_(report_ids))
         return self.session.exec(statement).rowcount
 
-    def set_speaker_ids_bulk(self, updates: dict[int, Optional[int]]) -> None:
-        if not updates:
+    def set_speaker_ids_bulk(self, speech_id_to_speaker_id: dict[int, Optional[int]]) -> None:
+        if not speech_id_to_speaker_id:
             return
         self.session.execute(
             text(
@@ -245,7 +245,7 @@ class CRUDSpeech:
                 "FROM UNNEST(:ids, CAST(:speaker_ids AS integer[])) AS v(id, speaker_id) "
                 "WHERE speech.id = v.id"
             ),
-            {"ids": list(updates.keys()), "speaker_ids": list(updates.values())},
+            {"ids": list(speech_id_to_speaker_id.keys()), "speaker_ids": list(speech_id_to_speaker_id.values())},
         )
 
     def get_vacuum_count(self) -> int:

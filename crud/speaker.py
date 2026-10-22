@@ -20,8 +20,8 @@ class CRUDSpeaker:
         statement = select(Speaker)
         return list(self.session.exec(statement).all())
 
-    def set_person_ids_bulk(self, updates: dict[int, int]) -> None:
-        if not updates:
+    def set_person_ids_bulk(self, speaker_id_to_person_id: dict[int, int]) -> None:
+        if not speaker_id_to_person_id:
             return
         self.session.execute(
             text(
@@ -29,11 +29,11 @@ class CRUDSpeaker:
                 "FROM UNNEST(:ids, :person_ids) AS v(id, person_id) "
                 "WHERE speaker.id = v.id"
             ),
-            {"ids": list(updates.keys()), "person_ids": list(updates.values())},
+            {"ids": list(speaker_id_to_person_id.keys()), "person_ids": list(speaker_id_to_person_id.values())},
         )
 
-    def set_is_legislative_assembly_bulk(self, updates: dict[int, bool]) -> int:
-        if not updates:
+    def set_is_legislative_assembly_bulk(self, speaker_id_to_is_legislative_assembly: dict[int, bool]) -> int:
+        if not speaker_id_to_is_legislative_assembly:
             return 0
         update_result = self.session.execute(
             text(
@@ -41,12 +41,12 @@ class CRUDSpeaker:
                 "FROM UNNEST(:ids, :is_legislative_assembly_values) AS v(id, is_legislative_assembly) "
                 "WHERE speaker.id = v.id"
             ),
-            {"ids": list(updates.keys()), "is_legislative_assembly_values": list(updates.values())},
+            {"ids": list(speaker_id_to_is_legislative_assembly.keys()), "is_legislative_assembly_values": list(speaker_id_to_is_legislative_assembly.values())},
         )
         return update_result.rowcount
 
-    def set_party_bulk(self, updates: dict[int, str]) -> int:
-        if not updates:
+    def set_party_bulk(self, speaker_id_to_party: dict[int, str]) -> int:
+        if not speaker_id_to_party:
             return 0
         update_result = self.session.execute(
             text(
@@ -54,12 +54,12 @@ class CRUDSpeaker:
                 "FROM UNNEST(:ids, :parties) AS v(id, party) "
                 "WHERE speaker.id = v.id"
             ),
-            {"ids": list(updates.keys()), "parties": list(updates.values())},
+            {"ids": list(speaker_id_to_party.keys()), "parties": list(speaker_id_to_party.values())},
         )
         return update_result.rowcount
 
-    def set_parliament_numbers_bulk(self, updates: dict[int, int]) -> int:
-        if not updates:
+    def set_parliament_numbers_bulk(self, speaker_id_to_parliament_number: dict[int, int]) -> int:
+        if not speaker_id_to_parliament_number:
             return 0
         update_result = self.session.execute(
             text(
@@ -67,6 +67,6 @@ class CRUDSpeaker:
                 "FROM UNNEST(:ids, :parliament_numbers) AS v(id, parliament_number) "
                 "WHERE speaker.id = v.id"
             ),
-            {"ids": list(updates.keys()), "parliament_numbers": list(updates.values())},
+            {"ids": list(speaker_id_to_parliament_number.keys()), "parliament_numbers": list(speaker_id_to_parliament_number.values())},
         )
         return update_result.rowcount

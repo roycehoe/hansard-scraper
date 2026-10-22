@@ -77,12 +77,12 @@ class CRUDAttendance:
         )
         return (AttendanceTextRow(*row) for row in self.session.exec(statement))
 
-    def get_by_ids(self, ids: list[int]) -> list[Attendance]:
-        statement = select(Attendance).where(col(Attendance.id).in_(ids))
+    def get_by_ids(self, attendance_ids: list[int]) -> list[Attendance]:
+        statement = select(Attendance).where(col(Attendance.id).in_(attendance_ids))
         return list(self.session.exec(statement).all())
 
-    def get_by_ids_for_update(self, ids: list[int]) -> list[Attendance]:
-        statement = select(Attendance).where(col(Attendance.id).in_(ids)).with_for_update()
+    def get_by_ids_for_update(self, attendance_ids: list[int]) -> list[Attendance]:
+        statement = select(Attendance).where(col(Attendance.id).in_(attendance_ids)).with_for_update()
         return list(self.session.exec(statement).all())
 
     def get_by_sitting_ids(self, sitting_ids: list[int]) -> list[Attendance]:
@@ -143,12 +143,12 @@ class CRUDAttendance:
         self.session.add_all(attendances)
         self.session.flush()
 
-    def delete_by_ids(self, ids: list[int]) -> int:
-        statement = delete(Attendance).where(col(Attendance.id).in_(ids))
+    def delete_by_ids(self, attendance_ids: list[int]) -> int:
+        statement = delete(Attendance).where(col(Attendance.id).in_(attendance_ids))
         return self.session.exec(statement).rowcount
 
-    def set_location_names_bulk(self, updates: dict[int, str]) -> int:
-        if not updates:
+    def set_location_names_bulk(self, attendance_id_to_location_name: dict[int, str]) -> int:
+        if not attendance_id_to_location_name:
             return 0
         update_result = self.session.execute(
             text(
@@ -156,12 +156,12 @@ class CRUDAttendance:
                 "FROM UNNEST(:ids, :location_names) AS v(id, location_name) "
                 "WHERE attendance.id = v.id"
             ),
-            {"ids": list(updates.keys()), "location_names": list(updates.values())},
+            {"ids": list(attendance_id_to_location_name.keys()), "location_names": list(attendance_id_to_location_name.values())},
         )
         return update_result.rowcount
 
-    def set_speaker_names_bulk(self, updates: dict[int, str]) -> int:
-        if not updates:
+    def set_speaker_names_bulk(self, attendance_id_to_speaker_name: dict[int, str]) -> int:
+        if not attendance_id_to_speaker_name:
             return 0
         update_result = self.session.execute(
             text(
@@ -169,12 +169,12 @@ class CRUDAttendance:
                 "FROM UNNEST(:ids, :speaker_names) AS v(id, speaker_name) "
                 "WHERE attendance.id = v.id"
             ),
-            {"ids": list(updates.keys()), "speaker_names": list(updates.values())},
+            {"ids": list(attendance_id_to_speaker_name.keys()), "speaker_names": list(attendance_id_to_speaker_name.values())},
         )
         return update_result.rowcount
 
-    def set_speaker_ids_bulk(self, updates: dict[int, int]) -> None:
-        if not updates:
+    def set_speaker_ids_bulk(self, attendance_id_to_speaker_id: dict[int, int]) -> None:
+        if not attendance_id_to_speaker_id:
             return
         self.session.execute(
             text(
@@ -182,7 +182,7 @@ class CRUDAttendance:
                 "FROM UNNEST(:ids, :speaker_ids) AS v(id, speaker_id) "
                 "WHERE attendance.id = v.id"
             ),
-            {"ids": list(updates.keys()), "speaker_ids": list(updates.values())},
+            {"ids": list(attendance_id_to_speaker_id.keys()), "speaker_ids": list(attendance_id_to_speaker_id.values())},
         )
 
     def get_vacuum_count(self) -> int:

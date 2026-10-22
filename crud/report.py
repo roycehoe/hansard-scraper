@@ -92,8 +92,8 @@ class CRUDReport:
         statement = select(Report).where(col(Report.report_id).in_(report_ids))
         return list(self.session.exec(statement).all())
 
-    def get_by_sitting_dates(self, dates: list[datetime]) -> list[Report]:
-        statement = select(Report).where(col(Report.sitting_date).in_(dates))
+    def get_by_sitting_dates(self, sitting_dates: list[datetime]) -> list[Report]:
+        statement = select(Report).where(col(Report.sitting_date).in_(sitting_dates))
         return list(self.session.exec(statement).all())
 
     def get_all_report_ids(self) -> set[str]:
@@ -166,8 +166,8 @@ class CRUDReport:
         )
         return update_result.rowcount
 
-    def set_sitting_numbers_bulk(self, updates: dict[int, int]) -> int:
-        if not updates:
+    def set_sitting_numbers_bulk(self, report_id_to_sitting_number: dict[int, int]) -> int:
+        if not report_id_to_sitting_number:
             return 0
         update_result = self.session.execute(
             text(
@@ -175,7 +175,7 @@ class CRUDReport:
                 "FROM UNNEST(:ids, :sitting_numbers) AS v(id, sitting_number) "
                 "WHERE report.id = v.id"
             ),
-            {"ids": list(updates.keys()), "sitting_numbers": list(updates.values())},
+            {"ids": list(report_id_to_sitting_number.keys()), "sitting_numbers": list(report_id_to_sitting_number.values())},
         )
         return update_result.rowcount
 

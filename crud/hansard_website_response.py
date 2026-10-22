@@ -7,16 +7,16 @@ class CRUDHansardWebsiteResponse:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, response: HansardWebsiteResponse) -> None:
-        self.session.add(response)
+    def create(self, hansard_website_response: HansardWebsiteResponse) -> None:
+        self.session.add(hansard_website_response)
         self.session.commit()
 
-    def create_many(self, responses: list[HansardWebsiteResponse]) -> None:
-        self.session.add_all(responses)
+    def create_many(self, hansard_website_responses: list[HansardWebsiteResponse]) -> None:
+        self.session.add_all(hansard_website_responses)
         self.session.commit()
 
-    def add_many(self, responses: list[HansardWebsiteResponse]) -> None:
-        self.session.add_all(responses)
+    def add_many(self, hansard_website_responses: list[HansardWebsiteResponse]) -> None:
+        self.session.add_all(hansard_website_responses)
         self.session.flush()
 
     def get_all(self) -> list[HansardWebsiteResponse]:

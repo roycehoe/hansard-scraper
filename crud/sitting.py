@@ -93,18 +93,18 @@ class CRUDSitting:
         statement = select(func.max(Sitting.parlement_no))
         return self.session.exec(statement).one()
 
-    def get_date_markdown_rows_by_sitting_dates_and_markdown_content_not_null(self, dates: list[str]) -> list[SittingDateMarkdownRow]:
+    def get_date_markdown_rows_by_sitting_dates_and_markdown_content_not_null(self, sitting_dates: list[str]) -> list[SittingDateMarkdownRow]:
         statement = (
             select(Sitting.sitting_date, Sitting.markdown_content)
-            .where(col(Sitting.sitting_date).in_(dates))
+            .where(col(Sitting.sitting_date).in_(sitting_dates))
             .where(Sitting.markdown_content.is_not(None))
         )
         return [SittingDateMarkdownRow(*row) for row in self.session.exec(statement).all()]
 
-    def get_date_sections_rows_by_sitting_dates_and_sections_not_null(self, dates: list[str]) -> list[SittingDateSectionsRow]:
+    def get_date_sections_rows_by_sitting_dates_and_sections_not_null(self, sitting_dates: list[str]) -> list[SittingDateSectionsRow]:
         statement = (
             select(Sitting.sitting_date, Sitting.sections)
-            .where(col(Sitting.sitting_date).in_(dates))
+            .where(col(Sitting.sitting_date).in_(sitting_dates))
             .where(Sitting.sections.is_not(None))
         )
         return [SittingDateSectionsRow(*row) for row in self.session.exec(statement).all()]
@@ -147,8 +147,8 @@ class CRUDSitting:
         )
         return update_result.rowcount
 
-    def set_session_numbers_bulk(self, updates: dict[int, int]) -> int:
-        if not updates:
+    def set_session_numbers_bulk(self, sitting_id_to_session_number: dict[int, int]) -> int:
+        if not sitting_id_to_session_number:
             return 0
         update_result = self.session.execute(
             text(
@@ -156,12 +156,12 @@ class CRUDSitting:
                 "FROM UNNEST(:ids, :session_numbers) AS v(id, session_no) "
                 "WHERE sitting.id = v.id"
             ),
-            {"ids": list(updates.keys()), "session_numbers": list(updates.values())},
+            {"ids": list(sitting_id_to_session_number.keys()), "session_numbers": list(sitting_id_to_session_number.values())},
         )
         return update_result.rowcount
 
-    def set_sitting_numbers_bulk(self, updates: dict[int, int]) -> int:
-        if not updates:
+    def set_sitting_numbers_bulk(self, sitting_id_to_sitting_number: dict[int, int]) -> int:
+        if not sitting_id_to_sitting_number:
             return 0
         update_result = self.session.execute(
             text(
@@ -169,6 +169,6 @@ class CRUDSitting:
                 "FROM UNNEST(:ids, :sitting_numbers) AS v(id, sitting_no) "
                 "WHERE sitting.id = v.id"
             ),
-            {"ids": list(updates.keys()), "sitting_numbers": list(updates.values())},
+            {"ids": list(sitting_id_to_sitting_number.keys()), "sitting_numbers": list(sitting_id_to_sitting_number.values())},
         )
         return update_result.rowcount

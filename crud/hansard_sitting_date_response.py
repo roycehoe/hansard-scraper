@@ -9,16 +9,16 @@ class CRUDHansardSittingDateResponse:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, response: HansardSittingDateResponse) -> None:
-        self.session.add(response)
+    def create(self, hansard_sitting_date_response: HansardSittingDateResponse) -> None:
+        self.session.add(hansard_sitting_date_response)
         self.session.commit()
 
-    def add_many(self, responses: list[HansardSittingDateResponse]) -> None:
-        self.session.add_all(responses)
+    def add_many(self, hansard_sitting_date_responses: list[HansardSittingDateResponse]) -> None:
+        self.session.add_all(hansard_sitting_date_responses)
         self.session.flush()
 
-    def update(self, response: HansardSittingDateResponse) -> None:
-        self.session.add(response)
+    def update(self, hansard_sitting_date_response: HansardSittingDateResponse) -> None:
+        self.session.add(hansard_sitting_date_response)
         self.session.flush()
 
     def get_all(self) -> list[HansardSittingDateResponse]:
