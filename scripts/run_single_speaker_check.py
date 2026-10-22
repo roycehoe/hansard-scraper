@@ -12,6 +12,7 @@ from services.speech import (
 )
 
 _TABLE_WIDTH = 52
+_PERCENT = 100
 
 
 def run() -> None:
@@ -65,7 +66,7 @@ def run() -> None:
     logger.info(f"{'TOTAL':<28} {total_passed:>6} {total_failed:>6} {total_no_start:>9}")
     logger.info("")
     total = total_passed + total_failed + total_no_start
-    percentage = 100 * total_passed / total if total else 0
+    percentage = _PERCENT * total_passed / total if total else 0
     logger.info(f"Pass rate (of {total}): {percentage:.1f}%")
     if total_failed:
         logger.info(f"  {total_failed} still fail — empty body after start line")

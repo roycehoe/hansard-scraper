@@ -43,6 +43,7 @@ _DOCUMENT_NOISE_RE = re.compile(
     r"|\b(the|have|been|informed|that|following|shall|order|read|resumption|debate|motion|question|bill|report|budget|committee|national|total|year|country)\b",
     re.I,
 )
+_NON_LETTER_RE = re.compile(r"[^A-Za-z]")
 
 
 class UnmatchedCategory(StrEnum):
@@ -62,7 +63,7 @@ def _get_category(name: str) -> UnmatchedCategory:
         return UnmatchedCategory.PRESIDING
     if _OFFICIAL_TITLE_RE.search(stripped_name):
         return UnmatchedCategory.OFFICIAL_WITH_TITLE
-    alpha = re.sub(r"[^A-Za-z]", "", stripped_name)
+    alpha = _NON_LETTER_RE.sub("", stripped_name)
     if alpha and alpha == alpha.upper() and len(alpha) >= _MIN_ALLCAPS_HEADER_LETTERS:
         return UnmatchedCategory.ALLCAPS_HEADER
     if _DOCUMENT_NOISE_RE.search(stripped_name):

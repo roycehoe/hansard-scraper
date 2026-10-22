@@ -12,6 +12,8 @@ from logs import logger
 from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
+_PERCENT = 100
+
 
 @dataclass
 class ReportTypeSpeechStats:
@@ -101,7 +103,7 @@ if __name__ == "__main__":
         ]
         baseline = run_stats_on(target_with_markdown)
         total = len(baseline.passed) + len(baseline.failed_start_line) + len(baseline.failed_speeches)
-        percentage = 100 * len(baseline.passed) / total if total else 0
+        percentage = _PERCENT * len(baseline.passed) / total if total else 0
         logger.info(f"  Pass: {len(baseline.passed)}/{total} ({percentage:.1f}%)")
         logger.info(f"  Fail has_start_line: {len(baseline.failed_start_line)}")
         logger.info(f"  Fail can_get_speeches: {len(baseline.failed_speeches)}")

@@ -37,6 +37,8 @@ _STRUCTURAL_EXCLUSIONS = frozenset({
     "Several Members", "Members",
 })
 _SECTION_HEADER_RE = re.compile(r"^[A-Z][A-Z0-9 /(),.\-]+$")
+_TRAILING_PARENTHETICAL_RE = re.compile(r"\s*\(([^)]+)\)\s*$")
+_TITLE_WITH_PERIOD_RE = re.compile(r"^(Mr|Mrs|Dr|Ms)\.\s+")
 
 
 def _is_excluded(speaker: str) -> bool:
@@ -53,14 +55,14 @@ def _preprocess(speaker: str) -> Optional[str]:
     if _is_excluded(speaker) or speaker.startswith("(") or speaker.startswith("_"):
         return None
     raw = speaker.rstrip(":").strip()
-    parenthetical_match = re.search(r"\s*\(([^)]+)\)\s*$", raw)
+    parenthetical_match = _TRAILING_PARENTHETICAL_RE.search(raw)
     if parenthetical_match is not None:
         inner = parenthetical_match.group(1).strip()
         if strip_title(inner) != inner:
             raw = inner
         else:
             raw = raw[: parenthetical_match.start()]
-    raw = re.sub(r"^(Mr|Mrs|Dr|Ms)\.\s+", r"\1 ", raw)
+    raw = _TITLE_WITH_PERIOD_RE.sub(r"\1 ", raw)
     name = normalize_name(strip_title(raw))
     return name or None
 
