@@ -57,9 +57,10 @@ def get_content_hash(content: str) -> str:
 
 def get_unlinked_share(linked_row_count: int, named_unlinked_row_count: int) -> Optional[float]:
     named_row_count = linked_row_count + named_unlinked_row_count
-    if named_row_count == 0:
+    try:
+        return named_unlinked_row_count / named_row_count
+    except ZeroDivisionError:
         return None
-    return named_unlinked_row_count / named_row_count
 
 
 def is_unlinked_share_over_limit(unlinked_share: float) -> bool:
