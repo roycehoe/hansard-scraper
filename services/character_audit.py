@@ -1,0 +1,49 @@
+import re
+from html.entities import html5
+
+# NOTE: each is a fault in the characters themselves, so the raw HTML can hold it too; the raw and derived counts say which side brought it in.
+CHARACTER_SIGNATURES = {
+    "replacement character": re.compile("�"),
+    "mojibake": re.compile("â€|Ã[ -¿]|Â[ -¿]"),
+    "C1 control": re.compile("[\u0080-\u009f]"),
+    "private use": re.compile("[-]"),
+    "zero width": re.compile("[​-‍⁠﻿]"),
+}
+# NOTE: markup is expected in the raw HTML, so these count in derived text only.
+MARKUP_SIGNATURES = {
+    "HTML entity": re.compile(r"&(?:[A-Za-z][A-Za-z0-9]*|#\d+|#x[0-9A-Fa-f]+);"),
+    "HTML tag": re.compile(r"</?[A-Za-z][A-Za-z0-9]*(?:\s[^<>]*)?/?>"),
+}
+PAIRS = {
+    "unbalanced double quotes": ("“", "”"),
+    "unbalanced parentheses": ("(", ")"),
+}
+_CONTEXT_LENGTH = 30
+
+
+def get_character_fault_counts(text: str) -> dict[str, int]:
+    signature_counts = {name: len(pattern.findall(text)) for name, pattern in CHARACTER_SIGNATURES.items()}
+    return {name: count for name, count in signature_counts.items() if count}
+
+
+def get_derived_text_counts(text: str) -> dict[str, int]:
+    markup_counts = {"HTML entity": len(_get_entity_matches(text)), "HTML tag": len(MARKUP_SIGNATURES["HTML tag"].findall(text))}
+    pair_counts = {name: 1 for name in get_unbalanced_pairs(text)}
+    return get_character_fault_counts(text) | {name: count for name, count in markup_counts.items() if count} | pair_counts
+
+
+def _get_entity_matches(text: str) -> list[re.Match]:
+    # NOTE: "R&D;" is text, so a name counts only when HTML5 defines it; a numeric reference always counts.
+    matches = MARKUP_SIGNATURES["HTML entity"].finditer(text)
+    return [match for match in matches if match.group(0)[1] == "#" or match.group(0)[1:] in html5]
+
+
+def get_unbalanced_pairs(text: str) -> list[str]:
+    return [name for name, (opening, closing) in PAIRS.items() if text.count(opening) != text.count(closing)]
+
+
+def get_signature_context(text: str, signature: str) -> str:
+    if signature in PAIRS:
+        return text[: _CONTEXT_LENGTH * 2]
+    match = _get_entity_matches(text)[0] if signature == "HTML entity" else (CHARACTER_SIGNATURES | MARKUP_SIGNATURES)[signature].search(text)
+    return text[max(0, match.start() - _CONTEXT_LENGTH) : match.end() + _CONTEXT_LENGTH]

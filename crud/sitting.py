@@ -24,6 +24,19 @@ class SittingNumberRow:
     markdown_content: Optional[str]
 
 
+@dataclass(frozen=True)
+class SittingMarkdownRow:
+    id: int
+    markdown_content: str
+
+
+@dataclass(frozen=True)
+class SittingTextRow:
+    id: int
+    html_full_content: Optional[str]
+    markdown_content: Optional[str]
+
+
 _STREAM_BATCH = 50
 
 
@@ -97,6 +110,32 @@ class CRUDSitting:
             .execution_options(yield_per=_STREAM_BATCH)
         )
         return (SittingNumberRow(*row) for row in self.session.exec(statement))
+
+    def get_text_rows(self) -> Iterable[SittingTextRow]:
+        statement = (
+            select(Sitting.id, Sitting.html_full_content, Sitting.markdown_content)
+            .order_by(Sitting.id)
+            .execution_options(yield_per=_STREAM_BATCH)
+        )
+        return (SittingTextRow(*row) for row in self.session.exec(statement))
+
+    def get_markdown_rows_by_markdown_content_regex(self, pattern: str) -> list[SittingMarkdownRow]:
+        statement = select(Sitting.id, Sitting.markdown_content).where(col(Sitting.markdown_content).regexp_match(pattern)).order_by(Sitting.id)
+        return [SittingMarkdownRow(*row) for row in self.session.exec(statement).all()]
+
+    def set_markdown_contents_bulk_by_markdown_content(self, updates: dict[int, tuple[str, str]]) -> int:
+        if not updates:
+            return 0
+        # NOTE: each pair is (before, after); a row whose markdown is no longer the before text is left alone and not counted.
+        update_result = self.session.execute(
+            text(
+                "UPDATE sitting SET markdown_content = v.after "
+                "FROM UNNEST(CAST(:ids AS integer[]), CAST(:befores AS text[]), CAST(:afters AS text[])) AS v(id, before, after) "
+                "WHERE sitting.id = v.id AND sitting.markdown_content = v.before"
+            ),
+            {"ids": list(updates), "befores": [before for before, _ in updates.values()], "afters": [after for _, after in updates.values()]},
+        )
+        return update_result.rowcount
 
     def set_session_numbers_bulk(self, updates: dict[int, int]) -> int:
         if not updates:

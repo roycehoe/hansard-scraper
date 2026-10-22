@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Iterable, Optional
 
 from sqlalchemy import text
 from sqlmodel import Session, col, delete, func, select
@@ -22,6 +22,18 @@ class ReportMarkdownRow:
     id: int
     sitting_date: datetime
     markdown_content: Optional[str]
+
+
+@dataclass(frozen=True)
+class ReportTextRow:
+    id: int
+    title: str
+    subtitle: Optional[str]
+    content: Optional[str]
+    markdown_content: Optional[str]
+
+
+_STREAM_BATCH = 200
 
 
 @dataclass(frozen=True)
@@ -123,6 +135,36 @@ class CRUDReport:
             .order_by(Report.id)
         )
         return [ReportMarkdownRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_text_rows(self) -> Iterable[ReportTextRow]:
+        statement = (
+            select(Report.id, Report.title, Report.subtitle, Report.content, Report.markdown_content)
+            .order_by(Report.id)
+            .execution_options(yield_per=_STREAM_BATCH)
+        )
+        return (ReportTextRow(*row) for row in self.session.exec(statement))
+
+    def get_markdown_rows_by_markdown_content_regex(self, pattern: str) -> list[ReportMarkdownRow]:
+        statement = (
+            select(Report.id, Report.sitting_date, Report.markdown_content)
+            .where(col(Report.markdown_content).regexp_match(pattern))
+            .order_by(Report.id)
+        )
+        return [ReportMarkdownRow(*row) for row in self.session.exec(statement).all()]
+
+    def set_markdown_contents_bulk_by_markdown_content(self, updates: dict[int, tuple[str, str]]) -> int:
+        if not updates:
+            return 0
+        # NOTE: each pair is (before, after); a row whose markdown is no longer the before text is left alone and not counted.
+        update_result = self.session.execute(
+            text(
+                "UPDATE report SET markdown_content = v.after "
+                "FROM UNNEST(CAST(:ids AS integer[]), CAST(:befores AS text[]), CAST(:afters AS text[])) AS v(id, before, after) "
+                "WHERE report.id = v.id AND report.markdown_content = v.before"
+            ),
+            {"ids": list(updates), "befores": [before for before, _ in updates.values()], "afters": [after for _, after in updates.values()]},
+        )
+        return update_result.rowcount
 
     def set_sitting_numbers_bulk(self, updates: dict[int, int]) -> int:
         if not updates:

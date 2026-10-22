@@ -54,6 +54,26 @@ class SpeechLinkRow:
 
 
 @dataclass(frozen=True)
+class SpeechTranscriptRow:
+    id: int
+    transcript: str
+
+
+@dataclass(frozen=True)
+class SpeechLabelRow:
+    id: int
+    speaker: str
+
+
+@dataclass(frozen=True)
+class SpeechTextRow:
+    id: int
+    report_id: int
+    speaker: Optional[str]
+    transcript: str
+
+
+@dataclass(frozen=True)
 class SpeakerStringCount:
     speaker: str
     row_count: int
@@ -148,6 +168,50 @@ class CRUDSpeech:
             .order_by(Speech.report_id, Speech.ordinal)
         )
         return [SpeechRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_text_rows(self) -> Iterable[SpeechTextRow]:
+        statement = (
+            select(Speech.id, Speech.report_id, Speech.speaker, Speech.transcript)
+            .order_by(Speech.id)
+            .execution_options(yield_per=_STREAM_BATCH)
+        )
+        return (SpeechTextRow(*row) for row in self.session.exec(statement))
+
+    def get_transcript_rows_by_transcript_regex(self, pattern: str) -> list[SpeechTranscriptRow]:
+        statement = select(Speech.id, Speech.transcript).where(col(Speech.transcript).regexp_match(pattern)).order_by(Speech.id)
+        return [SpeechTranscriptRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_label_rows_by_speaker_regex(self, pattern: str) -> list[SpeechLabelRow]:
+        statement = select(Speech.id, Speech.speaker).where(col(Speech.speaker).regexp_match(pattern)).order_by(Speech.id)
+        return [SpeechLabelRow(*row) for row in self.session.exec(statement).all()]
+
+    def set_speakers_bulk_by_speaker(self, updates: dict[int, tuple[str, str]]) -> int:
+        if not updates:
+            return 0
+        # NOTE: each pair is (before, after); a row whose label is no longer the before text is left alone and not counted.
+        update_result = self.session.execute(
+            text(
+                "UPDATE speech SET speaker = v.after "
+                "FROM UNNEST(CAST(:ids AS integer[]), CAST(:befores AS text[]), CAST(:afters AS text[])) AS v(id, before, after) "
+                "WHERE speech.id = v.id AND speech.speaker = v.before"
+            ),
+            {"ids": list(updates), "befores": [before for before, _ in updates.values()], "afters": [after for _, after in updates.values()]},
+        )
+        return update_result.rowcount
+
+    def set_transcripts_bulk_by_transcript(self, updates: dict[int, tuple[str, str]]) -> int:
+        if not updates:
+            return 0
+        # NOTE: each pair is (before, after); a row whose transcript is no longer the before text is left alone and not counted.
+        update_result = self.session.execute(
+            text(
+                "UPDATE speech SET transcript = v.after "
+                "FROM UNNEST(CAST(:ids AS integer[]), CAST(:befores AS text[]), CAST(:afters AS text[])) AS v(id, before, after) "
+                "WHERE speech.id = v.id AND speech.transcript = v.before"
+            ),
+            {"ids": list(updates), "befores": [before for before, _ in updates.values()], "afters": [after for _, after in updates.values()]},
+        )
+        return update_result.rowcount
 
     def get_speaker_ids_by_ids_for_update(self, speech_ids: list[int]) -> dict[int, Optional[int]]:
         statement = select(Speech.id, Speech.speaker_id).where(col(Speech.id).in_(speech_ids)).with_for_update()
