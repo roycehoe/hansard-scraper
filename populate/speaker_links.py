@@ -497,7 +497,7 @@ def _get_deputy_speaker_ids_for_report_ids(
         sitting_date_to_reports: dict[datetime, list[Report]] = {}
         for other in CRUDReport(session).get_by_sitting_dates(list(dates)):
             sitting_date_to_reports.setdefault(other.sitting_date, []).append(other)
-        sitting_date_key_to_markdown = CRUDSitting(session).get_markdown_by_dates(
+        sitting_date_key_to_markdown = CRUDSitting(session).get_markdown_by_sitting_dates_and_markdown_content_not_null(
             [get_sitting_date_key(sitting_date) for sitting_date in dates]
         )
         for report, speech_id_to_candidate_id, valid_holder_ids in pending_reports:
@@ -557,8 +557,8 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
         for speech_row in CRUDSpeech(session).get_rows_by_report_ids(batch):
             report_id_to_speech_rows.setdefault(speech_row.report_id, []).append(speech_row)
         date_keys = list({get_sitting_date_key(report.sitting_date) for report in report_id_to_report.values()})
-        date_key_to_markdown = CRUDSitting(session).get_markdown_by_dates(date_keys)
-        date_key_to_sections = CRUDSitting(session).get_sections_by_dates(date_keys)
+        date_key_to_markdown = CRUDSitting(session).get_markdown_by_sitting_dates_and_markdown_content_not_null(date_keys)
+        date_key_to_sections = CRUDSitting(session).get_sections_by_sitting_dates_and_sections_not_null(date_keys)
         date_key_to_sitting_text: dict[str, Optional[SittingText]] = {}
         for report_id, speech_rows in report_id_to_speech_rows.items():
             report = report_id_to_report[report_id]

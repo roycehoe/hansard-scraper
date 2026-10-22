@@ -81,7 +81,7 @@ class CRUDSitting:
         statement = select(func.max(Sitting.parlement_no))
         return self.session.exec(statement).one()
 
-    def get_markdown_by_dates(self, dates: list[str]) -> dict[str, str]:
+    def get_markdown_by_sitting_dates_and_markdown_content_not_null(self, dates: list[str]) -> dict[str, str]:
         statement = (
             select(Sitting.sitting_date, Sitting.markdown_content)
             .where(col(Sitting.sitting_date).in_(dates))
@@ -90,7 +90,7 @@ class CRUDSitting:
         sitting_markdown_rows = self.session.exec(statement).all()
         return {sitting_date: markdown for sitting_date, markdown in sitting_markdown_rows}
 
-    def get_sections_by_dates(self, dates: list[str]) -> dict[str, str]:
+    def get_sections_by_sitting_dates_and_sections_not_null(self, dates: list[str]) -> dict[str, str]:
         statement = (
             select(Sitting.sitting_date, Sitting.sections)
             .where(col(Sitting.sitting_date).in_(dates))

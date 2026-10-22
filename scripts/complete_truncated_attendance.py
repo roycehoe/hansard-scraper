@@ -77,7 +77,7 @@ def build_completions(session: Session, sitting_ids: list[int]) -> list[SittingC
     for presence_row in CRUDAttendance(session).get_presence_rows_by_speaker_id_not_null():
         if presence_row.sitting_id in sitting_id_to_presence_keys:
             sitting_id_to_presence_keys[presence_row.sitting_id][(presence_row.speaker_id, presence_row.is_present)] += 1
-    date_to_markdown = CRUDSitting(session).get_markdown_by_dates(
+    date_to_markdown = CRUDSitting(session).get_markdown_by_sitting_dates_and_markdown_content_not_null(
         [_SITTING_ID_TO_TRUNCATED_SITTING[sitting_id].sitting_date for sitting_id in sitting_ids]
     )
 
