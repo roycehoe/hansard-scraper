@@ -9,7 +9,6 @@ from database.report import Report
 from services.attribution import (
     HEADLINE_GROUP,
     HEADLINE_MAX_PARLIAMENT,
-    AttributionFigures,
     GroupFigures,
     ReportTypeFigures,
     get_countable_character_count,
@@ -59,7 +58,7 @@ def _is_single_speaker_collapse(report: Report) -> bool:
     return get_fallback_speaker(report.markdown_content, start_of_speech_line, report.report_type, report.report_version) is not None
 
 
-def get_attribution_figures(session: Session) -> AttributionFigures:
+def get_attribution_figures(session: Session) -> list[GroupFigures]:
     report_ids = CRUDReport(session).get_ids_by_markdown_content_not_null()
     reported_parliaments: set[int] = set()
     group_to_row_count: defaultdict[str, Counter[str]] = defaultdict(Counter)
@@ -101,7 +100,7 @@ def get_attribution_figures(session: Session) -> AttributionFigures:
                 figures.collapse_report_count += 1
                 figures.collapse_character_count += body_character_count
 
-    return AttributionFigures(groups=[
+    return [
         GroupFigures(
             group=group,
             report_count=len(group_to_report_ids[group]),
@@ -115,4 +114,4 @@ def get_attribution_figures(session: Session) -> AttributionFigures:
             },
         )
         for group in (HEADLINE_GROUP, *(get_group(parliament_number) for parliament_number in sorted(reported_parliaments)))
-    ])
+    ]

@@ -82,7 +82,7 @@ def test_parliament_15_has_its_own_group(scratch_session: Session) -> None:
     ])
     scratch_session.commit()
 
-    all_group_figures = get_attribution_figures(scratch_session).groups
+    all_group_figures = get_attribution_figures(scratch_session)
 
     group_names = [group_figures.group for group_figures in all_group_figures]
     new_parliament_figures = all_group_figures[group_names.index(_NEW_PARLIAMENT_GROUP)]

@@ -41,11 +41,6 @@ class GroupFigures:
     report_type_to_figures: dict[str, ReportTypeFigures]
 
 
-@dataclass
-class AttributionFigures:
-    groups: list[GroupFigures]
-
-
 def get_countable_character_count(text: str) -> int:
     return len(_MARKUP_AND_SPACE_RE.sub("", _PROC_TEXT_TAG_RE.sub("", text)))
 
@@ -100,8 +95,8 @@ def _build_group_json(group_figures: GroupFigures) -> dict[str, object]:
     }
 
 
-def build_attribution_figures_json(attribution_figures: AttributionFigures, measured_at: datetime) -> dict[str, object]:
+def build_attribution_figures_json(attribution_figures: list[GroupFigures], measured_at: datetime) -> dict[str, object]:
     return {
         "measured_at": measured_at.isoformat(),
-        "groups": [_build_group_json(group_figures) for group_figures in attribution_figures.groups],
+        "groups": [_build_group_json(group_figures) for group_figures in attribution_figures],
     }

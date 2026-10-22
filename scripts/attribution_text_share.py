@@ -54,7 +54,7 @@ def main(output_path: Optional[Path]) -> None:
     with Session(engine) as session:
         attribution_figures = get_attribution_figures(session)
 
-    headline_figures, *reported_figures = attribution_figures.groups
+    headline_figures, *reported_figures = attribution_figures
     category_to_row_count = headline_figures.category_to_row_count
     category_to_character_count = headline_figures.category_to_character_count
     body_total = headline_figures.body_total
@@ -80,7 +80,7 @@ def main(output_path: Optional[Path]) -> None:
         logger.info(f"{group_figures.group}, beside the headline:")
         _log_rates(group_figures.category_to_row_count, group_figures.category_to_character_count, group_figures.body_total)
 
-    for group_figures in attribution_figures.groups:
+    for group_figures in attribution_figures:
         logger.info(f"{group_figures.group}, by report type:")
         for report_type in sorted(group_figures.report_type_to_figures):
             _log_report_type_figures(report_type, group_figures.report_type_to_figures[report_type])
