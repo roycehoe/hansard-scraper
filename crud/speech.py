@@ -223,14 +223,6 @@ class CRUDSpeech:
         statement = select(Speech.id, Speech.speaker_id).where(col(Speech.id).in_(speech_ids)).with_for_update()
         return [SpeechSpeakerIdRow(*row) for row in self.session.exec(statement).all()]
 
-    def get_speaker_rows_by_ids(self, speech_ids: list[int]) -> list[SpeechSpeakerRow]:
-        statement = (
-            select(Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date)
-            .join(Report)
-            .where(Speech.id.in_(speech_ids))
-        )
-        return [SpeechSpeakerRow(*row) for row in self.session.exec(statement).all()]
-
     def get_speaker_rows_by_speaker_not_null_and_parliament_number(self, parliament_number: int) -> list[SpeechParliamentRow]:
         statement = (
             select(Speech.id, Speech.speaker, Report.report_type, Report.parliament_number)
@@ -239,12 +231,6 @@ class CRUDSpeech:
             .where(Report.parliament_number == parliament_number)
         )
         return [SpeechParliamentRow(*row) for row in self.session.exec(statement).all()]
-
-    def delete_by_report_id(self, report_id: int) -> int:
-        statement = delete(Speech).where(Speech.report_id == report_id)
-        delete_result = self.session.exec(statement)
-        self.session.commit()
-        return delete_result.rowcount
 
     def delete_by_report_ids(self, report_ids: list[int]) -> int:
         statement = delete(Speech).where(col(Speech.report_id).in_(report_ids))
