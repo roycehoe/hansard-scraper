@@ -411,6 +411,10 @@ def _classify_speech_type(parsed_speeches: list[ParsedSpeech], speaker_count: in
     return ParsedSpeechType.NO_SPEAKER
 
 
+def _has_speaker_honorific(text: str) -> bool:
+    return _SPEAKER_HONORIFIC_RE.search(text) is not None or _LEADING_TITLE_RE.match(text) is not None
+
+
 def _is_section_header_speaker(name: str) -> bool:
     stripped = name.strip()
     if not stripped:
@@ -722,6 +726,58 @@ def _is_record_end(record: str, line: str) -> bool:
     return _RECORD_END_RE.search(line) is not None
 
 
+def _is_note_line(line: str) -> bool:
+    return (
+        _FOOTNOTE_LINE_RE.match(line) is not None
+        or _CLOSED_FOOTNOTE_START_RE.match(line) is not None
+        or _COLUMN_REFERENCE_NOTE_RE.match(line) is not None
+    )
+
+
+def _is_closed_footnote_block(lines: list[str], block: list[int], is_closed: bool) -> bool:
+    if not is_closed or len(block) > _MAX_CLOSED_FOOTNOTE_LINES:
+        return False
+    if any(_BOLD_OPENING_RE.match(lines[index].strip()) for index in block):
+        return False
+    first_line = lines[block[0]].strip()
+    # NOTE: a column reference is a whole note, so what follows it may be unlabelled speech; its block is read line by line instead.
+    return _is_note_line(first_line) and _COLUMN_REFERENCE_NOTE_RE.match(first_line) is None
+
+
+def _get_speech_start_position(lines: list[str], block: list[int]) -> int:
+    # NOTE: a page-bottom footnote is followed by the next page's speech before the next rule, so a long paragraph right after a finished note is speech.
+    for position, index in enumerate(block):
+        line = lines[index].strip()
+        if _is_note_line(line):
+            continue
+        previous_line = lines[block[position - 1]].strip() if position > 0 else ""
+        is_after_finished_note = _COLUMN_REFERENCE_NOTE_RE.match(previous_line) is not None or (
+            _SENTENCE_END_RE.search(previous_line) is not None and _FOOTNOTE_REFERENCE_RE.search(previous_line) is None
+        )
+        is_speech = len(line) >= _MIN_SPEECH_LINE_LENGTH and _SPEECH_START_RE.match(line) is not None and is_after_finished_note
+        return position if is_speech else len(block)
+    return len(block)
+
+
+def _get_footnote_line_indexes(lines: list[str]) -> set[int]:
+    rule_indexes = [index for index, line in enumerate(lines) if line.strip() == _HORIZONTAL_RULE or _UNDERSCORE_RULE_RE.match(line.strip()) is not None]
+    footnote_line_indexes: set[int] = set()
+    for position, rule_index in enumerate(rule_indexes):
+        is_closed = position + 1 < len(rule_indexes)
+        block_end = rule_indexes[position + 1] if is_closed else len(lines)
+        block = [index for index in range(rule_index + 1, block_end) if lines[index].strip()]
+        if not block:
+            continue
+        if _is_closed_footnote_block(lines, block, is_closed):
+            footnote_line_indexes.update(block[: _get_speech_start_position(lines, block)])
+            continue
+        for index in block:
+            if not _is_note_line(lines[index].strip()):
+                break
+            footnote_line_indexes.add(index)
+    return footnote_line_indexes
+
+
 def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speaker: str) -> list[ParsedSpeech]:
     speeches: list[ParsedSpeech] = []
     speaker_lines: list[str] = []
@@ -783,10 +839,6 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
     if speaker_lines:
         speeches.extend(_build_speaker_lines_speeches(speaker, speaker_lines))
     return speeches
-
-
-def _has_speaker_honorific(text: str) -> bool:
-    return _SPEAKER_HONORIFIC_RE.search(text) is not None or _LEADING_TITLE_RE.match(text) is not None
 
 
 def _is_speaker_name(name: str) -> bool:
@@ -853,58 +905,6 @@ def _is_honourable_members_phrase(line: str) -> bool:
         return False
     text_after_bold = line[bold_match.end():]
     return _LOWERCASE_START_RE.match(text_after_bold) is not None and _CHAMBER_EVENT_VERB_RE.match(text_after_bold) is None
-
-
-def _is_note_line(line: str) -> bool:
-    return (
-        _FOOTNOTE_LINE_RE.match(line) is not None
-        or _CLOSED_FOOTNOTE_START_RE.match(line) is not None
-        or _COLUMN_REFERENCE_NOTE_RE.match(line) is not None
-    )
-
-
-def _is_closed_footnote_block(lines: list[str], block: list[int], is_closed: bool) -> bool:
-    if not is_closed or len(block) > _MAX_CLOSED_FOOTNOTE_LINES:
-        return False
-    if any(_BOLD_OPENING_RE.match(lines[index].strip()) for index in block):
-        return False
-    first_line = lines[block[0]].strip()
-    # NOTE: a column reference is a whole note, so what follows it may be unlabelled speech; its block is read line by line instead.
-    return _is_note_line(first_line) and _COLUMN_REFERENCE_NOTE_RE.match(first_line) is None
-
-
-def _get_speech_start_position(lines: list[str], block: list[int]) -> int:
-    # NOTE: a page-bottom footnote is followed by the next page's speech before the next rule, so a long paragraph right after a finished note is speech.
-    for position, index in enumerate(block):
-        line = lines[index].strip()
-        if _is_note_line(line):
-            continue
-        previous_line = lines[block[position - 1]].strip() if position > 0 else ""
-        is_after_finished_note = _COLUMN_REFERENCE_NOTE_RE.match(previous_line) is not None or (
-            _SENTENCE_END_RE.search(previous_line) is not None and _FOOTNOTE_REFERENCE_RE.search(previous_line) is None
-        )
-        is_speech = len(line) >= _MIN_SPEECH_LINE_LENGTH and _SPEECH_START_RE.match(line) is not None and is_after_finished_note
-        return position if is_speech else len(block)
-    return len(block)
-
-
-def _get_footnote_line_indexes(lines: list[str]) -> set[int]:
-    rule_indexes = [index for index, line in enumerate(lines) if line.strip() == _HORIZONTAL_RULE or _UNDERSCORE_RULE_RE.match(line.strip()) is not None]
-    footnote_line_indexes: set[int] = set()
-    for position, rule_index in enumerate(rule_indexes):
-        is_closed = position + 1 < len(rule_indexes)
-        block_end = rule_indexes[position + 1] if is_closed else len(lines)
-        block = [index for index in range(rule_index + 1, block_end) if lines[index].strip()]
-        if not block:
-            continue
-        if _is_closed_footnote_block(lines, block, is_closed):
-            footnote_line_indexes.update(block[: _get_speech_start_position(lines, block)])
-            continue
-        for index in block:
-            if not _is_note_line(lines[index].strip()):
-                break
-            footnote_line_indexes.add(index)
-    return footnote_line_indexes
 
 
 def _is_preamble_title_line(line: str) -> bool:

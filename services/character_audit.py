@@ -26,16 +26,16 @@ def get_character_fault_counts(text: str) -> dict[str, int]:
     return {name: count for name, count in signature_name_to_count.items() if count}
 
 
-def get_derived_text_counts(text: str) -> dict[str, int]:
-    markup_name_to_count = {"HTML entity": len(_get_entity_matches(text)), "HTML tag": len(MARKUP_SIGNATURES["HTML tag"].findall(text))}
-    pair_name_to_count = {name: 1 for name in get_unbalanced_pairs(text)}
-    return get_character_fault_counts(text) | {name: count for name, count in markup_name_to_count.items() if count} | pair_name_to_count
-
-
 def _get_entity_matches(text: str) -> list[re.Match]:
     # NOTE: "R&D;" is text, so a name counts only when HTML5 defines it; a numeric reference always counts.
     matches = MARKUP_SIGNATURES["HTML entity"].finditer(text)
     return [match for match in matches if match.group(0)[1] == "#" or match.group(0)[1:] in html5]
+
+
+def get_derived_text_counts(text: str) -> dict[str, int]:
+    markup_name_to_count = {"HTML entity": len(_get_entity_matches(text)), "HTML tag": len(MARKUP_SIGNATURES["HTML tag"].findall(text))}
+    pair_name_to_count = {name: 1 for name in get_unbalanced_pairs(text)}
+    return get_character_fault_counts(text) | {name: count for name, count in markup_name_to_count.items() if count} | pair_name_to_count
 
 
 def get_unbalanced_pairs(text: str) -> list[str]:
