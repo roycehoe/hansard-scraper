@@ -31,7 +31,6 @@ def build_sitting(hansard_sitting_date_response: HansardSittingDateResponse) -> 
         else None
     )
     column_to_value["markdown_content"] = markdown
-    # NOTE: the older-system response leaves these numbers out, so they are read from the header table its HTML prints.
     column_to_value["session_no"] = _get_number(column_to_value["session_no"], markdown, SESSION_NUMBER_FIELD)
     column_to_value["sitting_no"] = _get_number(column_to_value["sitting_no"], markdown, SITTING_NUMBER_FIELD)
     return Sitting.model_validate(column_to_value)

@@ -75,7 +75,6 @@ _WOMAN_TITLE_PREFIX = "Mdm"
 _SPEAKER_LABELS = ("Mr Speaker", _WOMAN_SPEAKER_LABEL)
 _DEPUTY_SPEAKER_LABELS = ("Mr Deputy Speaker", "Mr DeputySpeaker", "Mdm Deputy Speaker", "Mdm DeputySpeaker", "The Deputy Speaker")
 
-# NOTE: only these roles resolve by sitting date; every other string is memoised on (string, parliament).
 DATE_DEPENDENT_ROLES = (*DATED_ROLE_TERMS, *_SPEAKER_LABELS, *_DEPUTY_SPEAKER_LABELS)
 
 _LEADING_LIST_NUMBER_RE = re.compile(r"^\d+\\?\.\s*")
@@ -98,7 +97,7 @@ _TITLED_RE = re.compile(r"^(?:Mr|Mrs|Ms|Mdm|Dr|Miss|Inche|Encik|Assoc|Prof|Er)\b
 
 _ADDRESS_TITLES = ("GOVERNOR'S ADDRESS", "PRESIDENT'S ADDRESS", "YANG DI-PERTUAN NEGARA'S SPEECH")
 
-# NOTE: SPRS prints these labels without the opening bracket of the constituency; checked against the source on 22 Oct 2026.
+# NOTE: SPRS prints these labels without the opening bracket.
 _LABELS_MISSING_OPENING_BRACKET = {
     "Inche Mohd. Ali Bin Alwi Kampong Kembangan)": "Inche Mohd. Ali Bin Alwi (Kampong Kembangan)",
     "Ms Foo Mee Har West Coast)": "Ms Foo Mee Har (West Coast)",
@@ -213,7 +212,6 @@ def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int,
             text = _normalize_text(preceding[-1].text)
             named_deputy = _NAMED_DEPUTY_RE.search(text)
             if named_deputy is not None or not (_SPEAKER_ROLE_RE.match(text) or _DEPUTY_ROLE_RE.match(text)):
-                # NOTE: a chair-change line between the annotation and the row voids it.
                 if any(annotation_position < event_position < position for event_position, _ in events):
                     continue
                 speech_id_to_name[speech_row.id] = named_deputy.group(1).strip() if named_deputy is not None else text
@@ -229,7 +227,7 @@ def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int,
                     and not any(annotation_position < suspension_position < position for suspension_position in suspension_positions)
                 ):
                     speech_id_to_name[speech_row.id] = next(iter(holders))
-                # NOTE: with no MPs Speaking header to name the Speaker, the annotation goes to stage 8, which finds the Speaker of the day in SPEAKER_TERMS.
+                # NOTE: with no MPs Speaking header, the annotation goes to stage 8, which finds the Speaker in SPEAKER_TERMS.
                 elif not is_header_present and not any(annotation_position < event_position < position for event_position, _ in events):
                     speech_id_to_name[speech_row.id] = text
             continue

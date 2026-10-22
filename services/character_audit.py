@@ -1,7 +1,7 @@
 import re
 from html.entities import html5
 
-# NOTE: each is a fault in the characters themselves, so the raw HTML can hold it too; the raw and derived counts say which side brought it in.
+# NOTE: each is a fault in the characters themselves, so the raw HTML can hold it too.
 CHARACTER_SIGNATURES = {
     "replacement character": re.compile("�"),
     "mojibake": re.compile("â€|Ã[ -¿]|Â[ -¿]"),

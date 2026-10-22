@@ -11,7 +11,6 @@ from utils.names import (
     strip_title,
 )
 
-# NOTE: scanner errors made in every parliament go here; fixes that need a parliament go in NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.
 _OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
     "lai tha chai": "Lai Tai Chai",  # vols 32-51, parl 3-6
     "lai tha chia": "Lai Tai Chai",
@@ -237,7 +236,6 @@ _OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
     "chiam see chiam": "Chiam See Tong",
 }
 
-# NOTE: surname-only forms and inverted canonicals go here; OCR character errors belong in _OCR_FORM_TO_CORRECTED_NAME.
 # NOTE: a key of Parliament 0 names a member who sat only in the Legislative Assembly; a key of 1 names one who also sat in Parliament 1.
 NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
     ("d s marshall", 0): "David Marshall",
@@ -299,7 +297,7 @@ NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
     ("ya'acob bin mohamed", 2): "Yaacob Bin Mohamed",
     ("ya'acob bin mohamed", 3): "Yaacob Bin Mohamed",
     ("ya'acob bin mohamed", 4): "Yaacob Bin Mohamed",
-    # NOTE: the prefix lookup drops these as ambiguous, because both name forms yield the same key.
+    # NOTE: the prefix lookup drops these as ambiguous.
     ("mohd ariff", 1): "Mohd Ariff Bin Suradi, Haji",
     ("mohd ariff", 2): "Mohd Ariff Bin Suradi, Haji",
     ("yaacob", 1): "Yaacob Bin Mohamed",

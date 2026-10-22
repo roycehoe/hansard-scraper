@@ -69,7 +69,7 @@ _LEADING_NUMBER_RE = re.compile(r"^\d+(?=[A-Z])")
 _NUMBERED_ITEM_RE = re.compile(r"^\d+\\\.?\s")
 _MAX_MASTHEAD_LINES = 20
 
-# NOTE: the source lost the start of this entry; the line is the sitting of 10 June 1963.
+# NOTE: the source cut this entry, 10 June 1963.
 _TRUNCATED_LINE_TO_ENTRY_LINE: dict[str, str] = {
     "Tunah), Parliamentary Secretary to the Prime Minister.": "Inche Yaacob Bin Mohamed (Bukit Timah), Parliamentary Secretary to the Prime Minister.",
 }
@@ -318,7 +318,6 @@ def _parse_entry_line(line: str, sitting_date: str) -> Optional[ParsedAttendee]:
     if parsed.name.lower() != _SPEAKER_OFFICE_NAME:
         return parsed
 
-    # NOTE: a bare "Speaker" entry names the office; the dated table of Speakers names the person.
     presiding_officer_name = _get_presiding_officer_name(sitting_date)
     if presiding_officer_name is None:
         return parsed
