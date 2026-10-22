@@ -1333,3 +1333,33 @@ def build_speeches(report: Report, parsed_speeches: list[ParsedSpeech]) -> list[
         )
         for ordinal, parsed_speech in enumerate(parsed_speeches, start=1)
     ]
+
+
+class ReportSkipReason(Enum):
+    NO_MARKDOWN_CONTENT = "NO_MARKDOWN_CONTENT"
+    NO_START_OF_SPEECH_LINE = "NO_START_OF_SPEECH_LINE"
+
+
+@dataclass(frozen=True)
+class ReportSpeeches:
+    speeches: list[Speech]
+    skip_reason: Optional[ReportSkipReason]
+
+
+def build_report_speeches(report: Report, report_id_to_unattributed_range: dict[int, UnattributedSpeechRange]) -> ReportSpeeches:
+    if report.markdown_content is None:
+        return ReportSpeeches([], ReportSkipReason.NO_MARKDOWN_CONTENT)
+    start_of_speech_line = get_start_of_speech_line(
+        report.markdown_content,
+        report.title,
+        report.subtitle,
+        report.original_title,
+        report.report_type,
+        report.report_version,
+    )
+    if start_of_speech_line is None:
+        return ReportSpeeches([], ReportSkipReason.NO_START_OF_SPEECH_LINE)
+    speeches = get_speeches(report.markdown_content, start_of_speech_line, report.report_type, report.report_version)
+    unattributed_range = report_id_to_unattributed_range.get(report.id)
+    speeches_to_store = speeches if unattributed_range is None else apply_unattributed_speech_range(speeches, unattributed_range)
+    return ReportSpeeches(build_speeches(report, speeches_to_store), None)

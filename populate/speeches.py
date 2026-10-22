@@ -2,40 +2,11 @@ from sqlmodel import Session
 
 from crud.report import CRUDReport
 from crud.speech import CRUDSpeech
-from database.report import Report
-from database.speech import Speech
 from logs import logger
-from schemas.unattributed_speech import UnattributedSpeechRange
-from services.speech import (
-    apply_unattributed_speech_range,
-    build_speeches,
-    get_speeches,
-    get_start_of_speech_line,
-)
+from services.speech import ReportSkipReason, build_report_speeches
 from utils.data_files import get_unattributed_speech_ranges
 
 _BATCH_SIZE = 1_000
-
-
-def build_report_speeches(report: Report, report_id_to_unattributed_range: dict[int, UnattributedSpeechRange]) -> list[Speech]:
-    if report.markdown_content is None:
-        logger.debug(f"Skipping report {report.id}: no markdown content")
-        return []
-    start_of_speech_line = get_start_of_speech_line(
-        report.markdown_content,
-        report.title,
-        report.subtitle,
-        report.original_title,
-        report.report_type,
-        report.report_version,
-    )
-    if start_of_speech_line is None:
-        logger.debug(f"Skipping report {report.id}: could not find start of speech line")
-        return []
-    speeches = get_speeches(report.markdown_content, start_of_speech_line, report.report_type, report.report_version)
-    unattributed_range = report_id_to_unattributed_range.get(report.id)
-    speeches_to_store = speeches if unattributed_range is None else apply_unattributed_speech_range(speeches, unattributed_range)
-    return build_speeches(report, speeches_to_store)
 
 
 def populate_speeches(session: Session) -> None:
@@ -48,7 +19,12 @@ def populate_speeches(session: Session) -> None:
     batch = []
     for report_index, report in enumerate(reports_to_process, start=1):
         logger.info(f"{report_index}/{len(reports_to_process)}")
-        batch.extend(build_report_speeches(report, report_id_to_unattributed_range))
+        report_speeches = build_report_speeches(report, report_id_to_unattributed_range)
+        if report_speeches.skip_reason == ReportSkipReason.NO_MARKDOWN_CONTENT:
+            logger.debug(f"Skipping report {report.id}: no markdown content")
+        if report_speeches.skip_reason == ReportSkipReason.NO_START_OF_SPEECH_LINE:
+            logger.debug(f"Skipping report {report.id}: could not find start of speech line")
+        batch.extend(report_speeches.speeches)
         if len(batch) >= _BATCH_SIZE:
             CRUDSpeech(session).create_many(batch)
             batch.clear()

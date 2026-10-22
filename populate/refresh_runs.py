@@ -38,7 +38,6 @@ from gateway.telegram import send_telegram_message
 from logs import logger
 from populate.attribution_figures import get_attribution_figures
 from populate.speaker_links import link_speakers_by_report_ids_and_sitting_ids
-from populate.speeches import build_report_speeches
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
     HansardReportOldResponse,
@@ -94,6 +93,7 @@ from services.refresh import (
 )
 from services.report import build_report
 from services.sitting import build_sitting
+from services.speech import ReportSkipReason, build_report_speeches
 from settings import settings
 from utils.data_files import (
     get_constituency_names,
@@ -500,9 +500,13 @@ def _write_window_rows(session: Session, fetched_window: FetchedWindow, window_r
     speeches = []
     for report in reports:
         report_speeches = build_report_speeches(report, report_id_to_unattributed_range)
-        if not report_speeches:
+        if report_speeches.skip_reason == ReportSkipReason.NO_MARKDOWN_CONTENT:
+            logger.debug(f"Skipping report {report.id}: no markdown content")
+        if report_speeches.skip_reason == ReportSkipReason.NO_START_OF_SPEECH_LINE:
+            logger.debug(f"Skipping report {report.id}: could not find start of speech line")
+        if not report_speeches.speeches:
             window_result.reports_without_speech_rows += 1
-        speeches.extend(report_speeches)
+        speeches.extend(report_speeches.speeches)
     CRUDSpeech(session).add_many(speeches)
 
     hansard_sitting_date_responses = []
