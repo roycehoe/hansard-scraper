@@ -27,37 +27,47 @@ _INVERTED_TITLE_SUFFIXES = frozenset({"Dr", "Mdm", "Mr", "Mrs", "Ms", "Prof", "A
 
 _MIN_INVERTED_TITLE_SUFFIX_PART_COUNT = 3
 
+_SPACE_BETWEEN_PERIODED_INITIALS_PATTERN = r"(?<=[A-Z]\.) (?=[A-Z]\.)"
+_MOHD_PERIOD_PATTERN = r"\bMohd\."
+_PERIOD_BETWEEN_INITIALS_PATTERN = r"(?<=[A-Z])\.(?=[A-Z])"
+_INITIAL_PERIOD_PATTERN = r"([A-Z])\."
+_WHITESPACE_RUN_PATTERN = r"\s+"
+_BIN_PARTICLE_PATTERN = r"\s+bin(?:te)?\s+"
+_MIDDLE_HAJI_PATTERN = r"\s+(?:[Tt]uan\s+)?(?:[Hh]aji|[Hh]j\.?)\s+"
+_MOHAMED_VARIANT_PATTERN = r"\bMohamad\b|\bMohammed\b|\bMohammad\b"
+_SPACED_INITIALS_PATTERN = r"\b([A-Z])((?:\s+[A-Z])+)\b"
+
 
 def normalize_name(name: str) -> str:
     # NOTE: a lone-initial period ("S. Iswaran") stays, because some Speaker.name values keep it ("A. Rahim Ishak") and others drop it.
-    name = re.sub(r"(?<=[A-Z]\.) (?=[A-Z]\.)", "", name)
-    return re.sub(r"\bMohd\.", "Mohd", name)
+    name = re.sub(_SPACE_BETWEEN_PERIODED_INITIALS_PATTERN, "", name)
+    return re.sub(_MOHD_PERIOD_PATTERN, "Mohd", name)
 
 
 def period_normalize(name: str) -> str:
-    normalized = re.sub(r"(?<=[A-Z])\.(?=[A-Z])", " ", name)
-    normalized = re.sub(r"([A-Z])\.", r"\1", normalized)
-    normalized = re.sub(r"\s+", " ", normalized)
+    normalized = re.sub(_PERIOD_BETWEEN_INITIALS_PATTERN, " ", name)
+    normalized = re.sub(_INITIAL_PERIOD_PATTERN, r"\1", normalized)
+    normalized = re.sub(_WHITESPACE_RUN_PATTERN, " ", normalized)
     return normalized.strip().lower()
 
 
 def strip_bin(name: str) -> str:
-    return re.sub(r"\s+bin(?:te)?\s+", " ", name, flags=re.IGNORECASE).strip()
+    return re.sub(_BIN_PARTICLE_PATTERN, " ", name, flags=re.IGNORECASE).strip()
 
 
 def strip_middle_haji(name: str) -> str:
-    return re.sub(r"\s+(?:[Tt]uan\s+)?(?:[Hh]aji|[Hh]j\.?)\s+", " ", name).strip()
+    return re.sub(_MIDDLE_HAJI_PATTERN, " ", name).strip()
 
 
 def spelling_normalize(name: str) -> str:
-    normalized = re.sub(r"\bMohamad\b|\bMohammed\b|\bMohammad\b", "Mohamed", name)
+    normalized = re.sub(_MOHAMED_VARIANT_PATTERN, "Mohamed", name)
     normalized = normalized.replace("-", " ")
     normalized = re.sub(
-        r"\b([A-Z])((?:\s+[A-Z])+)\b",
+        _SPACED_INITIALS_PATTERN,
         lambda initials_match: initials_match.group(1) + initials_match.group(2).replace(" ", ""),
         normalized,
     )
-    return re.sub(r"\s+", " ", normalized).strip()
+    return re.sub(_WHITESPACE_RUN_PATTERN, " ", normalized).strip()
 
 
 def strip_title(text: str) -> str:
