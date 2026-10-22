@@ -6,6 +6,7 @@ from schemas.hansard_search_result import HansardSearchResult
 from schemas.hansard_topic_response import HansardTopicResponse
 
 _NEWER_SYSTEM_ID_SUFFIX = "#"
+_NUL_CHARACTER = "\x00"
 _NUL_REPLACEMENT = "�"
 
 
@@ -24,7 +25,7 @@ def get_topic_html_content(hansard_topic_response: HansardTopicResponse, report_
         html_content = hansard_topic_response.html_content
     if html_content is None:
         return None
-    return html_content.replace("\x00", _NUL_REPLACEMENT)
+    return html_content.replace(_NUL_CHARACTER, _NUL_REPLACEMENT)
 
 
 def build_hansard_website_response(

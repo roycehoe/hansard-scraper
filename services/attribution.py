@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
-from utils.markdown_parser import PROC_TEXT_CLOSE_TAG, PROC_TEXT_OPEN_TAG
+from utils.markdown_parser import EMPHASIS_MARK, PROC_TEXT_CLOSE_TAG, PROC_TEXT_OPEN_TAG
+from utils.names import OPENING_PARENTHESIS
 
 HEADLINE_MAX_PARLIAMENT = 11
 HEADLINE_GROUP = f"Parliaments 0 to {HEADLINE_MAX_PARLIAMENT}"
@@ -46,7 +47,7 @@ def get_countable_character_count(text: str) -> int:
 
 
 def _is_adr_excluded(speaker: str) -> bool:
-    return bool(_ADR_EXCLUDED_SPEAKER_RE.search(speaker)) or speaker.startswith(("(", "_"))
+    return bool(_ADR_EXCLUDED_SPEAKER_RE.search(speaker)) or speaker.startswith((OPENING_PARENTHESIS, EMPHASIS_MARK))
 
 
 def get_speech_category(speaker: Optional[str], speaker_id: Optional[int]) -> str:

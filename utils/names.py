@@ -23,6 +23,12 @@ TITLE_PREFIXES = (
     "Cdre (Res) ", "Cdre ", "[NS] ", "(NS) ",
 )
 
+OPENING_PARENTHESIS = "("
+CLOSING_PARENTHESIS = ")"
+LABEL_COLON = ":"
+MP_NAME_SEPARATOR = ";"
+INVERTED_NAME_SEPARATOR = ", "
+
 _INVERTED_TITLE_SUFFIXES = frozenset({"Dr", "Mdm", "Mr", "Mrs", "Ms", "Prof", "Assoc Prof", "RAdm", "BG"})
 
 _MIN_INVERTED_TITLE_SUFFIX_PART_COUNT = 3
@@ -81,9 +87,9 @@ def strip_title(text: str) -> str:
 
 
 def invert_to_natural(speaker_name: str) -> Optional[str]:
-    if ", " not in speaker_name:
+    if INVERTED_NAME_SEPARATOR not in speaker_name:
         return None
-    parts = speaker_name.split(", ")
+    parts = speaker_name.split(INVERTED_NAME_SEPARATOR)
     if len(parts) >= _MIN_INVERTED_TITLE_SUFFIX_PART_COUNT and parts[-1] in _INVERTED_TITLE_SUFFIXES:
         return strip_title(f"{' '.join(parts[1:-1])} {parts[0]}").strip()
-    return strip_title(f"{', '.join(parts[1:])} {parts[0]}").strip()
+    return strip_title(f"{INVERTED_NAME_SEPARATOR.join(parts[1:])} {parts[0]}").strip()

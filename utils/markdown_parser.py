@@ -8,14 +8,16 @@ from enums import ReportVersion
 from utils.text import fix_mojibake
 
 _MAX_ADJOURNMENT_CONTINUATIONS = 6
-_BOLD_MARKER = "**"
-_BOLD_MARKER_LENGTH = len(_BOLD_MARKER)
-_EMPHASIS_MARK = "_"
-_EMPHASIS_MARKER_LENGTH = len(_EMPHASIS_MARK)
+BOLD_MARKER = "**"
+_BOLD_MARKER_LENGTH = len(BOLD_MARKER)
+EMPHASIS_MARK = "_"
+_EMPHASIS_MARKER_LENGTH = len(EMPHASIS_MARK)
+ASTERISK = "*"
+HORIZONTAL_RULE = "* * *"
 _EMPTY_ITALIC_LINE = "__"
 _ONE_COLUMN_TABLE_SEPARATOR_LINE = "---|---"
 _PERIOD = "."
-_PERIOD_THEN_EMPHASIS_MARK = _PERIOD + _EMPHASIS_MARK
+_PERIOD_THEN_EMPHASIS_MARK = _PERIOD + EMPHASIS_MARK
 _OPENING_BRACKET = "["
 _HYPHEN = "-"
 _CLOSING_BRACKET = "]"
@@ -52,7 +54,7 @@ _DIRECTION_START_PATTERN = r"_?(?:Adjourned|Sitting|Debate)\b"
 _ALPHANUMERIC_PATTERN = r"[A-Za-z0-9]"
 _TIME_ABBREVIATION_END_PATTERN = r"[ap]\.m\.[\"')\]*_\s]*$"
 _BLOCK_START_PATTERN = r"^(\*\*|#{1,6}|\* \* \*)"
-_BYTE_ORDER_MARK = "\ufeff"
+BYTE_ORDER_MARK = "\ufeff"
 _NBSP_ENTITY = "&nbsp;"
 _STRAY_CLOSING_TAG = "</p />"
 _STRAY_OPENING_ANGLE = "<"
@@ -198,7 +200,7 @@ def repair_source_characters(markdown: str) -> str:
     # NOTE: the mojibake fix runs first, because SPRS also sends a lost closing quote as "ï¿½?", the mojibake of "\ufffd?".
     markdown = _restore_lost_closing_quotes(fix_mojibake(markdown))
     # NOTE: an older-system report can carry a byte-order mark as an entity, which the HTML strip in _prepare_newer_system_html does not see.
-    return _restore_lost_characters(markdown).replace(_BYTE_ORDER_MARK, "")
+    return _restore_lost_characters(markdown).replace(BYTE_ORDER_MARK, "")
 
 
 def _escape_bare_ampersand(match: re.Match) -> str:
@@ -229,7 +231,7 @@ def _prepare_newer_system_html(html: str) -> str:
     html = re.sub(_EMPTY_EMPHASIS_PATTERN, " ", html)
     html = _keep_proc_text_blocks(html)
     html = re.sub(_DATA_IMAGE_PATTERN, "", html)
-    return html.replace(_BYTE_ORDER_MARK, "")
+    return html.replace(BYTE_ORDER_MARK, "")
 
 
 def _mark_paragraph_page_breaks(html: str) -> str:
@@ -314,7 +316,7 @@ def _join_paragraphs_across_page_breaks(markdown: str) -> str:
         if is_after_page_break and lines and _should_join_across_page_break(lines[-1], line):
             before = lines[-1].rstrip()
             after = line.lstrip()
-            if before.endswith(_EMPHASIS_MARK) and after.startswith(_EMPHASIS_MARK) and _has_unclosed_bracket(before):
+            if before.endswith(EMPHASIS_MARK) and after.startswith(EMPHASIS_MARK) and _has_unclosed_bracket(before):
                 lines[-1] = _join_across_emphasis_pair(before, after)
             else:
                 lines[-1] = before + _get_page_break_separator(before, after) + after
@@ -411,11 +413,11 @@ def _merge_consecutive_bold_only_lines(markdown: str) -> str:
             pending_bold_lines.append(line.strip()[_BOLD_MARKER_LENGTH:-_BOLD_MARKER_LENGTH])
             continue
         if pending_bold_lines:
-            lines.append(f"{_BOLD_MARKER}{' '.join(pending_bold_lines)}{_BOLD_MARKER}")
+            lines.append(f"{BOLD_MARKER}{' '.join(pending_bold_lines)}{BOLD_MARKER}")
             pending_bold_lines = []
         lines.append(line)
     if pending_bold_lines:
-        lines.append(f"{_BOLD_MARKER}{' '.join(pending_bold_lines)}{_BOLD_MARKER}")
+        lines.append(f"{BOLD_MARKER}{' '.join(pending_bold_lines)}{BOLD_MARKER}")
 
     return "\n".join(lines)
 
@@ -428,7 +430,7 @@ def _join_bold_label_split_across_lines(markdown: str) -> str:
 def _join_emphasised_lines(before: str, after: str) -> str:
     before = before.rstrip()
     after = after.lstrip()
-    if before.endswith(_EMPHASIS_MARK) and after.startswith(_EMPHASIS_MARK):
+    if before.endswith(EMPHASIS_MARK) and after.startswith(EMPHASIS_MARK):
         return before[:-_EMPHASIS_MARKER_LENGTH] + " " + after[_EMPHASIS_MARKER_LENGTH:]
     return before + " " + after
 
@@ -436,7 +438,7 @@ def _join_emphasised_lines(before: str, after: str) -> str:
 def _is_split_direction_open(line: str, next_line: str) -> bool:
     if not re.search(_SENTENCE_END_PATTERN, line):
         return True
-    return bool(re.search(_TIME_ABBREVIATION_END_PATTERN, line, re.IGNORECASE)) and next_line.lstrip(_EMPHASIS_MARK + " ")[:1].islower()
+    return bool(re.search(_TIME_ABBREVIATION_END_PATTERN, line, re.IGNORECASE)) and next_line.lstrip(EMPHASIS_MARK + " ")[:1].islower()
 
 
 def _merge_split_direction_lines(markdown: str) -> str:
@@ -525,7 +527,7 @@ def _fix_sitting_concatenated_headers(html: str) -> str:
 
 def _remove_sitting_orphan_bold_markers(markdown: str) -> str:
     # NOTE: runs after _fix_sitting_split_bold, so a standalone ** left over is an orphaned marker.
-    return "\n".join(line for line in markdown.splitlines() if line.strip() != _BOLD_MARKER)
+    return "\n".join(line for line in markdown.splitlines() if line.strip() != BOLD_MARKER)
 
 
 def _remove_sitting_empty_italic(markdown: str) -> str:
@@ -540,19 +542,19 @@ def _fix_sitting_split_bold(markdown: str) -> str:
     while line_index < len(lines):
         stripped = lines[line_index].strip()
 
-        if (stripped.startswith(_BOLD_MARKER)
-                and not stripped.endswith(_BOLD_MARKER)
+        if (stripped.startswith(BOLD_MARKER)
+                and not stripped.endswith(BOLD_MARKER)
                 and len(stripped) > _BOLD_MARKER_LENGTH
                 and line_index + 1 < len(lines)
-                and lines[line_index + 1].strip() == _BOLD_MARKER):
-            fixed_lines.append(stripped + _BOLD_MARKER)
+                and lines[line_index + 1].strip() == BOLD_MARKER):
+            fixed_lines.append(stripped + BOLD_MARKER)
             line_index += 2
 
-        elif (stripped == _BOLD_MARKER
+        elif (stripped == BOLD_MARKER
               and line_index + 2 < len(lines)
               and lines[line_index + 1].strip()
-              and lines[line_index + 2].strip() == _BOLD_MARKER):
-            fixed_lines.append(f"{_BOLD_MARKER}{lines[line_index + 1].strip()}{_BOLD_MARKER}")
+              and lines[line_index + 2].strip() == BOLD_MARKER):
+            fixed_lines.append(f"{BOLD_MARKER}{lines[line_index + 1].strip()}{BOLD_MARKER}")
             line_index += 3
 
         else:
@@ -570,7 +572,7 @@ def _remove_sitting_table_separators(markdown: str) -> str:
 
 
 def _remove_sitting_orphan_italic_markers(markdown: str) -> str:
-    return "\n".join(line for line in markdown.splitlines() if line.strip() != _EMPHASIS_MARK)
+    return "\n".join(line for line in markdown.splitlines() if line.strip() != EMPHASIS_MARK)
 
 
 def _remove_sitting_empty_bold(markdown: str) -> str:

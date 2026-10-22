@@ -2,6 +2,7 @@
 
 import bisect
 import json
+import math
 import re
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -11,8 +12,20 @@ from crud.attendance import AttendanceSpeakerRow
 from crud.speech import SpeechRow, SpeechSpeakerRow
 from enums import ReportVersion
 from schemas.hansard_report_response import HansardReportSection
-from utils.markdown_parser import get_cleaned_report_markdown
-from utils.names import normalize_name, strip_title
+from utils.markdown_parser import (
+    ASTERISK,
+    BYTE_ORDER_MARK,
+    EMPHASIS_MARK,
+    get_cleaned_report_markdown,
+)
+from utils.names import (
+    CLOSING_PARENTHESIS,
+    LABEL_COLON,
+    MP_NAME_SEPARATOR,
+    OPENING_PARENTHESIS,
+    normalize_name,
+    strip_title,
+)
 from utils.parliament_numbers import VOLUME_TO_PARLIAMENT
 from utils.speaker_resolution import SpeakerLookups, resolve_canonical_name
 from utils.speaker_resolution_constants import (
@@ -46,6 +59,9 @@ _NAMED_DEPUTY_LABEL_RE = re.compile(r"(?:Mr|Mdm)\s*Deputy\s*Speaker\s*\(([^)]+)\
 _SPEAKER_LABEL_RE = re.compile(r"\b(?:Mr|Mdm|Madam)\s*Speaker\s*:", re.IGNORECASE)
 _SUSPENSION_RE = re.compile(r"Sitting (?:was )?suspended|Sitting resumed|resumed at \d", re.IGNORECASE)
 _MEMBER_LABEL_TAIL = r"\s*(?:\([^)]*\))?\s*:"
+_LABEL_TRAILING_CHARACTERS = ";, "
+_NON_LETTER_RE = re.compile(r"[^a-z ]")
+_TRAILING_PARENTHETICAL_RE = re.compile(r"\s*\([^)]*\)\s*$")
 _ALIGN_KEY_LENGTH = 35
 _MIN_ALIGN_KEY_LENGTH = 12
 _EVENT_SLACK = 3
@@ -54,21 +70,13 @@ _CARRIED_HOLDER_OPENER = " ("
 
 CARRIED_ROLES = ("The Chief Secretary",)
 
-_SPEAKER_LABELS = ("Mr Speaker", "Mdm Speaker")
+_WOMAN_SPEAKER_LABEL = "Mdm Speaker"
+_WOMAN_TITLE_PREFIX = "Mdm"
+_SPEAKER_LABELS = ("Mr Speaker", _WOMAN_SPEAKER_LABEL)
+_DEPUTY_SPEAKER_LABELS = ("Mr Deputy Speaker", "Mr DeputySpeaker", "Mdm Deputy Speaker", "Mdm DeputySpeaker", "The Deputy Speaker")
 
 # NOTE: only these roles resolve by sitting date; every other string is memoised on (string, parliament).
-DATE_DEPENDENT_ROLES = (
-    "The Chief Minister",
-    "The Prime Minister",
-    *_SPEAKER_LABELS,
-    "Mr Deputy Speaker",
-    "Mr DeputySpeaker",
-    "Mdm Deputy Speaker",
-    "Mdm DeputySpeaker",
-    "The Deputy Speaker",
-)
-
-_DEPUTY_SPEAKER_LABELS = ("Mr Deputy Speaker", "Mr DeputySpeaker", "Mdm Deputy Speaker", "Mdm DeputySpeaker", "The Deputy Speaker")
+DATE_DEPENDENT_ROLES = (*DATED_ROLE_TERMS, *_SPEAKER_LABELS, *_DEPUTY_SPEAKER_LABELS)
 
 _LEADING_LIST_NUMBER_RE = re.compile(r"^\d+\\?\.\s*")
 _LEADING_DOT_RE = re.compile(r"^\.\s+")
@@ -132,7 +140,7 @@ class ChairAnnotation:
 
 
 def _normalize_text(text: str) -> str:
-    return re.sub(r"\s+", " ", text.replace("*", "")).strip()
+    return _WHITESPACE_RE.sub(" ", text.replace(ASTERISK, "")).strip()
 
 
 def _get_header_holders(markdown: str) -> dict[str, set[str]]:
@@ -140,8 +148,8 @@ def _get_header_holders(markdown: str) -> dict[str, set[str]]:
     if header is None:
         return {}
     role_to_holder_names: dict[str, set[str]] = {}
-    for entry in header.group(1).split(";"):
-        tag = _HEADER_TAG_RE.match(entry.replace("*", ""))
+    for entry in header.group(1).split(MP_NAME_SEPARATOR):
+        tag = _HEADER_TAG_RE.match(entry.replace(ASTERISK, ""))
         if tag is not None:
             role_to_holder_names.setdefault(tag.group(2).lower(), set()).add(_TITLE_RE.sub("", tag.group(1).strip()))
     return role_to_holder_names
@@ -160,12 +168,12 @@ def _get_positions(normalized_text: str, speech_rows: list[SpeechRow]) -> list[O
 
 
 def _get_name_words(name: str) -> set[str]:
-    return set(re.sub(r"[^a-z ]", "", name.lower()).split()) - _TITLE_WORDS
+    return set(_NON_LETTER_RE.sub("", name.lower()).split()) - _TITLE_WORDS
 
 
 def _is_other_name_in_annotations(annotations: list[ChairAnnotation], name: str) -> bool:
     for annotation in annotations:
-        named = re.search(r"\(([^)]+)\)", _normalize_text(annotation.text))
+        named = _PARENTHESIS_RE.search(_normalize_text(annotation.text))
         if named is not None and not (_get_name_words(named.group(1)) & _get_name_words(name)):
             return True
     return False
@@ -176,7 +184,7 @@ def _get_bound_position(positions: list[Optional[int]], index: int, annotations:
         return positions[index]
     low = next((positions[row_index] for row_index in range(index - 1, -1, -1) if positions[row_index] is not None), 0)
     high = next((positions[row_index] for row_index in range(index + 1, len(positions)) if positions[row_index] is not None), None)
-    if any(low <= annotation.position < (high if high is not None else float("inf")) for annotation in annotations):
+    if any(low <= annotation.position < (high if high is not None else math.inf) for annotation in annotations):
         return None
     return low + 1
 
@@ -261,8 +269,8 @@ def get_deputy_speaker_names(markdown: str, speech_rows: list[SpeechRow]) -> Dep
             speech_id_to_deputy_name[speech_row.id] = position_to_deputy_name[preceding[-1]]
     mentioned = set(position_to_deputy_name.values()) | labelled
     header = _HEADER_RE.search(markdown)
-    for entry in (header.group(1).split(";") if header is not None else []):
-        name = _TITLE_RE.sub("", re.sub(r"\s*\([^)]*\)\s*$", "", entry.replace("*", "").strip()))
+    for entry in (header.group(1).split(MP_NAME_SEPARATOR) if header is not None else []):
+        name = _TITLE_RE.sub("", _TRAILING_PARENTHETICAL_RE.sub("", entry.replace(ASTERISK, "").strip()))
         if name:
             mentioned.add(name)
     return DeputySpeakerNames(speech_id_to_deputy_name, labelled, mentioned)
@@ -368,17 +376,17 @@ def get_carried_role_names(speech_rows: list[SpeechRow]) -> dict[int, str]:
     for speech_row in speech_rows:
         if not speech_row.speaker:
             continue
-        speaker = speech_row.speaker.rstrip(":").strip()
+        speaker = speech_row.speaker.rstrip(LABEL_COLON).strip()
         for role in CARRIED_ROLES:
             if speaker == role and role in role_to_holder:
                 speech_id_to_name[speech_row.id] = role_to_holder[role]
             elif speaker.startswith(role + _CARRIED_HOLDER_OPENER):
-                role_to_holder[role] = speaker[len(role + _CARRIED_HOLDER_OPENER) :].rstrip(")").strip()
+                role_to_holder[role] = speaker[len(role + _CARRIED_HOLDER_OPENER) :].rstrip(CLOSING_PARENTHESIS).strip()
     return speech_id_to_name
 
 
 def _clean_speaker_label(raw: str) -> str:
-    raw = raw.replace("\ufeff", "").strip()
+    raw = raw.replace(BYTE_ORDER_MARK, "").strip()
     raw = _LABELS_MISSING_OPENING_BRACKET.get(raw, raw)
     raw = _LEADING_LIST_NUMBER_RE.sub("", raw)
     raw = _LEADING_DOT_RE.sub("", raw)
@@ -391,9 +399,9 @@ def _clean_speaker_label(raw: str) -> str:
     raw = _TRAILING_NAME_DOT_RE.sub("", raw)
     if _UPPERCASE_TITLE_RE.match(raw) is not None and raw.isupper():
         raw = raw.title()
-    raw = _WHITESPACE_RE.sub(" ", raw).rstrip(";, ").strip()
-    if raw.count("(") > raw.count(")"):
-        cut = raw.rfind("(")
+    raw = _WHITESPACE_RE.sub(" ", raw).rstrip(_LABEL_TRAILING_CHARACTERS).strip()
+    if raw.count(OPENING_PARENTHESIS) > raw.count(CLOSING_PARENTHESIS):
+        cut = raw.rfind(OPENING_PARENTHESIS)
         inner = raw[cut + 1 :].strip()
         raw = f"{raw[:cut]}({inner})" if _TITLED_RE.match(inner) else raw[:cut].strip()
     inverted = _INVERTED_NAME_RE.match(raw)
@@ -464,7 +472,7 @@ def _resolve_presiding_officer(
 ) -> Optional[int]:
     if raw in _SPEAKER_LABELS:
         holder = _get_holder_on(SPEAKER_TERMS, sitting_date)
-        is_woman_label = raw == "Mdm Speaker"
+        is_woman_label = raw == _WOMAN_SPEAKER_LABEL
         if is_woman_label != (holder in SPEAKER_WOMEN):
             return None
         return _get_presiding_officer_id(holder, parliament_number, lookups, name_parliament_number_to_speaker_id)
@@ -472,7 +480,7 @@ def _resolve_presiding_officer(
         named_match = _PARENTHESIS_RE.search(raw)
         terms = (
             [term for term in DEPUTY_SPEAKER_TERMS if term[2] in DEPUTY_SPEAKER_WOMEN]
-            if raw.startswith("Mdm")
+            if raw.startswith(_WOMAN_TITLE_PREFIX)
             else DEPUTY_SPEAKER_TERMS
         )
         name = (
@@ -514,10 +522,10 @@ def resolve_speech_speaker_id(
     lookups: SpeakerLookups,
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
-    if speaker in NON_SPEAKERS or speaker.startswith("(") or speaker.startswith("_"):
+    if speaker in NON_SPEAKERS or speaker.startswith(OPENING_PARENTHESIS) or speaker.startswith(EMPHASIS_MARK):
         return None
 
-    raw = _clean_speaker_label(speaker.rstrip(":").strip())
+    raw = _clean_speaker_label(speaker.rstrip(LABEL_COLON).strip())
 
     if raw in _SPEAKER_LABELS or raw.startswith(_DEPUTY_SPEAKER_LABELS):
         return _resolve_presiding_officer(

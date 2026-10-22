@@ -10,7 +10,11 @@ from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
 from schemas.constituency_names import ConstituencyNames
 from schemas.hansard_report_response import HansardReportAttendanceEntry
+from utils.markdown_parser import BOLD_MARKER, HORIZONTAL_RULE
 from utils.names import (
+    CLOSING_PARENTHESIS,
+    INVERTED_NAME_SEPARATOR,
+    OPENING_PARENTHESIS,
     TITLE_PREFIXES,
     invert_to_natural,
     normalize_name,
@@ -56,6 +60,13 @@ _NEXT_ENTRY_START_RE = re.compile(rf"(?<=[\s.,;)\d])(?:{_TITLE_ALTERNATION})\s+[
 _SECTION_HEADER_RE = re.compile(r"^(?:\*{2}|#+)?\s*(?:PRESENT|ABSENT)\s*:(?:\*{2})?\s*$", re.IGNORECASE)
 _MASTHEAD_LINE = "## PARLIAMENTARY DEBATES"
 _SPEAKER_ENTRY_MARKER = "SPEAKER"
+_NAME_TRAILING_CHARACTERS = ", "
+_LINE_TRAILING_CHARACTERS = ". "
+_BULLET_MARKER = "* "
+_TRAILING_BRACKET_RE = re.compile(r"\((.+)\)\s*$")
+_SECTION_LABEL_PREFIX_RE = re.compile(r"^(?:Absent|Present):\s*", re.IGNORECASE)
+_LEADING_NUMBER_RE = re.compile(r"^\d+(?=[A-Z])")
+_NUMBERED_ITEM_RE = re.compile(r"^\d+\\\.?\s")
 _MAX_MASTHEAD_LINES = 20
 
 # NOTE: the source lost the start of this entry; the line is the sitting of 10 June 1963.
@@ -99,11 +110,11 @@ def _build_inverted_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str
     surname_only_entries: list[tuple[tuple[str, int], str]] = []
     for speaker in speakers:
         parliament_number = speaker.parliament_number
-        if ", " in speaker.name:
+        if INVERTED_NAME_SEPARATOR in speaker.name:
             natural_stripped = invert_to_natural(speaker.name)
             key = (normalize_for_lookup(natural_stripped), parliament_number)
             inverted[key] = speaker.name
-            surname = speaker.name.split(", ")[0]
+            surname = speaker.name.split(INVERTED_NAME_SEPARATOR)[0]
             surname_words = surname.split()
             if len(surname_words) >= _MIN_MULTIWORD_SURNAME_LENGTH:
                 surname_key = (normalize_for_lookup(surname), parliament_number)
@@ -231,9 +242,9 @@ class ParsedAttendee:
 def _get_closing_parenthesis_index(text: str, open_index: int) -> Optional[int]:
     depth = 0
     for char_index in range(open_index, len(text)):
-        if text[char_index] == "(":
+        if text[char_index] == OPENING_PARENTHESIS:
             depth += 1
-        elif text[char_index] == ")":
+        elif text[char_index] == CLOSING_PARENTHESIS:
             depth -= 1
             if depth == 0:
                 return char_index
@@ -243,32 +254,32 @@ def _get_closing_parenthesis_index(text: str, open_index: int) -> Optional[int]:
 def _strip_name_decorations(name_part: str) -> str:
     # NOTE: the role suffix goes first, so a mixed-case role title never blocks the all-caps honorific strip.
     name = strip_title(name_part.strip())
-    name = _OFFICIAL_ROLE_SUFFIX_RE.sub("", name).rstrip(", ").strip()
-    name = _HONORIFIC_SUFFIX_RE.sub("", name).rstrip(", ").strip()
+    name = _OFFICIAL_ROLE_SUFFIX_RE.sub("", name).rstrip(_NAME_TRAILING_CHARACTERS).strip()
+    name = _HONORIFIC_SUFFIX_RE.sub("", name).rstrip(_NAME_TRAILING_CHARACTERS).strip()
     return _ISLAMIC_SUFFIX_RE.sub("", name).strip()
 
 
 def _parse_name_and_location(text: str) -> ParsedAttendee:
-    text = text.strip().rstrip(". ")
+    text = text.strip().rstrip(_LINE_TRAILING_CHARACTERS)
 
     # NOTE: the first parenthetical is the constituency, so a later portfolio parenthetical never replaces it.
-    first_open = text.find("(")
+    first_open = text.find(OPENING_PARENTHESIS)
     if first_open == -1:
         return ParsedAttendee(_strip_name_decorations(text), None)
     close_index = _get_closing_parenthesis_index(text, first_open)
     if close_index is None:
-        return ParsedAttendee(_strip_name_decorations(text[:first_open].rstrip(", )")), None)
+        return ParsedAttendee(_strip_name_decorations(text[:first_open].rstrip(_NAME_TRAILING_CHARACTERS + CLOSING_PARENTHESIS)), None)
     constituency = text[first_open + 1 : close_index].strip()
-    return ParsedAttendee(_strip_name_decorations(text[:first_open].rstrip(", ")), constituency)
+    return ParsedAttendee(_strip_name_decorations(text[:first_open].rstrip(_NAME_TRAILING_CHARACTERS)), constituency)
 
 
 def parse_speaker_line(line: str) -> ParsedAttendee:
-    line = line.rstrip(". ")
-    match = re.search(r"\((.+)\)\s*$", line)
+    line = line.rstrip(_LINE_TRAILING_CHARACTERS)
+    match = _TRAILING_BRACKET_RE.search(line)
     if match is None:
-        return ParsedAttendee("SPEAKER", None)
+        return ParsedAttendee(_SPEAKER_ENTRY_MARKER, None)
     inner = match.group(1).strip()
-    name_before_constituency = line[: match.start()].partition("SPEAKER")[2].strip()
+    name_before_constituency = line[: match.start()].partition(_SPEAKER_ENTRY_MARKER)[2].strip()
     if name_before_constituency:
         return ParsedAttendee(_strip_name_decorations(name_before_constituency), inner)
     inner_stripped = strip_title(inner)
@@ -286,22 +297,22 @@ def _parse_entry_line(line: str, sitting_date: str) -> Optional[ParsedAttendee]:
     line = _TRUNCATED_LINE_TO_ENTRY_LINE.get(line, line)
     if not line:
         return None
-    if line.startswith("* "):
-        line = line[2:].strip()
+    if line.startswith(_BULLET_MARKER):
+        line = line[len(_BULLET_MARKER) :].strip()
     if not line:
         return None
-    if line.startswith("**"):
-        line = line[2:].strip()
-    line = re.sub(r"^(?:Absent|Present):\s*", "", line, flags=re.IGNORECASE)
+    if line.startswith(BOLD_MARKER):
+        line = line[len(BOLD_MARKER) :].strip()
+    line = _SECTION_LABEL_PREFIX_RE.sub("", line)
     if not line:
         return None
-    line = re.sub(r"^\d+(?=[A-Z])", "", line)
+    line = _LEADING_NUMBER_RE.sub("", line)
 
     # NOTE: a name entry carries a title or a bracketed constituency; office fragments and prose have neither.
-    if strip_title(line) == line and "(" not in line:
+    if strip_title(line) == line and OPENING_PARENTHESIS not in line:
         return None
 
-    parsed = parse_speaker_line(line) if "SPEAKER" in line else _parse_name_and_location(strip_title(line))
+    parsed = parse_speaker_line(line) if _SPEAKER_ENTRY_MARKER in line else _parse_name_and_location(strip_title(line))
     if _MARKUP_RE.search(parsed.name):
         return None
     if parsed.name.lower() != _SPEAKER_OFFICE_NAME:
@@ -342,7 +353,7 @@ def _drop_masthead_blocks(lines: list[str]) -> list[str]:
 def _split_entry_line(line: str) -> list[str]:
     if _SPEAKER_ENTRY_MARKER in line:
         return [line]
-    first_close_index = line.find(")")
+    first_close_index = line.find(CLOSING_PARENTHESIS)
     if first_close_index == -1:
         return [line]
     bounds = [0, *(match.start() for match in _NEXT_ENTRY_START_RE.finditer(line, first_close_index)), len(line)]
@@ -366,15 +377,15 @@ def extract_section_lines(content: str, section: str) -> list[str]:
 
         if re.match(rf"^(?:\*{{2}}|#+)?\s*{other_section}\s*:(?:\*{{2}})?\s*$", stripped, re.IGNORECASE):
             break
-        if _SECTION_END_RE.match(stripped) or stripped == "* * *":
+        if _SECTION_END_RE.match(stripped) or stripped == HORIZONTAL_RULE:
             break
-        if re.match(r"^\d+\\\.?\s", stripped):
+        if _NUMBERED_ITEM_RE.match(stripped):
             break
 
         if stripped:
             entry_lines.append(line)
             # NOTE: a heading glued to the end of an entry line starts the text that follows the list.
-            if "**" in stripped:
+            if BOLD_MARKER in stripped:
                 break
 
     return entry_lines

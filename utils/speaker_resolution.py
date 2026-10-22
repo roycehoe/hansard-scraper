@@ -318,10 +318,14 @@ NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
 }
 
 
+_LONE_INITIAL_PERIOD_RE = re.compile(r"^([A-Z])\. (?=[A-Z])")
+_CAMEL_CASE_BOUNDARY_RE = re.compile(r"([a-z\.])([A-Z])")
+
+
 def normalize_for_lookup(name: str) -> str:
     normalized = normalize_name(name)
     # NOTE: only this lookup key loses the lone-initial period, so "S. Rajaratnam" finds "Rajaratnam, S"; stored names keep it.
-    normalized = re.sub(r"^([A-Z])\. (?=[A-Z])", r"\1 ", normalized)
+    normalized = _LONE_INITIAL_PERIOD_RE.sub(r"\1 ", normalized)
     return normalized.lower()
 
 
@@ -387,7 +391,7 @@ def resolve_canonical_name(name: str, parliament_number: int, lookups: SpeakerLo
         if canonical_name:
             return canonical_name
 
-    camel_split_name = re.sub(r"([a-z\.])([A-Z])", r"\1 \2", name)
+    camel_split_name = _CAMEL_CASE_BOUNDARY_RE.sub(r"\1 \2", name)
     if camel_split_name != name:
         camel_split_stripped_name = strip_title(camel_split_name).strip()
         canonical_name = (

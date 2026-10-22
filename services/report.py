@@ -7,12 +7,11 @@ from database.hansard_website_response import HansardWebsiteResponse
 from database.report import Report
 from utils.markdown_header import SITTING_NUMBER_FIELD, get_header_number
 from utils.markdown_parser import get_cleaned_report_markdown
+from utils.names import CLOSING_PARENTHESIS, OPENING_PARENTHESIS
 from utils.text import fix_mojibake
 
 _HTML_TAG_PATTERN = r"<[^>]+>"
 _TITLE_PART_SEPARATOR = ","
-_OPENING_BRACKET = "("
-_CLOSING_BRACKET = ")"
 _SITTING_DATE_FORMAT = "%d-%m-%Y"
 
 
@@ -25,9 +24,9 @@ class ReportHeader:
 def _get_trailing_bracket_start(title: str) -> Optional[int]:
     depth = 0
     for index in range(len(title) - 1, -1, -1):
-        if title[index] == _CLOSING_BRACKET:
+        if title[index] == CLOSING_PARENTHESIS:
             depth += 1
-        if title[index] == _OPENING_BRACKET:
+        if title[index] == OPENING_PARENTHESIS:
             depth -= 1
         if depth == 0:
             return index
@@ -36,7 +35,7 @@ def _get_trailing_bracket_start(title: str) -> Optional[int]:
 
 def _split_off_subtitle(title: str) -> ReportHeader:
     title = title.strip()
-    if not title.endswith(_CLOSING_BRACKET):
+    if not title.endswith(CLOSING_PARENTHESIS):
         return ReportHeader(title=title)
     bracket_start = _get_trailing_bracket_start(title)
     if bracket_start is None:
@@ -53,9 +52,9 @@ def _split_title_parts(title: str) -> list[str]:
         if character == _TITLE_PART_SEPARATOR and depth == 0:
             parts.append("")
             continue
-        if character == _OPENING_BRACKET:
+        if character == OPENING_PARENTHESIS:
             depth += 1
-        if character == _CLOSING_BRACKET:
+        if character == CLOSING_PARENTHESIS:
             depth -= 1
         parts[-1] += character
     return parts

@@ -19,6 +19,8 @@ PAIRS = {
     "unbalanced parentheses": ("(", ")"),
 }
 _CONTEXT_LENGTH = 30
+_PAIR_CONTEXT_LENGTH = _CONTEXT_LENGTH * 2
+_NUMERIC_REFERENCE_MARKER = "#"
 
 
 def get_character_fault_counts(text: str) -> dict[str, int]:
@@ -29,7 +31,7 @@ def get_character_fault_counts(text: str) -> dict[str, int]:
 def _get_entity_matches(text: str) -> list[re.Match]:
     # NOTE: "R&D;" is text, so a name counts only when HTML5 defines it; a numeric reference always counts.
     matches = MARKUP_SIGNATURES["HTML entity"].finditer(text)
-    return [match for match in matches if match.group(0)[1] == "#" or match.group(0)[1:] in html5]
+    return [match for match in matches if match.group(0)[1] == _NUMERIC_REFERENCE_MARKER or match.group(0)[1:] in html5]
 
 
 def get_derived_text_counts(text: str) -> dict[str, int]:
@@ -44,6 +46,6 @@ def get_unbalanced_pairs(text: str) -> list[str]:
 
 def get_signature_context(text: str, signature: str) -> str:
     if signature in PAIRS:
-        return text[: _CONTEXT_LENGTH * 2]
+        return text[:_PAIR_CONTEXT_LENGTH]
     match = _get_entity_matches(text)[0] if signature == "HTML entity" else (CHARACTER_SIGNATURES | MARKUP_SIGNATURES)[signature].search(text)
     return text[max(0, match.start() - _CONTEXT_LENGTH) : match.end() + _CONTEXT_LENGTH]
