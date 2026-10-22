@@ -325,11 +325,6 @@ def normalize_for_lookup(name: str) -> str:
     return normalized.lower()
 
 
-def _get_wordset_key(name: str) -> tuple[frozenset, int]:
-    words = period_normalize(name).split()
-    return frozenset(words), len(words)
-
-
 @dataclass(frozen=True)
 class SpeakerLookups:
     inverted: dict[tuple[str, int], str]
@@ -357,7 +352,8 @@ def _get_variant_canonical_name(
     if canonical_name:
         return canonical_name
     if is_using_wordset:
-        wordset_canonical_name = lookups.wordset.get((*_get_wordset_key(name), parliament_number))
+        words = normalized.split()
+        wordset_canonical_name = lookups.wordset.get((frozenset(words), len(words), parliament_number))
         if wordset_canonical_name:
             return wordset_canonical_name
         subset_words = [word for word in period_normalize(name).split() if len(word) > 1]

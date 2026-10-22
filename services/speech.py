@@ -426,11 +426,6 @@ def _is_section_header_speaker(name: str) -> bool:
     return stripped == stripped.upper()
 
 
-def _extract_addenda_minister(markdown: str) -> Optional[str]:
-    match = _ADDENDA_MINISTER_RE.search(markdown)
-    return match.group(1).strip() if match is not None else None
-
-
 def _extract_body_attribution(markdown: str, report_type: str, report_version: str) -> Optional[str]:
     is_newer_system = report_version == ReportVersion.SPRS3
 
@@ -439,7 +434,8 @@ def _extract_body_attribution(markdown: str, report_type: str, report_version: s
         return match.group(1).strip() if match is not None else None
 
     if report_type == ReportType.PRESIDENT_ADDRESS:
-        minister = _extract_addenda_minister(markdown)
+        match = _ADDENDA_MINISTER_RE.search(markdown)
+        minister = match.group(1).strip() if match is not None else None
         if minister:
             return minister
         if _ADDENDA_TITLE_RE.search(markdown) is not None:

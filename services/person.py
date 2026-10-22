@@ -36,10 +36,6 @@ def normalize_person_name(name: str) -> str:
     return period_normalize(strip_bin(strip_title(natural)))
 
 
-def _get_slot(speaker: Speaker) -> tuple[int, bool, bool]:
-    return speaker.parliament_number, speaker.is_legislative_assembly, speaker.is_member
-
-
 class _SpeakerClusters:
     def __init__(self, speakers: list[Speaker], distinct: set[frozenset[int]]):
         self.parent: dict[int, int] = {speaker.id: speaker.id for speaker in speakers}
@@ -54,7 +50,9 @@ class _SpeakerClusters:
 
     def get_refusal_reason(self, left_id: int, right_id: int) -> Optional[str]:
         left, right = self.members[left_id], self.members[right_id]
-        if {_get_slot(speaker) for speaker in left} & {_get_slot(speaker) for speaker in right}:
+        left_slots = {(speaker.parliament_number, speaker.is_legislative_assembly, speaker.is_member) for speaker in left}
+        right_slots = {(speaker.parliament_number, speaker.is_legislative_assembly, speaker.is_member) for speaker in right}
+        if left_slots & right_slots:
             return "same parliament"
         if any(
             frozenset((left_speaker.id, right_speaker.id)) in self.distinct
