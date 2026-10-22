@@ -40,11 +40,11 @@ _HTML_BOLD_RE = re.compile(r"<(?:strong|b)\b[^>]*>(.*?)</(?:strong|b)>", re.IGNO
 _MARKDOWN_BOLD_RE = re.compile(r"\*\*[^* ][^*]*\*\*")
 
 
-def _html_bold_texts(html: str) -> list[str]:
+def _get_html_bold_texts(html: str) -> list[str]:
     return [_WHITESPACE_RE.sub(" ", text).strip() for text in _HTML_BOLD_RE.findall(html) if text.strip()]
 
 
-def _looks_like_speaker(text: str) -> bool:
+def _is_speaker_like(text: str) -> bool:
     stripped_text = text.strip()
     if stripped_text.endswith(":"):
         return True
@@ -53,14 +53,14 @@ def _looks_like_speaker(text: str) -> bool:
     return False
 
 
-def _show_doc(report: Report, start_line: int, speakers: list[str]) -> list[str]:
+def _show_document(report: Report, start_line: int, speakers: list[str]) -> list[str]:
     title_display = (report.title or "")[:_TITLE_DISPLAY_LENGTH]
     logger.info(f"\n  id={report.id}  parl={report.parliament_number}  type={report.report_type}")
     logger.info(f"  title: {title_display!r}")
     logger.info(f"  MPs Speaking ({len(speakers)}): {'; '.join(speakers[:_SPEAKERS_SHOWN])}")
 
-    html_bold_texts = _html_bold_texts(report.content or "")
-    speaker_like = [text for text in html_bold_texts if _looks_like_speaker(text)]
+    html_bold_texts = _get_html_bold_texts(report.content or "")
+    speaker_like = [text for text in html_bold_texts if _is_speaker_like(text)]
     logger.info(f"  HTML <strong>/<b> tags: {len(html_bold_texts)} total, {len(speaker_like)} speaker-like")
     if speaker_like:
         for text in speaker_like[:_HTML_BOLD_SHOWN]:
@@ -135,7 +135,7 @@ def run() -> None:
     logger.info("ZERO-SPEAKER DOCS (MPs Speaking absent or empty)")
     logger.info(_SEPARATOR)
     for report, start_line in zero_speaker:
-        _show_doc(report, start_line, speakers=[])
+        _show_document(report, start_line, speakers=[])
 
     logger.info("")
     logger.info(_SEPARATOR)
@@ -144,7 +144,7 @@ def run() -> None:
     suspicious = []
     for report in no_start_line:
         speakers = extract_mps_speaking(report.markdown_content)
-        flags = _show_doc(report, _BEFORE_FIRST_LINE, speakers)
+        flags = _show_document(report, _BEFORE_FIRST_LINE, speakers)
         if flags:
             suspicious.append((report, _BEFORE_FIRST_LINE, speakers, flags))
 
@@ -158,7 +158,7 @@ def run() -> None:
         logger.info(f"\n--- {report_type} ({len(reports_of_type)} total, checking {len(sample)}) ---")
 
         for report, start_line, speakers in sample:
-            flags = _show_doc(report, start_line, speakers)
+            flags = _show_document(report, start_line, speakers)
             if flags:
                 suspicious.append((report, start_line, speakers, flags))
 
