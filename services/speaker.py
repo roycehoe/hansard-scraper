@@ -5,10 +5,10 @@ from exceptions import HansardWriteCheckError
 from schemas.head_of_state import HeadOfStateResult
 from schemas.speaker import SpeakerResult
 from schemas.speaker_override import PartyOverride
+from utils.speaker_resolution_constants import COLONIAL_PARLIAMENT_NUMBER
 
 _CURLY_APOSTROPHE = "\u2019"
 _STRAIGHT_APOSTROPHE = "'"
-_ASSEMBLY_PARLIAMENT_NUMBER = 0
 _LOADED_PARLIAMENT_NUMBER = 1
 
 
@@ -76,19 +76,19 @@ def get_parliament_changes(
     speakers: list[Speaker], colonial_members: list[SpeakerResult], heads_of_state: list[HeadOfStateResult]
 ) -> list[ParliamentChange]:
     key_to_speaker = {(speaker.name, speaker.parliament_number): speaker for speaker in speakers}
-    assembly_names = [member.name for member in colonial_members if member.parliament_number == _ASSEMBLY_PARLIAMENT_NUMBER]
-    assembly_names += [head.name for head in heads_of_state if head.parliament_number == _ASSEMBLY_PARLIAMENT_NUMBER]
+    assembly_names = [member.name for member in colonial_members if member.parliament_number == COLONIAL_PARLIAMENT_NUMBER]
+    assembly_names += [head.name for head in heads_of_state if head.parliament_number == COLONIAL_PARLIAMENT_NUMBER]
     parliament_changes = []
     for name in assembly_names:
-        assembly_speaker = key_to_speaker.get((name, _ASSEMBLY_PARLIAMENT_NUMBER))
+        assembly_speaker = key_to_speaker.get((name, COLONIAL_PARLIAMENT_NUMBER))
         loaded_speaker = key_to_speaker.get((name, _LOADED_PARLIAMENT_NUMBER))
         if assembly_speaker is not None and loaded_speaker is not None:
-            raise HansardWriteCheckError(f"Speaker rows for {name!r} exist in Parliament {_ASSEMBLY_PARLIAMENT_NUMBER} and {_LOADED_PARLIAMENT_NUMBER}")
+            raise HansardWriteCheckError(f"Speaker rows for {name!r} exist in Parliament {COLONIAL_PARLIAMENT_NUMBER} and {_LOADED_PARLIAMENT_NUMBER}")
         if assembly_speaker is not None:
             continue
         if loaded_speaker is None:
-            raise HansardWriteCheckError(f"No speaker row for {name!r} in Parliament {_ASSEMBLY_PARLIAMENT_NUMBER} or {_LOADED_PARLIAMENT_NUMBER}")
+            raise HansardWriteCheckError(f"No speaker row for {name!r} in Parliament {COLONIAL_PARLIAMENT_NUMBER} or {_LOADED_PARLIAMENT_NUMBER}")
         parliament_changes.append(
-            ParliamentChange(loaded_speaker.id, name, _LOADED_PARLIAMENT_NUMBER, _ASSEMBLY_PARLIAMENT_NUMBER)
+            ParliamentChange(loaded_speaker.id, name, _LOADED_PARLIAMENT_NUMBER, COLONIAL_PARLIAMENT_NUMBER)
         )
     return parliament_changes

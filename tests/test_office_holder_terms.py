@@ -9,7 +9,7 @@ from database.speaker import Speaker
 from database.speech import Speech
 from enums import ReportType, ReportVersion
 from populate.speaker_links import link_speakers_by_report_ids_and_sitting_ids
-from populate.speaker_resolution_constants import DATED_ROLE_TERMS, HEAD_OF_STATE_TERMS
+from utils.speaker_resolution_constants import DATED_ROLE_TERMS, HEAD_OF_STATE_TERMS
 
 _HEADS_OF_STATE_PATH = Path(__file__).resolve().parent.parent / "data" / "heads_of_state.json"
 _PARLIAMENT_NUMBER = 15

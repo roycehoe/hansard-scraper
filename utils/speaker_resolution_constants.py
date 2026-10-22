@@ -97,3 +97,4 @@ NON_SPEAKERS: frozenset[str] = frozenset(
 
 COLONIAL_PARLIAMENT_FALLBACKS: tuple[int, ...] = (1, 2, 3)
 
+COLONIAL_PARLIAMENT_NUMBER = 0

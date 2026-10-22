@@ -11,16 +11,6 @@ from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech, SpeechRow, SpeechSpeakerRow
 from database.report import Report
 from logs import logger
-from populate.speaker_resolution_constants import (
-    COLONIAL_PARLIAMENT_FALLBACKS,
-    DATED_ROLE_TERMS,
-    DEPUTY_SPEAKER_TERMS,
-    DEPUTY_SPEAKER_WOMEN,
-    HEAD_OF_STATE_TERMS,
-    NON_SPEAKERS,
-    ROLE_ONLY_SPEAKERS,
-    SPEAKER_WOMEN,
-)
 from services.attendance import (
     VOLUME_TO_PARLIAMENT,
     SpeakerLookups,
@@ -45,6 +35,16 @@ from utils.names import (
     strip_title,
 )
 from utils.sitting_dates import get_sitting_date_key
+from utils.speaker_resolution_constants import (
+    COLONIAL_PARLIAMENT_FALLBACKS,
+    DATED_ROLE_TERMS,
+    DEPUTY_SPEAKER_TERMS,
+    DEPUTY_SPEAKER_WOMEN,
+    HEAD_OF_STATE_TERMS,
+    NON_SPEAKERS,
+    ROLE_ONLY_SPEAKERS,
+    SPEAKER_WOMEN,
+)
 from utils.speaker_terms import SPEAKER_TERMS
 
 _WRITE_BATCH = 50_000
