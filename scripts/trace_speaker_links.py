@@ -18,7 +18,7 @@ from populate.speaker_links import (
     _resolve_speech_speaker_id,
 )
 from services.attendance import build_speaker_lookups
-from services.role_context import BARE_DEPUTY_RE, CARRIED_ROLES, CHAIRMAN_RE
+from services.speaker_link import BARE_DEPUTY_RE, CARRIED_ROLES, CHAIRMAN_RE
 from utils.speaker_resolution_constants import HEAD_OF_STATE_TERMS
 
 _MAX_PARLIAMENT = 11

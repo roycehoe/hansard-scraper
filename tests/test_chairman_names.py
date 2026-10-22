@@ -1,5 +1,5 @@
 from crud.speech import SpeechRow
-from services.role_context import chairman_names
+from services.speaker_link import chairman_names
 
 _REPORT_ID = 1
 _DIVISION_CALL = "Will the hon Members in support of the Division, please rise in their places?"

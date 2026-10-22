@@ -12,7 +12,7 @@ from crud.speech import CRUDSpeech, SpeechRow, SpeechSpeakerRow
 from database.report import Report
 from logs import logger
 from services.attendance import build_speaker_lookups
-from services.role_context import (
+from services.speaker_link import (
     BARE_DEPUTY_RE,
     CARRIED_ROLES,
     CHAIRMAN_RE,

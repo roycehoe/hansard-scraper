@@ -1,7 +1,7 @@
 import json
 
 from crud.speech import SpeechRow
-from services.role_context import (
+from services.speaker_link import (
     build_sitting_text_from_markdown,
     build_sitting_text_from_sections,
     sitting_deputy_speaker_names,
