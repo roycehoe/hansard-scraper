@@ -13,7 +13,7 @@ def _fix_mojibake_run(match: re.Match) -> str:
 
 
 def fix_mojibake(text: str) -> str:
-    # NOTE: each run of non-ASCII characters is repaired on its own, so a correct "’" elsewhere in the text does not block the fix.
+    # NOTE: a whole-text decode fails on one correct character, so each run is repaired alone.
     return _NON_ASCII_RUN_PATTERN.sub(_fix_mojibake_run, text)
 
 

@@ -3,8 +3,8 @@ from datetime import date
 # NOTE: Hansard prints "Mdm Speaker" for her; every other Speaker in SPEAKER_TERMS is a man.
 SPEAKER_WOMEN: frozenset[str] = frozenset({"Halimah Yacob"})
 
-# NOTE: two Deputy Speakers served at once for most of Parliaments 7, 10, 11, 12, 13, 14 and 15, so a bare "Mr Deputy Speaker" on those dates stays unlinked unless the string names the person.
-# Sources: same as SPEAKER_TERMS; Parliaments 13, 14 and 15 from the Hansard sittings of 25 January 2016, 31 August 2020 and 22 September 2025 ("Election of Deputy Speakers"), the Wikipedia Deputy Speaker page and the 13th and 14th Parliament pages (terms end at dissolution)
+# NOTE: two Deputy Speakers serve at once from Parliament 7, so overlapping terms are correct.
+# Sources: same as SPEAKER_TERMS
 DEPUTY_SPEAKER_TERMS: tuple[tuple[date, date, str], ...] = (
     (date(1955, 4, 26), date(1959, 3, 31), "Lim, R.C.H."),
     (date(1959, 7, 15), date(1961, 9, 24), "G. Kandasamy"),

@@ -184,7 +184,6 @@ _OCR_FORM_TO_CORRECTED_NAME: dict[str, str] = {
     "p coomaraswam": "P. Coomaraswamy",  # 1968 header, parl 2
     "fang kim heng": "Fong Kim Heng",  # 1964 bracket, parl 0
     "absent: mr ahmad mohd magad": "Ahmad Mohd Magad",  # parl 9, vol 70
-    # Found in the October 2026 attribution pass
     "wan hussin bin hj zoohri": "Wan Hussin Zoohri",
     "mohamed maliki bin osman": "Mohamad Maliki Bin Osman",
     "rahmat bin kenap al-haj": "Rahmat Bin Kenap",
@@ -310,7 +309,6 @@ NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
     ("s rajaratnam", 4): "Rajaratnam, S",
     ("s rajaratnam", 5): "Rajaratnam, S",
     ("s rajaratnam", 6): "Rajaratnam, S",
-    # Found in the October 2026 attribution pass
     ("mohd ariff", 3): "Mohd Ariff Bin Suradi, Haji",
     ("gerald ee", 9): "Ee, Gerard",
     ("yaacob bin yaacob", 1): "Yaacob Bin Mohamed",

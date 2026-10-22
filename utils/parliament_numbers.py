@@ -1,6 +1,5 @@
 from typing import Optional
 
-# Derived from each sitting's Parliament No header
 # NOTE: volumes 1 to 11 print Parliament No 1 in the sitting header, but their reports carry Parliament 0, so they map to 0.
 VOLUME_TO_PARLIAMENT: dict[int, int] = {
     1: 0, 2: 0, 3: 0, 4: 0, 6: 0, 7: 0, 8: 0, 9: 0, 11: 0,

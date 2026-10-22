@@ -103,7 +103,6 @@ _NO_BREAK_SPACE = "\u00a0"
 REPAIRABLE_TEXT_PATTERN = "[\u00c2-\u00f4\ufffd\ufeff]"
 _LOST_CLOSING_QUOTE_PATTERN = r"(?<=[A-Za-z0-9.,;:!?')\]_*])\ufffd\?"
 _CLOSING_DOUBLE_QUOTE = "\u201d"
-# NOTE: a lost Latin-1 byte where only one character fits, checked by hand on 22 Oct 2026; "$" is ASCII and cannot be lost, so "\ufffd" before an amount is "£".
 _LOST_CHARACTER_WORDS = {
     "entrep\ufffdt": "entrep\u00f4t",
     "b\ufffdte noire": "b\u00eate noire",
@@ -111,6 +110,7 @@ _LOST_CHARACTER_WORDS = {
     "Communiqu\ufffd": "Communiqu\u00e9",
     "Associat\ufffdon": "Association",
 }
+# NOTE: "$" is ASCII and cannot be lost, so "\ufffd" before an amount is "£".
 _LOST_POUND_SIGN_PATTERN = r"(?<![\w\ufffd])\ufffd(?=\d)"
 _POUND_SIGN = "\u00a3"
 ASCII_FOLDED_CHARACTERS = str.maketrans(
@@ -118,7 +118,7 @@ ASCII_FOLDED_CHARACTERS = str.maketrans(
 )
 
 
-# NOTE: html2text puts a space between an emphasis mark and the letter before it but not after ASCII punctuation, so a character from an entity is judged by its ASCII fold, as it was when the converter folded it; a no-break space stays a space, as "&nbsp;" does.
+# NOTE: only preceding_data takes the ASCII fold, so emphasis spacing reads an entity as its ASCII form while the text keeps the real character.
 class _SourceCharacterConverter(html2text.HTML2Text):
     def __init__(self):
         super().__init__(bodywidth=0)
