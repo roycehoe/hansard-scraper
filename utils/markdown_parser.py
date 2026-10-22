@@ -13,6 +13,9 @@ _BOLD_MARKER_LENGTH = len(_BOLD_MARKER)
 _EMPHASIS_MARK = "_"
 _EMPHASIS_MARKER_LENGTH = len(_EMPHASIS_MARK)
 _EMPTY_ITALIC_LINE = "__"
+_ONE_COLUMN_TABLE_SEPARATOR_LINE = "---|---"
+_PERIOD = "."
+_PERIOD_THEN_EMPHASIS_MARK = _PERIOD + _EMPHASIS_MARK
 _OPENING_BRACKET = "["
 _HYPHEN = "-"
 _CLOSING_BRACKET = "]"
@@ -562,7 +565,7 @@ def _remove_sitting_table_separators(markdown: str) -> str:
     # NOTE: html2text renders <hr> as "* * *", so a standalone "---" line is a one-column table artefact.
     return "\n".join(
         line for line in markdown.splitlines()
-        if line.strip() != "---|---" and not re.fullmatch(_TABLE_SEPARATOR_LINE_PATTERN, line)
+        if line.strip() != _ONE_COLUMN_TABLE_SEPARATOR_LINE and not re.fullmatch(_TABLE_SEPARATOR_LINE_PATTERN, line)
     )
 
 
@@ -591,8 +594,8 @@ def _merge_sitting_adjournment_lines(markdown: str) -> str:
         if re.search(_ADJOURNMENT_LINE_PATTERN, line, re.IGNORECASE):
             merges = 0
             while (
-                not line.rstrip().endswith(".")
-                and not line.rstrip().endswith("._")
+                not line.rstrip().endswith(_PERIOD)
+                and not line.rstrip().endswith(_PERIOD_THEN_EMPHASIS_MARK)
                 and merges < _MAX_ADJOURNMENT_CONTINUATIONS
                 and line_index + 1 < len(lines)
                 and not re.match(_BLOCK_START_PATTERN, lines[line_index + 1])
