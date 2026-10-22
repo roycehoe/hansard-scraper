@@ -15,7 +15,10 @@ def _get_utc_now() -> datetime:
 class RefreshRun(SQLModel, table=True):
     __tablename__ = "refresh_run"
     __table_args__ = (
-        CheckConstraint("status IN ('RUNNING', 'SUCCEEDED', 'HALTED', 'FAILED')", name="ck_refresh_run_status"),
+        CheckConstraint(
+            "status IN (" + ", ".join(f"'{status.value}'" for status in RefreshRunStatus) + ")",
+            name="ck_refresh_run_status",
+        ),
         Index("ix_refresh_run_started_at", "started_at"),
     )
 
