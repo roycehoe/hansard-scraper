@@ -18,7 +18,7 @@ from utils.names import (
 )
 from utils.speaker_resolution import SpeakerLookups, resolve_canonical_name
 
-_SAMPLE_PATH = Path(__file__).parent.parent / "docs" / "speech-mp" / "sample.json"
+_SAMPLE_PATH = Path(__file__).parent.parent / "docs" / "speech-speaker" / "sample.json"
 _SEED = 42
 _PILOT_COUNT_PER_TYPE = 5
 _HELD_OUT_COUNT_PER_TYPE = 3
