@@ -35,10 +35,10 @@ from schemas.hansard_report_response import (
 from schemas.hansard_search_result import HansardSearchResult
 from schemas.hansard_topic_response import HansardTopicResponse
 from services.hansard_website import get_topic_id
-from services.refresh import SINGAPORE_TIMEZONE, get_sitting_date_key
+from services.refresh import SINGAPORE_TIMEZONE
 from settings import settings
 from tests.refresh_fixtures import FakeParliament, load_speaker_rows, seed_stored
-from utils.sitting_dates import parse_sitting_date
+from utils.sitting_dates import get_sitting_date_key, parse_sitting_date
 
 _BOT_TOKEN = "test-bot-token"
 _CHAT_ID = "test-chat"

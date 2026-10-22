@@ -44,6 +44,7 @@ from utils.names import (
     normalize_name,
     strip_title,
 )
+from utils.sitting_dates import get_sitting_date_key
 from utils.speaker_terms import SPEAKER_TERMS
 
 _WRITE_BATCH = 50_000
@@ -360,10 +361,6 @@ def _get_speaker_id_for_name(
     return speaker_id_lookup.get((canonical, resolved_parliament)) if canonical else None
 
 
-def _get_sitting_date_key(sitting_date: datetime) -> str:
-    return f"{sitting_date.day}-{sitting_date.month}-{sitting_date.year}"
-
-
 def _get_speaker_ids_for_names(
     names: Iterable[str],
     parliament: int,
@@ -504,11 +501,11 @@ def _get_deputy_speaker_ids_for_report_ids(
         for other in CRUDReport(session).get_by_sitting_dates(list(dates)):
             sitting_date_to_reports.setdefault(other.sitting_date, []).append(other)
         sitting_date_key_to_markdown = CRUDSitting(session).get_markdown_by_dates(
-            [_get_sitting_date_key(sitting_date) for sitting_date in dates]
+            [get_sitting_date_key(sitting_date) for sitting_date in dates]
         )
         for report, speech_id_to_candidate_id, valid_holder_ids in pending_reports:
             sitting_date, parliament = report.sitting_date, report.parliament_number
-            named_today = _get_day_speaker_ids(("sitting", sitting_date), sitting_date_key_to_markdown.get(_get_sitting_date_key(sitting_date), ""), parliament, text_key_to_speaker_ids, lookups, speaker_id_lookup)
+            named_today = _get_day_speaker_ids(("sitting", sitting_date), sitting_date_key_to_markdown.get(get_sitting_date_key(sitting_date), ""), parliament, text_key_to_speaker_ids, lookups, speaker_id_lookup)
             for other in sitting_date_to_reports.get(sitting_date, []):
                 if other.id != report.id:
                     named_today = named_today | _get_day_speaker_ids(other.id, other.markdown_content or "", parliament, text_key_to_speaker_ids, lookups, speaker_id_lookup)
@@ -562,7 +559,7 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
         report_id_to_speech_rows: dict[int, list[SpeechRow]] = {}
         for speech_row in CRUDSpeech(session).get_rows_by_report_ids(batch):
             report_id_to_speech_rows.setdefault(speech_row.report_id, []).append(speech_row)
-        date_keys = list({_get_sitting_date_key(report.sitting_date) for report in report_id_to_report.values()})
+        date_keys = list({get_sitting_date_key(report.sitting_date) for report in report_id_to_report.values()})
         date_key_to_markdown = CRUDSitting(session).get_markdown_by_dates(date_keys)
         date_key_to_sections = CRUDSitting(session).get_sections_by_dates(date_keys)
         date_key_to_sitting_text: dict[str, Optional[SittingText]] = {}
@@ -578,7 +575,7 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
             if None in holder_to_speaker_id.values():
                 continue
             male_holder_ids = {speaker_id for holder, speaker_id in holder_to_speaker_id.items() if holder not in DEPUTY_SPEAKER_WOMEN}
-            date_key = _get_sitting_date_key(report.sitting_date)
+            date_key = get_sitting_date_key(report.sitting_date)
             if date_key not in date_key_to_sitting_text:
                 date_key_to_sitting_text[date_key] = _build_sitting_text(date_key_to_markdown.get(date_key), date_key_to_sections.get(date_key))
             sitting_text = date_key_to_sitting_text[date_key]

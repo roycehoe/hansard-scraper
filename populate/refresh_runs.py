@@ -85,7 +85,6 @@ from services.refresh import (
     get_probe_start_date,
     get_recheck_start_date,
     get_singapore_today,
-    get_sitting_date_key,
     get_telegram_text,
     get_unexpected_parliament_numbers,
     get_unlinked_share,
@@ -101,7 +100,12 @@ from utils.data_files import (
     get_excluded_report_ids,
     get_unattributed_speech_ranges,
 )
-from utils.sitting_dates import MonthWindow, get_month_windows, parse_sitting_date
+from utils.sitting_dates import (
+    MonthWindow,
+    get_month_windows,
+    get_sitting_date_key,
+    parse_sitting_date,
+)
 
 _STALE_RUN_HOURS = 12
 _MAX_FAILURE_REASON_LENGTH = 1_000

@@ -20,7 +20,6 @@ from services.refresh import (
     get_probe_start_date,
     get_recheck_start_date,
     get_singapore_today,
-    get_sitting_date_key,
     get_telegram_text,
     get_unexpected_parliament_numbers,
     get_unlinked_share,
@@ -28,7 +27,7 @@ from services.refresh import (
     is_published_sitting_response,
     is_unlinked_share_over_limit,
 )
-from utils.sitting_dates import MonthWindow, get_month_windows
+from utils.sitting_dates import MonthWindow, get_month_windows, get_sitting_date_key
 
 _TODAY = date(2025, 4, 20)
 _RECENT_STORED_DAYS_AGO = 10

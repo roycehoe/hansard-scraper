@@ -26,6 +26,10 @@ def get_month_windows(first_date: date, last_date: date) -> list[MonthWindow]:
     return month_windows
 
 
+def get_sitting_date_key(sitting_date: date) -> str:
+    return f"{sitting_date.day}-{sitting_date.month}-{sitting_date.year}"
+
+
 def parse_sitting_date(sitting_date: str) -> datetime:
     return datetime.strptime(sitting_date, _SITTING_DATE_FORMAT)
 

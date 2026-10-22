@@ -33,10 +33,6 @@ def get_dates_between(first_date: date, last_date: date) -> list[date]:
     return [first_date + timedelta(days=day_offset) for day_offset in range((last_date - first_date).days + 1)]
 
 
-def get_sitting_date_key(sitting_date: date) -> str:
-    return f"{sitting_date.day}-{sitting_date.month}-{sitting_date.year}"
-
-
 def is_published_sitting_response(hansard_report_response: Union[HansardReportOldResponse, HansardReportNewResponse]) -> bool:
     if hansard_report_response.error_code is not None:
         return False
