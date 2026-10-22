@@ -31,10 +31,10 @@ class TitleChange:
 def _get_title_changes(title_rows: list[ReportTitleRow]) -> list[TitleChange]:
     title_changes = []
     for title_row in title_rows:
-        # NOTE: only a stored title the rule itself would rewrite is changed; a row whose header is merely stale stays as stored.
-        if build_report_header(fix_mojibake(title_row.title)).title == title_row.title:
-            continue
         report_header = build_report_header(fix_mojibake(title_row.original_title))
+        # NOTE: only a stored title the rule builds differently is changed; a row whose subtitle alone is stale stays as stored.
+        if report_header.title == title_row.title:
+            continue
         title_changes.append(TitleChange(title_row.id, title_row.title, title_row.subtitle, report_header.title, report_header.subtitle))
     return title_changes
 

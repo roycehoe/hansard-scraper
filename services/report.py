@@ -9,9 +9,10 @@ from utils.markdown_header import SITTING_NUMBER_FIELD, get_header_number
 from utils.markdown_parser import get_cleaned_report_markdown
 from utils.text import fix_mojibake
 
-_BRACKET_PATTERN = r"\(([^)]*)\)"
 _HTML_TAG_PATTERN = r"<[^>]+>"
 _TITLE_PART_SEPARATOR = ","
+_OPENING_BRACKET = "("
+_CLOSING_BRACKET = ")"
 _SITTING_DATE_FORMAT = "%d-%m-%Y"
 
 
@@ -21,33 +22,56 @@ class ReportHeader:
     subtitle: Optional[str] = None
 
 
-def _replace_bracket(match: re.Match) -> str:
-    if match.group(1).isupper():
-        return match.group(0)
-    return ""
+def _get_trailing_bracket_start(title: str) -> Optional[int]:
+    depth = 0
+    for index in range(len(title) - 1, -1, -1):
+        if title[index] == _CLOSING_BRACKET:
+            depth += 1
+        if title[index] == _OPENING_BRACKET:
+            depth -= 1
+        if depth == 0:
+            return index
+    return None
 
 
-def _get_collapsed_title(title: str) -> str:
-    parts = {part.strip() for part in title.split(_TITLE_PART_SEPARATOR)}
-    if len(parts) == 1:
-        return parts.pop()
-    return title
+def _split_off_subtitle(title: str) -> ReportHeader:
+    title = title.strip()
+    if not title.endswith(_CLOSING_BRACKET):
+        return ReportHeader(title=title)
+    bracket_start = _get_trailing_bracket_start(title)
+    if bracket_start is None:
+        return ReportHeader(title=title)
+    if not any(character.islower() for character in title[bracket_start + 1:-1]):
+        return ReportHeader(title=title)
+    return ReportHeader(title=title[:bracket_start].strip(), subtitle=title[bracket_start:])
+
+
+def _split_title_parts(title: str) -> list[str]:
+    parts = [""]
+    depth = 0
+    for character in title:
+        if character == _TITLE_PART_SEPARATOR and depth == 0:
+            parts.append("")
+            continue
+        if character == _OPENING_BRACKET:
+            depth += 1
+        if character == _CLOSING_BRACKET:
+            depth -= 1
+        parts[-1] += character
+    return parts
 
 
 def build_report_header(raw_title: str) -> ReportHeader:
     raw_title = re.sub(_HTML_TAG_PATTERN, " ", raw_title.replace("\n", " ")).strip()
-    if raw_title[-1] != ")":
-        return ReportHeader(title=_get_collapsed_title(raw_title))
+    part_headers = [_split_off_subtitle(part) for part in _split_title_parts(raw_title)]
+    part_titles = {part_header.title for part_header in part_headers}
+    if len(part_titles) != 1:
+        return _split_off_subtitle(raw_title)
 
-    contents = [
-        match.group(1)
-        for match in re.finditer(_BRACKET_PATTERN, raw_title)
-        if not match.group(1).isupper()
-    ]
-    title = _get_collapsed_title(re.sub(_BRACKET_PATTERN, _replace_bracket, raw_title).strip())
-    if not contents:
-        return ReportHeader(title=title)
-    return ReportHeader(title=title, subtitle=f"({contents[-1]})")
+    subtitles = [part_header.subtitle for part_header in part_headers if part_header.subtitle is not None]
+    if not subtitles:
+        return ReportHeader(title=part_titles.pop())
+    return ReportHeader(title=part_titles.pop(), subtitle=subtitles[-1])
 
 
 def _get_sitting_number(raw_sitting_number: Optional[str], markdown_content: Optional[str]) -> Optional[int]:
