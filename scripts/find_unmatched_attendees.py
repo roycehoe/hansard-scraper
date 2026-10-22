@@ -105,16 +105,6 @@ def find_unmatched(is_verbose: bool = False) -> dict[str, Counter]:
     return category_to_counter
 
 
-def _get_json_template(name: str) -> dict:
-    return {
-        "name": name,
-        "party": _TEMPLATE_PARTY,
-        "parliament_number": COLONIAL_PARLIAMENT_NUMBER,
-        "is_legislative_assembly": True,
-        "comments": None,
-    }
-
-
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -147,7 +137,7 @@ def main() -> None:
             logger.info(f"  {count:>6}  {name}")
 
     if arguments.json:
-        template = [_get_json_template(name) for name, _ in candidates.most_common()]
+        template = [{"name": name, "party": _TEMPLATE_PARTY, "parliament_number": COLONIAL_PARLIAMENT_NUMBER, "is_legislative_assembly": True, "comments": None} for name, _ in candidates.most_common()]
         path = arguments.json
         with open(path, "w") as file:
             json.dump(template, file, indent=2, ensure_ascii=False)

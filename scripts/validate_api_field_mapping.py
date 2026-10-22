@@ -162,7 +162,7 @@ def _is_sitting_payload_mapped(
     return True
 
 
-def is_sitting_date_mapped(sitting_date: str, label: str, synthetic: dict) -> bool:
+def is_sitting_date_mapped(sitting_date: str, label: str, synthetic: dict[str, object]) -> bool:
     logger.info(f"API 3 — getHansardReport ({label})")
     logger.info(f"  INFO  sitting_date={sitting_date!r}")
 

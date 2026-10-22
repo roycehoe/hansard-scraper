@@ -1,5 +1,6 @@
 import random
 from collections import Counter, defaultdict
+from dataclasses import dataclass
 
 from sqlmodel import Session
 
@@ -19,6 +20,12 @@ _SEED = 42
 _TOP_UNMATCHED = 30
 _PERCENT = 100
 _SEPARATOR_WIDTH = 56
+
+
+@dataclass
+class _MatchStats:
+    matched: int = 0
+    total: int = 0
 
 
 def main() -> None:
@@ -46,7 +53,7 @@ def main() -> None:
 
     matched = 0
     report_type_to_unmatched_speakers: dict[str, list[str]] = defaultdict(list)
-    report_type_to_stats: dict[str, dict[str, int]] = defaultdict(lambda: {"matched": 0, "total": 0})
+    report_type_to_stats: dict[str, _MatchStats] = defaultdict(_MatchStats)
 
     for row in sample:
         name = strip_title(row.speaker.rstrip(":").strip())
@@ -54,10 +61,10 @@ def main() -> None:
         canonical = resolve_canonical_name(name, row.parliament_number, lookups) if name else None
         is_found = canonical is not None and (canonical, row.parliament_number) in name_and_parliament_to_speaker_id
 
-        report_type_to_stats[row.report_type]["total"] += 1
+        report_type_to_stats[row.report_type].total += 1
         if is_found:
             matched += 1
-            report_type_to_stats[row.report_type]["matched"] += 1
+            report_type_to_stats[row.report_type].matched += 1
         else:
             report_type_to_unmatched_speakers[row.report_type].append(row.speaker)
 
@@ -66,7 +73,7 @@ def main() -> None:
     logger.info(f"{'Report type':<30} {'Matched':>8} {'Total':>7} {'Rate':>7}")
     logger.info("-" * _SEPARATOR_WIDTH)
     for report_type, stats in sorted(report_type_to_stats.items()):
-        matched_count, total_count = stats["matched"], stats["total"]
+        matched_count, total_count = stats.matched, stats.total
         rate = matched_count / total_count * _PERCENT if total_count else 0
         logger.info(f"{report_type:<30} {matched_count:>8} {total_count:>7} {rate:>6.1f}%")
 

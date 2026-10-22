@@ -1,5 +1,6 @@
 import sys
 from collections import Counter
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
@@ -37,6 +38,16 @@ def _is_context_linked(speaker: str) -> bool:
     )
 
 
+@dataclass(frozen=True)
+class StaleLink:
+    bad_row_count: int
+    speaker: str
+    parliament_number: int
+    sitting_date: Optional[datetime]
+    speaker_id_to_row_count: Counter[int]
+    resolved_speaker_id: Optional[int]
+
+
 def main() -> None:
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
@@ -51,7 +62,7 @@ def main() -> None:
         speaker_id_to_name = {speaker.id: speaker.name for speaker in speakers}
         lookups = build_speaker_lookups(speakers)
 
-        key_to_speaker_id_counts: dict[Key, Counter] = {}
+        key_to_speaker_id_counts: dict[Key, Counter[int]] = {}
         for start in range(0, len(reports), REPORT_BATCH):
             batch = reports[start : start + REPORT_BATCH]
             report_id_to_parliament_and_date = {report_id: (parliament_number, sitting_date) for report_id, parliament_number, sitting_date in batch}
@@ -63,34 +74,37 @@ def main() -> None:
                 key_to_speaker_id_counts.setdefault((row.speaker, parliament_number, date_key), Counter())[row.speaker_id] += 1
 
     total_rows = sum(sum(counter.values()) for counter in key_to_speaker_id_counts.values())
-    agree, context, stale = [0, 0], [0, 0], []
+    agree_key_count = 0
+    agree_row_count = 0
+    context_key_count = 0
+    context_row_count = 0
+    stale: list[StaleLink] = []
     for (speaker, parliament_number, sitting_date), counts in key_to_speaker_id_counts.items():
         key_row_count = sum(counts.values())
         resolved = resolve_speech_speaker_id(speaker, parliament_number, sitting_date, lookups, name_and_parliament_to_speaker_id)
         if resolved is None and _is_context_linked(speaker):
-            context[0] += 1
-            context[1] += key_row_count
+            context_key_count += 1
+            context_row_count += key_row_count
         elif set(counts) == {resolved}:
-            agree[0] += 1
-            agree[1] += key_row_count
+            agree_key_count += 1
+            agree_row_count += key_row_count
         else:
             bad_rows = sum(row_count for speaker_id, row_count in counts.items() if speaker_id != resolved)
-            stale.append((bad_rows, speaker, parliament_number, sitting_date, counts, resolved))
+            stale.append(StaleLink(bad_rows, speaker, parliament_number, sitting_date, counts, resolved))
 
-    stale_rows = sum(stale_entry[0] for stale_entry in stale)
+    stale_rows = sum(stale_link.bad_row_count for stale_link in stale)
     logger.info(f"Total: {len(key_to_speaker_id_counts)} keys, {total_rows} rows")
-    logger.info(f"Agree: {agree[0]} keys, {agree[1]} rows")
-    logger.info(f"Context-linked, not re-evaluated: {context[0]} keys, {context[1]} rows")
+    logger.info(f"Agree: {agree_key_count} keys, {agree_row_count} rows")
+    logger.info(f"Context-linked, not re-evaluated: {context_key_count} keys, {context_row_count} rows")
     logger.info(f"Stale: {len(stale)} keys, {stale_rows} rows")
-    for bad_rows, speaker, parliament_number, sitting_date, counts, resolved in sorted(
-        stale, key=lambda stale_entry: (-stale_entry[0], stale_entry[1], stale_entry[2])
-    ):
+    for stale_link in sorted(stale, key=lambda stale_link: (-stale_link.bad_row_count, stale_link.speaker, stale_link.parliament_number)):
         stored_text = ", ".join(
-            f"{speaker_id} {speaker_id_to_name.get(speaker_id)!r} x{row_count}" for speaker_id, row_count in sorted(counts.items())
+            f"{speaker_id} {speaker_id_to_name.get(speaker_id)!r} x{row_count}" for speaker_id, row_count in sorted(stale_link.speaker_id_to_row_count.items())
         )
         logger.info(
-            f"{bad_rows:>6}  {speaker!r}  P{parliament_number}  {sitting_date.date() if sitting_date is not None else '-'}  "
-            f"stored [{stored_text}]  resolved {resolved} {speaker_id_to_name.get(resolved)!r}"
+            f"{stale_link.bad_row_count:>6}  {stale_link.speaker!r}  P{stale_link.parliament_number}  "
+            f"{stale_link.sitting_date.date() if stale_link.sitting_date is not None else '-'}  "
+            f"stored [{stored_text}]  resolved {stale_link.resolved_speaker_id} {speaker_id_to_name.get(stale_link.resolved_speaker_id)!r}"
         )
     sys.exit(_STALE_EXIT_CODE if stale_rows else _CLEAN_EXIT_CODE)
 

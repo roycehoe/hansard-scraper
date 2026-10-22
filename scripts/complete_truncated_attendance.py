@@ -72,7 +72,7 @@ def build_completions(session: Session, sitting_ids: list[int]) -> list[SittingC
     }
     date_rows = {date_row.id: date_row for date_row in CRUDSitting(session).get_date_rows()}
     sitting_id_to_row_count = {count.sitting_id: count.row_count for count in CRUDAttendance(session).get_sitting_counts()}
-    sitting_id_to_presence_keys: dict[int, Counter] = {sitting_id: Counter() for sitting_id in sitting_ids}
+    sitting_id_to_presence_keys: dict[int, Counter[tuple[int, Optional[bool]]]] = {sitting_id: Counter() for sitting_id in sitting_ids}
     for presence_row in CRUDAttendance(session).get_presence_rows_by_speaker_id_not_null():
         if presence_row.sitting_id in sitting_id_to_presence_keys:
             sitting_id_to_presence_keys[presence_row.sitting_id][(presence_row.speaker_id, presence_row.is_present)] += 1

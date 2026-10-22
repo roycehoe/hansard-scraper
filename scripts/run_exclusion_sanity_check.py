@@ -100,9 +100,9 @@ def run() -> None:
 
     logger.info(f"Reports with markdown: {len(reports)}")
 
-    zero_speaker: list = []
-    multi_speaker: dict[str, list] = defaultdict(list)
-    no_start_line: list = []
+    zero_speaker: list[tuple[Report, int]] = []
+    multi_speaker: dict[str, list[tuple[Report, int, list[str]]]] = defaultdict(list)
+    no_start_line: list[Report] = []
 
     for report in reports:
         start_line = get_start_of_speech_line(

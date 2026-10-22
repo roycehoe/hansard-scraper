@@ -164,13 +164,13 @@ def _log_presence_counts(
 ) -> None:
     logger.info(f"B1 before exemptions, rows by status: { {status.value: row_count for status, row_count in unexempted_status_to_row_count.items()} }")
     logger.info(f"B1 exempted rows by reason: { {exemption.value: row_count for exemption, row_count in exemption_to_row_count.items()} }")
-    groups = sorted({key[0] for key in group_report_type_status_to_row_count}, key=lambda group: (group != HEADLINE_GROUP, group))
+    groups = sorted({key_group for key_group, _, _ in group_report_type_status_to_row_count}, key=lambda group: (group != HEADLINE_GROUP, group))
     for group in groups:
-        report_types = sorted({key[1] for key in group_report_type_status_to_row_count if key[0] == group})
+        report_types = sorted({report_type for key_group, report_type, _ in group_report_type_status_to_row_count if key_group == group})
         for report_type in report_types:
             status_to_row_count = {
-                key[2].value: row_count for key, row_count in group_report_type_status_to_row_count.items()
-                if key[0] == group and key[1] == report_type
+                status.value: row_count for (key_group, key_report_type, status), row_count in group_report_type_status_to_row_count.items()
+                if key_group == group and key_report_type == report_type
             }
             logger.info(f"B1 {group} {report_type}: {status_to_row_count}")
 
