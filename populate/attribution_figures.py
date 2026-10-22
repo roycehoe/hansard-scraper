@@ -33,14 +33,14 @@ _HEADER_ROW_MARKERS = ("Title:|", "MPs Speaking:|")
 
 def _get_body_character_count(report: Report) -> int:
     lines = report.markdown_content.splitlines()
-    start = get_start_of_speech_line(
+    start_of_speech_line = get_start_of_speech_line(
         report.markdown_content, report.title, report.subtitle, report.original_title, report.report_type,
         report.report_version,
     )
-    if start is None:
-        start = max((line_index for line_index, line in enumerate(lines[:_HEADER_SCAN_LINE_COUNT]) if any(marker in line for marker in _HEADER_ROW_MARKERS)), default=_NO_HEADER_ROW_INDEX)
+    if start_of_speech_line is None:
+        start_of_speech_line = max((line_index for line_index, line in enumerate(lines[:_HEADER_SCAN_LINE_COUNT]) if any(marker in line for marker in _HEADER_ROW_MARKERS)), default=_NO_HEADER_ROW_INDEX)
     total = 0
-    for line in lines[start + 1:]:
+    for line in lines[start_of_speech_line + 1:]:
         stripped = line.strip()
         if is_artifact_line(stripped) or stripped.startswith(_RULE_LINE_PREFIX) or REPORT_HEADER_FIELD_RE.match(stripped):
             continue
@@ -60,7 +60,7 @@ def _is_single_speaker_collapse(report: Report) -> bool:
 
 def get_attribution_figures(session: Session) -> list[GroupFigures]:
     report_ids = CRUDReport(session).get_ids_by_markdown_content_not_null()
-    reported_parliaments: set[int] = set()
+    reported_parliament_numbers: set[int] = set()
     group_to_row_count: defaultdict[str, Counter[str]] = defaultdict(Counter)
     group_to_character_count: defaultdict[str, Counter[str]] = defaultdict(Counter)
     group_and_type_to_figures: defaultdict[tuple[str, str], ReportTypeFigures] = defaultdict(ReportTypeFigures)
@@ -71,7 +71,7 @@ def get_attribution_figures(session: Session) -> list[GroupFigures]:
     for start in range(0, len(report_ids), _REPORT_BATCH):
         batch_report_ids = report_ids[start:start + _REPORT_BATCH]
         reports = CRUDReport(session).get_by_ids(batch_report_ids)
-        reported_parliaments.update(report.parliament_number for report in reports if report.parliament_number > HEADLINE_MAX_PARLIAMENT)
+        reported_parliament_numbers.update(report.parliament_number for report in reports if report.parliament_number > HEADLINE_MAX_PARLIAMENT)
         report_id_to_group = {report.id: get_group(report.parliament_number) for report in reports}
         report_id_to_group_and_type = {report.id: (report_id_to_group[report.id], report.report_type) for report in reports}
         for speech_row in CRUDSpeech(session).get_rows_by_report_ids(batch_report_ids):
@@ -113,5 +113,5 @@ def get_attribution_figures(session: Session) -> list[GroupFigures]:
                 report_type: figures for (group_name, report_type), figures in group_and_type_to_figures.items() if group_name == group
             },
         )
-        for group in (HEADLINE_GROUP, *(get_group(parliament_number) for parliament_number in sorted(reported_parliaments)))
+        for group in (HEADLINE_GROUP, *(get_group(parliament_number) for parliament_number in sorted(reported_parliament_numbers)))
     ]

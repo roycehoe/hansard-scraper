@@ -282,7 +282,7 @@ async def _fetch_topics(topic_requests: list[TopicRequest]) -> dict[str, Fetched
 
 def _fetch_sitting_responses(
     sitting_dates: list[date],
-    dates_with_hits: set[date],
+    sitting_dates_with_search_results: set[date],
 ) -> dict[str, Union[HansardReportOldResponse, HansardReportNewResponse]]:
     sitting_date_key_to_response: dict[str, Union[HansardReportOldResponse, HansardReportNewResponse]] = {}
     for sitting_date in sitting_dates:
@@ -290,7 +290,7 @@ def _fetch_sitting_responses(
         try:
             hansard_report_response = get_hansard_report_response(sitting_date_key)
         except HansardGatewayError as error:
-            if sitting_date in dates_with_hits:
+            if sitting_date in sitting_dates_with_search_results:
                 raise
             logger.info(f"No sitting response for {sitting_date}: {error}")
             continue
@@ -401,13 +401,13 @@ def _fetch_window(
         TopicRequest(search_result.report_id, search_result.html_file_name, search_result.report_version)
         for search_result in new_search_results
     ]))
-    dates_with_hits = {parse_sitting_date(search_result.sitting_date).date() for search_result in new_search_results}
+    sitting_dates_with_search_results = {parse_sitting_date(search_result.sitting_date).date() for search_result in new_search_results}
     sitting_dates_to_probe = [
         sitting_date
         for sitting_date in get_dates_between(month_window.first_date, month_window.last_date)
         if sitting_date not in stored_refresh_state.stored_sitting_dates
     ]
-    sitting_date_key_to_response = _fetch_sitting_responses(sitting_dates_to_probe, dates_with_hits)
+    sitting_date_key_to_response = _fetch_sitting_responses(sitting_dates_to_probe, sitting_dates_with_search_results)
     return FetchedWindow(
         new_search_results,
         report_id_to_fetched_topic,

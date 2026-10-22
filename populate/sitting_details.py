@@ -82,36 +82,36 @@ def populate_sitting_details(session: Session) -> None:
     skipped = 0
     for i, fetched_sitting in enumerate(fetched_sittings, start=1):
         sitting = fetched_sitting.sitting
-        response = fetched_sitting.hansard_report_response
+        hansard_report_response = fetched_sitting.hansard_report_response
         sitting_date = sitting.sitting_date
-        if response is None:
+        if hansard_report_response is None:
             skipped += 1
             continue
-        if not isinstance(response, HansardReportNewResponse):
+        if not isinstance(hansard_report_response, HansardReportNewResponse):
             logger.warning(f"Skipping {sitting_date}: the response is not the newer format")
             skipped += 1
             continue
-        raw = CRUDHansardSittingDateResponse(session).get_by_sitting_date(sitting_date)
-        if raw is None:
+        stored_hansard_sitting_date_response = CRUDHansardSittingDateResponse(session).get_by_sitting_date(sitting_date)
+        if stored_hansard_sitting_date_response is None:
             logger.warning(f"Skipping {sitting_date}: no raw sitting date response")
             skipped += 1
             continue
         logger.info(f"{i}/{len(sittings_to_fetch)}: {sitting_date}")
 
-        built = build_new_hansard_sitting_date_response(response, sitting_date)
-        _fill_null_fields(raw, built.model_dump(exclude={"id"}), sitting_date)
-        CRUDHansardSittingDateResponse(session).update(raw)
+        built_hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
+        _fill_null_fields(stored_hansard_sitting_date_response, built_hansard_sitting_date_response.model_dump(exclude={"id"}), sitting_date)
+        CRUDHansardSittingDateResponse(session).update(stored_hansard_sitting_date_response)
 
-        rebuilt = build_sitting(raw)
-        _fill_null_fields(sitting, rebuilt.model_dump(exclude={"id"} | _SITTING_NESTED_COLUMNS), sitting_date)
+        rebuilt_sitting = build_sitting(stored_hansard_sitting_date_response)
+        _fill_null_fields(sitting, rebuilt_sitting.model_dump(exclude={"id"} | _SITTING_NESTED_COLUMNS), sitting_date)
         if sitting.sections is None:
-            sitting.sections = get_json_column(response.takes_section_vo_list)
+            sitting.sections = get_json_column(hansard_report_response.takes_section_vo_list)
         if sitting.annexures is None:
-            sitting.annexures = get_json_column(response.annexure_list)
+            sitting.annexures = get_json_column(hansard_report_response.annexure_list)
         if sitting.vernaculars is None:
-            sitting.vernaculars = get_json_column(response.vernacular_list)
+            sitting.vernaculars = get_json_column(hansard_report_response.vernacular_list)
         if sitting.a2b is None:
-            sitting.a2b = get_json_column(response.a2b_list)
+            sitting.a2b = get_json_column(hansard_report_response.a2b_list)
         CRUDSitting(session).update(sitting)
         filled += 1
     session.commit()

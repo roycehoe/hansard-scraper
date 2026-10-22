@@ -24,6 +24,6 @@ def populate_attendances(session: Session) -> None:
     )
     for sitting_index, sitting in enumerate(sittings_to_process, start=1):
         logger.info(f"{sitting_index}/{len(sittings_to_process)}: {sitting.sitting_date}")
-        records = build_sitting_attendances(sitting, lookups, constituency_lookups)
-        if records:
-            CRUDAttendance(session).create_many(records)
+        attendances = build_sitting_attendances(sitting, lookups, constituency_lookups)
+        if attendances:
+            CRUDAttendance(session).create_many(attendances)

@@ -37,10 +37,10 @@ async def _fetch_sitting_date_response(
         return FetchedSittingDate(sitting_date, None)
 
 
-async def _fetch_all_sitting_dates(dates: list[str]) -> list[FetchedSittingDate]:
+async def _fetch_all_sitting_dates(sitting_dates: list[str]) -> list[FetchedSittingDate]:
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
         return await asyncio.gather(
-            *[_fetch_sitting_date_response(sitting_date, client) for sitting_date in dates]
+            *[_fetch_sitting_date_response(sitting_date, client) for sitting_date in sitting_dates]
         )
 
 
@@ -49,15 +49,15 @@ def populate_hansard_sitting_dates(session: Session) -> None:
     existing_sitting_dates = CRUDHansardSittingDateResponse(
         session
     ).get_all_sitting_dates()
-    dates_to_fetch = list(all_sitting_dates - existing_sitting_dates)
+    sitting_dates_to_fetch = list(all_sitting_dates - existing_sitting_dates)
 
-    fetched = asyncio.run(_fetch_all_sitting_dates(dates_to_fetch))
+    fetched_sitting_dates = asyncio.run(_fetch_all_sitting_dates(sitting_dates_to_fetch))
 
-    for i, fetched_sitting_date in enumerate(fetched, start=1):
+    for i, fetched_sitting_date in enumerate(fetched_sitting_dates, start=1):
         sitting_date = fetched_sitting_date.sitting_date
         if fetched_sitting_date.hansard_report_response is None:
             continue
-        logger.info(f"{i}/{len(dates_to_fetch)}: {sitting_date}")
+        logger.info(f"{i}/{len(sitting_dates_to_fetch)}: {sitting_date}")
 
         hansard_report_response = fetched_sitting_date.hansard_report_response
         hansard_sitting_date_response = build_hansard_sitting_date_response(hansard_report_response, sitting_date)

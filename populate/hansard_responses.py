@@ -66,17 +66,17 @@ async def _fetch_all(search_results: list[HansardSearchResult]) -> list[HansardW
 
 
 def populate_hansard_responses(session: Session) -> None:
-    all_search_results = get_all_hansard_search_results(settings.search_from_date, settings.search_to_date)
+    all_hansard_search_results = get_all_hansard_search_results(settings.search_from_date, settings.search_to_date)
     existing_report_ids = CRUDHansardWebsiteResponse(session).get_all_report_ids()
     # NOTE: the search can return one hit twice, so keep the first hit per report_id.
     report_id_to_first_search_result = {}
-    for search_result in all_search_results:
+    for search_result in all_hansard_search_results:
         report_id_to_first_search_result.setdefault(search_result.report_id, search_result)
     new_search_results = [search_result for search_result in report_id_to_first_search_result.values() if search_result.report_id not in existing_report_ids]
     excluded_report_ids = {excluded_report_id.report_id for excluded_report_id in get_excluded_report_ids()}
     search_results_to_fetch = [search_result for search_result in new_search_results if search_result.report_id not in excluded_report_ids]
     logger.info(f"Excluded {len(new_search_results) - len(search_results_to_fetch)} hits listed in {EXCLUDED_REPORT_IDS_FILE.name}")
-    logger.info(f"Fetching {len(search_results_to_fetch)}/{len(all_search_results)} ({len(existing_report_ids)} already in DB)")
+    logger.info(f"Fetching {len(search_results_to_fetch)}/{len(all_hansard_search_results)} ({len(existing_report_ids)} already in DB)")
 
     hansard_website_responses = asyncio.run(_fetch_all(search_results_to_fetch))
     CRUDHansardWebsiteResponse(session).create_many(hansard_website_responses)

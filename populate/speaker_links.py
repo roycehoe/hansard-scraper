@@ -59,14 +59,14 @@ def _write_in_batches(set_speaker_ids_bulk: Callable[[dict[int, int]], None], id
 def _get_day_speaker_ids(
     key: object,
     text: str,
-    parliament: int,
+    parliament_number: int,
     text_key_to_speaker_ids: dict[object, set[int]],
     lookups: SpeakerLookups,
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> set[int]:
     if key not in text_key_to_speaker_ids:
         text_key_to_speaker_ids[key] = get_speaker_ids_for_names(
-            get_deputy_speaker_names_in_text(text), parliament, lookups, name_parliament_number_to_speaker_id
+            get_deputy_speaker_names_in_text(text), parliament_number, lookups, name_parliament_number_to_speaker_id
         )
     return text_key_to_speaker_ids[key]
 
@@ -159,13 +159,13 @@ def _get_deputy_speaker_ids_for_report_ids(
             if not bare_deputy_rows or len(holders) != _DEPUTY_SPEAKER_PAIR_SIZE:
                 continue
             total += len(bare_deputy_rows)
-            parliament = report.parliament_number
-            holder_to_speaker_id = {holder: get_speaker_id_for_name(holder, parliament, lookups, name_parliament_number_to_speaker_id) for holder in holders}
+            parliament_number = report.parliament_number
+            holder_to_speaker_id = {holder: get_speaker_id_for_name(holder, parliament_number, lookups, name_parliament_number_to_speaker_id) for holder in holders}
             if None in holder_to_speaker_id.values():
                 continue
             valid_holder_ids = set(holder_to_speaker_id.values())
             deputy_names = get_deputy_speaker_names(report.markdown_content or "", speech_rows)
-            named_holder_ids = get_speaker_ids_for_names(deputy_names.mentioned, parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
+            named_holder_ids = get_speaker_ids_for_names(deputy_names.mentioned, parliament_number, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
             if len(named_holder_ids) > 1:
                 continue
             male_holders = [holder for holder in holders if holder not in DEPUTY_SPEAKER_WOMEN]
@@ -175,40 +175,40 @@ def _get_deputy_speaker_ids_for_report_ids(
                 continue
             if len(male_holders) != _DEPUTY_SPEAKER_PAIR_SIZE:
                 continue
-            labelled_ids = get_speaker_ids_for_names(deputy_names.labelled, parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
+            labelled_ids = get_speaker_ids_for_names(deputy_names.labelled, parliament_number, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
             speech_id_to_candidate_id = {}
             for speech_row in bare_deputy_rows:
                 deputy_name = deputy_names.speech_id_to_deputy_name.get(speech_row.id)
                 if deputy_name is not None:
-                    found = get_speaker_ids_for_names([deputy_name], parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
-                    candidate = next(iter(found)) if found else None
+                    found = get_speaker_ids_for_names([deputy_name], parliament_number, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
+                    candidate_id = next(iter(found)) if found else None
                 else:
-                    candidate = next(iter(labelled_ids)) if len(labelled_ids) == 1 else None
-                if candidate is not None:
-                    speech_id_to_candidate_id[speech_row.id] = candidate
+                    candidate_id = next(iter(labelled_ids)) if len(labelled_ids) == 1 else None
+                if candidate_id is not None:
+                    speech_id_to_candidate_id[speech_row.id] = candidate_id
             if speech_id_to_candidate_id:
                 pending_reports.append((report, speech_id_to_candidate_id, valid_holder_ids))
         if not pending_reports:
             continue
-        dates = {report.sitting_date for report, _, _ in pending_reports}
+        sitting_dates = {report.sitting_date for report, _, _ in pending_reports}
         sitting_date_to_reports: dict[datetime, list[Report]] = {}
-        for other in CRUDReport(session).get_by_sitting_dates(list(dates)):
-            sitting_date_to_reports.setdefault(other.sitting_date, []).append(other)
+        for sitting_date_report in CRUDReport(session).get_by_sitting_dates(list(sitting_dates)):
+            sitting_date_to_reports.setdefault(sitting_date_report.sitting_date, []).append(sitting_date_report)
         sitting_date_key_to_markdown = {
             date_markdown_row.sitting_date: date_markdown_row.markdown_content
             for date_markdown_row in CRUDSitting(session).get_date_markdown_rows_by_sitting_dates_and_markdown_content_not_null(
-                [get_sitting_date_key(sitting_date) for sitting_date in dates]
+                [get_sitting_date_key(sitting_date) for sitting_date in sitting_dates]
             )
         }
         for report, speech_id_to_candidate_id, valid_holder_ids in pending_reports:
-            sitting_date, parliament = report.sitting_date, report.parliament_number
-            named_today = _get_day_speaker_ids(("sitting", sitting_date), sitting_date_key_to_markdown.get(get_sitting_date_key(sitting_date), ""), parliament, text_key_to_speaker_ids, lookups, name_parliament_number_to_speaker_id)
-            for other in sitting_date_to_reports.get(sitting_date, []):
-                if other.id != report.id:
-                    named_today = named_today | _get_day_speaker_ids(other.id, other.markdown_content or "", parliament, text_key_to_speaker_ids, lookups, name_parliament_number_to_speaker_id)
-            for speech_id, candidate in speech_id_to_candidate_id.items():
-                if not (named_today & valid_holder_ids) - {candidate}:
-                    speech_id_to_speaker_id[speech_id] = candidate
+            sitting_date, parliament_number = report.sitting_date, report.parliament_number
+            named_today = _get_day_speaker_ids(("sitting", sitting_date), sitting_date_key_to_markdown.get(get_sitting_date_key(sitting_date), ""), parliament_number, text_key_to_speaker_ids, lookups, name_parliament_number_to_speaker_id)
+            for other_report in sitting_date_to_reports.get(sitting_date, []):
+                if other_report.id != report.id:
+                    named_today = named_today | _get_day_speaker_ids(other_report.id, other_report.markdown_content or "", parliament_number, text_key_to_speaker_ids, lookups, name_parliament_number_to_speaker_id)
+            for speech_id, candidate_id in speech_id_to_candidate_id.items():
+                if not (named_today & valid_holder_ids) - {candidate_id}:
+                    speech_id_to_speaker_id[speech_id] = candidate_id
     logger.info(f"Speech: set speaker_id on {len(speech_id_to_speaker_id)}/{total} deputy-speaker records")
     return speech_id_to_speaker_id
 
@@ -253,16 +253,16 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
     for start in range(0, len(report_ids), REPORT_BATCH):
         batch = report_ids[start : start + REPORT_BATCH]
         report_batch = _get_report_batch(session, batch)
-        date_keys = list({get_sitting_date_key(report.sitting_date) for report in report_batch.report_id_to_report.values()})
-        date_key_to_markdown = {
+        sitting_date_keys = list({get_sitting_date_key(report.sitting_date) for report in report_batch.report_id_to_report.values()})
+        sitting_date_key_to_markdown = {
             date_markdown_row.sitting_date: date_markdown_row.markdown_content
-            for date_markdown_row in CRUDSitting(session).get_date_markdown_rows_by_sitting_dates_and_markdown_content_not_null(date_keys)
+            for date_markdown_row in CRUDSitting(session).get_date_markdown_rows_by_sitting_dates_and_markdown_content_not_null(sitting_date_keys)
         }
-        date_key_to_sections = {
+        sitting_date_key_to_sections = {
             date_sections_row.sitting_date: date_sections_row.sections
-            for date_sections_row in CRUDSitting(session).get_date_sections_rows_by_sitting_dates_and_sections_not_null(date_keys)
+            for date_sections_row in CRUDSitting(session).get_date_sections_rows_by_sitting_dates_and_sections_not_null(sitting_date_keys)
         }
-        date_key_to_sitting_text: dict[str, Optional[SittingText]] = {}
+        sitting_date_key_to_sitting_text: dict[str, Optional[SittingText]] = {}
         for report_id, speech_rows in report_batch.report_id_to_speech_rows.items():
             report = report_batch.report_id_to_report[report_id]
             bare_deputy_rows = [speech_row for speech_row in speech_rows if speech_row.speaker_id is None and BARE_DEPUTY_RE.match(speech_row.speaker or "")]
@@ -275,10 +275,10 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
             if None in holder_to_speaker_id.values():
                 continue
             male_holder_ids = {speaker_id for holder, speaker_id in holder_to_speaker_id.items() if holder not in DEPUTY_SPEAKER_WOMEN}
-            date_key = get_sitting_date_key(report.sitting_date)
-            if date_key not in date_key_to_sitting_text:
-                date_key_to_sitting_text[date_key] = _build_sitting_text(date_key_to_markdown.get(date_key), date_key_to_sections.get(date_key))
-            sitting_text = date_key_to_sitting_text[date_key]
+            sitting_date_key = get_sitting_date_key(report.sitting_date)
+            if sitting_date_key not in sitting_date_key_to_sitting_text:
+                sitting_date_key_to_sitting_text[sitting_date_key] = _build_sitting_text(sitting_date_key_to_markdown.get(sitting_date_key), sitting_date_key_to_sections.get(sitting_date_key))
+            sitting_text = sitting_date_key_to_sitting_text[sitting_date_key]
             if sitting_text is None:
                 continue
             speech_id_to_deputy_name = get_sitting_deputy_speaker_names(sitting_text, report.title, speech_rows)
