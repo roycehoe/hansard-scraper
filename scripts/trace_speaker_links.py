@@ -10,7 +10,7 @@ from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from database.init import engine
 from logs import logger
-from populate.speaker_links import _REPORT_BATCH
+from populate.speaker_links import REPORT_BATCH
 from services.attendance import build_speaker_lookups
 from services.speaker_link import (
     BARE_DEPUTY_RE,
@@ -52,8 +52,8 @@ def main() -> None:
         lookups = build_speaker_lookups(speakers)
 
         key_to_speaker_id_counts: dict[Key, Counter] = {}
-        for start in range(0, len(reports), _REPORT_BATCH):
-            batch = reports[start : start + _REPORT_BATCH]
+        for start in range(0, len(reports), REPORT_BATCH):
+            batch = reports[start : start + REPORT_BATCH]
             report_id_to_parliament_and_date = {report_id: (parliament_number, sitting_date) for report_id, parliament_number, sitting_date in batch}
             for row in CRUDSpeech(session).get_rows_by_report_ids(list(report_id_to_parliament_and_date)):
                 if not row.speaker or row.speaker_id is None:

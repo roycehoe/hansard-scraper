@@ -42,7 +42,7 @@ from utils.speaker_resolution_constants import (
 )
 
 _WRITE_BATCH = 50_000
-_REPORT_BATCH = 200
+REPORT_BATCH = 200
 _DEPUTY_SPEAKER_PAIR_SIZE = 2
 
 _ROLE_CONTEXT_PATTERN = "|".join(
@@ -94,8 +94,8 @@ def _get_role_context_speaker_ids_for_report_ids(
     key_to_speaker_id: dict[tuple[str, int, Optional[datetime]], Optional[int]] = {}
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
-    for start in range(0, len(report_ids), _REPORT_BATCH):
-        batch = report_ids[start : start + _REPORT_BATCH]
+    for start in range(0, len(report_ids), REPORT_BATCH):
+        batch = report_ids[start : start + REPORT_BATCH]
         report_batch = _get_report_batch(session, batch)
         for report_id, speech_rows in report_batch.report_id_to_speech_rows.items():
             report = report_batch.report_id_to_report[report_id]
@@ -147,8 +147,8 @@ def _get_deputy_speaker_ids_for_report_ids(
     total = 0
     text_key_to_speaker_ids: dict[object, set[int]] = {}
 
-    for start in range(0, len(report_ids), _REPORT_BATCH):
-        batch = report_ids[start : start + _REPORT_BATCH]
+    for start in range(0, len(report_ids), REPORT_BATCH):
+        batch = report_ids[start : start + REPORT_BATCH]
         report_batch = _get_report_batch(session, batch)
         pending_reports = []
         for report_id, speech_rows in report_batch.report_id_to_speech_rows.items():
@@ -250,8 +250,8 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
 
-    for start in range(0, len(report_ids), _REPORT_BATCH):
-        batch = report_ids[start : start + _REPORT_BATCH]
+    for start in range(0, len(report_ids), REPORT_BATCH):
+        batch = report_ids[start : start + REPORT_BATCH]
         report_batch = _get_report_batch(session, batch)
         date_keys = list({get_sitting_date_key(report.sitting_date) for report in report_batch.report_id_to_report.values()})
         date_key_to_markdown = {
