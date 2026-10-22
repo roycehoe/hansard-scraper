@@ -229,8 +229,8 @@ def _get_alert_failure_reason(error: Exception, is_data_committed: bool) -> str:
 def _start_refresh_run(session: Session, now: datetime) -> int:
     stale_run_ids = [
         refresh_run.id
-        for refresh_run in CRUDRefreshRun(session).get_by_status(RefreshRunStatus.RUNNING)
-        if refresh_run.id is not None and refresh_run.started_at < now - timedelta(hours=_STALE_RUN_HOURS)
+        for refresh_run in CRUDRefreshRun(session).get_by_status_and_started_at_before(RefreshRunStatus.RUNNING, now - timedelta(hours=_STALE_RUN_HOURS))
+        if refresh_run.id is not None
     ]
     for stale_run_id in stale_run_ids:
         stale_run = CRUDRefreshRun(session).get_by_id_for_update(stale_run_id)
@@ -262,8 +262,8 @@ def _get_started_refresh_run_id(session: Session, now: datetime) -> int:
 
 
 def _validate_can_run(session: Session, refresh_run_id: int, now: datetime) -> None:
-    for refresh_run in CRUDRefreshRun(session).get_by_status(RefreshRunStatus.RUNNING):
-        if refresh_run.id != refresh_run_id and refresh_run.started_at >= now - timedelta(hours=_STALE_RUN_HOURS):
+    for refresh_run in CRUDRefreshRun(session).get_by_status_and_started_at_from(RefreshRunStatus.RUNNING, now - timedelta(hours=_STALE_RUN_HOURS)):
+        if refresh_run.id != refresh_run_id:
             raise HansardRefreshRunError("Another run is in progress")
 
 

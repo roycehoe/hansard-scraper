@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Optional
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from database.refresh_run import RefreshRun
 from enums import RefreshRunStatus
@@ -31,4 +32,20 @@ class CRUDRefreshRun:
 
     def get_by_status(self, status: RefreshRunStatus) -> list[RefreshRun]:
         statement = select(RefreshRun).where(RefreshRun.status == status)
+        return list(self.session.exec(statement).all())
+
+    def get_by_status_and_started_at_before(self, status: RefreshRunStatus, started_before: datetime) -> list[RefreshRun]:
+        statement = (
+            select(RefreshRun)
+            .where(RefreshRun.status == status)
+            .where(col(RefreshRun.started_at) < started_before)
+        )
+        return list(self.session.exec(statement).all())
+
+    def get_by_status_and_started_at_from(self, status: RefreshRunStatus, started_from: datetime) -> list[RefreshRun]:
+        statement = (
+            select(RefreshRun)
+            .where(RefreshRun.status == status)
+            .where(col(RefreshRun.started_at) >= started_from)
+        )
         return list(self.session.exec(statement).all())

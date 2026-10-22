@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import pytest
@@ -153,6 +153,30 @@ def test_refresh_run_create_and_update_commit(scratch_session: Session) -> None:
     assert stored_refresh_run is not None
     assert stored_refresh_run.status == RefreshRunStatus.SUCCEEDED
     assert CRUDRefreshRun(scratch_session).get_by_status(RefreshRunStatus.RUNNING) == []
+
+
+_BOUNDARY_STARTED_AT = datetime(2025, 4, 2, 12, tzinfo=timezone.utc)
+_ONE_MICROSECOND = timedelta(microseconds=1)
+
+
+def _add_refresh_run(scratch_session: Session, started_at: datetime, status: RefreshRunStatus) -> int:
+    refresh_run = RefreshRun(started_at=started_at, status=status)
+    CRUDRefreshRun(scratch_session).create(refresh_run)
+    assert refresh_run.id is not None
+    return refresh_run.id
+
+
+def test_started_at_reads_exclude_the_bound_before_and_include_it_from(scratch_session: Session) -> None:
+    earlier_run_id = _add_refresh_run(scratch_session, _BOUNDARY_STARTED_AT - _ONE_MICROSECOND, RefreshRunStatus.RUNNING)
+    boundary_run_id = _add_refresh_run(scratch_session, _BOUNDARY_STARTED_AT, RefreshRunStatus.RUNNING)
+    later_run_id = _add_refresh_run(scratch_session, _BOUNDARY_STARTED_AT + _ONE_MICROSECOND, RefreshRunStatus.RUNNING)
+    _add_refresh_run(scratch_session, _BOUNDARY_STARTED_AT, RefreshRunStatus.FAILED)
+
+    runs_before = CRUDRefreshRun(scratch_session).get_by_status_and_started_at_before(RefreshRunStatus.RUNNING, _BOUNDARY_STARTED_AT)
+    runs_from = CRUDRefreshRun(scratch_session).get_by_status_and_started_at_from(RefreshRunStatus.RUNNING, _BOUNDARY_STARTED_AT)
+
+    assert {refresh_run.id for refresh_run in runs_before} == {earlier_run_id}
+    assert {refresh_run.id for refresh_run in runs_from} == {boundary_run_id, later_run_id}
 
 
 def test_refresh_run_status_check_rejects_unknown(scratch_session: Session) -> None:
