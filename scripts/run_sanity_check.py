@@ -1,9 +1,11 @@
 import json
 from typing import Optional
 
+from sqlmodel import Session
+
 from crud.hansard_website_response import CRUDHansardWebsiteResponse
 from crud.report import CRUDReport
-from database.init import get_session
+from database.init import engine
 from database.report import Report
 from logs import logger
 from services.report import build_report
@@ -39,12 +41,11 @@ def run() -> None:
         + sample_sets.get("regression", [])
     )
 
-    session = next(get_session())
+    with Session(engine) as session:
+        stored_reports = CRUDReport(session).get_by_ids(report_ids)
+        report_id_strings = {stored_report.report_id for stored_report in stored_reports}
 
-    stored_reports = CRUDReport(session).get_by_ids(report_ids)
-    report_id_strings = {stored_report.report_id for stored_report in stored_reports}
-
-    website_responses = CRUDHansardWebsiteResponse(session).get_by_report_ids(report_id_strings)
+        website_responses = CRUDHansardWebsiteResponse(session).get_by_report_ids(report_id_strings)
     report_id_to_website_response = {website_response.report_id: website_response for website_response in website_responses}
 
     logger.info(f"Sample Report IDs:       {len(report_ids)}")
