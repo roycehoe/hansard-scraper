@@ -42,9 +42,9 @@ def _get_slot(speaker: Speaker) -> tuple[int, bool, bool]:
 
 class _SpeakerClusters:
     def __init__(self, speakers: list[Speaker], distinct: set[frozenset[int]]):
-        self.parent = {speaker.id: speaker.id for speaker in speakers}
-        self.members = {speaker.id: [speaker] for speaker in speakers}
-        self.distinct = distinct
+        self.parent: dict[int, int] = {speaker.id: speaker.id for speaker in speakers}
+        self.members: dict[int, list[Speaker]] = {speaker.id: [speaker] for speaker in speakers}
+        self.distinct: set[frozenset[int]] = distinct
         self.basis: dict[int, str] = {}
 
     def find(self, speaker_id: int) -> int:
