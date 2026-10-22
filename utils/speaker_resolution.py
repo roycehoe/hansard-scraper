@@ -379,9 +379,9 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
     if canonical:
         return canonical
 
-    spelling_normalised_name = spelling_normalize(name)
-    if spelling_normalised_name != name:
-        canonical = _get_variant_canonical_name(spelling_normalised_name, parliament, lookups)
+    spelling_normalized_name = spelling_normalize(name)
+    if spelling_normalized_name != name:
+        canonical = _get_variant_canonical_name(spelling_normalized_name, parliament, lookups)
         if canonical:
             return canonical
 
@@ -401,7 +401,7 @@ def resolve_canonical_name(name: str, parliament: int, lookups: SpeakerLookups) 
         if canonical:
             return canonical
 
-    normalised_words = period_normalize(name).split()
-    if len(normalised_words) == 1:
-        return lookups.surname_fallback.get((normalised_words[0], parliament))
+    normalized_words = period_normalize(name).split()
+    if len(normalized_words) == 1:
+        return lookups.surname_fallback.get((normalized_words[0], parliament))
     return None

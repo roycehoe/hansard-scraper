@@ -131,7 +131,7 @@ class ChairAnnotation:
     text: str
 
 
-def _normalise(text: str) -> str:
+def _normalize_text(text: str) -> str:
     return re.sub(r"\s+", " ", text.replace("*", "")).strip()
 
 
@@ -147,12 +147,12 @@ def _get_header_holders(markdown: str) -> dict[str, set[str]]:
     return role_to_holder_names
 
 
-def _get_positions(normalised: str, speech_rows: list[SpeechRow]) -> list[Optional[int]]:
+def _get_positions(normalized_text: str, speech_rows: list[SpeechRow]) -> list[Optional[int]]:
     positions: list[Optional[int]] = []
     cursor = 0
     for speech_row in speech_rows:
-        key = _normalise(speech_row.transcript)[:_ALIGN_KEY_LENGTH]
-        found = normalised.find(key, cursor) if len(key) >= _MIN_ALIGN_KEY_LENGTH else -1
+        key = _normalize_text(speech_row.transcript)[:_ALIGN_KEY_LENGTH]
+        found = normalized_text.find(key, cursor) if len(key) >= _MIN_ALIGN_KEY_LENGTH else -1
         positions.append(found if found >= 0 else None)
         if found >= 0:
             cursor = found + 1
@@ -165,7 +165,7 @@ def _get_name_words(name: str) -> set[str]:
 
 def _is_other_name_in_annotations(annotations: list[ChairAnnotation], name: str) -> bool:
     for annotation in annotations:
-        named = re.search(r"\(([^)]+)\)", _normalise(annotation.text))
+        named = re.search(r"\(([^)]+)\)", _normalize_text(annotation.text))
         if named is not None and not (_get_name_words(named.group(1)) & _get_name_words(name)):
             return True
     return False
@@ -182,14 +182,14 @@ def _get_bound_position(positions: list[Optional[int]], index: int, annotations:
 
 
 def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int, str]:
-    normalised = _normalise(markdown)
-    annotations = [ChairAnnotation(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalised)]
-    events = [(match.start(), match.group(1).lower()) for match in _CHAIR_EVENT_RE.finditer(normalised)]
+    normalized_text = _normalize_text(markdown)
+    annotations = [ChairAnnotation(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalized_text)]
+    events = [(match.start(), match.group(1).lower()) for match in _CHAIR_EVENT_RE.finditer(normalized_text)]
     role_to_holder_names = _get_header_holders(markdown)
     is_header_present = _HEADER_RE.search(markdown) is not None
-    is_deputy_named = _DEPUTY_MENTION_RE.search(normalised) is not None
-    suspension_positions = [match.start() for match in _SUSPENSION_RE.finditer(normalised)]
-    positions = _get_positions(normalised, speech_rows)
+    is_deputy_named = _DEPUTY_MENTION_RE.search(normalized_text) is not None
+    suspension_positions = [match.start() for match in _SUSPENSION_RE.finditer(normalized_text)]
+    positions = _get_positions(normalized_text, speech_rows)
     speech_id_to_name: dict[int, str] = {}
     for index, speech_row in enumerate(speech_rows):
         if not speech_row.speaker or not CHAIRMAN_RE.match(speech_row.speaker):
@@ -202,7 +202,7 @@ def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int,
         before_roles = {role for event_position, role in events if event_position < position - _EVENT_SLACK}
         if preceding:
             annotation_position = preceding[-1].position
-            text = _normalise(preceding[-1].text)
+            text = _normalize_text(preceding[-1].text)
             named_deputy = _NAMED_DEPUTY_RE.search(text)
             if named_deputy is not None or not (_SPEAKER_ROLE_RE.match(text) or _DEPUTY_ROLE_RE.match(text)):
                 # NOTE: a chair-change line between the annotation and the row voids it.
@@ -237,12 +237,12 @@ def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int,
 
 
 def get_deputy_speaker_names(markdown: str, speech_rows: list[SpeechRow]) -> DeputySpeakerNames:
-    normalised = _normalise(markdown)
-    annotations = [ChairAnnotation(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalised)]
-    position_to_deputy_match = {annotation.position: _NAMED_DEPUTY_RE.search(_normalise(annotation.text)) for annotation in annotations}
+    normalized_text = _normalize_text(markdown)
+    annotations = [ChairAnnotation(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalized_text)]
+    position_to_deputy_match = {annotation.position: _NAMED_DEPUTY_RE.search(_normalize_text(annotation.text)) for annotation in annotations}
     position_to_deputy_name = {position: _TITLE_RE.sub("", match.group(1).strip()) for position, match in position_to_deputy_match.items() if match is not None}
-    events = [match.start() for match in _CHAIR_EVENT_RE.finditer(normalised)]
-    positions = _get_positions(normalised, speech_rows)
+    events = [match.start() for match in _CHAIR_EVENT_RE.finditer(normalized_text)]
+    positions = _get_positions(normalized_text, speech_rows)
     speech_id_to_deputy_name: dict[int, str] = {}
     labelled: set[str] = set()
     for index, speech_row in enumerate(speech_rows):
@@ -281,7 +281,7 @@ def _get_chair_marks(text: str) -> list[ChairMark]:
 
 
 def build_sitting_text_from_markdown(markdown: str) -> SittingText:
-    text = _normalise(markdown)
+    text = _normalize_text(markdown)
     return SittingText(text, [], _get_chair_marks(text))
 
 
@@ -291,8 +291,8 @@ def build_sitting_text_from_sections(sections: str) -> SittingText:
     length = 0
     for raw_section in json.loads(sections):
         section = HansardReportSection.model_validate(raw_section)
-        title = "" if section.title is None else _normalise(section.title)
-        body = "" if section.content is None else _normalise(get_cleaned_report_markdown(section.content, ReportVersion.SPRS3))
+        title = "" if section.title is None else _normalize_text(section.title)
+        body = "" if section.content is None else _normalize_text(get_cleaned_report_markdown(section.content, ReportVersion.SPRS3))
         part = f"{title} {body} "
         section_spans.append(SectionSpan(title.lower(), length, length + len(part)))
         parts.append(part)
@@ -325,7 +325,7 @@ def _get_section_positions(sitting_text: SittingText, section_span: SectionSpan,
 
 # NOTE: two sections of a sitting can share a title, one per reading, so the report is aligned in the one that places most of its rows, and in none on a tie.
 def _get_sitting_positions(sitting_text: SittingText, report_title: str, speech_rows: list[SpeechRow]) -> Optional[list[Optional[int]]]:
-    title = _normalise(report_title).lower()
+    title = _normalize_text(report_title).lower()
     section_spans = [section_span for section_span in sitting_text.section_spans if section_span.title == title]
     if not section_spans:
         return _get_positions(sitting_text.text, speech_rows)
@@ -357,7 +357,7 @@ def get_sitting_deputy_speaker_names(sitting_text: SittingText, report_title: st
 
 
 def get_deputy_speaker_names_in_text(text: str) -> set[str]:
-    names = {_TITLE_RE.sub("", match.group(1).strip()) for match in _NAMED_DEPUTY_RE.finditer(_normalise(text))}
+    names = {_TITLE_RE.sub("", match.group(1).strip()) for match in _NAMED_DEPUTY_RE.finditer(_normalize_text(text))}
     names |= _get_header_holders(text).get("deputy speaker", set())
     return names
 

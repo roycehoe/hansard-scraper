@@ -31,7 +31,7 @@ class ClusterResult:
     conflicts: list[str] = field(default_factory=list)
 
 
-def normalised_name(name: str) -> str:
+def normalize_person_name(name: str) -> str:
     natural = invert_to_natural(name) or name
     return period_normalize(strip_bin(strip_title(natural)))
 
@@ -116,7 +116,7 @@ def cluster_speakers(speakers: list[Speaker], decisions: list[Decision]) -> Clus
 
     for basis, key_function in (
         ("auto:exact", lambda speaker: speaker.name),
-        ("auto:normalised", lambda speaker: normalised_name(speaker.name)),
+        ("auto:normalised", lambda speaker: normalize_person_name(speaker.name)),
     ):
         key_to_speaker_ids: dict[str, list[int]] = {}
         for speaker in speakers:

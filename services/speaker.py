@@ -35,7 +35,7 @@ class ParliamentChange:
     parliament_number_after: int
 
 
-def normalise_party(party: str) -> str:
+def normalize_party(party: str) -> str:
     return party.replace(_CURLY_APOSTROPHE, _STRAIGHT_APOSTROPHE)
 
 
@@ -95,7 +95,7 @@ def build_speaker(
 ) -> Speaker:
     key = (speaker_result.name, speaker_result.parliament_number)
     is_legislative_assembly = name_parliament_to_is_legislative_assembly.get(key, speaker_result.is_legislative_assembly)
-    party = normalise_party(name_parliament_to_party.get(key, speaker_result.party))
+    party = normalize_party(name_parliament_to_party.get(key, speaker_result.party))
     return Speaker(
         **speaker_result.model_dump(exclude={"is_legislative_assembly", "party"}),
         party=party,
@@ -120,7 +120,7 @@ def get_party_changes(
             raise HansardWriteCheckError(f"No speaker row for colonial member {member.name!r}, Parliament {member.parliament_number}")
     party_changes = []
     for speaker in speakers:
-        party_after = normalise_party(name_parliament_to_party.get((speaker.name, speaker.parliament_number), speaker.party))
+        party_after = normalize_party(name_parliament_to_party.get((speaker.name, speaker.parliament_number), speaker.party))
         if party_after == speaker.party:
             continue
         party_changes.append(PartyChange(speaker.id, speaker.name, speaker.parliament_number, speaker.party, party_after))
