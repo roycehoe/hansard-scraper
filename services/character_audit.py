@@ -22,14 +22,14 @@ _CONTEXT_LENGTH = 30
 
 
 def get_character_fault_counts(text: str) -> dict[str, int]:
-    signature_counts = {name: len(pattern.findall(text)) for name, pattern in CHARACTER_SIGNATURES.items()}
-    return {name: count for name, count in signature_counts.items() if count}
+    signature_name_to_count = {name: len(pattern.findall(text)) for name, pattern in CHARACTER_SIGNATURES.items()}
+    return {name: count for name, count in signature_name_to_count.items() if count}
 
 
 def get_derived_text_counts(text: str) -> dict[str, int]:
-    markup_counts = {"HTML entity": len(_get_entity_matches(text)), "HTML tag": len(MARKUP_SIGNATURES["HTML tag"].findall(text))}
-    pair_counts = {name: 1 for name in get_unbalanced_pairs(text)}
-    return get_character_fault_counts(text) | {name: count for name, count in markup_counts.items() if count} | pair_counts
+    markup_name_to_count = {"HTML entity": len(_get_entity_matches(text)), "HTML tag": len(MARKUP_SIGNATURES["HTML tag"].findall(text))}
+    pair_name_to_count = {name: 1 for name in get_unbalanced_pairs(text)}
+    return get_character_fault_counts(text) | {name: count for name, count in markup_name_to_count.items() if count} | pair_name_to_count
 
 
 def _get_entity_matches(text: str) -> list[re.Match]:

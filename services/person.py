@@ -77,9 +77,9 @@ class _SpeakerClusters:
 
 
 def _get_canonical_name(cluster: list[Speaker]) -> str:
-    counts = Counter(speaker.name for speaker in cluster)
+    name_to_count = Counter(speaker.name for speaker in cluster)
     most_common_name = max(
-        cluster, key=lambda speaker: (counts[speaker.name], speaker.parliament_number, len(speaker.name))
+        cluster, key=lambda speaker: (name_to_count[speaker.name], speaker.parliament_number, len(speaker.name))
     ).name
     return _TRAILING_DECORATION_RE.sub("", invert_to_natural(most_common_name) or most_common_name)
 

@@ -71,43 +71,43 @@ _TRUNCATED_LINE_TO_ENTRY_LINE: dict[str, str] = {
 
 
 def _build_direct_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str]:
-    counts: dict[tuple[str, int], int] = {}
+    key_to_count: dict[tuple[str, int], int] = {}
     entries: list[tuple[tuple[str, int], str]] = []
     for speaker in speakers:
         key = (period_normalize(speaker.name), speaker.parliament_number)
-        counts[key] = counts.get(key, 0) + 1
+        key_to_count[key] = key_to_count.get(key, 0) + 1
         entries.append((key, speaker.name))
-    return {key: canonical for key, canonical in entries if counts[key] == 1}
+    return {key: canonical_name for key, canonical_name in entries if key_to_count[key] == 1}
 
 
 def _build_bin_free_lookup(
     speakers: list[Speaker],
     direct: dict[tuple[str, int], str],
 ) -> dict[tuple[str, int], str]:
-    counts: dict[tuple[str, int], int] = {}
+    key_to_count: dict[tuple[str, int], int] = {}
     entries: list[tuple[tuple[str, int], str]] = []
     for speaker in speakers:
         key = (period_normalize(strip_bin(speaker.name)), speaker.parliament_number)
-        counts[key] = counts.get(key, 0) + 1
+        key_to_count[key] = key_to_count.get(key, 0) + 1
         entries.append((key, speaker.name))
-    return {key: canonical for key, canonical in entries if counts[key] == 1 and key not in direct}
+    return {key: canonical_name for key, canonical_name in entries if key_to_count[key] == 1 and key not in direct}
 
 
 def _build_inverted_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str]:
     inverted: dict[tuple[str, int], str] = {}
-    surname_only_counts: dict[tuple[str, int], int] = {}
+    surname_key_to_count: dict[tuple[str, int], int] = {}
     surname_only_entries: list[tuple[tuple[str, int], str]] = []
     for speaker in speakers:
-        parliament = speaker.parliament_number
+        parliament_number = speaker.parliament_number
         if ", " in speaker.name:
             natural_stripped = invert_to_natural(speaker.name)
-            key = (normalize_for_lookup(natural_stripped), parliament)
+            key = (normalize_for_lookup(natural_stripped), parliament_number)
             inverted[key] = speaker.name
             surname = speaker.name.split(", ")[0]
             surname_words = surname.split()
             if len(surname_words) >= _MIN_MULTIWORD_SURNAME_LENGTH:
-                surname_key = (normalize_for_lookup(surname), parliament)
-                surname_only_counts[surname_key] = surname_only_counts.get(surname_key, 0) + 1
+                surname_key = (normalize_for_lookup(surname), parliament_number)
+                surname_key_to_count[surname_key] = surname_key_to_count.get(surname_key, 0) + 1
                 surname_only_entries.append((surname_key, speaker.name))
         else:
             words = speaker.name.split()
@@ -115,12 +115,12 @@ def _build_inverted_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str
                 rearranged = f"{words[-1]} {' '.join(words[1:-1])} {words[0]}"
                 if rearranged != speaker.name:
                     rearranged_stripped = strip_title(rearranged).strip()
-                    rearranged_key = (normalize_for_lookup(rearranged_stripped), parliament)
+                    rearranged_key = (normalize_for_lookup(rearranged_stripped), parliament_number)
                     if rearranged_key not in inverted:
                         inverted[rearranged_key] = speaker.name
-    for surname_key, canonical in surname_only_entries:
-        if surname_only_counts.get(surname_key, 0) == 1 and surname_key not in inverted:
-            inverted[surname_key] = canonical
+    for surname_key, canonical_name in surname_only_entries:
+        if surname_key_to_count.get(surname_key, 0) == 1 and surname_key not in inverted:
+            inverted[surname_key] = canonical_name
     return inverted
 
 
@@ -131,16 +131,16 @@ def _build_wordset_lookup(speakers: list[Speaker]) -> dict[tuple[frozenset, int,
         if natural:
             triples.append((natural, speaker.name, speaker.parliament_number))
         triples.append((speaker.name, speaker.name, speaker.parliament_number))
-    counts: dict[tuple[frozenset, int, int], int] = {}
+    key_to_count: dict[tuple[frozenset, int, int], int] = {}
     entries: list[tuple[tuple[frozenset, int, int], str]] = []
-    for display, canonical_name, parliament in triples:
+    for display, canonical_name, parliament_number in triples:
         words = period_normalize(display).split()
-        key = (frozenset(words), len(words), parliament)
-        counts[key] = counts.get(key, 0) + 1
+        key = (frozenset(words), len(words), parliament_number)
+        key_to_count[key] = key_to_count.get(key, 0) + 1
         entries.append((key, canonical_name))
     wordset: dict[tuple[frozenset, int, int], str] = {}
     for key, canonical_name in entries:
-        if counts[key] == 1 and key not in wordset:
+        if key_to_count[key] == 1 and key not in wordset:
             wordset[key] = canonical_name
     return wordset
 
@@ -152,19 +152,19 @@ def _build_wordset_subset_lookup(speakers: list[Speaker]) -> dict[tuple[frozense
         if natural:
             triples.append((natural, speaker.name, speaker.parliament_number))
         triples.append((speaker.name, speaker.name, speaker.parliament_number))
-    counts: dict[tuple[frozenset, int], int] = {}
+    key_to_count: dict[tuple[frozenset, int], int] = {}
     entries: list[tuple[tuple[frozenset, int], str]] = []
-    for display, canonical_name, parliament in triples:
+    for display, canonical_name, parliament_number in triples:
         words = period_normalize(strip_title(display)).split()
         if len(words) < _MIN_WORDSET_SUBSET_WORDS:
             continue
         words = [word for word in words if len(word) > 1]
-        key = (frozenset(words), parliament)
-        counts[key] = counts.get(key, 0) + 1
+        key = (frozenset(words), parliament_number)
+        key_to_count[key] = key_to_count.get(key, 0) + 1
         entries.append((key, canonical_name))
     wordset_subset: dict[tuple[frozenset, int], str] = {}
     for key, canonical_name in entries:
-        if counts[key] == 1 and key not in wordset_subset:
+        if key_to_count[key] == 1 and key not in wordset_subset:
             wordset_subset[key] = canonical_name
     return wordset_subset
 
@@ -176,24 +176,24 @@ def _build_prefix_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str]:
         if natural:
             forms.append((natural, speaker.name, speaker.parliament_number))
         forms.append((speaker.name, speaker.name, speaker.parliament_number))
-    prefix_counts: dict[tuple[str, int], int] = {}
+    prefix_key_to_count: dict[tuple[str, int], int] = {}
     prefix_entries: list[tuple[tuple[str, int], str]] = []
-    for display, canonical, parliament in forms:
+    for display, canonical_name, parliament_number in forms:
         words = period_normalize(display).split()
         for prefix_length in range(_MIN_PREFIX_WORD_COUNT, len(words)):
             joined_prefix = " ".join(words[:prefix_length])
-            prefix_key = (joined_prefix, parliament)
-            prefix_counts[prefix_key] = prefix_counts.get(prefix_key, 0) + 1
-            prefix_entries.append((prefix_key, canonical))
+            prefix_key = (joined_prefix, parliament_number)
+            prefix_key_to_count[prefix_key] = prefix_key_to_count.get(prefix_key, 0) + 1
+            prefix_entries.append((prefix_key, canonical_name))
     prefix: dict[tuple[str, int], str] = {}
-    for prefix_key, canonical in prefix_entries:
-        if prefix_counts[prefix_key] == 1 and prefix_key not in prefix:
-            prefix[prefix_key] = canonical
+    for prefix_key, canonical_name in prefix_entries:
+        if prefix_key_to_count[prefix_key] == 1 and prefix_key not in prefix:
+            prefix[prefix_key] = canonical_name
     return prefix
 
 
 def _build_surname_fallback_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str]:
-    surname_counts: dict[tuple[str, int], int] = {}
+    surname_key_to_count: dict[tuple[str, int], int] = {}
     surname_entries: list[tuple[tuple[str, int], str]] = []
     for speaker in speakers:
         natural = invert_to_natural(speaker.name) or speaker.name
@@ -204,9 +204,9 @@ def _build_surname_fallback_lookup(speakers: list[Speaker]) -> dict[tuple[str, i
         if len(last_word) < _MIN_SURNAME_LOOKUP_LENGTH:
             continue
         surname_key = (last_word, speaker.parliament_number)
-        surname_counts[surname_key] = surname_counts.get(surname_key, 0) + 1
+        surname_key_to_count[surname_key] = surname_key_to_count.get(surname_key, 0) + 1
         surname_entries.append((surname_key, speaker.name))
-    return {key: canonical for key, canonical in surname_entries if surname_counts[key] == 1}
+    return {key: canonical_name for key, canonical_name in surname_entries if surname_key_to_count[key] == 1}
 
 
 def build_speaker_lookups(speakers: list[Speaker]) -> SpeakerLookups:
@@ -427,7 +427,7 @@ def build_constituency_lookups(constituency_names: ConstituencyNames) -> Constit
 
 def get_constituency_name(
     printed: Optional[str],
-    parliament: Optional[int],
+    parliament_number: Optional[int],
     sitting_date: Optional[str],
     speaker_name: Optional[str],
     lookups: ConstituencyLookups,
@@ -437,7 +437,7 @@ def get_constituency_name(
     row_constituency = lookups.sitting_speaker_printed_to_constituency.get((sitting_date, speaker_name, printed))
     if row_constituency is not None:
         return row_constituency
-    parliament_constituency = lookups.printed_parliament_to_constituency.get((printed, parliament))
+    parliament_constituency = lookups.printed_parliament_to_constituency.get((printed, parliament_number))
     if parliament_constituency is not None:
         return parliament_constituency
     return lookups.printed_to_constituency.get(printed, printed)
@@ -468,7 +468,7 @@ def build_sitting_attendances_from_markdown(sitting: Sitting, lookups: SpeakerLo
     if not sitting.markdown_content:
         return []
 
-    parliament = infer_parliament(sitting.parlement_no, sitting.volume_no)
+    parliament_number = infer_parliament(sitting.parlement_no, sitting.volume_no)
     content = sitting.markdown_content
     records = []
 
@@ -481,13 +481,13 @@ def build_sitting_attendances_from_markdown(sitting: Sitting, lookups: SpeakerLo
                 if not parsed.name:
                     continue
                 name = normalize_name(parsed.name)
-                canonical = None if parliament is None else resolve_canonical_name(name, parliament, lookups)
-                speaker_name = canonical or name
+                canonical_name = None if parliament_number is None else resolve_canonical_name(name, parliament_number, lookups)
+                speaker_name = canonical_name or name
                 records.append(Attendance(
                     sitting_id=sitting.id,
                     speaker_name=speaker_name,
                     is_present=is_present,
-                    location_name=get_constituency_name(parsed.constituency, parliament, sitting.sitting_date, speaker_name, constituency_lookups),
+                    location_name=get_constituency_name(parsed.constituency, parliament_number, sitting.sitting_date, speaker_name, constituency_lookups),
                 ))
 
     return _drop_repeated_attendees(records)
@@ -497,7 +497,7 @@ def build_sitting_attendances_from_list(sitting: Sitting, lookups: SpeakerLookup
     if sitting.attendance_list is None:
         return []
 
-    parliament = infer_parliament(sitting.parlement_no, sitting.volume_no)
+    parliament_number = infer_parliament(sitting.parlement_no, sitting.volume_no)
     records = []
 
     for raw_entry in json.loads(sitting.attendance_list):
@@ -512,13 +512,13 @@ def build_sitting_attendances_from_list(sitting: Sitting, lookups: SpeakerLookup
         if not parsed.name:
             continue
         name = normalize_name(parsed.name)
-        canonical = None if parliament is None else resolve_canonical_name(name, parliament, lookups)
-        speaker_name = canonical or name
+        canonical_name = None if parliament_number is None else resolve_canonical_name(name, parliament_number, lookups)
+        speaker_name = canonical_name or name
         records.append(Attendance(
             sitting_id=sitting.id,
             speaker_name=speaker_name,
             is_present=entry.attendance,
-            location_name=get_constituency_name(parsed.constituency, parliament, sitting.sitting_date, speaker_name, constituency_lookups),
+            location_name=get_constituency_name(parsed.constituency, parliament_number, sitting.sitting_date, speaker_name, constituency_lookups),
         ))
 
     return _drop_repeated_attendees(records)

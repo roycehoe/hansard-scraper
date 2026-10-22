@@ -22,8 +22,8 @@ class AttendanceCleanupPlan:
     updates: list[AttendanceUpdate]
 
 
-def _validate_can_clean_row(id_to_row: dict[int, Attendance], expected: AttendanceRowKey) -> None:
-    row = id_to_row.get(expected.id)
+def _validate_can_clean_row(attendance_id_to_attendance: dict[int, Attendance], expected: AttendanceRowKey) -> None:
+    row = attendance_id_to_attendance.get(expected.id)
     if row is None:
         raise HansardWriteCheckError(f"Attendance row {expected.id} is not stored")
     if row.sitting_id != expected.sitting_id:
@@ -34,9 +34,9 @@ def _validate_can_clean_row(id_to_row: dict[int, Attendance], expected: Attendan
         raise HansardWriteCheckError(f"Attendance row {expected.id}: presence {row.is_present}, expected {expected.is_present}")
 
 
-def _validate_can_link_row(id_to_row: dict[int, Attendance], expected: AttendanceRowKey, location_name: Optional[str]) -> None:
-    _validate_can_clean_row(id_to_row, expected)
-    row = id_to_row[expected.id]
+def _validate_can_link_row(attendance_id_to_attendance: dict[int, Attendance], expected: AttendanceRowKey, location_name: Optional[str]) -> None:
+    _validate_can_clean_row(attendance_id_to_attendance, expected)
+    row = attendance_id_to_attendance[expected.id]
     if row.location_name != location_name:
         raise HansardWriteCheckError(f"Attendance row {expected.id}: location {row.location_name!r}, expected {location_name!r}")
     if row.speaker_id is not None:
@@ -45,9 +45,9 @@ def _validate_can_link_row(id_to_row: dict[int, Attendance], expected: Attendanc
 
 def build_attendance_cleanup_plan(
     cleanup: AttendanceCleanup,
-    id_to_row: dict[int, Attendance],
+    attendance_id_to_attendance: dict[int, Attendance],
     sitting_id_to_rows: dict[int, list[Attendance]],
-    id_to_speaker_id: dict[int, int],
+    attendance_id_to_speaker_id: dict[int, int],
     speaker_id_to_name: dict[int, str],
 ) -> AttendanceCleanupPlan:
     entry_ids = [entry.id for entry in (*cleanup.removals, *cleanup.corrections, *cleanup.speaker_roles)]
@@ -56,25 +56,25 @@ def build_attendance_cleanup_plan(
 
     removal_id_to_reason: dict[int, AttendanceCleanupReason] = {}
     for removal in cleanup.removals:
-        _validate_can_clean_row(id_to_row, removal)
+        _validate_can_clean_row(attendance_id_to_attendance, removal)
         removal_id_to_reason[removal.id] = removal.reason
 
     updates = []
     for correction in cleanup.corrections:
-        _validate_can_link_row(id_to_row, correction, correction.location_name)
-        if correction.id not in id_to_speaker_id:
+        _validate_can_link_row(attendance_id_to_attendance, correction, correction.location_name)
+        if correction.id not in attendance_id_to_speaker_id:
             raise HansardWriteCheckError(f"Attendance row {correction.id}: no speaker row for {correction.speaker_name_after!r}")
         updates.append(
             AttendanceUpdate(
-                correction.id, correction.speaker_name_after, correction.location_name_after, id_to_speaker_id[correction.id], correction.reason
+                correction.id, correction.speaker_name_after, correction.location_name_after, attendance_id_to_speaker_id[correction.id], correction.reason
             )
         )
 
     for role in cleanup.speaker_roles:
-        _validate_can_link_row(id_to_row, role, role.location_name)
-        if role.id not in id_to_speaker_id:
+        _validate_can_link_row(attendance_id_to_attendance, role, role.location_name)
+        if role.id not in attendance_id_to_speaker_id:
             raise HansardWriteCheckError(f"Attendance row {role.id}: no presiding officer for {role.sitting_date}")
-        holder_id = id_to_speaker_id[role.id]
+        holder_id = attendance_id_to_speaker_id[role.id]
         is_holder_repeated = any(
             other.id != role.id and other.id not in removal_id_to_reason and other.speaker_id == holder_id
             for other in sitting_id_to_rows[role.sitting_id]

@@ -21,7 +21,7 @@ def _get_number(stored_number: Optional[int], markdown: Optional[str], field_nam
 def build_sitting(hansard_sitting_date_response: HansardSittingDateResponse) -> Sitting:
     # NOTE: some Optional[int] columns are stored as VARCHAR, so model_dump() returns "" for them;
     # it must become None before Pydantic coerces to int.
-    data = {
+    column_to_value = {
         key: (None if value == "" else value)
         for key, value in hansard_sitting_date_response.model_dump(exclude={"id"}).items()
     }
@@ -30,8 +30,8 @@ def build_sitting(hansard_sitting_date_response: HansardSittingDateResponse) -> 
         if hansard_sitting_date_response.html_full_content is not None
         else None
     )
-    data["markdown_content"] = markdown
+    column_to_value["markdown_content"] = markdown
     # NOTE: the older-system response leaves these numbers out, so they are read from the header table its HTML prints.
-    data["session_no"] = _get_number(data["session_no"], markdown, SESSION_NUMBER_FIELD)
-    data["sitting_no"] = _get_number(data["sitting_no"], markdown, SITTING_NUMBER_FIELD)
-    return Sitting.model_validate(data)
+    column_to_value["session_no"] = _get_number(column_to_value["session_no"], markdown, SESSION_NUMBER_FIELD)
+    column_to_value["sitting_no"] = _get_number(column_to_value["sitting_no"], markdown, SITTING_NUMBER_FIELD)
+    return Sitting.model_validate(column_to_value)
