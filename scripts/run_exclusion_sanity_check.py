@@ -34,7 +34,6 @@ _MARKDOWN_LINE_DISPLAY_LENGTH = 100
 _WHITESPACE_RE = re.compile(r"\s+")
 _PERSONAL_TITLE_RE = re.compile(r"\b(Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc|Col|Brig|Gen|Maj|Capt|Lt)\b")
 _FIRST_BOLD_TAG_RE = re.compile(r"<(?:strong|b)\b", re.IGNORECASE)
-# NOTE: -1 makes _show_doc read the markdown from line 0, as no start line exists
 _BEFORE_FIRST_LINE = -1
 
 _HTML_BOLD_RE = re.compile(r"<(?:strong|b)\b[^>]*>(.*?)</(?:strong|b)>", re.IGNORECASE | re.DOTALL)
