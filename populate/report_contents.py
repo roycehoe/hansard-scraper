@@ -17,7 +17,7 @@ def populate_report_contents(session: Session) -> None:
     skipped = 0
     for start in range(0, len(reports), _BATCH_SIZE):
         batch = reports[start : start + _BATCH_SIZE]
-        hansard_website_responses = CRUDHansardWebsiteResponse(session).get_all_by_report_ids({report.report_id for report in batch})
+        hansard_website_responses = CRUDHansardWebsiteResponse(session).get_by_report_ids({report.report_id for report in batch})
         report_id_to_first_response: dict[str, HansardWebsiteResponse] = {}
         for hansard_website_response in hansard_website_responses:
             if hansard_website_response.content is None:

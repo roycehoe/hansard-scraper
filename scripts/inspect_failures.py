@@ -34,7 +34,7 @@ def show_doc(website_response: HansardWebsiteResponse, report: Report, max_lines
 
 
 def inspect_type(session: Session, report_type: str, max_failing: int = _MAX_FAILING_SHOWN, max_passing: int = _MAX_PASSING_SHOWN) -> None:
-    responses = CRUDHansardWebsiteResponse(session).get_all_by_report_type(report_type)
+    responses = CRUDHansardWebsiteResponse(session).get_by_report_type(report_type)
 
     failing, passing = [], []
     for website_response in responses:

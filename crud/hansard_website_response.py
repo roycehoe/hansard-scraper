@@ -23,11 +23,11 @@ class CRUDHansardWebsiteResponse:
         statement = select(HansardWebsiteResponse)
         return list(self.session.exec(statement).all())
 
-    def get_all_by_report_type(self, report_type: str) -> list[HansardWebsiteResponse]:
+    def get_by_report_type(self, report_type: str) -> list[HansardWebsiteResponse]:
         statement = select(HansardWebsiteResponse).where(HansardWebsiteResponse.report_type == report_type)
         return list(self.session.exec(statement).all())
 
-    def get_all_by_report_ids(self, report_ids: set[str]) -> list[HansardWebsiteResponse]:
+    def get_by_report_ids(self, report_ids: set[str]) -> list[HansardWebsiteResponse]:
         statement = select(HansardWebsiteResponse).where(col(HansardWebsiteResponse.report_id).in_(report_ids))
         return list(self.session.exec(statement).all())
 

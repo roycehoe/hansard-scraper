@@ -44,7 +44,7 @@ def run() -> None:
     stored_reports = CRUDReport(session).get_by_ids(report_ids)
     report_id_strings = {stored_report.report_id for stored_report in stored_reports}
 
-    website_responses = CRUDHansardWebsiteResponse(session).get_all_by_report_ids(report_id_strings)
+    website_responses = CRUDHansardWebsiteResponse(session).get_by_report_ids(report_id_strings)
     report_id_to_website_response = {website_response.report_id: website_response for website_response in website_responses}
 
     logger.info(f"Sample Report IDs:       {len(report_ids)}")

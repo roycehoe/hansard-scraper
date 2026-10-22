@@ -355,7 +355,7 @@ def _get_stored_refresh_state(session: Session, today: date) -> StoredRefreshSta
     recheck_topic_requests = []
     report_id_to_stored_content: dict[str, str] = {}
     report_id_to_stored_sitting_date: dict[str, str] = {}
-    for hansard_website_response in CRUDHansardWebsiteResponse(session).get_all_by_report_ids(recheck_report_ids):
+    for hansard_website_response in CRUDHansardWebsiteResponse(session).get_by_report_ids(recheck_report_ids):
         stored_content = hansard_website_response.content
         if stored_content is None or stored_content == "":
             continue
