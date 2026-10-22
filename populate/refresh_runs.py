@@ -226,7 +226,7 @@ def _get_alert_failure_reason(error: Exception, is_data_committed: bool) -> str:
     return error_text
 
 
-def _start_refresh_run(session: Session, now: datetime) -> int:
+def _insert_refresh_run(session: Session, now: datetime) -> int:
     stale_run_ids = [
         refresh_run.id
         for refresh_run in CRUDRefreshRun(session).get_by_status_and_started_at_before(RefreshRunStatus.RUNNING, now - timedelta(hours=_STALE_RUN_HOURS))
@@ -251,9 +251,9 @@ def _start_refresh_run(session: Session, now: datetime) -> int:
     return refresh_run.id
 
 
-def _get_started_refresh_run_id(session: Session, now: datetime) -> int:
+def _start_refresh_run(session: Session, now: datetime) -> int:
     try:
-        return _start_refresh_run(session, now)
+        return _insert_refresh_run(session, now)
     except Exception as error:  # noqa: BLE001 a run that cannot start still alerts and pings before the error propagates
         logger.error(f"Refresh run could not start: {type(error).__name__}")
         _send_alert(build_failure_message(_get_alert_failure_reason(error, False)))
@@ -314,7 +314,7 @@ def _validate_can_accept_parliament_numbers(
         raise HansardRefreshHaltError(build_new_parliament_reason(unexpected_parliament_numbers))
 
 
-def _get_stored_refresh_state(session: Session, today: date) -> StoredRefreshState:
+def _load_stored_refresh_state(session: Session, today: date) -> StoredRefreshState:
     stored_sitting_dates = {
         parse_sitting_date(sitting_date_key).date()
         for sitting_date_key in CRUDHansardSittingDateResponse(session).get_all_sitting_dates()
@@ -645,14 +645,14 @@ def _record_failure(
 
 
 def populate_refresh_runs(session: Session, now: datetime, allowed_parliament_number: Optional[int]) -> RefreshRunStatus:
-    refresh_run_id = _get_started_refresh_run_id(session, now)
+    refresh_run_id = _start_refresh_run(session, now)
     today = get_singapore_today(now)
     run_result = RunResult()
     is_data_committed = False
     is_run_finished = False
     try:
         _validate_can_run(session, refresh_run_id, now)
-        stored_refresh_state = _get_stored_refresh_state(session, today)
+        stored_refresh_state = _load_stored_refresh_state(session, today)
         run_result.changed_reports = _fetch_changed_reports(stored_refresh_state)
         run_result.reports_changed = len(run_result.changed_reports)
         run_result.reports_rechecked = len(stored_refresh_state.recheck_topic_requests)
