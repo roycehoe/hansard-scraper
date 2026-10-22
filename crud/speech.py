@@ -101,9 +101,13 @@ class CRUDSpeech:
         self.session.add_all(speeches)
         self.session.flush()
 
-    def get_distinct_report_ids(self) -> set[int]:
-        statement = select(Speech.report_id).distinct()
-        return set(self.session.exec(statement).all()) - {None}
+    def get_distinct_report_ids_by_report_id_not_null(self) -> set[int]:
+        statement = (
+            select(Speech.report_id)
+            .distinct()
+            .where(col(Speech.report_id).is_not(None))
+        )
+        return set(self.session.exec(statement).all())
 
     def get_report_type_rows_by_speaker_not_null(self) -> list[SpeechReportTypeRow]:
         statement = (

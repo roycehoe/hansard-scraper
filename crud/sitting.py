@@ -84,10 +84,9 @@ class CRUDSitting:
         )
         return list(self.session.exec(statement).all())
 
-    def get_all_sitting_dates(self) -> set[str]:
-        statement = select(Sitting.sitting_date)
-        sitting_dates = self.session.exec(statement).all()
-        return {sitting_date for sitting_date in sitting_dates if sitting_date is not None}
+    def get_sitting_dates_by_sitting_date_not_null(self) -> set[str]:
+        statement = select(Sitting.sitting_date).where(Sitting.sitting_date.is_not(None))
+        return set(self.session.exec(statement).all())
 
     def get_max_parlement_no(self) -> Optional[int]:
         statement = select(func.max(Sitting.parlement_no))

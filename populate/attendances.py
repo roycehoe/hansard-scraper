@@ -16,7 +16,7 @@ def populate_attendances(session: Session) -> None:
     lookups = build_speaker_lookups(CRUDSpeaker(session).get_all())
     constituency_lookups = build_constituency_lookups(get_constituency_names())
     sittings = CRUDSitting(session).get_all()
-    sitting_ids_done = CRUDAttendance(session).get_distinct_sitting_ids()
+    sitting_ids_done = CRUDAttendance(session).get_distinct_sitting_ids_by_sitting_id_not_null()
     sittings_to_process = [sitting for sitting in sittings if sitting.id not in sitting_ids_done]
     logger.info(
         f"Extracting attendance for {len(sittings_to_process)}/{len(sittings)} sittings "
