@@ -12,11 +12,11 @@ from services.attendance import (
     ConstituencyLookups,
     LocationChange,
     build_constituency_lookups,
+    build_sitting_attendances_from_list,
+    build_sitting_attendances_from_markdown,
     build_speaker_lookups,
     get_constituency_name,
     get_location_changes,
-    get_sitting_attendance,
-    get_sitting_attendance_from_list,
 )
 
 _DATA_FILE = Path(__file__).parent.parent / "data" / "constituency_names.json"
@@ -148,7 +148,7 @@ def test_sitting_markdown_attendance_takes_the_mapped_constituency() -> None:
     markdown = "PRESENT:\nMr Goh Chew Chua (Mac Pherson).\nMr Lee Kuan Yew (Aijunied).\nMr Lim Cher Kheng (Changi).\nABSENT:\nMr Wong Foo Nam (Chua Chu Kang).\n"
     sitting = Sitting(id=1, sitting_date="13-2-1960", volume_no=14, markdown_content=markdown)
 
-    records = get_sitting_attendance(sitting, build_speaker_lookups([]), _get_test_lookups())
+    records = build_sitting_attendances_from_markdown(sitting, build_speaker_lookups([]), _get_test_lookups())
 
     assert [(record.speaker_name, record.location_name) for record in records] == [
         ("Goh Chew Chua", "Tampines"),
@@ -162,7 +162,7 @@ def test_attendance_list_takes_the_mapped_constituency() -> None:
     attendance_list = json.dumps([{"mpName": "Mr Lee Kuan Yew (Aijunied)", "attendance": True}, {"mpName": "Mr Lim Cher Kheng", "attendance": False}])
     sitting = Sitting(id=1, sitting_date="13-2-1960", volume_no=89, attendance_list=attendance_list)
 
-    records = get_sitting_attendance_from_list(sitting, build_speaker_lookups([]), _get_test_lookups())
+    records = build_sitting_attendances_from_list(sitting, build_speaker_lookups([]), _get_test_lookups())
 
     assert [(record.speaker_name, record.location_name) for record in records] == [("Lee Kuan Yew", "Aljunied"), ("Lim Cher Kheng", None)]
 

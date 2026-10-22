@@ -464,7 +464,7 @@ def _drop_repeated_attendees(records: list[Attendance]) -> list[Attendance]:
     return list(speaker_name_to_record.values())
 
 
-def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
+def build_sitting_attendances_from_markdown(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
     if not sitting.markdown_content:
         return []
 
@@ -493,7 +493,7 @@ def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups, constituen
     return _drop_repeated_attendees(records)
 
 
-def get_sitting_attendance_from_list(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
+def build_sitting_attendances_from_list(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
     if sitting.attendance_list is None:
         return []
 
@@ -526,8 +526,8 @@ def get_sitting_attendance_from_list(sitting: Sitting, lookups: SpeakerLookups, 
 
 def build_sitting_attendances(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
     if sitting.markdown_content is not None:
-        return get_sitting_attendance(sitting, lookups, constituency_lookups)
-    return get_sitting_attendance_from_list(sitting, lookups, constituency_lookups)
+        return build_sitting_attendances_from_markdown(sitting, lookups, constituency_lookups)
+    return build_sitting_attendances_from_list(sitting, lookups, constituency_lookups)
 
 
 def get_attendance_name_changes(sitting_id: int, stored_rows: list[Attendance], built_rows: list[Attendance]) -> list[AttendanceNameChange]:

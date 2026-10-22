@@ -5,9 +5,9 @@ from database.speaker import Speaker
 from schemas.constituency_names import ConstituencyNames
 from services.attendance import (
     build_constituency_lookups,
+    build_sitting_attendances_from_list,
+    build_sitting_attendances_from_markdown,
     build_speaker_lookups,
-    get_sitting_attendance,
-    get_sitting_attendance_from_list,
 )
 from utils.speaker_resolution import resolve_canonical_name
 
@@ -16,7 +16,7 @@ _CONSTITUENCY_LOOKUPS = build_constituency_lookups(ConstituencyNames(names=[], r
 
 def _get_rows(markdown: str, sitting_date: str = "1-1-1970") -> list[tuple[str, bool, str | None]]:
     sitting = Sitting(id=1, sitting_date=sitting_date, volume_no=29, markdown_content=markdown)
-    records = get_sitting_attendance(sitting, build_speaker_lookups([]), _CONSTITUENCY_LOOKUPS)
+    records = build_sitting_attendances_from_markdown(sitting, build_speaker_lookups([]), _CONSTITUENCY_LOOKUPS)
     return [(record.speaker_name, record.is_present, record.location_name) for record in records]
 
 
@@ -96,7 +96,7 @@ def test_a_name_that_holds_markup_is_never_a_name() -> None:
     ])
     sitting = Sitting(id=1, sitting_date="1-1-2013", volume_no=89, attendance_list=attendance_list)
 
-    records = get_sitting_attendance_from_list(sitting, build_speaker_lookups([]), _CONSTITUENCY_LOOKUPS)
+    records = build_sitting_attendances_from_list(sitting, build_speaker_lookups([]), _CONSTITUENCY_LOOKUPS)
 
     assert [record.speaker_name for record in records] == ["Lim Cher Kheng"]
 
@@ -120,7 +120,7 @@ def test_an_attendance_list_keeps_one_row_per_member_too() -> None:
     ])
     sitting = Sitting(id=1, sitting_date="1-1-2013", volume_no=89, attendance_list=attendance_list)
 
-    records = get_sitting_attendance_from_list(sitting, build_speaker_lookups([]), _CONSTITUENCY_LOOKUPS)
+    records = build_sitting_attendances_from_list(sitting, build_speaker_lookups([]), _CONSTITUENCY_LOOKUPS)
 
     assert [(record.speaker_name, record.is_present) for record in records] == [("Lim Cher Kheng", True)]
 

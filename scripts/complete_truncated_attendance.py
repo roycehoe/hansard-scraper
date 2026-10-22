@@ -16,8 +16,8 @@ from exceptions import HansardWriteCheckError
 from logs import logger
 from services.attendance import (
     build_constituency_lookups,
+    build_sitting_attendances_from_markdown,
     build_speaker_lookups,
-    get_sitting_attendance,
 )
 from utils.data_files import get_constituency_names
 from utils.names import normalize_name, strip_title
@@ -106,7 +106,7 @@ def build_completions(session: Session, sitting_ids: list[int]) -> list[SittingC
             parlement_no=date_row.parlement_no,
             volume_no=date_row.volume_no,
         )
-        parsed_rows = get_sitting_attendance(sitting, lookups, constituency_lookups)
+        parsed_rows = build_sitting_attendances_from_markdown(sitting, lookups, constituency_lookups)
         if len(parsed_rows) != expected.parsed_row_count:
             raise HansardWriteCheckError(f"sitting {sitting_id}: parse gives {len(parsed_rows)} rows, expected {expected.parsed_row_count}")
         for parsed_row in parsed_rows:

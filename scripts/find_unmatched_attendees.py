@@ -11,8 +11,8 @@ from database.sitting import Sitting
 from logs import logger
 from services.attendance import (
     build_constituency_lookups,
+    build_sitting_attendances_from_markdown,
     build_speaker_lookups,
-    get_sitting_attendance,
 )
 from utils.data_files import get_constituency_names
 from utils.parliament_numbers import infer_parliament
@@ -93,7 +93,7 @@ def find_unmatched(is_verbose: bool = False) -> dict[str, Counter]:
         parliament = infer_parliament(sitting.parlement_no, sitting.volume_no)
         if parliament is None:
             continue
-        for attendance_record in get_sitting_attendance(sitting, lookups, constituency_lookups):
+        for attendance_record in build_sitting_attendances_from_markdown(sitting, lookups, constituency_lookups):
             if not attendance_record.speaker_name:
                 continue
             if _is_resolved(attendance_record.speaker_name, parliament, lookups):
