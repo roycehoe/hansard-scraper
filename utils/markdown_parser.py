@@ -8,8 +8,11 @@ from enums import ReportVersion
 from utils.text import fix_mojibake
 
 _MAX_ADJOURNMENT_CONTINUATIONS = 6
-_BOLD_MARKER_LENGTH = 2
+_BOLD_MARKER = "**"
+_BOLD_MARKER_LENGTH = len(_BOLD_MARKER)
 _EMPHASIS_MARK = "_"
+_EMPHASIS_MARKER_LENGTH = len(_EMPHASIS_MARK)
+_EMPTY_ITALIC_LINE = "__"
 _OPENING_BRACKET = "["
 _HYPHEN = "-"
 _CLOSING_BRACKET = "]"
@@ -293,9 +296,9 @@ def _get_page_break_separator(before: str, after: str) -> str:
 
 
 def _join_across_emphasis_pair(before: str, after: str) -> str:
-    left = before[:-1]
+    left = before[:-_EMPHASIS_MARKER_LENGTH]
     separator = "" if left[-1:].isspace() or left.endswith(_HYPHEN) else " "
-    return left + separator + after[1:].lstrip()
+    return left + separator + after[_EMPHASIS_MARKER_LENGTH:].lstrip()
 
 
 def _join_paragraphs_across_page_breaks(markdown: str) -> str:
@@ -405,11 +408,11 @@ def _merge_consecutive_bold_only_lines(markdown: str) -> str:
             pending_bold_lines.append(line.strip()[_BOLD_MARKER_LENGTH:-_BOLD_MARKER_LENGTH])
             continue
         if pending_bold_lines:
-            lines.append(f"**{' '.join(pending_bold_lines)}**")
+            lines.append(f"{_BOLD_MARKER}{' '.join(pending_bold_lines)}{_BOLD_MARKER}")
             pending_bold_lines = []
         lines.append(line)
     if pending_bold_lines:
-        lines.append(f"**{' '.join(pending_bold_lines)}**")
+        lines.append(f"{_BOLD_MARKER}{' '.join(pending_bold_lines)}{_BOLD_MARKER}")
 
     return "\n".join(lines)
 
@@ -423,7 +426,7 @@ def _join_emphasised_lines(before: str, after: str) -> str:
     before = before.rstrip()
     after = after.lstrip()
     if before.endswith(_EMPHASIS_MARK) and after.startswith(_EMPHASIS_MARK):
-        return before[:-1] + " " + after[1:]
+        return before[:-_EMPHASIS_MARKER_LENGTH] + " " + after[_EMPHASIS_MARKER_LENGTH:]
     return before + " " + after
 
 
@@ -519,12 +522,12 @@ def _fix_sitting_concat_headers(html: str) -> str:
 
 def _remove_sitting_orphan_bold_markers(markdown: str) -> str:
     # NOTE: runs after _fix_sitting_split_bold, so a standalone ** left over is an orphaned marker.
-    return "\n".join(line for line in markdown.splitlines() if line.strip() != "**")
+    return "\n".join(line for line in markdown.splitlines() if line.strip() != _BOLD_MARKER)
 
 
 def _remove_sitting_empty_italic(markdown: str) -> str:
     # NOTE: empty italic tags in vol 38-70 render as __ between the date and meeting-time lines.
-    return "\n".join(line for line in markdown.splitlines() if line.strip() != "__")
+    return "\n".join(line for line in markdown.splitlines() if line.strip() != _EMPTY_ITALIC_LINE)
 
 
 def _fix_sitting_split_bold(markdown: str) -> str:
@@ -534,19 +537,19 @@ def _fix_sitting_split_bold(markdown: str) -> str:
     while line_index < len(lines):
         stripped = lines[line_index].strip()
 
-        if (stripped.startswith("**")
-                and not stripped.endswith("**")
+        if (stripped.startswith(_BOLD_MARKER)
+                and not stripped.endswith(_BOLD_MARKER)
                 and len(stripped) > _BOLD_MARKER_LENGTH
                 and line_index + 1 < len(lines)
-                and lines[line_index + 1].strip() == "**"):
-            fixed_lines.append(stripped + "**")
+                and lines[line_index + 1].strip() == _BOLD_MARKER):
+            fixed_lines.append(stripped + _BOLD_MARKER)
             line_index += 2
 
-        elif (stripped == "**"
+        elif (stripped == _BOLD_MARKER
               and line_index + 2 < len(lines)
               and lines[line_index + 1].strip()
-              and lines[line_index + 2].strip() == "**"):
-            fixed_lines.append(f"**{lines[line_index + 1].strip()}**")
+              and lines[line_index + 2].strip() == _BOLD_MARKER):
+            fixed_lines.append(f"{_BOLD_MARKER}{lines[line_index + 1].strip()}{_BOLD_MARKER}")
             line_index += 3
 
         else:
@@ -564,7 +567,7 @@ def _remove_sitting_table_separators(markdown: str) -> str:
 
 
 def _remove_sitting_orphan_italic_markers(markdown: str) -> str:
-    return "\n".join(line for line in markdown.splitlines() if line.strip() != "_")
+    return "\n".join(line for line in markdown.splitlines() if line.strip() != _EMPHASIS_MARK)
 
 
 def _remove_sitting_empty_bold(markdown: str) -> str:
