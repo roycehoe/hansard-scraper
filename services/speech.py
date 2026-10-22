@@ -1189,9 +1189,9 @@ def _split_speech_at_chamber_events(speech: ParsedSpeech) -> list[ParsedSpeech]:
 
 def _split_chamber_events(speeches: list[ParsedSpeech]) -> list[ParsedSpeech]:
     return [
-        row
+        split_speech
         for speech in speeches
-        for row in ([speech] if speech.speaker is None else _split_speech_at_chamber_events(speech))
+        for split_speech in ([speech] if speech.speaker is None else _split_speech_at_chamber_events(speech))
     ]
 
 

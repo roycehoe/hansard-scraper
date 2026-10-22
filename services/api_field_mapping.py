@@ -97,11 +97,11 @@ def _get_orm_field_to_value(orm_object: object) -> dict[str, object]:
 
 
 def get_search_result_field_losses(hansard_search_result: HansardSearchResult, hansard_website_response: HansardWebsiteResponse) -> list[str]:
-    raw = hansard_search_result.model_dump(by_alias=True)
+    raw_key_to_value = hansard_search_result.model_dump(by_alias=True)
     orm_field_to_value = _get_orm_field_to_value(hansard_website_response)
     orm_failures = []
     for raw_key, orm_field in _SEARCH_KEY_TO_ORM_FIELD.items():
-        raw_value = raw.get(raw_key)
+        raw_value = raw_key_to_value.get(raw_key)
         if raw_value is None or raw_value == "":
             continue
         orm_value = orm_field_to_value.get(orm_field)
@@ -130,11 +130,11 @@ def get_sitting_date_field_losses(
     hansard_report_response: Union[HansardReportOldResponse, HansardReportNewResponse],
     hansard_sitting_date_response: HansardSittingDateResponse,
 ) -> list[str]:
-    raw = hansard_report_response.model_dump(by_alias=True)
+    raw_key_to_value = hansard_report_response.model_dump(by_alias=True)
     orm_field_to_value = _get_orm_field_to_value(hansard_sitting_date_response)
     failures = []
     if isinstance(hansard_report_response, HansardReportNewResponse):
-        metadata = {} if raw["metadata"] is None else raw["metadata"]
+        metadata = {} if raw_key_to_value["metadata"] is None else raw_key_to_value["metadata"]
         for metadata_key, orm_field in _NEW_FORMAT_METADATA_KEY_TO_ORM_FIELD.items():
             value = metadata.get(metadata_key)
             if value is None or value == "":
@@ -142,14 +142,14 @@ def get_sitting_date_field_losses(
             if orm_field_to_value.get(orm_field) is None:
                 failures.append(f"  FAIL  metadata[{metadata_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None")
         for raw_key, orm_field in _NEW_FORMAT_KEY_TO_ORM_FIELD.items():
-            value = raw.get(raw_key)
+            value = raw_key_to_value.get(raw_key)
             if value is None or value == "":
                 continue
             if orm_field_to_value.get(orm_field) is None:
                 failures.append(f"  FAIL  raw[{raw_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None")
         return failures
     for raw_key, orm_field in _OLD_FORMAT_KEY_TO_ORM_FIELD.items():
-        value = raw.get(raw_key)
+        value = raw_key_to_value.get(raw_key)
         if value is None or value == "" or value == []:
             continue
         if orm_field_to_value.get(orm_field) is None:

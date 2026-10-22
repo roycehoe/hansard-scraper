@@ -430,7 +430,7 @@ def build_constituency_lookups(constituency_names: ConstituencyNames) -> Constit
         },
         printed_to_constituency={name.printed: name.constituency for name in constituency_names.names if name.parliament_number is None},
         sitting_speaker_printed_to_constituency={
-            (row.sitting_date, row.speaker_name, row.printed): row.constituency for row in constituency_names.rows
+            (row_name.sitting_date, row_name.speaker_name, row_name.printed): row_name.constituency for row_name in constituency_names.rows
         },
     )
 
@@ -453,25 +453,25 @@ def get_constituency_name(
     return lookups.printed_to_constituency.get(printed, printed)
 
 
-def get_location_changes(rows: list[AttendanceLocationRow], lookups: ConstituencyLookups) -> list[LocationChange]:
+def get_location_changes(attendance_location_rows: list[AttendanceLocationRow], lookups: ConstituencyLookups) -> list[LocationChange]:
     location_changes = []
-    for row in rows:
+    for attendance_location_row in attendance_location_rows:
         location_name_after = get_constituency_name(
-            row.location_name, infer_parliament(row.parlement_no, row.volume_no), row.sitting_date, row.speaker_name, lookups
+            attendance_location_row.location_name, infer_parliament(attendance_location_row.parlement_no, attendance_location_row.volume_no), attendance_location_row.sitting_date, attendance_location_row.speaker_name, lookups
         )
-        if location_name_after == row.location_name:
+        if location_name_after == attendance_location_row.location_name:
             continue
-        location_changes.append(LocationChange(row.id, row.speaker_name, row.sitting_date, row.location_name, location_name_after))
+        location_changes.append(LocationChange(attendance_location_row.id, attendance_location_row.speaker_name, attendance_location_row.sitting_date, attendance_location_row.location_name, location_name_after))
     return location_changes
 
 
-def _drop_repeated_attendees(records: list[Attendance]) -> list[Attendance]:
-    speaker_name_to_record: dict[Optional[str], Attendance] = {}
-    for record in records:
-        kept_record = speaker_name_to_record.get(record.speaker_name)
-        if kept_record is None or (record.is_present and not kept_record.is_present):
-            speaker_name_to_record[record.speaker_name] = record
-    return list(speaker_name_to_record.values())
+def _drop_repeated_attendees(attendances: list[Attendance]) -> list[Attendance]:
+    speaker_name_to_attendance: dict[Optional[str], Attendance] = {}
+    for attendance in attendances:
+        kept_attendance = speaker_name_to_attendance.get(attendance.speaker_name)
+        if kept_attendance is None or (attendance.is_present and not kept_attendance.is_present):
+            speaker_name_to_attendance[attendance.speaker_name] = attendance
+    return list(speaker_name_to_attendance.values())
 
 
 def build_sitting_attendances_from_markdown(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
@@ -480,7 +480,7 @@ def build_sitting_attendances_from_markdown(sitting: Sitting, lookups: SpeakerLo
 
     parliament_number = infer_parliament(sitting.parlement_no, sitting.volume_no)
     content = sitting.markdown_content
-    records = []
+    attendances = []
 
     for section, is_present in [("PRESENT", True), ("ABSENT", False)]:
         for line in extract_section_lines(content, section):
@@ -493,14 +493,14 @@ def build_sitting_attendances_from_markdown(sitting: Sitting, lookups: SpeakerLo
                 name = normalize_name(parsed.name)
                 canonical_name = None if parliament_number is None else resolve_canonical_name(name, parliament_number, lookups)
                 speaker_name = canonical_name or name
-                records.append(Attendance(
+                attendances.append(Attendance(
                     sitting_id=sitting.id,
                     speaker_name=speaker_name,
                     is_present=is_present,
                     location_name=get_constituency_name(parsed.constituency, parliament_number, sitting.sitting_date, speaker_name, constituency_lookups),
                 ))
 
-    return _drop_repeated_attendees(records)
+    return _drop_repeated_attendees(attendances)
 
 
 def build_sitting_attendances_from_list(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
@@ -508,7 +508,7 @@ def build_sitting_attendances_from_list(sitting: Sitting, lookups: SpeakerLookup
         return []
 
     parliament_number = infer_parliament(sitting.parlement_no, sitting.volume_no)
-    records = []
+    attendances = []
 
     for raw_entry in json.loads(sitting.attendance_list):
         entry = HansardReportAttendanceEntry.model_validate(raw_entry)
@@ -524,14 +524,14 @@ def build_sitting_attendances_from_list(sitting: Sitting, lookups: SpeakerLookup
         name = normalize_name(parsed.name)
         canonical_name = None if parliament_number is None else resolve_canonical_name(name, parliament_number, lookups)
         speaker_name = canonical_name or name
-        records.append(Attendance(
+        attendances.append(Attendance(
             sitting_id=sitting.id,
             speaker_name=speaker_name,
             is_present=entry.attendance,
             location_name=get_constituency_name(parsed.constituency, parliament_number, sitting.sitting_date, speaker_name, constituency_lookups),
         ))
 
-    return _drop_repeated_attendees(records)
+    return _drop_repeated_attendees(attendances)
 
 
 def build_sitting_attendances(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:

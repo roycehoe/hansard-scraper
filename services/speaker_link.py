@@ -383,30 +383,30 @@ def get_carried_role_names(speech_rows: list[SpeechRow]) -> dict[int, str]:
     return speech_id_to_name
 
 
-def _clean_speaker_label(raw: str) -> str:
-    raw = raw.replace(BYTE_ORDER_MARK, "").strip()
-    raw = _LABELS_MISSING_OPENING_BRACKET.get(raw, raw)
-    raw = _LEADING_LIST_NUMBER_RE.sub("", raw)
-    raw = _LEADING_DOT_RE.sub("", raw)
-    raw = _ASSOC_PROF_RE.sub("Assoc. Prof.", raw)
-    raw = _RANK_QUALIFIER_RE.sub(" ", raw)
-    raw = _TRAILING_MR_SPEAKER_RE.sub("", raw)
-    raw = _LEADING_QUOTE_RE.sub("", raw)
-    raw = _PRESIDING_BRACKET_RE.sub("", raw)
-    raw = _TRAILING_DASH_RE.sub("", raw)
-    raw = _TRAILING_NAME_DOT_RE.sub("", raw)
-    if _UPPERCASE_TITLE_RE.match(raw) is not None and raw.isupper():
-        raw = raw.title()
-    raw = _WHITESPACE_RE.sub(" ", raw).rstrip(_LABEL_TRAILING_CHARACTERS).strip()
-    if raw.count(OPENING_PARENTHESIS) > raw.count(CLOSING_PARENTHESIS):
-        cut = raw.rfind(OPENING_PARENTHESIS)
-        inner = raw[cut + 1 :].strip()
-        raw = f"{raw[:cut]}({inner})" if _TITLED_RE.match(inner) else raw[:cut].strip()
-    inverted = _INVERTED_NAME_RE.match(raw)
+def _clean_speaker_label(speaker_label: str) -> str:
+    speaker_label = speaker_label.replace(BYTE_ORDER_MARK, "").strip()
+    speaker_label = _LABELS_MISSING_OPENING_BRACKET.get(speaker_label, speaker_label)
+    speaker_label = _LEADING_LIST_NUMBER_RE.sub("", speaker_label)
+    speaker_label = _LEADING_DOT_RE.sub("", speaker_label)
+    speaker_label = _ASSOC_PROF_RE.sub("Assoc. Prof.", speaker_label)
+    speaker_label = _RANK_QUALIFIER_RE.sub(" ", speaker_label)
+    speaker_label = _TRAILING_MR_SPEAKER_RE.sub("", speaker_label)
+    speaker_label = _LEADING_QUOTE_RE.sub("", speaker_label)
+    speaker_label = _PRESIDING_BRACKET_RE.sub("", speaker_label)
+    speaker_label = _TRAILING_DASH_RE.sub("", speaker_label)
+    speaker_label = _TRAILING_NAME_DOT_RE.sub("", speaker_label)
+    if _UPPERCASE_TITLE_RE.match(speaker_label) is not None and speaker_label.isupper():
+        speaker_label = speaker_label.title()
+    speaker_label = _WHITESPACE_RE.sub(" ", speaker_label).rstrip(_LABEL_TRAILING_CHARACTERS).strip()
+    if speaker_label.count(OPENING_PARENTHESIS) > speaker_label.count(CLOSING_PARENTHESIS):
+        cut = speaker_label.rfind(OPENING_PARENTHESIS)
+        inner = speaker_label[cut + 1 :].strip()
+        speaker_label = f"{speaker_label[:cut]}({inner})" if _TITLED_RE.match(inner) else speaker_label[:cut].strip()
+    inverted = _INVERTED_NAME_RE.match(speaker_label)
     if inverted is not None:
-        raw = f"{inverted.group(2)} {inverted.group(1)}"
-    doubled = _DOUBLED_LABEL_RE.match(raw)
-    return doubled.group(1) if doubled is not None else raw
+        speaker_label = f"{inverted.group(2)} {inverted.group(1)}"
+    doubled = _DOUBLED_LABEL_RE.match(speaker_label)
+    return doubled.group(1) if doubled is not None else speaker_label
 
 
 def _is_title_in_parentheses(match: re.Match) -> bool:
@@ -462,23 +462,23 @@ def _get_presiding_officer_id(
 
 
 def _resolve_presiding_officer(
-    raw: str,
+    speaker_label: str,
     parliament_number: int,
     sitting_date: Optional[datetime],
     lookups: SpeakerLookups,
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
-    if raw in _SPEAKER_LABELS:
+    if speaker_label in _SPEAKER_LABELS:
         holder = _get_holder_on(SPEAKER_TERMS, sitting_date)
-        is_woman_label = raw == _WOMAN_SPEAKER_LABEL
+        is_woman_label = speaker_label == _WOMAN_SPEAKER_LABEL
         if is_woman_label != (holder in SPEAKER_WOMEN):
             return None
         return _get_presiding_officer_id(holder, parliament_number, lookups, name_parliament_number_to_speaker_id)
-    if raw.startswith(_DEPUTY_SPEAKER_LABELS):
-        named_match = _PARENTHESIS_RE.search(raw)
+    if speaker_label.startswith(_DEPUTY_SPEAKER_LABELS):
+        named_match = _PARENTHESIS_RE.search(speaker_label)
         terms = (
             [term for term in DEPUTY_SPEAKER_TERMS if term[2] in DEPUTY_SPEAKER_WOMEN]
-            if raw.startswith(_WOMAN_TITLE_PREFIX)
+            if speaker_label.startswith(_WOMAN_TITLE_PREFIX)
             else DEPUTY_SPEAKER_TERMS
         )
         name = (
@@ -504,12 +504,12 @@ def _resolve_attendance_speaker_id(
     return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
 
 
-def _get_role_key(raw: str, parliament_number: int) -> Optional[tuple[str, int]]:
+def _get_role_key(speaker_label: str, parliament_number: int) -> Optional[tuple[str, int]]:
     if parliament_number != 0:
-        return (raw, parliament_number)
+        return (speaker_label, parliament_number)
     for fallback_parliament_number in COLONIAL_PARLIAMENT_FALLBACKS:
-        if (raw, fallback_parliament_number) in ROLE_ONLY_SPEAKERS:
-            return (raw, fallback_parliament_number)
+        if (speaker_label, fallback_parliament_number) in ROLE_ONLY_SPEAKERS:
+            return (speaker_label, fallback_parliament_number)
     return None
 
 
@@ -523,40 +523,40 @@ def resolve_speech_speaker_id(
     if speaker in NON_SPEAKERS or speaker.startswith(OPENING_PARENTHESIS) or speaker.startswith(EMPHASIS_MARK):
         return None
 
-    raw = _clean_speaker_label(speaker.rstrip(LABEL_COLON).strip())
+    speaker_label = _clean_speaker_label(speaker.rstrip(LABEL_COLON).strip())
 
-    if raw in _SPEAKER_LABELS or raw.startswith(_DEPUTY_SPEAKER_LABELS):
+    if speaker_label in _SPEAKER_LABELS or speaker_label.startswith(_DEPUTY_SPEAKER_LABELS):
         return _resolve_presiding_officer(
-            raw, parliament_number, sitting_date, lookups, name_parliament_number_to_speaker_id
+            speaker_label, parliament_number, sitting_date, lookups, name_parliament_number_to_speaker_id
         )
 
-    if raw in DATED_ROLE_TERMS:
-        holder = _get_holder_on(DATED_ROLE_TERMS[raw], sitting_date)
+    if speaker_label in DATED_ROLE_TERMS:
+        holder = _get_holder_on(DATED_ROLE_TERMS[speaker_label], sitting_date)
         if holder is None:
             return None
         resolved_name = _resolve_with_parliament_fallback(holder, parliament_number, lookups, name_parliament_number_to_speaker_id)
         return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
 
-    role_key = _get_role_key(raw, parliament_number)
+    role_key = _get_role_key(speaker_label, parliament_number)
     if role_key is not None and role_key in ROLE_ONLY_SPEAKERS:
         role_name = ROLE_ONLY_SPEAKERS[role_key]
         _, role_key_parliament_number = role_key
         resolved_role_name = _resolve_with_parliament_fallback(role_name, role_key_parliament_number, lookups, name_parliament_number_to_speaker_id)
         return name_parliament_number_to_speaker_id.get((resolved_role_name.canonical_name, resolved_role_name.parliament_number)) if resolved_role_name.canonical_name else None
 
-    parenthesised_matches = list(_PARENTHESIS_RE.finditer(raw))
+    parenthesised_matches = list(_PARENTHESIS_RE.finditer(speaker_label))
     if parenthesised_matches:
         title_match = next(
             (match for match in reversed(parenthesised_matches) if _is_title_in_parentheses(match)),
             None,
         )
         if title_match is not None:
-            raw = title_match.group(1).strip()
+            speaker_label = title_match.group(1).strip()
         else:
-            raw = raw[: parenthesised_matches[0].start()].strip()
-    raw = _GLUED_TITLE_RE.sub(r"\1 \2", raw)
-    raw = _TITLE_DOT_PREFIX_RE.sub(r"\1 ", raw)
-    name = normalize_name(strip_title(raw))
+            speaker_label = speaker_label[: parenthesised_matches[0].start()].strip()
+    speaker_label = _GLUED_TITLE_RE.sub(r"\1 \2", speaker_label)
+    speaker_label = _TITLE_DOT_PREFIX_RE.sub(r"\1 ", speaker_label)
+    name = normalize_name(strip_title(speaker_label))
     if not name:
         return None
 

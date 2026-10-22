@@ -23,24 +23,24 @@ class AttendanceCleanupPlan:
 
 
 def _validate_can_clean_row(attendance_id_to_attendance: dict[int, Attendance], expected: AttendanceRowKey) -> None:
-    row = attendance_id_to_attendance.get(expected.id)
-    if row is None:
+    attendance = attendance_id_to_attendance.get(expected.id)
+    if attendance is None:
         raise HansardWriteCheckError(f"Attendance row {expected.id} is not stored")
-    if row.sitting_id != expected.sitting_id:
-        raise HansardWriteCheckError(f"Attendance row {expected.id}: sitting {row.sitting_id}, expected {expected.sitting_id}")
-    if row.speaker_name != expected.speaker_name:
-        raise HansardWriteCheckError(f"Attendance row {expected.id}: name {row.speaker_name!r}, expected {expected.speaker_name!r}")
-    if row.is_present != expected.is_present:
-        raise HansardWriteCheckError(f"Attendance row {expected.id}: presence {row.is_present}, expected {expected.is_present}")
+    if attendance.sitting_id != expected.sitting_id:
+        raise HansardWriteCheckError(f"Attendance row {expected.id}: sitting {attendance.sitting_id}, expected {expected.sitting_id}")
+    if attendance.speaker_name != expected.speaker_name:
+        raise HansardWriteCheckError(f"Attendance row {expected.id}: name {attendance.speaker_name!r}, expected {expected.speaker_name!r}")
+    if attendance.is_present != expected.is_present:
+        raise HansardWriteCheckError(f"Attendance row {expected.id}: presence {attendance.is_present}, expected {expected.is_present}")
 
 
 def _validate_can_link_row(attendance_id_to_attendance: dict[int, Attendance], expected: AttendanceRowKey, location_name: Optional[str]) -> None:
     _validate_can_clean_row(attendance_id_to_attendance, expected)
-    row = attendance_id_to_attendance[expected.id]
-    if row.location_name != location_name:
-        raise HansardWriteCheckError(f"Attendance row {expected.id}: location {row.location_name!r}, expected {location_name!r}")
-    if row.speaker_id is not None:
-        raise HansardWriteCheckError(f"Attendance row {expected.id}: already linked to speaker {row.speaker_id}")
+    attendance = attendance_id_to_attendance[expected.id]
+    if attendance.location_name != location_name:
+        raise HansardWriteCheckError(f"Attendance row {expected.id}: location {attendance.location_name!r}, expected {location_name!r}")
+    if attendance.speaker_id is not None:
+        raise HansardWriteCheckError(f"Attendance row {expected.id}: already linked to speaker {attendance.speaker_id}")
 
 
 def build_attendance_cleanup_plan(
