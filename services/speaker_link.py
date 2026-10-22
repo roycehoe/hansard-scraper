@@ -270,8 +270,9 @@ def get_deputy_speaker_names(markdown: str, speech_rows: list[SpeechRow]) -> Dep
         if position is None:
             continue
         preceding = [annotation.position for annotation in annotations if annotation.position < position]
-        if preceding and preceding[-1] in position_to_deputy_name and not any(preceding[-1] < event_position < position for event_position in events):
-            speech_id_to_deputy_name[speech_row.id] = position_to_deputy_name[preceding[-1]]
+        deputy_name = position_to_deputy_name.get(preceding[-1]) if preceding else None
+        if deputy_name is not None and not any(preceding[-1] < event_position < position for event_position in events):
+            speech_id_to_deputy_name[speech_row.id] = deputy_name
     mentioned = set(position_to_deputy_name.values()) | labelled
     header = _HEADER_RE.search(markdown)
     for entry in (header.group(1).split(MP_NAME_SEPARATOR) if header is not None else []):
@@ -383,8 +384,9 @@ def get_carried_role_names(speech_rows: list[SpeechRow]) -> dict[int, str]:
             continue
         speaker = speech_row.speaker.rstrip(LABEL_COLON).strip()
         for role in CARRIED_ROLES:
-            if speaker == role and role in role_to_holder:
-                speech_id_to_name[speech_row.id] = role_to_holder[role]
+            holder = role_to_holder.get(role)
+            if speaker == role and holder is not None:
+                speech_id_to_name[speech_row.id] = holder
             elif speaker.startswith(role + _CARRIED_HOLDER_OPENER):
                 role_to_holder[role] = speaker[len(role + _CARRIED_HOLDER_OPENER) :].rstrip(CLOSING_PARENTHESIS).strip()
     return speech_id_to_name
@@ -537,19 +539,21 @@ def resolve_speech_speaker_id(
             speaker_label, parliament_number, sitting_date, lookups, name_parliament_number_to_speaker_id
         )
 
-    if speaker_label in DATED_ROLE_TERMS:
-        holder = _get_holder_on(DATED_ROLE_TERMS[speaker_label], sitting_date)
+    dated_role_terms = DATED_ROLE_TERMS.get(speaker_label)
+    if dated_role_terms is not None:
+        holder = _get_holder_on(dated_role_terms, sitting_date)
         if holder is None:
             return None
         resolved_name = _resolve_with_parliament_fallback(holder, parliament_number, lookups, name_parliament_number_to_speaker_id)
         return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
 
     role_key = _get_role_key(speaker_label, parliament_number)
-    if role_key is not None and role_key in ROLE_ONLY_SPEAKERS:
-        role_name = ROLE_ONLY_SPEAKERS[role_key]
-        _, role_key_parliament_number = role_key
-        resolved_role_name = _resolve_with_parliament_fallback(role_name, role_key_parliament_number, lookups, name_parliament_number_to_speaker_id)
-        return name_parliament_number_to_speaker_id.get((resolved_role_name.canonical_name, resolved_role_name.parliament_number)) if resolved_role_name.canonical_name else None
+    if role_key is not None:
+        role_name = ROLE_ONLY_SPEAKERS.get(role_key)
+        if role_name is not None:
+            _, role_key_parliament_number = role_key
+            resolved_role_name = _resolve_with_parliament_fallback(role_name, role_key_parliament_number, lookups, name_parliament_number_to_speaker_id)
+            return name_parliament_number_to_speaker_id.get((resolved_role_name.canonical_name, resolved_role_name.parliament_number)) if resolved_role_name.canonical_name else None
 
     parenthesised_matches = list(_PARENTHESIS_RE.finditer(speaker_label))
     if parenthesised_matches:
@@ -633,8 +637,11 @@ def get_head_of_state_names(title: str, sitting_date: datetime, speech_rows: lis
         return {}
     speech_id_to_name = {}
     for speech_row in speech_rows:
-        if speech_row.speaker in HEAD_OF_STATE_TERMS:
-            holder = _get_holder_on(HEAD_OF_STATE_TERMS[speech_row.speaker], sitting_date)
+        if speech_row.speaker is None:
+            continue
+        head_of_state_terms = HEAD_OF_STATE_TERMS.get(speech_row.speaker)
+        if head_of_state_terms is not None:
+            holder = _get_holder_on(head_of_state_terms, sitting_date)
             if holder is not None:
                 speech_id_to_name[speech_row.id] = holder
     return speech_id_to_name

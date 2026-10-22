@@ -178,8 +178,9 @@ def _get_deputy_speaker_ids_for_report_ids(
             labelled_ids = get_speaker_ids_for_names(deputy_names.labelled, parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
             speech_id_to_candidate_id = {}
             for speech_row in bare_deputy_rows:
-                if speech_row.id in deputy_names.speech_id_to_deputy_name:
-                    found = get_speaker_ids_for_names([deputy_names.speech_id_to_deputy_name[speech_row.id]], parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
+                deputy_name = deputy_names.speech_id_to_deputy_name.get(speech_row.id)
+                if deputy_name is not None:
+                    found = get_speaker_ids_for_names([deputy_name], parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
                     candidate = next(iter(found)) if found else None
                 else:
                     candidate = next(iter(labelled_ids)) if len(labelled_ids) == 1 else None
@@ -282,9 +283,10 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
                 continue
             speech_id_to_deputy_name = get_sitting_deputy_speaker_names(sitting_text, report.title, speech_rows)
             for speech_row in bare_deputy_rows:
-                if speech_row.id not in speech_id_to_deputy_name:
+                deputy_name = speech_id_to_deputy_name.get(speech_row.id)
+                if deputy_name is None:
                     continue
-                found = get_speaker_ids_for_names([speech_id_to_deputy_name[speech_row.id]], report.parliament_number, lookups, name_parliament_number_to_speaker_id) & male_holder_ids
+                found = get_speaker_ids_for_names([deputy_name], report.parliament_number, lookups, name_parliament_number_to_speaker_id) & male_holder_ids
                 if len(found) == 1:
                     speech_id_to_speaker_id[speech_row.id] = next(iter(found))
     logger.info(f"Sitting-level deputy speaker: {len(speech_id_to_speaker_id)}/{total} bare records resolved")
