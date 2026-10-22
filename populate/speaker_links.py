@@ -17,18 +17,18 @@ from services.speaker_link import (
     CARRIED_ROLES,
     CHAIRMAN_RE,
     SittingText,
-    _get_head_of_state_names,
-    _get_speaker_id_for_name,
-    _get_speaker_ids_for_names,
-    _resolve_speech_speaker_id,
     build_sitting_text_from_markdown,
     build_sitting_text_from_sections,
     carried_role_names,
     chairman_names,
     deputy_speaker_names,
     deputy_speaker_names_in_text,
+    get_head_of_state_names,
+    get_speaker_id_for_name,
+    get_speaker_ids_for_names,
     resolve_attendance_rows,
     resolve_speech_rows,
+    resolve_speech_speaker_id,
     sitting_deputy_speaker_names,
 )
 from utils.sitting_dates import get_sitting_date_key
@@ -63,7 +63,7 @@ def _get_day_speaker_ids(
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> set[int]:
     if key not in text_key_to_speaker_ids:
-        text_key_to_speaker_ids[key] = _get_speaker_ids_for_names(
+        text_key_to_speaker_ids[key] = get_speaker_ids_for_names(
             deputy_speaker_names_in_text(text), parliament, lookups, name_parliament_number_to_speaker_id
         )
     return text_key_to_speaker_ids[key]
@@ -89,14 +89,14 @@ def _get_role_context_speaker_ids_for_report_ids(
             unlinked = {speech_row.id for speech_row in speech_rows if speech_row.speaker_id is None}
             speech_id_to_name = chairman_names(report.markdown_content or "", speech_rows)
             speech_id_to_name.update(carried_role_names(speech_rows))
-            speech_id_to_name.update(_get_head_of_state_names(report.title, report.sitting_date, speech_rows))
+            speech_id_to_name.update(get_head_of_state_names(report.title, report.sitting_date, speech_rows))
             for speech_id, name in speech_id_to_name.items():
                 if speech_id not in unlinked:
                     continue
                 total += 1
                 key = (name, report.parliament_number, report.sitting_date)
                 if key not in key_to_speaker_id:
-                    key_to_speaker_id[key] = _resolve_speech_speaker_id(
+                    key_to_speaker_id[key] = resolve_speech_speaker_id(
                         name, report.parliament_number, report.sitting_date, lookups, name_parliament_number_to_speaker_id
                     )
                 if key_to_speaker_id[key] is not None:
@@ -150,12 +150,12 @@ def _get_deputy_speaker_ids_for_report_ids(
                 continue
             total += len(bare_deputy_rows)
             parliament = report.parliament_number
-            holder_to_speaker_id = {holder: _get_speaker_id_for_name(holder, parliament, lookups, name_parliament_number_to_speaker_id) for holder in holders}
+            holder_to_speaker_id = {holder: get_speaker_id_for_name(holder, parliament, lookups, name_parliament_number_to_speaker_id) for holder in holders}
             if None in holder_to_speaker_id.values():
                 continue
             valid_holder_ids = set(holder_to_speaker_id.values())
             deputy_names = deputy_speaker_names(report.markdown_content or "", speech_rows)
-            named_holder_ids = _get_speaker_ids_for_names(deputy_names.mentioned, parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
+            named_holder_ids = get_speaker_ids_for_names(deputy_names.mentioned, parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
             if len(named_holder_ids) > 1:
                 continue
             male_holders = [holder for holder in holders if holder not in DEPUTY_SPEAKER_WOMEN]
@@ -165,11 +165,11 @@ def _get_deputy_speaker_ids_for_report_ids(
                 continue
             if len(male_holders) != _DEPUTY_SPEAKER_PAIR_SIZE:
                 continue
-            labelled_ids = _get_speaker_ids_for_names(deputy_names.labelled, parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
+            labelled_ids = get_speaker_ids_for_names(deputy_names.labelled, parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
             speech_id_to_candidate_id = {}
             for speech_row in bare_deputy_rows:
                 if speech_row.id in deputy_names.speech_id_to_deputy_name:
-                    found = _get_speaker_ids_for_names([deputy_names.speech_id_to_deputy_name[speech_row.id]], parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
+                    found = get_speaker_ids_for_names([deputy_names.speech_id_to_deputy_name[speech_row.id]], parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
                     candidate = next(iter(found)) if found else None
                 else:
                     candidate = next(iter(labelled_ids)) if len(labelled_ids) == 1 else None
@@ -263,7 +263,7 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
             if not bare_deputy_rows or len(holders) != _DEPUTY_SPEAKER_PAIR_SIZE:
                 continue
             total += len(bare_deputy_rows)
-            holder_to_speaker_id = {holder: _get_speaker_id_for_name(holder, report.parliament_number, lookups, name_parliament_number_to_speaker_id) for holder in holders}
+            holder_to_speaker_id = {holder: get_speaker_id_for_name(holder, report.parliament_number, lookups, name_parliament_number_to_speaker_id) for holder in holders}
             if None in holder_to_speaker_id.values():
                 continue
             male_holder_ids = {speaker_id for holder, speaker_id in holder_to_speaker_id.items() if holder not in DEPUTY_SPEAKER_WOMEN}
@@ -277,7 +277,7 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
             for speech_row in bare_deputy_rows:
                 if speech_row.id not in speech_id_to_deputy_name:
                     continue
-                found = _get_speaker_ids_for_names([speech_id_to_deputy_name[speech_row.id]], report.parliament_number, lookups, name_parliament_number_to_speaker_id) & male_holder_ids
+                found = get_speaker_ids_for_names([speech_id_to_deputy_name[speech_row.id]], report.parliament_number, lookups, name_parliament_number_to_speaker_id) & male_holder_ids
                 if len(found) == 1:
                     speech_id_to_speaker_id[speech_row.id] = next(iter(found))
     logger.info(f"Sitting-level deputy speaker: {len(speech_id_to_speaker_id)}/{total} bare records resolved")

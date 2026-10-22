@@ -5,7 +5,7 @@ import pytest
 
 from database.speaker import Speaker
 from services.attendance import build_speaker_lookups
-from services.speaker_link import _resolve_speech_speaker_id
+from services.speaker_link import resolve_speech_speaker_id
 
 _PARTY = "People's Action Party"
 _SPEAKERS = (
@@ -46,18 +46,18 @@ _NAME_AND_PARLIAMENT_TO_SPEAKER_ID = {(speaker.name, speaker.parliament_number):
     ],
 )
 def test_label_that_names_a_member_links_to_that_member(label: str, parliament: int, expected_speaker_id: Optional[int]) -> None:
-    speaker_id = _resolve_speech_speaker_id(label, parliament, None, _LOOKUPS, _NAME_AND_PARLIAMENT_TO_SPEAKER_ID)
+    speaker_id = resolve_speech_speaker_id(label, parliament, None, _LOOKUPS, _NAME_AND_PARLIAMENT_TO_SPEAKER_ID)
 
     assert speaker_id == expected_speaker_id
 
 
 def test_speaker_label_in_the_15th_parliament_links_to_the_speaker() -> None:
-    speaker_id = _resolve_speech_speaker_id("Mr Speaker", 15, datetime(2026, 10, 6), _LOOKUPS, _NAME_AND_PARLIAMENT_TO_SPEAKER_ID)
+    speaker_id = resolve_speech_speaker_id("Mr Speaker", 15, datetime(2026, 10, 6), _LOOKUPS, _NAME_AND_PARLIAMENT_TO_SPEAKER_ID)
 
     assert speaker_id == _NAME_AND_PARLIAMENT_TO_SPEAKER_ID[("Seah Kian Peng", 15)]
 
 
 def test_speaker_label_in_the_13th_parliament_links_to_the_speaker_of_the_day() -> None:
-    speaker_id = _resolve_speech_speaker_id("Mr Speaker", 13, datetime(2019, 5, 8), _LOOKUPS, _NAME_AND_PARLIAMENT_TO_SPEAKER_ID)
+    speaker_id = resolve_speech_speaker_id("Mr Speaker", 13, datetime(2019, 5, 8), _LOOKUPS, _NAME_AND_PARLIAMENT_TO_SPEAKER_ID)
 
     assert speaker_id == _NAME_AND_PARLIAMENT_TO_SPEAKER_ID[("Tan Chuan-Jin", 13)]

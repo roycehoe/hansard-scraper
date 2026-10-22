@@ -10,16 +10,14 @@ from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from database.init import engine
 from logs import logger
-
-# NOTE: the private names are imported on purpose, so the guard runs the exact resolver and not a copy that can drift.
 from populate.speaker_links import _REPORT_BATCH
 from services.attendance import build_speaker_lookups
 from services.speaker_link import (
-    _DATE_DEPENDENT_ROLES,
     BARE_DEPUTY_RE,
     CARRIED_ROLES,
     CHAIRMAN_RE,
-    _resolve_speech_speaker_id,
+    DATE_DEPENDENT_ROLES,
+    resolve_speech_speaker_id,
 )
 from utils.speaker_resolution_constants import HEAD_OF_STATE_TERMS
 
@@ -61,14 +59,14 @@ def main() -> None:
                 if not row.speaker or row.speaker_id is None:
                     continue
                 parliament_number, sitting_date = report_id_to_parliament_and_date[row.report_id]
-                date_key = sitting_date if row.speaker.startswith(_DATE_DEPENDENT_ROLES) else None
+                date_key = sitting_date if row.speaker.startswith(DATE_DEPENDENT_ROLES) else None
                 key_to_speaker_id_counts.setdefault((row.speaker, parliament_number, date_key), Counter())[row.speaker_id] += 1
 
     total_rows = sum(sum(counter.values()) for counter in key_to_speaker_id_counts.values())
     agree, context, stale = [0, 0], [0, 0], []
     for (speaker, parliament_number, sitting_date), counts in key_to_speaker_id_counts.items():
         key_row_count = sum(counts.values())
-        resolved = _resolve_speech_speaker_id(speaker, parliament_number, sitting_date, lookups, name_and_parliament_to_speaker_id)
+        resolved = resolve_speech_speaker_id(speaker, parliament_number, sitting_date, lookups, name_and_parliament_to_speaker_id)
         if resolved is None and _is_context_linked(speaker):
             context[0] += 1
             context[1] += key_row_count

@@ -57,7 +57,7 @@ CARRIED_ROLES = ("The Chief Secretary",)
 _SPEAKER_LABELS = ("Mr Speaker", "Mdm Speaker")
 
 # NOTE: only these roles resolve by sitting date; every other string is memoised on (string, parliament).
-_DATE_DEPENDENT_ROLES = (
+DATE_DEPENDENT_ROLES = (
     "The Chief Minister",
     "The Prime Minister",
     *_SPEAKER_LABELS,
@@ -499,7 +499,7 @@ def _get_role_key(raw: str, parliament: int) -> Optional[tuple[str, int]]:
     return None
 
 
-def _resolve_speech_speaker_id(
+def resolve_speech_speaker_id(
     speaker: str,
     parliament: int,
     sitting_date: Optional[datetime],
@@ -600,10 +600,10 @@ def resolve_speech_rows(
         total += 1
         if not speech_row.speaker:
             continue
-        date_key = speech_row.sitting_date if speech_row.speaker.startswith(_DATE_DEPENDENT_ROLES) else None
+        date_key = speech_row.sitting_date if speech_row.speaker.startswith(DATE_DEPENDENT_ROLES) else None
         key = (speech_row.speaker, speech_row.parliament_number, date_key)
         if key not in key_to_speaker_id:
-            key_to_speaker_id[key] = _resolve_speech_speaker_id(
+            key_to_speaker_id[key] = resolve_speech_speaker_id(
                 speech_row.speaker, speech_row.parliament_number, speech_row.sitting_date, lookups, name_parliament_number_to_speaker_id
             )
         if key_to_speaker_id[key] is not None:
@@ -612,7 +612,7 @@ def resolve_speech_rows(
 
 
 # NOTE: a bare head-of-state string is the holder only in the Address itself; the same strings in addenda and adjournment reports are parser errors and stay unlinked.
-def _get_head_of_state_names(title: str, sitting_date: datetime, speech_rows: list[SpeechRow]) -> dict[int, str]:
+def get_head_of_state_names(title: str, sitting_date: datetime, speech_rows: list[SpeechRow]) -> dict[int, str]:
     if not title.upper().startswith(_ADDRESS_TITLES):
         return {}
     speech_id_to_name = {}
@@ -624,7 +624,7 @@ def _get_head_of_state_names(title: str, sitting_date: datetime, speech_rows: li
     return speech_id_to_name
 
 
-def _get_speaker_id_for_name(
+def get_speaker_id_for_name(
     name: str,
     parliament: int,
     lookups: SpeakerLookups,
@@ -636,11 +636,11 @@ def _get_speaker_id_for_name(
     return name_parliament_number_to_speaker_id.get((canonical, resolved_parliament)) if canonical else None
 
 
-def _get_speaker_ids_for_names(
+def get_speaker_ids_for_names(
     names: Iterable[str],
     parliament: int,
     lookups: SpeakerLookups,
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> set[int]:
-    found = (_get_speaker_id_for_name(name, parliament, lookups, name_parliament_number_to_speaker_id) for name in names)
+    found = (get_speaker_id_for_name(name, parliament, lookups, name_parliament_number_to_speaker_id) for name in names)
     return {speaker_id for speaker_id in found if speaker_id is not None}
