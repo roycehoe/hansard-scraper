@@ -21,10 +21,7 @@ from gateway.http import (
     paced_request,
     send_with_retry,
 )
-from gateway.speakers_by_parliament import (
-    get_all_speakers,
-    get_speakers_by_parliament_number,
-)
+from gateway.speakers_by_parliament import get_parliament_member_list_response
 from settings import AppSettings, settings
 
 _REQUEST_SECONDS = 0.25
@@ -41,7 +38,6 @@ _REPORT_ID = "x"
 _SITTING_DATE = "8-4-2025"
 _SYNC_GATEWAY_REQUEST_COUNT = 3
 _SPEAKER_REQUEST_COUNT = 2
-_SPEAKER_PARLIAMENT_NUMBER = 15
 _MEMBER_LIST_PAGE_FILE = Path(__file__).parent / "fixtures" / "parliament_member_list_page.html"
 _FAILED_SEND_COUNT = 2
 _ASYNC_ATTEMPT_COUNT = 2
@@ -213,8 +209,8 @@ def test_speaker_requests_send_the_user_agent_and_are_paced(fake_clock: _FakeClo
 
     monkeypatch.setattr(requests, "get", fake_get)
 
-    get_all_speakers()
-    get_speakers_by_parliament_number(_SPEAKER_PARLIAMENT_NUMBER)
+    for _ in range(_SPEAKER_REQUEST_COUNT):
+        get_parliament_member_list_response()
 
     assert len(recorded_requests) == _SPEAKER_REQUEST_COUNT
     assert all(recorded_request.user_agent == CRAWL_USER_AGENT for recorded_request in recorded_requests)

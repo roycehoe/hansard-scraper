@@ -5,18 +5,15 @@ import requests
 
 from exceptions import HansardGatewayError
 from gateway.http import CRAWL_PACER, CRAWL_USER_AGENT
-from gateway.speakers_by_parliament import (
-    get_all_speakers,
-    get_speakers_by_parliament_number,
-)
+from gateway.speakers_by_parliament import get_parliament_member_list_response
 from schemas.speaker import SpeakerResult
+from services.speaker import build_speaker_results
 from settings import settings
 
 _FIXTURE_FILE = Path(__file__).parent / "fixtures" / "parliament_member_list_page.html"
 _FIFTEENTH_PARLIAMENT = 15
 _FOURTEENTH_PARLIAMENT = 14
 _FIRST_PARLIAMENT = 1
-_UNKNOWN_PARLIAMENT = 99
 _FIFTEENTH_PARLIAMENT_MEMBER_COUNT = 108
 _FOURTEENTH_PARLIAMENT_MEMBER_COUNT = 112
 _FOURTEENTH_PARLIAMENT_COMMENT_COUNT = 9
@@ -60,10 +57,20 @@ def _get_speaker_result(speaker_results: list[SpeakerResult], name: str) -> Spea
     return next(speaker_result for speaker_result in speaker_results if speaker_result.name == name)
 
 
+def _get_all_speaker_results() -> list[SpeakerResult]:
+    return build_speaker_results(get_parliament_member_list_response())
+
+
+def _get_parliament_speaker_results(parliament_number: int) -> list[SpeakerResult]:
+    return [
+        speaker_result for speaker_result in _get_all_speaker_results() if speaker_result.parliament_number == parliament_number
+    ]
+
+
 def test_fifteenth_parliament_list(monkeypatch: pytest.MonkeyPatch, no_op_pacer: None) -> None:
     _serve_page(monkeypatch, _FIXTURE_FILE.read_text())
 
-    speaker_results = get_speakers_by_parliament_number(_FIFTEENTH_PARLIAMENT)
+    speaker_results = _get_parliament_speaker_results(_FIFTEENTH_PARLIAMENT)
 
     assert len(speaker_results) == _FIFTEENTH_PARLIAMENT_MEMBER_COUNT
     assert all(speaker_result.parliament_number == _FIFTEENTH_PARLIAMENT for speaker_result in speaker_results)
@@ -79,7 +86,7 @@ def test_fifteenth_parliament_list(monkeypatch: pytest.MonkeyPatch, no_op_pacer:
 def test_fourteenth_parliament_list(monkeypatch: pytest.MonkeyPatch, no_op_pacer: None) -> None:
     _serve_page(monkeypatch, _FIXTURE_FILE.read_text())
 
-    speaker_results = get_speakers_by_parliament_number(_FOURTEENTH_PARLIAMENT)
+    speaker_results = _get_parliament_speaker_results(_FOURTEENTH_PARLIAMENT)
 
     assert len(speaker_results) == _FOURTEENTH_PARLIAMENT_MEMBER_COUNT
     assert len({speaker_result.name for speaker_result in speaker_results}) == _FOURTEENTH_PARLIAMENT_MEMBER_COUNT
@@ -95,7 +102,7 @@ def test_fourteenth_parliament_list(monkeypatch: pytest.MonkeyPatch, no_op_pacer
 def test_bracket_after_the_name_becomes_the_comment(monkeypatch: pytest.MonkeyPatch, no_op_pacer: None) -> None:
     _serve_page(monkeypatch, _FIXTURE_FILE.read_text())
 
-    speaker_results = get_speakers_by_parliament_number(_FOURTEENTH_PARLIAMENT)
+    speaker_results = _get_parliament_speaker_results(_FOURTEENTH_PARLIAMENT)
 
     tharman = _get_speaker_result(speaker_results, "Tharman Shanmugaratnam")
     assert tharman.comments == "Resigned on 7 July 2023, 14th Parliament"
@@ -111,7 +118,7 @@ def test_bracket_after_the_name_becomes_the_comment(monkeypatch: pytest.MonkeyPa
 def test_whitespace_around_the_name_and_party_is_trimmed(monkeypatch: pytest.MonkeyPatch, no_op_pacer: None) -> None:
     _serve_page(monkeypatch, _FIXTURE_FILE.read_text())
 
-    speaker_results = get_all_speakers()
+    speaker_results = _get_all_speaker_results()
 
     assert _get_speaker_result(speaker_results, "Derrick Goh").party == "People's Action Party"
     assert _get_speaker_result(speaker_results, "Audrey Wong Wai Yen").party == "Nominated Member of Parliament"
@@ -120,7 +127,7 @@ def test_whitespace_around_the_name_and_party_is_trimmed(monkeypatch: pytest.Mon
 def test_assembly_flag_two_marks_an_assembly_member(monkeypatch: pytest.MonkeyPatch, no_op_pacer: None) -> None:
     _serve_page(monkeypatch, _FIXTURE_FILE.read_text())
 
-    speaker_results = get_speakers_by_parliament_number(_FIRST_PARLIAMENT)
+    speaker_results = _get_parliament_speaker_results(_FIRST_PARLIAMENT)
 
     assert _get_speaker_result(speaker_results, "Lee Kuan Yew").is_legislative_assembly is True
 
@@ -128,7 +135,7 @@ def test_assembly_flag_two_marks_an_assembly_member(monkeypatch: pytest.MonkeyPa
 def test_all_speakers_come_in_parliament_order(monkeypatch: pytest.MonkeyPatch, no_op_pacer: None) -> None:
     _serve_page(monkeypatch, _FIXTURE_FILE.read_text())
 
-    parliament_numbers = [speaker_result.parliament_number for speaker_result in get_all_speakers()]
+    parliament_numbers = [speaker_result.parliament_number for speaker_result in _get_all_speaker_results()]
 
     assert parliament_numbers == sorted(parliament_numbers)
     assert parliament_numbers.count(_FIFTEENTH_PARLIAMENT) == _FIFTEENTH_PARLIAMENT_MEMBER_COUNT
@@ -138,18 +145,11 @@ def test_page_without_member_data_raises(monkeypatch: pytest.MonkeyPatch, no_op_
     _serve_page(monkeypatch, _PAGE_WITHOUT_MEMBER_DATA)
 
     with pytest.raises(HansardGatewayError):
-        get_all_speakers()
+        get_parliament_member_list_response()
 
 
 def test_member_list_shorter_than_its_count_raises(monkeypatch: pytest.MonkeyPatch, no_op_pacer: None) -> None:
     _serve_page(monkeypatch, _FIXTURE_FILE.read_text().replace(_FIXTURE_MEMBER_COUNT_TEXT, _INFLATED_MEMBER_COUNT_TEXT))
 
     with pytest.raises(HansardGatewayError):
-        get_all_speakers()
-
-
-def test_unknown_parliament_raises(monkeypatch: pytest.MonkeyPatch, no_op_pacer: None) -> None:
-    _serve_page(monkeypatch, _FIXTURE_FILE.read_text())
-
-    with pytest.raises(HansardGatewayError):
-        get_speakers_by_parliament_number(_UNKNOWN_PARLIAMENT)
+        get_parliament_member_list_response()

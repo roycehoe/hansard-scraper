@@ -1,9 +1,9 @@
 from sqlmodel import Session
 
 from crud.speaker import CRUDSpeaker
-from gateway.speakers_by_parliament import get_all_speakers
+from gateway.speakers_by_parliament import get_parliament_member_list_response
 from logs import logger
-from services.speaker import build_speaker
+from services.speaker import build_speaker, build_speaker_results
 from utils.data_files import get_speaker_overrides
 
 
@@ -21,7 +21,7 @@ def load_name_parliament_to_party() -> dict[tuple[str, int], str]:
 
 
 def populate_speakers(session: Session) -> None:
-    speakers = get_all_speakers()
+    speakers = build_speaker_results(get_parliament_member_list_response())
     name_parliament_to_is_legislative_assembly = load_name_parliament_to_is_legislative_assembly()
     name_parliament_to_party = load_name_parliament_to_party()
     for i, speaker_result in enumerate(speakers, start=1):

@@ -4,20 +4,27 @@ from sqlmodel import Session
 
 from crud.speaker import CRUDSpeaker
 from database.init import engine
-from gateway.speakers_by_parliament import get_speakers_by_parliament_number
+from exceptions import HansardGatewayError
+from gateway.speakers_by_parliament import get_parliament_member_list_response
 from logs import logger
 from populate.speakers import (
     load_name_parliament_to_is_legislative_assembly,
     load_name_parliament_to_party,
 )
-from services.speaker import build_speaker
+from services.speaker import build_speaker, build_speaker_results
 from settings import settings
 from utils.write_target import validate_can_write
 
 
 def load_parliament_speakers(session: Session, parliament_number: int, is_commit: bool) -> None:
     stored_keys = {(speaker.name, speaker.parliament_number) for speaker in CRUDSpeaker(session).get_all()}
-    speaker_results = get_speakers_by_parliament_number(parliament_number)
+    speaker_results = [
+        speaker_result
+        for speaker_result in build_speaker_results(get_parliament_member_list_response())
+        if speaker_result.parliament_number == parliament_number
+    ]
+    if not speaker_results:
+        raise HansardGatewayError(f"No member list for parliament {parliament_number}")
     name_parliament_to_is_legislative_assembly = load_name_parliament_to_is_legislative_assembly()
     name_parliament_to_party = load_name_parliament_to_party()
     new_speakers = [

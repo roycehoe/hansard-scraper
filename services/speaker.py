@@ -1,8 +1,12 @@
+import re
 from dataclasses import dataclass
+from operator import attrgetter
 
 from database.speaker import Speaker
-from exceptions import HansardWriteCheckError
+from enums import LegislativeAssemblyFlag
+from exceptions import HansardGatewayError, HansardWriteCheckError
 from schemas.head_of_state import HeadOfStateResult
+from schemas.parliament_member_list_response import ParliamentMemberListResponse
 from schemas.speaker import SpeakerResult
 from schemas.speaker_override import PartyOverride
 from utils.speaker_resolution_constants import COLONIAL_PARLIAMENT_NUMBER
@@ -10,6 +14,8 @@ from utils.speaker_resolution_constants import COLONIAL_PARLIAMENT_NUMBER
 _CURLY_APOSTROPHE = "\u2019"
 _STRAIGHT_APOSTROPHE = "'"
 _LOADED_PARLIAMENT_NUMBER = 1
+_PARLIAMENT_TITLE_RE = re.compile(r"(\d+)(?:st|nd|rd|th) Parliament")
+_NAME_WITH_COMMENT_RE = re.compile(r"^(.*?)\s*\((.+)\)\s*$")
 
 
 @dataclass(frozen=True)
@@ -31,6 +37,44 @@ class ParliamentChange:
 
 def normalise_party(party: str) -> str:
     return party.replace(_CURLY_APOSTROPHE, _STRAIGHT_APOSTROPHE)
+
+
+def _get_parliament_number(parliament_title: str) -> int:
+    match = _PARLIAMENT_TITLE_RE.fullmatch(parliament_title)
+    if match is None:
+        raise HansardGatewayError(f"Member list names an unreadable Parliament {parliament_title!r}")
+    return int(match.group(1))
+
+
+def build_speaker_results(parliament_member_list_response: ParliamentMemberListResponse) -> list[SpeakerResult]:
+    session_id_to_parliament_number = {
+        session_id: _get_parliament_number(parliament.title)
+        for parliament in parliament_member_list_response.options
+        for session_id in parliament.parliament_sessions
+    }
+    speaker_results = []
+    for member in parliament_member_list_response.mps.data:
+        full_name = member.full_name.strip()
+        match = _NAME_WITH_COMMENT_RE.match(full_name)
+        name = full_name if match is None else match.group(1).strip()
+        comments = None if match is None else match.group(2).strip()
+        try:
+            parliament_numbers = {
+                session_id_to_parliament_number[session.parliament_sessions_id] for session in member.parliament_session
+            }
+        except KeyError as error:
+            raise HansardGatewayError(f"Member list gives {full_name!r} a session of no listed Parliament") from error
+        speaker_results.extend(
+            SpeakerResult(
+                name=name,
+                party=member.party_affliation.strip(),
+                is_legislative_assembly=member.legislative_assembly == LegislativeAssemblyFlag.YES,
+                parliament_number=parliament_number,
+                comments=comments,
+            )
+            for parliament_number in parliament_numbers
+        )
+    return sorted(speaker_results, key=attrgetter("parliament_number"))
 
 
 def build_speaker(
