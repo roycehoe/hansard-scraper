@@ -6,7 +6,6 @@ from schemas.hansard_report_response import (
 )
 from services.refresh import (
     RECHECK_WINDOW_DAYS,
-    MonthWindow,
     build_changed_report_message,
     build_failure_message,
     build_field_mapping_reason,
@@ -18,7 +17,6 @@ from services.refresh import (
     build_unlinked_reason,
     get_content_hash,
     get_dates_between,
-    get_month_windows,
     get_probe_start_date,
     get_recheck_start_date,
     get_singapore_today,
@@ -30,6 +28,7 @@ from services.refresh import (
     is_published_sitting_response,
     is_unlinked_share_over_limit,
 )
+from utils.sitting_dates import MonthWindow, get_month_windows
 
 _TODAY = date(2025, 4, 20)
 _RECENT_STORED_DAYS_AGO = 10

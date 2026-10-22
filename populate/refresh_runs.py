@@ -71,7 +71,6 @@ from services.hansard_website import (
     get_topic_id,
 )
 from services.refresh import (
-    MonthWindow,
     build_changed_report_message,
     build_failure_message,
     build_field_mapping_reason,
@@ -83,7 +82,6 @@ from services.refresh import (
     build_unlinked_reason,
     get_content_hash,
     get_dates_between,
-    get_month_windows,
     get_probe_start_date,
     get_recheck_start_date,
     get_singapore_today,
@@ -103,7 +101,7 @@ from utils.data_files import (
     get_excluded_report_ids,
     get_unattributed_speech_ranges,
 )
-from utils.sitting_dates import parse_sitting_date
+from utils.sitting_dates import MonthWindow, get_month_windows, parse_sitting_date
 
 _STALE_RUN_HOURS = 12
 _MAX_FAILURE_REASON_LENGTH = 1_000

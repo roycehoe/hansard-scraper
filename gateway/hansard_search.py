@@ -1,6 +1,4 @@
-import calendar
 import time
-from collections.abc import Iterator
 from datetime import date
 from functools import partial
 from typing import Optional
@@ -12,13 +10,13 @@ from gateway.http import CRAWL_HEADERS, send_with_retry
 from logs import logger
 from schemas.hansard_search_result import HansardSearchResult
 from settings import settings
+from utils.sitting_dates import get_month_windows
 
 _MAX_RETRIES = 3
 _BASE_DELAY = 1.0
 _MAX_PASSES = 25
 _HTTP_BAD_REQUEST = 400
 _HTTP_INTERNAL_SERVER_ERROR = 500
-_DECEMBER = 12
 _REQUEST_TIMEOUT_SECONDS = 60
 
 
@@ -89,16 +87,6 @@ def _get_page_with_retries(start_index: int, from_date: date, to_date: date) -> 
             time.sleep(_BASE_DELAY * (2 ** attempt))
 
 
-def _get_months(first: date, last: date) -> Iterator[tuple[date, date]]:
-    year, month = first.year, first.month
-    while (year, month) <= (last.year, last.month):
-        yield (
-            max(first, date(year, month, 1)),
-            min(last, date(year, month, calendar.monthrange(year, month)[1])),
-        )
-        year, month = (year + 1, 1) if month == _DECEMBER else (year, month + 1)
-
-
 def get_window_hansard_search_results(from_date: date, to_date: date) -> list[HansardSearchResult]:
     # NOTE: hits with equal sort keys come back in a different order on each request, so one pass can repeat
     # some hits and skip others. Pages are re-requested until the distinct report ids reach the engine total.
@@ -124,9 +112,9 @@ def get_window_hansard_search_results(from_date: date, to_date: date) -> list[Ha
 
 def get_all_hansard_search_results(from_date: date, to_date: date) -> list[HansardSearchResult]:
     all_hansard_search_results = []
-    for window_from_date, window_to_date in _get_months(from_date, to_date):
-        window_hansard_search_results = get_window_hansard_search_results(window_from_date, window_to_date)
+    for month_window in get_month_windows(from_date, to_date):
+        window_hansard_search_results = get_window_hansard_search_results(month_window.first_date, month_window.last_date)
         all_hansard_search_results.extend(window_hansard_search_results)
-        logger.info(f"Fetched {window_from_date:%Y-%m}: {len(window_hansard_search_results)} distinct hits")
+        logger.info(f"Fetched {month_window.first_date:%Y-%m}: {len(window_hansard_search_results)} distinct hits")
     logger.info(f"Search done: {len(all_hansard_search_results)} distinct hits")
     return all_hansard_search_results
