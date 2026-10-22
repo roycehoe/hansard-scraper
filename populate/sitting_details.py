@@ -96,15 +96,14 @@ def populate_sitting_details(session: Session) -> None:
 
         rebuilt = build_sitting(raw)
         _fill_null_fields(sitting, rebuilt.model_dump(exclude={"id"} | _SITTING_NESTED_COLUMNS), sitting_date)
-        column_to_value = {
-            "sections": response.takes_section_vo_list,
-            "annexures": response.annexure_list,
-            "vernaculars": response.vernacular_list,
-            "a2b": response.a2b_list,
-        }
-        for column, value in column_to_value.items():
-            if getattr(sitting, column) is None:
-                setattr(sitting, column, get_json_column(value))
+        if sitting.sections is None:
+            sitting.sections = get_json_column(response.takes_section_vo_list)
+        if sitting.annexures is None:
+            sitting.annexures = get_json_column(response.annexure_list)
+        if sitting.vernaculars is None:
+            sitting.vernaculars = get_json_column(response.vernacular_list)
+        if sitting.a2b is None:
+            sitting.a2b = get_json_column(response.a2b_list)
         CRUDSitting(session).update(sitting)
         filled += 1
     session.commit()

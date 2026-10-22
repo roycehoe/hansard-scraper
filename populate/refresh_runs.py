@@ -107,23 +107,6 @@ _STALE_RUN_HOURS = 12
 _MAX_FAILURE_REASON_LENGTH = 1_000
 _HTTP_TIMEOUT_SECONDS = 60
 _AFTER_DATA_COMMIT = "After the data commit: "
-_RUN_RESULT_COLUMNS = (
-    "website_responses_added",
-    "sitting_date_responses_added",
-    "sittings_added",
-    "reports_added",
-    "speeches_added",
-    "speeches_linked",
-    "speeches_named_unlinked",
-    "attendances_added",
-    "attendances_linked",
-    "reports_held_without_text",
-    "reports_without_speech_rows",
-    "reports_rechecked",
-    "reports_changed",
-    "latest_sitting_date_with_text",
-    "figures",
-)
 
 
 @dataclass(frozen=True)
@@ -569,8 +552,21 @@ def _finish_refresh_run(
         raise HansardRefreshRunError(f"Run {refresh_run_id} is not stored")
     if stored_run.status != RefreshRunStatus.RUNNING:
         raise HansardRefreshRunError(f"Run {refresh_run_id} is already {stored_run.status}")
-    for column in _RUN_RESULT_COLUMNS:
-        setattr(stored_run, column, getattr(run_result, column))
+    stored_run.website_responses_added = run_result.website_responses_added
+    stored_run.sitting_date_responses_added = run_result.sitting_date_responses_added
+    stored_run.sittings_added = run_result.sittings_added
+    stored_run.reports_added = run_result.reports_added
+    stored_run.speeches_added = run_result.speeches_added
+    stored_run.speeches_linked = run_result.speeches_linked
+    stored_run.speeches_named_unlinked = run_result.speeches_named_unlinked
+    stored_run.attendances_added = run_result.attendances_added
+    stored_run.attendances_linked = run_result.attendances_linked
+    stored_run.reports_held_without_text = run_result.reports_held_without_text
+    stored_run.reports_without_speech_rows = run_result.reports_without_speech_rows
+    stored_run.reports_rechecked = run_result.reports_rechecked
+    stored_run.reports_changed = run_result.reports_changed
+    stored_run.latest_sitting_date_with_text = run_result.latest_sitting_date_with_text
+    stored_run.figures = run_result.figures
     stored_run.status = status
     stored_run.finished_at = datetime.now(timezone.utc)
     stored_run.halt_reason = halt_reason
