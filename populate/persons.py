@@ -40,8 +40,11 @@ def populate_persons(session: Session) -> None:
         existing_person_ids = sorted({speaker.person_id for speaker in person_cluster.memberships if speaker.person_id is not None})
         if len(existing_person_ids) > 1:
             logger.warning(f"Person: cluster {person_cluster.canonical_name!r} spans persons {existing_person_ids}; keeping {existing_person_ids[0]}")
-        person_id = existing_person_ids[0] if existing_person_ids else CRUDPerson(session).create(Person(canonical_name=person_cluster.canonical_name, basis=person_cluster.basis))
-        created += not existing_person_ids
+        if existing_person_ids:
+            person_id = existing_person_ids[0]
+        else:
+            person_id = CRUDPerson(session).create(Person(canonical_name=person_cluster.canonical_name, basis=person_cluster.basis))
+            created += 1
         person = person_id_to_person.get(person_id)
         if person is not None and person.canonical_name != person_cluster.canonical_name:
             logger.info(f"Person {person_id}: {person.canonical_name!r} -> {person_cluster.canonical_name!r}")
