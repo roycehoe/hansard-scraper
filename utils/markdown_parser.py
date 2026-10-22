@@ -517,7 +517,7 @@ def get_cleaned_report_markdown(html: str, report_version: str) -> str:
     return repair_source_characters(_unescape_text_characters(markdown))
 
 
-def _fix_sitting_concat_headers(html: str) -> str:
+def _fix_sitting_concatenated_headers(html: str) -> str:
     # NOTE: modern (vol 79+) HTML stores "PARTIOF SECOND SESSION" and "VOLUME79" without spaces.
     html = re.sub(_CONCATENATED_PART_PATTERN, r"PART \1 OF", html)
     return re.sub(_CONCATENATED_VOLUME_PATTERN, r"VOLUME \1", html)
@@ -610,7 +610,7 @@ def _merge_sitting_adjournment_lines(markdown: str) -> str:
 
 def get_cleaned_sitting_markdown(html: str) -> str:
     converter = _SourceCharacterConverter()
-    preprocessed = _fix_sitting_concat_headers(_preprocess_html(html))
+    preprocessed = _fix_sitting_concatenated_headers(_preprocess_html(html))
     markdown = _postprocess_markdown_base(converter.handle(preprocessed))
     markdown = _fix_sitting_split_bold(markdown)
     markdown = _remove_sitting_orphan_bold_markers(markdown)
