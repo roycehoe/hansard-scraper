@@ -94,7 +94,7 @@ _LABELS_MISSING_OPENING_BRACKET = {
 }
 
 
-def _preclean(raw: str) -> str:
+def _clean_speaker_label(raw: str) -> str:
     raw = raw.replace("\ufeff", "").strip()
     raw = _LABELS_MISSING_OPENING_BRACKET.get(raw, raw)
     raw = _LEADING_LIST_NUMBER_RE.sub("", raw)
@@ -229,7 +229,7 @@ def _resolve_speech_speaker_id(
     if speaker in NON_SPEAKERS or speaker.startswith("(") or speaker.startswith("_"):
         return None
 
-    raw = _preclean(speaker.rstrip(":").strip())
+    raw = _clean_speaker_label(speaker.rstrip(":").strip())
 
     if raw in _SPEAKER_LABELS or raw.startswith(_DEPUTY_SPEAKER_LABELS):
         return _resolve_presiding_officer(
