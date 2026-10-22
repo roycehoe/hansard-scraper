@@ -330,7 +330,7 @@ def _get_wordset_key(name: str) -> tuple[frozenset, int]:
     return frozenset(words), len(words)
 
 
-@dataclass
+@dataclass(frozen=True)
 class SpeakerLookups:
     inverted: dict[tuple[str, int], str]
     direct: dict[tuple[str, int], str]

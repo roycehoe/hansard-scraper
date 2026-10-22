@@ -16,7 +16,7 @@ _CLOSING_BRACKET = ")"
 _SITTING_DATE_FORMAT = "%d-%m-%Y"
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReportHeader:
     title: str
     subtitle: Optional[str] = None

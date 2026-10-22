@@ -16,7 +16,7 @@ Key = tuple[str, int]
 _TRAILING_DECORATION_RE = re.compile(r"\s+(?:BPM|BBM)$")
 
 
-@dataclass
+@dataclass(frozen=True)
 class Decision:
     members: list[Key]
     decision: str

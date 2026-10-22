@@ -29,7 +29,7 @@ class ReportTypeFigures:
     category_to_character_count: Counter[str] = field(default_factory=Counter)
 
 
-@dataclass
+@dataclass(frozen=True)
 class GroupFigures:
     group: str
     report_count: int

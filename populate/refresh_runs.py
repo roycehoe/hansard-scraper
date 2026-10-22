@@ -139,7 +139,7 @@ class FetchedTopic:
     html_content: Optional[str]
 
 
-@dataclass
+@dataclass(frozen=True)
 class StoredRefreshState:
     stored_sitting_dates: set[date]
     stored_report_ids: set[str]
