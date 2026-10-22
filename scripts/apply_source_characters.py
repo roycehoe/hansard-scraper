@@ -41,13 +41,13 @@ def _get_source_character_plan(session: Session) -> SourceCharacterPlan:
     label_rows = CRUDSpeech(session).get_label_rows_by_speaker_regex(REPAIRABLE_TEXT_PATTERN)
     report_rows = CRUDReport(session).get_markdown_rows_by_markdown_content_regex(REPAIRABLE_TEXT_PATTERN)
     sitting_rows = CRUDSitting(session).get_markdown_rows_by_markdown_content_regex(REPAIRABLE_TEXT_PATTERN)
-    transcript_changes = _get_text_changes([TextChange(row.id, row.transcript, _repair_speech_text(row.transcript)) for row in speech_rows])
+    transcript_changes = _get_text_changes([TextChange(speech_row.id, speech_row.transcript, _repair_speech_text(speech_row.transcript)) for speech_row in speech_rows])
     # NOTE: the parser drops a speech row with nothing left, which an update cannot do, so such a row stays as stored until the next parse write.
     return SourceCharacterPlan(
         [text_change for text_change in transcript_changes if text_change.after],
-        _get_text_changes([TextChange(row.id, row.speaker, _repair_speech_text(row.speaker)) for row in label_rows]),
-        _get_text_changes([TextChange(row.id, row.markdown_content, repair_source_characters(row.markdown_content)) for row in report_rows]),
-        _get_text_changes([TextChange(row.id, row.markdown_content, repair_source_characters(row.markdown_content)) for row in sitting_rows]),
+        _get_text_changes([TextChange(label_row.id, label_row.speaker, _repair_speech_text(label_row.speaker)) for label_row in label_rows]),
+        _get_text_changes([TextChange(report_row.id, report_row.markdown_content, repair_source_characters(report_row.markdown_content)) for report_row in report_rows]),
+        _get_text_changes([TextChange(sitting_row.id, sitting_row.markdown_content, repair_source_characters(sitting_row.markdown_content)) for sitting_row in sitting_rows]),
         [text_change.id for text_change in transcript_changes if not text_change.after],
     )
 

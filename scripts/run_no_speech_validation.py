@@ -56,15 +56,15 @@ def run() -> None:
         if not get_speeches(report.markdown_content, start_line, report.report_type, report.report_version):
             report_type_to_no_speech_items[report.report_type].append((report, start_line))
 
-    total_no_speech = sum(len(items) for items in report_type_to_no_speech_items.values())
+    total_no_speech = sum(len(no_speech_items) for no_speech_items in report_type_to_no_speech_items.values())
     logger.info(f"With start line:       {total_with_start}")
     logger.info(f"No-speech docs:        {total_no_speech}")
     logger.info(f"No start line:         {len(no_start_line)}")
     logger.info("")
 
     logger.info("Breakdown by report_type:")
-    for report_type, items in sorted(report_type_to_no_speech_items.items(), key=lambda entry: -len(entry[1])):
-        logger.info(f"  {report_type:<30} {len(items)}")
+    for report_type, no_speech_items in sorted(report_type_to_no_speech_items.items(), key=lambda entry: -len(entry[1])):
+        logger.info(f"  {report_type:<30} {len(no_speech_items)}")
     logger.info("")
 
     logger.info("=" * _SEPARATOR_WIDTH)
@@ -74,9 +74,9 @@ def run() -> None:
     total_checked = 0
     suspicious = []
 
-    for report_type, items in sorted(report_type_to_no_speech_items.items(), key=lambda entry: -len(entry[1])):
-        sample = random.sample(items, min(_SAMPLE_SIZE_PER_REPORT_TYPE, len(items)))
-        logger.info(f"\n--- {report_type} ({len(items)} total, checking {len(sample)}) ---")
+    for report_type, no_speech_items in sorted(report_type_to_no_speech_items.items(), key=lambda entry: -len(entry[1])):
+        sample = random.sample(no_speech_items, min(_SAMPLE_SIZE_PER_REPORT_TYPE, len(no_speech_items)))
+        logger.info(f"\n--- {report_type} ({len(no_speech_items)} total, checking {len(sample)}) ---")
 
         for report, start_line in sample:
             total_checked += 1

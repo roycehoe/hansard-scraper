@@ -16,15 +16,15 @@ def load_colonial_la_speakers() -> None:
     records = [record for data_file in _DATA_FILES for record in json.loads(data_file.read_text())]
 
     with Session(engine) as session:
-        existing = {(speaker.name, speaker.parliament_number) for speaker in CRUDSpeaker(session).get_all()}
+        stored_keys = {(speaker.name, speaker.parliament_number) for speaker in CRUDSpeaker(session).get_all()}
 
         inserted = 0
         for record in records:
-            key = (record["name"], record["parliament_number"])
-            if key in existing:
+            speaker_key = (record["name"], record["parliament_number"])
+            if speaker_key in stored_keys:
                 continue
             CRUDSpeaker(session).create(Speaker(**record))
-            existing.add(key)
+            stored_keys.add(speaker_key)
             inserted += 1
 
         logger.info(f"Inserted {inserted} hand-typed speakers ({len(records) - inserted} already existed)")

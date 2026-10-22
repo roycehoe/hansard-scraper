@@ -153,9 +153,9 @@ def run() -> None:
     logger.info("MULTI-SPEAKER DOCS — stratified sample")
     logger.info(_SEPARATOR)
 
-    for report_type, items in sorted(multi_speaker.items(), key=lambda item: -len(item[1])):
-        sample = random.sample(items, min(_SAMPLE_SIZE_PER_REPORT_TYPE, len(items)))
-        logger.info(f"\n--- {report_type} ({len(items)} total, checking {len(sample)}) ---")
+    for report_type, reports_of_type in sorted(multi_speaker.items(), key=lambda item: -len(item[1])):
+        sample = random.sample(reports_of_type, min(_SAMPLE_SIZE_PER_REPORT_TYPE, len(reports_of_type)))
+        logger.info(f"\n--- {report_type} ({len(reports_of_type)} total, checking {len(sample)}) ---")
 
         for report, start_line, speakers in sample:
             flags = _show_doc(report, start_line, speakers)

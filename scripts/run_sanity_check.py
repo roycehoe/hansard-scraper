@@ -86,12 +86,12 @@ def run() -> None:
         stored_reports = CRUDReport(session).get_by_ids(report_ids)
         report_id_strings = {stored_report.report_id for stored_report in stored_reports}
 
-        website_responses = CRUDHansardWebsiteResponse(session).get_by_report_ids(report_id_strings)
-    report_id_to_website_response = {website_response.report_id: website_response for website_response in website_responses}
+        hansard_website_responses = CRUDHansardWebsiteResponse(session).get_by_report_ids(report_id_strings)
+    report_id_to_hansard_website_response = {hansard_website_response.report_id: hansard_website_response for hansard_website_response in hansard_website_responses}
 
     logger.info(f"Sample Report IDs:       {len(report_ids)}")
     logger.info(f"Stored Reports found:    {len(stored_reports)}")
-    logger.info(f"Matching HWRs found:     {len(website_responses)}")
+    logger.info(f"Matching HWRs found:     {len(hansard_website_responses)}")
     logger.info("")
 
     issues: list[Union[_MissingHansardWebsiteResponse, _FailedReport]] = []
@@ -100,22 +100,22 @@ def run() -> None:
     logger.info(f"{'report_id':<14} {'type':<22} {'md':>2} {'sl':>2} {'sp':>4} {'v':>2}  checks")
     logger.info("-" * _SEPARATOR_WIDTH)
 
-    for stored in sorted(stored_reports, key=lambda stored_report: stored_report.report_type):
-        website_response = report_id_to_website_response.get(stored.report_id)
+    for stored_report in sorted(stored_reports, key=lambda stored_report: stored_report.report_type):
+        hansard_website_response = report_id_to_hansard_website_response.get(stored_report.report_id)
         stats.total += 1
 
-        if website_response is None:
+        if hansard_website_response is None:
             stats.no_hansard_website_response += 1
-            issues.append(_MissingHansardWebsiteResponse(stored.report_id, stored.report_type))
-            logger.info(f"{stored.report_id:<14} {stored.report_type:<22} {'?':>2} {'?':>2} {'?':>4} {'?':>2}  NO HansardWebsiteResponse found")
+            issues.append(_MissingHansardWebsiteResponse(stored_report.report_id, stored_report.report_type))
+            logger.info(f"{stored_report.report_id:<14} {stored_report.report_type:<22} {'?':>2} {'?':>2} {'?':>4} {'?':>2}  NO HansardWebsiteResponse found")
             continue
 
-        if website_response.content is None:
+        if hansard_website_response.content is None:
             stats.no_content += 1
-            logger.info(f"{stored.report_id:<14} {stored.report_type:<22} {'-':>2} {'-':>2} {'-':>4} {'-':>2}  no content (expected for some types)")
+            logger.info(f"{stored_report.report_id:<14} {stored_report.report_type:<22} {'-':>2} {'-':>2} {'-':>4} {'-':>2}  no content (expected for some types)")
             continue
 
-        regenerated_report = build_report(website_response)
+        regenerated_report = build_report(hansard_website_response)
 
         checks = []
 
@@ -124,13 +124,13 @@ def run() -> None:
             checks.append(_Check.NO_MARKDOWN.value)
         markdown_flag = "Y" if regenerated_report.markdown_content else "N"
 
-        if regenerated_report.title != stored.title:
+        if regenerated_report.title != stored_report.title:
             stats.title_mismatch += 1
-            checks.append(f"{_Check.TITLE_MISMATCH}(stored={stored.title!r} regen={regenerated_report.title!r})")
+            checks.append(f"{_Check.TITLE_MISMATCH}(stored={stored_report.title!r} regen={regenerated_report.title!r})")
 
-        if regenerated_report.subtitle != stored.subtitle:
+        if regenerated_report.subtitle != stored_report.subtitle:
             stats.subtitle_mismatch += 1
-            checks.append(f"{_Check.SUBTITLE_MISMATCH}(stored={stored.subtitle!r} regen={regenerated_report.subtitle!r})")
+            checks.append(f"{_Check.SUBTITLE_MISMATCH}(stored={stored_report.subtitle!r} regen={regenerated_report.subtitle!r})")
 
         start_line = _get_start_line(regenerated_report)
         if start_line is None and regenerated_report.markdown_content:
@@ -162,16 +162,16 @@ def run() -> None:
 
         start_line_flag = "Y" if start_line is not None else "N"
         checks_text = "  ".join(checks)
-        logger.info(f"{stored.report_id:<14} {stored.report_type:<22} {markdown_flag:>2} {start_line_flag:>2} {speech_count:>4} {valid_flag:>2}  {checks_text}")
+        logger.info(f"{stored_report.report_id:<14} {stored_report.report_type:<22} {markdown_flag:>2} {start_line_flag:>2} {speech_count:>4} {valid_flag:>2}  {checks_text}")
 
         if is_failed:
             issues.append(_FailedReport(
-                stored.report_id,
-                stored.report_type,
+                stored_report.report_id,
+                stored_report.report_type,
                 checks,
-                stored.title,
+                stored_report.title,
                 regenerated_report.title,
-                stored.subtitle,
+                stored_report.subtitle,
                 regenerated_report.subtitle,
                 start_line,
                 len(speeches),

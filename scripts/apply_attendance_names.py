@@ -48,14 +48,14 @@ def _get_planned_changes(session: Session) -> list[AttendanceNameChange]:
     speakers = CRUDSpeaker(session).get_all()
     lookups = build_speaker_lookups(speakers)
     constituency_lookups = build_constituency_lookups(get_constituency_names())
-    sitting_id_to_rows: dict[int, list[Attendance]] = defaultdict(list)
-    for row in CRUDAttendance(session).get_all():
-        sitting_id_to_rows[row.sitting_id].append(row)
+    sitting_id_to_attendances: dict[int, list[Attendance]] = defaultdict(list)
+    for attendance in CRUDAttendance(session).get_all():
+        sitting_id_to_attendances[attendance.sitting_id].append(attendance)
     name_changes = []
     speaker_rows = []
     for sitting in CRUDSitting(session).get_all():
         sitting_name_changes = get_attendance_name_changes(
-            sitting.id, sitting_id_to_rows[sitting.id], build_sitting_attendances(sitting, lookups, constituency_lookups)
+            sitting.id, sitting_id_to_attendances[sitting.id], build_sitting_attendances(sitting, lookups, constituency_lookups)
         )
         name_changes.extend(sitting_name_changes)
         speaker_rows.extend(
@@ -75,12 +75,12 @@ def _get_planned_row(name_change: AttendanceNameChange, speaker_name: Optional[s
 
 def _validate_rows(session: Session, planned_rows: list[Attendance]) -> None:
     id_to_planned_row = {planned_row.id: planned_row for planned_row in planned_rows}
-    rows = CRUDAttendance(session).get_by_ids_for_update(list(id_to_planned_row))
-    if len(rows) != len(planned_rows):
-        raise HansardWriteCheckError(f"{len(rows)} of {len(planned_rows)} planned attendance rows are stored")
-    for row in rows:
-        if row.model_dump() != id_to_planned_row[row.id].model_dump():
-            raise HansardWriteCheckError(f"Attendance row {row.id} holds {row.model_dump()}, planned {id_to_planned_row[row.id].model_dump()}")
+    attendances = CRUDAttendance(session).get_by_ids_for_update(list(id_to_planned_row))
+    if len(attendances) != len(planned_rows):
+        raise HansardWriteCheckError(f"{len(attendances)} of {len(planned_rows)} planned attendance rows are stored")
+    for attendance in attendances:
+        if attendance.model_dump() != id_to_planned_row[attendance.id].model_dump():
+            raise HansardWriteCheckError(f"Attendance row {attendance.id} holds {attendance.model_dump()}, planned {id_to_planned_row[attendance.id].model_dump()}")
 
 
 def _get_row_count(session: Session) -> int:

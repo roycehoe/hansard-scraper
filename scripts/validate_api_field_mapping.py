@@ -98,12 +98,12 @@ SYNTHETIC_NEW_FORMAT = {
 
 def is_search_and_topic_mapped() -> bool:
     logger.info("API 1 — searchResult  →  HansardSearchResult  →  HansardWebsiteResponse")
-    search_results = get_hansard_search_results(_FIRST_PAGE_START_INDEX, _FIRST_PAGE_END_INDEX)
-    if not search_results:
+    hansard_search_results = get_hansard_search_results(_FIRST_PAGE_START_INDEX, _FIRST_PAGE_END_INDEX)
+    if not hansard_search_results:
         logger.info("  WARN  No search results returned (check settings.search_from_date).")
         return True
 
-    hansard_search_result = search_results[0]
+    hansard_search_result = hansard_search_results[0]
     logger.info(f"  INFO  report_id={hansard_search_result.report_id}  title={hansard_search_result.title[:_VALUE_PREVIEW_LENGTH]}")
     hansard_website_response = build_hansard_website_response(hansard_search_result, content=None)
     orm_failures = get_search_result_field_losses(hansard_search_result, hansard_website_response)
@@ -121,12 +121,12 @@ def is_search_and_topic_mapped() -> bool:
 def is_topic_mapped(report_id: str) -> bool:
     logger.info("API 2 — getHansardTopic  →  htmlContent  →  HansardWebsiteResponse.content")
     logger.info(f"  INFO  report_id={report_id!r}")
-    search_results = get_hansard_search_results(_FIRST_PAGE_START_INDEX, _FIRST_PAGE_END_INDEX)
-    if not search_results:
+    hansard_search_results = get_hansard_search_results(_FIRST_PAGE_START_INDEX, _FIRST_PAGE_END_INDEX)
+    if not hansard_search_results:
         logger.info("  WARN  No search results; skipping.")
         return True
 
-    hansard_search_result = next((search_result for search_result in search_results if search_result.report_id == report_id), search_results[0])
+    hansard_search_result = next((search_result for search_result in hansard_search_results if search_result.report_id == report_id), hansard_search_results[0])
     hansard_topic_response = get_hansard_topic_response(report_id)
     html_content = hansard_topic_response.html_content
 

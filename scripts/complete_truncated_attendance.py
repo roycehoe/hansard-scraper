@@ -70,7 +70,7 @@ def build_completions(session: Session, sitting_ids: list[int]) -> list[SittingC
     name_parliament_number_to_speaker_id = {
         (speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None
     }
-    date_rows = {date_row.id: date_row for date_row in CRUDSitting(session).get_date_rows()}
+    sitting_id_to_date_row = {date_row.id: date_row for date_row in CRUDSitting(session).get_date_rows()}
     sitting_id_to_row_count = {count.sitting_id: count.row_count for count in CRUDAttendance(session).get_sitting_counts()}
     sitting_id_to_presence_keys: dict[int, Counter[tuple[int, Optional[bool]]]] = {sitting_id: Counter() for sitting_id in sitting_ids}
     for presence_row in CRUDAttendance(session).get_presence_rows_by_speaker_id_not_null():
@@ -86,7 +86,7 @@ def build_completions(session: Session, sitting_ids: list[int]) -> list[SittingC
     completions = []
     for sitting_id in sitting_ids:
         expected = _SITTING_ID_TO_TRUNCATED_SITTING[sitting_id]
-        date_row = date_rows[sitting_id]
+        date_row = sitting_id_to_date_row[sitting_id]
         if date_row.sitting_date != expected.sitting_date:
             raise HansardWriteCheckError(f"sitting {sitting_id}: date is {date_row.sitting_date}, expected {expected.sitting_date}")
         markdown = sitting_date_to_markdown[expected.sitting_date]
@@ -112,7 +112,7 @@ def build_completions(session: Session, sitting_ids: list[int]) -> list[SittingC
             parsed_row.speaker_id = _get_speaker_id(parsed_row.speaker_name, parliament_number, lookups, name_parliament_number_to_speaker_id)
 
         stored_prefix = parsed_rows[: expected.stored_row_count]
-        prefix_keys = Counter((row.speaker_id, row.is_present) for row in stored_prefix if row.speaker_id is not None)
+        prefix_keys = Counter((parsed_row.speaker_id, parsed_row.is_present) for parsed_row in stored_prefix if parsed_row.speaker_id is not None)
         if prefix_keys != sitting_id_to_presence_keys[sitting_id]:
             raise HansardWriteCheckError(f"sitting {sitting_id}: stored rows are not the first {expected.stored_row_count} parsed rows")
         completions.append(SittingCompletion(sitting_id, parsed_rows[expected.stored_row_count :]))
@@ -143,9 +143,9 @@ def main() -> None:
         validate_can_write(str(engine.url))
     with Session(engine) as session:
         completions = build_completions(session, sitting_ids)
-        rows_to_insert = [row for completion in completions for row in completion.rows_to_insert]
+        rows_to_insert = [attendance for completion in completions for attendance in completion.rows_to_insert]
         for completion in completions:
-            linked = sum(row.speaker_id is not None for row in completion.rows_to_insert)
+            linked = sum(attendance.speaker_id is not None for attendance in completion.rows_to_insert)
             logger.info(f"Sitting {completion.sitting_id}: insert {len(completion.rows_to_insert)} rows, {linked} linked")
         logger.info(f"Attendance: insert {len(rows_to_insert)} rows, delete 0, update 0")
         sitting_id_to_stored_row_count = {

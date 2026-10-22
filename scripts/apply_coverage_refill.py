@@ -55,9 +55,9 @@ def _build_speeches(report: Report, markdown_content: str) -> list[Speech]:
 
 def _validate_hits_unstored(session: Session, search_results: list[HansardSearchResult]) -> None:
     report_ids = {search_result.report_id for search_result in search_results}
-    stored_responses = CRUDHansardWebsiteResponse(session).get_by_report_ids(report_ids)
-    if stored_responses:
-        raise HansardWriteCheckError(f"{len(stored_responses)} planned hits are already stored as raw rows, first {stored_responses[0].report_id}")
+    stored_hansard_website_responses = CRUDHansardWebsiteResponse(session).get_by_report_ids(report_ids)
+    if stored_hansard_website_responses:
+        raise HansardWriteCheckError(f"{len(stored_hansard_website_responses)} planned hits are already stored as raw rows, first {stored_hansard_website_responses[0].report_id}")
     stored_reports = CRUDReport(session).get_by_report_ids(list(report_ids))
     if stored_reports:
         raise HansardWriteCheckError(f"{len(stored_reports)} planned hits are already stored as reports, first {stored_reports[0].report_id}")

@@ -66,12 +66,12 @@ def main() -> None:
         for start in range(0, len(reports), REPORT_BATCH):
             batch = reports[start : start + REPORT_BATCH]
             report_id_to_parliament_number_and_sitting_date = {report_id: (parliament_number, sitting_date) for report_id, parliament_number, sitting_date in batch}
-            for row in CRUDSpeech(session).get_rows_by_report_ids(list(report_id_to_parliament_number_and_sitting_date)):
-                if not row.speaker or row.speaker_id is None:
+            for speech_row in CRUDSpeech(session).get_rows_by_report_ids(list(report_id_to_parliament_number_and_sitting_date)):
+                if not speech_row.speaker or speech_row.speaker_id is None:
                     continue
-                parliament_number, sitting_date = report_id_to_parliament_number_and_sitting_date[row.report_id]
-                date_key = sitting_date if row.speaker.startswith(DATE_DEPENDENT_ROLES) else None
-                key_to_speaker_id_counts.setdefault((row.speaker, parliament_number, date_key), Counter())[row.speaker_id] += 1
+                parliament_number, sitting_date = report_id_to_parliament_number_and_sitting_date[speech_row.report_id]
+                date_key = sitting_date if speech_row.speaker.startswith(DATE_DEPENDENT_ROLES) else None
+                key_to_speaker_id_counts.setdefault((speech_row.speaker, parliament_number, date_key), Counter())[speech_row.speaker_id] += 1
 
     total_rows = sum(sum(counter.values()) for counter in key_to_speaker_id_counts.values())
     agree_key_count = 0

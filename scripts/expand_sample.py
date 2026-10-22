@@ -92,45 +92,45 @@ def main() -> None:
 
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
-        rows = CRUDSpeech(session).get_parliament_rows_by_speaker_not_null_and_parliament_number(COLONIAL_PARLIAMENT_NUMBER)
+        speech_rows = CRUDSpeech(session).get_parliament_rows_by_speaker_not_null_and_parliament_number(COLONIAL_PARLIAMENT_NUMBER)
 
     name_parliament_number_to_speaker_id = {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None}
     lookups = build_speaker_lookups(speakers)
 
     eligible: list[SpeechParliamentRow] = []
-    for row in rows:
-        if not row.speaker:
+    for speech_row in speech_rows:
+        if not speech_row.speaker:
             continue
-        if row.id in existing_ids:
+        if speech_row.id in existing_ids:
             continue
-        if _is_excluded(row.speaker) or row.speaker.startswith("(") or row.speaker.startswith("_"):
+        if _is_excluded(speech_row.speaker) or speech_row.speaker.startswith("(") or speech_row.speaker.startswith("_"):
             continue
-        eligible.append(row)
+        eligible.append(speech_row)
 
-    speech_id_to_row = {row.id: row for row in eligible}
+    speech_id_to_speech_row = {speech_row.id: speech_row for speech_row in eligible}
 
-    report_type_to_rows: dict[str, list[SpeechParliamentRow]] = defaultdict(list)
-    for row in eligible:
-        report_type_to_rows[row.report_type].append(row)
+    report_type_to_speech_rows: dict[str, list[SpeechParliamentRow]] = defaultdict(list)
+    for speech_row in eligible:
+        report_type_to_speech_rows[speech_row.report_type].append(speech_row)
 
     new_pilot: list[int] = []
     new_held_out: list[int] = []
 
     logger.info(f"Eligible parliament=0 speeches (excluding existing sample): {len(eligible)}")
     logger.info("\nSampling per report_type:")
-    for report_type, items in sorted(report_type_to_rows.items()):
-        random.shuffle(items)
-        pilot_slice = items[:_PILOT_COUNT_PER_TYPE]
-        held_out_slice = items[_PILOT_COUNT_PER_TYPE : _PILOT_COUNT_PER_TYPE + _HELD_OUT_COUNT_PER_TYPE]
-        new_pilot.extend(row.id for row in pilot_slice)
-        new_held_out.extend(row.id for row in held_out_slice)
+    for report_type, report_type_speech_rows in sorted(report_type_to_speech_rows.items()):
+        random.shuffle(report_type_speech_rows)
+        pilot_slice = report_type_speech_rows[:_PILOT_COUNT_PER_TYPE]
+        held_out_slice = report_type_speech_rows[_PILOT_COUNT_PER_TYPE : _PILOT_COUNT_PER_TYPE + _HELD_OUT_COUNT_PER_TYPE]
+        new_pilot.extend(speech_row.id for speech_row in pilot_slice)
+        new_held_out.extend(speech_row.id for speech_row in held_out_slice)
         logger.info(f"  {report_type:<30} {len(pilot_slice)} pilot + {len(held_out_slice)} held-out")
 
     passing_pilot: list[int] = []
     for speech_id in new_pilot:
-        if speech_id not in speech_id_to_row:
+        if speech_id not in speech_id_to_speech_row:
             continue
-        eligible_row = speech_id_to_row[speech_id]
+        eligible_row = speech_id_to_speech_row[speech_id]
         name = _preprocess(eligible_row.speaker)
         if name is not None and _is_resolved(name, eligible_row.parliament_number, lookups, name_parliament_number_to_speaker_id):
             passing_pilot.append(speech_id)

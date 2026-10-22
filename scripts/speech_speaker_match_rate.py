@@ -42,31 +42,31 @@ def main() -> None:
     }
     lookups = build_speaker_lookups(speakers)
 
-    report_type_to_rows: dict[str, list[SpeechReportTypeRow]] = defaultdict(list)
-    for row in all_rows:
-        report_type_to_rows[row.report_type].append(row)
+    report_type_to_speech_rows: dict[str, list[SpeechReportTypeRow]] = defaultdict(list)
+    for speech_row in all_rows:
+        report_type_to_speech_rows[speech_row.report_type].append(speech_row)
 
     sample: list[SpeechReportTypeRow] = []
-    for report_type, items in report_type_to_rows.items():
-        sample_size = min(_SAMPLE_PER_TYPE, len(items))
-        sample.extend(random.sample(items, sample_size))
+    for report_type, report_type_speech_rows in report_type_to_speech_rows.items():
+        sample_size = min(_SAMPLE_PER_TYPE, len(report_type_speech_rows))
+        sample.extend(random.sample(report_type_speech_rows, sample_size))
 
     matched = 0
     report_type_to_unmatched_speakers: dict[str, list[str]] = defaultdict(list)
     report_type_to_stats: dict[str, _MatchStats] = defaultdict(_MatchStats)
 
-    for row in sample:
-        name = strip_title(row.speaker.rstrip(":").strip())
+    for speech_row in sample:
+        name = strip_title(speech_row.speaker.rstrip(":").strip())
         name = normalize_name(name)
-        canonical_name = resolve_canonical_name(name, row.parliament_number, lookups) if name else None
-        is_found = canonical_name is not None and (canonical_name, row.parliament_number) in name_parliament_number_to_speaker_id
+        canonical_name = resolve_canonical_name(name, speech_row.parliament_number, lookups) if name else None
+        is_found = canonical_name is not None and (canonical_name, speech_row.parliament_number) in name_parliament_number_to_speaker_id
 
-        report_type_to_stats[row.report_type].total += 1
+        report_type_to_stats[speech_row.report_type].total += 1
         if is_found:
             matched += 1
-            report_type_to_stats[row.report_type].matched += 1
+            report_type_to_stats[speech_row.report_type].matched += 1
         else:
-            report_type_to_unmatched_speakers[row.report_type].append(row.speaker)
+            report_type_to_unmatched_speakers[speech_row.report_type].append(speech_row.speaker)
 
     total = len(sample)
     logger.info(f"\nOverall: {matched}/{total} = {matched/total*_PERCENT:.1f}%\n")
