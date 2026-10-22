@@ -14,7 +14,6 @@ _MAX_ALERT_LABELS = 20
 _MAX_TELEGRAM_MESSAGE_LENGTH = 4_000
 _PERCENT = 100
 _FIRST_ALERT_WINDOW_DAYS = 1
-_SINGULAR_COUNT = 1
 
 
 def get_singapore_today(now: datetime) -> date:
@@ -116,7 +115,7 @@ def build_unlinked_reason(unlinked_share: float, label_to_row_count: dict[str, i
 
 
 def _get_count_text(count: int, noun: str) -> str:
-    if count == _SINGULAR_COUNT:
+    if count == 1:
         return f"{count:,} {noun}"
     return f"{count:,} {noun}s"
 
