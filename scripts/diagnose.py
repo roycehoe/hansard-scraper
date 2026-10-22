@@ -1,4 +1,3 @@
-import random
 from collections import defaultdict
 from typing import Optional
 
@@ -11,9 +10,6 @@ from database.report import Report
 from logs import logger
 from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
-
-_DEFAULT_FAILING_SAMPLE_SIZE = 3
-_DEFAULT_PASSING_SAMPLE_SIZE = 30
 
 
 def _get_speech_start(response: HansardWebsiteResponse) -> tuple[Report, Optional[int]]:
@@ -47,48 +43,6 @@ def get_report_type_speech_stats(session: Session) -> dict:
         report_type_to_counts[report_type]["can_get_speeches"] += 1
 
     return dict(report_type_to_counts)
-
-
-def get_failing_sample(session: Session, no_speech_types: set[str], sample_size: int = _DEFAULT_FAILING_SAMPLE_SIZE) -> dict:
-    responses = CRUDHansardWebsiteResponse(session).get_all()
-    stage_and_report_type_to_responses = defaultdict(list)
-
-    for response in responses:
-        if response.report_type in no_speech_types:
-            continue
-        report, start = _get_speech_start(response)
-        if report.markdown_content is None:
-            continue
-        if start is None:
-            stage_and_report_type_to_responses[("has_start_line", response.report_type)].append(response)
-            continue
-        get_speeches(report.markdown_content, start, response.report_type, response.report_version)
-
-    stage_and_report_type_to_sample = {}
-    for key, items in stage_and_report_type_to_responses.items():
-        random.shuffle(items)
-        stage_and_report_type_to_sample[key] = items[:sample_size]
-    return stage_and_report_type_to_sample
-
-
-def get_passing_sample(session: Session, no_speech_types: set[str], sample_size: int = _DEFAULT_PASSING_SAMPLE_SIZE) -> list:
-    responses = CRUDHansardWebsiteResponse(session).get_all()
-    passing = []
-
-    for response in responses:
-        if response.report_type in no_speech_types:
-            continue
-        report, start = _get_speech_start(response)
-        if report.markdown_content is None or start is None:
-            continue
-        try:
-            get_speeches(report.markdown_content, start, response.report_type, response.report_version)
-            passing.append(response)
-        except Exception:  # noqa: BLE001 a corpus survey must record every failing document, not stop at the first
-            pass
-
-    random.shuffle(passing)
-    return passing[:sample_size]
 
 
 def run_stats_on(responses: list) -> dict:
