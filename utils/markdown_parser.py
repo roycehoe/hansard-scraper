@@ -154,11 +154,11 @@ def _render_footnote_superscript(match: re.Match) -> str:
         return match.group(0)
     # NOTE: the converter writes a space between closing emphasis and a digit outside a link, so that digit was never glued.
     if (
-        re.search(_CLOSING_EMPHASIS_END_PATTERN, preceding_window, flags=re.IGNORECASE) is not None
-        and re.search(_ANCHOR_TAG_PATTERN, match.group(0), flags=re.IGNORECASE) is None
+        re.search(_CLOSING_EMPHASIS_END_PATTERN, preceding_window, flags=re.IGNORECASE)
+        and not re.search(_ANCHOR_TAG_PATTERN, match.group(0), flags=re.IGNORECASE)
     ):
         return match.group(0)
-    if re.search(_EXPONENT_BASE_PATTERN, preceding) is not None:
+    if re.search(_EXPONENT_BASE_PATTERN, preceding):
         return match.group(0)
     marker = _OPENING_BRACKET + re.sub(_LIST_COMMA_PATTERN, ",", match.group(1)) + _CLOSING_BRACKET
     # NOTE: the marker replaces only the digits, so the converter treats the tags and spaces around it as it did before.
@@ -258,11 +258,11 @@ def _has_unclosed_bracket(text: str) -> bool:
 
 
 def _is_proc_text_line(line: str) -> bool:
-    return re.match(_PROC_TEXT_LINE_START_PATTERN, line) is not None
+    return bool(re.match(_PROC_TEXT_LINE_START_PATTERN, line))
 
 
 def _is_name_line(line: str) -> bool:
-    return re.match(_PERSON_NAME_LINE_PATTERN, line.strip()) is not None and len(line.split()) <= _MAX_NAME_LINE_WORDS
+    return bool(re.match(_PERSON_NAME_LINE_PATTERN, line.strip())) and len(line.split()) <= _MAX_NAME_LINE_WORDS
 
 
 def _should_join_across_page_break(before: str, after: str) -> bool:
@@ -277,7 +277,7 @@ def _should_join_across_page_break(before: str, after: str) -> bool:
     if _is_name_line(before) and _is_name_line(after):
         return False
     # NOTE: a marker inside a bracketed note cuts the note itself, whatever emphasis or stage-direction marks sit at the cut.
-    if _has_unclosed_bracket(before) and re.match(_NON_SPEECH_BLOCK_PATTERN, after) is None:
+    if _has_unclosed_bracket(before) and not re.match(_NON_SPEECH_BLOCK_PATTERN, after):
         return True
     if re.match(_EMPHASIS_START_PATTERN, after) or re.match(_NON_SPEECH_BLOCK_PATTERN, after):
         return False
@@ -289,7 +289,7 @@ def _should_join_across_page_break(before: str, after: str) -> bool:
         return False
     if re.fullmatch(_BOLD_ONLY_LINE_PATTERN, before.strip()):
         return False
-    return re.search(_SENTENCE_END_PATTERN, before) is None
+    return not re.search(_SENTENCE_END_PATTERN, before)
 
 
 def _get_page_break_separator(before: str, after: str) -> str:
@@ -434,9 +434,9 @@ def _join_emphasised_lines(before: str, after: str) -> str:
 
 
 def _is_split_direction_open(line: str, next_line: str) -> bool:
-    if re.search(_SENTENCE_END_PATTERN, line) is None:
+    if not re.search(_SENTENCE_END_PATTERN, line):
         return True
-    return re.search(_TIME_ABBREVIATION_END_PATTERN, line, re.IGNORECASE) is not None and next_line.lstrip(_EMPHASIS_MARK + " ")[:1].islower()
+    return bool(re.search(_TIME_ABBREVIATION_END_PATTERN, line, re.IGNORECASE)) and next_line.lstrip(_EMPHASIS_MARK + " ")[:1].islower()
 
 
 def _merge_split_direction_lines(markdown: str) -> str:
