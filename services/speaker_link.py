@@ -125,6 +125,12 @@ class SittingText:
     chair_marks: list[ChairMark]
 
 
+@dataclass(frozen=True)
+class ChairAnnotation:
+    position: int
+    text: str
+
+
 def _normalise(text: str) -> str:
     return re.sub(r"\s+", " ", text.replace("*", "")).strip()
 
@@ -157,27 +163,27 @@ def _get_name_words(name: str) -> set[str]:
     return set(re.sub(r"[^a-z ]", "", name.lower()).split()) - _TITLE_WORDS
 
 
-def _is_other_name_in_annotations(annotations: list[tuple[int, str]], name: str) -> bool:
-    for _, text in annotations:
-        named = re.search(r"\(([^)]+)\)", _normalise(text))
+def _is_other_name_in_annotations(annotations: list[ChairAnnotation], name: str) -> bool:
+    for annotation in annotations:
+        named = re.search(r"\(([^)]+)\)", _normalise(annotation.text))
         if named is not None and not (_get_name_words(named.group(1)) & _get_name_words(name)):
             return True
     return False
 
 
-def _get_bound_position(positions: list[Optional[int]], index: int, annotations: list[tuple[int, str]]) -> Optional[int]:
+def _get_bound_position(positions: list[Optional[int]], index: int, annotations: list[ChairAnnotation]) -> Optional[int]:
     if positions[index] is not None:
         return positions[index]
     low = next((positions[row_index] for row_index in range(index - 1, -1, -1) if positions[row_index] is not None), 0)
     high = next((positions[row_index] for row_index in range(index + 1, len(positions)) if positions[row_index] is not None), None)
-    if any(low <= annotation_position < (high if high is not None else float("inf")) for annotation_position, _ in annotations):
+    if any(low <= annotation.position < (high if high is not None else float("inf")) for annotation in annotations):
         return None
     return low + 1
 
 
 def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int, str]:
     normalised = _normalise(markdown)
-    annotations = [(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalised)]
+    annotations = [ChairAnnotation(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalised)]
     events = [(match.start(), match.group(1).lower()) for match in _CHAIR_EVENT_RE.finditer(normalised)]
     role_to_holder_names = _get_header_holders(markdown)
     is_header_present = _HEADER_RE.search(markdown) is not None
@@ -191,12 +197,12 @@ def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int,
         position = _get_bound_position(positions, index, annotations)
         if position is None:
             continue
-        preceding = [annotation for annotation in annotations if annotation[0] < position]
+        preceding = [annotation for annotation in annotations if annotation.position < position]
         after_roles = {role for event_position, role in events if event_position >= position - _EVENT_SLACK}
         before_roles = {role for event_position, role in events if event_position < position - _EVENT_SLACK}
         if preceding:
-            annotation_position, text = preceding[-1]
-            text = _normalise(text)
+            annotation_position = preceding[-1].position
+            text = _normalise(preceding[-1].text)
             named_deputy = _NAMED_DEPUTY_RE.search(text)
             if named_deputy is not None or not (_SPEAKER_ROLE_RE.match(text) or _DEPUTY_ROLE_RE.match(text)):
                 # NOTE: a chair-change line between the annotation and the row voids it.
@@ -232,8 +238,8 @@ def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int,
 
 def get_deputy_speaker_names(markdown: str, speech_rows: list[SpeechRow]) -> DeputySpeakerNames:
     normalised = _normalise(markdown)
-    annotations = [(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalised)]
-    position_to_deputy_match = {position: _NAMED_DEPUTY_RE.search(_normalise(text)) for position, text in annotations}
+    annotations = [ChairAnnotation(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalised)]
+    position_to_deputy_match = {annotation.position: _NAMED_DEPUTY_RE.search(_normalise(annotation.text)) for annotation in annotations}
     position_to_deputy_name = {position: _TITLE_RE.sub("", match.group(1).strip()) for position, match in position_to_deputy_match.items() if match is not None}
     events = [match.start() for match in _CHAIR_EVENT_RE.finditer(normalised)]
     positions = _get_positions(normalised, speech_rows)
@@ -250,7 +256,7 @@ def get_deputy_speaker_names(markdown: str, speech_rows: list[SpeechRow]) -> Dep
         position = _get_bound_position(positions, index, annotations)
         if position is None:
             continue
-        preceding = [annotation_position for annotation_position, _ in annotations if annotation_position < position]
+        preceding = [annotation.position for annotation in annotations if annotation.position < position]
         if preceding and preceding[-1] in position_to_deputy_name and not any(preceding[-1] < event_position < position for event_position in events):
             speech_id_to_deputy_name[speech_row.id] = position_to_deputy_name[preceding[-1]]
     mentioned = set(position_to_deputy_name.values()) | labelled
@@ -336,7 +342,7 @@ def get_sitting_deputy_speaker_names(sitting_text: SittingText, report_title: st
     if positions is None:
         return {}
     chair_mark_positions = [chair_mark.position for chair_mark in sitting_text.chair_marks]
-    chair_mark_annotations = [(chair_mark.position, "") for chair_mark in sitting_text.chair_marks]
+    chair_mark_annotations = [ChairAnnotation(chair_mark.position, "") for chair_mark in sitting_text.chair_marks]
     speech_id_to_deputy_name = {}
     for index, speech_row in enumerate(speech_rows):
         if not speech_row.speaker or not BARE_DEPUTY_RE.match(speech_row.speaker.strip()):
@@ -415,20 +421,26 @@ def _get_holder_on(
     return holders[0] if len(holders) == 1 else None
 
 
+@dataclass(frozen=True)
+class ResolvedName:
+    canonical_name: Optional[str]
+    parliament_number: int
+
+
 def _resolve_with_parliament_fallback(
     name: str,
     parliament: int,
     lookups: SpeakerLookups,
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
-) -> tuple[Optional[str], int]:
+) -> ResolvedName:
     canonical = resolve_canonical_name(name, parliament, lookups)
     if canonical is not None or parliament != 0:
-        return canonical, parliament
+        return ResolvedName(canonical, parliament)
     for fallback in COLONIAL_PARLIAMENT_FALLBACKS:
         candidate = resolve_canonical_name(name, fallback, lookups)
         if candidate and (candidate, fallback) in name_parliament_number_to_speaker_id:
-            return candidate, fallback
-    return None, parliament
+            return ResolvedName(candidate, fallback)
+    return ResolvedName(None, parliament)
 
 
 def _get_presiding_officer_id(
@@ -439,10 +451,8 @@ def _get_presiding_officer_id(
 ) -> Optional[int]:
     if not name:
         return None
-    canonical, resolved_parliament = _resolve_with_parliament_fallback(
-        name, parliament, lookups, name_parliament_number_to_speaker_id
-    )
-    return name_parliament_number_to_speaker_id.get((canonical, resolved_parliament)) if canonical else None
+    resolved_name = _resolve_with_parliament_fallback(name, parliament, lookups, name_parliament_number_to_speaker_id)
+    return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
 
 
 def _resolve_presiding_officer(
@@ -484,10 +494,8 @@ def _resolve_attendance_speaker_id(
     if speaker_id is not None:
         return speaker_id
     name = normalize_name(strip_title(speaker_name))
-    canonical, parliament = _resolve_with_parliament_fallback(
-        name, parliament, lookups, name_parliament_number_to_speaker_id
-    )
-    return name_parliament_number_to_speaker_id.get((canonical, parliament)) if canonical else None
+    resolved_name = _resolve_with_parliament_fallback(name, parliament, lookups, name_parliament_number_to_speaker_id)
+    return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
 
 
 def _get_role_key(raw: str, parliament: int) -> Optional[tuple[str, int]]:
@@ -520,18 +528,15 @@ def resolve_speech_speaker_id(
         holder = _get_holder_on(DATED_ROLE_TERMS[raw], sitting_date)
         if not holder:
             return None
-        canonical, resolved_parliament = _resolve_with_parliament_fallback(
-            holder, parliament, lookups, name_parliament_number_to_speaker_id
-        )
-        return name_parliament_number_to_speaker_id.get((canonical, resolved_parliament)) if canonical else None
+        resolved_name = _resolve_with_parliament_fallback(holder, parliament, lookups, name_parliament_number_to_speaker_id)
+        return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
 
     role_key = _get_role_key(raw, parliament)
     if role_key is not None and role_key in ROLE_ONLY_SPEAKERS:
         role_name = ROLE_ONLY_SPEAKERS[role_key]
-        role_canonical, role_parliament = _resolve_with_parliament_fallback(
-            role_name, role_key[1], lookups, name_parliament_number_to_speaker_id
-        )
-        return name_parliament_number_to_speaker_id.get((role_canonical, role_parliament)) if role_canonical else None
+        _, role_key_parliament = role_key
+        resolved_role_name = _resolve_with_parliament_fallback(role_name, role_key_parliament, lookups, name_parliament_number_to_speaker_id)
+        return name_parliament_number_to_speaker_id.get((resolved_role_name.canonical_name, resolved_role_name.parliament_number)) if resolved_role_name.canonical_name else None
 
     parenthesised_matches = list(_PARENTHESIS_RE.finditer(raw))
     if parenthesised_matches:
@@ -549,10 +554,8 @@ def resolve_speech_speaker_id(
     if not name:
         return None
 
-    canonical, parliament = _resolve_with_parliament_fallback(
-        name, parliament, lookups, name_parliament_number_to_speaker_id
-    )
-    return name_parliament_number_to_speaker_id.get((canonical, parliament)) if canonical else None
+    resolved_name = _resolve_with_parliament_fallback(name, parliament, lookups, name_parliament_number_to_speaker_id)
+    return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
 
 
 @dataclass(frozen=True)
@@ -630,10 +633,10 @@ def get_speaker_id_for_name(
     lookups: SpeakerLookups,
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
-    canonical, resolved_parliament = _resolve_with_parliament_fallback(
+    resolved_name = _resolve_with_parliament_fallback(
         normalize_name(strip_title(name)), parliament, lookups, name_parliament_number_to_speaker_id
     )
-    return name_parliament_number_to_speaker_id.get((canonical, resolved_parliament)) if canonical else None
+    return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
 
 
 def get_speaker_ids_for_names(
