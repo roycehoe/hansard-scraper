@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 from typing import Optional, Union
 
@@ -67,6 +68,16 @@ def _get_start_line(report: Report) -> Optional[int]:
     )
 
 
+class _Check(StrEnum):
+    NO_MARKDOWN = "NO_MARKDOWN"
+    TITLE_MISMATCH = "TITLE_MISMATCH"
+    SUBTITLE_MISMATCH = "SUBTITLE_MISMATCH"
+    NO_START_LINE = "NO_START_LINE"
+    NO_SPEECHES = "NO_SPEECHES"
+    INVALID_SPEECHES = "INVALID_SPEECHES"
+    OK = "OK"
+
+
 def run() -> None:
     sample_sets = SampleSets.model_validate_json(_SAMPLE_FILE_PATH.read_text())
     report_ids = sample_sets.pilot + sample_sets.held_out + sample_sets.regression
@@ -111,24 +122,24 @@ def run() -> None:
 
         if regenerated_report.markdown_content is None:
             stats.no_markdown += 1
-            checks.append("NO_MARKDOWN")
+            checks.append(_Check.NO_MARKDOWN.value)
             is_failed = True
         markdown_flag = "Y" if regenerated_report.markdown_content else "N"
 
         if regenerated_report.title != stored.title:
             stats.title_mismatch += 1
-            checks.append(f"TITLE_MISMATCH(stored={stored.title!r} regen={regenerated_report.title!r})")
+            checks.append(f"{_Check.TITLE_MISMATCH}(stored={stored.title!r} regen={regenerated_report.title!r})")
             is_failed = True
 
         if regenerated_report.subtitle != stored.subtitle:
             stats.subtitle_mismatch += 1
-            checks.append(f"SUBTITLE_MISMATCH(stored={stored.subtitle!r} regen={regenerated_report.subtitle!r})")
+            checks.append(f"{_Check.SUBTITLE_MISMATCH}(stored={stored.subtitle!r} regen={regenerated_report.subtitle!r})")
             is_failed = True
 
         start_line = _get_start_line(regenerated_report)
         if start_line is None and regenerated_report.markdown_content:
             stats.no_start_line += 1
-            checks.append("NO_START_LINE")
+            checks.append(_Check.NO_START_LINE.value)
             is_failed = True
 
         speeches = []
@@ -141,19 +152,19 @@ def run() -> None:
             speech_count = str(len(speeches))
             if len(speeches) == 0:
                 stats.no_speeches += 1
-                checks.append("NO_SPEECHES")
+                checks.append(_Check.NO_SPEECHES.value)
                 is_failed = True
             else:
                 invalid = [speech for speech in speeches if not speech.speaker or not speech.transcript.strip()]
                 if invalid:
                     stats.invalid_speeches += 1
-                    checks.append(f"INVALID_SPEECHES({len(invalid)})")
+                    checks.append(f"{_Check.INVALID_SPEECHES}({len(invalid)})")
                     is_failed = True
             valid_flag = "Y" if not is_failed else "N"
 
         if not is_failed:
             stats.passed += 1
-            checks.append("OK")
+            checks.append(_Check.OK.value)
 
         start_line_flag = "Y" if start_line is not None else "N"
         checks_text = "  ".join(checks)
@@ -201,13 +212,13 @@ def run() -> None:
                 continue
             logger.info(f"\n  report_id={issue.report_id}  type={issue.report_type}")
             logger.info(f"  checks: {issue.checks}")
-            if "TITLE_MISMATCH" in str(issue.checks):
+            if _Check.TITLE_MISMATCH in str(issue.checks):
                 logger.info(f"  title stored: {issue.title_stored!r}")
                 logger.info(f"  title regen:  {issue.title_regenerated!r}")
-            if "SUBTITLE_MISMATCH" in str(issue.checks):
+            if _Check.SUBTITLE_MISMATCH in str(issue.checks):
                 logger.info(f"  subtitle stored: {issue.subtitle_stored!r}")
                 logger.info(f"  subtitle regen:  {issue.subtitle_regenerated!r}")
-            if "NO_START_LINE" in str(issue.checks) or "NO_SPEECHES" in str(issue.checks):
+            if _Check.NO_START_LINE in str(issue.checks) or _Check.NO_SPEECHES in str(issue.checks):
                 logger.info("  markdown snippet:")
                 for line in issue.markdown_snippet.splitlines()[:_SNIPPET_LINES_SHOWN]:
                     logger.info(f"    {line}")

@@ -2,6 +2,7 @@ import argparse
 import json
 import re
 from collections import Counter
+from enum import StrEnum
 
 from sqlmodel import Session
 
@@ -44,20 +45,29 @@ _DOCUMENT_NOISE_RE = re.compile(
 )
 
 
-def _get_category(name: str) -> str:
+class UnmatchedCategory(StrEnum):
+    CANDIDATE = "candidate"
+    OFFICIAL_WITH_TITLE = "official_with_title"
+    PRESIDING = "presiding"
+    ALLCAPS_HEADER = "allcaps_header"
+    DOCUMENT_NOISE = "document_noise"
+    BLANK = "blank"
+
+
+def _get_category(name: str) -> UnmatchedCategory:
     stripped_name = name.strip()
     if not stripped_name:
-        return "blank"
+        return UnmatchedCategory.BLANK
     if _PRESIDING_RE.search(stripped_name):
-        return "presiding"
+        return UnmatchedCategory.PRESIDING
     if _OFFICIAL_TITLE_RE.search(stripped_name):
-        return "official_with_title"
+        return UnmatchedCategory.OFFICIAL_WITH_TITLE
     alpha = re.sub(r"[^A-Za-z]", "", stripped_name)
     if alpha and alpha == alpha.upper() and len(alpha) >= _MIN_ALLCAPS_HEADER_LETTERS:
-        return "allcaps_header"
+        return UnmatchedCategory.ALLCAPS_HEADER
     if _DOCUMENT_NOISE_RE.search(stripped_name):
-        return "document_noise"
-    return "candidate"
+        return UnmatchedCategory.DOCUMENT_NOISE
+    return UnmatchedCategory.CANDIDATE
 
 
 def _is_resolved(name: str, parliament: int, lookups: SpeakerLookups) -> bool:
@@ -70,7 +80,7 @@ def _is_resolved(name: str, parliament: int, lookups: SpeakerLookups) -> bool:
     return False
 
 
-def find_unmatched(is_verbose: bool = False) -> dict[str, Counter]:
+def find_unmatched(is_verbose: bool = False) -> dict[UnmatchedCategory, Counter[str]]:
     with Session(engine) as session:
         sittings = CRUDSitting(session).get_all()
         speakers = CRUDSpeaker(session).get_all()
@@ -78,14 +88,7 @@ def find_unmatched(is_verbose: bool = False) -> dict[str, Counter]:
     lookups = build_speaker_lookups(speakers)
     constituency_lookups = build_constituency_lookups(get_constituency_names())
 
-    category_to_counter: dict[str, Counter] = {
-        "candidate": Counter(),
-        "official_with_title": Counter(),
-        "presiding": Counter(),
-        "allcaps_header": Counter(),
-        "document_noise": Counter(),
-        "blank": Counter(),
-    }
+    category_to_counter: dict[UnmatchedCategory, Counter[str]] = {category: Counter() for category in UnmatchedCategory}
     total = len(sittings)
 
     for sitting_number, sitting in enumerate(sittings, 1):
@@ -117,14 +120,14 @@ def main() -> None:
     logger.info("Scanning sittings…")
     category_to_counter = find_unmatched(is_verbose=arguments.verbose)
 
-    candidates = category_to_counter["candidate"]
+    candidates = category_to_counter[UnmatchedCategory.CANDIDATE]
     total_unmatched = sum(sum(counter.values()) for counter in category_to_counter.values())
     total_candidates = sum(candidates.values())
 
     logger.info(f"\nUnmatched attendance rows: {total_unmatched}")
     logger.info(f"  Candidates (likely real people, no Speaker entry): {total_candidates}")
     for category, counter in category_to_counter.items():
-        if category == "candidate":
+        if category == UnmatchedCategory.CANDIDATE:
             continue
         if counter:
             logger.info(f"  {category}: {sum(counter.values())}")

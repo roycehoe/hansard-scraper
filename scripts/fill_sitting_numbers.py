@@ -2,6 +2,7 @@ import argparse
 import json
 from dataclasses import asdict, dataclass, field
 from datetime import date
+from enum import StrEnum
 from pathlib import Path
 from typing import Optional
 
@@ -23,12 +24,18 @@ from utils.sitting_dates import parse_sitting_date
 from utils.write_target import validate_can_write
 
 
+class NumberSource(StrEnum):
+    SITTING_HEADER = "sitting header"
+    REPORT_HEADER = "report header"
+    SAME_DATE_SITTING = "sitting of the same date"
+
+
 @dataclass(frozen=True)
 class NumberFill:
     id: int
     sitting_date: str
     number: int
-    source: str
+    source: NumberSource
 
 
 @dataclass(frozen=True)
@@ -54,11 +61,11 @@ def _add_sitting_numbers(plan: NumberPlan, session: Session) -> dict[date, int]:
         header_session_number = get_header_number(markdown, SESSION_NUMBER_FIELD)
         header_sitting_number = get_header_number(markdown, SITTING_NUMBER_FIELD)
         if sitting_row.session_no is None and header_session_number is not None:
-            plan.session_fills.append(NumberFill(sitting_row.id, sitting_row.sitting_date, header_session_number, "sitting header"))
+            plan.session_fills.append(NumberFill(sitting_row.id, sitting_row.sitting_date, header_session_number, NumberSource.SITTING_HEADER))
         if sitting_row.session_no is None and header_session_number is None:
             plan.skips.append(NumberSkip(sitting_row.id, sitting_row.sitting_date, "sitting session_no: no Session No line in the sitting header"))
         if sitting_row.sitting_no is None and header_sitting_number is not None:
-            plan.sitting_fills.append(NumberFill(sitting_row.id, sitting_row.sitting_date, header_sitting_number, "sitting header"))
+            plan.sitting_fills.append(NumberFill(sitting_row.id, sitting_row.sitting_date, header_sitting_number, NumberSource.SITTING_HEADER))
         if sitting_row.sitting_no is None and header_sitting_number is None:
             plan.skips.append(NumberSkip(sitting_row.id, sitting_row.sitting_date, "sitting sitting_no: no Sitting No line in the sitting header"))
         if sitting_row.sitting_no is not None and header_sitting_number is not None and sitting_row.sitting_no != header_sitting_number:
@@ -74,11 +81,11 @@ def _add_report_numbers(plan: NumberPlan, session: Session, sitting_day_to_sitti
         sitting_date = f"{report_row.sitting_date:%d-%m-%Y}"
         header_sitting_number = get_header_number(report_row.markdown_content or "", SITTING_NUMBER_FIELD)
         if header_sitting_number is not None:
-            plan.report_fills.append(NumberFill(report_row.id, sitting_date, header_sitting_number, "report header"))
+            plan.report_fills.append(NumberFill(report_row.id, sitting_date, header_sitting_number, NumberSource.REPORT_HEADER))
             continue
         sitting_number: Optional[int] = sitting_day_to_sitting_number.get(report_row.sitting_date.date())
         if sitting_number is not None:
-            plan.report_fills.append(NumberFill(report_row.id, sitting_date, sitting_number, "sitting of the same date"))
+            plan.report_fills.append(NumberFill(report_row.id, sitting_date, sitting_number, NumberSource.SAME_DATE_SITTING))
             continue
         plan.skips.append(NumberSkip(report_row.id, sitting_date, "report sitting_number: no header and no sitting number for the date"))
 

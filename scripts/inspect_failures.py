@@ -6,6 +6,7 @@ from crud.hansard_website_response import CRUDHansardWebsiteResponse
 from database.hansard_website_response import HansardWebsiteResponse
 from database.init import engine
 from database.report import Report
+from enums import ReportType
 from logs import logger
 from services.report import build_report
 from services.speech import get_start_of_speech_line
@@ -14,7 +15,7 @@ _MAX_LINES_SHOWN = 60
 _MAX_FAILING_SHOWN = 3
 _MAX_PASSING_SHOWN = 2
 _SEPARATOR_WIDTH = 60
-_DEFAULT_REPORT_TYPES = ("bill-intro", "budget", "president-address", "atbp")
+_DEFAULT_REPORT_TYPES = (ReportType.BILL_INTRODUCTION.value, ReportType.BUDGET.value, ReportType.PRESIDENT_ADDRESS.value, ReportType.ATBP.value)
 
 
 def show_doc(website_response: HansardWebsiteResponse, report: Report, max_lines: int = _MAX_LINES_SHOWN) -> None:

@@ -1,6 +1,7 @@
 import random
 import re
 from collections import defaultdict
+from enum import StrEnum
 
 from sqlmodel import Session
 
@@ -20,6 +21,11 @@ _PREVIEW_LINE_COUNT = 20
 _PREVIEW_LINE_WIDTH = 100
 _BOLD_LINE_COUNT = 5
 _BOLD_LINE_WIDTH = 120
+
+
+class _Status(StrEnum):
+    SUSPICIOUS = "SUSPICIOUS"
+    OK = "OK"
 
 
 def run() -> None:
@@ -77,7 +83,7 @@ def run() -> None:
             lines_after = report.markdown_content.splitlines()[start_line + 1 :]
 
             bold_lines = [line for line in lines_after if _BOLD_SPEAKER_RE.search(line.strip())]
-            status = "SUSPICIOUS" if bold_lines else "OK"
+            status = _Status.SUSPICIOUS if bold_lines else _Status.OK
             if bold_lines:
                 suspicious.append((report, start_line, bold_lines))
 
@@ -100,7 +106,7 @@ def run() -> None:
     logger.info("=== NO START LINE (never parsed; bold speaker lines counted over the whole doc) ===")
     for report in no_start_line:
         bold_count = sum(1 for line in report.markdown_content.splitlines() if _BOLD_SPEAKER_RE.search(line.strip()))
-        status = "SUSPICIOUS" if bold_count else "OK"
+        status = _Status.SUSPICIOUS if bold_count else _Status.OK
         logger.info(f"  [{status}] id={report.id}  type={report.report_type}  parl={report.parliament_number}  "
                     f"bold_lines={bold_count}  {report.title[:_TITLE_DISPLAY_WIDTH]!r}")
 
