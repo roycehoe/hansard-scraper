@@ -15,7 +15,6 @@ from database.init import engine
 from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
 from logs import logger
-from populate.speaker_links import resolve_attendance_rows
 from services.attendance import (
     AttendanceNameChange,
     build_constituency_lookups,
@@ -23,6 +22,7 @@ from services.attendance import (
     build_speaker_lookups,
     get_attendance_name_changes,
 )
+from services.speaker_link import resolve_attendance_rows
 from settings import settings
 from utils.data_files import get_constituency_names
 from utils.speaker_resolution import SpeakerLookups
@@ -32,14 +32,15 @@ from utils.write_target import validate_can_write
 def _validate_speaker_ids(
     name_changes: list[AttendanceNameChange], speaker_rows: list[AttendanceSpeakerRow], speakers: list[Speaker], lookups: SpeakerLookups
 ) -> None:
-    id_to_speaker_id = resolve_attendance_rows(
+    resolved_speaker_ids = resolve_attendance_rows(
         speaker_rows, lookups, {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None}
     )
+    logger.info(f"Attendance: set speaker_id on {len(resolved_speaker_ids.id_to_speaker_id)}/{resolved_speaker_ids.row_count} records")
     for name_change in name_changes:
-        if id_to_speaker_id.get(name_change.id) != name_change.speaker_id:
+        if resolved_speaker_ids.id_to_speaker_id.get(name_change.id) != name_change.speaker_id:
             raise HansardWriteCheckError(
                 f"Attendance row {name_change.id}: speaker {name_change.speaker_id}, stage 8 links {name_change.speaker_name_after!r} "
-                f"to {id_to_speaker_id.get(name_change.id)}"
+                f"to {resolved_speaker_ids.id_to_speaker_id.get(name_change.id)}"
             )
 
 

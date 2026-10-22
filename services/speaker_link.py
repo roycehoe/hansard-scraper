@@ -4,12 +4,28 @@ import bisect
 import json
 import re
 from dataclasses import dataclass
-from typing import Optional
+from datetime import date, datetime
+from typing import Iterable, Optional, Sequence
 
-from crud.speech import SpeechRow
+from crud.attendance import AttendanceSpeakerRow
+from crud.speech import SpeechRow, SpeechSpeakerRow
 from enums import ReportVersion
 from schemas.hansard_report_response import HansardReportSection
 from utils.markdown_parser import get_cleaned_report_markdown
+from utils.names import normalize_name, strip_title
+from utils.parliament_numbers import VOLUME_TO_PARLIAMENT
+from utils.speaker_resolution import SpeakerLookups, resolve_canonical_name
+from utils.speaker_resolution_constants import (
+    COLONIAL_PARLIAMENT_FALLBACKS,
+    DATED_ROLE_TERMS,
+    DEPUTY_SPEAKER_TERMS,
+    DEPUTY_SPEAKER_WOMEN,
+    HEAD_OF_STATE_TERMS,
+    NON_SPEAKERS,
+    ROLE_ONLY_SPEAKERS,
+    SPEAKER_WOMEN,
+)
+from utils.speaker_terms import SPEAKER_TERMS
 
 CHAIRMAN_RE = re.compile(r"^(?:the ?|mr ?)?chairman:?$", re.IGNORECASE)
 _ANNOTATION_RE = re.compile(r"\[([^\]\[]{0,90}?)\s*(?:temporarily\s+)?in the Chair\]", re.IGNORECASE)
@@ -37,6 +53,48 @@ _TITLE_WORDS = frozenset({"mr", "mdm", "ms", "mrs", "dr", "sir"})
 _CARRIED_HOLDER_OPENER = " ("
 
 CARRIED_ROLES = ("The Chief Secretary",)
+
+_SPEAKER_LABELS = ("Mr Speaker", "Mdm Speaker")
+
+# NOTE: only these roles resolve by sitting date; every other string is memoised on (string, parliament).
+_DATE_DEPENDENT_ROLES = (
+    "The Chief Minister",
+    "The Prime Minister",
+    *_SPEAKER_LABELS,
+    "Mr Deputy Speaker",
+    "Mr DeputySpeaker",
+    "Mdm Deputy Speaker",
+    "Mdm DeputySpeaker",
+    "The Deputy Speaker",
+)
+
+_DEPUTY_SPEAKER_LABELS = ("Mr Deputy Speaker", "Mr DeputySpeaker", "Mdm Deputy Speaker", "Mdm DeputySpeaker", "The Deputy Speaker")
+
+_LEADING_LIST_NUMBER_RE = re.compile(r"^\d+\\?\.\s*")
+_LEADING_DOT_RE = re.compile(r"^\.\s+")
+_ASSOC_PROF_RE = re.compile(r"\bAssoc\.Prof\.")
+_RANK_QUALIFIER_RE = re.compile(r"\s*[\[(](?:NS|Res)[\])]\s*")
+_TRAILING_MR_SPEAKER_RE = re.compile(r"\s+Mr Speaker,?$")
+_LEADING_QUOTE_RE = re.compile(r"^[\"“”'‘’]+")
+_TRAILING_DASH_RE = re.compile(r"\s*[–—-]+$")
+_TRAILING_NAME_DOT_RE = re.compile(r"(?<=[A-Za-z]{3})\.$")
+_UPPERCASE_TITLE_RE = re.compile(r"^(?:MR|MRS|MS|DR|MDM|PROF)\b")
+_PRESIDING_BRACKET_RE = re.compile(r"\s*\((?:Mr|Mdm) Speaker\)$")
+_WHITESPACE_RE = re.compile(r"\s+")
+_INVERTED_NAME_RE = re.compile(r"^([A-Z][a-z]+), ([A-Z][a-z]+)$")
+_DOUBLED_LABEL_RE = re.compile(r"^(.{6,}?)\s+\1$")
+_PARENTHESIS_RE = re.compile(r"\(([^)]+)\)")
+_TITLE_DOT_PREFIX_RE = re.compile(r"^(Mr|Mrs|Dr|Ms)\.\s+")
+_GLUED_TITLE_RE = re.compile(r"^(Mr|Mrs|Dr|Ms|Mdm)([A-Z])")
+_TITLED_RE = re.compile(r"^(?:Mr|Mrs|Ms|Mdm|Dr|Miss|Inche|Encik|Assoc|Prof|Er)\b")
+
+_ADDRESS_TITLES = ("GOVERNOR'S ADDRESS", "PRESIDENT'S ADDRESS", "YANG DI-PERTUAN NEGARA'S SPEECH")
+
+# NOTE: SPRS prints these labels without the opening bracket of the constituency; checked against the source on 22 Oct 2026.
+_LABELS_MISSING_OPENING_BRACKET = {
+    "Inche Mohd. Ali Bin Alwi Kampong Kembangan)": "Inche Mohd. Ali Bin Alwi (Kampong Kembangan)",
+    "Ms Foo Mee Har West Coast)": "Ms Foo Mee Har (West Coast)",
+}
 
 
 @dataclass(frozen=True)
@@ -311,3 +369,275 @@ def carried_role_names(speech_rows: list[SpeechRow]) -> dict[int, str]:
             elif speaker.startswith(role + _CARRIED_HOLDER_OPENER):
                 role_to_holder[role] = speaker[len(role + _CARRIED_HOLDER_OPENER) :].rstrip(")").strip()
     return speech_id_to_name
+
+
+def _clean_speaker_label(raw: str) -> str:
+    raw = raw.replace("\ufeff", "").strip()
+    raw = _LABELS_MISSING_OPENING_BRACKET.get(raw, raw)
+    raw = _LEADING_LIST_NUMBER_RE.sub("", raw)
+    raw = _LEADING_DOT_RE.sub("", raw)
+    raw = _ASSOC_PROF_RE.sub("Assoc. Prof.", raw)
+    raw = _RANK_QUALIFIER_RE.sub(" ", raw)
+    raw = _TRAILING_MR_SPEAKER_RE.sub("", raw)
+    raw = _LEADING_QUOTE_RE.sub("", raw)
+    raw = _PRESIDING_BRACKET_RE.sub("", raw)
+    raw = _TRAILING_DASH_RE.sub("", raw)
+    raw = _TRAILING_NAME_DOT_RE.sub("", raw)
+    if _UPPERCASE_TITLE_RE.match(raw) is not None and raw.isupper():
+        raw = raw.title()
+    raw = _WHITESPACE_RE.sub(" ", raw).rstrip(";, ").strip()
+    if raw.count("(") > raw.count(")"):
+        cut = raw.rfind("(")
+        inner = raw[cut + 1 :].strip()
+        raw = f"{raw[:cut]}({inner})" if _TITLED_RE.match(inner) else raw[:cut].strip()
+    inverted = _INVERTED_NAME_RE.match(raw)
+    if inverted is not None:
+        raw = f"{inverted.group(2)} {inverted.group(1)}"
+    doubled = _DOUBLED_LABEL_RE.match(raw)
+    return doubled.group(1) if doubled is not None else raw
+
+
+def _is_title_in_parentheses(match: re.Match) -> bool:
+    inner = _TITLE_DOT_PREFIX_RE.sub(r"\1 ", match.group(1).strip())
+    return strip_title(inner) != inner
+
+
+def _get_holder_on(
+    terms: Sequence[tuple[date, date, str]], sitting_date: Optional[datetime]
+) -> Optional[str]:
+    if sitting_date is None:
+        return None
+    day = sitting_date.date()
+    holders = [name for first, last, name in terms if first <= day <= last]
+    return holders[0] if len(holders) == 1 else None
+
+
+def _resolve_with_parliament_fallback(
+    name: str,
+    parliament: int,
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> tuple[Optional[str], int]:
+    canonical = resolve_canonical_name(name, parliament, lookups)
+    if canonical is not None or parliament != 0:
+        return canonical, parliament
+    for fallback in COLONIAL_PARLIAMENT_FALLBACKS:
+        candidate = resolve_canonical_name(name, fallback, lookups)
+        if candidate and (candidate, fallback) in name_parliament_number_to_speaker_id:
+            return candidate, fallback
+    return None, parliament
+
+
+def _get_presiding_officer_id(
+    name: Optional[str],
+    parliament: int,
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> Optional[int]:
+    if not name:
+        return None
+    canonical, resolved_parliament = _resolve_with_parliament_fallback(
+        name, parliament, lookups, name_parliament_number_to_speaker_id
+    )
+    return name_parliament_number_to_speaker_id.get((canonical, resolved_parliament)) if canonical else None
+
+
+def _resolve_presiding_officer(
+    raw: str,
+    parliament: int,
+    sitting_date: Optional[datetime],
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> Optional[int]:
+    if raw in _SPEAKER_LABELS:
+        holder = _get_holder_on(SPEAKER_TERMS, sitting_date)
+        is_woman_label = raw == "Mdm Speaker"
+        if is_woman_label != (holder in SPEAKER_WOMEN):
+            return None
+        return _get_presiding_officer_id(holder, parliament, lookups, name_parliament_number_to_speaker_id)
+    if raw.startswith(_DEPUTY_SPEAKER_LABELS):
+        named_match = _PARENTHESIS_RE.search(raw)
+        terms = (
+            [term for term in DEPUTY_SPEAKER_TERMS if term[2] in DEPUTY_SPEAKER_WOMEN]
+            if raw.startswith("Mdm")
+            else DEPUTY_SPEAKER_TERMS
+        )
+        name = (
+            normalize_name(strip_title(named_match.group(1).strip()))
+            if named_match is not None
+            else _get_holder_on(terms, sitting_date)
+        )
+        return _get_presiding_officer_id(name, parliament, lookups, name_parliament_number_to_speaker_id)
+    return None
+
+
+def _resolve_attendance_speaker_id(
+    speaker_name: str,
+    parliament: int,
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> Optional[int]:
+    speaker_id = name_parliament_number_to_speaker_id.get((speaker_name, parliament))
+    if speaker_id is not None:
+        return speaker_id
+    name = normalize_name(strip_title(speaker_name))
+    canonical, parliament = _resolve_with_parliament_fallback(
+        name, parliament, lookups, name_parliament_number_to_speaker_id
+    )
+    return name_parliament_number_to_speaker_id.get((canonical, parliament)) if canonical else None
+
+
+def _get_role_key(raw: str, parliament: int) -> Optional[tuple[str, int]]:
+    if parliament != 0:
+        return (raw, parliament)
+    for fallback_parliament in COLONIAL_PARLIAMENT_FALLBACKS:
+        if (raw, fallback_parliament) in ROLE_ONLY_SPEAKERS:
+            return (raw, fallback_parliament)
+    return None
+
+
+def _resolve_speech_speaker_id(
+    speaker: str,
+    parliament: int,
+    sitting_date: Optional[datetime],
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> Optional[int]:
+    if speaker in NON_SPEAKERS or speaker.startswith("(") or speaker.startswith("_"):
+        return None
+
+    raw = _clean_speaker_label(speaker.rstrip(":").strip())
+
+    if raw in _SPEAKER_LABELS or raw.startswith(_DEPUTY_SPEAKER_LABELS):
+        return _resolve_presiding_officer(
+            raw, parliament, sitting_date, lookups, name_parliament_number_to_speaker_id
+        )
+
+    if raw in DATED_ROLE_TERMS:
+        holder = _get_holder_on(DATED_ROLE_TERMS[raw], sitting_date)
+        if not holder:
+            return None
+        canonical, resolved_parliament = _resolve_with_parliament_fallback(
+            holder, parliament, lookups, name_parliament_number_to_speaker_id
+        )
+        return name_parliament_number_to_speaker_id.get((canonical, resolved_parliament)) if canonical else None
+
+    role_key = _get_role_key(raw, parliament)
+    if role_key is not None and role_key in ROLE_ONLY_SPEAKERS:
+        role_name = ROLE_ONLY_SPEAKERS[role_key]
+        role_canonical, role_parliament = _resolve_with_parliament_fallback(
+            role_name, role_key[1], lookups, name_parliament_number_to_speaker_id
+        )
+        return name_parliament_number_to_speaker_id.get((role_canonical, role_parliament)) if role_canonical else None
+
+    parenthesised_matches = list(_PARENTHESIS_RE.finditer(raw))
+    if parenthesised_matches:
+        title_match = next(
+            (match for match in reversed(parenthesised_matches) if _is_title_in_parentheses(match)),
+            None,
+        )
+        if title_match is not None:
+            raw = title_match.group(1).strip()
+        else:
+            raw = raw[: parenthesised_matches[0].start()].strip()
+    raw = _GLUED_TITLE_RE.sub(r"\1 \2", raw)
+    raw = _TITLE_DOT_PREFIX_RE.sub(r"\1 ", raw)
+    name = normalize_name(strip_title(raw))
+    if not name:
+        return None
+
+    canonical, parliament = _resolve_with_parliament_fallback(
+        name, parliament, lookups, name_parliament_number_to_speaker_id
+    )
+    return name_parliament_number_to_speaker_id.get((canonical, parliament)) if canonical else None
+
+
+@dataclass(frozen=True)
+class ResolvedSpeakerIds:
+    id_to_speaker_id: dict[int, int]
+    row_count: int
+
+
+def resolve_attendance_rows(
+    attendance_rows: Iterable[AttendanceSpeakerRow],
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> ResolvedSpeakerIds:
+    key_to_speaker_id: dict[tuple[str, int], Optional[int]] = {}
+    attendance_id_to_speaker_id: dict[int, int] = {}
+    total = 0
+    for attendance_row in attendance_rows:
+        total += 1
+        if not attendance_row.speaker_name:
+            continue
+        parliament = (
+            attendance_row.parlement_no if attendance_row.parlement_no is not None else VOLUME_TO_PARLIAMENT.get(attendance_row.volume_no)
+        )
+        if parliament is None:
+            continue
+        key = (attendance_row.speaker_name, parliament)
+        if key not in key_to_speaker_id:
+            key_to_speaker_id[key] = _resolve_attendance_speaker_id(
+                attendance_row.speaker_name, parliament, lookups, name_parliament_number_to_speaker_id
+            )
+        if key_to_speaker_id[key] is not None:
+            attendance_id_to_speaker_id[attendance_row.id] = key_to_speaker_id[key]
+    return ResolvedSpeakerIds(attendance_id_to_speaker_id, total)
+
+
+def resolve_speech_rows(
+    speech_rows: Iterable[SpeechSpeakerRow],
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> ResolvedSpeakerIds:
+    key_to_speaker_id: dict[tuple[str, int, Optional[datetime]], Optional[int]] = {}
+    speech_id_to_speaker_id: dict[int, int] = {}
+    total = 0
+    for speech_row in speech_rows:
+        total += 1
+        if not speech_row.speaker:
+            continue
+        date_key = speech_row.sitting_date if speech_row.speaker.startswith(_DATE_DEPENDENT_ROLES) else None
+        key = (speech_row.speaker, speech_row.parliament_number, date_key)
+        if key not in key_to_speaker_id:
+            key_to_speaker_id[key] = _resolve_speech_speaker_id(
+                speech_row.speaker, speech_row.parliament_number, speech_row.sitting_date, lookups, name_parliament_number_to_speaker_id
+            )
+        if key_to_speaker_id[key] is not None:
+            speech_id_to_speaker_id[speech_row.id] = key_to_speaker_id[key]
+    return ResolvedSpeakerIds(speech_id_to_speaker_id, total)
+
+
+# NOTE: a bare head-of-state string is the holder only in the Address itself; the same strings in addenda and adjournment reports are parser errors and stay unlinked.
+def _get_head_of_state_names(title: str, sitting_date: datetime, speech_rows: list[SpeechRow]) -> dict[int, str]:
+    if not title.upper().startswith(_ADDRESS_TITLES):
+        return {}
+    speech_id_to_name = {}
+    for speech_row in speech_rows:
+        if speech_row.speaker in HEAD_OF_STATE_TERMS:
+            holder = _get_holder_on(HEAD_OF_STATE_TERMS[speech_row.speaker], sitting_date)
+            if holder:
+                speech_id_to_name[speech_row.id] = holder
+    return speech_id_to_name
+
+
+def _get_speaker_id_for_name(
+    name: str,
+    parliament: int,
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> Optional[int]:
+    canonical, resolved_parliament = _resolve_with_parliament_fallback(
+        normalize_name(strip_title(name)), parliament, lookups, name_parliament_number_to_speaker_id
+    )
+    return name_parliament_number_to_speaker_id.get((canonical, resolved_parliament)) if canonical else None
+
+
+def _get_speaker_ids_for_names(
+    names: Iterable[str],
+    parliament: int,
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> set[int]:
+    found = (_get_speaker_id_for_name(name, parliament, lookups, name_parliament_number_to_speaker_id) for name in names)
+    return {speaker_id for speaker_id in found if speaker_id is not None}

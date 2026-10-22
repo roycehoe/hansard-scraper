@@ -4,8 +4,8 @@ from typing import Optional
 import pytest
 
 from database.speaker import Speaker
-from populate.speaker_links import _resolve_speech_speaker_id
 from services.attendance import build_speaker_lookups
+from services.speaker_link import _resolve_speech_speaker_id
 
 _PARTY = "People's Action Party"
 _SPEAKERS = (

@@ -8,11 +8,11 @@ import database.speech  # noqa: F401 registers Speech so the Report relationship
 from crud.speech import SpeechSpeakerRow
 from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
-from populate.speaker_links import resolve_speech_rows
 from schemas.head_of_state import HeadOfStateResult
 from schemas.speaker import SpeakerResult
 from services.attendance import build_speaker_lookups
 from services.speaker import ParliamentChange, get_parliament_changes
+from services.speaker_link import resolve_speech_rows
 from utils.parliament_numbers import VOLUME_TO_PARLIAMENT, infer_parliament
 from utils.speaker_resolution import NAME_PARLIAMENT_TO_CANONICAL_SPEAKER
 
@@ -122,4 +122,4 @@ def test_the_chief_minister_of_7_june_1956_is_david_marshall() -> None:
         SpeechSpeakerRow(13, "The Chief Minister", 0, datetime(1956, 8, 29)),
     ]
 
-    assert resolve_speech_rows(rows, lookups, name_parliament_number_to_speaker_id) == {10: 1, 11: 1, 12: 2, 13: 2}
+    assert resolve_speech_rows(rows, lookups, name_parliament_number_to_speaker_id).id_to_speaker_id == {10: 1, 11: 1, 12: 2, 13: 2}

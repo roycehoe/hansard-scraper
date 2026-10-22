@@ -12,13 +12,15 @@ from database.init import engine
 from logs import logger
 
 # NOTE: the private names are imported on purpose, so the guard runs the exact resolver and not a copy that can drift.
-from populate.speaker_links import (
+from populate.speaker_links import _REPORT_BATCH
+from services.attendance import build_speaker_lookups
+from services.speaker_link import (
     _DATE_DEPENDENT_ROLES,
-    _REPORT_BATCH,
+    BARE_DEPUTY_RE,
+    CARRIED_ROLES,
+    CHAIRMAN_RE,
     _resolve_speech_speaker_id,
 )
-from services.attendance import build_speaker_lookups
-from services.speaker_link import BARE_DEPUTY_RE, CARRIED_ROLES, CHAIRMAN_RE
 from utils.speaker_resolution_constants import HEAD_OF_STATE_TERMS
 
 _MAX_PARLIAMENT = 11

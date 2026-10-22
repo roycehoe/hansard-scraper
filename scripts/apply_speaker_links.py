@@ -16,10 +16,9 @@ from populate.speaker_links import (
     get_deputy_speaker_ids,
     get_role_context_speaker_ids,
     get_sitting_deputy_speaker_ids,
-    resolve_attendance_rows,
-    resolve_speech_rows,
 )
 from services.attendance import build_speaker_lookups
+from services.speaker_link import resolve_attendance_rows, resolve_speech_rows
 from settings import settings
 from utils.speaker_resolution import SpeakerLookups
 from utils.write_target import validate_can_write
@@ -33,7 +32,9 @@ class SpeakerLinkPlan:
 
 # NOTE: stage 8 writes each pass before the next one reads, so a row an earlier pass links keeps that pass's speaker here too.
 def _get_speech_plan(session: Session, lookups: SpeakerLookups, name_parliament_number_to_speaker_id: dict[tuple[str, int], int]) -> dict[int, int]:
-    speech_id_to_speaker_id = resolve_speech_rows(CRUDSpeech(session).get_speaker_rows_by_speaker_id_null(), lookups, name_parliament_number_to_speaker_id)
+    resolved_speech_speaker_ids = resolve_speech_rows(CRUDSpeech(session).get_speaker_rows_by_speaker_id_null(), lookups, name_parliament_number_to_speaker_id)
+    logger.info(f"Speech: set speaker_id on {len(resolved_speech_speaker_ids.id_to_speaker_id)}/{resolved_speech_speaker_ids.row_count} records")
+    speech_id_to_speaker_id = resolved_speech_speaker_ids.id_to_speaker_id
     for get_pass_speaker_ids in (get_role_context_speaker_ids, get_deputy_speaker_ids, get_sitting_deputy_speaker_ids):
         for speech_id, speaker_id in get_pass_speaker_ids(session, lookups, name_parliament_number_to_speaker_id).items():
             speech_id_to_speaker_id.setdefault(speech_id, speaker_id)
@@ -65,10 +66,12 @@ def _get_plan(session: Session) -> SpeakerLinkPlan:
     speakers = CRUDSpeaker(session).get_all()
     name_parliament_number_to_speaker_id = {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None}
     lookups = build_speaker_lookups(speakers)
-    plan = SpeakerLinkPlan(
-        _get_speech_plan(session, lookups, name_parliament_number_to_speaker_id),
-        resolve_attendance_rows(CRUDAttendance(session).get_speaker_rows_by_speaker_id_null(), lookups, name_parliament_number_to_speaker_id),
+    speech_id_to_speaker_id = _get_speech_plan(session, lookups, name_parliament_number_to_speaker_id)
+    resolved_attendance_speaker_ids = resolve_attendance_rows(CRUDAttendance(session).get_speaker_rows_by_speaker_id_null(), lookups, name_parliament_number_to_speaker_id)
+    logger.info(
+        f"Attendance: set speaker_id on {len(resolved_attendance_speaker_ids.id_to_speaker_id)}/{resolved_attendance_speaker_ids.row_count} records"
     )
+    plan = SpeakerLinkPlan(speech_id_to_speaker_id, resolved_attendance_speaker_ids.id_to_speaker_id)
     logger.info(f"Plan: {len(plan.speech_id_to_speaker_id)} speech rows, {len(plan.attendance_id_to_speaker_id)} attendance rows to link")
     return plan
 

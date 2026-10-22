@@ -14,13 +14,13 @@ from database.attendance import Attendance
 from database.init import engine
 from exceptions import HansardWriteCheckError
 from logs import logger
-from populate.speaker_links import resolve_attendance_rows
 from schemas.attendance_cleanup import AttendanceCleanup
 from services.attendance import build_speaker_lookups
 from services.attendance_cleanup import (
     AttendanceCleanupPlan,
     build_attendance_cleanup_plan,
 )
+from services.speaker_link import resolve_attendance_rows
 from settings import settings
 from utils.sitting_dates import parse_sitting_date
 from utils.speaker_terms import SPEAKER_TERMS
@@ -54,13 +54,14 @@ def _get_plan(session: Session, cleanup: AttendanceCleanup, id_to_row: dict[int,
     sitting_id_to_rows: dict[int, list[Attendance]] = {sitting_id: [] for sitting_id in role_sitting_ids}
     for row in CRUDAttendance(session).get_by_sitting_ids(role_sitting_ids):
         sitting_id_to_rows[row.sitting_id].append(row)
-    id_to_speaker_id = resolve_attendance_rows(
+    resolved_speaker_ids = resolve_attendance_rows(
         name_rows,
         build_speaker_lookups(speakers),
         {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None},
     )
+    logger.info(f"Attendance: set speaker_id on {len(resolved_speaker_ids.id_to_speaker_id)}/{resolved_speaker_ids.row_count} records")
     speaker_id_to_name = {speaker.id: speaker.name for speaker in speakers if speaker.id is not None}
-    return build_attendance_cleanup_plan(cleanup, id_to_row, sitting_id_to_rows, id_to_speaker_id, speaker_id_to_name)
+    return build_attendance_cleanup_plan(cleanup, id_to_row, sitting_id_to_rows, resolved_speaker_ids.id_to_speaker_id, speaker_id_to_name)
 
 
 def _validate_written(session: Session, plan: AttendanceCleanupPlan, linked_pairs_removed: set[tuple[int, int]]) -> None:
