@@ -104,8 +104,8 @@ def _is_unlinkable(speaker: str) -> bool:
     )
 
 
-def _get_status(person_id: int, sitting_date: date, date_to_person_to_is_present: dict[date, dict[int, bool]]) -> _PresenceStatus:
-    person_to_is_present = date_to_person_to_is_present.get(sitting_date)
+def _get_status(person_id: int, sitting_date: date, sitting_date_to_person_id_to_is_present: dict[date, dict[int, bool]]) -> _PresenceStatus:
+    person_to_is_present = sitting_date_to_person_id_to_is_present.get(sitting_date)
     if person_to_is_present is None:
         return _PresenceStatus.NO_ATTENDANCE
     is_present = person_to_is_present.get(person_id)
@@ -120,40 +120,40 @@ def _get_first_line(transcript: str) -> str:
     return transcript.strip().split("\n", 1)[0][:_FIRST_LINE_MAX_LENGTH]
 
 
-def _get_date_to_person_to_is_present(
-    session: Session, sitting_id_to_date: dict[int, date], speaker_id_to_person_id: dict[int, Optional[int]]
+def _get_sitting_date_to_person_id_to_is_present(
+    session: Session, sitting_id_to_sitting_date: dict[int, date], speaker_id_to_person_id: dict[int, Optional[int]]
 ) -> dict[date, dict[int, bool]]:
     sitting_ids_with_attendance = {count.sitting_id for count in CRUDAttendance(session).get_sitting_counts()}
-    date_to_person_to_is_present: dict[date, dict[int, bool]] = {
-        sitting_id_to_date[sitting_id]: {} for sitting_id in sitting_ids_with_attendance if sitting_id in sitting_id_to_date
+    sitting_date_to_person_id_to_is_present: dict[date, dict[int, bool]] = {
+        sitting_id_to_sitting_date[sitting_id]: {} for sitting_id in sitting_ids_with_attendance if sitting_id in sitting_id_to_sitting_date
     }
     for attendance in CRUDAttendance(session).get_presence_rows_by_speaker_id_not_null():
-        sitting_date = sitting_id_to_date.get(attendance.sitting_id)
+        sitting_date = sitting_id_to_sitting_date.get(attendance.sitting_id)
         person_id = speaker_id_to_person_id.get(attendance.speaker_id)
         if sitting_date is None or person_id is None:
             continue
-        person_to_is_present = date_to_person_to_is_present[sitting_date]
+        person_to_is_present = sitting_date_to_person_id_to_is_present[sitting_date]
         person_to_is_present[person_id] = person_to_is_present.get(person_id, False) or attendance.is_present is True
-    return date_to_person_to_is_present
+    return sitting_date_to_person_id_to_is_present
 
 
 def _get_short_sittings(
-    session: Session, sitting_id_to_date: dict[int, date], sitting_id_to_parliament: dict[int, int]
+    session: Session, sitting_id_to_sitting_date: dict[int, date], sitting_id_to_parliament_number: dict[int, int]
 ) -> list[_ShortSitting]:
     sitting_id_to_row_count = {
         count.sitting_id: count.row_count for count in CRUDAttendance(session).get_sitting_counts()
-        if count.sitting_id in sitting_id_to_date and count.sitting_id in sitting_id_to_parliament
+        if count.sitting_id in sitting_id_to_sitting_date and count.sitting_id in sitting_id_to_parliament_number
     }
-    parliament_to_row_counts: defaultdict[int, list[int]] = defaultdict(list)
+    parliament_number_to_row_counts: defaultdict[int, list[int]] = defaultdict(list)
     for sitting_id, row_count in sitting_id_to_row_count.items():
-        parliament_to_row_counts[sitting_id_to_parliament[sitting_id]].append(row_count)
-    parliament_to_median = {
-        parliament_number: median(row_counts) for parliament_number, row_counts in parliament_to_row_counts.items()
+        parliament_number_to_row_counts[sitting_id_to_parliament_number[sitting_id]].append(row_count)
+    parliament_number_to_median = {
+        parliament_number: median(row_counts) for parliament_number, row_counts in parliament_number_to_row_counts.items()
     }
     return [
-        _ShortSitting(sitting_id_to_date[sitting_id], sitting_id_to_parliament[sitting_id], row_count, parliament_to_median[sitting_id_to_parliament[sitting_id]])
+        _ShortSitting(sitting_id_to_sitting_date[sitting_id], sitting_id_to_parliament_number[sitting_id], row_count, parliament_number_to_median[sitting_id_to_parliament_number[sitting_id]])
         for sitting_id, row_count in sitting_id_to_row_count.items()
-        if row_count < _SHORT_LIST_MEDIAN_SHARE * parliament_to_median[sitting_id_to_parliament[sitting_id]]
+        if row_count < _SHORT_LIST_MEDIAN_SHARE * parliament_number_to_median[sitting_id_to_parliament_number[sitting_id]]
     ]
 
 
@@ -178,7 +178,7 @@ def _log_presence_counts(
 def _check_presence(
     session: Session,
     speakers: list[Speaker],
-    date_to_person_to_is_present: dict[date, dict[int, bool]],
+    sitting_date_to_person_id_to_is_present: dict[date, dict[int, bool]],
     short_dates: set[date],
 ) -> list[_Pair]:
     speaker_id_to_speaker = {speaker.id: speaker for speaker in speakers}
@@ -192,7 +192,7 @@ def _check_presence(
         header = report_id_to_header[link_row.report_id]
         speaker = speaker_id_to_speaker[link_row.speaker_id]
         sitting_date = header.sitting_date.date()
-        status = _get_status(speaker.person_id, sitting_date, date_to_person_to_is_present)
+        status = _get_status(speaker.person_id, sitting_date, sitting_date_to_person_id_to_is_present)
         unexempted_status_to_row_count[status] += 1
         exemption = _get_exemption(header.report_type, link_row.speaker or "", link_row.transcript, speaker.is_member)
         if exemption is not None:
@@ -249,25 +249,25 @@ def main() -> None:
 
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
-        sitting_id_to_date: dict[int, date] = {}
-        sitting_id_to_parliament: dict[int, int] = {}
+        sitting_id_to_sitting_date: dict[int, date] = {}
+        sitting_id_to_parliament_number: dict[int, int] = {}
         for sitting in CRUDSitting(session).get_date_rows():
             if sitting.sitting_date is None:
                 continue
-            sitting_id_to_date[sitting.id] = parse_sitting_date(sitting.sitting_date).date()
+            sitting_id_to_sitting_date[sitting.id] = parse_sitting_date(sitting.sitting_date).date()
             parliament_number = infer_parliament(sitting.parlement_no, sitting.volume_no)
             if parliament_number is not None:
-                sitting_id_to_parliament[sitting.id] = parliament_number
+                sitting_id_to_parliament_number[sitting.id] = parliament_number
 
-        short_sittings = _get_short_sittings(session, sitting_id_to_date, sitting_id_to_parliament)
+        short_sittings = _get_short_sittings(session, sitting_id_to_sitting_date, sitting_id_to_parliament_number)
         logger.info(f"B3 short attendance lists (under {_SHORT_LIST_MEDIAN_SHARE} of the parliament median): {len(short_sittings)} sittings")
         for sitting in short_sittings:
             logger.info(f"B3 {sitting.sitting_date} (Parliament {sitting.parliament_number}): {sitting.attendance_row_count} attendance rows, parliament median {sitting.parliament_median}")
-        date_to_person_to_is_present = _get_date_to_person_to_is_present(
-            session, sitting_id_to_date, {speaker.id: speaker.person_id for speaker in speakers}
+        sitting_date_to_person_id_to_is_present = _get_sitting_date_to_person_id_to_is_present(
+            session, sitting_id_to_sitting_date, {speaker.id: speaker.person_id for speaker in speakers}
         )
         short_dates = {sitting.sitting_date for sitting in short_sittings}
-        flagged_pairs = _check_presence(session, speakers, date_to_person_to_is_present, short_dates)
+        flagged_pairs = _check_presence(session, speakers, sitting_date_to_person_id_to_is_present, short_dates)
         faults = _check_unlinkable(session)
 
     if arguments.json:

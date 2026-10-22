@@ -56,7 +56,7 @@ def main() -> None:
             for report in CRUDReport(session).get_all()
             if report.parliament_number is not None and report.parliament_number <= HEADLINE_MAX_PARLIAMENT
         ]
-        name_and_parliament_to_speaker_id = {
+        name_parliament_number_to_speaker_id = {
             (speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None
         }
         speaker_id_to_name = {speaker.id: speaker.name for speaker in speakers}
@@ -65,11 +65,11 @@ def main() -> None:
         key_to_speaker_id_counts: dict[Key, Counter[int]] = {}
         for start in range(0, len(reports), REPORT_BATCH):
             batch = reports[start : start + REPORT_BATCH]
-            report_id_to_parliament_and_date = {report_id: (parliament_number, sitting_date) for report_id, parliament_number, sitting_date in batch}
-            for row in CRUDSpeech(session).get_rows_by_report_ids(list(report_id_to_parliament_and_date)):
+            report_id_to_parliament_number_and_sitting_date = {report_id: (parliament_number, sitting_date) for report_id, parliament_number, sitting_date in batch}
+            for row in CRUDSpeech(session).get_rows_by_report_ids(list(report_id_to_parliament_number_and_sitting_date)):
                 if not row.speaker or row.speaker_id is None:
                     continue
-                parliament_number, sitting_date = report_id_to_parliament_and_date[row.report_id]
+                parliament_number, sitting_date = report_id_to_parliament_number_and_sitting_date[row.report_id]
                 date_key = sitting_date if row.speaker.startswith(DATE_DEPENDENT_ROLES) else None
                 key_to_speaker_id_counts.setdefault((row.speaker, parliament_number, date_key), Counter())[row.speaker_id] += 1
 
@@ -81,7 +81,7 @@ def main() -> None:
     stale: list[StaleLink] = []
     for (speaker, parliament_number, sitting_date), counts in key_to_speaker_id_counts.items():
         key_row_count = sum(counts.values())
-        resolved = resolve_speech_speaker_id(speaker, parliament_number, sitting_date, lookups, name_and_parliament_to_speaker_id)
+        resolved = resolve_speech_speaker_id(speaker, parliament_number, sitting_date, lookups, name_parliament_number_to_speaker_id)
         if resolved is None and _is_context_linked(speaker):
             context_key_count += 1
             context_row_count += key_row_count

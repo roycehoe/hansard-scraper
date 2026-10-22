@@ -69,17 +69,17 @@ def _preprocess(speaker: str) -> Optional[str]:
 
 def _is_resolved(
     name: str,
-    parliament: int,
+    parliament_number: int,
     lookups: SpeakerLookups,
-    name_and_parliament_to_speaker_id: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> bool:
-    canonical = resolve_canonical_name(name, parliament, lookups)
-    if canonical is not None:
-        return (canonical, parliament) in name_and_parliament_to_speaker_id
-    if parliament == COLONIAL_PARLIAMENT_NUMBER:
+    canonical_name = resolve_canonical_name(name, parliament_number, lookups)
+    if canonical_name is not None:
+        return (canonical_name, parliament_number) in name_parliament_number_to_speaker_id
+    if parliament_number == COLONIAL_PARLIAMENT_NUMBER:
         for fallback in COLONIAL_PARLIAMENT_FALLBACKS:
             candidate = resolve_canonical_name(name, fallback, lookups)
-            if candidate is not None and (candidate, fallback) in name_and_parliament_to_speaker_id:
+            if candidate is not None and (candidate, fallback) in name_parliament_number_to_speaker_id:
                 return True
     return False
 
@@ -94,7 +94,7 @@ def main() -> None:
         speakers = CRUDSpeaker(session).get_all()
         rows = CRUDSpeech(session).get_parliament_rows_by_speaker_not_null_and_parliament_number(COLONIAL_PARLIAMENT_NUMBER)
 
-    name_and_parliament_to_speaker_id = {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None}
+    name_parliament_number_to_speaker_id = {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None}
     lookups = build_speaker_lookups(speakers)
 
     eligible: list[SpeechParliamentRow] = []
@@ -132,7 +132,7 @@ def main() -> None:
             continue
         eligible_row = speech_id_to_row[speech_id]
         name = _preprocess(eligible_row.speaker)
-        if name is not None and _is_resolved(name, eligible_row.parliament_number, lookups, name_and_parliament_to_speaker_id):
+        if name is not None and _is_resolved(name, eligible_row.parliament_number, lookups, name_parliament_number_to_speaker_id):
             passing_pilot.append(speech_id)
 
     regression_count = max(_MIN_REGRESSION_COUNT, len(new_pilot) // _PILOT_TO_REGRESSION_RATIO)

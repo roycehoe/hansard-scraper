@@ -30,8 +30,8 @@ _ATTENDANCE_CLEANUP_FILE = Path(__file__).parent.parent / "data" / "attendance_c
 
 
 def _get_presiding_officer_name(sitting_date: str) -> Optional[str]:
-    day = parse_sitting_date(sitting_date).date()
-    names = [name for first, last, name in SPEAKER_TERMS if first <= day <= last]
+    sitting_day = parse_sitting_date(sitting_date).date()
+    names = [name for first, last, name in SPEAKER_TERMS if first <= sitting_day <= last]
     return names[0] if len(names) == 1 else None
 
 

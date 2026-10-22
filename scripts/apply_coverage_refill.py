@@ -153,7 +153,7 @@ def _fill_fetched_reports(session: Session, fetched_reports: list[FetchedReport]
 
 def apply_coverage_refill(plan_path: Path, hits_path: Optional[Path], report_ids: list[int], is_commit: bool) -> None:
     if not is_commit:
-        search_results = [HansardSearchResult.model_validate(hit) for hit in json.loads(hits_path.read_text())]
+        search_results = [HansardSearchResult.model_validate(search_result) for search_result in json.loads(hits_path.read_text())]
         with Session(engine) as session:
             plan = _get_plan(session, search_results, report_ids)
         _write_plan(plan_path, plan)

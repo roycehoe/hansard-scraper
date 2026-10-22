@@ -71,12 +71,12 @@ def _get_category(name: str) -> UnmatchedCategory:
     return UnmatchedCategory.CANDIDATE
 
 
-def _is_resolved(name: str, parliament: int, lookups: SpeakerLookups) -> bool:
-    if resolve_canonical_name(name, parliament, lookups) is not None:
+def _is_resolved(name: str, parliament_number: int, lookups: SpeakerLookups) -> bool:
+    if resolve_canonical_name(name, parliament_number, lookups) is not None:
         return True
-    if parliament == COLONIAL_PARLIAMENT_NUMBER:
-        for fallback_parliament in COLONIAL_PARLIAMENT_FALLBACKS:
-            if resolve_canonical_name(name, fallback_parliament, lookups) is not None:
+    if parliament_number == COLONIAL_PARLIAMENT_NUMBER:
+        for fallback_parliament_number in COLONIAL_PARLIAMENT_FALLBACKS:
+            if resolve_canonical_name(name, fallback_parliament_number, lookups) is not None:
                 return True
     return False
 
@@ -95,13 +95,13 @@ def find_unmatched(is_verbose: bool = False) -> dict[UnmatchedCategory, Counter[
     for sitting_number, sitting in enumerate(sittings, 1):
         if is_verbose and sitting_number % _PROGRESS_INTERVAL == 0:
             logger.info(f"  {sitting_number}/{total} sittings processed…")
-        parliament = infer_parliament(sitting.parlement_no, sitting.volume_no)
-        if parliament is None:
+        parliament_number = infer_parliament(sitting.parlement_no, sitting.volume_no)
+        if parliament_number is None:
             continue
         for attendance_record in build_sitting_attendances_from_markdown(sitting, lookups, constituency_lookups):
             if not attendance_record.speaker_name:
                 continue
-            if _is_resolved(attendance_record.speaker_name, parliament, lookups):
+            if _is_resolved(attendance_record.speaker_name, parliament_number, lookups):
                 continue
             category = _get_category(attendance_record.speaker_name)
             category_to_counter[category][attendance_record.speaker_name] += 1

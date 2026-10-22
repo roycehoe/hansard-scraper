@@ -35,7 +35,7 @@ def main() -> None:
         speakers = CRUDSpeaker(session).get_all()
         all_rows: list[SpeechReportTypeRow] = CRUDSpeech(session).get_report_type_rows_by_speaker_not_null()
 
-    name_and_parliament_to_speaker_id: dict[tuple[str, int], int] = {
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int] = {
         (speaker.name, speaker.parliament_number): speaker.id
         for speaker in speakers
         if speaker.id is not None
@@ -58,8 +58,8 @@ def main() -> None:
     for row in sample:
         name = strip_title(row.speaker.rstrip(":").strip())
         name = normalize_name(name)
-        canonical = resolve_canonical_name(name, row.parliament_number, lookups) if name else None
-        is_found = canonical is not None and (canonical, row.parliament_number) in name_and_parliament_to_speaker_id
+        canonical_name = resolve_canonical_name(name, row.parliament_number, lookups) if name else None
+        is_found = canonical_name is not None and (canonical_name, row.parliament_number) in name_parliament_number_to_speaker_id
 
         report_type_to_stats[row.report_type].total += 1
         if is_found:
