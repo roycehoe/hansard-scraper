@@ -45,6 +45,7 @@ class CRUDHansardWebsiteResponse:
             .where(col(HansardWebsiteResponse.report_id) == report_id)
             .values(content=content)
         )
+
         self.session.execute(statement)
 
     def get_all_report_ids(self) -> set[str]:

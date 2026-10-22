@@ -148,11 +148,13 @@ class CRUDAttendance:
 
     def delete_by_ids(self, attendance_ids: list[int]) -> int:
         statement = delete(Attendance).where(col(Attendance.id).in_(attendance_ids))
+
         return self.session.exec(statement).rowcount
 
     def set_location_names_bulk(self, attendance_id_to_location_name: dict[int, str]) -> int:
         if not attendance_id_to_location_name:
             return 0
+
         update_result = self.session.execute(
             text(
                 "UPDATE attendance SET location_name = v.location_name "
@@ -161,11 +163,13 @@ class CRUDAttendance:
             ),
             {"ids": list(attendance_id_to_location_name.keys()), "location_names": list(attendance_id_to_location_name.values())},
         )
+
         return update_result.rowcount
 
     def set_speaker_names_bulk(self, attendance_id_to_speaker_name: dict[int, str]) -> int:
         if not attendance_id_to_speaker_name:
             return 0
+
         update_result = self.session.execute(
             text(
                 "UPDATE attendance SET speaker_name = v.speaker_name "
@@ -174,11 +178,13 @@ class CRUDAttendance:
             ),
             {"ids": list(attendance_id_to_speaker_name.keys()), "speaker_names": list(attendance_id_to_speaker_name.values())},
         )
+
         return update_result.rowcount
 
     def set_speaker_ids_bulk(self, attendance_id_to_speaker_id: dict[int, int]) -> None:
         if not attendance_id_to_speaker_id:
             return
+
         self.session.execute(
             text(
                 "UPDATE attendance SET speaker_id = v.speaker_id "

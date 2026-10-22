@@ -135,6 +135,7 @@ class CRUDSitting:
     def set_markdown_contents_bulk_by_markdown_content(self, updates: dict[int, tuple[str, str]]) -> int:
         if not updates:
             return 0
+
         # NOTE: each pair is (before, after); a row whose markdown is no longer the before text is left alone and not counted.
         update_result = self.session.execute(
             text(
@@ -144,11 +145,13 @@ class CRUDSitting:
             ),
             {"ids": list(updates), "befores": [before for before, _ in updates.values()], "afters": [after for _, after in updates.values()]},
         )
+
         return update_result.rowcount
 
     def set_session_numbers_bulk(self, sitting_id_to_session_number: dict[int, int]) -> int:
         if not sitting_id_to_session_number:
             return 0
+
         update_result = self.session.execute(
             text(
                 "UPDATE sitting SET session_no = v.session_no "
@@ -157,11 +160,13 @@ class CRUDSitting:
             ),
             {"ids": list(sitting_id_to_session_number.keys()), "session_numbers": list(sitting_id_to_session_number.values())},
         )
+
         return update_result.rowcount
 
     def set_sitting_numbers_bulk(self, sitting_id_to_sitting_number: dict[int, int]) -> int:
         if not sitting_id_to_sitting_number:
             return 0
+
         update_result = self.session.execute(
             text(
                 "UPDATE sitting SET sitting_no = v.sitting_no "
@@ -170,4 +175,5 @@ class CRUDSitting:
             ),
             {"ids": list(sitting_id_to_sitting_number.keys()), "sitting_numbers": list(sitting_id_to_sitting_number.values())},
         )
+
         return update_result.rowcount

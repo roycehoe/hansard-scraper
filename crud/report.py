@@ -122,6 +122,7 @@ class CRUDReport:
 
     def delete_by_ids(self, report_ids: list[int]) -> int:
         statement = delete(Report).where(col(Report.id).in_(report_ids))
+
         return self.session.exec(statement).rowcount
 
     def get_title_rows(self) -> list[ReportTitleRow]:
@@ -155,6 +156,7 @@ class CRUDReport:
     def set_markdown_contents_bulk_by_markdown_content(self, updates: dict[int, tuple[str, str]]) -> int:
         if not updates:
             return 0
+
         # NOTE: each pair is (before, after); a row whose markdown is no longer the before text is left alone and not counted.
         update_result = self.session.execute(
             text(
@@ -164,11 +166,13 @@ class CRUDReport:
             ),
             {"ids": list(updates), "befores": [before for before, _ in updates.values()], "afters": [after for _, after in updates.values()]},
         )
+
         return update_result.rowcount
 
     def set_sitting_numbers_bulk(self, report_id_to_sitting_number: dict[int, int]) -> int:
         if not report_id_to_sitting_number:
             return 0
+
         update_result = self.session.execute(
             text(
                 "UPDATE report SET sitting_number = v.sitting_number "
@@ -177,6 +181,7 @@ class CRUDReport:
             ),
             {"ids": list(report_id_to_sitting_number.keys()), "sitting_numbers": list(report_id_to_sitting_number.values())},
         )
+
         return update_result.rowcount
 
     def get_vacuum_count(self) -> int:

@@ -23,6 +23,7 @@ class CRUDSpeaker:
     def set_person_ids_bulk(self, speaker_id_to_person_id: dict[int, int]) -> None:
         if not speaker_id_to_person_id:
             return
+
         self.session.execute(
             text(
                 "UPDATE speaker SET person_id = v.person_id "
@@ -35,6 +36,7 @@ class CRUDSpeaker:
     def set_is_legislative_assembly_bulk(self, speaker_id_to_is_legislative_assembly: dict[int, bool]) -> int:
         if not speaker_id_to_is_legislative_assembly:
             return 0
+
         update_result = self.session.execute(
             text(
                 "UPDATE speaker SET is_legislative_assembly = v.is_legislative_assembly "
@@ -43,11 +45,13 @@ class CRUDSpeaker:
             ),
             {"ids": list(speaker_id_to_is_legislative_assembly.keys()), "is_legislative_assembly_values": list(speaker_id_to_is_legislative_assembly.values())},
         )
+
         return update_result.rowcount
 
     def set_party_bulk(self, speaker_id_to_party: dict[int, str]) -> int:
         if not speaker_id_to_party:
             return 0
+
         update_result = self.session.execute(
             text(
                 "UPDATE speaker SET party = v.party "
@@ -56,11 +60,13 @@ class CRUDSpeaker:
             ),
             {"ids": list(speaker_id_to_party.keys()), "parties": list(speaker_id_to_party.values())},
         )
+
         return update_result.rowcount
 
     def set_parliament_numbers_bulk(self, speaker_id_to_parliament_number: dict[int, int]) -> int:
         if not speaker_id_to_parliament_number:
             return 0
+
         update_result = self.session.execute(
             text(
                 "UPDATE speaker SET parliament_number = v.parliament_number "
@@ -69,4 +75,5 @@ class CRUDSpeaker:
             ),
             {"ids": list(speaker_id_to_parliament_number.keys()), "parliament_numbers": list(speaker_id_to_parliament_number.values())},
         )
+
         return update_result.rowcount

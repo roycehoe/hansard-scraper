@@ -10,6 +10,7 @@ class CRUDPerson:
     def create(self, person: Person) -> int:
         self.session.add(person)
         self.session.flush()
+
         return person.id
 
     def get_all(self) -> list[Person]:

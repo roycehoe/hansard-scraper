@@ -198,6 +198,7 @@ class CRUDSpeech:
     def set_speakers_bulk_by_speaker(self, updates: dict[int, tuple[str, str]]) -> int:
         if not updates:
             return 0
+
         # NOTE: each pair is (before, after); a row whose label is no longer the before text is left alone and not counted.
         update_result = self.session.execute(
             text(
@@ -207,11 +208,13 @@ class CRUDSpeech:
             ),
             {"ids": list(updates), "befores": [before for before, _ in updates.values()], "afters": [after for _, after in updates.values()]},
         )
+
         return update_result.rowcount
 
     def set_transcripts_bulk_by_transcript(self, updates: dict[int, tuple[str, str]]) -> int:
         if not updates:
             return 0
+
         # NOTE: each pair is (before, after); a row whose transcript is no longer the before text is left alone and not counted.
         update_result = self.session.execute(
             text(
@@ -221,6 +224,7 @@ class CRUDSpeech:
             ),
             {"ids": list(updates), "befores": [before for before, _ in updates.values()], "afters": [after for _, after in updates.values()]},
         )
+
         return update_result.rowcount
 
     def get_speaker_id_rows_by_ids_for_update(self, speech_ids: list[int]) -> list[SpeechSpeakerIdRow]:
@@ -238,11 +242,13 @@ class CRUDSpeech:
 
     def delete_by_report_ids(self, report_ids: list[int]) -> int:
         statement = delete(Speech).where(col(Speech.report_id).in_(report_ids))
+
         return self.session.exec(statement).rowcount
 
     def set_speaker_ids_bulk(self, speech_id_to_speaker_id: dict[int, Optional[int]]) -> None:
         if not speech_id_to_speaker_id:
             return
+
         self.session.execute(
             text(
                 "UPDATE speech SET speaker_id = v.speaker_id "
