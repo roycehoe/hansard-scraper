@@ -85,7 +85,7 @@ def _get_sitting_number(raw_sitting_number: Optional[str], markdown_content: Opt
 def build_report(hansard_website_response: HansardWebsiteResponse) -> Report:
     sitting_date = datetime.strptime(hansard_website_response.sitting_date, _SITTING_DATE_FORMAT)
     raw_title = fix_mojibake(hansard_website_response.title)
-    db_report_header = build_report_header(raw_title)
+    report_header = build_report_header(raw_title)
     markdown_content = (
         get_cleaned_report_markdown(hansard_website_response.content, hansard_website_response.report_version)
         if hansard_website_response.content is not None
@@ -99,8 +99,8 @@ def build_report(hansard_website_response: HansardWebsiteResponse) -> Report:
         sittingDate=sitting_date,
         sno=int(hansard_website_response.speech_number),
         original_title=raw_title,
-        title=db_report_header.title,
-        subtitle=db_report_header.subtitle,
+        title=report_header.title,
+        subtitle=report_header.subtitle,
         reportId=hansard_website_response.report_id,
         reportType=hansard_website_response.report_type,
         content=hansard_website_response.content,
