@@ -3,11 +3,11 @@ import json
 import re
 from collections import Counter
 
-from sqlmodel import Session, select
+from sqlmodel import Session
 
+from crud.sitting import CRUDSitting
 from crud.speaker import CRUDSpeaker
 from database.init import engine
-from database.sitting import Sitting
 from logs import logger
 from services.attendance import (
     build_constituency_lookups,
@@ -71,7 +71,7 @@ def _is_resolved(name: str, parliament: int, lookups: SpeakerLookups) -> bool:
 
 def find_unmatched(is_verbose: bool = False) -> dict[str, Counter]:
     with Session(engine) as session:
-        sittings = session.exec(select(Sitting)).all()
+        sittings = CRUDSitting(session).get_all()
         speakers = CRUDSpeaker(session).get_all()
 
     lookups = build_speaker_lookups(speakers)
