@@ -2,7 +2,7 @@ import argparse
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 from sqlmodel import Session
 
@@ -15,14 +15,8 @@ from exceptions import HansardWriteCheckError
 from logs import logger
 from settings import settings
 from utils.markdown_parser import REPAIRABLE_TEXT_PATTERN, repair_source_characters
+from utils.text import TextChange
 from utils.write_target import validate_can_write
-
-
-@dataclass(frozen=True)
-class TextChange:
-    id: int
-    before: str
-    after: str
 
 
 @dataclass(frozen=True)
@@ -38,8 +32,7 @@ def _repair_speech_text(text: str) -> str:
     return repair_source_characters(text).strip()
 
 
-def _get_text_changes(id_text_pairs: list[tuple[int, str]], repair: Callable[[str], str]) -> list[TextChange]:
-    text_changes = [TextChange(row_id, text, repair(text)) for row_id, text in id_text_pairs]
+def _get_text_changes(text_changes: list[TextChange]) -> list[TextChange]:
     return [text_change for text_change in text_changes if text_change.after != text_change.before]
 
 
@@ -48,19 +41,15 @@ def _get_source_character_plan(session: Session) -> SourceCharacterPlan:
     label_rows = CRUDSpeech(session).get_label_rows_by_speaker_regex(REPAIRABLE_TEXT_PATTERN)
     report_rows = CRUDReport(session).get_markdown_rows_by_markdown_content_regex(REPAIRABLE_TEXT_PATTERN)
     sitting_rows = CRUDSitting(session).get_markdown_rows_by_markdown_content_regex(REPAIRABLE_TEXT_PATTERN)
-    transcript_changes = _get_text_changes([(row.id, row.transcript) for row in speech_rows], _repair_speech_text)
+    transcript_changes = _get_text_changes([TextChange(row.id, row.transcript, _repair_speech_text(row.transcript)) for row in speech_rows])
     # NOTE: the parser drops a speech row with nothing left, which an update cannot do, so such a row stays as stored until the next parse write.
     return SourceCharacterPlan(
         [text_change for text_change in transcript_changes if text_change.after],
-        _get_text_changes([(row.id, row.speaker) for row in label_rows], _repair_speech_text),
-        _get_text_changes([(row.id, row.markdown_content) for row in report_rows], repair_source_characters),
-        _get_text_changes([(row.id, row.markdown_content) for row in sitting_rows], repair_source_characters),
+        _get_text_changes([TextChange(row.id, row.speaker, _repair_speech_text(row.speaker)) for row in label_rows]),
+        _get_text_changes([TextChange(row.id, row.markdown_content, repair_source_characters(row.markdown_content)) for row in report_rows]),
+        _get_text_changes([TextChange(row.id, row.markdown_content, repair_source_characters(row.markdown_content)) for row in sitting_rows]),
         [text_change.id for text_change in transcript_changes if not text_change.after],
     )
-
-
-def _get_updates(text_changes: list[TextChange]) -> dict[int, tuple[str, str]]:
-    return {text_change.id: (text_change.before, text_change.after) for text_change in text_changes}
 
 
 def _get_counts(source_character_plan: SourceCharacterPlan) -> dict[str, int]:
@@ -74,10 +63,10 @@ def _get_counts(source_character_plan: SourceCharacterPlan) -> dict[str, int]:
 
 def _write_source_characters(session: Session, source_character_plan: SourceCharacterPlan) -> None:
     written_counts = {
-        "speech transcripts": CRUDSpeech(session).set_transcripts_bulk_by_transcript(_get_updates(source_character_plan.speech_transcripts)),
-        "speech labels": CRUDSpeech(session).set_speakers_bulk_by_speaker(_get_updates(source_character_plan.speech_labels)),
-        "report markdowns": CRUDReport(session).set_markdown_contents_bulk_by_markdown_content(_get_updates(source_character_plan.report_markdowns)),
-        "sitting markdowns": CRUDSitting(session).set_markdown_contents_bulk_by_markdown_content(_get_updates(source_character_plan.sitting_markdowns)),
+        "speech transcripts": CRUDSpeech(session).set_transcripts_bulk_by_transcript(source_character_plan.speech_transcripts),
+        "speech labels": CRUDSpeech(session).set_speakers_bulk_by_speaker(source_character_plan.speech_labels),
+        "report markdowns": CRUDReport(session).set_markdown_contents_bulk_by_markdown_content(source_character_plan.report_markdowns),
+        "sitting markdowns": CRUDSitting(session).set_markdown_contents_bulk_by_markdown_content(source_character_plan.sitting_markdowns),
     }
     planned_counts = _get_counts(source_character_plan)
     if written_counts != planned_counts:

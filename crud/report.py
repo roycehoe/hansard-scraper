@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlmodel import Session, col, delete, func, select
 
 from database.report import Report
+from utils.text import TextChange
 
 
 @dataclass(frozen=True)
@@ -153,18 +154,22 @@ class CRUDReport:
         )
         return [ReportMarkdownRow(*row) for row in self.session.exec(statement).all()]
 
-    def set_markdown_contents_bulk_by_markdown_content(self, updates: dict[int, tuple[str, str]]) -> int:
-        if not updates:
+    def set_markdown_contents_bulk_by_markdown_content(self, text_changes: list[TextChange]) -> int:
+        if not text_changes:
             return 0
 
-        # NOTE: each pair is (before, after); a row whose markdown is no longer the before text is left alone and not counted.
+        # NOTE: a row whose markdown is no longer the before text is left alone and not counted.
         update_result = self.session.execute(
             text(
                 "UPDATE report SET markdown_content = v.after "
                 "FROM UNNEST(CAST(:ids AS integer[]), CAST(:befores AS text[]), CAST(:afters AS text[])) AS v(id, before, after) "
                 "WHERE report.id = v.id AND report.markdown_content = v.before"
             ),
-            {"ids": list(updates), "befores": [before for before, _ in updates.values()], "afters": [after for _, after in updates.values()]},
+            {
+                "ids": [text_change.id for text_change in text_changes],
+                "befores": [text_change.before for text_change in text_changes],
+                "afters": [text_change.after for text_change in text_changes],
+            },
         )
 
         return update_result.rowcount

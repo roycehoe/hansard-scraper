@@ -1,6 +1,14 @@
 import re
+from dataclasses import dataclass
 
 _NON_ASCII_RUN_PATTERN = re.compile(r"[^\x00-\x7f]+")
+
+
+@dataclass(frozen=True)
+class TextChange:
+    id: int
+    before: str
+    after: str
 
 
 def _fix_mojibake_run(match: re.Match) -> str:

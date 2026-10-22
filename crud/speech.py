@@ -7,6 +7,7 @@ from sqlmodel import Session, col, delete, func, select
 
 from database.report import Report
 from database.speech import Speech
+from utils.text import TextChange
 
 _STREAM_BATCH = 10_000
 
@@ -195,34 +196,42 @@ class CRUDSpeech:
         statement = select(Speech.id, Speech.speaker).where(col(Speech.speaker).regexp_match(pattern)).order_by(Speech.id)
         return [SpeechLabelRow(*row) for row in self.session.exec(statement).all()]
 
-    def set_speakers_bulk_by_speaker(self, updates: dict[int, tuple[str, str]]) -> int:
-        if not updates:
+    def set_speakers_bulk_by_speaker(self, text_changes: list[TextChange]) -> int:
+        if not text_changes:
             return 0
 
-        # NOTE: each pair is (before, after); a row whose label is no longer the before text is left alone and not counted.
+        # NOTE: a row whose label is no longer the before text is left alone and not counted.
         update_result = self.session.execute(
             text(
                 "UPDATE speech SET speaker = v.after "
                 "FROM UNNEST(CAST(:ids AS integer[]), CAST(:befores AS text[]), CAST(:afters AS text[])) AS v(id, before, after) "
                 "WHERE speech.id = v.id AND speech.speaker = v.before"
             ),
-            {"ids": list(updates), "befores": [before for before, _ in updates.values()], "afters": [after for _, after in updates.values()]},
+            {
+                "ids": [text_change.id for text_change in text_changes],
+                "befores": [text_change.before for text_change in text_changes],
+                "afters": [text_change.after for text_change in text_changes],
+            },
         )
 
         return update_result.rowcount
 
-    def set_transcripts_bulk_by_transcript(self, updates: dict[int, tuple[str, str]]) -> int:
-        if not updates:
+    def set_transcripts_bulk_by_transcript(self, text_changes: list[TextChange]) -> int:
+        if not text_changes:
             return 0
 
-        # NOTE: each pair is (before, after); a row whose transcript is no longer the before text is left alone and not counted.
+        # NOTE: a row whose transcript is no longer the before text is left alone and not counted.
         update_result = self.session.execute(
             text(
                 "UPDATE speech SET transcript = v.after "
                 "FROM UNNEST(CAST(:ids AS integer[]), CAST(:befores AS text[]), CAST(:afters AS text[])) AS v(id, before, after) "
                 "WHERE speech.id = v.id AND speech.transcript = v.before"
             ),
-            {"ids": list(updates), "befores": [before for before, _ in updates.values()], "afters": [after for _, after in updates.values()]},
+            {
+                "ids": [text_change.id for text_change in text_changes],
+                "befores": [text_change.before for text_change in text_changes],
+                "afters": [text_change.after for text_change in text_changes],
+            },
         )
 
         return update_result.rowcount
