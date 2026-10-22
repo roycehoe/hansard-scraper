@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import dataclass
 from typing import Optional, Union
 
 import httpx
@@ -27,22 +28,27 @@ _HTTP_TIMEOUT_SECONDS = 120
 _SITTING_NESTED_COLUMNS = frozenset({"markdown_content", "sections", "annexures", "vernaculars", "a2b"})
 
 
+@dataclass(frozen=True)
+class FetchedSittingDetails:
+    sitting: Sitting
+    hansard_report_response: Optional[Union[HansardReportOldResponse, HansardReportNewResponse]]
+
+
 async def _fetch_report_response(
-    sitting_date: str,
+    sitting: Sitting,
     client: httpx.AsyncClient,
-) -> Optional[Union[HansardReportOldResponse, HansardReportNewResponse]]:
+) -> FetchedSittingDetails:
     try:
-        return await get_hansard_report_response_async(sitting_date, client)
+        hansard_report_response = await get_hansard_report_response_async(sitting.sitting_date, client)
+        return FetchedSittingDetails(sitting, hansard_report_response)
     except HansardGatewayError as error:
-        logger.warning(f"Skipping {sitting_date}: {error}")
-        return None
+        logger.warning(f"Skipping {sitting.sitting_date}: {error}")
+        return FetchedSittingDetails(sitting, None)
 
 
-async def _fetch_all_report_responses(
-    sitting_dates: list[str],
-) -> list[Optional[Union[HansardReportOldResponse, HansardReportNewResponse]]]:
+async def _fetch_all_report_responses(sittings: list[Sitting]) -> list[FetchedSittingDetails]:
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
-        return await asyncio.gather(*[_fetch_report_response(sitting_date, client) for sitting_date in sitting_dates])
+        return await asyncio.gather(*[_fetch_report_response(sitting, client) for sitting in sittings])
 
 
 def _fill_null_fields(
@@ -70,11 +76,13 @@ def populate_sitting_details(session: Session) -> None:
     ]
     logger.info(f"Fetching {len(sittings_to_fetch)}/{len(sittings)} sittings without details")
 
-    responses = asyncio.run(_fetch_all_report_responses([sitting.sitting_date for sitting in sittings_to_fetch]))
+    fetched_sittings = asyncio.run(_fetch_all_report_responses(sittings_to_fetch))
 
     filled = 0
     skipped = 0
-    for i, (sitting, response) in enumerate(zip(sittings_to_fetch, responses), start=1):
+    for i, fetched_sitting in enumerate(fetched_sittings, start=1):
+        sitting = fetched_sitting.sitting
+        response = fetched_sitting.hansard_report_response
         sitting_date = sitting.sitting_date
         if response is None:
             skipped += 1

@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import dataclass
 from typing import Optional
 
 import httpx
@@ -18,10 +19,16 @@ _BATCH_SIZE = 200
 _HTTP_TIMEOUT_SECONDS = 60
 
 
+@dataclass(frozen=True)
+class FetchedContent:
+    report_id: str
+    content: Optional[str]
+
+
 async def _fetch_content(
     hansard_website_response: HansardWebsiteResponse,
     client: httpx.AsyncClient,
-) -> Optional[str]:
+) -> FetchedContent:
     try:
         hansard_topic_response = await get_hansard_topic_response_async(
             get_topic_id(
@@ -33,21 +40,21 @@ async def _fetch_content(
         )
     except HansardGatewayError as error:
         logger.warning(f"No content for {hansard_website_response.report_id}: {error}")
-        return None
+        return FetchedContent(hansard_website_response.report_id, None)
     content = get_topic_html_content(hansard_topic_response, hansard_website_response.report_version)
     if content is None:
         logger.warning(f"No content for {hansard_website_response.report_id}: the response holds no text")
-    return content
+    return FetchedContent(hansard_website_response.report_id, content)
 
 
-async def _fetch_all_contents(hansard_website_responses: list[HansardWebsiteResponse]) -> list[Optional[str]]:
-    contents: list[Optional[str]] = []
+async def _fetch_all_contents(hansard_website_responses: list[HansardWebsiteResponse]) -> list[FetchedContent]:
+    fetched_contents: list[FetchedContent] = []
 
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
         for start in range(0, len(hansard_website_responses), _BATCH_SIZE):
             batch = hansard_website_responses[start : start + _BATCH_SIZE]
-            contents.extend(await asyncio.gather(*[_fetch_content(response, client) for response in batch]))
-    return contents
+            fetched_contents.extend(await asyncio.gather(*[_fetch_content(response, client) for response in batch]))
+    return fetched_contents
 
 
 def populate_hansard_response_contents(session: Session) -> None:
@@ -63,16 +70,16 @@ def populate_hansard_response_contents(session: Session) -> None:
     responses_to_fetch = list(report_id_to_first_response.values())
     logger.info(f"Fetching {len(responses_to_fetch)}/{len(hansard_website_responses)} rows without content")
 
-    contents = asyncio.run(_fetch_all_contents(responses_to_fetch))
+    fetched_contents = asyncio.run(_fetch_all_contents(responses_to_fetch))
 
     filled = 0
     failed = 0
-    for i, (hansard_website_response, content) in enumerate(zip(responses_to_fetch, contents), start=1):
-        if content is None:
+    for i, fetched_content in enumerate(fetched_contents, start=1):
+        if fetched_content.content is None:
             failed += 1
             continue
-        logger.info(f"{i}/{len(responses_to_fetch)}: {hansard_website_response.report_id}")
-        CRUDHansardWebsiteResponse(session).set_content_by_report_id(hansard_website_response.report_id, content)
+        logger.info(f"{i}/{len(responses_to_fetch)}: {fetched_content.report_id}")
+        CRUDHansardWebsiteResponse(session).set_content_by_report_id(fetched_content.report_id, fetched_content.content)
         filled += 1
     session.commit()
     logger.info(f"Hansard response contents: {filled} ids filled, {failed} ids failed")
