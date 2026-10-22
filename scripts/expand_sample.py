@@ -11,6 +11,7 @@ from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech, SpeechParliamentRow
 from database.init import engine
 from logs import logger
+from schemas.sample_sets import SampleSets
 from services.attendance import build_speaker_lookups
 from utils.names import (
     normalize_name,
@@ -26,7 +27,6 @@ _COLONIAL_PARLIAMENT_FALLBACKS = (1, 2, 3)
 _COLONIAL_PARLIAMENT_NUMBER = 0
 _PILOT_TO_REGRESSION_RATIO = 5
 _MIN_REGRESSION_COUNT = 1
-_JSON_INDENT = 2
 
 _STRUCTURAL_EXCLUSIONS = frozenset({
     "An hon. Member", "Some hon. Members", "Non-Residents",
@@ -83,8 +83,8 @@ def _is_resolved(
 def main() -> None:
     random.seed(_SEED)
 
-    sample = json.loads(_SAMPLE_PATH.read_text())
-    existing_ids = set(sample["pilot"] + sample["held_out"] + sample["regression"])
+    sample_sets = SampleSets.model_validate_json(_SAMPLE_PATH.read_text())
+    existing_ids = set(sample_sets.pilot + sample_sets.held_out + sample_sets.regression)
 
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
@@ -134,17 +134,17 @@ def main() -> None:
     regression_count = max(_MIN_REGRESSION_COUNT, len(new_pilot) // _PILOT_TO_REGRESSION_RATIO)
     new_regression = random.sample(passing_pilot, min(regression_count, len(passing_pilot)))
 
-    sample["pilot"].extend(new_pilot)
-    sample["held_out"].extend(new_held_out)
-    sample["regression"].extend(new_regression)
+    sample_sets.pilot.extend(new_pilot)
+    sample_sets.held_out.extend(new_held_out)
+    sample_sets.regression.extend(new_regression)
 
-    _SAMPLE_PATH.write_text(json.dumps(sample, indent=_JSON_INDENT))
+    _SAMPLE_PATH.write_text(json.dumps(sample_sets.model_dump(), indent=2))
 
     logger.info("\nExpansion summary:")
     logger.info(f"  Added pilot:      {len(new_pilot)}")
     logger.info(f"  Added held-out:   {len(new_held_out)}")
     logger.info(f"  Added regression: {len(new_regression)} (from {len(passing_pilot)} passing new pilot)")
-    logger.info(f"  New totals — pilot: {len(sample['pilot'])}, held_out: {len(sample['held_out'])}, regression: {len(sample['regression'])}")
+    logger.info(f"  New totals — pilot: {len(sample_sets.pilot)}, held_out: {len(sample_sets.held_out)}, regression: {len(sample_sets.regression)}")
 
 
 if __name__ == "__main__":

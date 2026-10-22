@@ -1,7 +1,6 @@
 import argparse
 import json
 from collections import Counter
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -17,6 +16,7 @@ from database.speech import Speech
 from exceptions import HansardWriteCheckError
 from gateway.hansard_topic import get_hansard_topic_response
 from logs import logger
+from schemas.coverage_refill_plan import CoverageRefillPlan, FetchedHit, FetchedReport
 from schemas.hansard_search_result import HansardSearchResult
 from services.hansard_website import (
     build_hansard_website_response,
@@ -28,26 +28,6 @@ from services.speech import build_speeches, get_speeches, get_start_of_speech_li
 from settings import settings
 from utils.markdown_parser import get_cleaned_report_markdown
 from utils.write_target import validate_can_write
-
-
-@dataclass(frozen=True)
-class FetchedHit:
-    search_result: HansardSearchResult
-    content: str
-    speech_count: int
-
-
-@dataclass(frozen=True)
-class FetchedReport:
-    id: int
-    content: str
-    speech_count: int
-
-
-@dataclass(frozen=True)
-class CoverageRefillPlan:
-    fetched_hits: list[FetchedHit]
-    fetched_reports: list[FetchedReport]
 
 
 def _fetch_topic_content(report_id: str, html_file_name: Optional[str], report_version: str) -> str:
@@ -102,15 +82,15 @@ def _get_plan(session: Session, search_results: list[HansardSearchResult], repor
     for search_result in search_results:
         content = _fetch_topic_content(search_result.report_id, search_result.html_file_name, search_result.report_version)
         report = build_report(build_hansard_website_response(search_result, content))
-        fetched_hits.append(FetchedHit(search_result, content, len(_build_speeches(report, report.markdown_content))))
+        fetched_hits.append(FetchedHit(search_result=search_result, content=content, speech_count=len(_build_speeches(report, report.markdown_content))))
         logger.info(f"{len(fetched_hits)}/{len(search_results)}: {search_result.report_id}, {fetched_hits[-1].speech_count} speech rows")
     fetched_reports = []
     for report in _get_validated_textless_reports(session, report_ids):
         content = _fetch_topic_content(report.report_id, report.html_file_name, report.report_version)
         speeches = _build_speeches(report, get_cleaned_report_markdown(content, report.report_version))
-        fetched_reports.append(FetchedReport(report.id, content, len(speeches)))
+        fetched_reports.append(FetchedReport(id=report.id, content=content, speech_count=len(speeches)))
         logger.info(f"Report {report.id}: {len(content)} characters, {fetched_reports[-1].speech_count} speech rows")
-    return CoverageRefillPlan(fetched_hits, fetched_reports)
+    return CoverageRefillPlan(fetched_hits=fetched_hits, fetched_reports=fetched_reports)
 
 
 def _write_plan(plan_path: Path, plan: CoverageRefillPlan) -> None:
@@ -128,14 +108,7 @@ def _write_plan(plan_path: Path, plan: CoverageRefillPlan) -> None:
 
 
 def _read_plan(plan_path: Path) -> CoverageRefillPlan:
-    plan = json.loads(plan_path.read_text())
-    return CoverageRefillPlan(
-        [
-            FetchedHit(HansardSearchResult.model_validate(fetched_hit["search_result"]), fetched_hit["content"], fetched_hit["speech_count"])
-            for fetched_hit in plan["fetched_hits"]
-        ],
-        [FetchedReport(fetched_report["id"], fetched_report["content"], fetched_report["speech_count"]) for fetched_report in plan["fetched_reports"]],
-    )
+    return CoverageRefillPlan.model_validate_json(plan_path.read_text())
 
 
 def _validate_speech_counts(session: Session, report_id_to_speech_count: dict[int, int]) -> None:

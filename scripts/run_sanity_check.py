@@ -1,4 +1,4 @@
-import json
+from pathlib import Path
 from typing import Optional
 
 from sqlmodel import Session
@@ -8,10 +8,11 @@ from crud.report import CRUDReport
 from database.init import engine
 from database.report import Report
 from logs import logger
+from schemas.sample_sets import SampleSets
 from services.report import build_report
 from services.speech import get_speeches, get_start_of_speech_line
 
-_SAMPLE_FILE_PATH = "sample.json"
+_SAMPLE_FILE_PATH = Path("sample.json")
 _SEPARATOR_WIDTH = 90
 _SNIPPET_LENGTH = 500
 _SNIPPET_LINES_SHOWN = 15
@@ -32,14 +33,8 @@ def _get_start_line(report: Report) -> Optional[int]:
 
 
 def run() -> None:
-    with open(_SAMPLE_FILE_PATH) as sample_file:
-        sample_sets = json.load(sample_file)
-
-    report_ids = (
-        sample_sets.get("pilot", [])
-        + sample_sets.get("held_out", [])
-        + sample_sets.get("regression", [])
-    )
+    sample_sets = SampleSets.model_validate_json(_SAMPLE_FILE_PATH.read_text())
+    report_ids = sample_sets.pilot + sample_sets.held_out + sample_sets.regression
 
     with Session(engine) as session:
         stored_reports = CRUDReport(session).get_by_ids(report_ids)

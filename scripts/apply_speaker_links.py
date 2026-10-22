@@ -1,6 +1,5 @@
 import argparse
 import json
-from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -17,17 +16,12 @@ from populate.speaker_links import (
     get_role_context_speaker_ids,
     get_sitting_deputy_speaker_ids,
 )
+from schemas.speaker_link_plan import SpeakerLinkPlan
 from services.attendance import build_speaker_lookups
 from services.speaker_link import resolve_attendance_rows, resolve_speech_rows
 from settings import settings
 from utils.speaker_resolution import SpeakerLookups
 from utils.write_target import validate_can_write
-
-
-@dataclass(frozen=True)
-class SpeakerLinkPlan:
-    speech_id_to_speaker_id: dict[int, int]
-    attendance_id_to_speaker_id: dict[int, int]
 
 
 # NOTE: stage 8 writes each pass before the next one reads, so a row an earlier pass links keeps that pass's speaker here too.
@@ -71,24 +65,20 @@ def _get_plan(session: Session) -> SpeakerLinkPlan:
     logger.info(
         f"Attendance: set speaker_id on {len(resolved_attendance_speaker_ids.id_to_speaker_id)}/{resolved_attendance_speaker_ids.row_count} records"
     )
-    plan = SpeakerLinkPlan(speech_id_to_speaker_id, resolved_attendance_speaker_ids.id_to_speaker_id)
+    plan = SpeakerLinkPlan(speech_id_to_speaker_id=speech_id_to_speaker_id, attendance_id_to_speaker_id=resolved_attendance_speaker_ids.id_to_speaker_id)
     logger.info(f"Plan: {len(plan.speech_id_to_speaker_id)} speech rows, {len(plan.attendance_id_to_speaker_id)} attendance rows to link")
     return plan
 
 
 def _read_plan(plan_path: Path) -> SpeakerLinkPlan:
-    plan = json.loads(plan_path.read_text())
-    return SpeakerLinkPlan(
-        {int(speech_id): speaker_id for speech_id, speaker_id in plan["speech_id_to_speaker_id"].items()},
-        {int(attendance_id): speaker_id for attendance_id, speaker_id in plan["attendance_id_to_speaker_id"].items()},
-    )
+    return SpeakerLinkPlan.model_validate_json(plan_path.read_text())
 
 
 def apply_speaker_links(plan_path: Path, is_commit: bool) -> None:
     if not is_commit:
         with Session(engine) as session:
             plan = _get_plan(session)
-        plan_path.write_text(json.dumps(asdict(plan), indent=1))
+        plan_path.write_text(json.dumps(plan.model_dump(), indent=1))
         logger.info("Dry run: nothing written")
         return
 
