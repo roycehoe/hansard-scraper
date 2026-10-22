@@ -14,6 +14,7 @@ from utils.sitting_dates import get_month_windows
 
 _MAX_RETRIES = 3
 _BASE_DELAY = 1.0
+_BACKOFF_BASE = 2
 _MAX_PASSES = 25
 _HTTP_BAD_REQUEST = 400
 _HTTP_INTERNAL_SERVER_ERROR = 500
@@ -84,7 +85,7 @@ def _get_page_with_retries(start_index: int, from_date: date, to_date: date) -> 
             if attempt == _MAX_RETRIES:
                 raise
             logger.warning(f"{from_date:%Y-%m} start {start_index}: {error}, retry {attempt + 1}/{_MAX_RETRIES}")
-            time.sleep(_BASE_DELAY * (2 ** attempt))
+            time.sleep(_BASE_DELAY * (_BACKOFF_BASE ** attempt))
 
 
 def get_window_hansard_search_results(from_date: date, to_date: date) -> list[HansardSearchResult]:
