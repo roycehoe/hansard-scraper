@@ -64,7 +64,7 @@ def _get_plan(session: Session, cleanup: AttendanceCleanup, attendance_id_to_att
     return build_attendance_cleanup_plan(cleanup, attendance_id_to_attendance, sitting_id_to_attendances, resolved_speaker_ids.id_to_speaker_id, speaker_id_to_name)
 
 
-def _validate_written(session: Session, plan: AttendanceCleanupPlan, linked_pairs_removed: set[tuple[int, int]]) -> None:
+def _validate_can_commit_cleanup(session: Session, plan: AttendanceCleanupPlan, linked_pairs_removed: set[tuple[int, int]]) -> None:
     session.expire_all()
     removed_ids_still_stored = [attendance.id for attendance in CRUDAttendance(session).get_by_ids(list(plan.removal_id_to_reason))]
     if removed_ids_still_stored:
@@ -98,7 +98,7 @@ def _apply_plan(session: Session, plan: AttendanceCleanupPlan, attendance_id_to_
         attendance.location_name = update.location_name
         attendance.speaker_id = update.speaker_id
     CRUDAttendance(session).update_many([attendance_id_to_attendance[update.id] for update in plan.updates])
-    _validate_written(session, plan, linked_pairs_removed)
+    _validate_can_commit_cleanup(session, plan, linked_pairs_removed)
 
 
 def _log_plan(plan: AttendanceCleanupPlan, unlinked_before: int, unlinked_after: int) -> None:

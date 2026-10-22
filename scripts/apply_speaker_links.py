@@ -35,7 +35,7 @@ def _get_speech_plan(session: Session, lookups: SpeakerLookups, name_parliament_
     return speech_id_to_speaker_id
 
 
-def _validate_speech_speaker_ids(session: Session, speech_id_to_speaker_id: dict[int, Optional[int]]) -> None:
+def _validate_can_commit_speech_speaker_ids(session: Session, speech_id_to_speaker_id: dict[int, Optional[int]]) -> None:
     stored_speech_id_to_speaker_id = {
         speaker_id_row.id: speaker_id_row.speaker_id
         for speaker_id_row in CRUDSpeech(session).get_speaker_id_rows_by_ids_for_update(list(speech_id_to_speaker_id))
@@ -47,7 +47,7 @@ def _validate_speech_speaker_ids(session: Session, speech_id_to_speaker_id: dict
             raise HansardWriteCheckError(f"Speech row {speech_id} holds speaker {stored_speech_id_to_speaker_id[speech_id]}, expected {speaker_id}")
 
 
-def _validate_attendance_speaker_ids(session: Session, attendance_id_to_speaker_id: dict[int, Optional[int]]) -> None:
+def _validate_can_commit_attendance_speaker_ids(session: Session, attendance_id_to_speaker_id: dict[int, Optional[int]]) -> None:
     attendances = CRUDAttendance(session).get_by_ids_for_update(list(attendance_id_to_speaker_id))
     if len(attendances) != len(attendance_id_to_speaker_id):
         raise HansardWriteCheckError(f"{len(attendances)} of {len(attendance_id_to_speaker_id)} planned attendance rows are stored")
@@ -85,15 +85,15 @@ def apply_speaker_links(plan_path: Path, is_commit: bool) -> None:
     validate_can_write(settings.database_url)
     reviewed_plan = _read_plan(plan_path)
     with Session(engine) as session:
-        _validate_speech_speaker_ids(session, dict.fromkeys(reviewed_plan.speech_id_to_speaker_id))
-        _validate_attendance_speaker_ids(session, dict.fromkeys(reviewed_plan.attendance_id_to_speaker_id))
+        _validate_can_commit_speech_speaker_ids(session, dict.fromkeys(reviewed_plan.speech_id_to_speaker_id))
+        _validate_can_commit_attendance_speaker_ids(session, dict.fromkeys(reviewed_plan.attendance_id_to_speaker_id))
         plan = _get_plan(session)
         if plan != reviewed_plan:
             raise HansardWriteCheckError("The plan differs from the reviewed plan")
         CRUDSpeech(session).set_speaker_ids_bulk(plan.speech_id_to_speaker_id)
         CRUDAttendance(session).set_speaker_ids_bulk(plan.attendance_id_to_speaker_id)
-        _validate_speech_speaker_ids(session, plan.speech_id_to_speaker_id)
-        _validate_attendance_speaker_ids(session, plan.attendance_id_to_speaker_id)
+        _validate_can_commit_speech_speaker_ids(session, plan.speech_id_to_speaker_id)
+        _validate_can_commit_attendance_speaker_ids(session, plan.attendance_id_to_speaker_id)
         session.commit()
     logger.info(f"Committed: {len(plan.speech_id_to_speaker_id)} speech rows and {len(plan.attendance_id_to_speaker_id)} attendance rows linked")
 

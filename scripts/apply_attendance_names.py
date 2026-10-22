@@ -29,7 +29,7 @@ from utils.speaker_resolution import SpeakerLookups
 from utils.write_target import validate_can_write
 
 
-def _validate_speaker_ids(
+def _validate_can_keep_speaker_ids(
     name_changes: list[AttendanceNameChange], speaker_rows: list[AttendanceSpeakerRow], speakers: list[Speaker], lookups: SpeakerLookups
 ) -> None:
     resolved_speaker_ids = resolve_attendance_rows(
@@ -62,7 +62,7 @@ def _get_planned_changes(session: Session) -> list[AttendanceNameChange]:
             AttendanceSpeakerRow(name_change.id, name_change.speaker_name_after, sitting.parlement_no, sitting.volume_no)
             for name_change in sitting_name_changes
         )
-    _validate_speaker_ids(name_changes, speaker_rows, speakers, lookups)
+    _validate_can_keep_speaker_ids(name_changes, speaker_rows, speakers, lookups)
     return name_changes
 
 
@@ -73,7 +73,7 @@ def _get_planned_row(name_change: AttendanceNameChange, speaker_name: Optional[s
     )
 
 
-def _validate_rows(session: Session, planned_rows: list[Attendance]) -> None:
+def _validate_can_commit_attendances(session: Session, planned_rows: list[Attendance]) -> None:
     id_to_planned_row = {planned_row.id: planned_row for planned_row in planned_rows}
     attendances = CRUDAttendance(session).get_by_ids_for_update(list(id_to_planned_row))
     if len(attendances) != len(planned_rows):
@@ -104,14 +104,14 @@ def apply_attendance_names(is_commit: bool, plan_path: Optional[Path]) -> None:
 
         row_count_before = _get_row_count(session)
         session.expire_all()
-        _validate_rows(session, [_get_planned_row(name_change, name_change.speaker_name_before) for name_change in name_changes])
+        _validate_can_commit_attendances(session, [_get_planned_row(name_change, name_change.speaker_name_before) for name_change in name_changes])
         updated_count = CRUDAttendance(session).set_speaker_names_bulk(
             {name_change.id: name_change.speaker_name_after for name_change in name_changes}
         )
         if updated_count != len(name_changes):
             raise HansardWriteCheckError(f"Updated {updated_count} attendance rows, planned {len(name_changes)}")
         session.expire_all()
-        _validate_rows(session, [_get_planned_row(name_change, name_change.speaker_name_after) for name_change in name_changes])
+        _validate_can_commit_attendances(session, [_get_planned_row(name_change, name_change.speaker_name_after) for name_change in name_changes])
         if _get_row_count(session) != row_count_before:
             raise HansardWriteCheckError("The attendance row count changed during the update")
         session.commit()

@@ -53,7 +53,7 @@ def _build_speeches(report: Report, markdown_content: str) -> list[Speech]:
     return build_speeches(report, get_speeches(markdown_content, start_of_speech_line, report.report_type, report.report_version))
 
 
-def _validate_hits_unstored(session: Session, search_results: list[HansardSearchResult]) -> None:
+def _validate_can_store_search_results(session: Session, search_results: list[HansardSearchResult]) -> None:
     report_ids = {search_result.report_id for search_result in search_results}
     stored_hansard_website_responses = CRUDHansardWebsiteResponse(session).get_by_report_ids(report_ids)
     if stored_hansard_website_responses:
@@ -77,7 +77,7 @@ def _get_validated_textless_reports(session: Session, report_ids: list[int]) -> 
 
 
 def _get_plan(session: Session, search_results: list[HansardSearchResult], report_ids: list[int]) -> CoverageRefillPlan:
-    _validate_hits_unstored(session, search_results)
+    _validate_can_store_search_results(session, search_results)
     fetched_hits = []
     for search_result in search_results:
         content = _fetch_topic_content(search_result.report_id, search_result.html_file_name, search_result.report_version)
@@ -111,7 +111,7 @@ def _read_plan(plan_path: Path) -> CoverageRefillPlan:
     return CoverageRefillPlan.model_validate_json(plan_path.read_text())
 
 
-def _validate_speech_counts(session: Session, report_id_to_speech_count: dict[int, int]) -> None:
+def _validate_can_commit_speech_counts(session: Session, report_id_to_speech_count: dict[int, int]) -> None:
     speech_rows = CRUDSpeech(session).get_rows_by_report_ids(list(report_id_to_speech_count))
     stored_report_id_to_speech_count = Counter(speech_row.report_id for speech_row in speech_rows)
     for report_id, speech_count in report_id_to_speech_count.items():
@@ -165,9 +165,9 @@ def apply_coverage_refill(plan_path: Path, hits_path: Optional[Path], report_ids
     validate_can_write(settings.database_url)
     plan = _read_plan(plan_path)
     with Session(engine) as session:
-        _validate_hits_unstored(session, [fetched_hit.search_result for fetched_hit in plan.fetched_hits])
+        _validate_can_store_search_results(session, [fetched_hit.search_result for fetched_hit in plan.fetched_hits])
         report_id_to_speech_count = _add_fetched_hits(session, plan.fetched_hits) | _fill_fetched_reports(session, plan.fetched_reports)
-        _validate_speech_counts(session, report_id_to_speech_count)
+        _validate_can_commit_speech_counts(session, report_id_to_speech_count)
         session.commit()
     logger.info(
         f"Committed: {len(plan.fetched_hits)} hits inserted, {len(plan.fetched_reports)} reports filled, "
