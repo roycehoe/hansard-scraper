@@ -23,9 +23,8 @@ from utils.data_files import get_constituency_names
 from utils.names import normalize_name, strip_title
 from utils.parliament_numbers import infer_parliament
 from utils.speaker_resolution import SpeakerLookups, resolve_canonical_name
+from utils.speaker_resolution_constants import COLONIAL_PARLIAMENT_NUMBER
 from utils.write_target import validate_can_write
-
-_COLONIAL_PARLIAMENT_NUMBER = 0
 
 
 @dataclass(frozen=True)
@@ -97,7 +96,7 @@ def build_completions(session: Session, sitting_ids: list[int]) -> list[SittingC
             raise HansardWriteCheckError(f"sitting {sitting_id}: {sitting_id_to_row_count.get(sitting_id, 0)} stored rows, expected {expected.stored_row_count}")
 
         parliament = infer_parliament(date_row.parlement_no, date_row.volume_no)
-        if parliament is None or parliament == _COLONIAL_PARLIAMENT_NUMBER:
+        if parliament is None or parliament == COLONIAL_PARLIAMENT_NUMBER:
             raise HansardWriteCheckError(f"sitting {sitting_id}: parliament {parliament} needs the colonial fallback")
         sitting = Sitting(
             id=sitting_id,

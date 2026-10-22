@@ -12,6 +12,7 @@ from database.init import engine
 from logs import logger
 from populate.speaker_links import REPORT_BATCH
 from services.attendance import build_speaker_lookups
+from services.attribution import HEADLINE_MAX_PARLIAMENT
 from services.speaker_link import (
     BARE_DEPUTY_RE,
     CARRIED_ROLES,
@@ -21,7 +22,6 @@ from services.speaker_link import (
 )
 from utils.speaker_resolution_constants import HEAD_OF_STATE_TERMS
 
-_MAX_PARLIAMENT = 11
 _STALE_EXIT_CODE = 1
 _CLEAN_EXIT_CODE = 0
 
@@ -43,7 +43,7 @@ def main() -> None:
         reports = [
             (report.id, report.parliament_number, report.sitting_date)
             for report in CRUDReport(session).get_all()
-            if report.parliament_number is not None and report.parliament_number <= _MAX_PARLIAMENT
+            if report.parliament_number is not None and report.parliament_number <= HEADLINE_MAX_PARLIAMENT
         ]
         name_and_parliament_to_speaker_id = {
             (speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None

@@ -17,15 +17,16 @@ from services.attendance import (
 from utils.data_files import get_constituency_names
 from utils.parliament_numbers import infer_parliament
 from utils.speaker_resolution import SpeakerLookups, resolve_canonical_name
+from utils.speaker_resolution_constants import (
+    COLONIAL_PARLIAMENT_FALLBACKS,
+    COLONIAL_PARLIAMENT_NUMBER,
+)
 
 _MIN_ALLCAPS_HEADER_LETTERS = 4
 _PROGRESS_INTERVAL = 100
-_COLONIAL_PARLIAMENT_NUMBER = 0
-_COLONIAL_PARLIAMENT_FALLBACKS = (1, 2, 3)
 _COUNT_COLUMN_WIDTH = 6
 _NAME_COLUMN_WIDTH = 50
 _TEMPLATE_PARTY = "Unknown"
-_TEMPLATE_PARLIAMENT_NUMBER = 0
 
 _OFFICIAL_TITLE_RE = re.compile(
     r",\s*(?:Financial|Chief|Colonial|Acting\s+Chief)\s+Secretary"
@@ -62,8 +63,8 @@ def _get_category(name: str) -> str:
 def _is_resolved(name: str, parliament: int, lookups: SpeakerLookups) -> bool:
     if resolve_canonical_name(name, parliament, lookups) is not None:
         return True
-    if parliament == _COLONIAL_PARLIAMENT_NUMBER:
-        for fallback_parliament in _COLONIAL_PARLIAMENT_FALLBACKS:
+    if parliament == COLONIAL_PARLIAMENT_NUMBER:
+        for fallback_parliament in COLONIAL_PARLIAMENT_FALLBACKS:
             if resolve_canonical_name(name, fallback_parliament, lookups) is not None:
                 return True
     return False
@@ -108,7 +109,7 @@ def _get_json_template(name: str) -> dict:
     return {
         "name": name,
         "party": _TEMPLATE_PARTY,
-        "parliament_number": _TEMPLATE_PARLIAMENT_NUMBER,
+        "parliament_number": COLONIAL_PARLIAMENT_NUMBER,
         "is_legislative_assembly": True,
         "comments": None,
     }

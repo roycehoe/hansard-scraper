@@ -16,7 +16,7 @@ from services.speech import (
 )
 
 _SAMPLE_SIZE_PER_REPORT_TYPE = 5
-_RANDOM_SEED = 42
+_SEED = 42
 _MIN_MULTI_SPEAKER_COUNT = 2
 _SEPARATOR_WIDTH = 80
 _SEPARATOR = "=" * _SEPARATOR_WIDTH
@@ -93,7 +93,7 @@ def _show_doc(report: Report, start_line: int, speakers: list[str]) -> list[str]
 
 
 def run() -> None:
-    random.seed(_RANDOM_SEED)
+    random.seed(_SEED)
 
     with Session(engine) as session:
         reports = CRUDReport(session).get_by_markdown_content_not_null()

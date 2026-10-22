@@ -18,13 +18,15 @@ from utils.names import (
     strip_title,
 )
 from utils.speaker_resolution import SpeakerLookups, resolve_canonical_name
+from utils.speaker_resolution_constants import (
+    COLONIAL_PARLIAMENT_FALLBACKS,
+    COLONIAL_PARLIAMENT_NUMBER,
+)
 
 _SAMPLE_PATH = Path(__file__).parent.parent / "docs" / "speech-speaker" / "sample.json"
 _SEED = 42
 _PILOT_COUNT_PER_TYPE = 5
 _HELD_OUT_COUNT_PER_TYPE = 3
-_COLONIAL_PARLIAMENT_FALLBACKS = (1, 2, 3)
-_COLONIAL_PARLIAMENT_NUMBER = 0
 _PILOT_TO_REGRESSION_RATIO = 5
 _MIN_REGRESSION_COUNT = 1
 
@@ -72,8 +74,8 @@ def _is_resolved(
     canonical = resolve_canonical_name(name, parliament, lookups)
     if canonical is not None:
         return (canonical, parliament) in name_and_parliament_to_speaker_id
-    if parliament == _COLONIAL_PARLIAMENT_NUMBER:
-        for fallback in _COLONIAL_PARLIAMENT_FALLBACKS:
+    if parliament == COLONIAL_PARLIAMENT_NUMBER:
+        for fallback in COLONIAL_PARLIAMENT_FALLBACKS:
             candidate = resolve_canonical_name(name, fallback, lookups)
             if candidate is not None and (candidate, fallback) in name_and_parliament_to_speaker_id:
                 return True
@@ -88,7 +90,7 @@ def main() -> None:
 
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
-        rows = CRUDSpeech(session).get_parliament_rows_by_speaker_not_null_and_parliament_number(_COLONIAL_PARLIAMENT_NUMBER)
+        rows = CRUDSpeech(session).get_parliament_rows_by_speaker_not_null_and_parliament_number(COLONIAL_PARLIAMENT_NUMBER)
 
     name_and_parliament_to_speaker_id = {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None}
     lookups = build_speaker_lookups(speakers)

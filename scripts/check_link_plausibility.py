@@ -19,12 +19,11 @@ from database.init import engine
 from database.speaker import Speaker
 from enums import ReportType
 from logs import logger
+from services.attribution import HEADLINE_GROUP, get_group
 from services.speaker_link import BARE_DEPUTY_RE, CHAIRMAN_RE
 from utils.parliament_numbers import infer_parliament
 from utils.sitting_dates import parse_sitting_date
 
-_HEADLINE_MAX_PARLIAMENT = 11
-_HEADLINE_GROUP = f"Parliaments 0 to {_HEADLINE_MAX_PARLIAMENT}"
 _SHORT_LIST_MEDIAN_SHARE = 0.5
 _MIN_ALLCAPS_HEADER_LETTERS = 4
 _FIRST_LINE_MAX_LENGTH = 200
@@ -73,12 +72,6 @@ class _Pair:
     first_ordinal: int
     first_transcript_line: str
     is_short_list_sitting: bool
-
-
-def _get_group(parliament_number: int) -> str:
-    if parliament_number <= _HEADLINE_MAX_PARLIAMENT:
-        return _HEADLINE_GROUP
-    return f"Parliament {parliament_number}"
 
 
 # NOTE: chairman strings are not exempt because they resolve to a named member, whose absence is a real signal.
@@ -171,7 +164,7 @@ def _log_presence_counts(
 ) -> None:
     logger.info(f"B1 before exemptions, rows by status: { {status.value: row_count for status, row_count in unexempted_status_to_row_count.items()} }")
     logger.info(f"B1 exempted rows by reason: { {exemption.value: row_count for exemption, row_count in exemption_to_row_count.items()} }")
-    groups = sorted({key[0] for key in group_report_type_status_to_row_count}, key=lambda group: (group != _HEADLINE_GROUP, group))
+    groups = sorted({key[0] for key in group_report_type_status_to_row_count}, key=lambda group: (group != HEADLINE_GROUP, group))
     for group in groups:
         report_types = sorted({key[1] for key in group_report_type_status_to_row_count if key[0] == group})
         for report_type in report_types:
@@ -205,7 +198,7 @@ def _check_presence(
         if exemption is not None:
             exemption_to_row_count[exemption] += 1
             continue
-        group_report_type_status_to_row_count[(_get_group(header.parliament_number), header.report_type, status)] += 1
+        group_report_type_status_to_row_count[(get_group(header.parliament_number), header.report_type, status)] += 1
         if status != _PresenceStatus.ABSENT and status != _PresenceStatus.UNLISTED:
             continue
         pair = pair_key_to_pair.get((link_row.report_id, speaker.person_id))
