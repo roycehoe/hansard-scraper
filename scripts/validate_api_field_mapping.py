@@ -147,10 +147,11 @@ def _is_sitting_payload_mapped(
 ) -> bool:
     is_new = is_new_sitting_date_format(sitting_date)
 
-    if is_new:
-        hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
-    else:
-        hansard_sitting_date_response = build_old_hansard_sitting_date_response(hansard_report_response, sitting_date)
+    hansard_sitting_date_response = (
+        build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
+        if is_new
+        else build_old_hansard_sitting_date_response(hansard_report_response, sitting_date)
+    )
     failures = get_sitting_date_field_losses(hansard_report_response, hansard_sitting_date_response)
 
     format_label = "new" if is_new else "old"

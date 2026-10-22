@@ -61,10 +61,7 @@ def main() -> None:
             if _SPEAKER_ROLE not in stripped:
                 continue
 
-            if "DEPUTY" in stripped:
-                role = _DEPUTY_SPEAKER_ROLE
-            else:
-                role = _SPEAKER_ROLE
+            role = _DEPUTY_SPEAKER_ROLE if "DEPUTY" in stripped else _SPEAKER_ROLE
 
             parsed_speaker = parse_speaker_line(stripped)
             if not parsed_speaker.name or parsed_speaker.name == _SPEAKER_ROLE:

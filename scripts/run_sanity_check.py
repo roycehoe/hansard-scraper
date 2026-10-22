@@ -118,49 +118,43 @@ def run() -> None:
         regenerated_report = build_report(website_response)
 
         checks = []
-        is_failed = False
 
         if regenerated_report.markdown_content is None:
             stats.no_markdown += 1
             checks.append(_Check.NO_MARKDOWN.value)
-            is_failed = True
         markdown_flag = "Y" if regenerated_report.markdown_content else "N"
 
         if regenerated_report.title != stored.title:
             stats.title_mismatch += 1
             checks.append(f"{_Check.TITLE_MISMATCH}(stored={stored.title!r} regen={regenerated_report.title!r})")
-            is_failed = True
 
         if regenerated_report.subtitle != stored.subtitle:
             stats.subtitle_mismatch += 1
             checks.append(f"{_Check.SUBTITLE_MISMATCH}(stored={stored.subtitle!r} regen={regenerated_report.subtitle!r})")
-            is_failed = True
 
         start_line = _get_start_line(regenerated_report)
         if start_line is None and regenerated_report.markdown_content:
             stats.no_start_line += 1
             checks.append(_Check.NO_START_LINE.value)
-            is_failed = True
 
-        speeches = []
-        speech_count = "-"
-        valid_flag = "-"
-        if start_line is not None:
-            speeches = get_speeches(
+        speeches = (
+            []
+            if start_line is None
+            else get_speeches(
                 regenerated_report.markdown_content, start_line, regenerated_report.report_type, regenerated_report.report_version
             )
-            speech_count = str(len(speeches))
-            if len(speeches) == 0:
-                stats.no_speeches += 1
-                checks.append(_Check.NO_SPEECHES.value)
-                is_failed = True
-            else:
-                invalid = [speech for speech in speeches if not speech.speaker or not speech.transcript.strip()]
-                if invalid:
-                    stats.invalid_speeches += 1
-                    checks.append(f"{_Check.INVALID_SPEECHES}({len(invalid)})")
-                    is_failed = True
-            valid_flag = "Y" if not is_failed else "N"
+        )
+        if start_line is not None and len(speeches) == 0:
+            stats.no_speeches += 1
+            checks.append(_Check.NO_SPEECHES.value)
+        invalid = [speech for speech in speeches if not speech.speaker or not speech.transcript.strip()]
+        if invalid:
+            stats.invalid_speeches += 1
+            checks.append(f"{_Check.INVALID_SPEECHES}({len(invalid)})")
+
+        is_failed = bool(checks)
+        speech_count = "-" if start_line is None else str(len(speeches))
+        valid_flag = "-" if start_line is None else ("N" if is_failed else "Y")
 
         if not is_failed:
             stats.passed += 1
