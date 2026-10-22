@@ -10,12 +10,12 @@ def _get_content(party_affiliation: PartyAffiliation) -> dict[str, object]:
     return party_affiliation.model_dump(exclude={"id"})
 
 
-def _get_membership_label(membership: MembershipPartyAffiliations) -> str:
-    return f"{membership.name!r}, Parliament {membership.parliament_number}"
+def _get_membership_label(name: str, parliament_number: int) -> str:
+    return f"{name!r}, Parliament {parliament_number}"
 
 
 def _get_validated_speaker(membership: MembershipPartyAffiliations, speakers: list[Speaker]) -> Speaker:
-    membership_label = _get_membership_label(membership)
+    membership_label = _get_membership_label(membership.name, membership.parliament_number)
     matching_speakers = [
         speaker for speaker in speakers if speaker.name == membership.name and speaker.parliament_number == membership.parliament_number
     ]
@@ -30,7 +30,7 @@ def _get_validated_speaker(membership: MembershipPartyAffiliations, speakers: li
 
 
 def _validate_can_build_spans(membership: MembershipPartyAffiliations) -> None:
-    membership_label = _get_membership_label(membership)
+    membership_label = _get_membership_label(membership.name, membership.parliament_number)
     for span in membership.affiliations:
         if span.source_url is None and span.source_report_id is None:
             raise HansardPartyAffiliationError(f"{membership_label}: span of {span.party!r} from {span.started_on} has no source")
