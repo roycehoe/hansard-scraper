@@ -1,6 +1,7 @@
 import json
 import re
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Optional
 
 from crud.attendance import AttendanceLocationRow
@@ -359,11 +360,16 @@ def _split_entry_line(line: str) -> list[str]:
     return [line[start:end] for start, end in zip(bounds, bounds[1:])]
 
 
-def extract_section_lines(content: str, section: str) -> list[str]:
+class AttendanceSection(StrEnum):
+    PRESENT = "PRESENT"
+    ABSENT = "ABSENT"
+
+
+def extract_section_lines(content: str, section: AttendanceSection) -> list[str]:
     # NOTE: a page masthead reprinted inside a list is not its end when a member entry follows it.
     lines = _drop_masthead_blocks(content.split("\n"))
     is_in_section = False
-    other_section = "ABSENT" if section == "PRESENT" else "PRESENT"
+    other_section = AttendanceSection.ABSENT if section == AttendanceSection.PRESENT else AttendanceSection.PRESENT
     entry_lines = []
 
     for line in lines:
@@ -482,7 +488,7 @@ def build_sitting_attendances_from_markdown(sitting: Sitting, lookups: SpeakerLo
     content = sitting.markdown_content
     attendances = []
 
-    for section, is_present in [("PRESENT", True), ("ABSENT", False)]:
+    for section, is_present in [(AttendanceSection.PRESENT, True), (AttendanceSection.ABSENT, False)]:
         for line in extract_section_lines(content, section):
             for entry_line in _split_entry_line(line):
                 parsed = _parse_entry_line(entry_line, sitting.sitting_date)

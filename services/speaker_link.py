@@ -6,6 +6,7 @@ import math
 import re
 from dataclasses import dataclass
 from datetime import date, datetime
+from enum import StrEnum
 from typing import Iterable, Optional, Sequence
 
 from crud.attendance import AttendanceSpeakerRow
@@ -39,6 +40,12 @@ from utils.speaker_resolution_constants import (
     SPEAKER_WOMEN,
 )
 from utils.speaker_terms import SPEAKER_TERMS
+
+
+class ChairRole(StrEnum):
+    SPEAKER = "speaker"
+    DEPUTY_SPEAKER = "deputy speaker"
+
 
 CHAIRMAN_RE = re.compile(r"^(?:the ?|mr ?)?chairman:?$", re.IGNORECASE)
 _ANNOTATION_RE = re.compile(r"\[([^\]\[]{0,90}?)\s*(?:temporarily\s+)?in the Chair\]", re.IGNORECASE)
@@ -216,8 +223,8 @@ def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int,
                     continue
                 speech_id_to_name[speech_row.id] = named_deputy.group(1).strip() if named_deputy is not None else text
             elif _SPEAKER_ROLE_RE.match(text):
-                holders = role_to_holder_names.get("speaker", set())
-                if after_roles == {"speaker"} and not before_roles and len(holders) == 1:
+                holders = role_to_holder_names.get(ChairRole.SPEAKER, set())
+                if after_roles == {ChairRole.SPEAKER} and not before_roles and len(holders) == 1:
                     speech_id_to_name[speech_row.id] = next(iter(holders))
                 # NOTE: a Deputy Speaker named anywhere in the report, or a suspension, may hand over the chair without a note, so the header's Speaker takes the chair only without either.
                 elif (
@@ -364,7 +371,7 @@ def get_sitting_deputy_speaker_names(sitting_text: SittingText, report_title: st
 
 def get_deputy_speaker_names_in_text(text: str) -> set[str]:
     names = {_TITLE_RE.sub("", match.group(1).strip()) for match in _NAMED_DEPUTY_RE.finditer(_normalize_text(text))}
-    names |= _get_header_holders(text).get("deputy speaker", set())
+    names |= _get_header_holders(text).get(ChairRole.DEPUTY_SPEAKER, set())
     return names
 
 
