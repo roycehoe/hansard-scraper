@@ -2,7 +2,7 @@ import pytest
 import requests
 
 from exceptions import HansardGatewayError
-from gateway.hansard_report import _REQUEST_TIMEOUT_SECONDS, get_hansard_report_response
+from gateway.hansard_report import REQUEST_TIMEOUT_SECONDS, get_hansard_report_response
 from gateway.http import CRAWL_PACER
 
 _SITTING_DATE = "8-4-2025"
@@ -39,7 +39,7 @@ def no_op_pacer(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.mark.parametrize("body", [None, []])
 def test_body_that_is_not_an_object_raises_gateway_error(body: object, monkeypatch: pytest.MonkeyPatch, no_op_pacer: None) -> None:
     def fake_post(**kwargs: object) -> _FakeResponse:
-        assert kwargs["timeout"] == _REQUEST_TIMEOUT_SECONDS
+        assert kwargs["timeout"] == REQUEST_TIMEOUT_SECONDS
         return _FakeResponse(body)
 
     monkeypatch.setattr(requests, "post", fake_post)

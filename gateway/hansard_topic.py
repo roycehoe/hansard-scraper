@@ -8,7 +8,7 @@ from gateway.http import CRAWL_HEADERS, async_post_with_retry, send_with_retry
 from schemas.hansard_topic_response import HansardTopicResponse
 from settings import settings
 
-_REQUEST_TIMEOUT_SECONDS = 60
+REQUEST_TIMEOUT_SECONDS = 60
 
 
 def get_hansard_topic_response(report_id: str) -> HansardTopicResponse:
@@ -19,7 +19,7 @@ def get_hansard_topic_response(report_id: str) -> HansardTopicResponse:
                 url=settings.hansard_topic_url,
                 json={"id": report_id},
                 headers=CRAWL_HEADERS,
-                timeout=_REQUEST_TIMEOUT_SECONDS,
+                timeout=REQUEST_TIMEOUT_SECONDS,
             )
         )
         return HansardTopicResponse(**response.json())

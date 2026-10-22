@@ -15,7 +15,7 @@ from utils.sitting_dates import get_zero_padded_sitting_date
 from utils.text import strip_nul
 
 _NEW_FORMAT_KEY = "metadata"
-_REQUEST_TIMEOUT_SECONDS = 60
+REQUEST_TIMEOUT_SECONDS = 60
 
 
 def _build_hansard_report_response(body: object) -> Union[HansardReportOldResponse, HansardReportNewResponse]:
@@ -34,7 +34,7 @@ def get_hansard_report_response(sitting_date: str) -> Union[HansardReportOldResp
                 url=settings.hansard_report_url,
                 json=request_body,
                 headers=CRAWL_HEADERS,
-                timeout=_REQUEST_TIMEOUT_SECONDS,
+                timeout=REQUEST_TIMEOUT_SECONDS,
             )
         )
         return _build_hansard_report_response(response.json())
