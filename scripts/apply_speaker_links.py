@@ -19,8 +19,9 @@ from populate.speaker_links import (
     resolve_attendance_rows,
     resolve_speech_rows,
 )
-from services.attendance import SpeakerLookups, build_speaker_lookups
+from services.attendance import build_speaker_lookups
 from settings import settings
+from utils.speaker_resolution import SpeakerLookups
 from utils.write_target import validate_can_write
 
 

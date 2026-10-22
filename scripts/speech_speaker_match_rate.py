@@ -7,14 +7,12 @@ from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech, SpeechReportTypeRow
 from database.init import engine
 from logs import logger
-from services.attendance import (
-    build_speaker_lookups,
-    resolve_canonical_name,
-)
+from services.attendance import build_speaker_lookups
 from utils.names import (
     normalize_name,
     strip_title,
 )
+from utils.speaker_resolution import resolve_canonical_name
 
 _SAMPLE_PER_TYPE = 10
 _SEED = 42

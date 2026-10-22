@@ -8,8 +8,8 @@ from services.attendance import (
     build_speaker_lookups,
     get_sitting_attendance,
     get_sitting_attendance_from_list,
-    resolve_canonical_name,
 )
+from utils.speaker_resolution import resolve_canonical_name
 
 _CONSTITUENCY_LOOKUPS = build_constituency_lookups(ConstituencyNames(names=[], rows=[]))
 

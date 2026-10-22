@@ -11,12 +11,10 @@ from exceptions import HansardWriteCheckError
 from populate.speaker_links import resolve_speech_rows
 from schemas.head_of_state import HeadOfStateResult
 from schemas.speaker import SpeakerResult
-from services.attendance import (
-    _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER,
-    build_speaker_lookups,
-)
+from services.attendance import build_speaker_lookups
 from services.speaker import ParliamentChange, get_parliament_changes
 from utils.parliament_numbers import VOLUME_TO_PARLIAMENT, infer_parliament
+from utils.speaker_resolution import NAME_PARLIAMENT_TO_CANONICAL_SPEAKER
 
 _DATA_DIRECTORY = Path(__file__).parent.parent / "data"
 _ASSEMBLY_ONLY_ROW_COUNT = 71
@@ -99,10 +97,10 @@ def test_name_map_keys_a_moved_member_to_parliament_zero_and_a_dual_member_to_pa
     zero_names = {member.name for member in _load_colonial_members() if member.parliament_number == 0}
     zero_names |= {head.name for head in _load_heads_of_state() if head.parliament_number == 0}
 
-    moved_keys = [key for key, canonical in _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.items() if canonical in zero_names]
+    moved_keys = [key for key, canonical in NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.items() if canonical in zero_names]
     assert len(moved_keys) == _REKEYED_NAME_COUNT
     assert all(parliament == 0 for _, parliament in moved_keys)
-    assert _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER[("c v devan nair", 1)] == "Devan Nair, Mrs"
+    assert NAME_PARLIAMENT_TO_CANONICAL_SPEAKER[("c v devan nair", 1)] == "Devan Nair, Mrs"
 
 
 def test_volumes_of_1955_to_1959_are_parliament_zero() -> None:

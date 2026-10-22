@@ -10,14 +10,13 @@ from database.init import engine
 from database.sitting import Sitting
 from logs import logger
 from services.attendance import (
-    SpeakerLookups,
     build_constituency_lookups,
     build_speaker_lookups,
     get_sitting_attendance,
-    resolve_canonical_name,
 )
 from utils.data_files import get_constituency_names
 from utils.parliament_numbers import infer_parliament
+from utils.speaker_resolution import SpeakerLookups, resolve_canonical_name
 
 _MIN_ALLCAPS_HEADER_LETTERS = 4
 _PROGRESS_INTERVAL = 100

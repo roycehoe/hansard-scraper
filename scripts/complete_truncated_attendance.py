@@ -15,15 +15,14 @@ from database.sitting import Sitting
 from exceptions import HansardWriteCheckError
 from logs import logger
 from services.attendance import (
-    SpeakerLookups,
     build_constituency_lookups,
     build_speaker_lookups,
     get_sitting_attendance,
-    resolve_canonical_name,
 )
 from utils.data_files import get_constituency_names
 from utils.names import normalize_name, strip_title
 from utils.parliament_numbers import infer_parliament
+from utils.speaker_resolution import SpeakerLookups, resolve_canonical_name
 from utils.write_target import validate_can_write
 
 _COLONIAL_PARLIAMENT_NUMBER = 0

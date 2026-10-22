@@ -18,7 +18,6 @@ from logs import logger
 from populate.speaker_links import resolve_attendance_rows
 from services.attendance import (
     AttendanceNameChange,
-    SpeakerLookups,
     build_constituency_lookups,
     build_sitting_attendances,
     build_speaker_lookups,
@@ -26,6 +25,7 @@ from services.attendance import (
 )
 from settings import settings
 from utils.data_files import get_constituency_names
+from utils.speaker_resolution import SpeakerLookups
 from utils.write_target import validate_can_write
 
 
