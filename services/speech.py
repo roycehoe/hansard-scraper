@@ -333,7 +333,7 @@ _BOLD_OPENING_RE = re.compile(r"^\*\*(?!\*)")
 _LEADING_BOLD_ARTIFACT_RE = re.compile(r"^(\*{4})+")
 _TIME_MARKER_RE = re.compile(r"^\d{1,2}(?:\s*[.:]\s*\d{2})?\s*(?:[ap]\.?m|noon|midnight)\.?$", re.IGNORECASE)
 _MARKDOWN_HEADING_RE = re.compile(r"^#{1,6}(\s|$)")
-_REPORT_HEADER_FIELD_RE = re.compile(r"^\|?\s*(?:Parliament No|Session No|Volume No|Sitting No|Sitting Date|Section Name|Title|MPs? Speaking):\|")
+REPORT_HEADER_FIELD_RE = re.compile(r"^\|?\s*(?:Parliament No|Session No|Volume No|Sitting No|Sitting Date|Section Name|Title|MPs? Speaking):\|")
 _LINE_EDGE_MARKUP_RE = re.compile(r"^(?:#{1,6}|\|)\s*|\s*\|$")
 _MARKUP_ONLY_CHARACTERS = "* _|-"
 _EMPHASIS_MARK_CHARACTERS = "*_ "
@@ -394,7 +394,7 @@ _CHAMBER_EVENT_INNER_RE = re.compile(
 )
 
 
-def _extract_mps_speaking(markdown: str) -> list[str]:
+def extract_mps_speaking(markdown: str) -> list[str]:
     match = _MP_SPEAK_RE.search(markdown)
     if match is None:
         return []
@@ -556,7 +556,7 @@ def get_start_of_speech_line(
     return _get_first_bold_line_start(markdown_content)
 
 
-def _is_artifact_line(line: str) -> bool:
+def is_artifact_line(line: str) -> bool:
     if not line:
         return True
     if not line.strip("* _|"):
@@ -733,7 +733,7 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
     footnote_line_indexes = _get_footnote_line_indexes(lines)
     for line_index, line in enumerate(lines):
         stripped = line.strip()
-        if _REPORT_HEADER_FIELD_RE.match(stripped):
+        if REPORT_HEADER_FIELD_RE.match(stripped):
             continue
         edge_unmarked = _LINE_EDGE_MARKUP_RE.sub("", stripped)
         if not edge_unmarked.strip(_MARKUP_ONLY_CHARACTERS):
@@ -909,7 +909,7 @@ def _get_footnote_line_indexes(lines: list[str]) -> set[int]:
 
 def _is_preamble_title_line(line: str) -> bool:
     return (
-        _REPORT_HEADER_FIELD_RE.match(line) is not None
+        REPORT_HEADER_FIELD_RE.match(line) is not None
         or line.startswith(_BOLD_MARKER)
         or _PARENTHESISED_RE.match(line.strip(_EMPHASIS_MARK_CHARACTERS)) is not None
         or _ITALIC_HEADING_RE.match(line) is not None
@@ -937,7 +937,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
     for line_index, line in enumerate(lines):
         parsed_line = line.strip()
         parsed_line = _LEADING_BOLD_ARTIFACT_RE.sub("", parsed_line)
-        if _is_artifact_line(parsed_line):
+        if is_artifact_line(parsed_line):
             continue
         proc_text = _get_proc_text(parsed_line)
         # NOTE: the older system does not tag a first reading, so its formula stands in for the tag.
@@ -1193,7 +1193,7 @@ def _get_unlabelled_speeches(markdown: str, start_of_speech_line: int) -> list[P
     speeches: list[ParsedSpeech] = []
     for line in markdown.splitlines()[start_of_speech_line + 1:]:
         stripped = line.strip()
-        if _REPORT_HEADER_FIELD_RE.match(stripped):
+        if REPORT_HEADER_FIELD_RE.match(stripped):
             continue
         edge_unmarked = _LINE_EDGE_MARKUP_RE.sub("", stripped)
         if not edge_unmarked.strip(_MARKUP_ONLY_CHARACTERS):
@@ -1228,7 +1228,7 @@ def _get_fallback_speaker_from_parsed(
 
 def get_fallback_speaker(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> Optional[str]:
     parsed_speeches = _parse_speeches(markdown, start_of_speech_line, report_type, report_version)
-    return _get_fallback_speaker_from_parsed(markdown, parsed_speeches, _extract_mps_speaking(markdown), report_type, report_version)
+    return _get_fallback_speaker_from_parsed(markdown, parsed_speeches, extract_mps_speaking(markdown), report_type, report_version)
 
 
 def _has_speech_sentence(transcript: str) -> bool:
@@ -1268,7 +1268,7 @@ def _credit_addenda_signers(speeches: list[ParsedSpeech]) -> list[ParsedSpeech]:
 
 def _get_unsplit_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
     parsed_speeches = _parse_speeches(markdown, start_of_speech_line, report_type, report_version)
-    speakers = _extract_mps_speaking(markdown)
+    speakers = extract_mps_speaking(markdown)
     fallback_speaker = _get_fallback_speaker_from_parsed(markdown, parsed_speeches, speakers, report_type, report_version)
     if fallback_speaker is not None:
         speeches = _get_single_speaker_speeches(markdown, start_of_speech_line, fallback_speaker)

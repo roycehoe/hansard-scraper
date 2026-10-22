@@ -10,7 +10,7 @@ from database.init import engine
 from database.report import Report
 from logs import logger
 from services.speech import (
-    _extract_mps_speaking,
+    extract_mps_speaking,
     get_speeches,
     get_start_of_speech_line,
 )
@@ -120,7 +120,7 @@ def run() -> None:
         if speeches:
             continue
 
-        speakers = _extract_mps_speaking(report.markdown_content)
+        speakers = extract_mps_speaking(report.markdown_content)
         if len(speakers) == 0:
             zero_speaker.append((report, start_line))
         elif len(speakers) >= _MIN_MULTI_SPEAKER_COUNT:
@@ -144,7 +144,7 @@ def run() -> None:
     logger.info(_SEPARATOR)
     suspicious = []
     for report in no_start_line:
-        speakers = _extract_mps_speaking(report.markdown_content)
+        speakers = extract_mps_speaking(report.markdown_content)
         flags = _show_doc(report, _BEFORE_FIRST_LINE, speakers)
         if flags:
             suspicious.append((report, _BEFORE_FIRST_LINE, speakers, flags))

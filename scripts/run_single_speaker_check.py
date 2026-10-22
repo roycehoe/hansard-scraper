@@ -6,7 +6,7 @@ from crud.report import CRUDReport
 from database.init import engine
 from logs import logger
 from services.speech import (
-    _extract_mps_speaking,
+    extract_mps_speaking,
     get_speeches,
     get_start_of_speech_line,
 )
@@ -20,7 +20,7 @@ def run() -> None:
 
     single_speaker = [
         report for report in reports
-        if len(_extract_mps_speaking(report.markdown_content)) == 1
+        if len(extract_mps_speaking(report.markdown_content)) == 1
     ]
     logger.info(f"Single-speaker docs: {len(single_speaker)}")
 

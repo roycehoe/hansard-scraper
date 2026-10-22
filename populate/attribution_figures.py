@@ -17,10 +17,10 @@ from services.attribution import (
     get_speech_category,
 )
 from services.speech import (
-    _REPORT_HEADER_FIELD_RE,
-    _is_artifact_line,
+    REPORT_HEADER_FIELD_RE,
     get_fallback_speaker,
     get_start_of_speech_line,
+    is_artifact_line,
 )
 
 _REPORT_BATCH = 2_000
@@ -43,7 +43,7 @@ def _get_body_character_count(report: Report) -> int:
     total = 0
     for line in lines[start + 1:]:
         stripped = line.strip()
-        if _is_artifact_line(stripped) or stripped.startswith(_RULE_LINE_PREFIX) or _REPORT_HEADER_FIELD_RE.match(stripped):
+        if is_artifact_line(stripped) or stripped.startswith(_RULE_LINE_PREFIX) or REPORT_HEADER_FIELD_RE.match(stripped):
             continue
         total += get_countable_character_count(_LEADING_BOLD_LABEL_RE.sub("", stripped, count=1) if "**" in stripped else stripped)
     return total

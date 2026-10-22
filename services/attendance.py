@@ -262,7 +262,7 @@ def _parse_name_and_location(text: str) -> ParsedAttendee:
     return ParsedAttendee(_strip_name_decorations(text[:first_open].rstrip(", ")), constituency)
 
 
-def _parse_speaker_line(line: str) -> ParsedAttendee:
+def parse_speaker_line(line: str) -> ParsedAttendee:
     line = line.rstrip(". ")
     match = re.search(r"\((.+)\)\s*$", line)
     if match is None:
@@ -301,7 +301,7 @@ def _parse_entry_line(line: str, sitting_date: str) -> Optional[ParsedAttendee]:
     if strip_title(line) == line and "(" not in line:
         return None
 
-    parsed = _parse_speaker_line(line) if "SPEAKER" in line else _parse_name_and_location(strip_title(line))
+    parsed = parse_speaker_line(line) if "SPEAKER" in line else _parse_name_and_location(strip_title(line))
     if _MARKUP_RE.search(parsed.name):
         return None
     if parsed.name.lower() != _SPEAKER_OFFICE_NAME:
@@ -349,7 +349,7 @@ def _split_entry_line(line: str) -> list[str]:
     return [line[start:end] for start, end in zip(bounds, bounds[1:])]
 
 
-def _extract_section_lines(content: str, section: str) -> list[str]:
+def extract_section_lines(content: str, section: str) -> list[str]:
     # NOTE: a page masthead reprinted inside a list is not its end when a member entry follows it.
     lines = _drop_masthead_blocks(content.split("\n"))
     is_in_section = False
@@ -473,7 +473,7 @@ def get_sitting_attendance(sitting: Sitting, lookups: SpeakerLookups, constituen
     records = []
 
     for section, is_present in [("PRESENT", True), ("ABSENT", False)]:
-        for line in _extract_section_lines(content, section):
+        for line in extract_section_lines(content, section):
             for entry_line in _split_entry_line(line):
                 parsed = _parse_entry_line(entry_line, sitting.sitting_date)
                 if parsed is None:

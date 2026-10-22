@@ -6,9 +6,9 @@ from crud.sitting import CRUDSitting
 from crud.speaker import CRUDSpeaker
 from database.init import engine
 from services.attendance import (
-    _extract_section_lines,
-    _parse_speaker_line,
     build_speaker_lookups,
+    extract_section_lines,
+    parse_speaker_line,
 )
 from utils.names import (
     normalize_name,
@@ -40,7 +40,7 @@ def main() -> None:
         if parliament is None:
             continue
 
-        for line in _extract_section_lines(sitting.markdown_content, _PRESENT_SECTION):
+        for line in extract_section_lines(sitting.markdown_content, _PRESENT_SECTION):
             stripped = line.strip()
             if _SPEAKER_ROLE not in stripped:
                 continue
@@ -50,7 +50,7 @@ def main() -> None:
             else:
                 role = _SPEAKER_ROLE
 
-            parsed_speaker = _parse_speaker_line(stripped)
+            parsed_speaker = parse_speaker_line(stripped)
             if not parsed_speaker.name or parsed_speaker.name == _SPEAKER_ROLE:
                 continue
 
