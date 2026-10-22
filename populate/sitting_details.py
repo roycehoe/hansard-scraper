@@ -1,5 +1,4 @@
 import asyncio
-import json
 from typing import Optional, Union
 
 import httpx
@@ -21,6 +20,7 @@ from services.hansard_sitting_date_response import (
 )
 from services.sitting import build_sitting
 from settings import settings
+from utils.json_columns import get_json_column
 from utils.sitting_dates import parse_sitting_date
 
 _HTTP_TIMEOUT_SECONDS = 120
@@ -43,12 +43,6 @@ async def _fetch_all_report_responses(
 ) -> list[Optional[Union[HansardReportOldResponse, HansardReportNewResponse]]]:
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
         return await asyncio.gather(*[_fetch_report_response(sitting_date, client) for sitting_date in sitting_dates])
-
-
-def _get_json_column(value: object) -> Optional[str]:
-    if value is None:
-        return None
-    return json.dumps(value)
 
 
 def _fill_null_fields(
@@ -110,7 +104,7 @@ def populate_sitting_details(session: Session) -> None:
         }
         for column, value in column_to_value.items():
             if getattr(sitting, column) is None:
-                setattr(sitting, column, _get_json_column(value))
+                setattr(sitting, column, get_json_column(value))
         CRUDSitting(session).update(sitting)
         filled += 1
     session.commit()

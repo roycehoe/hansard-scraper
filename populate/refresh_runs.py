@@ -1,5 +1,4 @@
 import asyncio
-import json
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
@@ -96,6 +95,7 @@ from utils.data_files import (
     get_excluded_report_ids,
     get_unattributed_speech_ranges,
 )
+from utils.json_columns import get_json_column
 from utils.sitting_dates import (
     MonthWindow,
     get_month_windows,
@@ -124,12 +124,6 @@ _RUN_RESULT_COLUMNS = (
     "latest_sitting_date_with_text",
     "figures",
 )
-
-
-def _get_json_column(value: object) -> Optional[str]:
-    if value is None:
-        return None
-    return json.dumps(value)
 
 
 @dataclass(frozen=True)
@@ -461,10 +455,10 @@ def _validate_can_store_fetched_window(fetched_window: FetchedWindow, allowed_pa
 
 
 def _set_sitting_detail_columns(sitting: Sitting, hansard_report_response: HansardReportNewResponse) -> None:
-    sitting.sections = _get_json_column(hansard_report_response.takes_section_vo_list)
-    sitting.annexures = _get_json_column(hansard_report_response.annexure_list)
-    sitting.vernaculars = _get_json_column(hansard_report_response.vernacular_list)
-    sitting.a2b = _get_json_column(hansard_report_response.a2b_list)
+    sitting.sections = get_json_column(hansard_report_response.takes_section_vo_list)
+    sitting.annexures = get_json_column(hansard_report_response.annexure_list)
+    sitting.vernaculars = get_json_column(hansard_report_response.vernacular_list)
+    sitting.a2b = get_json_column(hansard_report_response.a2b_list)
 
 
 def _write_window_rows(session: Session, fetched_window: FetchedWindow, window_result: RunResult, today: date) -> NewRowIds:
