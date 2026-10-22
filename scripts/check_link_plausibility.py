@@ -19,8 +19,8 @@ from database.init import engine
 from database.speaker import Speaker
 from enums import ReportType
 from logs import logger
-from services.attendance import infer_parliament
 from services.role_context import BARE_DEPUTY_RE, CHAIRMAN_RE
+from utils.parliament_numbers import infer_parliament
 from utils.sitting_dates import parse_sitting_date
 
 _HEADLINE_MAX_PARLIAMENT = 11

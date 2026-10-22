@@ -9,12 +9,12 @@ from services.attendance import (
     _extract_section_lines,
     _parse_speaker_line,
     build_speaker_lookups,
-    infer_parliament,
     resolve_canonical_name,
 )
 from utils.names import (
     normalize_name,
 )
+from utils.parliament_numbers import infer_parliament
 
 _SPEAKER_ROLE = "SPEAKER"
 _DEPUTY_SPEAKER_ROLE = "DEPUTY SPEAKER"

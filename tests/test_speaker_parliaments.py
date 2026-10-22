@@ -13,11 +13,10 @@ from schemas.head_of_state import HeadOfStateResult
 from schemas.speaker import SpeakerResult
 from services.attendance import (
     _NAME_PARLIAMENT_TO_CANONICAL_SPEAKER,
-    VOLUME_TO_PARLIAMENT,
     build_speaker_lookups,
-    infer_parliament,
 )
 from services.speaker import ParliamentChange, get_parliament_changes
+from utils.parliament_numbers import VOLUME_TO_PARLIAMENT, infer_parliament
 
 _DATA_DIRECTORY = Path(__file__).parent.parent / "data"
 _ASSEMBLY_ONLY_ROW_COUNT = 71

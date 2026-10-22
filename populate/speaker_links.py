@@ -12,7 +12,6 @@ from crud.speech import CRUDSpeech, SpeechRow, SpeechSpeakerRow
 from database.report import Report
 from logs import logger
 from services.attendance import (
-    VOLUME_TO_PARLIAMENT,
     SpeakerLookups,
     build_speaker_lookups,
     resolve_canonical_name,
@@ -34,6 +33,7 @@ from utils.names import (
     normalize_name,
     strip_title,
 )
+from utils.parliament_numbers import VOLUME_TO_PARLIAMENT
 from utils.sitting_dates import get_sitting_date_key
 from utils.speaker_resolution_constants import (
     COLONIAL_PARLIAMENT_FALLBACKS,

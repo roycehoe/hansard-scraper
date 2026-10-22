@@ -19,11 +19,11 @@ from services.attendance import (
     build_constituency_lookups,
     build_speaker_lookups,
     get_sitting_attendance,
-    infer_parliament,
     resolve_canonical_name,
 )
 from utils.data_files import get_constituency_names
 from utils.names import normalize_name, strip_title
+from utils.parliament_numbers import infer_parliament
 from utils.write_target import validate_can_write
 
 _COLONIAL_PARLIAMENT_NUMBER = 0

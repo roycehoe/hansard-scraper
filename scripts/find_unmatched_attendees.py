@@ -14,10 +14,10 @@ from services.attendance import (
     build_constituency_lookups,
     build_speaker_lookups,
     get_sitting_attendance,
-    infer_parliament,
     resolve_canonical_name,
 )
 from utils.data_files import get_constituency_names
+from utils.parliament_numbers import infer_parliament
 
 _MIN_ALLCAPS_HEADER_LETTERS = 4
 _PROGRESS_INTERVAL = 100
