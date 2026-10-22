@@ -76,7 +76,7 @@ def build_old_hansard_sitting_date_response(hansard_report_response: HansardRepo
 
 
 def build_new_hansard_sitting_date_response(hansard_report_response: HansardReportNewResponse, sitting_date: str) -> HansardSittingDateResponse:
-    metadata = hansard_report_response.metadata or HansardReportMetadata()
+    metadata = hansard_report_response.metadata if hansard_report_response.metadata is not None else HansardReportMetadata()
 
     return HansardSittingDateResponse(
         parlement_no=metadata.parliment_no,

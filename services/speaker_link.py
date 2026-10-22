@@ -532,7 +532,7 @@ def resolve_speech_speaker_id(
 
     if raw in DATED_ROLE_TERMS:
         holder = _get_holder_on(DATED_ROLE_TERMS[raw], sitting_date)
-        if not holder:
+        if holder is None:
             return None
         resolved_name = _resolve_with_parliament_fallback(holder, parliament_number, lookups, name_parliament_number_to_speaker_id)
         return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
@@ -628,7 +628,7 @@ def get_head_of_state_names(title: str, sitting_date: datetime, speech_rows: lis
     for speech_row in speech_rows:
         if speech_row.speaker in HEAD_OF_STATE_TERMS:
             holder = _get_holder_on(HEAD_OF_STATE_TERMS[speech_row.speaker], sitting_date)
-            if holder:
+            if holder is not None:
                 speech_id_to_name[speech_row.id] = holder
     return speech_id_to_name
 

@@ -134,7 +134,7 @@ def get_sitting_date_field_losses(
     orm_field_to_value = _get_orm_field_to_value(hansard_sitting_date_response)
     failures = []
     if isinstance(hansard_report_response, HansardReportNewResponse):
-        metadata = raw["metadata"] or {}
+        metadata = {} if raw["metadata"] is None else raw["metadata"]
         for metadata_key, orm_field in _NEW_FORMAT_METADATA_KEY_TO_ORM_FIELD.items():
             value = metadata.get(metadata_key)
             if value is None or value == "":

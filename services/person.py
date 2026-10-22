@@ -66,7 +66,7 @@ class _SpeakerClusters:
         left_id, right_id = self.find(left_id), self.find(right_id)
         if left_id == right_id:
             return None
-        if refusal_reason := self.get_refusal_reason(left_id, right_id):
+        if (refusal_reason := self.get_refusal_reason(left_id, right_id)) is not None:
             return refusal_reason
         self.parent[right_id] = left_id
         self.members[left_id] += self.members.pop(right_id)
@@ -104,7 +104,7 @@ def cluster_speakers(speakers: list[Speaker], decisions: list[Decision]) -> Clus
             continue
         first, *rest = (key_to_speaker[key].id for key in decision.members)
         for other in rest:
-            if refusal_reason := clusters.union(first, other, "review:merge"):
+            if (refusal_reason := clusters.union(first, other, "review:merge")) is not None:
                 raise ValueError(f"merge decision refused ({refusal_reason}): {decision.members}")
         if decision.person_name:
             speaker_id_to_person_name[first] = decision.person_name
@@ -123,7 +123,7 @@ def cluster_speakers(speakers: list[Speaker], decisions: list[Decision]) -> Clus
             key_to_speaker_ids.setdefault(key_function(speaker), []).append(speaker.id)
         for key, speaker_ids in key_to_speaker_ids.items():
             for other in speaker_ids[1:]:
-                if refusal_reason := clusters.union(speaker_ids[0], other, basis):
+                if (refusal_reason := clusters.union(speaker_ids[0], other, basis)) is not None:
                     cluster_result.conflicts.append(f"{basis} {key!r}: {refusal_reason}")
 
     for root, members in clusters.members.items():
