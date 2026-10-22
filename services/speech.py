@@ -430,7 +430,7 @@ def _classify_speech_type(parsed_speeches: list[ParsedSpeech], speaker_count: in
 
 
 def _has_speaker_honorific(text: str) -> bool:
-    return _SPEAKER_HONORIFIC_RE.search(text) is not None or _LEADING_TITLE_RE.match(text) is not None
+    return bool(_SPEAKER_HONORIFIC_RE.search(text)) or bool(_LEADING_TITLE_RE.match(text))
 
 
 def _is_section_header_speaker(name: str) -> bool:
@@ -456,7 +456,7 @@ def _extract_body_attribution(markdown: str, report_type: str, report_version: s
         minister = match.group(1).strip() if match is not None else None
         if minister:
             return minister
-        if _ADDENDA_TITLE_RE.search(markdown) is not None:
+        if _ADDENDA_TITLE_RE.search(markdown):
             return None
         if not _MINISTRY_HEADING_RE.search(markdown):
             return _PRESIDENT_LABEL
@@ -613,13 +613,13 @@ def _split_division_records(lines: list[str]) -> list[str]:
 
 
 def _get_bracketed_note_kind(note: str) -> Optional[SpeechKind]:
-    if _WHOLE_BRACKETED_LINE_RE.match(note) is None:
+    if not _WHOLE_BRACKETED_LINE_RE.match(note):
         return None
-    if _VERNACULAR_NOTE_RE.match(note) is not None or _STANDING_ORDER_NOTE_RE.match(note) is not None:
+    if _VERNACULAR_NOTE_RE.match(note) or _STANDING_ORDER_NOTE_RE.match(note):
         return SpeechKind.EDITORIAL_NOTE
-    if _CHAIR_NOTE_RE.match(note) is not None:
+    if _CHAIR_NOTE_RE.match(note):
         return SpeechKind.PROCEDURAL
-    if _REACTION_NOTE_RE.match(note) is not None:
+    if _REACTION_NOTE_RE.match(note):
         return SpeechKind.CHAMBER_EVENT
     return None
 
@@ -629,32 +629,32 @@ def _get_note_kind(line: str) -> Optional[SpeechKind]:
     bracketed_note_kind = _get_bracketed_note_kind(line[language_note.end():] if language_note is not None else line)
     if bracketed_note_kind is not None:
         return bracketed_note_kind
-    if _SUPPLY_HEADER_NOTE_RE.match(line) is not None:
+    if _SUPPLY_HEADER_NOTE_RE.match(line):
         return SpeechKind.HEADING
-    if _HOUSE_ROSE_NOTE_RE.match(line) is not None:
+    if _HOUSE_ROSE_NOTE_RE.match(line):
         return SpeechKind.PROCEDURAL
-    if _CHAMBER_NOTE_RE.match(line) is not None or _COPIES_NOTE_RE.match(line) is not None:
+    if _CHAMBER_NOTE_RE.match(line) or _COPIES_NOTE_RE.match(line):
         return SpeechKind.CHAMBER_EVENT
     return None
 
 
 def _get_non_speech_kind(line: str) -> Optional[SpeechKind]:
-    if _AMENDMENT_TEXT_RE.match(line) is not None:
+    if _AMENDMENT_TEXT_RE.match(line):
         return SpeechKind.DOCUMENT_TEXT
-    if _STOOD_IN_NAMES_NOTE_RE.match(line) is not None or _WRITTEN_STATEMENT_NOTE_RE.match(line) is not None:
+    if _STOOD_IN_NAMES_NOTE_RE.match(line) or _WRITTEN_STATEMENT_NOTE_RE.match(line):
         return SpeechKind.EDITORIAL_NOTE
     note_kind = _get_note_kind(line)
     if note_kind is not None:
         return note_kind
-    if _PLAIN_CHAMBER_EVENT_RE.match(line) is not None:
+    if _PLAIN_CHAMBER_EVENT_RE.match(line):
         return SpeechKind.CHAMBER_EVENT
-    if _OATH_LINE_RE.match(line) is not None or _PROCEDURAL_RECORD_LINE_RE.match(line) is not None:
+    if _OATH_LINE_RE.match(line) or _PROCEDURAL_RECORD_LINE_RE.match(line):
         return SpeechKind.PROCEDURAL
-    if _PROCEDURAL_LINE_RE.match(line) is None:
+    if not _PROCEDURAL_LINE_RE.match(line):
         return None
-    if _AMENDMENT_FOLLOWS_NOTE_RE.match(line) is not None:
+    if _AMENDMENT_FOLLOWS_NOTE_RE.match(line):
         return SpeechKind.EDITORIAL_NOTE
-    if _COPIES_LINE_RE.match(line) is not None:
+    if _COPIES_LINE_RE.match(line):
         return SpeechKind.CHAMBER_EVENT
     return SpeechKind.PROCEDURAL
 
@@ -663,17 +663,17 @@ def _get_no_speaker_kind(line: str) -> SpeechKind:
     non_speech_kind = _get_non_speech_kind(line)
     if non_speech_kind is not None:
         return non_speech_kind
-    if _SUPPLY_AMENDMENT_TEXT_RE.match(line) is not None or _ORDER_PAPER_TEXT_RE.match(line) is not None:
+    if _SUPPLY_AMENDMENT_TEXT_RE.match(line) or _ORDER_PAPER_TEXT_RE.match(line):
         return SpeechKind.DOCUMENT_TEXT
-    if _UNANCHORED_PROCEDURAL_LINE_RE.match(line) is not None:
+    if _UNANCHORED_PROCEDURAL_LINE_RE.match(line):
         return SpeechKind.PROCEDURAL
-    if _SUPPLY_HEAD_RE.match(line) is not None or _CLAUSE_CAPTION_RE.match(line) is not None:
+    if _SUPPLY_HEAD_RE.match(line) or _CLAUSE_CAPTION_RE.match(line):
         return SpeechKind.HEADING
     return SpeechKind.UNCLASSIFIED
 
 
 def _build_current_speaker_speech(current_speaker: Optional[str], transcript: str) -> ParsedSpeech:
-    if _ITALIC_TITLE_RE.match(transcript) is not None:
+    if _ITALIC_TITLE_RE.match(transcript):
         return ParsedSpeech(speaker=None, transcript=transcript, kind=SpeechKind.HEADING)
     if current_speaker is None:
         return ParsedSpeech(speaker=None, transcript=transcript, kind=_get_no_speaker_kind(transcript))
@@ -688,7 +688,7 @@ def _build_line_speech(line: str, current_speaker: Optional[str]) -> ParsedSpeec
 
 
 def _build_footnote_speech(line: str) -> ParsedSpeech:
-    is_document_text = _AMENDMENT_TEXT_RE.match(line) is not None or _SUPPLY_AMENDMENT_TEXT_RE.match(line) is not None
+    is_document_text = bool(_AMENDMENT_TEXT_RE.match(line)) or bool(_SUPPLY_AMENDMENT_TEXT_RE.match(line))
     kind = SpeechKind.DOCUMENT_TEXT if is_document_text else SpeechKind.EDITORIAL_NOTE
     return ParsedSpeech(speaker=None, transcript=line, kind=kind)
 
@@ -711,17 +711,17 @@ def _get_proc_text(line: str) -> Optional[str]:
 
 
 def _is_first_reading_formula(line: str) -> bool:
-    if _FIRST_READING_RE.search(line) is None:
+    if not _FIRST_READING_RE.search(line):
         return False
-    return not line.startswith(BOLD_MARKER) or _WHOLE_BOLD_LINE_RE.match(line) is not None
+    return not line.startswith(BOLD_MARKER) or bool(_WHOLE_BOLD_LINE_RE.match(line))
 
 
 def _is_first_reading_lead_line(stripped: str, unmarked: str) -> bool:
     return (
-        _TIME_MARKER_RE.match(unmarked.strip(_EMPHASIS_MARK_CHARACTERS)) is not None
-        or _MARKDOWN_HEADING_RE.match(stripped) is not None
-        or _WHOLE_BOLD_LINE_RE.match(stripped) is not None
-        or _SENTENCE_END_RE.search(unmarked) is None
+        bool(_TIME_MARKER_RE.match(unmarked.strip(_EMPHASIS_MARK_CHARACTERS)))
+        or bool(_MARKDOWN_HEADING_RE.match(stripped))
+        or bool(_WHOLE_BOLD_LINE_RE.match(stripped))
+        or not _SENTENCE_END_RE.search(unmarked)
         or not unmarked[:1].isupper()
     )
 
@@ -735,16 +735,16 @@ def _build_speaker_lines_speeches(speaker: str, speaker_lines: list[str]) -> lis
 
 # NOTE: a quoted motion may hold whole sentences, so only the mover's bracket ends it.
 def _is_record_end(record: str, line: str) -> bool:
-    if _QUOTE_MARK_RE.search(record) is not None:
-        return _MOVER_BRACKET_RE.search(line) is not None
-    return _RECORD_END_RE.search(line) is not None
+    if _QUOTE_MARK_RE.search(record):
+        return bool(_MOVER_BRACKET_RE.search(line))
+    return bool(_RECORD_END_RE.search(line))
 
 
 def _is_note_line(line: str) -> bool:
     return (
-        _FOOTNOTE_LINE_RE.match(line) is not None
-        or _CLOSED_FOOTNOTE_START_RE.match(line) is not None
-        or _COLUMN_REFERENCE_NOTE_RE.match(line) is not None
+        bool(_FOOTNOTE_LINE_RE.match(line))
+        or bool(_CLOSED_FOOTNOTE_START_RE.match(line))
+        or bool(_COLUMN_REFERENCE_NOTE_RE.match(line))
     )
 
 
@@ -755,7 +755,7 @@ def _is_closed_footnote_block(lines: list[str], block: list[int], is_closed: boo
         return False
     first_line = lines[block[0]].strip()
     # NOTE: a column reference is a whole note, so what follows it may be unlabelled speech; its block is read line by line instead.
-    return _is_note_line(first_line) and _COLUMN_REFERENCE_NOTE_RE.match(first_line) is None
+    return _is_note_line(first_line) and not _COLUMN_REFERENCE_NOTE_RE.match(first_line)
 
 
 def _get_speech_start_position(lines: list[str], block: list[int]) -> int:
@@ -765,16 +765,16 @@ def _get_speech_start_position(lines: list[str], block: list[int]) -> int:
         if _is_note_line(line):
             continue
         previous_line = lines[block[position - 1]].strip() if position > 0 else ""
-        is_after_finished_note = _COLUMN_REFERENCE_NOTE_RE.match(previous_line) is not None or (
-            _SENTENCE_END_RE.search(previous_line) is not None and _FOOTNOTE_REFERENCE_RE.search(previous_line) is None
+        is_after_finished_note = bool(_COLUMN_REFERENCE_NOTE_RE.match(previous_line)) or (
+            bool(_SENTENCE_END_RE.search(previous_line)) and not _FOOTNOTE_REFERENCE_RE.search(previous_line)
         )
-        is_speech = len(line) >= _MIN_SPEECH_LINE_LENGTH and _SPEECH_START_RE.match(line) is not None and is_after_finished_note
+        is_speech = len(line) >= _MIN_SPEECH_LINE_LENGTH and bool(_SPEECH_START_RE.match(line)) and is_after_finished_note
         return position if is_speech else len(block)
     return len(block)
 
 
 def _get_footnote_line_indexes(lines: list[str]) -> set[int]:
-    rule_indexes = [index for index, line in enumerate(lines) if line.strip() == HORIZONTAL_RULE or _UNDERSCORE_RULE_RE.match(line.strip()) is not None]
+    rule_indexes = [index for index, line in enumerate(lines) if line.strip() == HORIZONTAL_RULE or _UNDERSCORE_RULE_RE.match(line.strip())]
     footnote_line_indexes: set[int] = set()
     for position, rule_index in enumerate(rule_indexes):
         is_closed = position + 1 < len(rule_indexes)
@@ -810,14 +810,14 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
             continue
         proc_text = _get_proc_text(edge_unmarked)
         unmarked = edge_unmarked if proc_text is None else proc_text
-        is_first_reading = proc_text is None and _FIRST_READING_RE.search(unmarked) is not None
-        is_heading_line = _MARKDOWN_HEADING_RE.match(stripped) is not None or _WHOLE_BOLD_LINE_RE.match(stripped) is not None
+        is_first_reading = proc_text is None and bool(_FIRST_READING_RE.search(unmarked))
+        is_heading_line = bool(_MARKDOWN_HEADING_RE.match(stripped)) or bool(_WHOLE_BOLD_LINE_RE.match(stripped))
         if record_continuations > 0 and not is_heading_line and _get_non_speech_kind(unmarked) is None:
             speeches[-1].transcript += " " + unmarked
             record_continuations = 0 if _is_record_end(speeches[-1].transcript, unmarked) else record_continuations - 1
             continue
         record_continuations = 0
-        is_resolved_line = _RESOLVED_LINE_RE.match(unmarked) is not None
+        is_resolved_line = bool(_RESOLVED_LINE_RE.match(unmarked))
         if not is_body_started and not is_resolved_line and is_heading_line:
             continue
         non_speech_kind = _get_non_speech_kind(unmarked)
@@ -845,10 +845,10 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
             speeches.extend(_build_speaker_lines_speeches(speaker, speaker_lines))
             speaker_lines = []
         speeches.append(ParsedSpeech(speaker=None, transcript=unmarked, kind=SpeechKind.PROCEDURAL if proc_text is not None or is_first_reading or is_resolved_line else non_speech_kind))
-        is_adjournment_line = _ADJOURNMENT_LINE_RE.match(unmarked) is not None
+        is_adjournment_line = bool(_ADJOURNMENT_LINE_RE.match(unmarked))
         is_adjourned = is_adjourned or is_adjournment_line
-        is_record_line = is_adjournment_line or _CONSENT_LINE_RE.match(unmarked) is not None or is_resolved_line
-        if is_record_line and (_BARE_RESOLVED_LINE_RE.match(unmarked) is not None or _RECORD_END_RE.search(unmarked) is None):
+        is_record_line = is_adjournment_line or bool(_CONSENT_LINE_RE.match(unmarked)) or is_resolved_line
+        if is_record_line and (_BARE_RESOLVED_LINE_RE.match(unmarked) or not _RECORD_END_RE.search(unmarked)):
             record_continuations = _MAX_RECORD_CONTINUATIONS
     if speaker_lines:
         speeches.extend(_build_speaker_lines_speeches(speaker, speaker_lines))
@@ -857,7 +857,7 @@ def _get_single_speaker_speeches(markdown: str, start_of_speech_line: int, speak
 
 def _is_speaker_name(name: str) -> bool:
     honorifics = _SPEAKER_HONORIFIC_RE.findall(name)
-    if _LEADING_TITLE_RE.match(name) is not None:
+    if _LEADING_TITLE_RE.match(name):
         return True
     if not honorifics:
         return False
@@ -865,11 +865,11 @@ def _is_speaker_name(name: str) -> bool:
         return True
     if OPENING_PARENTHESIS in name:
         return True
-    return _SPEAKER_ROLE_WORD_RE.search(name) is not None or _OFFICE_WORD_RE.search(name) is not None
+    return bool(_SPEAKER_ROLE_WORD_RE.search(name)) or bool(_OFFICE_WORD_RE.search(name))
 
 
 def _is_name_fragment(label: str) -> bool:
-    if _PERSONAL_TITLE_RE.match(label) is None:
+    if not _PERSONAL_TITLE_RE.match(label):
         return False
     words = _PARENTHESISED_GROUP_RE.sub("", label).split()[1:]
     lowercase_words = [word for word in words if word[:1].islower() and word not in _NAME_PARTICLES]
@@ -894,7 +894,7 @@ def _is_bold_mid_sentence(line: str) -> bool:
     if _has_speaker_honorific(bold_text) or _MISS_RE.search(bold_text) or _DROP_CAP_RE.fullmatch(bold_text):
         return False
     text_before_bold = _LIST_ENUMERATOR_RE.sub("", _LANGUAGE_NOTE_RE.sub("", line[: bold_match.start()]))
-    return _LETTER_RE.search(text_before_bold) is not None
+    return bool(_LETTER_RE.search(text_before_bold))
 
 
 def _is_bold_without_letters(line: str) -> bool:
@@ -903,9 +903,9 @@ def _is_bold_without_letters(line: str) -> bool:
         return False
     bold_text = bold_match.group(0)
     return (
-        _LETTER_RE.search(bold_text) is None
-        and _PARENTHESIS_RE.search(bold_text) is None
-        and _LETTER_RE.search(line) is not None
+        not _LETTER_RE.search(bold_text)
+        and not _PARENTHESIS_RE.search(bold_text)
+        and bool(_LETTER_RE.search(line))
     )
 
 
@@ -915,18 +915,18 @@ def _is_honourable_members_phrase(line: str) -> bool:
         return False
     if line[: bold_match.start()].strip():
         return False
-    if _HONOURABLE_MEMBERS_RE.match(bold_match.group(0).replace(ASTERISK, "").strip()) is None:
+    if not _HONOURABLE_MEMBERS_RE.match(bold_match.group(0).replace(ASTERISK, "").strip()):
         return False
     text_after_bold = line[bold_match.end():]
-    return _LOWERCASE_START_RE.match(text_after_bold) is not None and _CHAMBER_EVENT_VERB_RE.match(text_after_bold) is None
+    return bool(_LOWERCASE_START_RE.match(text_after_bold)) and not _CHAMBER_EVENT_VERB_RE.match(text_after_bold)
 
 
 def _is_preamble_title_line(line: str) -> bool:
     return (
-        REPORT_HEADER_FIELD_RE.match(line) is not None
+        bool(REPORT_HEADER_FIELD_RE.match(line))
         or line.startswith(BOLD_MARKER)
-        or _PARENTHESISED_RE.match(line.strip(_EMPHASIS_MARK_CHARACTERS)) is not None
-        or _ITALIC_HEADING_RE.match(line) is not None
+        or bool(_PARENTHESISED_RE.match(line.strip(_EMPHASIS_MARK_CHARACTERS)))
+        or bool(_ITALIC_HEADING_RE.match(line))
     )
 
 
@@ -1007,7 +1007,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
         if bold_match is not None:
             unbolded_line = parsed_line.replace(BOLD_MARKER, "").strip()
             # NOTE: the source splits a bracketed chair annotation into several bold runs, so only the whole line shows it is no label.
-            if parsed_line.startswith(_BRACKETED_BOLD_OPENINGS) and _CHAIR_ANNOTATION_FULL_RE.fullmatch(unbolded_line) is not None:
+            if parsed_line.startswith(_BRACKETED_BOLD_OPENINGS) and _CHAIR_ANNOTATION_FULL_RE.fullmatch(unbolded_line):
                 continue
             transcript = _LEADING_COLON_RE.sub("", parsed_line.split(bold_match.group(0))[-1].strip())
             # NOTE: a bold cell next to a pipe is a table row, not a label, so the whole line stays with the current speaker; a person's label with a colon may still have a pipe in its speech.
@@ -1021,7 +1021,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
             # NOTE: A bold line holding only a language note keeps its text so it stays a section annotation.
             raw_speaker = speaker_without_note or raw_speaker
             # NOTE: the lead-in sentence stands outside the bold name and a dash follows it, so the generic split would drop the sentence and keep the dash in the label.
-            if report_version == ReportVersion.SPRS3 and _QUESTION_LEAD_IN_RE.match(parsed_line) is not None:
+            if report_version == ReportVersion.SPRS3 and _QUESTION_LEAD_IN_RE.match(parsed_line):
                 (preamble_speeches if is_in_preamble else speeches).append(ParsedSpeech(speaker=None, transcript=unbolded_line, kind=SpeechKind.PROCEDURAL))
                 current_speaker = _TRAILING_DASH_RE.sub("", raw_speaker)
                 is_in_preamble = False
@@ -1042,17 +1042,17 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
                 continue
             is_non_label_bold = (
                 not _is_speaker_name(raw_speaker)
-                and _PERSONAL_TITLE_RE.match(raw_speaker) is None
-                and _COLLECTIVE_LABEL_RE.search(raw_speaker) is None
+                and not _PERSONAL_TITLE_RE.match(raw_speaker)
+                and not _COLLECTIVE_LABEL_RE.search(raw_speaker)
             )
             is_bold_ending_with_colon = bold_match.group(0).rstrip().endswith(_BOLD_LABEL_ENDING)
             is_heading_line = (
-                (_MARKDOWN_HEADING_RE.match(parsed_line) is not None and bool(transcript))
-                or _CONTINUATION_NOTE_RE.match(transcript) is not None
+                (bool(_MARKDOWN_HEADING_RE.match(parsed_line)) and bool(transcript))
+                or bool(_CONTINUATION_NOTE_RE.match(transcript))
                 or (is_bold_ending_with_colon and not transcript.strip(_EMPHASIS_MARK_CHARACTERS))
             )
             non_speech_kind = _get_non_speech_kind(unbolded_line)
-            is_question_stub = _QUESTION_NUMBER_ONLY_RE.match(parsed_line[: bold_match.start()]) is not None
+            is_question_stub = bool(_QUESTION_NUMBER_ONLY_RE.match(parsed_line[: bold_match.start()]))
             # NOTE: a bold heading, a bold word inside a procedural line or a question's "To ask" is no label; its text keeps a row with no speaker.
             if is_non_label_bold and (is_heading_line or non_speech_kind is not None or is_question_stub):
                 # NOTE: a numbered bold phrase that is no label, such as a question's "To ask", stays in the current turn.
@@ -1096,9 +1096,9 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
             ):
                 continue
             # NOTE: a parenthesised annotation resets the speaker but an italic subheading sits inside a speech; the check must run before the section-title skip below.
-            is_parenthesised_annotation = _PARENTHESISED_RE.match(new_speaker) is not None
+            is_parenthesised_annotation = bool(_PARENTHESISED_RE.match(new_speaker))
             is_section_annotation = (
-                (is_parenthesised_annotation or _ITALIC_HEADING_RE.match(new_speaker) is not None)
+                (is_parenthesised_annotation or bool(_ITALIC_HEADING_RE.match(new_speaker)))
                 and not _has_speaker_honorific(new_speaker)
             )
             # NOTE: in the older system a bold line that is only a language note says how the speaker goes on, so the speaker stays.
@@ -1116,18 +1116,18 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
                     current_speaker = None
                 continue
             # NOTE: a bold name before "rose -" is a chamber event, not a speaker label, so the current speaker stays and the name stays in the text.
-            is_turn_ending_direction = _LABELLED_TURN_ENDING_DIRECTION_RE.match(transcript) is not None
+            is_turn_ending_direction = bool(_LABELLED_TURN_ENDING_DIRECTION_RE.match(transcript))
             if is_turn_ending_direction or _LABELLED_CHAMBER_EVENT_RE.match(transcript):
                 is_in_preamble = False
                 text_before_bold = parsed_line[: bold_match.start()]
-                has_lead_letters = _LETTER_RE.search(text_before_bold) is not None
-                is_lead_sentence = has_lead_letters and _SENTENCE_FINAL_RE.search(text_before_bold.strip()) is not None
+                has_lead_letters = bool(_LETTER_RE.search(text_before_bold))
+                is_lead_sentence = has_lead_letters and bool(_SENTENCE_FINAL_RE.search(text_before_bold.strip()))
                 if is_lead_sentence:
                     speeches.append(_build_current_speaker_speech(current_speaker, text_before_bold.strip()))
                 bold_text = bold_match.group(0).replace(ASTERISK, "")
                 name_separator = " " if bold_text != bold_text.rstrip() else ""
                 direction_lead = text_before_bold if has_lead_letters and not is_lead_sentence else ""
-                is_procedural_direction = _LABELLED_PROCEDURAL_DIRECTION_RE.match(transcript) is not None
+                is_procedural_direction = bool(_LABELLED_PROCEDURAL_DIRECTION_RE.match(transcript))
                 speeches.append(ParsedSpeech(
                     speaker=None,
                     transcript=direction_lead + bold_text.strip() + name_separator + transcript,
@@ -1161,7 +1161,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
 def _split_speech_at_chamber_events(speech: ParsedSpeech) -> list[ParsedSpeech]:
     event_matches = [
         match for match in _BRACKET_SPAN_RE.finditer(speech.transcript)
-        if _CHAMBER_EVENT_INNER_RE.match(match.group(1).strip(_BRACKET_INNER_EDGE_CHARACTERS)) is not None
+        if _CHAMBER_EVENT_INNER_RE.match(match.group(1).strip(_BRACKET_INNER_EDGE_CHARACTERS))
     ]
     if not event_matches:
         return [speech]
@@ -1177,7 +1177,7 @@ def _split_speech_at_chamber_events(speech: ParsedSpeech) -> list[ParsedSpeech]:
     for text, is_event in parts:
         full_stop = _EVENT_FULL_STOP_RE.search(text) if is_event else None
         # NOTE: a full stop after the brackets ends the sentence the event cut, so it goes back to the paragraph unless that already ends one.
-        is_full_stop_returned = full_stop is not None and bool(paragraph_parts) and _SENTENCE_FINAL_RE.search(paragraph_parts[-1]) is None
+        is_full_stop_returned = full_stop is not None and bool(paragraph_parts) and not _SENTENCE_FINAL_RE.search(paragraph_parts[-1])
         if is_full_stop_returned:
             paragraph_parts[-1] += "."
             event_text = _EMPTY_EMPHASIS_TAIL_RE.sub("", text[: full_stop.start(1)] + text[full_stop.end(1):])
@@ -1185,7 +1185,7 @@ def _split_speech_at_chamber_events(speech: ParsedSpeech) -> list[ParsedSpeech]:
         elif is_event:
             event_rows.append(ParsedSpeech(speaker=None, transcript=text, kind=SpeechKind.CHAMBER_EVENT))
         # NOTE: punctuation left after an event ("[Interruption]-") belongs to the interrupted speech, so it stays on the event row.
-        elif event_rows and _ALPHANUMERIC_RE.search(text) is None:
+        elif event_rows and not _ALPHANUMERIC_RE.search(text):
             event_rows[-1].transcript += text.rstrip()
         elif text.strip():
             paragraph_parts.append(text.strip())
@@ -1253,15 +1253,15 @@ def _has_speech_sentence(transcript: str) -> bool:
 
 
 def _is_resolved_record_without_speech(speeches: list[ParsedSpeech]) -> bool:
-    is_resolved_record = any(speech.speaker is None and _RESOLVED_LINE_RE.match(speech.transcript) is not None for speech in speeches)
+    is_resolved_record = any(speech.speaker is None and _RESOLVED_LINE_RE.match(speech.transcript) for speech in speeches)
     return is_resolved_record and not any(speech.speaker is not None and _has_speech_sentence(speech.transcript) for speech in speeches)
 
 
 def _is_addenda_signature(speeches: list[ParsedSpeech], index: int) -> bool:
     return (
         index + 1 < len(speeches)
-        and _ADDENDA_SIGNATURE_NAME_RE.match(speeches[index].transcript) is not None
-        and _ADDENDA_SIGNATURE_TITLE_RE.match(speeches[index + 1].transcript) is not None
+        and bool(_ADDENDA_SIGNATURE_NAME_RE.match(speeches[index].transcript))
+        and bool(_ADDENDA_SIGNATURE_TITLE_RE.match(speeches[index + 1].transcript))
     )
 
 
