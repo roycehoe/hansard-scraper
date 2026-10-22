@@ -1,4 +1,5 @@
 import re
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable, Optional
 
@@ -24,6 +25,7 @@ from services.speaker_link import (
     get_deputy_speaker_names,
     get_deputy_speaker_names_in_text,
     get_head_of_state_names,
+    get_holders_on,
     get_sitting_deputy_speaker_names,
     get_speaker_id_for_name,
     get_speaker_ids_for_names,
@@ -69,6 +71,20 @@ def _get_day_speaker_ids(
     return text_key_to_speaker_ids[key]
 
 
+@dataclass(frozen=True)
+class ReportBatch:
+    report_id_to_report: dict[int, Report]
+    report_id_to_speech_rows: dict[int, list[SpeechRow]]
+
+
+def _get_report_batch(session: Session, report_ids: list[int]) -> ReportBatch:
+    report_id_to_report = {report.id: report for report in CRUDReport(session).get_by_ids(report_ids)}
+    report_id_to_speech_rows: dict[int, list[SpeechRow]] = {}
+    for speech_row in CRUDSpeech(session).get_rows_by_report_ids(report_ids):
+        report_id_to_speech_rows.setdefault(speech_row.report_id, []).append(speech_row)
+    return ReportBatch(report_id_to_report, report_id_to_speech_rows)
+
+
 def _get_role_context_speaker_ids_for_report_ids(
     session: Session,
     report_ids: list[int],
@@ -80,12 +96,9 @@ def _get_role_context_speaker_ids_for_report_ids(
     total = 0
     for start in range(0, len(report_ids), _REPORT_BATCH):
         batch = report_ids[start : start + _REPORT_BATCH]
-        report_id_to_report = {report.id: report for report in CRUDReport(session).get_by_ids(batch)}
-        report_id_to_speech_rows: dict[int, list[SpeechRow]] = {}
-        for speech_row in CRUDSpeech(session).get_rows_by_report_ids(batch):
-            report_id_to_speech_rows.setdefault(speech_row.report_id, []).append(speech_row)
-        for report_id, speech_rows in report_id_to_speech_rows.items():
-            report = report_id_to_report[report_id]
+        report_batch = _get_report_batch(session, batch)
+        for report_id, speech_rows in report_batch.report_id_to_speech_rows.items():
+            report = report_batch.report_id_to_report[report_id]
             unlinked = {speech_row.id for speech_row in speech_rows if speech_row.speaker_id is None}
             speech_id_to_name = get_chairman_names(report.markdown_content or "", speech_rows)
             speech_id_to_name.update(get_carried_role_names(speech_rows))
@@ -136,16 +149,13 @@ def _get_deputy_speaker_ids_for_report_ids(
 
     for start in range(0, len(report_ids), _REPORT_BATCH):
         batch = report_ids[start : start + _REPORT_BATCH]
-        report_id_to_report = {report.id: report for report in CRUDReport(session).get_by_ids(batch)}
-        report_id_to_speech_rows: dict[int, list[SpeechRow]] = {}
-        for speech_row in CRUDSpeech(session).get_rows_by_report_ids(batch):
-            report_id_to_speech_rows.setdefault(speech_row.report_id, []).append(speech_row)
+        report_batch = _get_report_batch(session, batch)
         pending_reports = []
-        for report_id, speech_rows in report_id_to_speech_rows.items():
-            report = report_id_to_report[report_id]
+        for report_id, speech_rows in report_batch.report_id_to_speech_rows.items():
+            report = report_batch.report_id_to_report[report_id]
             bare_deputy_rows = [speech_row for speech_row in speech_rows if speech_row.speaker_id is None and BARE_DEPUTY_RE.match(speech_row.speaker or "")]
             day = report.sitting_date.date()
-            holders = [name for first, last, name in DEPUTY_SPEAKER_TERMS if first <= day <= last]
+            holders = get_holders_on(DEPUTY_SPEAKER_TERMS, day)
             if not bare_deputy_rows or len(holders) != _DEPUTY_SPEAKER_PAIR_SIZE:
                 continue
             total += len(bare_deputy_rows)
@@ -241,11 +251,8 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
 
     for start in range(0, len(report_ids), _REPORT_BATCH):
         batch = report_ids[start : start + _REPORT_BATCH]
-        report_id_to_report = {report.id: report for report in CRUDReport(session).get_by_ids(batch)}
-        report_id_to_speech_rows: dict[int, list[SpeechRow]] = {}
-        for speech_row in CRUDSpeech(session).get_rows_by_report_ids(batch):
-            report_id_to_speech_rows.setdefault(speech_row.report_id, []).append(speech_row)
-        date_keys = list({get_sitting_date_key(report.sitting_date) for report in report_id_to_report.values()})
+        report_batch = _get_report_batch(session, batch)
+        date_keys = list({get_sitting_date_key(report.sitting_date) for report in report_batch.report_id_to_report.values()})
         date_key_to_markdown = {
             date_markdown_row.sitting_date: date_markdown_row.markdown_content
             for date_markdown_row in CRUDSitting(session).get_date_markdown_rows_by_sitting_dates_and_markdown_content_not_null(date_keys)
@@ -255,11 +262,11 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
             for date_sections_row in CRUDSitting(session).get_date_sections_rows_by_sitting_dates_and_sections_not_null(date_keys)
         }
         date_key_to_sitting_text: dict[str, Optional[SittingText]] = {}
-        for report_id, speech_rows in report_id_to_speech_rows.items():
-            report = report_id_to_report[report_id]
+        for report_id, speech_rows in report_batch.report_id_to_speech_rows.items():
+            report = report_batch.report_id_to_report[report_id]
             bare_deputy_rows = [speech_row for speech_row in speech_rows if speech_row.speaker_id is None and BARE_DEPUTY_RE.match(speech_row.speaker or "")]
             day = report.sitting_date.date()
-            holders = [name for first, last, name in DEPUTY_SPEAKER_TERMS if first <= day <= last]
+            holders = get_holders_on(DEPUTY_SPEAKER_TERMS, day)
             if not bare_deputy_rows or len(holders) != _DEPUTY_SPEAKER_PAIR_SIZE:
                 continue
             total += len(bare_deputy_rows)
