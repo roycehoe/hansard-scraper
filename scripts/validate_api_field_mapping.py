@@ -1,5 +1,5 @@
 import sys
-from typing import Optional, Union
+from typing import Union
 
 from gateway.hansard_report import get_hansard_report_response
 from gateway.hansard_search import get_hansard_search_results
@@ -22,7 +22,7 @@ from utils.sitting_dates import is_new_sitting_date_format
 
 _VALUE_PREVIEW_LENGTH = 55
 _HTTP_INTERNAL_SERVER_ERROR = 500
-_SYNTHETIC_OLD_FORMAT = {
+SYNTHETIC_OLD_FORMAT = {
     "parlNo": "9",
     "sessionNo": "1",
     "volumeNo": "65",
@@ -66,7 +66,7 @@ _SYNTHETIC_OLD_FORMAT = {
     "questionCount": "3",
     "attendanceList": [{"name": "Dr Tan Cheng Bock", "status": "P"}],
 }
-_SYNTHETIC_NEW_FORMAT = {
+SYNTHETIC_NEW_FORMAT = {
     "metadata": {
         "parlimentNO": "13",
         "sessionNO": "2",
@@ -93,7 +93,7 @@ _SYNTHETIC_NEW_FORMAT = {
 }
 
 
-def validate_search_and_topic() -> bool:
+def is_search_and_topic_mapped() -> bool:
     logger.info("API 1 — searchResult  →  HansardSearchResult  →  HansardWebsiteResponse")
     search_results = get_hansard_search_results(0, 0)
     if not search_results:
@@ -115,7 +115,7 @@ def validate_search_and_topic() -> bool:
     return not orm_failures
 
 
-def validate_topic(report_id: str) -> bool:
+def is_topic_mapped(report_id: str) -> bool:
     logger.info("API 2 — getHansardTopic  →  htmlContent  →  HansardWebsiteResponse.content")
     logger.info(f"  INFO  report_id={report_id!r}")
     search_results = get_hansard_search_results(0, 0)
@@ -142,14 +142,10 @@ def validate_topic(report_id: str) -> bool:
     return True
 
 
-def _validate_sitting_payload(
+def _is_sitting_payload_mapped(
     hansard_report_response: Union[HansardReportOldResponse, HansardReportNewResponse], sitting_date: str, source: str
-) -> Optional[bool]:
+) -> bool:
     is_new = is_new_sitting_date_format(sitting_date)
-
-    if hansard_report_response.error_code is not None:
-        logger.info(f"  WARN  API returned error: {hansard_report_response.description} — using synthetic payload instead")
-        return None
 
     if is_new:
         hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
@@ -166,7 +162,7 @@ def _validate_sitting_payload(
     return True
 
 
-def validate_sitting_date(sitting_date: str, label: str, synthetic: dict) -> bool:
+def is_sitting_date_mapped(sitting_date: str, label: str, synthetic: dict) -> bool:
     logger.info(f"API 3 — getHansardReport ({label})")
     logger.info(f"  INFO  sitting_date={sitting_date!r}")
 
@@ -177,28 +173,26 @@ def validate_sitting_date(sitting_date: str, label: str, synthetic: dict) -> boo
         logger.info(f"  WARN  API call failed ({error}) — using synthetic payload")
         hansard_report_response = response_schema(error_code=_HTTP_INTERNAL_SERVER_ERROR)
 
-    is_passed = _validate_sitting_payload(hansard_report_response, sitting_date, source="live API")
-    if is_passed is None:
-        is_passed = _validate_sitting_payload(
-            response_schema.model_validate(synthetic), sitting_date, source="synthetic payload"
-        )
+    if hansard_report_response.error_code is None:
+        return _is_sitting_payload_mapped(hansard_report_response, sitting_date, source="live API")
 
-    return bool(is_passed)
+    logger.info(f"  WARN  API returned error: {hansard_report_response.description} — using synthetic payload instead")
+    return _is_sitting_payload_mapped(response_schema.model_validate(synthetic), sitting_date, source="synthetic payload")
 
 
 if __name__ == "__main__":
     is_all_passed = True
-    is_all_passed &= validate_search_and_topic()
-    is_all_passed &= validate_topic(get_hansard_search_results(0, 0)[0].report_id)
-    is_all_passed &= validate_sitting_date(
+    is_all_passed &= is_search_and_topic_mapped()
+    is_all_passed &= is_topic_mapped(get_hansard_search_results(0, 0)[0].report_id)
+    is_all_passed &= is_sitting_date_mapped(
         "11-05-2015",
         "old format, pre-2015-08-18",
-        _SYNTHETIC_OLD_FORMAT,
+        SYNTHETIC_OLD_FORMAT,
     )
-    is_all_passed &= validate_sitting_date(
+    is_all_passed &= is_sitting_date_mapped(
         "15-01-2024",
         "new format, post-2015-08-18",
-        _SYNTHETIC_NEW_FORMAT,
+        SYNTHETIC_NEW_FORMAT,
     )
 
     if is_all_passed:

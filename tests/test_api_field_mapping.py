@@ -1,7 +1,7 @@
 from schemas.hansard_report_response import HansardReportNewResponse
 from schemas.hansard_search_result import HansardSearchResult
 from schemas.hansard_topic_response import HansardTopicResponse
-from scripts.validate_api_field_mapping import _SYNTHETIC_NEW_FORMAT
+from scripts.validate_api_field_mapping import SYNTHETIC_NEW_FORMAT
 from services.api_field_mapping import (
     get_search_result_field_losses,
     get_sitting_date_field_losses,
@@ -59,14 +59,14 @@ def test_empty_topic_body_is_no_loss() -> None:
 
 
 def test_new_format_sitting_keeps_every_mapped_field() -> None:
-    hansard_report_response = HansardReportNewResponse.model_validate(_SYNTHETIC_NEW_FORMAT)
+    hansard_report_response = HansardReportNewResponse.model_validate(SYNTHETIC_NEW_FORMAT)
     hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, _SITTING_DATE)
 
     assert get_sitting_date_field_losses(hansard_report_response, hansard_sitting_date_response) == []
 
 
 def test_new_format_sitting_with_a_dropped_parliament_number_is_one_loss() -> None:
-    hansard_report_response = HansardReportNewResponse.model_validate(_SYNTHETIC_NEW_FORMAT)
+    hansard_report_response = HansardReportNewResponse.model_validate(SYNTHETIC_NEW_FORMAT)
     hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, _SITTING_DATE)
     hansard_sitting_date_response.parlement_no = None
 
