@@ -175,7 +175,7 @@ def _get_bound_position(positions: list[Optional[int]], index: int, annotations:
     return low + 1
 
 
-def chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int, str]:
+def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int, str]:
     normalised = _normalise(markdown)
     annotations = [(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalised)]
     events = [(match.start(), match.group(1).lower()) for match in _CHAIR_EVENT_RE.finditer(normalised)]
@@ -230,7 +230,7 @@ def chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int, str
     return speech_id_to_name
 
 
-def deputy_speaker_names(markdown: str, speech_rows: list[SpeechRow]) -> DeputySpeakerNames:
+def get_deputy_speaker_names(markdown: str, speech_rows: list[SpeechRow]) -> DeputySpeakerNames:
     normalised = _normalise(markdown)
     annotations = [(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalised)]
     position_to_deputy_match = {position: _NAMED_DEPUTY_RE.search(_normalise(text)) for position, text in annotations}
@@ -331,7 +331,7 @@ def _get_sitting_positions(sitting_text: SittingText, report_title: str, speech_
     return section_positions[aligned_counts.index(most_aligned)]
 
 
-def sitting_deputy_speaker_names(sitting_text: SittingText, report_title: str, speech_rows: list[SpeechRow]) -> dict[int, str]:
+def get_sitting_deputy_speaker_names(sitting_text: SittingText, report_title: str, speech_rows: list[SpeechRow]) -> dict[int, str]:
     positions = _get_sitting_positions(sitting_text, report_title, speech_rows)
     if positions is None:
         return {}
@@ -350,13 +350,13 @@ def sitting_deputy_speaker_names(sitting_text: SittingText, report_title: str, s
     return speech_id_to_deputy_name
 
 
-def deputy_speaker_names_in_text(text: str) -> set[str]:
+def get_deputy_speaker_names_in_text(text: str) -> set[str]:
     names = {_TITLE_RE.sub("", match.group(1).strip()) for match in _NAMED_DEPUTY_RE.finditer(_normalise(text))}
     names |= _get_header_holders(text).get("deputy speaker", set())
     return names
 
 
-def carried_role_names(speech_rows: list[SpeechRow]) -> dict[int, str]:
+def get_carried_role_names(speech_rows: list[SpeechRow]) -> dict[int, str]:
     role_to_holder: dict[str, str] = {}
     speech_id_to_name: dict[int, str] = {}
     for speech_row in speech_rows:

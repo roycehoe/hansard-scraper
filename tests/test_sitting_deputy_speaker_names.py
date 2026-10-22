@@ -4,7 +4,7 @@ from crud.speech import SpeechRow
 from services.speaker_link import (
     build_sitting_text_from_markdown,
     build_sitting_text_from_sections,
-    sitting_deputy_speaker_names,
+    get_sitting_deputy_speaker_names,
 )
 
 _REPORT_ID = 1
@@ -19,7 +19,7 @@ _SPEECH_ROWS = [
 
 
 def _get_names(markdown: str) -> dict[int, str]:
-    return sitting_deputy_speaker_names(build_sitting_text_from_markdown(markdown), _REPORT_TITLE, _SPEECH_ROWS)
+    return get_sitting_deputy_speaker_names(build_sitting_text_from_markdown(markdown), _REPORT_TITLE, _SPEECH_ROWS)
 
 
 def test_bare_deputy_row_takes_the_deputy_named_by_the_last_bracket() -> None:
@@ -70,7 +70,7 @@ def test_bracket_in_an_earlier_section_carries_into_the_report() -> None:
         {"title": _REPORT_TITLE, "content": "<p><strong>Mr Gan Thiam Poh (Ang Mo Kio)</strong>: I rise in support of the Bill before the House today.</p><p><strong>Mr Deputy Speaker</strong>: Mr Leon Perera, please proceed with your speech.</p>"},
     ])
 
-    names = sitting_deputy_speaker_names(build_sitting_text_from_sections(sections), _REPORT_TITLE, _SPEECH_ROWS)
+    names = get_sitting_deputy_speaker_names(build_sitting_text_from_sections(sections), _REPORT_TITLE, _SPEECH_ROWS)
 
     assert names == {2: "Mr Lim Biow Chuan"}
 
@@ -88,7 +88,7 @@ def _get_two_reading_names(first_reading_content: str, second_reading_content: s
         {"title": "Extension of a Sitting", "content": "<p><strong>[Deputy Speaker (Mr Charles Chong) in the Chair]</strong></p>"},
         {"title": _REPORT_TITLE, "content": second_reading_content},
     ])
-    return sitting_deputy_speaker_names(build_sitting_text_from_sections(sections), _REPORT_TITLE, _TWO_READING_SPEECH_ROWS)
+    return get_sitting_deputy_speaker_names(build_sitting_text_from_sections(sections), _REPORT_TITLE, _TWO_READING_SPEECH_ROWS)
 
 
 def test_report_is_aligned_in_the_same_titled_section_that_holds_its_rows() -> None:

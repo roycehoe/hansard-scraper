@@ -19,17 +19,17 @@ from services.speaker_link import (
     SittingText,
     build_sitting_text_from_markdown,
     build_sitting_text_from_sections,
-    carried_role_names,
-    chairman_names,
-    deputy_speaker_names,
-    deputy_speaker_names_in_text,
+    get_carried_role_names,
+    get_chairman_names,
+    get_deputy_speaker_names,
+    get_deputy_speaker_names_in_text,
     get_head_of_state_names,
+    get_sitting_deputy_speaker_names,
     get_speaker_id_for_name,
     get_speaker_ids_for_names,
     resolve_attendance_rows,
     resolve_speech_rows,
     resolve_speech_speaker_id,
-    sitting_deputy_speaker_names,
 )
 from utils.sitting_dates import get_sitting_date_key
 from utils.speaker_resolution import SpeakerLookups
@@ -64,7 +64,7 @@ def _get_day_speaker_ids(
 ) -> set[int]:
     if key not in text_key_to_speaker_ids:
         text_key_to_speaker_ids[key] = get_speaker_ids_for_names(
-            deputy_speaker_names_in_text(text), parliament, lookups, name_parliament_number_to_speaker_id
+            get_deputy_speaker_names_in_text(text), parliament, lookups, name_parliament_number_to_speaker_id
         )
     return text_key_to_speaker_ids[key]
 
@@ -87,8 +87,8 @@ def _get_role_context_speaker_ids_for_report_ids(
         for report_id, speech_rows in report_id_to_speech_rows.items():
             report = report_id_to_report[report_id]
             unlinked = {speech_row.id for speech_row in speech_rows if speech_row.speaker_id is None}
-            speech_id_to_name = chairman_names(report.markdown_content or "", speech_rows)
-            speech_id_to_name.update(carried_role_names(speech_rows))
+            speech_id_to_name = get_chairman_names(report.markdown_content or "", speech_rows)
+            speech_id_to_name.update(get_carried_role_names(speech_rows))
             speech_id_to_name.update(get_head_of_state_names(report.title, report.sitting_date, speech_rows))
             for speech_id, name in speech_id_to_name.items():
                 if speech_id not in unlinked:
@@ -154,7 +154,7 @@ def _get_deputy_speaker_ids_for_report_ids(
             if None in holder_to_speaker_id.values():
                 continue
             valid_holder_ids = set(holder_to_speaker_id.values())
-            deputy_names = deputy_speaker_names(report.markdown_content or "", speech_rows)
+            deputy_names = get_deputy_speaker_names(report.markdown_content or "", speech_rows)
             named_holder_ids = get_speaker_ids_for_names(deputy_names.mentioned, parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
             if len(named_holder_ids) > 1:
                 continue
@@ -273,7 +273,7 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
             sitting_text = date_key_to_sitting_text[date_key]
             if sitting_text is None:
                 continue
-            speech_id_to_deputy_name = sitting_deputy_speaker_names(sitting_text, report.title, speech_rows)
+            speech_id_to_deputy_name = get_sitting_deputy_speaker_names(sitting_text, report.title, speech_rows)
             for speech_row in bare_deputy_rows:
                 if speech_row.id not in speech_id_to_deputy_name:
                     continue
