@@ -139,14 +139,14 @@ def _resolve_with_parliament_fallback(
     name: str,
     parliament: int,
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> tuple[Optional[str], int]:
     canonical = resolve_canonical_name(name, parliament, lookups)
     if canonical is not None or parliament != 0:
         return canonical, parliament
     for fallback in COLONIAL_PARLIAMENT_FALLBACKS:
         candidate = resolve_canonical_name(name, fallback, lookups)
-        if candidate and (candidate, fallback) in speaker_id_lookup:
+        if candidate and (candidate, fallback) in name_parliament_number_to_speaker_id:
             return candidate, fallback
     return None, parliament
 
@@ -155,14 +155,14 @@ def _get_presiding_officer_id(
     name: Optional[str],
     parliament: int,
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
     if not name:
         return None
     canonical, resolved_parliament = _resolve_with_parliament_fallback(
-        name, parliament, lookups, speaker_id_lookup
+        name, parliament, lookups, name_parliament_number_to_speaker_id
     )
-    return speaker_id_lookup.get((canonical, resolved_parliament)) if canonical else None
+    return name_parliament_number_to_speaker_id.get((canonical, resolved_parliament)) if canonical else None
 
 
 def _resolve_presiding_officer(
@@ -170,14 +170,14 @@ def _resolve_presiding_officer(
     parliament: int,
     sitting_date: Optional[datetime],
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
     if raw in _SPEAKER_LABELS:
         holder = _get_holder_on(SPEAKER_TERMS, sitting_date)
         is_woman_label = raw == "Mdm Speaker"
         if is_woman_label != (holder in SPEAKER_WOMEN):
             return None
-        return _get_presiding_officer_id(holder, parliament, lookups, speaker_id_lookup)
+        return _get_presiding_officer_id(holder, parliament, lookups, name_parliament_number_to_speaker_id)
     if raw.startswith(_DEPUTY_SPEAKER_LABELS):
         named_match = _PARENTHESIS_RE.search(raw)
         terms = (
@@ -190,7 +190,7 @@ def _resolve_presiding_officer(
             if named_match is not None
             else _get_holder_on(terms, sitting_date)
         )
-        return _get_presiding_officer_id(name, parliament, lookups, speaker_id_lookup)
+        return _get_presiding_officer_id(name, parliament, lookups, name_parliament_number_to_speaker_id)
     return None
 
 
@@ -198,16 +198,16 @@ def _resolve_attendance_speaker_id(
     speaker_name: str,
     parliament: int,
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
-    speaker_id = speaker_id_lookup.get((speaker_name, parliament))
+    speaker_id = name_parliament_number_to_speaker_id.get((speaker_name, parliament))
     if speaker_id is not None:
         return speaker_id
     name = normalize_name(strip_title(speaker_name))
     canonical, parliament = _resolve_with_parliament_fallback(
-        name, parliament, lookups, speaker_id_lookup
+        name, parliament, lookups, name_parliament_number_to_speaker_id
     )
-    return speaker_id_lookup.get((canonical, parliament)) if canonical else None
+    return name_parliament_number_to_speaker_id.get((canonical, parliament)) if canonical else None
 
 
 def _get_role_key(raw: str, parliament: int) -> Optional[tuple[str, int]]:
@@ -224,7 +224,7 @@ def _resolve_speech_speaker_id(
     parliament: int,
     sitting_date: Optional[datetime],
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
     if speaker in NON_SPEAKERS or speaker.startswith("(") or speaker.startswith("_"):
         return None
@@ -233,7 +233,7 @@ def _resolve_speech_speaker_id(
 
     if raw in _SPEAKER_LABELS or raw.startswith(_DEPUTY_SPEAKER_LABELS):
         return _resolve_presiding_officer(
-            raw, parliament, sitting_date, lookups, speaker_id_lookup
+            raw, parliament, sitting_date, lookups, name_parliament_number_to_speaker_id
         )
 
     if raw in DATED_ROLE_TERMS:
@@ -241,17 +241,17 @@ def _resolve_speech_speaker_id(
         if not holder:
             return None
         canonical, resolved_parliament = _resolve_with_parliament_fallback(
-            holder, parliament, lookups, speaker_id_lookup
+            holder, parliament, lookups, name_parliament_number_to_speaker_id
         )
-        return speaker_id_lookup.get((canonical, resolved_parliament)) if canonical else None
+        return name_parliament_number_to_speaker_id.get((canonical, resolved_parliament)) if canonical else None
 
     role_key = _get_role_key(raw, parliament)
     if role_key is not None and role_key in ROLE_ONLY_SPEAKERS:
         role_name = ROLE_ONLY_SPEAKERS[role_key]
         role_canonical, role_parliament = _resolve_with_parliament_fallback(
-            role_name, role_key[1], lookups, speaker_id_lookup
+            role_name, role_key[1], lookups, name_parliament_number_to_speaker_id
         )
-        return speaker_id_lookup.get((role_canonical, role_parliament)) if role_canonical else None
+        return name_parliament_number_to_speaker_id.get((role_canonical, role_parliament)) if role_canonical else None
 
     parenthesised_matches = list(_PARENTHESIS_RE.finditer(raw))
     if parenthesised_matches:
@@ -270,15 +270,15 @@ def _resolve_speech_speaker_id(
         return None
 
     canonical, parliament = _resolve_with_parliament_fallback(
-        name, parliament, lookups, speaker_id_lookup
+        name, parliament, lookups, name_parliament_number_to_speaker_id
     )
-    return speaker_id_lookup.get((canonical, parliament)) if canonical else None
+    return name_parliament_number_to_speaker_id.get((canonical, parliament)) if canonical else None
 
 
 def resolve_attendance_rows(
     attendance_rows: Iterable[AttendanceSpeakerRow],
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> dict[int, int]:
     key_to_speaker_id: dict[tuple[str, int], Optional[int]] = {}
     attendance_id_to_speaker_id: dict[int, int] = {}
@@ -295,7 +295,7 @@ def resolve_attendance_rows(
         key = (attendance_row.speaker_name, parliament)
         if key not in key_to_speaker_id:
             key_to_speaker_id[key] = _resolve_attendance_speaker_id(
-                attendance_row.speaker_name, parliament, lookups, speaker_id_lookup
+                attendance_row.speaker_name, parliament, lookups, name_parliament_number_to_speaker_id
             )
         if key_to_speaker_id[key] is not None:
             attendance_id_to_speaker_id[attendance_row.id] = key_to_speaker_id[key]
@@ -306,7 +306,7 @@ def resolve_attendance_rows(
 def resolve_speech_rows(
     speech_rows: Iterable[SpeechSpeakerRow],
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> dict[int, int]:
     key_to_speaker_id: dict[tuple[str, int, Optional[datetime]], Optional[int]] = {}
     speech_id_to_speaker_id: dict[int, int] = {}
@@ -319,7 +319,7 @@ def resolve_speech_rows(
         key = (speech_row.speaker, speech_row.parliament_number, date_key)
         if key not in key_to_speaker_id:
             key_to_speaker_id[key] = _resolve_speech_speaker_id(
-                speech_row.speaker, speech_row.parliament_number, speech_row.sitting_date, lookups, speaker_id_lookup
+                speech_row.speaker, speech_row.parliament_number, speech_row.sitting_date, lookups, name_parliament_number_to_speaker_id
             )
         if key_to_speaker_id[key] is not None:
             speech_id_to_speaker_id[speech_row.id] = key_to_speaker_id[key]
@@ -350,21 +350,21 @@ def _get_speaker_id_for_name(
     name: str,
     parliament: int,
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
     canonical, resolved_parliament = _resolve_with_parliament_fallback(
-        normalize_name(strip_title(name)), parliament, lookups, speaker_id_lookup
+        normalize_name(strip_title(name)), parliament, lookups, name_parliament_number_to_speaker_id
     )
-    return speaker_id_lookup.get((canonical, resolved_parliament)) if canonical else None
+    return name_parliament_number_to_speaker_id.get((canonical, resolved_parliament)) if canonical else None
 
 
 def _get_speaker_ids_for_names(
     names: Iterable[str],
     parliament: int,
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> set[int]:
-    found = (_get_speaker_id_for_name(name, parliament, lookups, speaker_id_lookup) for name in names)
+    found = (_get_speaker_id_for_name(name, parliament, lookups, name_parliament_number_to_speaker_id) for name in names)
     return {speaker_id for speaker_id in found if speaker_id is not None}
 
 
@@ -374,11 +374,11 @@ def _get_day_speaker_ids(
     parliament: int,
     text_key_to_speaker_ids: dict[object, set[int]],
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> set[int]:
     if key not in text_key_to_speaker_ids:
         text_key_to_speaker_ids[key] = _get_speaker_ids_for_names(
-            deputy_speaker_names_in_text(text), parliament, lookups, speaker_id_lookup
+            deputy_speaker_names_in_text(text), parliament, lookups, name_parliament_number_to_speaker_id
         )
     return text_key_to_speaker_ids[key]
 
@@ -387,7 +387,7 @@ def _get_role_context_speaker_ids_for_report_ids(
     session: Session,
     report_ids: list[int],
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> dict[int, int]:
     key_to_speaker_id: dict[tuple[str, int, Optional[datetime]], Optional[int]] = {}
     speech_id_to_speaker_id: dict[int, int] = {}
@@ -411,7 +411,7 @@ def _get_role_context_speaker_ids_for_report_ids(
                 key = (name, report.parliament_number, report.sitting_date)
                 if key not in key_to_speaker_id:
                     key_to_speaker_id[key] = _resolve_speech_speaker_id(
-                        name, report.parliament_number, report.sitting_date, lookups, speaker_id_lookup
+                        name, report.parliament_number, report.sitting_date, lookups, name_parliament_number_to_speaker_id
                     )
                 if key_to_speaker_id[key] is not None:
                     speech_id_to_speaker_id[speech_id] = key_to_speaker_id[key]
@@ -422,18 +422,18 @@ def _get_role_context_speaker_ids_for_report_ids(
 def get_role_context_speaker_ids(
     session: Session,
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> dict[int, int]:
     report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(_ROLE_CONTEXT_PATTERN)
-    return _get_role_context_speaker_ids_for_report_ids(session, report_ids, lookups, speaker_id_lookup)
+    return _get_role_context_speaker_ids_for_report_ids(session, report_ids, lookups, name_parliament_number_to_speaker_id)
 
 
 def _populate_role_context_links(
     session: Session,
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> None:
-    speech_id_to_speaker_id = get_role_context_speaker_ids(session, lookups, speaker_id_lookup)
+    speech_id_to_speaker_id = get_role_context_speaker_ids(session, lookups, name_parliament_number_to_speaker_id)
     _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, speech_id_to_speaker_id)
     session.commit()
 
@@ -442,7 +442,7 @@ def _get_deputy_speaker_ids_for_report_ids(
     session: Session,
     report_ids: list[int],
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> dict[int, int]:
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
@@ -464,12 +464,12 @@ def _get_deputy_speaker_ids_for_report_ids(
                 continue
             total += len(bare_deputy_rows)
             parliament = report.parliament_number
-            holder_to_speaker_id = {holder: _get_speaker_id_for_name(holder, parliament, lookups, speaker_id_lookup) for holder in holders}
+            holder_to_speaker_id = {holder: _get_speaker_id_for_name(holder, parliament, lookups, name_parliament_number_to_speaker_id) for holder in holders}
             if None in holder_to_speaker_id.values():
                 continue
             valid_holder_ids = set(holder_to_speaker_id.values())
             deputy_names = deputy_speaker_names(report.markdown_content or "", speech_rows)
-            named_holder_ids = _get_speaker_ids_for_names(deputy_names.mentioned, parliament, lookups, speaker_id_lookup) & valid_holder_ids
+            named_holder_ids = _get_speaker_ids_for_names(deputy_names.mentioned, parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
             if len(named_holder_ids) > 1:
                 continue
             male_holders = [holder for holder in holders if holder not in DEPUTY_SPEAKER_WOMEN]
@@ -479,11 +479,11 @@ def _get_deputy_speaker_ids_for_report_ids(
                 continue
             if len(male_holders) != _DEPUTY_SPEAKER_PAIR_SIZE:
                 continue
-            labelled_ids = _get_speaker_ids_for_names(deputy_names.labelled, parliament, lookups, speaker_id_lookup) & valid_holder_ids
+            labelled_ids = _get_speaker_ids_for_names(deputy_names.labelled, parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
             speech_id_to_candidate_id = {}
             for speech_row in bare_deputy_rows:
                 if speech_row.id in deputy_names.speech_id_to_deputy_name:
-                    found = _get_speaker_ids_for_names([deputy_names.speech_id_to_deputy_name[speech_row.id]], parliament, lookups, speaker_id_lookup) & valid_holder_ids
+                    found = _get_speaker_ids_for_names([deputy_names.speech_id_to_deputy_name[speech_row.id]], parliament, lookups, name_parliament_number_to_speaker_id) & valid_holder_ids
                     candidate = next(iter(found)) if found else None
                 else:
                     candidate = next(iter(labelled_ids)) if len(labelled_ids) == 1 else None
@@ -505,10 +505,10 @@ def _get_deputy_speaker_ids_for_report_ids(
         }
         for report, speech_id_to_candidate_id, valid_holder_ids in pending_reports:
             sitting_date, parliament = report.sitting_date, report.parliament_number
-            named_today = _get_day_speaker_ids(("sitting", sitting_date), sitting_date_key_to_markdown.get(get_sitting_date_key(sitting_date), ""), parliament, text_key_to_speaker_ids, lookups, speaker_id_lookup)
+            named_today = _get_day_speaker_ids(("sitting", sitting_date), sitting_date_key_to_markdown.get(get_sitting_date_key(sitting_date), ""), parliament, text_key_to_speaker_ids, lookups, name_parliament_number_to_speaker_id)
             for other in sitting_date_to_reports.get(sitting_date, []):
                 if other.id != report.id:
-                    named_today = named_today | _get_day_speaker_ids(other.id, other.markdown_content or "", parliament, text_key_to_speaker_ids, lookups, speaker_id_lookup)
+                    named_today = named_today | _get_day_speaker_ids(other.id, other.markdown_content or "", parliament, text_key_to_speaker_ids, lookups, name_parliament_number_to_speaker_id)
             for speech_id, candidate in speech_id_to_candidate_id.items():
                 if not (named_today & valid_holder_ids) - {candidate}:
                     speech_id_to_speaker_id[speech_id] = candidate
@@ -520,18 +520,18 @@ def _get_deputy_speaker_ids_for_report_ids(
 def get_deputy_speaker_ids(
     session: Session,
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> dict[int, int]:
     report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(BARE_DEPUTY_RE.pattern)
-    return _get_deputy_speaker_ids_for_report_ids(session, report_ids, lookups, speaker_id_lookup)
+    return _get_deputy_speaker_ids_for_report_ids(session, report_ids, lookups, name_parliament_number_to_speaker_id)
 
 
 def _populate_deputy_speaker_links(
     session: Session,
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> None:
-    speech_id_to_speaker_id = get_deputy_speaker_ids(session, lookups, speaker_id_lookup)
+    speech_id_to_speaker_id = get_deputy_speaker_ids(session, lookups, name_parliament_number_to_speaker_id)
     _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, speech_id_to_speaker_id)
     session.commit()
 
@@ -548,7 +548,7 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
     session: Session,
     report_ids: list[int],
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> dict[int, int]:
     speech_id_to_speaker_id: dict[int, int] = {}
     total = 0
@@ -577,7 +577,7 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
             if not bare_deputy_rows or len(holders) != _DEPUTY_SPEAKER_PAIR_SIZE:
                 continue
             total += len(bare_deputy_rows)
-            holder_to_speaker_id = {holder: _get_speaker_id_for_name(holder, report.parliament_number, lookups, speaker_id_lookup) for holder in holders}
+            holder_to_speaker_id = {holder: _get_speaker_id_for_name(holder, report.parliament_number, lookups, name_parliament_number_to_speaker_id) for holder in holders}
             if None in holder_to_speaker_id.values():
                 continue
             male_holder_ids = {speaker_id for holder, speaker_id in holder_to_speaker_id.items() if holder not in DEPUTY_SPEAKER_WOMEN}
@@ -591,7 +591,7 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
             for speech_row in bare_deputy_rows:
                 if speech_row.id not in speech_id_to_deputy_name:
                     continue
-                found = _get_speaker_ids_for_names([speech_id_to_deputy_name[speech_row.id]], report.parliament_number, lookups, speaker_id_lookup) & male_holder_ids
+                found = _get_speaker_ids_for_names([speech_id_to_deputy_name[speech_row.id]], report.parliament_number, lookups, name_parliament_number_to_speaker_id) & male_holder_ids
                 if len(found) == 1:
                     speech_id_to_speaker_id[speech_row.id] = next(iter(found))
     logger.info(f"Sitting-level deputy speaker: {len(speech_id_to_speaker_id)}/{total} bare records resolved")
@@ -602,18 +602,18 @@ def _get_sitting_deputy_speaker_ids_for_report_ids(
 def get_sitting_deputy_speaker_ids(
     session: Session,
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> dict[int, int]:
     report_ids = CRUDSpeech(session).get_report_ids_by_speaker_id_null_and_speaker_regex(BARE_DEPUTY_RE.pattern)
-    return _get_sitting_deputy_speaker_ids_for_report_ids(session, report_ids, lookups, speaker_id_lookup)
+    return _get_sitting_deputy_speaker_ids_for_report_ids(session, report_ids, lookups, name_parliament_number_to_speaker_id)
 
 
 def _populate_sitting_deputy_speaker_links(
     session: Session,
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> None:
-    speech_id_to_speaker_id = get_sitting_deputy_speaker_ids(session, lookups, speaker_id_lookup)
+    speech_id_to_speaker_id = get_sitting_deputy_speaker_ids(session, lookups, name_parliament_number_to_speaker_id)
     _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, speech_id_to_speaker_id)
     session.commit()
     logger.info(f"Speech: set speaker_id on {len(speech_id_to_speaker_id)} sitting-level deputy-speaker records")
@@ -621,38 +621,38 @@ def _populate_sitting_deputy_speaker_links(
 
 def populate_speaker_links(session: Session) -> None:
     speakers = CRUDSpeaker(session).get_all()
-    speaker_id_lookup = {
+    name_parliament_number_to_speaker_id = {
         (speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None
     }
     lookups = build_speaker_lookups(speakers)
 
     attendance_id_to_speaker_id = resolve_attendance_rows(
-        CRUDAttendance(session).get_speaker_rows_by_speaker_id_null(), lookups, speaker_id_lookup
+        CRUDAttendance(session).get_speaker_rows_by_speaker_id_null(), lookups, name_parliament_number_to_speaker_id
     )
     _write_in_batches(CRUDAttendance(session).set_speaker_ids_bulk, attendance_id_to_speaker_id)
     session.commit()
 
     speech_id_to_speaker_id = resolve_speech_rows(
-        CRUDSpeech(session).get_speaker_rows_by_speaker_id_null(), lookups, speaker_id_lookup
+        CRUDSpeech(session).get_speaker_rows_by_speaker_id_null(), lookups, name_parliament_number_to_speaker_id
     )
     _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, speech_id_to_speaker_id)
     session.commit()
-    _populate_role_context_links(session, lookups, speaker_id_lookup)
-    _populate_deputy_speaker_links(session, lookups, speaker_id_lookup)
-    _populate_sitting_deputy_speaker_links(session, lookups, speaker_id_lookup)
+    _populate_role_context_links(session, lookups, name_parliament_number_to_speaker_id)
+    _populate_deputy_speaker_links(session, lookups, name_parliament_number_to_speaker_id)
+    _populate_sitting_deputy_speaker_links(session, lookups, name_parliament_number_to_speaker_id)
 
 
 def link_speakers_by_report_ids_and_sitting_ids(session: Session, report_ids: list[int], sitting_ids: list[int]) -> None:
     speakers = CRUDSpeaker(session).get_all()
-    speaker_id_lookup = {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None}
+    name_parliament_number_to_speaker_id = {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None}
     lookups = build_speaker_lookups(speakers)
 
     attendance_id_to_speaker_id = resolve_attendance_rows(
-        CRUDAttendance(session).get_speaker_rows_by_sitting_ids_and_speaker_id_null(sitting_ids), lookups, speaker_id_lookup
+        CRUDAttendance(session).get_speaker_rows_by_sitting_ids_and_speaker_id_null(sitting_ids), lookups, name_parliament_number_to_speaker_id
     )
     _write_in_batches(CRUDAttendance(session).set_speaker_ids_bulk, attendance_id_to_speaker_id)
     speech_id_to_speaker_id = resolve_speech_rows(
-        CRUDSpeech(session).get_speaker_rows_by_report_ids_and_speaker_id_null(report_ids), lookups, speaker_id_lookup
+        CRUDSpeech(session).get_speaker_rows_by_report_ids_and_speaker_id_null(report_ids), lookups, name_parliament_number_to_speaker_id
     )
     _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, speech_id_to_speaker_id)
     session.flush()
@@ -662,5 +662,5 @@ def link_speakers_by_report_ids_and_sitting_ids(session: Session, report_ids: li
         (BARE_DEPUTY_RE.pattern, _get_sitting_deputy_speaker_ids_for_report_ids),
     ):
         candidate_report_ids = CRUDSpeech(session).get_report_ids_by_report_ids_and_speaker_id_null_and_speaker_regex(report_ids, pattern)
-        _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, get_pass_speaker_ids(session, candidate_report_ids, lookups, speaker_id_lookup))
+        _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, get_pass_speaker_ids(session, candidate_report_ids, lookups, name_parliament_number_to_speaker_id))
         session.flush()

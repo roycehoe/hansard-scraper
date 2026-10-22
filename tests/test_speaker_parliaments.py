@@ -114,7 +114,7 @@ def test_volumes_of_1955_to_1959_are_parliament_zero() -> None:
 def test_the_chief_minister_of_7_june_1956_is_david_marshall() -> None:
     speakers = [_get_speaker(1, "David Marshall", 0), _get_speaker(2, "Lim Yew Hock", 0)]
     lookups = build_speaker_lookups(speakers)
-    speaker_id_lookup = {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers}
+    name_parliament_number_to_speaker_id = {(speaker.name, speaker.parliament_number): speaker.id for speaker in speakers}
     rows = [
         SpeechSpeakerRow(10, "The Chief Minister", 0, datetime(1956, 6, 6)),
         SpeechSpeakerRow(11, "The Chief Minister", 0, datetime(1956, 6, 7)),
@@ -122,4 +122,4 @@ def test_the_chief_minister_of_7_june_1956_is_david_marshall() -> None:
         SpeechSpeakerRow(13, "The Chief Minister", 0, datetime(1956, 8, 29)),
     ]
 
-    assert resolve_speech_rows(rows, lookups, speaker_id_lookup) == {10: 1, 11: 1, 12: 2, 13: 2}
+    assert resolve_speech_rows(rows, lookups, name_parliament_number_to_speaker_id) == {10: 1, 11: 1, 12: 2, 13: 2}

@@ -53,22 +53,22 @@ def _get_speaker_id(
     speaker_name: str,
     parliament: int,
     lookups: SpeakerLookups,
-    speaker_id_lookup: dict[tuple[str, int], int],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
-    speaker_id = speaker_id_lookup.get((speaker_name, parliament))
+    speaker_id = name_parliament_number_to_speaker_id.get((speaker_name, parliament))
     if speaker_id is not None:
         return speaker_id
     canonical = resolve_canonical_name(normalize_name(strip_title(speaker_name)), parliament, lookups)
     if canonical is None:
         return None
-    return speaker_id_lookup.get((canonical, parliament))
+    return name_parliament_number_to_speaker_id.get((canonical, parliament))
 
 
 def build_completions(session: Session, sitting_ids: list[int]) -> list[SittingCompletion]:
     speakers = CRUDSpeaker(session).get_all()
     lookups = build_speaker_lookups(speakers)
     constituency_lookups = build_constituency_lookups(get_constituency_names())
-    speaker_id_lookup = {
+    name_parliament_number_to_speaker_id = {
         (speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None
     }
     date_rows = {date_row.id: date_row for date_row in CRUDSitting(session).get_date_rows()}
@@ -110,7 +110,7 @@ def build_completions(session: Session, sitting_ids: list[int]) -> list[SittingC
         if len(parsed_rows) != expected.parsed_row_count:
             raise HansardWriteCheckError(f"sitting {sitting_id}: parse gives {len(parsed_rows)} rows, expected {expected.parsed_row_count}")
         for parsed_row in parsed_rows:
-            parsed_row.speaker_id = _get_speaker_id(parsed_row.speaker_name, parliament, lookups, speaker_id_lookup)
+            parsed_row.speaker_id = _get_speaker_id(parsed_row.speaker_name, parliament, lookups, name_parliament_number_to_speaker_id)
 
         stored_prefix = parsed_rows[: expected.stored_row_count]
         prefix_keys = Counter((row.speaker_id, row.is_present) for row in stored_prefix if row.speaker_id is not None)
