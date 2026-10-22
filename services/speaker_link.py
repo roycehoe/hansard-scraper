@@ -402,13 +402,16 @@ def _is_title_in_parentheses(match: re.Match) -> bool:
     return strip_title(inner) != inner
 
 
+def get_holders_on(terms: Sequence[tuple[date, date, str]], day: date) -> list[str]:
+    return [name for first, last, name in terms if first <= day <= last]
+
+
 def _get_holder_on(
     terms: Sequence[tuple[date, date, str]], sitting_date: Optional[datetime]
 ) -> Optional[str]:
     if sitting_date is None:
         return None
-    day = sitting_date.date()
-    holders = [name for first, last, name in terms if first <= day <= last]
+    holders = get_holders_on(terms, sitting_date.date())
     return holders[0] if len(holders) == 1 else None
 
 
