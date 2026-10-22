@@ -14,10 +14,7 @@ from schemas.hansard_report_response import (
     HansardReportNewResponse,
     HansardReportOldResponse,
 )
-from services.hansard_sitting_date_response import (
-    build_new_hansard_sitting_date_response,
-    build_old_hansard_sitting_date_response,
-)
+from services.hansard_sitting_date_response import build_hansard_sitting_date_response
 
 _HTTP_TIMEOUT_SECONDS = 120
 
@@ -63,9 +60,6 @@ def populate_hansard_sitting_dates(session: Session) -> None:
         logger.info(f"{i}/{len(dates_to_fetch)}: {sitting_date}")
 
         hansard_report_response = fetched_sitting_date.hansard_report_response
-        if isinstance(hansard_report_response, HansardReportNewResponse):
-            hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
-        else:
-            hansard_sitting_date_response = build_old_hansard_sitting_date_response(hansard_report_response, sitting_date)
+        hansard_sitting_date_response = build_hansard_sitting_date_response(hansard_report_response, sitting_date)
 
         CRUDHansardSittingDateResponse(session).create(hansard_sitting_date_response)

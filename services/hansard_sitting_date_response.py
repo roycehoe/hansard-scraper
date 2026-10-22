@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Optional, Union
 
 from database.hansard_sitting_date_response import HansardSittingDateResponse
 from schemas.hansard_report_response import (
@@ -103,3 +103,11 @@ def build_new_hansard_sitting_date_response(hansard_report_response: HansardRepo
         atbp_start_pg_no=hansard_report_response.atbp_start_pg_no,
         online_pdf_file_name=hansard_report_response.online_pdf_file_name,
     )
+
+
+def build_hansard_sitting_date_response(
+    hansard_report_response: Union[HansardReportOldResponse, HansardReportNewResponse], sitting_date_key: str
+) -> HansardSittingDateResponse:
+    if isinstance(hansard_report_response, HansardReportNewResponse):
+        return build_new_hansard_sitting_date_response(hansard_report_response, sitting_date_key)
+    return build_old_hansard_sitting_date_response(hansard_report_response, sitting_date_key)

@@ -12,6 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, col, func, select
 
 import populate.refresh_runs as refresh_runs
+import services.hansard_sitting_date_response as hansard_sitting_date_response_service
 from crud.attendance import CRUDAttendance
 from crud.refresh_run import CRUDRefreshRun
 from crud.report import CRUDReport
@@ -504,14 +505,14 @@ def test_sitting_field_mapping_failure_halts(
     seed_stored(scratch_session)
     row_counts_before = _get_row_counts(scratch_engine)
     assert fake_parliament.new_sitting["metadata"]["sessionNO"] not in (None, "")
-    build_new_hansard_sitting_date_response = refresh_runs.build_new_hansard_sitting_date_response
+    build_new_hansard_sitting_date_response = hansard_sitting_date_response_service.build_new_hansard_sitting_date_response
 
     def build_lossy_sitting_date_response(hansard_report_response: HansardReportNewResponse, sitting_date: str) -> HansardSittingDateResponse:
         hansard_sitting_date_response = build_new_hansard_sitting_date_response(hansard_report_response, sitting_date)
         hansard_sitting_date_response.session_no = None
         return hansard_sitting_date_response
 
-    monkeypatch.setattr(refresh_runs, "build_new_hansard_sitting_date_response", build_lossy_sitting_date_response)
+    monkeypatch.setattr(hansard_sitting_date_response_service, "build_new_hansard_sitting_date_response", build_lossy_sitting_date_response)
 
     status = refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
 
