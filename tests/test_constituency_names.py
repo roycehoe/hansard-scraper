@@ -21,6 +21,7 @@ from services.attendance import (
 
 _DATA_FILE = Path(__file__).parent.parent / "data" / "constituency_names.json"
 _ROW_NAME_COUNT = 8
+_GRC_NAME_COUNT = 17
 
 
 def _get_file_lookups() -> tuple[ConstituencyNames, ConstituencyLookups]:
@@ -103,6 +104,18 @@ def test_data_file_keeps_the_spellings_the_source_prints_consistently_as_the_ele
     assert get_constituency_name("Kampung Glam", 3, "1-1-1969", "Someone", lookups) == "Kampong Glam"
     assert get_constituency_name("Choa Chu Kang", 2, "1-1-1970", "Someone", lookups) == "Chua Chu Kang"
     assert get_constituency_name("Mac Pherson", 3, "1-1-1969", "Someone", lookups) == "MacPherson"
+
+
+def test_data_file_drops_the_grc_suffix_the_source_prints_in_parliaments_7_and_8() -> None:
+    constituency_names, lookups = _get_file_lookups()
+
+    grc_names = [name for name in constituency_names.names if name.printed.endswith(" GRC")]
+    assert len(grc_names) == _GRC_NAME_COUNT
+    assert all(name.printed == f"{name.constituency} GRC" and name.parliament_number is None for name in grc_names)
+    assert get_constituency_name("Aljunied GRC", 7, "1-1-1990", "Someone", lookups) == "Aljunied"
+    assert get_constituency_name("Bedok GRC", 8, "10-1-1994", "Someone", lookups) == "Bedok"
+    assert get_constituency_name("Bedok GRC", None, None, None, lookups) == "Bedok"
+    assert get_constituency_name("Bedok", 9, "1-1-2000", "Someone", lookups) == "Bedok"
 
 
 def test_data_file_leaves_seat_types_and_non_places_alone() -> None:
