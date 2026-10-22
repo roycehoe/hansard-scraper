@@ -8,7 +8,7 @@ from schemas.hansard_report_response import (
 )
 
 RECHECK_WINDOW_DAYS = 14
-UNLINKED_HALT_SHARE = 0.05
+_UNLINKED_HALT_SHARE = 0.05
 SINGAPORE_TIMEZONE = timezone(timedelta(hours=8))
 _MAX_ALERT_LABELS = 20
 _MAX_TELEGRAM_MESSAGE_LENGTH = 4_000
@@ -64,7 +64,7 @@ def get_unlinked_share(linked_row_count: int, named_unlinked_row_count: int) -> 
 
 
 def is_unlinked_share_over_limit(unlinked_share: float) -> bool:
-    return unlinked_share > UNLINKED_HALT_SHARE
+    return unlinked_share > _UNLINKED_HALT_SHARE
 
 
 def get_unexpected_parliament_numbers(
@@ -111,7 +111,7 @@ def _get_label_list_text(label_to_row_count: dict[str, int]) -> str:
 def build_unlinked_reason(unlinked_share: float, label_to_row_count: dict[str, int]) -> str:
     return (
         f"{unlinked_share * _PERCENT:.1f}% of new speech rows have a speaker label with no registry link, "
-        f"above the {UNLINKED_HALT_SHARE * _PERCENT:.0f}% limit. Labels: {_get_label_list_text(label_to_row_count)}."
+        f"above the {_UNLINKED_HALT_SHARE * _PERCENT:.0f}% limit. Labels: {_get_label_list_text(label_to_row_count)}."
     )
 
 
