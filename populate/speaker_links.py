@@ -213,7 +213,6 @@ def _get_deputy_speaker_ids_for_report_ids(
     return speech_id_to_speaker_id
 
 
-# NOTE: with one man and one woman in office the "Mr" row goes to the man unless the report shows the woman taking part. With two men the row links only when the report names one of them and nothing else printed that day names the other.
 def get_deputy_speaker_ids(
     session: Session,
     lookups: SpeakerLookups,
