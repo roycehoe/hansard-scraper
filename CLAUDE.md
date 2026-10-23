@@ -198,6 +198,9 @@ hansard-scraper/
 │   ├── party_affiliation.py        # MembershipPartyAffiliations / PartyAffiliationSpan / PartyAffiliationMemberships: data/party_affiliations.json entries
 │   ├── hand_kept_member.py         # HandKeptMember / HandKeptMembers: data/colonial_la_members.json and data/unscraped_members.json entries
 │   ├── person_decision.py          # PersonDecision / PersonDecisionMember / PersonDecisions: data/person_decisions.json entries
+│   ├── head_of_state.py            # HeadOfStateResult / HeadsOfState: data/heads_of_state.json entries
+│   ├── unattributed_speech.py      # UnattributedSpeechRange / UnattributedSpeechRanges: data/unattributed_speech.json entries
+│   ├── constituency_names.py       # ConstituencyName / ConstituencyRowName / ConstituencyNames: data/constituency_names.json
 │   ├── speaker_link_plan.py        # SpeakerLinkPlan: the plan file of scripts/apply_speaker_links.py
 │   ├── coverage_refill_plan.py     # CoverageRefillPlan / FetchedHit / FetchedReport: the plan file of scripts/apply_coverage_refill.py
 │   ├── sample_sets.py              # SampleSets: the pilot, held-out and regression report ids of the speech sample
@@ -273,7 +276,7 @@ hansard-scraper/
 │   └── speakers.py                  # Out-of-band: persist scraped Speaker records
 │
 ├── utils/                           # Shared pure utilities (no DB, no HTTP)
-│   ├── data_files.py                # The only module that opens data/: one get_ function per file, each on model_validate_json
+│   ├── data_files.py                # The only module outside its own test that opens data/: one get_ function per file, each on model_validate_json
 │   ├── json_columns.py              # Serialises a nested list to the JSON text stored in a column
 │   ├── markdown_header.py           # Reads a number such as Sitting No from a stored header table
 │   ├── markdown_parser.py           # HTML → clean markdown; merges split bold lines
