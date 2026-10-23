@@ -23,8 +23,6 @@ from utils.sitting_dates import is_new_sitting_date_format
 _VALUE_PREVIEW_LENGTH = 55
 _HTTP_INTERNAL_SERVER_ERROR = 500
 _FIELD_LOSS_EXIT_CODE = 1
-_FIRST_PAGE_START_INDEX = 0
-_FIRST_PAGE_END_INDEX = 0
 SYNTHETIC_OLD_FORMAT = {
     "parlNo": "9",
     "sessionNo": "1",
@@ -98,7 +96,7 @@ SYNTHETIC_NEW_FORMAT = {
 
 def is_search_and_topic_mapped() -> bool:
     logger.info("API 1 — searchResult  →  HansardSearchResult  →  HansardWebsiteResponse")
-    hansard_search_results = get_hansard_search_results(_FIRST_PAGE_START_INDEX, _FIRST_PAGE_END_INDEX)
+    hansard_search_results = get_hansard_search_results(start_index=0, end_index=0)
     if not hansard_search_results:
         logger.info("  WARN  No search results returned (check settings.search_from_date).")
         return True
@@ -121,7 +119,7 @@ def is_search_and_topic_mapped() -> bool:
 def is_topic_mapped(report_id: str) -> bool:
     logger.info("API 2 — getHansardTopic  →  htmlContent  →  HansardWebsiteResponse.content")
     logger.info(f"  INFO  report_id={report_id!r}")
-    hansard_search_results = get_hansard_search_results(_FIRST_PAGE_START_INDEX, _FIRST_PAGE_END_INDEX)
+    hansard_search_results = get_hansard_search_results(start_index=0, end_index=0)
     if not hansard_search_results:
         logger.info("  WARN  No search results; skipping.")
         return True
@@ -187,7 +185,7 @@ def is_sitting_date_mapped(sitting_date: str, label: str, synthetic: dict[str, o
 def validate_api_field_mapping() -> None:
     is_all_passed = True
     is_all_passed &= is_search_and_topic_mapped()
-    is_all_passed &= is_topic_mapped(get_hansard_search_results(_FIRST_PAGE_START_INDEX, _FIRST_PAGE_END_INDEX)[0].report_id)
+    is_all_passed &= is_topic_mapped(get_hansard_search_results(start_index=0, end_index=0)[0].report_id)
     is_all_passed &= is_sitting_date_mapped(
         "11-05-2015",
         "old format, pre-2015-08-18",

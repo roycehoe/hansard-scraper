@@ -30,7 +30,7 @@ class PersonCluster:
     basis: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class ClusterResult:
     clusters: list[PersonCluster] = field(default_factory=list)
     conflicts: list[str] = field(default_factory=list)

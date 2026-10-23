@@ -200,8 +200,8 @@ def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int,
     annotations = [ChairAnnotation(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalized_text)]
     events = [(match.start(), match.group(1).lower()) for match in _CHAIR_EVENT_RE.finditer(normalized_text)]
     role_to_holder_names = _get_header_holders(markdown)
-    is_header_present = _HEADER_RE.search(markdown) is not None
-    is_deputy_named = _DEPUTY_MENTION_RE.search(normalized_text) is not None
+    is_header_present = bool(_HEADER_RE.search(markdown))
+    is_deputy_named = bool(_DEPUTY_MENTION_RE.search(normalized_text))
     suspension_positions = [match.start() for match in _SUSPENSION_RE.finditer(normalized_text)]
     positions = _get_positions(normalized_text, speech_rows)
     speech_id_to_name: dict[int, str] = {}
@@ -323,7 +323,7 @@ def _get_chair_deputy_name(sitting_text: SittingText, chair_mark_positions: list
     if last_chair_mark.deputy_name is None:
         return None
     member_label_re = re.compile(re.escape(last_chair_mark.deputy_name) + _MEMBER_LABEL_TAIL)
-    if member_label_re.search(sitting_text.text, last_chair_mark.end, position) is not None:
+    if member_label_re.search(sitting_text.text, last_chair_mark.end, position):
         return None
     if index < len(sitting_text.chair_marks):
         next_deputy_name = sitting_text.chair_marks[index].deputy_name
@@ -404,7 +404,7 @@ def _clean_speaker_label(speaker_label: str) -> str:
     speaker_label = _PRESIDING_BRACKET_RE.sub("", speaker_label)
     speaker_label = _TRAILING_DASH_RE.sub("", speaker_label)
     speaker_label = _TRAILING_NAME_DOT_RE.sub("", speaker_label)
-    if _UPPERCASE_TITLE_RE.match(speaker_label) is not None and speaker_label.isupper():
+    if _UPPERCASE_TITLE_RE.match(speaker_label) and speaker_label.isupper():
         speaker_label = speaker_label.title()
     speaker_label = _WHITESPACE_RE.sub(" ", speaker_label).rstrip(_LABEL_TRAILING_CHARACTERS).strip()
     if speaker_label.count(OPENING_PARENTHESIS) > speaker_label.count(CLOSING_PARENTHESIS):
