@@ -1,4 +1,5 @@
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 from crud.attendance import AttendanceLocationRow
@@ -24,9 +25,15 @@ _ROW_NAME_COUNT = 8
 _GRC_NAME_COUNT = 17
 
 
-def _get_file_lookups() -> tuple[ConstituencyNames, ConstituencyLookups]:
+@dataclass(frozen=True)
+class _FileLookups:
+    constituency_names: ConstituencyNames
+    lookups: ConstituencyLookups
+
+
+def _get_file_lookups() -> _FileLookups:
     constituency_names = ConstituencyNames.model_validate(json.loads(_DATA_FILE.read_text()))
-    return constituency_names, build_constituency_lookups(constituency_names)
+    return _FileLookups(constituency_names, build_constituency_lookups(constituency_names))
 
 
 def _get_test_lookups() -> ConstituencyLookups:
@@ -78,27 +85,27 @@ def test_a_row_entry_beats_the_general_entry_and_applies_to_one_row() -> None:
 
 
 def test_data_file_has_no_duplicate_keys_and_no_entry_that_maps_to_itself() -> None:
-    constituency_names, _ = _get_file_lookups()
+    constituency_names = _get_file_lookups().constituency_names
 
     name_keys = [(name.printed, name.parliament_number) for name in constituency_names.names]
-    row_keys = [(row.sitting_date, row.speaker_name, row.printed) for row in constituency_names.rows]
+    row_keys = [(row_name.sitting_date, row_name.speaker_name, row_name.printed) for row_name in constituency_names.rows]
     assert len(name_keys) == len(set(name_keys))
     assert len(row_keys) == len(set(row_keys))
     assert all(name.printed != name.constituency for name in constituency_names.names)
-    assert all(row.printed != row.constituency for row in constituency_names.rows)
+    assert all(row_name.printed != row_name.constituency for row_name in constituency_names.rows)
     assert len(constituency_names.rows) == _ROW_NAME_COUNT
 
 
 def test_data_file_targets_of_general_entries_are_never_printed_forms_of_general_entries() -> None:
-    constituency_names, _ = _get_file_lookups()
+    constituency_names = _get_file_lookups().constituency_names
 
     printed_forms = {name.printed for name in constituency_names.names if name.parliament_number is None}
     assert not printed_forms & {name.constituency for name in constituency_names.names if name.parliament_number is None}
-    assert not printed_forms & {row.constituency for row in constituency_names.rows}
+    assert not printed_forms & {row_name.constituency for row_name in constituency_names.rows}
 
 
 def test_data_file_keeps_the_spellings_the_source_prints_consistently_as_the_election_spelling() -> None:
-    _, lookups = _get_file_lookups()
+    lookups = _get_file_lookups().lookups
 
     assert get_constituency_name("Ponggol-Tampenis", 0, "1-1-1957", "Someone", lookups) == "Punggol-Tampines"
     assert get_constituency_name("Kampung Glam", 3, "1-1-1969", "Someone", lookups) == "Kampong Glam"
@@ -107,19 +114,19 @@ def test_data_file_keeps_the_spellings_the_source_prints_consistently_as_the_ele
 
 
 def test_data_file_drops_the_grc_suffix_the_source_prints_in_parliaments_7_and_8() -> None:
-    constituency_names, lookups = _get_file_lookups()
+    file_lookups = _get_file_lookups()
 
-    grc_names = [name for name in constituency_names.names if name.printed.endswith(" GRC")]
+    grc_names = [name for name in file_lookups.constituency_names.names if name.printed.endswith(" GRC")]
     assert len(grc_names) == _GRC_NAME_COUNT
     assert all(name.printed == f"{name.constituency} GRC" and name.parliament_number is None for name in grc_names)
-    assert get_constituency_name("Aljunied GRC", 7, "1-1-1990", "Someone", lookups) == "Aljunied"
-    assert get_constituency_name("Bedok GRC", 8, "10-1-1994", "Someone", lookups) == "Bedok"
-    assert get_constituency_name("Bedok GRC", None, None, None, lookups) == "Bedok"
-    assert get_constituency_name("Bedok", 9, "1-1-2000", "Someone", lookups) == "Bedok"
+    assert get_constituency_name("Aljunied GRC", 7, "1-1-1990", "Someone", file_lookups.lookups) == "Aljunied"
+    assert get_constituency_name("Bedok GRC", 8, "10-1-1994", "Someone", file_lookups.lookups) == "Bedok"
+    assert get_constituency_name("Bedok GRC", None, None, None, file_lookups.lookups) == "Bedok"
+    assert get_constituency_name("Bedok", 9, "1-1-2000", "Someone", file_lookups.lookups) == "Bedok"
 
 
 def test_data_file_leaves_seat_types_and_non_places_alone() -> None:
-    _, lookups = _get_file_lookups()
+    lookups = _get_file_lookups().lookups
 
     assert get_constituency_name("Nominated Member", 8, "1-1-1995", "Someone", lookups) == "Nominated Member"
     assert get_constituency_name("Non-Constituency Member", 8, "1-1-1995", "Someone", lookups) == "Non-Constituency Member"
@@ -129,14 +136,14 @@ def test_data_file_leaves_seat_types_and_non_places_alone() -> None:
 
 
 def test_data_file_fixes_the_spelling_of_a_seat_type_only() -> None:
-    _, lookups = _get_file_lookups()
+    lookups = _get_file_lookups().lookups
 
     assert get_constituency_name("exofficio", 0, "1-1-1957", "Someone", lookups) == "ex-officio"
     assert get_constituency_name("NominatedMember", 10, "1-1-2005", "Someone", lookups) == "Nominated Member"
 
 
 def test_data_file_fixes_the_ward_rows_of_the_sitting_of_7_march_2011() -> None:
-    _, lookups = _get_file_lookups()
+    lookups = _get_file_lookups().lookups
 
     assert get_constituency_name("Nee Soon", 11, "7-3-2011", "K Shanmugam", lookups) == "Sembawang"
     assert get_constituency_name("Nee Soon", 11, "7-3-2011", "Lee Bee Wah", lookups) == "Ang Mo Kio"
@@ -169,21 +176,21 @@ def test_attendance_list_takes_the_mapped_constituency() -> None:
 
 def test_location_changes_cover_the_rows_that_differ_and_are_empty_once_applied() -> None:
     lookups = _get_test_lookups()
-    rows = [
+    location_rows = [
         AttendanceLocationRow(1, "Lee Kuan Yew", "Aijunied", "1-1-1960", None, 14),
         AttendanceLocationRow(2, "Lim Cher Kheng", "Changi", "1-1-1960", None, 14),
         AttendanceLocationRow(3, "Wong Foo Nam", "Chua Chu Kang", "1-1-1960", None, 14),
         AttendanceLocationRow(4, "Wong Foo Nam", "Chua Chu Kang", "1-1-1970", None, 30),
     ]
 
-    location_changes = get_location_changes(rows, lookups)
+    location_changes = get_location_changes(location_rows, lookups)
 
     assert location_changes == [
         LocationChange(1, "Lee Kuan Yew", "1-1-1960", "Aijunied", "Aljunied"),
         LocationChange(3, "Wong Foo Nam", "1-1-1960", "Chua Chu Kang", "Choa Chu Kang"),
     ]
     applied_rows = [
-        AttendanceLocationRow(row.id, row.speaker_name, next((change.location_name_after for change in location_changes if change.id == row.id), row.location_name), row.sitting_date, row.parlement_no, row.volume_no)
-        for row in rows
+        AttendanceLocationRow(location_row.id, location_row.speaker_name, next((change.location_name_after for change in location_changes if change.id == location_row.id), location_row.location_name), location_row.sitting_date, location_row.parlement_no, location_row.volume_no)
+        for location_row in location_rows
     ]
     assert get_location_changes(applied_rows, lookups) == []

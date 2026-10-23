@@ -30,9 +30,9 @@ def test_rows_in_the_range_lose_the_wrong_label() -> None:
         report_id=8732, speaker=_CHAIR, first_transcript_start="First, look", last_transcript_start="The Motion", reason="",
     )
 
-    rows = apply_unattributed_speech_range(_build_chair_resumption(), speech_range)
+    parsed_speeches = apply_unattributed_speech_range(_build_chair_resumption(), speech_range)
 
-    assert [[row.speaker, row.kind] for row in rows] == [
+    assert [[parsed_speech.speaker, parsed_speech.kind] for parsed_speech in parsed_speeches] == [
         [_MINISTER, SpeechKind.SPEECH],
         [_CHAIR, SpeechKind.SPEECH],
         [None, SpeechKind.CHAMBER_EVENT],
@@ -53,9 +53,9 @@ def test_unclassified_rows_before_the_first_speaker_become_speech() -> None:
         report_id=24248, speaker=None, first_transcript_start="Mr Speaker, Sir", last_transcript_start="Sir, I beg", reason="",
     )
 
-    rows = apply_unattributed_speech_range(speeches, speech_range)
+    parsed_speeches = apply_unattributed_speech_range(speeches, speech_range)
 
-    assert [[row.speaker, row.kind] for row in rows] == [
+    assert [[parsed_speech.speaker, parsed_speech.kind] for parsed_speech in parsed_speeches] == [
         [None, SpeechKind.SPEECH],
         [None, SpeechKind.SPEECH],
         [None, SpeechKind.PROCEDURAL],

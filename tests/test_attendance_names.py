@@ -9,8 +9,8 @@ from services.attendance import AttendanceNameChange, get_attendance_name_change
 _SITTING_ID = 1
 
 
-def _get_row(id: int, speaker_name: str, is_present: bool = True, location_name: Optional[str] = None, speaker_id: Optional[int] = None) -> Attendance:
-    return Attendance(id=id, sitting_id=_SITTING_ID, speaker_name=speaker_name, is_present=is_present, location_name=location_name, speaker_id=speaker_id)
+def _get_row(attendance_id: int, speaker_name: str, is_present: bool = True, location_name: Optional[str] = None, speaker_id: Optional[int] = None) -> Attendance:
+    return Attendance(id=attendance_id, sitting_id=_SITTING_ID, speaker_name=speaker_name, is_present=is_present, location_name=location_name, speaker_id=speaker_id)
 
 
 def test_name_changes_cover_the_rows_whose_name_differs_and_are_empty_once_applied() -> None:

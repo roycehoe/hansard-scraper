@@ -581,7 +581,7 @@ def test_changed_report_in_window_alerts_and_keeps_text(
         ).one()
         stored_markdown = session.exec(select(Report.markdown_content).where(Report.report_id == stored_report_id)).one()
     assert stored_content is not None
-    assert _FIRST_WORD_RE.search(stored_content) is not None
+    assert _FIRST_WORD_RE.search(stored_content)
     fake_parliament.report_id_to_topic[stored_report_id] = {"resultHTML": {"content": _FIRST_WORD_RE.sub("a", stored_content, count=1)}}
 
     status = refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)

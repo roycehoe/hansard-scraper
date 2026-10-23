@@ -34,21 +34,21 @@ def _get_members(file_name: str) -> list[SpeakerResult]:
     return [SpeakerResult.model_validate(record) for record in json.loads((_DATA_FILE.parent / file_name).read_text())]
 
 
-def _get_row(id: int, speaker_name: str = "Someone", is_present: bool = True, location_name: Optional[str] = None, speaker_id: Optional[int] = None, sitting_id: int = 1) -> Attendance:
-    return Attendance(id=id, sitting_id=sitting_id, speaker_name=speaker_name, is_present=is_present, location_name=location_name, speaker_id=speaker_id)
+def _get_row(attendance_id: int, speaker_name: str = "Someone", is_present: bool = True, location_name: Optional[str] = None, speaker_id: Optional[int] = None, sitting_id: int = 1) -> Attendance:
+    return Attendance(id=attendance_id, sitting_id=sitting_id, speaker_name=speaker_name, is_present=is_present, location_name=location_name, speaker_id=speaker_id)
 
 
-def _get_removal(id: int, speaker_name: str = "Someone", is_present: bool = True, sitting_id: int = 1) -> AttendanceRemoval:
-    return AttendanceRemoval(id=id, sitting_id=sitting_id, speaker_name=speaker_name, is_present=is_present, reason=AttendanceCleanupReason.NOT_A_NAME)
+def _get_removal(attendance_id: int, speaker_name: str = "Someone", is_present: bool = True, sitting_id: int = 1) -> AttendanceRemoval:
+    return AttendanceRemoval(id=attendance_id, sitting_id=sitting_id, speaker_name=speaker_name, is_present=is_present, reason=AttendanceCleanupReason.NOT_A_NAME)
 
 
-def _get_role(id: int, sitting_id: int = 1) -> AttendanceSpeakerRole:
-    return AttendanceSpeakerRole(id=id, sitting_id=sitting_id, sitting_date="23-12-1960", speaker_name="Speaker", is_present=True, location_name="Sir George Oehlers, O.B.E.")
+def _get_role(attendance_id: int, sitting_id: int = 1) -> AttendanceSpeakerRole:
+    return AttendanceSpeakerRole(id=attendance_id, sitting_id=sitting_id, sitting_date="23-12-1960", speaker_name="Speaker", is_present=True, location_name="Sir George Oehlers, O.B.E.")
 
 
-def _get_correction(id: int) -> AttendanceCorrection:
+def _get_correction(attendance_id: int) -> AttendanceCorrection:
     return AttendanceCorrection(
-        id=id, sitting_id=1, speaker_name="Wong Lm Ken", is_present=True, location_name="Alexandra",
+        id=attendance_id, sitting_id=1, speaker_name="Wong Lm Ken", is_present=True, location_name="Alexandra",
         speaker_name_after="Wong Lin Ken", location_name_after="Alexandra", reason=AttendanceCleanupReason.OCR_ALIAS,
     )
 

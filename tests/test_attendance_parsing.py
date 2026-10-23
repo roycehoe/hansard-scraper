@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 
 from database.sitting import Sitting
 from database.speaker import Speaker
@@ -14,7 +15,7 @@ from utils.speaker_resolution import resolve_canonical_name
 _CONSTITUENCY_LOOKUPS = build_constituency_lookups(ConstituencyNames(names=[], rows=[]))
 
 
-def _get_rows(markdown: str, sitting_date: str = "1-1-1970") -> list[tuple[str, bool, str | None]]:
+def _get_rows(markdown: str, sitting_date: str = "1-1-1970") -> list[tuple[str, bool, Optional[str]]]:
     sitting = Sitting(id=1, sitting_date=sitting_date, volume_no=29, markdown_content=markdown)
     records = build_sitting_attendances_from_markdown(sitting, build_speaker_lookups([]), _CONSTITUENCY_LOOKUPS)
     return [(record.speaker_name, record.is_present, record.location_name) for record in records]
