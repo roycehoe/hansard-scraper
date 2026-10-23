@@ -11,7 +11,7 @@ from database.init import engine
 from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
 from logs import logger
-from schemas.speaker import SpeakerResult
+from schemas.hand_kept_member import HandKeptMember
 from schemas.speaker_override import (
     LegislativeAssemblyOverride,
     PartyOverride,
@@ -59,7 +59,7 @@ def _write_flags(session: Session, flag_changes: list[FlagChange], overrides: li
 
 
 def _write_party(
-    session: Session, party_changes: list[PartyChange], overrides: list[PartyOverride], colonial_members: list[SpeakerResult]
+    session: Session, party_changes: list[PartyChange], overrides: list[PartyOverride], colonial_members: list[HandKeptMember]
 ) -> None:
     updated_count = CRUDSpeaker(session).set_party_bulk({party_change.id: party_change.party_after for party_change in party_changes})
     if updated_count != len(party_changes):

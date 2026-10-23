@@ -6,6 +6,7 @@ import pytest
 import database.speech  # noqa: F401 registers Speech so the Report relationship resolves
 from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
+from schemas.hand_kept_member import HandKeptMember
 from schemas.speaker import SpeakerResult
 from schemas.speaker_override import PartyOverride, SpeakerOverrides
 from services.speaker import PartyChange, build_speaker, get_party_changes
@@ -94,7 +95,7 @@ def test_party_changes_cover_overrides_colonial_members_and_curly_apostrophes() 
         _get_speaker(4, "Lee Hsien Loong", 7, "People's Action Party"),
     ]
     overrides = [PartyOverride(name="Chiam See Tong", parliament_number=6, source_party="Singapore Democratic Alliance", party="Singapore Democratic Party", reason="test")]
-    colonial_members = [SpeakerResult(name="Lim Yew Hock", party="Singapore People's Alliance", is_legislative_assembly=True, parliament_number=1)]
+    colonial_members = [HandKeptMember(name="Lim Yew Hock", party="Singapore People's Alliance", is_legislative_assembly=True, parliament_number=1, comments=None)]
 
     party_changes = get_party_changes(speakers, overrides, colonial_members)
 
@@ -129,7 +130,7 @@ def test_party_override_for_a_row_holding_another_party_raises() -> None:
 
 def test_party_changes_refuse_a_colonial_member_without_a_stored_row() -> None:
     speakers = [_get_speaker(1, "David Marshall", 1, "Labour Front")]
-    colonial_members = [SpeakerResult(name="David Marshall", party="Labour Front", is_legislative_assembly=True, parliament_number=0)]
+    colonial_members = [HandKeptMember(name="David Marshall", party="Labour Front", is_legislative_assembly=True, parliament_number=0, comments=None)]
 
     with pytest.raises(HansardWriteCheckError):
         get_party_changes(speakers, [], colonial_members)

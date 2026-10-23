@@ -1,10 +1,13 @@
 import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Optional
 
 import pytest
 from pydantic import BaseModel, ValidationError
 
+import utils.data_files as data_files_module
+from exceptions import HansardDataFileError
 from schemas.attendance_cleanup import AttendanceCleanup
 from schemas.constituency_names import ConstituencyNames
 from schemas.excluded_report_id import ExcludedReportIds
@@ -14,6 +17,18 @@ from schemas.party_affiliation import PartyAffiliationMemberships
 from schemas.person_decision import PersonDecision, PersonDecisions
 from schemas.speaker_override import SpeakerOverrides
 from schemas.unattributed_speech import UnattributedSpeechRanges
+from utils.data_files import (
+    get_attendance_cleanup,
+    get_colonial_members,
+    get_constituency_names,
+    get_excluded_report_ids,
+    get_heads_of_state,
+    get_party_affiliations,
+    get_person_decisions,
+    get_speaker_overrides,
+    get_unattributed_speech_ranges,
+    get_unscraped_members,
+)
 
 _DATA_DIRECTORY = Path(__file__).parent.parent / "data"
 _DATA_FILE_SCHEMAS = (
@@ -28,7 +43,28 @@ _DATA_FILE_SCHEMAS = (
     ("unattributed_speech.json", UnattributedSpeechRanges),
     ("unscraped_members.json", HandKeptMembers),
 )
+_DATA_FILE_GETTERS = (
+    get_attendance_cleanup,
+    get_colonial_members,
+    get_constituency_names,
+    get_excluded_report_ids,
+    get_heads_of_state,
+    get_party_affiliations,
+    get_person_decisions,
+    get_speaker_overrides,
+    get_unattributed_speech_ranges,
+    get_unscraped_members,
+)
 _TYPO_KEY = "typo_key"
+_SPEAKER_OVERRIDES_FILE_NAME = "speaker_overrides.json"
+_EXCLUDED_REPORT_IDS_FILE_NAME = "excluded_report_ids.json"
+
+
+def _get_record_count(loaded: object) -> int:
+    if isinstance(loaded, list):
+        return len(loaded)
+    assert isinstance(loaded, BaseModel)
+    return sum(len(value) for _, value in loaded if isinstance(value, list))
 
 
 def _get_object_paths(node: object, path: tuple[object, ...] = ()) -> list[tuple[object, ...]]:
@@ -52,9 +88,50 @@ def _get_person_decision(**fields: object) -> dict[str, object]:
     return person_decision | fields
 
 
-@pytest.mark.parametrize(("file_name", "schema"), _DATA_FILE_SCHEMAS)
-def test_data_file_passes_its_schema(file_name: str, schema: type[BaseModel]) -> None:
-    schema.model_validate_json((_DATA_DIRECTORY / file_name).read_bytes())
+@pytest.mark.parametrize("getter", _DATA_FILE_GETTERS)
+def test_a_getter_returns_the_records_of_its_file(getter: Callable[[], object]) -> None:
+    assert _get_record_count(getter()) > 0
+
+
+def test_a_mistyped_key_raises_data_file_error_naming_the_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    speaker_overrides_file = tmp_path / _SPEAKER_OVERRIDES_FILE_NAME
+    speaker_overrides_file.write_text(json.dumps({"legislative_assembly_overrides": [], "party_overrides": [], _TYPO_KEY: 1}))
+    monkeypatch.setattr(data_files_module, "_SPEAKER_OVERRIDES_FILE", speaker_overrides_file)
+
+    with pytest.raises(HansardDataFileError) as error:
+        get_speaker_overrides()
+
+    assert _SPEAKER_OVERRIDES_FILE_NAME in str(error.value)
+    assert _TYPO_KEY in str(error.value)
+
+
+def test_a_list_file_error_names_the_record_index(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    excluded_report_ids_file = tmp_path / _EXCLUDED_REPORT_IDS_FILE_NAME
+    records = [{"report_id": "a", "kept_report_id": "b", "reason": "A reason."}, {"report_id": "c", "kept_report_id": "d"}]
+    excluded_report_ids_file.write_text(json.dumps(records))
+    monkeypatch.setattr(data_files_module, "EXCLUDED_REPORT_IDS_FILE", excluded_report_ids_file)
+
+    with pytest.raises(HansardDataFileError) as error:
+        get_excluded_report_ids()
+
+    assert _EXCLUDED_REPORT_IDS_FILE_NAME in str(error.value)
+    assert "1.reason" in str(error.value)
+
+
+def test_a_missing_file_is_not_a_data_file_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(data_files_module, "_SPEAKER_OVERRIDES_FILE", tmp_path / _SPEAKER_OVERRIDES_FILE_NAME)
+
+    with pytest.raises(FileNotFoundError):
+        get_speaker_overrides()
+
+
+def test_a_malformed_json_file_raises_data_file_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    speaker_overrides_file = tmp_path / _SPEAKER_OVERRIDES_FILE_NAME
+    speaker_overrides_file.write_text("{not json")
+    monkeypatch.setattr(data_files_module, "_SPEAKER_OVERRIDES_FILE", speaker_overrides_file)
+
+    with pytest.raises(HansardDataFileError, match="json_invalid"):
+        get_speaker_overrides()
 
 
 @pytest.mark.parametrize(("file_name", "schema"), _DATA_FILE_SCHEMAS)

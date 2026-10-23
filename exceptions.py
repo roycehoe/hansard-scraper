@@ -10,6 +10,10 @@ class HansardMemberListError(HansardError):
     pass
 
 
+class HansardDataFileError(HansardError):
+    pass
+
+
 class HansardUnattributedSpeechError(HansardError):
     pass
 

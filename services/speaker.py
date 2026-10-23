@@ -5,6 +5,7 @@ from operator import attrgetter
 from database.speaker import Speaker
 from enums import LegislativeAssemblyFlag
 from exceptions import HansardMemberListError, HansardWriteCheckError
+from schemas.hand_kept_member import HandKeptMember
 from schemas.head_of_state import HeadOfStateResult
 from schemas.parliament_member_list_response import ParliamentMemberListResponse
 from schemas.speaker import SpeakerResult
@@ -104,7 +105,7 @@ def build_speaker(
 
 
 def get_party_changes(
-    speakers: list[Speaker], overrides: list[PartyOverride], colonial_members: list[SpeakerResult]
+    speakers: list[Speaker], overrides: list[PartyOverride], colonial_members: list[HandKeptMember]
 ) -> list[PartyChange]:
     key_to_speaker = {(speaker.name, speaker.parliament_number): speaker for speaker in speakers}
     name_parliament_to_party = {(member.name, member.parliament_number): member.party for member in colonial_members}
@@ -130,7 +131,7 @@ def get_party_changes(
 
 
 def get_parliament_changes(
-    speakers: list[Speaker], colonial_members: list[SpeakerResult], heads_of_state: list[HeadOfStateResult]
+    speakers: list[Speaker], colonial_members: list[HandKeptMember], heads_of_state: list[HeadOfStateResult]
 ) -> list[ParliamentChange]:
     key_to_speaker = {(speaker.name, speaker.parliament_number): speaker for speaker in speakers}
     assembly_names = [member.name for member in colonial_members if member.parliament_number == COLONIAL_PARLIAMENT_NUMBER]

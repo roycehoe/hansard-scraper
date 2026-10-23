@@ -185,7 +185,7 @@ hansard-scraper/
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
 ├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag
-├── exceptions.py                    # HansardError / HansardGatewayError / HansardMemberListError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshRunError
+├── exceptions.py                    # HansardError / HansardGatewayError / HansardMemberListError / HansardDataFileError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshRunError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the scheduled refresh job; runs python refresh.py
 │

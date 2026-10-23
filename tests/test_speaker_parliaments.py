@@ -8,8 +8,8 @@ import database.speech  # noqa: F401 registers Speech so the Report relationship
 from crud.speech import SpeechSpeakerRow
 from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
+from schemas.hand_kept_member import HandKeptMember
 from schemas.head_of_state import HeadOfStateResult
-from schemas.speaker import SpeakerResult
 from services.attendance import build_speaker_lookups
 from services.speaker import ParliamentChange, get_parliament_changes
 from services.speaker_link import resolve_speech_rows
@@ -27,12 +27,12 @@ def _get_speaker(speaker_id: int, name: str, parliament_number: int) -> Speaker:
     return Speaker(id=speaker_id, name=name, party="Labour Front", is_legislative_assembly=True, parliament_number=parliament_number)
 
 
-def _get_member(name: str, parliament_number: int) -> SpeakerResult:
-    return SpeakerResult(name=name, party="Labour Front", is_legislative_assembly=True, parliament_number=parliament_number)
+def _get_member(name: str, parliament_number: int) -> HandKeptMember:
+    return HandKeptMember(name=name, party="Labour Front", is_legislative_assembly=True, parliament_number=parliament_number, comments=None)
 
 
-def _load_colonial_members() -> list[SpeakerResult]:
-    return [SpeakerResult.model_validate(record) for record in json.loads((_DATA_DIRECTORY / "colonial_la_members.json").read_text())]
+def _load_colonial_members() -> list[HandKeptMember]:
+    return [HandKeptMember.model_validate(record) for record in json.loads((_DATA_DIRECTORY / "colonial_la_members.json").read_text())]
 
 
 def _load_heads_of_state() -> list[HeadOfStateResult]:
