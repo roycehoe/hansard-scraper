@@ -38,7 +38,7 @@ After the last month, the run:
 
 ## Schedule
 
-The run is an App Platform scheduled job, daily at 04:00 Singapore time (`0 4 * * *` in `Asia/Singapore`, which is `0 20 * * *` UTC). Batch E adds the component to `hansard/.do/app.yaml`. The image is built from `Dockerfile` at the repo root, and the command is `python refresh.py`.
+The run is an App Platform scheduled job, daily at 04:00 Singapore time (`0 4 * * *` in `Asia/Singapore`, which is `0 20 * * *` UTC). Batch E adds the component to `hansard/.do/app.yaml`. The image is built from `Dockerfile` at the repo root, and the command is `sh refresh.sh`, which runs `python refresh.py`.
 
 Enable the schedule only after the Parliament 15 backfill (see "The Parliament 15 backfill"). The backfill ran on 19 October 2026, and a plain run after it succeeded, so the stored data no longer blocks the schedule.
 
@@ -71,7 +71,7 @@ Setup:
 1. Create a bot with @BotFather and keep its token. Send the bot a message, then read the chat id from the bot's `getUpdates` response.
 2. Create a healthchecks.io check with period 1 day and grace 2 hours, so it reports a missed run 26 hours after the last ping. Add its Telegram integration.
 
-The run sends the plain ping on success and the `/fail` ping on a halt, a failure, or a run that cannot start. The check goes down at once on a `/fail` ping, and after 26 hours with no ping. A halt or a failure also shows up as a Telegram alert.
+The run sends the plain ping on success and the `/fail` ping on a halt, a failure, or a run that cannot start. `refresh.sh` then pings with refresh.py's exit code, so a crash before the run's own alert code, such as an import error or a bad `DATABASE_URL`, also sends a failure ping. The check goes down at once on a `/fail` ping or a nonzero exit code, and after 26 hours with no ping. A halt or a failure also shows up as a Telegram alert.
 
 ## Halts and how to clear each
 
@@ -212,7 +212,7 @@ The contract the API reads, with the read grant of "Write role SQL".
 - **`figures` shape.** `{"measured_at": "<ISO 8601 UTC>", "groups": [{"group", "report_count", "reports_with_rows_count", "zero_row_report_count", "linked_row_count", "named_unlinked_row_count", "adr_excluded_row_count", "no_speaker_row_count", "row_count", "linked_character_count", "body_character_count", "body_in_zero_row_reports", "report_types": [{"report_type", "report_count", "zero_row_report_count", "collapse_report_count", "collapse_character_count", "body_total", "category_to_row_count", "category_to_character_count"}]}]}`. The groups are "Parliaments 0 to 11", then every Parliament above 11 present in the data. The group fields are the stable contract. Per group, named linked is `linked_row_count / (linked_row_count + named_unlinked_row_count)`, all linked is `linked_row_count / row_count`, and text share is `linked_character_count / body_character_count`.
 - **Footer rules.** "Includes sittings up to {date}" is `latest_sitting_date_with_text` of the latest `SUCCEEDED` row. "Last checked {date}" is that row's `finished_at` as a Singapore date. Halted and failed runs move neither. Figures come from the latest `SUCCEEDED` row whose `figures` is not null. While no `SUCCEEDED` row exists, the API shows no footer line and keeps its current figures.
 - **Read grant.** The column grant on `refresh_run` in "Write role SQL", which leaves out `halt_reason` and `failure_reason`. Royce runs it.
-- **Image.** Repo `roycehoe/hansard-scraper`, `Dockerfile` at the root, branch `master`, command `python refresh.py`.
+- **Image.** Repo `roycehoe/hansard-scraper`, `Dockerfile` at the root, branch `master`, command `sh refresh.sh`.
 - **Schedule.** Daily at 04:00 Singapore time (`0 4 * * *` in `Asia/Singapore`, or `0 20 * * *` UTC).
 - **Env vars.** `DATABASE_URL` (the write role), `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HEALTHCHECKS_PING_URL`. Each alert target does nothing while unset.
 
