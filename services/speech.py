@@ -453,9 +453,8 @@ def _extract_body_attribution(markdown: str, report_type: str, report_version: s
 
     if report_type == ReportType.PRESIDENT_ADDRESS:
         match = _ADDENDA_MINISTER_RE.search(markdown)
-        minister = match.group(1).strip() if match is not None else None
-        if minister is not None:
-            return minister
+        if match is not None:
+            return match.group(1).strip()
         if _ADDENDA_TITLE_RE.search(markdown):
             return None
         if not _MINISTRY_HEADING_RE.search(markdown):
