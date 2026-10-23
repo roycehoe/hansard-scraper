@@ -41,7 +41,8 @@ def _add_counts(tallies: Tallies, column: str, row_label: str, text: str, counts
         tally.occurrences += count
         # NOTE: only a character fault can be in the raw HTML; markup and pair counts have no raw side.
         if raw_signatures is not None and name in CHARACTER_SIGNATURES:
-            tally.rows_not_in_raw = (tally.rows_not_in_raw or 0) + (name not in raw_signatures)
+            rows_not_in_raw = 0 if tally.rows_not_in_raw is None else tally.rows_not_in_raw
+            tally.rows_not_in_raw = rows_not_in_raw + (name not in raw_signatures)
         if tally.example is None:
             tally.example = f"{row_label}: {get_signature_context(text, name)!r}"
 
