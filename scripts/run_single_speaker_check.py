@@ -15,7 +15,7 @@ _TABLE_WIDTH = 52
 _PERCENT = 100
 
 
-def run() -> None:
+def run_single_speaker_check() -> None:
     with Session(engine) as session:
         reports = CRUDReport(session).get_by_markdown_content_not_null()
 
@@ -73,4 +73,4 @@ def run() -> None:
 
 
 if __name__ == "__main__":
-    run()
+    run_single_speaker_check()

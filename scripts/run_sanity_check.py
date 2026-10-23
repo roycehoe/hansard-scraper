@@ -78,7 +78,7 @@ class _Check(StrEnum):
     OK = "OK"
 
 
-def run() -> None:
+def run_sanity_check() -> None:
     sample_sets = SampleSets.model_validate_json(_SAMPLE_FILE_PATH.read_text())
     report_ids = sample_sets.pilot + sample_sets.held_out + sample_sets.regression
 
@@ -219,4 +219,4 @@ def run() -> None:
 
 
 if __name__ == "__main__":
-    run()
+    run_sanity_check()

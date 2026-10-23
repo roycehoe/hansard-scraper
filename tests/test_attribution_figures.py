@@ -52,7 +52,7 @@ def test_script_output_is_unchanged(scratch_engine: Engine, scratch_session: Ses
     seed_attribution_rows(scratch_session)
     monkeypatch.setattr(attribution_text_share, "engine", scratch_engine)
     output_path = tmp_path / "figures.txt"
-    attribution_text_share.main(output_path)
+    attribution_text_share.attribution_text_share(output_path)
     assert output_path.read_text(encoding="utf-8") == _EXPECTED_FIGURES_FILE.read_text(encoding="utf-8")
 
 

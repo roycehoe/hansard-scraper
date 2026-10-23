@@ -242,7 +242,7 @@ def _check_unlinkable(session: Session) -> list[SpeakerStringCount]:
     return faults
 
 
-def main() -> None:
+def check_link_plausibility() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--json", metavar="FILE", help="Write the review list to FILE")
     arguments = parser.parse_args()
@@ -282,4 +282,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    check_link_plausibility()

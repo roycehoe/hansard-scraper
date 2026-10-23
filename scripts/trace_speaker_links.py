@@ -48,7 +48,7 @@ class StaleLink:
     resolved_speaker_id: Optional[int]
 
 
-def main() -> None:
+def trace_speaker_links() -> None:
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
         reports = [
@@ -110,4 +110,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    trace_speaker_links()

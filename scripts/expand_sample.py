@@ -51,7 +51,7 @@ def _is_excluded(speaker: str) -> bool:
     return False
 
 
-def _preprocess(speaker: str) -> Optional[str]:
+def _clean_speaker_label(speaker: str) -> Optional[str]:
     if _is_excluded(speaker) or speaker.startswith("(") or speaker.startswith("_"):
         return None
     raw = speaker.rstrip(":").strip()
@@ -84,7 +84,7 @@ def _is_resolved(
     return False
 
 
-def main() -> None:
+def expand_sample() -> None:
     random.seed(_SEED)
 
     sample_sets = SampleSets.model_validate_json(_SAMPLE_PATH.read_text())
@@ -131,7 +131,7 @@ def main() -> None:
         if speech_id not in speech_id_to_speech_row:
             continue
         eligible_row = speech_id_to_speech_row[speech_id]
-        name = _preprocess(eligible_row.speaker)
+        name = _clean_speaker_label(eligible_row.speaker)
         if name is not None and _is_resolved(name, eligible_row.parliament_number, lookups, name_parliament_number_to_speaker_id):
             passing_pilot.append(speech_id)
 
@@ -152,4 +152,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    expand_sample()

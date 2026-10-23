@@ -28,7 +28,7 @@ class _MatchStats:
     total: int = 0
 
 
-def main() -> None:
+def speech_speaker_match_rate() -> None:
     random.seed(_SEED)
 
     with Session(engine) as session:
@@ -85,4 +85,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    speech_speaker_match_rate()

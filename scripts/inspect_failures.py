@@ -18,7 +18,7 @@ _SEPARATOR_WIDTH = 60
 _DEFAULT_REPORT_TYPES = (ReportType.BILL_INTRODUCTION.value, ReportType.BUDGET.value, ReportType.PRESIDENT_ADDRESS.value, ReportType.ATBP.value)
 
 
-def show_doc(hansard_website_response: HansardWebsiteResponse, report: Report, max_lines: int = _MAX_LINES_SHOWN) -> None:
+def log_report_markdown(hansard_website_response: HansardWebsiteResponse, report: Report, max_lines: int = _MAX_LINES_SHOWN) -> None:
     start_line = get_start_of_speech_line(
         report.markdown_content, report.title, report.subtitle, report.original_title,
         hansard_website_response.report_type, hansard_website_response.report_version,
@@ -34,7 +34,7 @@ def show_doc(hansard_website_response: HansardWebsiteResponse, report: Report, m
     logger.info("")
 
 
-def inspect_type(session: Session, report_type: str, max_failing: int = _MAX_FAILING_SHOWN, max_passing: int = _MAX_PASSING_SHOWN) -> None:
+def log_report_type_samples(session: Session, report_type: str, max_failing: int = _MAX_FAILING_SHOWN, max_passing: int = _MAX_PASSING_SHOWN) -> None:
     hansard_website_responses = CRUDHansardWebsiteResponse(session).get_by_report_type(report_type)
 
     failing, passing = [], []
@@ -56,18 +56,18 @@ def inspect_type(session: Session, report_type: str, max_failing: int = _MAX_FAI
 
     logger.info(f"\n--- FAILING (showing {min(max_failing, len(failing))}) ---")
     for hansard_website_response, report in failing[:max_failing]:
-        show_doc(hansard_website_response, report)
+        log_report_markdown(hansard_website_response, report)
 
     logger.info(f"\n--- PASSING (showing {min(max_passing, len(passing))}) ---")
     for hansard_website_response, report in passing[:max_passing]:
-        show_doc(hansard_website_response, report)
+        log_report_markdown(hansard_website_response, report)
 
 
 def inspect_failures() -> None:
     types = sys.argv[1:] if len(sys.argv) > 1 else _DEFAULT_REPORT_TYPES
     with Session(engine) as session:
         for report_type in types:
-            inspect_type(session, report_type)
+            log_report_type_samples(session, report_type)
 
 
 if __name__ == "__main__":

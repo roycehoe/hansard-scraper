@@ -62,7 +62,7 @@ def get_report_type_speech_stats(session: Session) -> dict[str, ReportTypeSpeech
     return dict(report_type_to_counts)
 
 
-def run_stats_on(hansard_website_responses: list[HansardWebsiteResponse]) -> BaselineResults:
+def get_baseline_results(hansard_website_responses: list[HansardWebsiteResponse]) -> BaselineResults:
     baseline_results = BaselineResults()
     for hansard_website_response in hansard_website_responses:
         report = build_report(hansard_website_response)
@@ -101,12 +101,12 @@ def diagnose() -> None:
             hansard_website_response for hansard_website_response in all_hansard_website_responses
             if hansard_website_response.report_type not in no_speech_types and build_report(hansard_website_response).markdown_content is not None
         ]
-        baseline = run_stats_on(target_with_markdown)
-        total = len(baseline.passed) + len(baseline.failed_start_line) + len(baseline.failed_speeches)
-        percentage = _PERCENT * len(baseline.passed) / total if total else 0
-        logger.info(f"  Pass: {len(baseline.passed)}/{total} ({percentage:.1f}%)")
-        logger.info(f"  Fail has_start_line: {len(baseline.failed_start_line)}")
-        logger.info(f"  Fail can_get_speeches: {len(baseline.failed_speeches)}")
+        baseline_results = get_baseline_results(target_with_markdown)
+        total = len(baseline_results.passed) + len(baseline_results.failed_start_line) + len(baseline_results.failed_speeches)
+        percentage = _PERCENT * len(baseline_results.passed) / total if total else 0
+        logger.info(f"  Pass: {len(baseline_results.passed)}/{total} ({percentage:.1f}%)")
+        logger.info(f"  Fail has_start_line: {len(baseline_results.failed_start_line)}")
+        logger.info(f"  Fail can_get_speeches: {len(baseline_results.failed_speeches)}")
 
 
 if __name__ == "__main__":

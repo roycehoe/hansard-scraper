@@ -109,7 +109,7 @@ def find_unmatched(is_verbose: bool = False) -> dict[UnmatchedCategory, Counter[
     return category_to_counter
 
 
-def main() -> None:
+def find_unmatched_attendees() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--json", metavar="FILE",
@@ -150,4 +150,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    find_unmatched_attendees()

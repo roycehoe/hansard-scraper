@@ -35,7 +35,7 @@ def _print_terms(terms_name: str, parliament_number_to_name_to_dates: dict[int, 
     print(")")  # noqa: T201 stdout is the tuple literal to paste into the source
 
 
-def main() -> None:
+def find_presiding_officers() -> None:
     with Session(engine) as session:
         sittings = CRUDSitting(session).get_all()
         speakers = CRUDSpeaker(session).get_all()
@@ -76,4 +76,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    find_presiding_officers()

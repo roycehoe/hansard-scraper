@@ -91,7 +91,7 @@ def _show_document(report: Report, start_line: int, speakers: list[str]) -> list
     return []
 
 
-def run() -> None:
+def run_exclusion_sanity_check() -> None:
     random.seed(_SEED)
 
     with Session(engine) as session:
@@ -176,4 +176,4 @@ def run() -> None:
 
 
 if __name__ == "__main__":
-    run()
+    run_exclusion_sanity_check()

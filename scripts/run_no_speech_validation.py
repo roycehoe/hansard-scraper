@@ -28,7 +28,7 @@ class _Status(StrEnum):
     OK = "OK"
 
 
-def run() -> None:
+def run_no_speech_validation() -> None:
     random.seed(_SEED)
 
     with Session(engine) as session:
@@ -122,4 +122,4 @@ def run() -> None:
 
 
 if __name__ == "__main__":
-    run()
+    run_no_speech_validation()

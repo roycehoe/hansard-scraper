@@ -131,7 +131,7 @@ def _write_attendance(session: Session, rows_to_insert: list[Attendance], sittin
     session.commit()
 
 
-def main() -> None:
+def complete_truncated_attendance() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("sitting_ids", type=int, nargs="+", choices=sorted(_SITTING_ID_TO_TRUNCATED_SITTING))
     parser.add_argument("--commit", action="store_true")
@@ -168,4 +168,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    complete_truncated_attendance()

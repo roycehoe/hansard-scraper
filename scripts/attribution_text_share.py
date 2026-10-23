@@ -48,7 +48,7 @@ def _log_rates(category_to_row_count: Counter[str], category_to_character_count:
     logger.info(f"3. Text share:     {category_to_character_count[LINKED_CATEGORY]} / {body_total} chars = {_PERCENT * category_to_character_count[LINKED_CATEGORY] / body_total:.2f}%")
 
 
-def main(output_path: Optional[Path]) -> None:
+def attribution_text_share(output_path: Optional[Path]) -> None:
     if output_path is not None:
         logger.add(output_path, format="{message}", mode="w")
     with Session(engine) as session:
@@ -89,4 +89,4 @@ def main(output_path: Optional[Path]) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="The three attribution numbers, by Parliament group and by report type")
     parser.add_argument("--output", type=Path, help="also write the log lines to this file, such as docs/figures/2026-10-17-round8.txt")
-    main(parser.parse_args().output)
+    attribution_text_share(parser.parse_args().output)
