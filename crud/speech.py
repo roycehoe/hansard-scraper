@@ -168,6 +168,10 @@ class CRUDSpeech:
         )
         return list(self.session.exec(statement).all())
 
+    def get_report_ids_by_transcript_regex(self, pattern: str) -> list[int]:
+        statement = select(Speech.report_id).distinct().where(col(Speech.transcript).regexp_match(pattern))
+        return list(self.session.exec(statement).all())
+
     def get_report_ids_by_report_ids_and_speaker_id_null_and_speaker_regex(self, report_ids: list[int], pattern: str) -> list[int]:
         statement = (
             select(Speech.report_id)
