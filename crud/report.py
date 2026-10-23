@@ -86,6 +86,10 @@ class CRUDReport:
         statement = select(col(Report.id)).where(col(Report.markdown_content).is_not(None)).order_by(col(Report.id))
         return list(self.session.exec(statement).all())
 
+    def get_ids_by_content_regex(self, pattern: str) -> list[int]:
+        statement = select(col(Report.id)).where(col(Report.content).regexp_match(pattern)).order_by(col(Report.id))
+        return list(self.session.exec(statement).all())
+
     def get_by_ids(self, report_ids: list[int]) -> list[Report]:
         statement = select(Report).where(col(Report.id).in_(report_ids)).order_by(col(Report.id))
         return list(self.session.exec(statement).all())

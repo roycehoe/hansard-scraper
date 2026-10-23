@@ -144,7 +144,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline.
 
 Every script that calls `validate_can_write` ends a `--commit` run with `vacuum_analyze_written_tables` (`populate/written_tables.py`) on the tables it wrote, so search does not wait for the 04:00 refresh to get a vacuumed table. It raises `HansardWriteCheckError` when a table's `vacuum_count` did not rise, which is what Postgres leaves behind when the role lacks `MAINTAIN` or ownership. A new write script adds the call in the same change.
 
-A write that adds, rewrites or deletes speech rows of an older-system report (Parliaments 0 to 11) also sets their column numbers again, so `speech.column_start` and its note never go stale: `apply_coverage_refill.py` and `apply_language_note_close_marks.py` run the column pass inside their own write, and any other such write, the speech fidelity loop's ship tools included, ends with `python -m scripts.apply_column_numbers --commit --report-id ...` for the reports it touched.
+A write that adds, rewrites or deletes speech rows of an older-system report (Parliaments 0 to 11) also sets their column numbers again, so `speech.column_start` and its note never go stale: `apply_coverage_refill.py`, `apply_language_note_close_marks.py` and `apply_footnote_markers.py` run the column pass inside their own write, and any other such write, the speech fidelity loop's ship tools included, ends with `python -m scripts.apply_column_numbers --commit --report-id ...` for the reports it touched.
 
 The scripts:
 
@@ -163,6 +163,7 @@ The scripts:
 - `apply_report_titles.py`: rewrites stored titles and subtitles that the current title rule would change; a dry run unless `--commit`
 - `apply_source_characters.py`: applies `repair_source_characters`, the parser's repair of the characters SPRS sends broken (mojibake, lost closing quotes and the lost characters with one answer, byte-order marks), to stored speech transcripts and labels and report and sitting markdown; a dry run unless `--commit`
 - `apply_language_note_close_marks.py`: drops the `_` a language note left open at the start of a stored transcript, as the parser has since `69476f4`, on rows where nothing else differs from a fresh parse; counts and leaves every other difference; reruns the column pass for the reports it wrote; a dry run unless `--commit`; run as a module
+- `apply_footnote_markers.py`: writes the footnote markers the parser has set after a unit letter or a possessive since the exponent test took only 2 and 3, to stored report markdown and transcripts where nothing else differs from a fresh parse; counts and leaves every other difference; reruns the column pass for the reports it wrote; a dry run unless `--commit`; run as a module
 - `audit_characters.py`: read-only count of character faults (U+FFFD, mojibake, control and private-use characters, leftover HTML, unbalanced quotes and parentheses) in every stored text column, with the rows whose raw text does not hold the fault; `--output PATH` keeps the lines in `docs/figures/`
 - `count_column_coverage.py`: read-only count, by system and Parliament, of the reports whose raw HTML holds "Column: N" markers, and of the stored speech rows `utils/column_numbers.py` gives a start column; checks each report range against the `Start_Col` and `End_Col` of the report head; run as a module
 - `apply_column_numbers.py`: sets `report.column_start` and `column_end` and each speech row's `column_start`, `column_note` and `column_suggested` from the column markers in the raw HTML, through `populate/column_numbers.py`; `--report-id` limits it to the reports given; checks the stored counts by Parliament against its plan before it commits; a dry run unless `--commit`; run as a module
@@ -329,6 +330,7 @@ hansard-scraper/
     ├── apply_report_titles.py
     ├── apply_source_characters.py
     ├── apply_language_note_close_marks.py
+    ├── apply_footnote_markers.py
     ├── audit_characters.py
     ├── count_column_coverage.py
     ├── apply_column_numbers.py
