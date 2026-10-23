@@ -19,19 +19,11 @@ You can build your own copy with the steps under [Setup](#setup). A full crawl s
 
 ## What the record holds
 
-| | |
-|---|---|
-| Period | 22 April 1955 to 7 October 2026 |
-| Bodies | The Legislative Assembly before independence, then the 1st to 15th Parliaments |
-| Sittings | 1,758 |
-| Reports | About 46,600 |
-| Speeches | About 1.1 million |
-| People who speak | 573, mostly members, plus heads of state |
-| Attendance | Who was present and absent at every sitting |
+The record runs from the Legislative Assembly before independence, through the 1st to 15th Parliaments. It holds the reports, speeches, people and sittings, and who was present and absent at every sitting. For the dates and counts, see the [coverage page](https://hansard.fancybinary.sg/coverage). Its [methods page](https://hansard.fancybinary.sg/coverage/methods) has the full counts and reports by year. The site's API is the only source of these figures, so this README does not copy them.
 
 ## How accurate the speaker links are
 
-In a blind check of 191 reports, 99.4% of the words here were credited to the right person, against 95.5% on sgparliament.com ([comparison](docs/report/sgparliament-comparison-2026-10-18.md)).
+In a check of 191 reports, 99.4% of the words here were credited to the right person, against 95.5% on sgparliament.com ([comparison](docs/report/sgparliament-comparison-2026-10-18.md)). AI models judged the sample, under rules this project wrote. They saw the two sites as "Site A" and "Site B", so they couldn't tell which was which. No person has read the sample yet. Most of sgparliament.com's errors are presiding officers and heads of state it leaves unlinked, which this project links to the holder of the day.
 
 About 98% of the text sits in a speech linked to a member ([figures](docs/figures/2026-10-19-backfill-15.txt)). Most of the rest is text no member spoke, such as "Question put, and agreed to."
 
