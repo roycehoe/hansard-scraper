@@ -10,9 +10,11 @@ from crud.person import CRUDPerson
 from crud.speaker import CRUDSpeaker
 from database.person import Person
 from database.speaker import Speaker
+from enums import PersonDecisionKind
 from populate import persons as populate_persons_module
 from populate.persons import populate_persons
-from services.person import Decision, cluster_speakers
+from schemas.person_decision import PersonDecision, PersonDecisionMember
+from services.person import cluster_speakers
 
 _DECISIONS_FILE = Path(__file__).parent.parent / "data" / "person_decisions.json"
 _NAME_DECISION_COUNT = 6
@@ -29,7 +31,16 @@ def _get_speaker(speaker_id: int, name: str, parliament_number: int, person_id: 
     )
 
 
-def _get_canonical_names(speakers: list[Speaker], decisions: list[Decision]) -> list[str]:
+def _get_decision(name: str, parliament_number: int, kind: PersonDecisionKind, person_name: Optional[str]) -> PersonDecision:
+    return PersonDecision(
+        person_name=person_name,
+        members=[PersonDecisionMember(name=name, parliament_number=parliament_number)],
+        decision=kind,
+        source="test",
+    )
+
+
+def _get_canonical_names(speakers: list[Speaker], decisions: list[PersonDecision]) -> list[str]:
     return [person_cluster.canonical_name for person_cluster in cluster_speakers(speakers, decisions).clusters]
 
 
@@ -57,7 +68,7 @@ def test_comma_and_natural_spellings_of_one_person_give_one_natural_name() -> No
 
 def test_name_decision_replaces_the_rule_for_its_person() -> None:
     speakers = [_get_speaker(1, "Devan Nair, Mrs", 1), _get_speaker(2, "Tay S C, Simon, Assoc Prof", 9)]
-    decisions = [Decision(members=[("Devan Nair, Mrs", 1)], decision="name", person_name="Mrs Devan Nair")]
+    decisions = [_get_decision("Devan Nair, Mrs", 1, PersonDecisionKind.NAME, "Mrs Devan Nair")]
 
     assert _get_canonical_names(speakers, decisions) == ["Mrs Devan Nair", "Simon Tay S C"]
 
@@ -69,8 +80,8 @@ def test_spelling_decisions_give_the_official_report_form() -> None:
         _get_speaker(3, "Mohamed Maidin BPM", 9),
     ]
     decisions = [
-        Decision(members=[("Seet Ai Mei, Dr", 7)], decision="name", person_name="Seet Ai Mee"),
-        Decision(members=[("Mohamed Maidin BPM", 8)], decision="name", person_name="Mohamad Maidin"),
+        _get_decision("Seet Ai Mei, Dr", 7, PersonDecisionKind.NAME, "Seet Ai Mee"),
+        _get_decision("Mohamed Maidin BPM", 8, PersonDecisionKind.NAME, "Mohamad Maidin"),
     ]
 
     assert _get_canonical_names(speakers, decisions) == ["Seet Ai Mee", "Mohamad Maidin"]
@@ -78,7 +89,7 @@ def test_spelling_decisions_give_the_official_report_form() -> None:
 
 def test_name_decision_does_not_merge_or_split_clusters() -> None:
     speakers = [_get_speaker(1, "Yeo Yong-Boon, George", 7), _get_speaker(2, "Yeo Yong-Boon, George", 8)]
-    decisions = [Decision(members=[("Yeo Yong-Boon, George", 7)], decision="name", person_name="George Yong-Boon Yeo")]
+    decisions = [_get_decision("Yeo Yong-Boon, George", 7, PersonDecisionKind.NAME, "George Yong-Boon Yeo")]
 
     cluster_result = cluster_speakers(speakers, decisions)
 
@@ -103,7 +114,7 @@ def test_populate_persons_renames_a_reused_person_and_leaves_an_unchanged_one(mo
     renamed: list[tuple[int, str]] = []
     created: list[str] = []
     linked: list[dict[int, int]] = []
-    monkeypatch.setattr(populate_persons_module, "_load_decisions", lambda: [])
+    monkeypatch.setattr(populate_persons_module, "get_person_decisions", lambda: [])
     monkeypatch.setattr(CRUDSpeaker, "get_all", lambda self: speakers)
     monkeypatch.setattr(CRUDSpeaker, "set_person_ids_bulk", lambda self, updates: linked.append(updates))
     monkeypatch.setattr(CRUDPerson, "get_all", lambda self: persons)

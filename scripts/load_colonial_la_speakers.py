@@ -1,5 +1,4 @@
-import json
-from pathlib import Path
+import argparse
 
 from sqlmodel import Session
 
@@ -7,28 +6,50 @@ from crud.speaker import CRUDSpeaker
 from database.init import engine
 from database.speaker import Speaker
 from logs import logger
+from settings import settings
+from utils.data_files import get_colonial_members, get_unscraped_members
+from utils.write_target import validate_can_write
 
-_DATA_DIRECTORY = Path(__file__).parent.parent / "data"
-_DATA_FILES = (_DATA_DIRECTORY / "colonial_la_members.json", _DATA_DIRECTORY / "unscraped_members.json")
+
+def store_colonial_speakers(session: Session, is_commit: bool) -> None:
+    members = get_colonial_members() + get_unscraped_members()
+    stored_keys = {(speaker.name, speaker.parliament_number) for speaker in CRUDSpeaker(session).get_all()}
+    new_speakers = []
+    for member in members:
+        member_key = (member.name, member.parliament_number)
+        if member_key in stored_keys:
+            continue
+        new_speakers.append(
+            Speaker(
+                name=member.name,
+                party=member.party,
+                is_legislative_assembly=member.is_legislative_assembly,
+                parliament_number=member.parliament_number,
+                comments=member.comments,
+            )
+        )
+        stored_keys.add(member_key)
+
+    logger.info(f"Inserted {len(new_speakers)} hand-typed speakers ({len(members) - len(new_speakers)} already existed)")
+    if not is_commit:
+        logger.info("Dry run: nothing written")
+        return
+
+    CRUDSpeaker(session).create_many(new_speakers)
+    session.commit()
 
 
-def load_colonial_la_speakers() -> None:
-    records = [record for data_file in _DATA_FILES for record in json.loads(data_file.read_text())]
-
+def load_colonial_la_speakers(is_commit: bool) -> None:
+    if is_commit:
+        validate_can_write(settings.database_url)
     with Session(engine) as session:
-        stored_keys = {(speaker.name, speaker.parliament_number) for speaker in CRUDSpeaker(session).get_all()}
-
-        inserted = 0
-        for record in records:
-            speaker_key = (record["name"], record["parliament_number"])
-            if speaker_key in stored_keys:
-                continue
-            CRUDSpeaker(session).create(Speaker(**record))
-            stored_keys.add(speaker_key)
-            inserted += 1
-
-        logger.info(f"Inserted {inserted} hand-typed speakers ({len(records) - inserted} already existed)")
+        store_colonial_speakers(session, is_commit)
 
 
 if __name__ == "__main__":
-    load_colonial_la_speakers()
+    parser = argparse.ArgumentParser(
+        description="Store the members of data/colonial_la_members.json and data/unscraped_members.json that the speaker table lacks"
+    )
+    parser.add_argument("--commit", action="store_true", help="write; without it the script only reports the plan")
+    arguments = parser.parse_args()
+    load_colonial_la_speakers(arguments.commit)

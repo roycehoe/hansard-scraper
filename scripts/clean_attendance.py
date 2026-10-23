@@ -22,11 +22,10 @@ from services.attendance_cleanup import (
 )
 from services.speaker_link import resolve_attendance_rows
 from settings import settings
+from utils.data_files import get_attendance_cleanup
 from utils.sitting_dates import parse_sitting_date
 from utils.speaker_terms import SPEAKER_TERMS
 from utils.write_target import validate_can_write
-
-_ATTENDANCE_CLEANUP_FILE = Path(__file__).parent.parent / "data" / "attendance_cleanup.json"
 
 
 def _get_presiding_officer_name(sitting_date: str) -> Optional[str]:
@@ -115,7 +114,7 @@ def _log_plan(plan: AttendanceCleanupPlan, unlinked_before: int, unlinked_after:
 def clean_attendance(is_commit: bool, plan_path: Optional[Path]) -> None:
     if is_commit:
         validate_can_write(settings.database_url)
-    cleanup = AttendanceCleanup.model_validate(json.loads(_ATTENDANCE_CLEANUP_FILE.read_text()))
+    cleanup = get_attendance_cleanup()
     entry_ids = [entry.id for entry in (*cleanup.removals, *cleanup.corrections, *cleanup.speaker_roles)]
     with Session(engine) as session:
         attendance_id_to_attendance = {attendance.id: attendance for attendance in CRUDAttendance(session).get_by_ids(entry_ids) if attendance.id is not None}

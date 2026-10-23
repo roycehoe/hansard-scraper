@@ -40,7 +40,7 @@ python -m alembic revision --autogenerate -m "describe change"  # generate a new
 python -m alembic downgrade -1          # roll back one migration
 
 # Scrape speakers by parliament (run separately, not part of script.py)
-python scripts/scrape_speakers_by_parliament.py
+python scripts/scrape_speakers_by_parliament.py          # a dry run; add --commit to write
 
 # Daily refresh: adds new sittings, reports and speech rows (--allow-parliament N accepts one new Parliament, for a supervised backfill)
 python refresh.py
@@ -148,9 +148,9 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `attribution_text_share.py` — the three attribution numbers in `docs/vision.md`: ADR 0001 rate, all-rows rate, and share of body text in a linked speech; also per report type within each Parliament group, with the zero-row count and the single-speaker collapse share; `--output PATH` keeps the lines in `docs/figures/`, one file per write
 - `check_link_plausibility.py`: read-only check on stage 8 links: lists linked rows whose person was absent or unlisted that sitting, unlinked speaker strings outside the known-unlinkable classes, and sittings with a short attendance list; `--json FILE` keeps the review list
 - `speech_speaker_match_rate.py` — samples speeches stratified by report type, applies the full `SpeakerLookups` name-resolution pipeline via `resolve_canonical_name`, reports match rate overall and by type
-- `load_colonial_la_speakers.py` — idempotent load of `data/colonial_la_members.json` and `data/unscraped_members.json` into the `Speaker` table; must be run before `populate_speaker_links`
-- `load_heads_of_state.py`: idempotent load of `data/heads_of_state.json` (Governors, the Yang di-Pertuan Negara, Presidents) into the `Speaker` table as non-member rows; run after `load_colonial_la_speakers.py` and before `populate_speaker_links`
-- `scrape_speakers_by_parliament.py` — populates the `Speaker` table from parliament.gov.sg
+- `load_colonial_la_speakers.py` — idempotent load of `data/colonial_la_members.json` and `data/unscraped_members.json` into the `Speaker` table; must be run before `populate_speaker_links`; a dry run unless `--commit`
+- `load_heads_of_state.py`: idempotent load of `data/heads_of_state.json` (Governors, the Yang di-Pertuan Negara, Presidents) into the `Speaker` table as non-member rows; run after `load_colonial_la_speakers.py` and before `populate_speaker_links`; a dry run unless `--commit`
+- `scrape_speakers_by_parliament.py` — populates the `Speaker` table from parliament.gov.sg; a dry run unless `--commit`
 - `fill_sitting_numbers.py`: fills empty `report.sitting_number`, `sitting.session_no` and `sitting.sitting_no` from the stored header tables; a dry run unless `--commit`
 - `apply_report_titles.py`: rewrites stored titles and subtitles that the current title rule would change; a dry run unless `--commit`
 - `apply_source_characters.py`: applies `repair_source_characters`, the parser's repair of the characters SPRS sends broken (mojibake, lost closing quotes and the lost characters with one answer, byte-order marks), to stored speech transcripts and labels and report and sitting markdown; a dry run unless `--commit`

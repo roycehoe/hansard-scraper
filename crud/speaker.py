@@ -12,9 +12,9 @@ class CRUDSpeaker:
         self.session.add(speaker)
         self.session.commit()
 
-    def update(self, speaker: Speaker) -> None:
-        self.session.add(speaker)
-        self.session.commit()
+    def create_many(self, speakers: list[Speaker]) -> None:
+        self.session.add_all(speakers)
+        self.session.flush()
 
     def get_all(self) -> list[Speaker]:
         statement = select(Speaker)
@@ -44,6 +44,21 @@ class CRUDSpeaker:
                 "WHERE speaker.id = v.id"
             ),
             {"ids": list(speaker_id_to_is_legislative_assembly.keys()), "is_legislative_assembly_values": list(speaker_id_to_is_legislative_assembly.values())},
+        )
+
+        return update_result.rowcount
+
+    def set_is_member_bulk(self, speaker_id_to_is_member: dict[int, bool]) -> int:
+        if not speaker_id_to_is_member:
+            return 0
+
+        update_result = self.session.execute(
+            text(
+                "UPDATE speaker SET is_member = v.is_member "
+                "FROM UNNEST(:ids, :is_member_values) AS v(id, is_member) "
+                "WHERE speaker.id = v.id"
+            ),
+            {"ids": list(speaker_id_to_is_member.keys()), "is_member_values": list(speaker_id_to_is_member.values())},
         )
 
         return update_result.rowcount

@@ -4,6 +4,9 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from database.speaker import Speaker
+from enums import PersonDecisionKind
+from exceptions import HansardDataFileError
+from schemas.person_decision import PersonDecision, PersonDecisionMember
 from utils.names import (
     invert_to_natural,
     period_normalize,
@@ -14,13 +17,6 @@ from utils.names import (
 Key = tuple[str, int]
 
 _TRAILING_DECORATION_RE = re.compile(r"\s+(?:BPM|BBM)$")
-
-
-@dataclass(frozen=True)
-class Decision:
-    members: list[Key]
-    decision: str
-    person_name: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -87,37 +83,42 @@ def _get_canonical_name(cluster: list[Speaker]) -> str:
     return _TRAILING_DECORATION_RE.sub("", invert_to_natural(most_common_name) or most_common_name)
 
 
-def cluster_speakers(speakers: list[Speaker], decisions: list[Decision]) -> ClusterResult:
+def _get_member_keys(members: list[PersonDecisionMember]) -> list[Key]:
+    return [(member.name, member.parliament_number) for member in members]
+
+
+def cluster_speakers(speakers: list[Speaker], decisions: list[PersonDecision]) -> ClusterResult:
     key_to_speaker = {(speaker.name, speaker.parliament_number): speaker for speaker in speakers}
     for decision in decisions:
-        for key in decision.members:
+        for key in _get_member_keys(decision.members):
             try:
                 key_to_speaker[key]
             except KeyError as error:
-                raise ValueError(f"person decision names no speaker row: {key}") from error
+                raise HansardDataFileError(f"data/person_decisions.json names no speaker row: {key}") from error
     distinct = {
         frozenset((key_to_speaker[left_key].id, key_to_speaker[right_key].id))
-        for decision in decisions if decision.decision == "distinct"
-        for left_key in decision.members for right_key in decision.members if left_key != right_key
+        for decision in decisions if decision.decision == PersonDecisionKind.DISTINCT
+        for left_key in _get_member_keys(decision.members) for right_key in _get_member_keys(decision.members) if left_key != right_key
     }
     clusters = _SpeakerClusters(speakers, distinct)
     cluster_result = ClusterResult()
     speaker_id_to_person_name: dict[int, str] = {}
 
     for decision in decisions:
-        if decision.decision != "merge":
+        if decision.decision != PersonDecisionKind.MERGE:
             continue
-        first, *rest = (key_to_speaker[key].id for key in decision.members)
+        member_keys = _get_member_keys(decision.members)
+        first, *rest = (key_to_speaker[key].id for key in member_keys)
         for other in rest:
             if (refusal_reason := clusters.union(first, other, "review:merge")) is not None:
-                raise ValueError(f"merge decision refused ({refusal_reason}): {decision.members}")
+                raise HansardDataFileError(f"data/person_decisions.json merge decision refused ({refusal_reason}): {member_keys}")
         if decision.person_name:
             speaker_id_to_person_name[first] = decision.person_name
 
     for decision in decisions:
-        if decision.decision != "name":
+        if decision.decision != PersonDecisionKind.NAME:
             continue
-        speaker_id_to_person_name[key_to_speaker[decision.members[0]].id] = decision.person_name
+        speaker_id_to_person_name[key_to_speaker[_get_member_keys(decision.members)[0]].id] = decision.person_name
 
     for basis, key_function in (
         ("auto:exact", lambda speaker: speaker.name),

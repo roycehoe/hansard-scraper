@@ -169,7 +169,7 @@ A local run sends live requests to SPRS at the crawl rate, so start one only whe
 The backfill runs as a separate, later step, not as part of the scheduled refresh. All of it runs supervised with the owner role, not `hansard_refresh`. The member load inserts into `speaker`, and stage 9 inserts into `person` and sets `speaker.person_id`, and the write role has no grant for any of that.
 
 1. `python scripts/load_parliament_speakers.py --parliament 15`, a dry run. Review the members it lists, then run it again with `--commit`.
-2. `python -m scripts.load_heads_of_state`, supervised. It adds the President's Parliament 15 row, and stage 9 then gives that row its `person_id`.
+2. `python -m scripts.load_heads_of_state --commit`, supervised. It adds the President's Parliament 15 row, and stage 9 then gives that row its `person_id`.
 3. Stage 9 for the new speakers: `populate_persons` in `populate/persons.py`.
 4. `python refresh.py --allow-parliament 15`, supervised.
 5. `python scripts/attribution_text_share.py --output docs/figures/YYYY-MM-DD-backfill-15.txt` on the replica, and a register row, as `CLAUDE.md` requires.

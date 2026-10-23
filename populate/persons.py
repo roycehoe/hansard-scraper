@@ -1,32 +1,17 @@
-import json
-from pathlib import Path
-
 from sqlmodel import Session
 
 from crud.person import CRUDPerson
 from crud.speaker import CRUDSpeaker
 from database.person import Person
 from logs import logger
-from services.person import Decision, cluster_speakers
-
-DECISIONS_FILE = Path(__file__).parent.parent / "data" / "person_decisions.json"
-
-
-def _load_decisions() -> list[Decision]:
-    return [
-        Decision(
-            members=[(member["name"], member["parliament_number"]) for member in entry["members"]],
-            decision=entry["decision"],
-            person_name=entry.get("person_name"),
-        )
-        for entry in json.loads(DECISIONS_FILE.read_text())
-    ]
+from services.person import cluster_speakers
+from utils.data_files import get_person_decisions
 
 
 def populate_persons(session: Session) -> None:
     speakers = CRUDSpeaker(session).get_all()
     person_id_to_person = {person.id: person for person in CRUDPerson(session).get_all()}
-    cluster_result = cluster_speakers(speakers, _load_decisions())
+    cluster_result = cluster_speakers(speakers, get_person_decisions())
     for conflict in cluster_result.conflicts:
         logger.warning(f"Person: refused union, {conflict}")
 

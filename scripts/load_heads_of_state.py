@@ -1,36 +1,62 @@
-import json
-from pathlib import Path
+import argparse
 
 from sqlmodel import Session
 
 from crud.speaker import CRUDSpeaker
 from database.init import engine
 from database.speaker import Speaker
+from exceptions import HansardWriteCheckError
 from logs import logger
+from settings import settings
+from utils.data_files import get_heads_of_state
+from utils.write_target import validate_can_write
 
 _NON_PARTISAN_PARTY = "Non-partisan"
-_DATA_FILE = Path(__file__).parent.parent / "data" / "heads_of_state.json"
 
 
-def load_heads_of_state() -> None:
-    records = json.loads(_DATA_FILE.read_text())
+def store_heads_of_state(session: Session, is_commit: bool) -> None:
+    name_and_parliament_number_to_speaker = {(speaker.name, speaker.parliament_number): speaker for speaker in CRUDSpeaker(session).get_all()}
+    new_speakers = []
+    speaker_id_to_is_member = {}
+    for head_of_state in get_heads_of_state():
+        head_of_state_key = (head_of_state.name, head_of_state.parliament_number)
+        speaker = name_and_parliament_number_to_speaker.get(head_of_state_key)
+        if speaker is None:
+            new_speaker = Speaker(
+                name=head_of_state.name,
+                parliament_number=head_of_state.parliament_number,
+                comments=head_of_state.comments,
+                party=_NON_PARTISAN_PARTY,
+                is_legislative_assembly=False,
+                is_member=False,
+            )
+            new_speakers.append(new_speaker)
+            name_and_parliament_number_to_speaker[head_of_state_key] = new_speaker
+            continue
+        if speaker.is_member:
+            speaker_id_to_is_member[speaker.id] = False
 
+    logger.info(f"Inserted {len(new_speakers)} head-of-state speakers, marked {len(speaker_id_to_is_member)} existing rows as non-members")
+    if not is_commit:
+        logger.info("Dry run: nothing written")
+        return
+
+    CRUDSpeaker(session).create_many(new_speakers)
+    updated_count = CRUDSpeaker(session).set_is_member_bulk(speaker_id_to_is_member)
+    if updated_count != len(speaker_id_to_is_member):
+        raise HansardWriteCheckError(f"Updated {updated_count} speaker rows, planned {len(speaker_id_to_is_member)}")
+    session.commit()
+
+
+def load_heads_of_state(is_commit: bool) -> None:
+    if is_commit:
+        validate_can_write(settings.database_url)
     with Session(engine) as session:
-        name_and_parliament_number_to_speaker = {(speaker.name, speaker.parliament_number): speaker for speaker in CRUDSpeaker(session).get_all()}
-
-        inserted = marked = 0
-        for record in records:
-            speaker = name_and_parliament_number_to_speaker.get((record["name"], record["parliament_number"]))
-            if speaker is None:
-                CRUDSpeaker(session).create(Speaker(**record, party=_NON_PARTISAN_PARTY, is_legislative_assembly=False, is_member=False))
-                inserted += 1
-            elif speaker.is_member:
-                speaker.is_member = False
-                CRUDSpeaker(session).update(speaker)
-                marked += 1
-
-        logger.info(f"Inserted {inserted} head-of-state speakers, marked {marked} existing rows as non-members")
+        store_heads_of_state(session, is_commit)
 
 
 if __name__ == "__main__":
-    load_heads_of_state()
+    parser = argparse.ArgumentParser(description="Store the heads of state of data/heads_of_state.json as non-member speakers")
+    parser.add_argument("--commit", action="store_true", help="write; without it the script only reports the plan")
+    arguments = parser.parse_args()
+    load_heads_of_state(arguments.commit)
