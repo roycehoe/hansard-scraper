@@ -19,4 +19,7 @@ RUN /opt/poetry/bin/poetry install --only main --no-root --no-interaction
 
 COPY . .
 
+# A broken import fails the build, so the old image stays live
+RUN python -c "import refresh"
+
 CMD ["python", "refresh.py"]
