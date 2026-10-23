@@ -136,6 +136,7 @@ class CRUDSpeech:
         statement = (
             select(Speech.report_id, Speech.ordinal, Speech.speaker, Speech.speaker_id, Speech.transcript)
             .where(col(Speech.speaker_id).is_not(None))
+            .order_by(Speech.report_id, Speech.ordinal)
             .execution_options(yield_per=_STREAM_BATCH)
         )
         return (SpeechLinkRow(*row) for row in self.session.exec(statement))
