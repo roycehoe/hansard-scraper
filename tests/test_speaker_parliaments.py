@@ -1,6 +1,4 @@
-import json
 from datetime import datetime
-from pathlib import Path
 
 import pytest
 
@@ -13,10 +11,14 @@ from schemas.head_of_state import HeadOfStateResult
 from services.attendance import build_speaker_lookups
 from services.speaker import ParliamentChange, get_parliament_changes
 from services.speaker_link import resolve_speech_rows
+from utils.data_files import (
+    get_colonial_members,
+    get_heads_of_state,
+    get_person_decisions,
+)
 from utils.parliament_numbers import VOLUME_TO_PARLIAMENT, infer_parliament
 from utils.speaker_resolution import NAME_PARLIAMENT_TO_CANONICAL_SPEAKER
 
-_DATA_DIRECTORY = Path(__file__).parent.parent / "data"
 _ASSEMBLY_ONLY_ROW_COUNT = 71
 _DUAL_COLONIAL_NAMES = frozenset({"Devan Nair, Mrs", "Lim Huan Boon"})
 _REKEYED_NAME_COUNT = 12
@@ -29,14 +31,6 @@ def _get_speaker(speaker_id: int, name: str, parliament_number: int) -> Speaker:
 
 def _get_member(name: str, parliament_number: int) -> HandKeptMember:
     return HandKeptMember(name=name, party="Labour Front", is_legislative_assembly=True, parliament_number=parliament_number, comments=None)
-
-
-def _load_colonial_members() -> list[HandKeptMember]:
-    return [HandKeptMember.model_validate(record) for record in json.loads((_DATA_DIRECTORY / "colonial_la_members.json").read_text())]
-
-
-def _load_heads_of_state() -> list[HeadOfStateResult]:
-    return [HeadOfStateResult.model_validate(record) for record in json.loads((_DATA_DIRECTORY / "heads_of_state.json").read_text())]
 
 
 def test_a_row_the_file_puts_in_parliament_zero_moves_from_parliament_one() -> None:
@@ -75,8 +69,8 @@ def test_rows_in_both_parliaments_raise() -> None:
 
 
 def test_data_files_put_71_assembly_only_rows_in_parliament_zero_and_the_two_dual_members_in_parliament_one() -> None:
-    colonial_members = _load_colonial_members()
-    heads_of_state = _load_heads_of_state()
+    colonial_members = get_colonial_members()
+    heads_of_state = get_heads_of_state()
 
     zero_names = [member.name for member in colonial_members if member.parliament_number == 0]
     zero_names += [head.name for head in heads_of_state if head.parliament_number == 0]
@@ -87,18 +81,18 @@ def test_data_files_put_71_assembly_only_rows_in_parliament_zero_and_the_two_dua
 
 
 def test_person_decisions_key_a_moved_row_to_parliament_zero() -> None:
-    zero_names = {member.name for member in _load_colonial_members() if member.parliament_number == 0}
-    zero_names |= {head.name for head in _load_heads_of_state() if head.parliament_number == 0}
-    decisions = json.loads((_DATA_DIRECTORY / "person_decisions.json").read_text())
+    zero_names = {member.name for member in get_colonial_members() if member.parliament_number == 0}
+    zero_names |= {head.name for head in get_heads_of_state() if head.parliament_number == 0}
+    decisions = get_person_decisions()
 
-    members = [member for decision in decisions for member in decision["members"] if member["name"] in zero_names]
+    members = [member for decision in decisions for member in decision.members if member.name in zero_names]
     assert members
-    assert all(member["parliament_number"] == 0 for member in members)
+    assert all(member.parliament_number == 0 for member in members)
 
 
 def test_name_map_keys_a_moved_member_to_parliament_zero_and_a_dual_member_to_parliament_one() -> None:
-    zero_names = {member.name for member in _load_colonial_members() if member.parliament_number == 0}
-    zero_names |= {head.name for head in _load_heads_of_state() if head.parliament_number == 0}
+    zero_names = {member.name for member in get_colonial_members() if member.parliament_number == 0}
+    zero_names |= {head.name for head in get_heads_of_state() if head.parliament_number == 0}
 
     moved_keys = [key for key, canonical in NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.items() if canonical in zero_names]
     assert len(moved_keys) == _REKEYED_NAME_COUNT

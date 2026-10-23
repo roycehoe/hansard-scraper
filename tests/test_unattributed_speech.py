@@ -1,14 +1,11 @@
-import json
-from pathlib import Path
-
 import pytest
 
 from enums import SpeechKind
 from exceptions import HansardUnattributedSpeechError
 from schemas.unattributed_speech import UnattributedSpeechRange
 from services.speech import ParsedSpeech, apply_unattributed_speech_range
+from utils.data_files import get_unattributed_speech_ranges
 
-_DATA_FILE = Path(__file__).parent.parent / "data" / "unattributed_speech.json"
 _CHAIR = "Mr Speaker"
 _MINISTER = "The Minister for Manpower (Dr Tan See Leng)"
 
@@ -72,6 +69,6 @@ def test_a_range_the_parse_no_longer_holds_raises() -> None:
 
 
 def test_the_data_file_holds_one_range_per_report() -> None:
-    speech_ranges = [UnattributedSpeechRange.model_validate(entry) for entry in json.loads(_DATA_FILE.read_text())]
+    speech_ranges = get_unattributed_speech_ranges()
 
     assert len({speech_range.report_id for speech_range in speech_ranges}) == len(speech_ranges)

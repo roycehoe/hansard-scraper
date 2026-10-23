@@ -1,6 +1,4 @@
-import json
 from datetime import date
-from pathlib import Path
 from typing import Optional
 
 import pytest
@@ -15,8 +13,8 @@ from services.party_affiliation import (
     build_party_affiliations,
     get_unstored_party_affiliations,
 )
+from utils.data_files import get_party_affiliations
 
-_DATA_FILE = Path(__file__).parent.parent / "data" / "party_affiliations.json"
 _ALLIANCE = "Singapore Democratic Alliance"
 _PEOPLES_PARTY = "Singapore People's Party"
 _EXAMPLE_URL = "https://example.org"
@@ -135,9 +133,7 @@ def test_table_checks_for_exactly_one_source() -> None:
 
 
 def test_data_file_builds_chiam_two_spans() -> None:
-    memberships = [
-        MembershipPartyAffiliations.model_validate(record) for record in json.loads(_DATA_FILE.read_text()) if record["name"] == "Chiam See Tong"
-    ]
+    memberships = [membership for membership in get_party_affiliations() if membership.name == "Chiam See Tong"]
 
     party_affiliations = build_party_affiliations(memberships, _get_chiam_speakers())
 
@@ -155,7 +151,7 @@ def test_data_file_builds_chiam_two_spans() -> None:
 
 
 def test_data_file_names_each_membership_once() -> None:
-    memberships = [MembershipPartyAffiliations.model_validate(record) for record in json.loads(_DATA_FILE.read_text())]
+    memberships = get_party_affiliations()
 
     keys = [(membership.name, membership.parliament_number) for membership in memberships]
 

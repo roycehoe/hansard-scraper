@@ -1,6 +1,4 @@
-import json
 from datetime import date, datetime
-from pathlib import Path
 
 from sqlmodel import Session, select
 
@@ -9,9 +7,9 @@ from database.speaker import Speaker
 from database.speech import Speech
 from enums import ReportType, ReportVersion
 from populate.speaker_links import link_speakers_by_report_ids_and_sitting_ids
+from utils.data_files import get_heads_of_state
 from utils.speaker_resolution_constants import DATED_ROLE_TERMS, HEAD_OF_STATE_TERMS
 
-_HEADS_OF_STATE_PATH = Path(__file__).resolve().parent.parent / "data" / "heads_of_state.json"
 _PARLIAMENT_NUMBER = 15
 _PREVIOUS_PARLIAMENT_NUMBER = 14
 _PRIME_MINISTER = "Lawrence Wong"
@@ -101,9 +99,9 @@ def test_president_in_the_parliament_15_address_links(scratch_session: Session) 
 
 
 def test_heads_of_state_file_has_the_parliament_15_president() -> None:
-    records = json.loads(_HEADS_OF_STATE_PATH.read_text())
+    heads_of_state = get_heads_of_state()
 
-    president_records = [record for record in records if record["name"] == _PRESIDENT]
+    presidents = [head for head in heads_of_state if head.name == _PRESIDENT]
 
-    assert [record["parliament_number"] for record in president_records].count(_PARLIAMENT_NUMBER) == 1
-    assert [record["parliament_number"] for record in president_records].count(_PREVIOUS_PARLIAMENT_NUMBER) == 0
+    assert [president.parliament_number for president in presidents].count(_PARLIAMENT_NUMBER) == 1
+    assert [president.parliament_number for president in presidents].count(_PREVIOUS_PARLIAMENT_NUMBER) == 0

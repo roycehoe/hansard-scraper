@@ -1,6 +1,5 @@
 import json
 from dataclasses import dataclass
-from pathlib import Path
 
 from crud.attendance import AttendanceLocationRow
 from database.sitting import Sitting
@@ -19,8 +18,8 @@ from services.attendance import (
     get_constituency_name,
     get_location_changes,
 )
+from utils.data_files import get_constituency_names
 
-_DATA_FILE = Path(__file__).parent.parent / "data" / "constituency_names.json"
 _ROW_NAME_COUNT = 8
 _GRC_NAME_COUNT = 17
 
@@ -32,7 +31,7 @@ class _FileLookups:
 
 
 def _get_file_lookups() -> _FileLookups:
-    constituency_names = ConstituencyNames.model_validate(json.loads(_DATA_FILE.read_text()))
+    constituency_names = get_constituency_names()
     return _FileLookups(constituency_names, build_constituency_lookups(constituency_names))
 
 

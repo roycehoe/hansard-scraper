@@ -1,6 +1,3 @@
-import json
-from pathlib import Path
-
 import pytest
 
 import database.speech  # noqa: F401 registers Speech so the Report relationship resolves
@@ -8,11 +5,10 @@ from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
 from schemas.hand_kept_member import HandKeptMember
 from schemas.speaker import SpeakerResult
-from schemas.speaker_override import PartyOverride, SpeakerOverrides
+from schemas.speaker_override import PartyOverride
 from services.speaker import PartyChange, build_speaker, get_party_changes
+from utils.data_files import get_colonial_members, get_speaker_overrides
 
-_DATA_FILE = Path(__file__).parent.parent / "data" / "speaker_overrides.json"
-_COLONIAL_LA_MEMBERS_FILE = Path(__file__).parent.parent / "data" / "colonial_la_members.json"
 _CURLY_APOSTROPHE = "’"
 
 
@@ -37,7 +33,7 @@ def test_row_without_an_override_keeps_the_scraped_flag() -> None:
 
 
 def test_data_file_names_each_membership_once_and_changes_its_flag() -> None:
-    overrides = SpeakerOverrides.model_validate(json.loads(_DATA_FILE.read_text())).legislative_assembly_overrides
+    overrides = get_speaker_overrides().legislative_assembly_overrides
 
     keys = [(override.name, override.parliament_number) for override in overrides]
     assert len(keys) == len(set(keys))
@@ -69,7 +65,7 @@ def test_curly_apostrophe_in_the_scraped_party_becomes_straight() -> None:
 
 
 def test_party_override_data_file_names_each_membership_once_and_changes_its_party() -> None:
-    overrides = SpeakerOverrides.model_validate(json.loads(_DATA_FILE.read_text())).party_overrides
+    overrides = get_speaker_overrides().party_overrides
 
     keys = [(override.name, override.parliament_number) for override in overrides]
     assert len(keys) == len(set(keys))
@@ -78,8 +74,8 @@ def test_party_override_data_file_names_each_membership_once_and_changes_its_par
 
 
 def test_colonial_members_hold_no_placeholder_or_curly_party_and_no_overridden_key() -> None:
-    members = [SpeakerResult.model_validate(record) for record in json.loads(_COLONIAL_LA_MEMBERS_FILE.read_text())]
-    overrides = SpeakerOverrides.model_validate(json.loads(_DATA_FILE.read_text())).party_overrides
+    members = get_colonial_members()
+    overrides = get_speaker_overrides().party_overrides
 
     assert all(member.party != "Unknown" for member in members)
     assert all(_CURLY_APOSTROPHE not in member.party for member in members)

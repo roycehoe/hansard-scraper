@@ -1,5 +1,3 @@
-import json
-from pathlib import Path
 from typing import Optional
 
 import pytest
@@ -13,25 +11,20 @@ from schemas.attendance_cleanup import (
     AttendanceRemoval,
     AttendanceSpeakerRole,
 )
-from schemas.speaker import SpeakerResult
 from services.attendance_cleanup import AttendanceUpdate, build_attendance_cleanup_plan
+from utils.data_files import (
+    get_attendance_cleanup,
+    get_colonial_members,
+    get_unscraped_members,
+)
 from utils.sitting_dates import parse_sitting_date
 from utils.speaker_terms import SPEAKER_TERMS
 
-_DATA_FILE = Path(__file__).parent.parent / "data" / "attendance_cleanup.json"
 _REMOVAL_COUNT = 91
 _CORRECTION_COUNT = 14
 _SPEAKER_ROLE_COUNT = 13
 _HOLDER_ID = 7
 _HOLDER_NAME = "George Oehlers"
-
-
-def _get_file_cleanup() -> AttendanceCleanup:
-    return AttendanceCleanup.model_validate(json.loads(_DATA_FILE.read_text()))
-
-
-def _get_members(file_name: str) -> list[SpeakerResult]:
-    return [SpeakerResult.model_validate(record) for record in json.loads((_DATA_FILE.parent / file_name).read_text())]
 
 
 def _get_row(attendance_id: int, speaker_name: str = "Someone", is_present: bool = True, location_name: Optional[str] = None, speaker_id: Optional[int] = None, sitting_id: int = 1) -> Attendance:
@@ -54,7 +47,7 @@ def _get_correction(attendance_id: int) -> AttendanceCorrection:
 
 
 def test_cleanup_file_holds_each_row_once_with_a_reason_of_its_own_kind() -> None:
-    cleanup = _get_file_cleanup()
+    cleanup = get_attendance_cleanup()
 
     entry_ids = [entry.id for entry in (*cleanup.removals, *cleanup.corrections, *cleanup.speaker_roles)]
     assert len(set(entry_ids)) == len(entry_ids)
@@ -73,15 +66,15 @@ def test_cleanup_file_holds_each_row_once_with_a_reason_of_its_own_kind() -> Non
 
 
 def test_the_unscraped_members_are_not_in_the_colonial_file() -> None:
-    colonial_keys = {(member.name, member.parliament_number) for member in _get_members("colonial_la_members.json")}
-    unscraped_members = _get_members("unscraped_members.json")
+    colonial_keys = {(member.name, member.parliament_number) for member in get_colonial_members()}
+    unscraped_members = get_unscraped_members()
 
     assert "Lee Li Lian" in {member.name for member in unscraped_members}
     assert not any((member.name, member.parliament_number) in colonial_keys for member in unscraped_members)
 
 
 def test_every_speaker_role_falls_on_a_date_with_one_presiding_officer() -> None:
-    for role in _get_file_cleanup().speaker_roles:
+    for role in get_attendance_cleanup().speaker_roles:
         day = parse_sitting_date(role.sitting_date).date()
 
         assert len([name for first, last, name in SPEAKER_TERMS if first <= day <= last]) == 1, role.sitting_date

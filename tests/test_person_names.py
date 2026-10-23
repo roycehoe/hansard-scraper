@@ -1,5 +1,3 @@
-import json
-from pathlib import Path
 from types import SimpleNamespace
 from typing import Optional
 
@@ -15,8 +13,8 @@ from populate import persons as populate_persons_module
 from populate.persons import populate_persons
 from schemas.person_decision import PersonDecision, PersonDecisionMember
 from services.person import cluster_speakers
+from utils.data_files import get_person_decisions
 
-_DECISIONS_FILE = Path(__file__).parent.parent / "data" / "person_decisions.json"
 _NAME_DECISION_COUNT = 6
 
 
@@ -98,10 +96,10 @@ def test_name_decision_does_not_merge_or_split_clusters() -> None:
 
 
 def test_data_file_gives_each_name_decision_one_member_and_a_name() -> None:
-    entries = [entry for entry in json.loads(_DECISIONS_FILE.read_text()) if entry["decision"] == "name"]
+    name_decisions = [decision for decision in get_person_decisions() if decision.decision == PersonDecisionKind.NAME]
 
-    assert len(entries) == _NAME_DECISION_COUNT
-    assert all(len(entry["members"]) == 1 and entry["person_name"] and entry["source"] for entry in entries)
+    assert len(name_decisions) == _NAME_DECISION_COUNT
+    assert all(len(decision.members) == 1 and decision.person_name and decision.source for decision in name_decisions)
 
 
 def test_populate_persons_renames_a_reused_person_and_leaves_an_unchanged_one(monkeypatch: pytest.MonkeyPatch) -> None:
