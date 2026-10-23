@@ -2,6 +2,7 @@ import json
 from typing import Optional, Union
 
 from database.hansard_sitting_date_response import HansardSittingDateResponse
+from exceptions import HansardSittingReportError
 from schemas.hansard_report_response import (
     HansardReportMetadata,
     HansardReportNewResponse,
@@ -9,13 +10,15 @@ from schemas.hansard_report_response import (
 )
 
 
-def _get_int(value: object) -> Optional[int]:
+def _get_int(value: object, field_name: str, sitting_date: str) -> Optional[int]:
+    if value is None or value == "":
+        return None
     try:
         return int(value)
-    except TypeError:
-        return None
-    except ValueError:
-        return None
+    except TypeError as error:
+        raise HansardSittingReportError(f"Sitting {sitting_date}: {field_name} {value!r} is not an integer") from error
+    except ValueError as error:
+        raise HansardSittingReportError(f"Sitting {sitting_date}: {field_name} {value!r} is not an integer") from error
 
 
 def _serialise_list(value: object) -> object:
@@ -26,10 +29,10 @@ def _serialise_list(value: object) -> object:
 
 def build_old_hansard_sitting_date_response(hansard_report_response: HansardReportOldResponse, sitting_date: str) -> HansardSittingDateResponse:
     return HansardSittingDateResponse(
-        parlement_no=_get_int(hansard_report_response.parl_no),
-        session_no=_get_int(hansard_report_response.session_no),
-        volume_no=_get_int(hansard_report_response.volume_no),
-        sitting_no=_get_int(hansard_report_response.sitting_no),
+        parlement_no=_get_int(hansard_report_response.parl_no, "parl_no", sitting_date),
+        session_no=_get_int(hansard_report_response.session_no, "session_no", sitting_date),
+        volume_no=_get_int(hansard_report_response.volume_no, "volume_no", sitting_date),
+        sitting_no=_get_int(hansard_report_response.sitting_no, "sitting_no", sitting_date),
         sitting_date=sitting_date,
         online_pdf_file_name=hansard_report_response.online_pdf_file_name,
         html_full_content=hansard_report_response.html_full_content,

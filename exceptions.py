@@ -14,6 +14,10 @@ class HansardDataFileError(HansardError):
     pass
 
 
+class HansardSittingReportError(HansardError):
+    pass
+
+
 class HansardUnattributedSpeechError(HansardError):
     pass
 
