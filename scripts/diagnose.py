@@ -30,11 +30,11 @@ class BaselineResults:
     failed_speeches: list[int] = field(default_factory=list)
 
 
-def _get_speech_start(hansard_website_response: HansardWebsiteResponse, report: Report) -> Optional[int]:
+def _get_speech_start(report: Report) -> Optional[int]:
     return (
         get_start_of_speech_line(
             report.markdown_content, report.title, report.subtitle, report.original_title,
-            hansard_website_response.report_type, hansard_website_response.report_version,
+            report.report_type, report.report_version,
         )
         if report.markdown_content is not None
         else None
@@ -49,14 +49,14 @@ def get_report_type_speech_stats(session: Session) -> dict[str, ReportTypeSpeech
         report_type = hansard_website_response.report_type
         report_type_to_counts[report_type].total += 1
         report = build_report(hansard_website_response)
-        start = _get_speech_start(hansard_website_response, report)
+        start = _get_speech_start(report)
         if report.markdown_content is None:
             continue
         report_type_to_counts[report_type].has_markdown += 1
         if start is None:
             continue
         report_type_to_counts[report_type].has_start_line += 1
-        get_speeches(report.markdown_content, start, hansard_website_response.report_type, hansard_website_response.report_version)
+        get_speeches(report.markdown_content, start, report.report_type, report.report_version)
         report_type_to_counts[report_type].can_get_speeches += 1
 
     return dict(report_type_to_counts)
@@ -66,13 +66,13 @@ def get_baseline_results(hansard_website_responses: list[HansardWebsiteResponse]
     baseline_results = BaselineResults()
     for hansard_website_response in hansard_website_responses:
         report = build_report(hansard_website_response)
-        start = _get_speech_start(hansard_website_response, report)
+        start = _get_speech_start(report)
         if report.markdown_content is None:
             continue
         if start is None:
             baseline_results.failed_start_line.append(hansard_website_response.id)
             continue
-        get_speeches(report.markdown_content, start, hansard_website_response.report_type, hansard_website_response.report_version)
+        get_speeches(report.markdown_content, start, report.report_type, report.report_version)
         baseline_results.passed.append(hansard_website_response.id)
     return baseline_results
 
