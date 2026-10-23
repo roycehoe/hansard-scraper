@@ -138,7 +138,11 @@ All configurable URLs and search date bounds live in `settings.py` (`AppSettings
 
 ### `scripts/` directory
 
-One-off diagnostic and analysis scripts, not part of the main pipeline:
+One-off diagnostic and analysis scripts, not part of the main pipeline.
+
+Every script that calls `validate_can_write` ends a `--commit` run with `vacuum_analyze_written_tables` (`populate/written_tables.py`) on the tables it wrote, so search does not wait for the 04:00 refresh to get a vacuumed table. It raises `HansardWriteCheckError` when a table's `vacuum_count` did not rise, which is what Postgres leaves behind when the role lacks `MAINTAIN` or ownership. A new write script adds the call in the same change.
+
+The scripts:
 
 - `diagnose.py` — inspect parsing failures across the corpus
 - `inspect_failures.py` — drill into specific failure cases
@@ -257,6 +261,7 @@ hansard-scraper/
 │   ├── person.py
 │   ├── party_affiliation.py
 │   ├── refresh_run.py               # Run rows, with a row lock for the finish
+│   ├── vacuum.py                    # vacuum_count and VACUUM (ANALYZE) for a table named by the caller
 │   └── speaker.py
 │
 ├── populate/                        # Pipeline stages — fetch + persist each entity type
@@ -273,6 +278,7 @@ hansard-scraper/
 │   ├── persons.py                   # Stage 9: cluster Speaker rows into Person rows
 │   ├── attribution_figures.py       # Reads report and speech rows into the attribution figures
 │   ├── refresh_runs.py              # Daily refresh: fetch, check, add rows, link, record the run, alert
+│   ├── written_tables.py            # VACUUM (ANALYZE) the tables a supervised write script wrote, and check the count rose
 │   └── speakers.py                  # Out-of-band: persist scraped Speaker records
 │
 ├── utils/                           # Shared pure utilities (no DB, no HTTP)
