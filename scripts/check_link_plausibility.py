@@ -76,29 +76,29 @@ class _Pair:
 
 # NOTE: chairman strings are not exempt because they resolve to a named member, whose absence is a real signal.
 def _is_presiding_speaker(speaker: str) -> bool:
-    return _PRESIDING_SPEAKER_RE.match(speaker) is not None or BARE_DEPUTY_RE.match(speaker) is not None
+    return bool(_PRESIDING_SPEAKER_RE.match(speaker) or BARE_DEPUTY_RE.match(speaker))
 
 
 def _get_exemption(report_type: str, speaker: str, transcript: str, is_member: bool) -> Optional[_Exemption]:
     if report_type == ReportType.WRITTEN_ANSWER or report_type == ReportType.WRITTEN_ANSWER_NOT_AVAILABLE:
         return _Exemption.WRITTEN_ANSWER
-    if _QUESTION_OPENER_RE.match(transcript) is not None:
+    if _QUESTION_OPENER_RE.match(transcript):
         return _Exemption.QUESTION_LINE
     if not is_member:
         return _Exemption.NOT_MEMBER
     if _is_presiding_speaker(speaker):
         return _Exemption.PRESIDING_OFFICER
-    if _LETTER_RE.search(transcript) is None:
+    if not _LETTER_RE.search(transcript):
         return _Exemption.NO_LETTERS
     return None
 
 
 def _is_unlinkable(speaker: str) -> bool:
     letters = "".join(_LETTER_RE.findall(speaker))
-    return (
-        CHAIRMAN_RE.match(speaker) is not None
-        or BARE_DEPUTY_RE.match(speaker) is not None
-        or _HON_MEMBERS_RE.search(speaker) is not None
+    return bool(
+        CHAIRMAN_RE.match(speaker)
+        or BARE_DEPUTY_RE.match(speaker)
+        or _HON_MEMBERS_RE.search(speaker)
         or speaker.startswith(("(", "_"))
         or (len(letters) >= _MIN_ALLCAPS_HEADER_LETTERS and letters == letters.upper())
     )
