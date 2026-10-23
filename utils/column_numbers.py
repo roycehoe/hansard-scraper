@@ -204,6 +204,9 @@ def get_report_column_range(column_markers: tuple[ColumnMarker, ...], head_colum
     for previous_marker, marker in zip(column_markers, column_markers[1:]):
         if _is_broken_step(previous_marker.sequence_column, marker.sequence_column):
             return None
+    # NOTE: a head that ends more than one past the last marker leaves the end unknown, so the report gets no range.
+    if head_column_range is not None and head_column_range.column_end > column_markers[-1].sequence_column + 1:
+        return None
     return ColumnRange(_get_range_start(column_markers[0], head_column_range), _get_range_end(column_markers[-1], head_column_range))
 
 
