@@ -27,7 +27,7 @@ from utils.names import (
     normalize_name,
     strip_title,
 )
-from utils.parliament_numbers import VOLUME_TO_PARLIAMENT
+from utils.parliament_numbers import infer_parliament
 from utils.speaker_resolution import SpeakerLookups, resolve_canonical_name
 from utils.speaker_resolution_constants import (
     COLONIAL_PARLIAMENT_FALLBACKS,
@@ -458,6 +458,16 @@ def _resolve_with_parliament_fallback(
     return ResolvedName(None, parliament_number)
 
 
+def _get_speaker_id(
+    name: str,
+    parliament_number: int,
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> Optional[int]:
+    resolved_name = _resolve_with_parliament_fallback(name, parliament_number, lookups, name_parliament_number_to_speaker_id)
+    return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
+
+
 def _get_presiding_officer_id(
     name: Optional[str],
     parliament_number: int,
@@ -466,8 +476,7 @@ def _get_presiding_officer_id(
 ) -> Optional[int]:
     if not name:
         return None
-    resolved_name = _resolve_with_parliament_fallback(name, parliament_number, lookups, name_parliament_number_to_speaker_id)
-    return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
+    return _get_speaker_id(name, parliament_number, lookups, name_parliament_number_to_speaker_id)
 
 
 def _resolve_presiding_officer(
@@ -509,8 +518,7 @@ def _resolve_attendance_speaker_id(
     if speaker_id is not None:
         return speaker_id
     name = normalize_name(strip_title(speaker_name))
-    resolved_name = _resolve_with_parliament_fallback(name, parliament_number, lookups, name_parliament_number_to_speaker_id)
-    return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
+    return _get_speaker_id(name, parliament_number, lookups, name_parliament_number_to_speaker_id)
 
 
 def _get_role_key(speaker_label: str, parliament_number: int) -> Optional[tuple[str, int]]:
@@ -544,16 +552,14 @@ def resolve_speech_speaker_id(
         holder = _get_holder_on(dated_role_terms, sitting_date)
         if holder is None:
             return None
-        resolved_name = _resolve_with_parliament_fallback(holder, parliament_number, lookups, name_parliament_number_to_speaker_id)
-        return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
+        return _get_speaker_id(holder, parliament_number, lookups, name_parliament_number_to_speaker_id)
 
     role_key = _get_role_key(speaker_label, parliament_number)
     if role_key is not None:
         role_name = ROLE_ONLY_SPEAKERS.get(role_key)
         if role_name is not None:
             _, role_key_parliament_number = role_key
-            resolved_role_name = _resolve_with_parliament_fallback(role_name, role_key_parliament_number, lookups, name_parliament_number_to_speaker_id)
-            return name_parliament_number_to_speaker_id.get((resolved_role_name.canonical_name, resolved_role_name.parliament_number)) if resolved_role_name.canonical_name else None
+            return _get_speaker_id(role_name, role_key_parliament_number, lookups, name_parliament_number_to_speaker_id)
 
     parenthesised_matches = list(_PARENTHESIS_RE.finditer(speaker_label))
     if parenthesised_matches:
@@ -571,8 +577,7 @@ def resolve_speech_speaker_id(
     if not name:
         return None
 
-    resolved_name = _resolve_with_parliament_fallback(name, parliament_number, lookups, name_parliament_number_to_speaker_id)
-    return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
+    return _get_speaker_id(name, parliament_number, lookups, name_parliament_number_to_speaker_id)
 
 
 @dataclass(frozen=True)
@@ -593,9 +598,7 @@ def resolve_attendance_rows(
         total += 1
         if not attendance_row.speaker_name:
             continue
-        parliament_number = (
-            attendance_row.parlement_no if attendance_row.parlement_no is not None else VOLUME_TO_PARLIAMENT.get(attendance_row.volume_no)
-        )
+        parliament_number = infer_parliament(attendance_row.parlement_no, attendance_row.volume_no)
         if parliament_number is None:
             continue
         key = (attendance_row.speaker_name, parliament_number)
@@ -653,10 +656,7 @@ def get_speaker_id_for_name(
     lookups: SpeakerLookups,
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
-    resolved_name = _resolve_with_parliament_fallback(
-        normalize_name(strip_title(name)), parliament_number, lookups, name_parliament_number_to_speaker_id
-    )
-    return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
+    return _get_speaker_id(normalize_name(strip_title(name)), parliament_number, lookups, name_parliament_number_to_speaker_id)
 
 
 def get_speaker_ids_for_names(
