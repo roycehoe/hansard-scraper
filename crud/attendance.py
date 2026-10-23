@@ -53,10 +53,6 @@ class CRUDAttendance:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, attendance: Attendance) -> None:
-        self.session.add(attendance)
-        self.session.commit()
-
     def create_many(self, attendances: list[Attendance]) -> None:
         self.session.add_all(attendances)
         self.session.commit()

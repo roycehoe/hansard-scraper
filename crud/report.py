@@ -49,10 +49,6 @@ class CRUDReport:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, report: Report) -> None:
-        self.session.add(report)
-        self.session.commit()
-
     def create_many(self, reports: list[Report]) -> None:
         self.session.add_all(reports)
         self.session.commit()

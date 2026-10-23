@@ -7,10 +7,6 @@ class CRUDHansardWebsiteResponse:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, hansard_website_response: HansardWebsiteResponse) -> None:
-        self.session.add(hansard_website_response)
-        self.session.commit()
-
     def create_many(self, hansard_website_responses: list[HansardWebsiteResponse]) -> None:
         self.session.add_all(hansard_website_responses)
         self.session.commit()
