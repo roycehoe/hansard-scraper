@@ -136,6 +136,7 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"Division [Bb]ells? rung",
     r"Motion made,? and Question proposed",
     r"Bill accordingly read the (?:Second|Third) time",
+    r"Bill accordingly (?:re)?committed",
     r"Clause read a Second time and added to the Bill",
     r"A ?m{1,2}endments?(?: to the amendment)?,? by,? leave[.,]? [Ww]ithdrawn",
     r"The sum of \$?[0-9,]+ .*ordered to stand part",  # Committee of Supply head
@@ -173,10 +174,10 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"The Question having been proposed at",
     r"At the conclusion of .{1,60}?(?:Address|speech), Mr (?:SPEAKER|Speaker), preceded by",
     r"The (?:Assembly|House|Council) resumed its sitting",
-    r"The following amendments? (?:also )?stood in the names? of",
+    r"\+?The following amendments? (?:also )?stood in the names? of",
     r"The time allotted for .{1,80}? having expired",
     r"Amendments? (?:accordingly )?(?:agreed to|negatived)",
-    r"[*+#]{1,2}\s*(?:The (?:amendments?|motion)(?:, [^:]{1,200},)? reads? as follows|Consequential amendments?:)",
+    r"(?:[*+#]{1,2}\s*(?:The (?:amendments?|motion)(?:, [^:]{1,200},)? reads? as follows|Consequential amendments?:)|The amendments? reads? as follows)",
     r"Amendments? made: In (?:page|line|clause)",
     r"(?:First|Second|Third|Fourth|Fifth|Sixth|New) Schedule(?:, as amended,)? ordered to stand part",
     r"Parts? [IVXL]+\b.{0,80}ordered to stand part",
@@ -188,7 +189,7 @@ _QUESTION_DECISION_ANCHORS = (
     r"(?:Main |Original )?Question,? as amended,? .*(?:\bput\b|accordingly)",
     r"Questions? on the [^.]{1,60}? (?:put\b|accordingly)",
     r"Question accordingly (?:agreed|aggreed|negatived)",
-    r"Question put[.,]?\s*[\"“'‘]\s*That\b",
+    r"(?:Original |Main )?Question put[.,]?\s*[\"“'‘]\s*That\b",
     r"(?:Main |Original )Motion,? as amended,? agreed to",
 )
 _PROCEDURAL_LINE_RE = re.compile(r"^[\s*_]*(?:" + "|".join(_PROCEDURAL_LINE_ANCHORS + _QUESTION_DECISION_ANCHORS) + ")")
@@ -198,12 +199,14 @@ _TURN_KEEPING_PROCEDURAL_LINE_RE = re.compile(
     r"^[\s*_]*(?:Question (?:again )?proposed|\*\s*The same amendment|" + _BROUGHT_UP_ANCHOR + "|" + "|".join(_QUESTION_DECISION_ANCHORS) + ")"
 )
 
+# NOTE: an unmarked "The amendments read as follows:" keeps the speaker, because the member's own speech often follows the amendment list.
+_UNMARKED_AMENDMENT_FOLLOWS_RE = re.compile(r"^\s*The amendments? reads? as follows")
 _AMENDMENT_TEXT_RE = re.compile(r"^[\s_*]*(?:\(\d+\) )?In page \d+(?:, (?:after )?lines? [\d, and]+)?: (?:after|to|leave)")
 _STOOD_IN_NAMES_NOTE_RE = re.compile(
     r"^[\s_(]*[*+#]{1,2}\s*The (?:[Mm]otion|amendment|same (?:motion|amendment)) (?:also )?stood in the names? of"
 )
 _AMENDMENT_FOLLOWS_NOTE_RE = re.compile(
-    r"^[\s*_]*[*+#]{1,2}\s*(?:The (?:amendments?|motion)(?:, [^:]{1,200},)? reads? as follows|Consequential amendments?:)"
+    r"^[\s*_]*(?:[*+#]{1,2}\s*(?:The (?:amendments?|motion)(?:, [^:]{1,200},)? reads? as follows|Consequential amendments?:)|The amendments? reads? as follows)"
 )
 _COPIES_LINE_RE = re.compile(r"^[\s*_]*Copies of ")
 _SUPPLY_AMENDMENT_TEXT_RE = re.compile(r"^[\s_*]*(?:\(\d+\)\s*)?(?:\([^()]*\):?\s*)?That the (?:total )?sum\b.{0,40}\ballocated for Head\b")
@@ -698,6 +701,8 @@ def _is_turn_ending_line(line: str) -> bool:
     if _OATH_LINE_RE.match(line):
         return True
     if not _PROCEDURAL_LINE_RE.match(line):
+        return False
+    if _UNMARKED_AMENDMENT_FOLLOWS_RE.match(line):
         return False
     return not _TURN_KEEPING_PROCEDURAL_LINE_RE.match(line)
 
