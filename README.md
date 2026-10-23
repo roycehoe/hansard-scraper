@@ -166,9 +166,9 @@ export SEARCH_FROM_DATE=1955-01-01 SEARCH_TO_DATE=2026-10-19
 python -c "from database.init import create_db_and_tables, get_session; from populate.hansard_responses import populate_hansard_responses; from populate.reports import populate_reports; from populate.speeches import populate_speeches; create_db_and_tables(); session = next(get_session()); populate_hansard_responses(session); populate_reports(session); populate_speeches(session)"
 
 # 2. The people who speak
-python scripts/scrape_speakers_by_parliament.py
-python scripts/load_colonial_la_speakers.py
-python -m scripts.load_heads_of_state
+python scripts/scrape_speakers_by_parliament.py --commit
+python scripts/load_colonial_la_speakers.py --commit
+python -m scripts.load_heads_of_state --commit
 
 # 3. Sittings, attendance, links from speeches to members, and people
 python script.py
