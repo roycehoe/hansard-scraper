@@ -20,10 +20,14 @@ _PERCENT = 100
 _NO_DENOMINATOR = "n/a"
 
 
-def _get_share(numerator: int, denominator: int) -> str:
+def _get_percent(numerator: int, denominator: int) -> str:
     if denominator == 0:
-        return f"{numerator} / {denominator} = {_NO_DENOMINATOR}"
-    return f"{numerator} / {denominator} = {_PERCENT * numerator / denominator:.2f}%"
+        return _NO_DENOMINATOR
+    return f"{_PERCENT * numerator / denominator:.2f}%"
+
+
+def _get_share(numerator: int, denominator: int) -> str:
+    return f"{numerator} / {denominator} = {_get_percent(numerator, denominator)}"
 
 
 def _log_report_type_figures(report_type: str, figures: ReportTypeFigures) -> None:
@@ -41,11 +45,12 @@ def _log_report_type_figures(report_type: str, figures: ReportTypeFigures) -> No
 
 def _log_rates(category_to_row_count: Counter[str], category_to_character_count: Counter[str], body_total: int) -> None:
     rows_total = sum(category_to_row_count.values())
-    adr_denominator = category_to_row_count[LINKED_CATEGORY] + category_to_row_count[NAMED_UNLINKED_CATEGORY]
-    logger.info(f"1. ADR 0001 rate:  {category_to_row_count[LINKED_CATEGORY]} / {adr_denominator} = "
-          f"{_PERCENT * category_to_row_count[LINKED_CATEGORY] / adr_denominator:.2f}%")
-    logger.info(f"2. All-rows rate:  {category_to_row_count[LINKED_CATEGORY]} / {rows_total} = {_PERCENT * category_to_row_count[LINKED_CATEGORY] / rows_total:.2f}%")
-    logger.info(f"3. Text share:     {category_to_character_count[LINKED_CATEGORY]} / {body_total} chars = {_PERCENT * category_to_character_count[LINKED_CATEGORY] / body_total:.2f}%")
+    linked_row_count = category_to_row_count[LINKED_CATEGORY]
+    linked_character_count = category_to_character_count[LINKED_CATEGORY]
+    adr_denominator = linked_row_count + category_to_row_count[NAMED_UNLINKED_CATEGORY]
+    logger.info(f"1. ADR 0001 rate:  {linked_row_count} / {adr_denominator} = {_get_percent(linked_row_count, adr_denominator)}")
+    logger.info(f"2. All-rows rate:  {linked_row_count} / {rows_total} = {_get_percent(linked_row_count, rows_total)}")
+    logger.info(f"3. Text share:     {linked_character_count} / {body_total} chars = {_get_percent(linked_character_count, body_total)}")
 
 
 def attribution_text_share(output_path: Optional[Path]) -> None:
@@ -74,7 +79,7 @@ def attribution_text_share(output_path: Optional[Path]) -> None:
         ("dropped inside reports with rows (preamble, headings, labels)",
          body_total - stored_character_count - body_in_zero_row_reports),
     ):
-        logger.info(f"  {label:<64} {character_count:>12} {_PERCENT * character_count / body_total:6.2f}%")
+        logger.info(f"  {label:<64} {character_count:>12} {_get_percent(character_count, body_total):>7}")
     logger.info(f"Rows by category: {dict(category_to_row_count)}")
     for group_figures in reported_figures:
         logger.info(f"{group_figures.group}, beside the headline:")
