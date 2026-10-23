@@ -3,9 +3,18 @@ from pathlib import Path
 import pytest
 import requests
 
-from exceptions import HansardGatewayError
+from enums import LegislativeAssemblyFlag
+from exceptions import HansardGatewayError, HansardMemberListError
 from gateway.http import CRAWL_PACER, CRAWL_USER_AGENT
 from gateway.speakers_by_parliament import get_parliament_member_list_response
+from schemas.parliament_member_list_response import (
+    ParliamentMember,
+    ParliamentMemberListResponse,
+    ParliamentMembers,
+    ParliamentMemberSession,
+    ParliamentMembersMeta,
+    ParliamentOption,
+)
 from schemas.speaker import SpeakerResult
 from services.speaker import build_speaker_results
 from settings import settings
@@ -19,6 +28,10 @@ _FOURTEENTH_PARLIAMENT_MEMBER_COUNT = 112
 _FOURTEENTH_PARLIAMENT_COMMENT_COUNT = 9
 _FIXTURE_MEMBER_COUNT_TEXT = 'filter_count\\":155'
 _INFLATED_MEMBER_COUNT_TEXT = 'filter_count\\":156'
+_LISTED_SESSION_ID = "session-15"
+_UNLISTED_SESSION_ID = "session-99"
+_READABLE_PARLIAMENT_TITLE = "15th Parliament"
+_UNREADABLE_PARLIAMENT_TITLE = "Fifteenth Parliament"
 _PAGE_WITHOUT_MEMBER_DATA = (
     "<html><body><h1>List of MPs By Parliament</h1>"
     "<script>(self.__next_f=self.__next_f||[]).push([0])</script>"
@@ -65,6 +78,19 @@ def _get_parliament_speaker_results(parliament_number: int) -> list[SpeakerResul
     return [
         speaker_result for speaker_result in _get_all_speaker_results() if speaker_result.parliament_number == parliament_number
     ]
+
+
+def _get_member_list_response(parliament_title: str, member_session_id: str) -> ParliamentMemberListResponse:
+    member = ParliamentMember(
+        full_name="New Member",
+        party_affliation="WP",
+        legislative_assembly=LegislativeAssemblyFlag.NO,
+        parliament_session=[ParliamentMemberSession(parliament_sessions_id=member_session_id)],
+    )
+    return ParliamentMemberListResponse(
+        mps=ParliamentMembers(meta=ParliamentMembersMeta(filter_count=1), data=[member]),
+        options=[ParliamentOption(title=parliament_title, parliament_sessions=[_LISTED_SESSION_ID])],
+    )
 
 
 def test_fifteenth_parliament_list(monkeypatch: pytest.MonkeyPatch, no_op_pacer: None) -> None:
@@ -153,3 +179,13 @@ def test_member_list_shorter_than_its_count_raises(monkeypatch: pytest.MonkeyPat
 
     with pytest.raises(HansardGatewayError):
         get_parliament_member_list_response()
+
+
+def test_unreadable_parliament_title_raises_member_list_error() -> None:
+    with pytest.raises(HansardMemberListError):
+        build_speaker_results(_get_member_list_response(_UNREADABLE_PARLIAMENT_TITLE, _LISTED_SESSION_ID))
+
+
+def test_session_of_no_listed_parliament_raises_member_list_error() -> None:
+    with pytest.raises(HansardMemberListError):
+        build_speaker_results(_get_member_list_response(_READABLE_PARLIAMENT_TITLE, _UNLISTED_SESSION_ID))

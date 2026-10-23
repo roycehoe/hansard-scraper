@@ -5,7 +5,7 @@ import scripts.load_parliament_speakers as load_parliament_speakers_script
 from crud.speaker import CRUDSpeaker
 from database.speaker import Speaker
 from enums import LegislativeAssemblyFlag
-from exceptions import HansardGatewayError
+from exceptions import HansardMemberListError
 from schemas.parliament_member_list_response import (
     ParliamentMember,
     ParliamentMemberListResponse,
@@ -69,5 +69,5 @@ def test_commit_inserts_only_the_unstored_member(seeded_session: Session) -> Non
 
 
 def test_unknown_parliament_raises(seeded_session: Session) -> None:
-    with pytest.raises(HansardGatewayError, match=f"No member list for parliament {_UNKNOWN_PARLIAMENT_NUMBER}"):
+    with pytest.raises(HansardMemberListError, match=f"No member list for parliament {_UNKNOWN_PARLIAMENT_NUMBER}"):
         load_parliament_speakers_script.store_new_speakers(seeded_session, _UNKNOWN_PARLIAMENT_NUMBER, is_commit=False)

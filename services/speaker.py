@@ -4,7 +4,7 @@ from operator import attrgetter
 
 from database.speaker import Speaker
 from enums import LegislativeAssemblyFlag
-from exceptions import HansardGatewayError, HansardWriteCheckError
+from exceptions import HansardMemberListError, HansardWriteCheckError
 from schemas.head_of_state import HeadOfStateResult
 from schemas.parliament_member_list_response import ParliamentMemberListResponse
 from schemas.speaker import SpeakerResult
@@ -42,7 +42,7 @@ def normalize_party(party: str) -> str:
 def _get_parliament_number(parliament_title: str) -> int:
     match = _PARLIAMENT_TITLE_RE.fullmatch(parliament_title)
     if match is None:
-        raise HansardGatewayError(f"Member list names an unreadable Parliament {parliament_title!r}")
+        raise HansardMemberListError(f"Member list names an unreadable Parliament {parliament_title!r}")
     return int(match.group(1))
 
 
@@ -63,7 +63,7 @@ def build_speaker_results(parliament_member_list_response: ParliamentMemberListR
                 session_id_to_parliament_number[session.parliament_sessions_id] for session in member.parliament_session
             }
         except KeyError as error:
-            raise HansardGatewayError(f"Member list gives {full_name!r} a session of no listed Parliament") from error
+            raise HansardMemberListError(f"Member list gives {full_name!r} a session of no listed Parliament") from error
         speaker_results.extend(
             SpeakerResult(
                 name=name,

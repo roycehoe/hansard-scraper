@@ -4,7 +4,7 @@ from sqlmodel import Session
 
 from crud.speaker import CRUDSpeaker
 from database.init import engine
-from exceptions import HansardGatewayError
+from exceptions import HansardMemberListError
 from gateway.speakers_by_parliament import get_parliament_member_list_response
 from logs import logger
 from services.speaker import (
@@ -26,7 +26,7 @@ def store_new_speakers(session: Session, parliament_number: int, is_commit: bool
         if speaker_result.parliament_number == parliament_number
     ]
     if not speaker_results:
-        raise HansardGatewayError(f"No member list for parliament {parliament_number}")
+        raise HansardMemberListError(f"No member list for parliament {parliament_number}")
     speaker_overrides = get_speaker_overrides()
     name_parliament_to_is_legislative_assembly = get_name_parliament_to_is_legislative_assembly(speaker_overrides)
     name_parliament_to_party = get_name_parliament_to_party(speaker_overrides)
