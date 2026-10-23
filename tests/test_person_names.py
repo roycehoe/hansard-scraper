@@ -83,7 +83,7 @@ def test_name_decision_does_not_merge_or_split_clusters() -> None:
     cluster_result = cluster_speakers(speakers, decisions)
 
     assert [len(person_cluster.memberships) for person_cluster in cluster_result.clusters] == [2]
-    assert [person_cluster.canonical_name for person_cluster in cluster_result.clusters] == ["George Yong-Boon Yeo"]
+    assert _get_canonical_names(speakers, decisions) == ["George Yong-Boon Yeo"]
 
 
 def test_data_file_gives_each_name_decision_one_member_and_a_name() -> None:
