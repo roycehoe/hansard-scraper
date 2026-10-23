@@ -65,7 +65,8 @@ _SUPERSCRIPT_FOOTNOTE_PATTERN = r"<sup\b[^>]*>\s*(?:<a\b[^>]*>)?\s*(\d{1,3}(?:\s
 _HTML_TAG_PATTERN = r"<[^>]*>"
 _BLOCK_TAG_PATTERN = r"</?(?:p|div|br|li|ul|ol|h[1-6]|table|tr|td|th|hr|blockquote|pre)\b[^>]*>"
 _PRECEDING_HTML_LENGTH = 600
-_EXPONENT_BASE_PATTERN = r"(?:^|[^A-Za-z])(?:[A-Za-z]|CO|NO|SO|km|cm|mm)$"
+_EXPONENT_BASE_PATTERN = r"(?:^|[^A-Za-z'\u2019])(?:[A-Za-z]|CO|NO|SO|km|cm|mm)$"
+_EXPONENT_DIGITS = frozenset({"2", "3"})
 _LIST_COMMA_PATTERN = r"\s*,\s*"
 _CLOSING_EMPHASIS_END_PATTERN = r"</(?:i|em|u|b|strong)\s*>$"
 _ANCHOR_TAG_PATTERN = r"<a\b"
@@ -160,7 +161,7 @@ def _render_footnote_superscript(match: re.Match) -> str:
         and not re.search(_ANCHOR_TAG_PATTERN, match.group(0), flags=re.IGNORECASE)
     ):
         return match.group(0)
-    if re.search(_EXPONENT_BASE_PATTERN, preceding):
+    if match.group(1) in _EXPONENT_DIGITS and re.search(_EXPONENT_BASE_PATTERN, preceding):
         return match.group(0)
     marker = _OPENING_BRACKET + re.sub(_LIST_COMMA_PATTERN, ",", match.group(1)) + _CLOSING_BRACKET
     # NOTE: the marker replaces only the digits, so the converter treats the tags and spaces around it as it did before.

@@ -1,0 +1,27 @@
+{
+  "why": "A superscript 2 or 3 after a single letter or CO, NO, SO, km, cm or mm is an exponent or part of a name and stays a plain digit: m2, m3, km2, CO2, H2, E2 Singapore, I2R, L3 and the Malay body M3 are what the corpus prints this way.",
+  "source_report_id": 0,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr A</strong>: Flats of 90 m<sup>2</sup> use 12 m<sup>3</sup> of water over 5 km<sup>2</sup>.</p><p>Emissions of CO<sup>2</sup> and H<sup>2</sup> fell.</p><p>E<sup>2</sup> Singapore, I<sup>2</sup>R losses, L<sup>3</sup> and M<sup>3</sup> work together.</p>",
+  "expected_rows": [
+    [
+      "Mr A",
+      "Flats of 90 m2 use 12 m3 of water over 5 km2.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "Emissions of CO2 and H2 fell.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "E2 Singapore, I2R losses, L3 and M3 work together.",
+      "SPEECH"
+    ]
+  ]
+}

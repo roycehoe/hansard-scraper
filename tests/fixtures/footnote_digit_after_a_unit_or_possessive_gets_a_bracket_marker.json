@@ -1,0 +1,52 @@
+{
+  "why": "A footnote number after a unit letter or a possessive is a footnote, not an exponent, so it gets a bracket marker: only 2 and 3 can be exponents, and the s of 's or ’s is never a unit. $140m with footnote 1 no longer reads $140m1 (report 49250); the other shapes are reports 20274, 4861, 43554, 1554, 12334, 51165 and 44205.",
+  "source_report_id": 49250,
+  "report_version": "sprs3",
+  "report_type": "written-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr A</strong>: The cost over the same period of time is estimated at $140m<sup>1</sup>. Since its inception.</p><p>Table 1 shows the average ridership per car-km<sup>6</sup>while Table 2 shows the train-km.</p><p>I will also address Mr Yip Hon Weng's<sup>1</sup> Parliamentary Question.</p><p>I will also address Mr Murali Pillai's<sup>1</sup> Parliamentary Question.</p><p>The Order Paper, as well as Mr Derrick Goh’s<sup>1</sup> filed for the Sitting.</p><p>Let me take this opportunity to address Dr Intan Azura Mokhtar’s<sup>1</sup> question as well.</p><p>Ms Joan Pereira<sup>1</sup> and Dr Hamid Razak’s<sup>2</sup> questions for the Sitting.</p><p>The financial year 1 April 2016 to 31<sup>29</sup> <sup>30</sup>M<sup>31</sup>a<sup>32</sup>rch 2017.</p>",
+  "expected_rows": [
+    [
+      "Mr A",
+      "The cost over the same period of time is estimated at $140m[1]. Since its inception.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "Table 1 shows the average ridership per car-km[6]while Table 2 shows the train-km.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "I will also address Mr Yip Hon Weng's[1] Parliamentary Question.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "I will also address Mr Murali Pillai's[1] Parliamentary Question.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "The Order Paper, as well as Mr Derrick Goh’s[1] filed for the Sitting.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "Let me take this opportunity to address Dr Intan Azura Mokhtar’s[1] question as well.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "Ms Joan Pereira[1] and Dr Hamid Razak’s[2] questions for the Sitting.",
+      "SPEECH"
+    ],
+    [
+      "Mr A",
+      "The financial year 1 April 2016 to 31[29] 30M[31]a[32]rch 2017.",
+      "SPEECH"
+    ]
+  ]
+}
