@@ -61,7 +61,7 @@ Each folder has a strict responsibility boundary. `populate/` is the only layer 
 
 | Layer | Responsibility | Forbidden |
 |---|---|---|
-| `schemas/` | Pydantic models for API response shapes | DB access, logic |
+| `schemas/` | Pydantic models for external data shapes: API bodies and `data/` files | DB access, logic |
 | `gateway/` | HTTP calls; return parsed Pydantic models from `schemas/` | Business logic, DB writes, interpreting a missing field |
 | `services/` | Pure transforms: input data → output entity | HTTP calls, DB access |
 | `database/` | SQLModel table class definitions | Logic of any kind |
@@ -184,18 +184,20 @@ hansard-scraper/
 ├── script.py                        # Pipeline orchestrator — runs populate stages 5 to 9 in order
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
-├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag
+├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag, PersonDecisionKind
 ├── exceptions.py                    # HansardError / HansardGatewayError / HansardMemberListError / HansardDataFileError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshRunError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the scheduled refresh job; runs python refresh.py
 │
-├── schemas/                         # Pydantic validation models (API shapes, not DB)
+├── schemas/                         # Pydantic validation models (API bodies and data/ files, not DB)
 │   ├── hansard_search_result.py    # HansardSearchResult — camelCase alias support
 │   ├── hansard_topic_response.py   # HansardTopicResponse: the getHansardTopic body (three shapes)
 │   ├── hansard_report_response.py  # HansardReportOldResponse / HansardReportNewResponse / HansardReportMetadata / HansardReportAttendanceEntry
-│   ├── excluded_report_id.py       # ExcludedReportId: data/excluded_report_ids.json entries
+│   ├── excluded_report_id.py       # ExcludedReportId / ExcludedReportIds: data/excluded_report_ids.json entries
 │   ├── attendance_cleanup.py       # AttendanceCleanup: data/attendance_cleanup.json entries
-│   ├── party_affiliation.py        # MembershipPartyAffiliations / PartyAffiliationSpan: data/party_affiliations.json entries
+│   ├── party_affiliation.py        # MembershipPartyAffiliations / PartyAffiliationSpan / PartyAffiliationMemberships: data/party_affiliations.json entries
+│   ├── hand_kept_member.py         # HandKeptMember / HandKeptMembers: data/colonial_la_members.json and data/unscraped_members.json entries
+│   ├── person_decision.py          # PersonDecision / PersonDecisionMember / PersonDecisions: data/person_decisions.json entries
 │   ├── speaker_link_plan.py        # SpeakerLinkPlan: the plan file of scripts/apply_speaker_links.py
 │   ├── coverage_refill_plan.py     # CoverageRefillPlan / FetchedHit / FetchedReport: the plan file of scripts/apply_coverage_refill.py
 │   ├── sample_sets.py              # SampleSets: the pilot, held-out and regression report ids of the speech sample
@@ -271,7 +273,7 @@ hansard-scraper/
 │   └── speakers.py                  # Out-of-band: persist scraped Speaker records
 │
 ├── utils/                           # Shared pure utilities (no DB, no HTTP)
-│   ├── data_files.py                # Reads each hand-kept data/ file through its schema
+│   ├── data_files.py                # The only module that opens data/: one get_ function per file, each on model_validate_json
 │   ├── json_columns.py              # Serialises a nested list to the JSON text stored in a column
 │   ├── markdown_header.py           # Reads a number such as Sitting No from a stored header table
 │   ├── markdown_parser.py           # HTML → clean markdown; merges split bold lines
