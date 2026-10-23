@@ -19,7 +19,7 @@ You can build your own copy with the steps under [Setup](#setup). A full crawl s
 
 ## What the record holds
 
-The record runs from the Legislative Assembly before independence, through the 1st to 15th Parliaments. It holds the reports, speeches, people and sittings, and who was present and absent at every sitting. For the dates and counts, see the [coverage page](https://hansard.fancybinary.sg/coverage). Its [methods page](https://hansard.fancybinary.sg/coverage/methods) has the full counts and reports by year. The site's API is the only source of these figures, so this README does not copy them.
+The record runs from the Legislative Assembly before independence, through the 1st to 15th Parliaments. It holds the reports, speeches, people and sittings, and who was present and absent at every sitting. For the dates and counts, see the [coverage page](https://hansard.fancybinary.sg/coverage). Its [methods page](https://hansard.fancybinary.sg/coverage/methods) has the full counts, reports by year and known gaps. The site calls each speech row a paragraph. The site's API is the only source of the dates and totals, so this README does not copy them.
 
 ## How accurate the speaker links are
 
@@ -44,7 +44,7 @@ flowchart TD
 2. To get speeches, the parser splits each report at bold speaker names. The Extract speeches loop fixed the reports it failed on.
 3. To know who spoke, names are matched to parliament.gov.sg's members plus hand-kept facts, like colonial Assembly members.
 4. To find what the parser got wrong, the Check speeches loop read samples against the source and fixed the parser.
-5. To compare, a blind test of 191 reports found 99.4% of words credited to the right person, against sgparliament.com's 95.5%.
+5. To compare, a check of 191 reports, judged by AI models, found 99.4% of words credited to the right person, against sgparliament.com's 95.5%.
 
 [How the data was checked](#how-the-data-was-checked) describes both loops.
 
@@ -118,9 +118,9 @@ The 99.4% and 95.5% credit each Addendum to the President's Address to the minis
 
 ## Known limits
 
-- 132 reports have no text. 113 are the President's assent to bills from September 2012, which SPRS sends as a bill list with no report text. SPRS sends no text for the other 19, most often an empty text field or an error. Every other report has its speeches.
+- Some reports have no text. Most are the President's assent to bills from September 2012, which SPRS sends as a bill list with no report text. For the others SPRS sends no text, most often an empty text field or an error. The methods page gives the count. Every other report has its speeches.
 - About 12,000 speeches have a speaker label but no link to a member. About 9,000 of them are "The Chairman" in reports that do not say who was in the chair ([decision record](docs/adr/0002-role-holder-attribution.md)). Most of the rest are collective labels such as "An hon. Member".
-- 66 reports still hold speeches split by an older version of the parser. In 792 more, 2,608 speeches start with a stray `_` that the current parser drops, until a pending write corrects them.
+- Some reports still hold speeches split by an older version of the parser (the methods page gives the count). In 792 more, 2,608 speeches start with a stray `_` that the current parser drops, until a pending write corrects them.
 - Older-system speeches (Parliaments 0 to 11) carry the Hansard column they start in, as printed. 29,027 of 607,946 rows in reports with column markers have none, because the column markers do not fix it. Later speeches carry no column number.
 
 [docs/data-dictionary.md](docs/data-dictionary.md) has the fields and more caveats, and [docs/data-loss-register.md](docs/data-loss-register.md) lists every step that drops or changes source text.
