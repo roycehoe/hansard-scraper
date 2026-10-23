@@ -1,7 +1,5 @@
-import re
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Optional
 
 from sqlmodel import Session
 
@@ -12,15 +10,15 @@ from database.init import engine
 from database.report import Report
 from logs import logger
 from utils.column_numbers import (
-    ColumnRange,
+    SpeechText,
     build_column_text,
+    get_column_markers,
+    get_head_column_range,
     get_report_column_range,
-    get_speech_start_columns,
+    get_speech_columns,
 )
 
 _REPORT_BATCH = 200
-_HEAD_START_COLUMN_PATTERN = r"<meta\s+name=\"Start_Col\"\s+content=\"(\d+)\""
-_HEAD_END_COLUMN_PATTERN = r"<meta\s+name=\"End_Col\"\s+content=\"(\d+)\""
 _SAMPLE_REPORT_COUNT = 10
 
 
@@ -39,36 +37,26 @@ class ColumnCoverageTally:
     rows_outside_head_range: int = 0
 
 
-def _get_head_column_range(content: str) -> Optional[ColumnRange]:
-    start_match = re.search(_HEAD_START_COLUMN_PATTERN, content, flags=re.IGNORECASE)
-    end_match = re.search(_HEAD_END_COLUMN_PATTERN, content, flags=re.IGNORECASE)
-    if start_match is None:
-        return None
-    if end_match is None:
-        return None
-    # NOTE: some Parliament 11 heads print 0 for both columns.
-    if int(start_match.group(1)) == 0:
-        return None
-    return ColumnRange(int(start_match.group(1)), int(end_match.group(1)))
-
-
 def _tally_report(tally: ColumnCoverageTally, report: Report, speech_rows: list[SpeechRow]) -> int:
     tally.reports += 1
     tally.rows += len(speech_rows)
     column_text = build_column_text(report.content or "")
-    column_range = get_report_column_range(column_text)
-    if column_range is None:
+    column_markers = get_column_markers(column_text)
+    if not column_markers:
         return 0
-    marker_columns = [marker.column for marker in column_text.markers]
+    head_column_range = get_head_column_range(report.content or "")
+    column_range = get_report_column_range(column_markers, head_column_range)
+    marker_columns = [marker.column for marker in column_markers]
     tally.reports_with_markers += 1
     tally.markers += len(marker_columns)
     tally.reports_with_markers_out_of_order += marker_columns != sorted(marker_columns)
     tally.rows_in_reports_with_markers += len(speech_rows)
-    head_column_range = _get_head_column_range(report.content or "")
     if head_column_range is not None:
         tally.reports_with_head_range += 1
         tally.reports_with_head_range_equal += head_column_range == column_range
-    start_columns = [column for column in get_speech_start_columns(column_text, [speech_row.transcript for speech_row in speech_rows]) if column is not None]
+    speech_texts = [SpeechText(speech_row.speaker, speech_row.transcript) for speech_row in speech_rows]
+    speech_columns = get_speech_columns(column_text, column_markers, head_column_range, speech_texts)
+    start_columns = [speech_column.column_start for speech_column in speech_columns if speech_column.column_start is not None]
     tally.rows_with_column += len(start_columns)
     tally.rows_back_a_column += sum(after < before for before, after in zip(start_columns, start_columns[1:]))
     if head_column_range is not None:
