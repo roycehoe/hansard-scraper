@@ -50,8 +50,6 @@ class _FailedReport:
     title_regenerated: str
     subtitle_stored: Optional[str]
     subtitle_regenerated: Optional[str]
-    start_line: Optional[int]
-    speech_count: int
     markdown_snippet: str
 
 
@@ -173,8 +171,6 @@ def run_sanity_check() -> None:
                 regenerated_report.title,
                 stored_report.subtitle,
                 regenerated_report.subtitle,
-                start_line,
-                len(speeches),
                 (regenerated_report.markdown_content or "")[:_SNIPPET_LENGTH],
             ))
 
