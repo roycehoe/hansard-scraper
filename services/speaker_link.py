@@ -31,6 +31,7 @@ from utils.parliament_numbers import infer_parliament
 from utils.speaker_resolution import SpeakerLookups, resolve_canonical_name
 from utils.speaker_resolution_constants import (
     COLONIAL_PARLIAMENT_FALLBACKS,
+    COLONIAL_PARLIAMENT_NUMBER,
     DATED_ROLE_TERMS,
     DEPUTY_SPEAKER_TERMS,
     DEPUTY_SPEAKER_WOMEN,
@@ -449,7 +450,7 @@ def _resolve_with_parliament_fallback(
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> ResolvedName:
     canonical_name = resolve_canonical_name(name, parliament_number, lookups)
-    if canonical_name is not None or parliament_number != 0:
+    if canonical_name is not None or parliament_number != COLONIAL_PARLIAMENT_NUMBER:
         return ResolvedName(canonical_name, parliament_number)
     for fallback_parliament_number in COLONIAL_PARLIAMENT_FALLBACKS:
         candidate = resolve_canonical_name(name, fallback_parliament_number, lookups)
@@ -522,7 +523,7 @@ def _resolve_attendance_speaker_id(
 
 
 def _get_role_key(speaker_label: str, parliament_number: int) -> Optional[tuple[str, int]]:
-    if parliament_number != 0:
+    if parliament_number != COLONIAL_PARLIAMENT_NUMBER:
         return (speaker_label, parliament_number)
     for fallback_parliament_number in COLONIAL_PARLIAMENT_FALLBACKS:
         if (speaker_label, fallback_parliament_number) in ROLE_ONLY_SPEAKERS:
