@@ -75,6 +75,8 @@ def get_hansard_search_results(
         raise HansardGatewayError(f"Search request failed for page {page}") from error
     except ValueError as error:
         raise HansardGatewayError(f"Search request failed for page {page}") from error
+    except TypeError as error:
+        raise HansardGatewayError(f"Search request failed for page {page}") from error
 
 
 def _get_page_with_retries(start_index: int, from_date: date, to_date: date) -> list[HansardSearchResult]:
@@ -94,7 +96,12 @@ def get_window_hansard_search_results(from_date: date, to_date: date) -> list[Ha
     first_page = _get_page_with_retries(0, from_date, to_date)
     if not first_page:
         return []
-    total = int(first_page[0].max_result)
+    try:
+        total = int(first_page[0].max_result)
+    except TypeError as error:
+        raise HansardGatewayError(f"Search window {from_date} to {to_date} reports no total") from error
+    except ValueError as error:
+        raise HansardGatewayError(f"Search window {from_date} to {to_date} reports a total that is not a number") from error
     report_id_to_hit = {hit.report_id: hit for hit in first_page}
     for _ in range(_MAX_PASSES):
         for start_index in range(0, total, settings.search_page_size):
@@ -112,6 +119,8 @@ def get_window_hansard_search_results(from_date: date, to_date: date) -> list[Ha
 
 
 def get_all_hansard_search_results(from_date: date, to_date: date) -> list[HansardSearchResult]:
+    if from_date > to_date:
+        raise HansardGatewayError(f"Search range {from_date} to {to_date} starts after it ends")
     all_hansard_search_results = []
     for month_window in get_month_windows(from_date, to_date):
         window_hansard_search_results = get_window_hansard_search_results(month_window.first_date, month_window.last_date)
