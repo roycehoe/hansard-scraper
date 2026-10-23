@@ -31,7 +31,7 @@ def test_rows_to_insert_are_the_built_rows_no_stored_row_matches() -> None:
 
     rows_to_insert = get_rows_to_insert(_SITTING_ID, stored_rows, built_rows)
 
-    assert [row.speaker_name for row in rows_to_insert] == ["B", "D"]
+    assert [row_to_insert.speaker_name for row_to_insert in rows_to_insert] == ["B", "D"]
 
 
 def test_a_repeated_built_row_is_matched_once_per_stored_row() -> None:
@@ -40,7 +40,7 @@ def test_a_repeated_built_row_is_matched_once_per_stored_row() -> None:
 
     rows_to_insert = get_rows_to_insert(_SITTING_ID, stored_rows, built_rows)
 
-    assert [row.speaker_name for row in rows_to_insert] == ["A"]
+    assert [row_to_insert.speaker_name for row_to_insert in rows_to_insert] == ["A"]
 
 
 def test_a_stored_row_stage_7_does_not_build_refuses_the_sitting() -> None:

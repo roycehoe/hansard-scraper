@@ -130,20 +130,6 @@ def _validate_can_commit_sitting_counts(session: Session, plan: AttendanceComple
             raise HansardWriteCheckError(f"Sitting {sitting.sitting_id}: {row_count} rows after the write, expected {sitting.built_row_count}")
 
 
-def _get_attendances_to_insert(plan: AttendanceCompletionPlan) -> list[Attendance]:
-    return [
-        Attendance(
-            sitting_id=sitting.sitting_id,
-            speaker_name=planned_row.speaker_name,
-            is_present=planned_row.is_present,
-            location_name=planned_row.location_name,
-            speaker_id=planned_row.speaker_id,
-        )
-        for sitting in plan.sittings
-        for planned_row in sitting.rows_to_insert
-    ]
-
-
 def complete_truncated_attendance(plan_path: Path, is_commit: bool) -> None:
     if not is_commit:
         with Session(engine) as session:
@@ -158,7 +144,17 @@ def complete_truncated_attendance(plan_path: Path, is_commit: bool) -> None:
         plan = _get_plan(session)
         if plan != reviewed_plan:
             raise HansardWriteCheckError("The plan differs from the reviewed plan")
-        attendances_to_insert = _get_attendances_to_insert(plan)
+        attendances_to_insert = [
+            Attendance(
+                sitting_id=sitting.sitting_id,
+                speaker_name=planned_row.speaker_name,
+                is_present=planned_row.is_present,
+                location_name=planned_row.location_name,
+                speaker_id=planned_row.speaker_id,
+            )
+            for sitting in plan.sittings
+            for planned_row in sitting.rows_to_insert
+        ]
         CRUDAttendance(session).add_many(attendances_to_insert)
         _validate_can_commit_sitting_counts(session, plan)
         session.commit()
