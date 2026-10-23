@@ -10,8 +10,10 @@ from crud.report import CRUDReport
 from crud.speech import CRUDSpeech
 from database.init import engine
 from database.report import Report
+from database.speech import Speech
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from schemas.excluded_report_id import ExcludedReportId
 from settings import settings
 from utils.data_files import get_excluded_report_ids
@@ -86,6 +88,7 @@ def remove_excluded_reports(is_commit: bool, plan_path: Optional[Path]) -> None:
         _remove_reports(session, removals)
         session.commit()
         logger.info(f"Committed: {len(removals)} reports removed")
+        vacuum_analyze_written_tables(session, [Speech.__tablename__, Report.__tablename__])
 
 
 if __name__ == "__main__":

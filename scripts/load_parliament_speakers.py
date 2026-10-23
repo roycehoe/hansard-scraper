@@ -4,9 +4,11 @@ from sqlmodel import Session
 
 from crud.speaker import CRUDSpeaker
 from database.init import engine
+from database.speaker import Speaker
 from exceptions import HansardMemberListError
 from gateway.speakers_by_parliament import get_parliament_member_list_response
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from services.speaker import (
     build_speaker,
     build_speaker_results,
@@ -53,6 +55,8 @@ def load_parliament_speakers(parliament_number: int, is_commit: bool) -> None:
         validate_can_write(settings.database_url)
     with Session(engine) as session:
         store_new_speakers(session, parliament_number, is_commit)
+        if is_commit:
+            vacuum_analyze_written_tables(session, [Speaker.__tablename__])
 
 
 if __name__ == "__main__":

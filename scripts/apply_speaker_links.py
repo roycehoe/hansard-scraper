@@ -8,7 +8,9 @@ from sqlmodel import Session
 from crud.attendance import CRUDAttendance
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
+from database.attendance import Attendance
 from database.init import engine
+from database.speech import Speech
 from exceptions import HansardWriteCheckError
 from logs import logger
 from populate.speaker_links import (
@@ -16,6 +18,7 @@ from populate.speaker_links import (
     get_role_context_speaker_ids,
     get_sitting_deputy_speaker_ids,
 )
+from populate.written_tables import vacuum_analyze_written_tables
 from schemas.speaker_link_plan import SpeakerLinkPlan
 from services.attendance import build_speaker_lookups
 from services.speaker_link import resolve_attendance_rows, resolve_speech_rows
@@ -95,6 +98,7 @@ def apply_speaker_links(plan_path: Path, is_commit: bool) -> None:
         _validate_can_commit_speech_speaker_ids(session, plan.speech_id_to_speaker_id)
         _validate_can_commit_attendance_speaker_ids(session, plan.attendance_id_to_speaker_id)
         session.commit()
+        vacuum_analyze_written_tables(session, [Speech.__tablename__, Attendance.__tablename__])
     logger.info(f"Committed: {len(plan.speech_id_to_speaker_id)} speech rows and {len(plan.attendance_id_to_speaker_id)} attendance rows linked")
 
 

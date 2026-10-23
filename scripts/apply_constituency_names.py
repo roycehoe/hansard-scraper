@@ -8,9 +8,11 @@ from typing import Optional
 from sqlmodel import Session
 
 from crud.attendance import CRUDAttendance
+from database.attendance import Attendance
 from database.init import engine
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from services.attendance import (
     ConstituencyLookups,
     LocationChange,
@@ -49,6 +51,7 @@ def apply_constituency_names(is_commit: bool, plan_path: Optional[Path]) -> None
             raise HansardWriteCheckError("Constituency names not applied after the update")
         session.commit()
         logger.info(f"Committed: {len(location_changes)} location changes")
+        vacuum_analyze_written_tables(session, [Attendance.__tablename__])
 
 
 if __name__ == "__main__":

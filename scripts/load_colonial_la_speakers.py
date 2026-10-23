@@ -6,6 +6,7 @@ from crud.speaker import CRUDSpeaker
 from database.init import engine
 from database.speaker import Speaker
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from settings import settings
 from utils.data_files import get_colonial_members, get_unscraped_members
 from utils.write_target import validate_can_write
@@ -45,6 +46,8 @@ def load_colonial_la_speakers(is_commit: bool) -> None:
         validate_can_write(settings.database_url)
     with Session(engine) as session:
         store_colonial_speakers(session, is_commit)
+        if is_commit:
+            vacuum_analyze_written_tables(session, [Speaker.__tablename__])
 
 
 if __name__ == "__main__":

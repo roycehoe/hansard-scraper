@@ -8,8 +8,10 @@ from sqlmodel import Session
 
 from crud.speaker import CRUDSpeaker
 from database.init import engine
+from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from services.speaker import get_parliament_changes
 from settings import settings
 from utils.data_files import get_colonial_members, get_heads_of_state
@@ -45,6 +47,7 @@ def apply_speaker_parliaments(is_commit: bool, plan_path: Optional[Path]) -> Non
             raise HansardWriteCheckError("Parliament changes not applied after the update")
         session.commit()
         logger.info(f"Committed: {len(parliament_changes)} Parliament changes")
+        vacuum_analyze_written_tables(session, [Speaker.__tablename__])
 
 
 if __name__ == "__main__":

@@ -5,8 +5,10 @@ from sqlmodel import Session
 from crud.party_affiliation import CRUDPartyAffiliation
 from crud.speaker import CRUDSpeaker
 from database.init import engine
+from database.party_affiliation import PartyAffiliation
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from services.party_affiliation import (
     build_party_affiliations,
     get_unstored_party_affiliations,
@@ -44,6 +46,7 @@ def load_party_affiliations(is_commit: bool) -> None:
             raise HansardWriteCheckError("Party affiliations are not stored after the insert")
         session.commit()
         logger.info(f"Committed: {len(unstored_party_affiliations)} rows inserted")
+        vacuum_analyze_written_tables(session, [PartyAffiliation.__tablename__])
 
 
 if __name__ == "__main__":

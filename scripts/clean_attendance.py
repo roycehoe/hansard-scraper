@@ -14,6 +14,7 @@ from database.attendance import Attendance
 from database.init import engine
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from schemas.attendance_cleanup import AttendanceCleanup
 from services.attendance import build_speaker_lookups
 from services.attendance_cleanup import (
@@ -136,6 +137,7 @@ def clean_attendance(is_commit: bool, plan_path: Optional[Path]) -> None:
             raise HansardWriteCheckError(f"Unlinked attendance rows are not {unlinked_after} after the cleanup")
         session.commit()
         logger.info(f"Committed: {len(plan.removal_id_to_reason)} rows deleted, {len(plan.updates)} rows updated")
+        vacuum_analyze_written_tables(session, [Attendance.__tablename__])
 
 
 if __name__ == "__main__":

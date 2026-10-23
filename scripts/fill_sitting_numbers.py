@@ -12,8 +12,11 @@ import database.speech  # noqa: F401 registers Speech so the Report relationship
 from crud.report import CRUDReport
 from crud.sitting import CRUDSitting
 from database.init import engine
+from database.report import Report
+from database.sitting import Sitting
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from settings import settings
 from utils.markdown_header import (
     SESSION_NUMBER_FIELD,
@@ -130,6 +133,7 @@ def fill_sitting_numbers(is_commit: bool, plan_path: Optional[Path]) -> None:
         _write_numbers(plan, session)
         session.commit()
         logger.info("Committed")
+        vacuum_analyze_written_tables(session, [Sitting.__tablename__, Report.__tablename__])
 
 
 if __name__ == "__main__":

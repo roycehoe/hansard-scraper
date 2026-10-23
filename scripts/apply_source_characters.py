@@ -11,8 +11,12 @@ from crud.report import CRUDReport
 from crud.sitting import CRUDSitting
 from crud.speech import CRUDSpeech
 from database.init import engine
+from database.report import Report
+from database.sitting import Sitting
+from database.speech import Speech
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from settings import settings
 from utils.markdown_parser import REPAIRABLE_TEXT_PATTERN, repair_source_characters
 from utils.text import TextChange
@@ -92,6 +96,7 @@ def apply_source_characters(is_commit: bool, plan_path: Optional[Path]) -> None:
         _write_source_characters(session, source_character_plan)
         session.commit()
         logger.info(f"Committed: {_get_counts(source_character_plan)}")
+        vacuum_analyze_written_tables(session, [Speech.__tablename__, Report.__tablename__, Sitting.__tablename__])
 
 
 if __name__ == "__main__":

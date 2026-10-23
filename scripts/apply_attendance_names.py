@@ -15,6 +15,7 @@ from database.init import engine
 from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from services.attendance import (
     AttendanceNameChange,
     build_constituency_lookups,
@@ -116,6 +117,7 @@ def apply_attendance_names(is_commit: bool, plan_path: Optional[Path]) -> None:
             raise HansardWriteCheckError("The attendance row count changed during the update")
         session.commit()
         logger.info(f"Committed: {len(name_changes)} name changes")
+        vacuum_analyze_written_tables(session, [Attendance.__tablename__])
 
 
 if __name__ == "__main__":

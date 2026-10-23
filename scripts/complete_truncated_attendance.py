@@ -14,6 +14,7 @@ from database.init import engine
 from database.sitting import Sitting
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from services.attendance import (
     build_constituency_lookups,
     build_sitting_attendances_from_markdown,
@@ -165,6 +166,7 @@ def complete_truncated_attendance() -> None:
 
         _write_attendance(session, rows_to_insert, sitting_ids)
         logger.info("Attendance: row counts verified and write committed")
+        vacuum_analyze_written_tables(session, [Attendance.__tablename__])
 
 
 if __name__ == "__main__":

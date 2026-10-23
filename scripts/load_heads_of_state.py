@@ -7,6 +7,7 @@ from database.init import engine
 from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from settings import settings
 from utils.data_files import get_heads_of_state
 from utils.write_target import validate_can_write
@@ -54,6 +55,8 @@ def load_heads_of_state(is_commit: bool) -> None:
         validate_can_write(settings.database_url)
     with Session(engine) as session:
         store_heads_of_state(session, is_commit)
+        if is_commit:
+            vacuum_analyze_written_tables(session, [Speaker.__tablename__])
 
 
 if __name__ == "__main__":

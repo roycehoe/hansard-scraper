@@ -9,8 +9,10 @@ from sqlmodel import Session
 import database.speech  # noqa: F401 registers Speech so the Report relationship resolves
 from crud.report import CRUDReport, ReportTitleRow
 from database.init import engine
+from database.report import Report
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from services.report import build_report_header
 from settings import settings
 from utils.text import fix_mojibake
@@ -72,6 +74,7 @@ def apply_report_titles(is_commit: bool, plan_path: Optional[Path]) -> None:
         _write_titles(session, title_changes)
         session.commit()
         logger.info(f"Committed: {len(title_changes)} report titles")
+        vacuum_analyze_written_tables(session, [Report.__tablename__])
 
 
 if __name__ == "__main__":

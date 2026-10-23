@@ -1,12 +1,16 @@
 import argparse
 from pathlib import Path
 
+from sqlmodel import Session
+
 from alembic import command
 from alembic.config import Config
 from alembic.runtime.migration import MigrationContext
 from database.init import engine
+from database.speech import Speech
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from settings import settings
 from utils.write_target import validate_can_write
 
@@ -34,6 +38,8 @@ def apply_speech_sitting_date(is_commit: bool) -> None:
 
         transaction.commit()
     logger.info(f"Committed: migration {_REVISION}, speech copied with its sitting date and swapped in")
+    with Session(engine) as session:
+        vacuum_analyze_written_tables(session, [Speech.__tablename__])
 
 
 if __name__ == "__main__":

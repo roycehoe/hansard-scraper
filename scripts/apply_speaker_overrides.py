@@ -11,6 +11,7 @@ from database.init import engine
 from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.written_tables import vacuum_analyze_written_tables
 from schemas.hand_kept_member import HandKeptMember
 from schemas.speaker_override import (
     LegislativeAssemblyOverride,
@@ -103,6 +104,7 @@ def apply_speaker_overrides(is_commit: bool, plan_path: Optional[Path]) -> None:
         _write_party(session, party_changes, speaker_overrides.party_overrides, colonial_members)
         session.commit()
         logger.info(f"Committed: {len(flag_changes)} flag changes, {len(party_changes)} party changes")
+        vacuum_analyze_written_tables(session, [Speaker.__tablename__])
 
 
 if __name__ == "__main__":
