@@ -1,6 +1,7 @@
 import asyncio
 import itertools
 from collections.abc import Iterator
+from dataclasses import dataclass
 from typing import Optional
 
 import httpx
@@ -24,10 +25,22 @@ from utils.data_files import EXCLUDED_REPORT_IDS_FILE, get_excluded_report_ids
 _HTTP_TIMEOUT_SECONDS = 60
 
 
+@dataclass(frozen=True)
+class FetchedHtmlContent:
+    html_content: Optional[str]
+    is_fetch_failed: bool
+
+
+@dataclass(frozen=True)
+class FetchedWebsiteResponse:
+    hansard_website_response: HansardWebsiteResponse
+    is_fetch_failed: bool
+
+
 async def _fetch_html_content(
     search_result: HansardSearchResult,
     client: httpx.AsyncClient,
-) -> Optional[str]:
+) -> FetchedHtmlContent:
     try:
         hansard_topic_response = await get_hansard_topic_response_async(
             get_topic_id(search_result.report_id, search_result.html_file_name, search_result.report_version),
@@ -35,11 +48,11 @@ async def _fetch_html_content(
         )
     except HansardGatewayError as error:
         logger.warning(f"No content for {search_result.report_id}: {error}")
-        return None
+        return FetchedHtmlContent(None, True)
     html_content = get_topic_html_content(hansard_topic_response, search_result.report_version)
     if html_content is None:
         logger.warning(f"No content for {search_result.report_id}: the response holds no text")
-    return html_content
+    return FetchedHtmlContent(html_content, False)
 
 
 async def _fetch_website_response(
@@ -47,15 +60,15 @@ async def _fetch_website_response(
     client: httpx.AsyncClient,
     progress: Iterator[int],
     total: int,
-) -> HansardWebsiteResponse:
-    html_content = await _fetch_html_content(search_result, client)
-    hansard_website_response = build_hansard_website_response(search_result, html_content)
+) -> FetchedWebsiteResponse:
+    fetched_html_content = await _fetch_html_content(search_result, client)
+    hansard_website_response = build_hansard_website_response(search_result, fetched_html_content.html_content)
     completed = next(progress)
     logger.info(f"{completed}/{total}")
-    return hansard_website_response
+    return FetchedWebsiteResponse(hansard_website_response, fetched_html_content.is_fetch_failed)
 
 
-async def _fetch_all(search_results: list[HansardSearchResult]) -> list[HansardWebsiteResponse]:
+async def _fetch_all(search_results: list[HansardSearchResult]) -> list[FetchedWebsiteResponse]:
     progress = itertools.count(1)
     total = len(search_results)
 
@@ -78,5 +91,8 @@ def populate_hansard_responses(session: Session) -> None:
     logger.info(f"Excluded {len(new_search_results) - len(search_results_to_fetch)} hits listed in {EXCLUDED_REPORT_IDS_FILE.name}")
     logger.info(f"Fetching {len(search_results_to_fetch)}/{len(all_hansard_search_results)} ({len(existing_report_ids)} already in DB)")
 
-    hansard_website_responses = asyncio.run(_fetch_all(search_results_to_fetch))
+    fetched_website_responses = asyncio.run(_fetch_all(search_results_to_fetch))
+    hansard_website_responses = [fetched_website_response.hansard_website_response for fetched_website_response in fetched_website_responses]
     CRUDHansardWebsiteResponse(session).create_many(hansard_website_responses)
+    failed_fetches = sum(1 for fetched_website_response in fetched_website_responses if fetched_website_response.is_fetch_failed)
+    logger.info(f"Hansard responses: {len(hansard_website_responses)} stored, {failed_fetches} fetches failed")

@@ -53,9 +53,11 @@ def populate_hansard_sitting_dates(session: Session) -> None:
 
     fetched_sitting_dates = asyncio.run(_fetch_all_sitting_dates(sitting_dates_to_fetch))
 
+    failed_fetches = 0
     for i, fetched_sitting_date in enumerate(fetched_sitting_dates, start=1):
         sitting_date = fetched_sitting_date.sitting_date
         if fetched_sitting_date.hansard_report_response is None:
+            failed_fetches += 1
             continue
         logger.info(f"{i}/{len(sitting_dates_to_fetch)}: {sitting_date}")
 
@@ -63,3 +65,4 @@ def populate_hansard_sitting_dates(session: Session) -> None:
         hansard_sitting_date_response = build_hansard_sitting_date_response(hansard_report_response, sitting_date)
 
         CRUDHansardSittingDateResponse(session).create(hansard_sitting_date_response)
+    logger.info(f"Hansard sitting dates: {len(sitting_dates_to_fetch) - failed_fetches} stored, {failed_fetches} fetches failed")

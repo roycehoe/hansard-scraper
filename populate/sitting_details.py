@@ -80,11 +80,13 @@ def populate_sitting_details(session: Session) -> None:
 
     filled = 0
     skipped = 0
+    failed_fetches = 0
     for i, fetched_sitting in enumerate(fetched_sittings, start=1):
         sitting = fetched_sitting.sitting
         hansard_report_response = fetched_sitting.hansard_report_response
         sitting_date = sitting.sitting_date
         if hansard_report_response is None:
+            failed_fetches += 1
             skipped += 1
             continue
         if not isinstance(hansard_report_response, HansardReportNewResponse):
@@ -115,4 +117,4 @@ def populate_sitting_details(session: Session) -> None:
         CRUDSitting(session).update(sitting)
         filled += 1
     session.commit()
-    logger.info(f"Sitting details: {filled} sittings filled, {skipped} sittings skipped")
+    logger.info(f"Sitting details: {filled} sittings filled, {skipped} sittings skipped, {failed_fetches} fetches failed")

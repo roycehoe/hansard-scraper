@@ -23,6 +23,7 @@ _HTTP_TIMEOUT_SECONDS = 60
 class FetchedContent:
     report_id: str
     content: Optional[str]
+    is_fetch_failed: bool
 
 
 async def _fetch_content(
@@ -40,11 +41,11 @@ async def _fetch_content(
         )
     except HansardGatewayError as error:
         logger.warning(f"No content for {hansard_website_response.report_id}: {error}")
-        return FetchedContent(hansard_website_response.report_id, None)
+        return FetchedContent(hansard_website_response.report_id, None, True)
     content = get_topic_html_content(hansard_topic_response, hansard_website_response.report_version)
     if content is None:
         logger.warning(f"No content for {hansard_website_response.report_id}: the response holds no text")
-    return FetchedContent(hansard_website_response.report_id, content)
+    return FetchedContent(hansard_website_response.report_id, content, False)
 
 
 async def _fetch_all_contents(hansard_website_responses: list[HansardWebsiteResponse]) -> list[FetchedContent]:
@@ -74,7 +75,10 @@ def populate_hansard_response_contents(session: Session) -> None:
 
     filled = 0
     failed = 0
+    failed_fetches = 0
     for i, fetched_content in enumerate(fetched_contents, start=1):
+        if fetched_content.is_fetch_failed:
+            failed_fetches += 1
         if fetched_content.content is None:
             failed += 1
             continue
@@ -82,4 +86,4 @@ def populate_hansard_response_contents(session: Session) -> None:
         CRUDHansardWebsiteResponse(session).set_content_by_report_id(fetched_content.report_id, fetched_content.content)
         filled += 1
     session.commit()
-    logger.info(f"Hansard response contents: {filled} ids filled, {failed} ids failed")
+    logger.info(f"Hansard response contents: {filled} ids filled, {failed} ids failed, {failed_fetches} fetches failed")
