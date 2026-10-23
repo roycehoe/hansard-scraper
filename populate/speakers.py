@@ -27,6 +27,6 @@ def populate_speakers(session: Session, is_commit: bool) -> None:
         logger.info("Dry run: nothing written")
         return
 
-    CRUDSpeaker(session).create_many(speakers)
+    CRUDSpeaker(session).add_many(speakers)
     session.commit()
     logger.info(f"Committed: {len(speakers)} members inserted")

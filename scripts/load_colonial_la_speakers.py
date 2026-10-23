@@ -35,7 +35,7 @@ def store_colonial_speakers(session: Session, is_commit: bool) -> None:
         logger.info("Dry run: nothing written")
         return
 
-    CRUDSpeaker(session).create_many(new_speakers)
+    CRUDSpeaker(session).add_many(new_speakers)
     session.commit()
 
 

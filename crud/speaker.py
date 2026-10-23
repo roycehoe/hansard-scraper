@@ -12,7 +12,7 @@ class CRUDSpeaker:
         self.session.add(speaker)
         self.session.commit()
 
-    def create_many(self, speakers: list[Speaker]) -> None:
+    def add_many(self, speakers: list[Speaker]) -> None:
         self.session.add_all(speakers)
         self.session.flush()
 

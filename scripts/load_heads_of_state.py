@@ -41,7 +41,7 @@ def store_heads_of_state(session: Session, is_commit: bool) -> None:
         logger.info("Dry run: nothing written")
         return
 
-    CRUDSpeaker(session).create_many(new_speakers)
+    CRUDSpeaker(session).add_many(new_speakers)
     updated_count = CRUDSpeaker(session).set_is_member_bulk(speaker_id_to_is_member)
     if updated_count != len(speaker_id_to_is_member):
         raise HansardWriteCheckError(f"Updated {updated_count} speaker rows, planned {len(speaker_id_to_is_member)}")
