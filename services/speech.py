@@ -78,6 +78,7 @@ _MINISTRY_HEADING_RE = re.compile(
 
 _LANGUAGE_NOTE = r"[_*]*\(\s*[_*]*\s*(?:in|dalam)\s+(?:Mandar\w+|Malay|English|Tamil|Hokkien|Cantonese|Teochew|Hakka)\s*[_*]*\s*\)[_*]*"
 _LANGUAGE_NOTE_RE = re.compile(_LANGUAGE_NOTE + r"\s*:?\s*", re.IGNORECASE)
+_LEADING_ITALIC_CLOSE_RE = re.compile(r"^_\s*")
 
 _ADJOURNMENT_MOVER_RE = re.compile(
     r"[−–—\-]\s*\[((?:Mr|Mrs|Ms|Dr|Prof|Mdm|Assoc\s+Prof)[^]]+)\]",
@@ -938,6 +939,17 @@ def _get_plain_label_match(line: str, report_version: str) -> Optional[re.Match]
     return _PLAIN_LANGUAGE_NOTE_LABEL_RE.match(line)
 
 
+def _strip_leading_language_note(transcript: str) -> str:
+    match = _LANGUAGE_NOTE_RE.match(transcript)
+    if match is None:
+        return transcript
+    transcript_after_note = transcript[match.end() :]
+    # NOTE: the close mark goes only when the note left an italic open, because in "(In Malay):_Salam_" the mark opens the speech's own italic.
+    if match.group(0).count("_") % 2 != 0:
+        return _LEADING_ITALIC_CLOSE_RE.sub("", transcript_after_note)
+    return transcript_after_note
+
+
 def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, report_version: str) -> list[ParsedSpeech]:
     current_speaker = None
     is_in_preamble = True
@@ -1144,8 +1156,7 @@ def _parse_speeches(markdown: str, start_of_speech_line: int, report_type: str, 
     if not is_in_preamble:
         speeches = preamble_speeches + speeches
     for speech in speeches:
-        if (match := _LANGUAGE_NOTE_RE.match(speech.transcript)) is not None:
-            speech.transcript = speech.transcript[match.end() :]
+        speech.transcript = _strip_leading_language_note(speech.transcript)
     return [speech for speech in speeches if speech.transcript.strip() != ""]
 
 

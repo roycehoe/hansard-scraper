@@ -1,0 +1,42 @@
+{
+  "why": "A language note that leaves an italic open ('(_In Mandarin_)_:_[...' in 3872, '_(In English):_ We' in 12857) also loses the close mark after the colon, which had become a stray '_' at the start of the transcript. A mark that opens the speech's own italic ('(In Malay):_Salam_', a made-up line) stays.",
+  "source_report_id": 3872,
+  "report_version": "sprs3",
+  "report_type": "oral-answer",
+  "title": "Sample Question",
+  "subtitle": null,
+  "original_title": "Sample Question",
+  "html": "<p><strong>Mr Gan Thiam Poh (Ang Mo Kio)</strong>: Mdm Speaker, in Mandarin.</p><p>(<em>In Mandarin</em>)<em>: </em>[<em>Please refer to <a  href =\"/search/search/download?value=20160405/vernacular-Gan Thiam Poh(1).pdf\" target=\"_blank\"> Vernacular Speech</a></em>.]<em>&nbsp;</em>I welcome the move by the Government to raise the income ceiling of the Workfare Income Supplement (WIS) from $1,900 to $2,000.</p><p><strong>Prof Fatimah Lateef (Marine Parade)</strong>: How will MUIS provide support to them under this masterplan for asatizahs?</p><p><em>(In English):</em> We need to enhance our asatizahs' functioning capabilities.</p><p><strong>Mr Lim</strong>: Sir, I will speak in Malay.</p><p>(In Malay):<em>Salam</em> sejahtera, Tuan Speaker.</p>",
+  "expected_rows": [
+    [
+      "Mr Gan Thiam Poh (Ang Mo Kio)",
+      "Mdm Speaker, in Mandarin.",
+      "SPEECH"
+    ],
+    [
+      "Mr Gan Thiam Poh (Ang Mo Kio)",
+      "[_Please refer to Vernacular Speech_.] I welcome the move by the Government to raise the income ceiling of the Workfare Income Supplement (WIS) from $1,900 to $2,000.",
+      "SPEECH"
+    ],
+    [
+      "Prof Fatimah Lateef (Marine Parade)",
+      "How will MUIS provide support to them under this masterplan for asatizahs?",
+      "SPEECH"
+    ],
+    [
+      "Prof Fatimah Lateef (Marine Parade)",
+      "We need to enhance our asatizahs' functioning capabilities.",
+      "SPEECH"
+    ],
+    [
+      "Mr Lim",
+      "Sir, I will speak in Malay.",
+      "SPEECH"
+    ],
+    [
+      "Mr Lim",
+      "_Salam_ sejahtera, Tuan Speaker.",
+      "SPEECH"
+    ]
+  ]
+}
