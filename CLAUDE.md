@@ -159,6 +159,7 @@ The scripts:
 - `apply_report_titles.py`: rewrites stored titles and subtitles that the current title rule would change; a dry run unless `--commit`
 - `apply_source_characters.py`: applies `repair_source_characters`, the parser's repair of the characters SPRS sends broken (mojibake, lost closing quotes and the lost characters with one answer, byte-order marks), to stored speech transcripts and labels and report and sitting markdown; a dry run unless `--commit`
 - `audit_characters.py`: read-only count of character faults (U+FFFD, mojibake, control and private-use characters, leftover HTML, unbalanced quotes and parentheses) in every stored text column, with the rows whose raw text does not hold the fault; `--output PATH` keeps the lines in `docs/figures/`
+- `count_column_coverage.py`: read-only count, by system and Parliament, of the reports whose raw HTML holds "Column: N" markers, and of the stored speech rows `utils/column_numbers.py` gives a start column; checks each marker range against the `Start_Col` and `End_Col` of the report head; run as a module
 - `apply_speaker_overrides.py`: applies `data/speaker_overrides.json` and the party values of `data/colonial_la_members.json` to stored speaker rows, and straightens the apostrophe in party; a dry run unless `--commit`
 - `complete_truncated_attendance.py`: inserts the attendance rows an interrupted stage 7 run never wrote for sittings 5941, 5988 and 6009, parsed from the stored sitting markdown; checks the per-sitting counts before it commits; a dry run unless `--commit`
 - `apply_constituency_names.py`: rewrites stored attendance location names that `data/constituency_names.json` would change; a dry run unless `--commit`
@@ -282,6 +283,7 @@ hansard-scraper/
 │   └── speakers.py                  # Out-of-band: persist scraped Speaker records
 │
 ├── utils/                           # Shared pure utilities (no DB, no HTTP)
+│   ├── column_numbers.py            # A report's column range and each speech row's start column, from the "Column: N" markers in its raw HTML
 │   ├── data_files.py                # The only module outside its own test that opens data/: one get_ function per file, each on model_validate_json
 │   ├── json_columns.py              # Serialises a nested list to the JSON text stored in a column
 │   ├── markdown_header.py           # Reads a number such as Sitting No from a stored header table
@@ -320,6 +322,7 @@ hansard-scraper/
     ├── apply_report_titles.py
     ├── apply_source_characters.py
     ├── audit_characters.py
+    ├── count_column_coverage.py
     ├── apply_speaker_overrides.py
     ├── complete_truncated_attendance.py
     ├── apply_constituency_names.py
