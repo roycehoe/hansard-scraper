@@ -232,7 +232,7 @@ The stopping rule needs every remaining class listed with its corpus count. Thes
 | "#### [... in the Chair]" credited to a speaker (524 before write #3) | 0 | 0 | 0 | None left |
 | `<pre>` table stored one row per line (about 15,500 of the rows are real tables) | 18,591 | 863 | 388,269 | Tier C |
 | Prose cut across rows inside `<pre>`, a lower bound (542 cuts) | 1,021 | 162 | 37,103 | Tier B |
-| Footnote digit glued to a word or number (1,462 hits; 185 hits in 147 reports change a number) | 1,157 | 869 | 401,308 | Tier B |
+| Footnote digit glued to a word or number (1,462 hits before write #5, 185 of them changing a number in 147 reports; fixed by `2f5cc5d` and `53eac45`. A replica recount on 23 October finds the stored rows equal the parse in all 1,012 reports the rule changes, except the held 23268) | 5 | 1 (23268, held) | not counted | Tier B, no number changed |
 | Labels that are not people: headings 52 rows in 7 reports, a table caption and cell in 22806 (8), a report title in 32642 (5), junk such as a bold "Question" or "To ask" (48) | 113 | 15 | 9,081 | Tier A where the text is a member's or the chair's (about 7,000 characters), otherwise Tier C |
 | Member speech swallowed by a footnote run (23268, held) | 6 | 1 | 1,297 | Tier A |
 | Caption text dropped after a bold "Table N:" (23627, 43250) | 2 lines | 2 | 23 words | Tier A, lost text |
