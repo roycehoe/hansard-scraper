@@ -199,7 +199,7 @@ hansard-scraper/
 ├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag, PersonDecisionKind
 ├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshRunError / HansardTestGuardError
 ├── logs.py                          # Loguru logger initialisation
-├── Dockerfile                       # Image for the scheduled refresh job; runs python refresh.py
+├── Dockerfile                       # Image for the refresh job (run as `sh refresh.sh`); the build imports `refresh`, so an import error fails it
 │
 ├── schemas/                         # Pydantic validation models (API bodies and data/ files, not DB)
 │   ├── hansard_search_result.py    # HansardSearchResult — camelCase alias support

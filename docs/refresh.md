@@ -40,6 +40,8 @@ After the last month, the run:
 
 The run is an App Platform scheduled job, daily at 04:00 Singapore time (`0 4 * * *` in `Asia/Singapore`, which is `0 20 * * *` UTC). Batch E adds the component to `hansard/.do/app.yaml`. The image is built from `Dockerfile` at the repo root, and the command is `sh refresh.sh`, which runs `python refresh.py`.
 
+A push to master deploys the refresh job to production: the `refresh` job of the `hansard` DigitalOcean app has `deploy_on_push: true`. Run `poetry run pytest` before every push.
+
 Enable the schedule only after the Parliament 15 backfill (see "The Parliament 15 backfill"). The backfill ran on 19 October 2026, and a plain run after it succeeded, so the stored data no longer blocks the schedule.
 
 ## Crawl rate
