@@ -11,5 +11,6 @@ def validate_can_write(database_url: str) -> None:
     url = make_url(database_url)
     if url.database in _PROTECTED_DATABASES:
         raise HansardWriteTargetError(f"Refusing to write: database {url.database} is the loop's own copy")
+    # NOTE: the falsy test refuses port 0 as well as no port, so the guard fails closed
     if (url.host is None or url.host in _LOCAL_HOSTS) and (url.port or _PROTECTED_LOCAL_PORT) == _PROTECTED_LOCAL_PORT:
         raise HansardWriteTargetError(f"Refusing to write: local port {_PROTECTED_LOCAL_PORT} belongs to another project")
