@@ -121,7 +121,7 @@ The 99.4% and 95.5% credit each Addendum to the President's Address to the minis
 - 132 reports have no text. 113 are the President's assent to bills from September 2012, which SPRS sends as a bill list with no report text. SPRS sends no text for the other 19, most often an empty text field or an error. Every other report has its speeches.
 - About 12,000 speeches have a speaker label but no link to a member. About 9,000 of them are "The Chairman" in reports that do not say who was in the chair ([decision record](docs/adr/0002-role-holder-attribution.md)). Most of the rest are collective labels such as "An hon. Member".
 - 66 reports still hold speeches split by an older version of the parser.
-- Speeches carry no Hansard column number.
+- Older-system speeches (Parliaments 0 to 11) carry the Hansard column they start in, as printed. 29,027 of 607,946 rows in reports with column markers have none, because the column markers do not fix it. Later speeches carry no column number.
 
 [docs/data-dictionary.md](docs/data-dictionary.md) has the fields and more caveats, and [docs/data-loss-register.md](docs/data-loss-register.md) lists every step that drops or changes source text.
 
