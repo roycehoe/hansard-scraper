@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlmodel import Field, Relationship, SQLModel
 
 from database.report import Report
-from enums import SpeechKind
+from enums import ColumnNote, SpeechKind
 
 
 class Speech(SQLModel, table=True):
@@ -36,6 +36,9 @@ class Speech(SQLModel, table=True):
         sa_column=Column(TSVECTOR, Computed("to_tsvector('english'::regconfig, transcript)", persisted=True)),
     )
     sitting_date: datetime
+    column_start: Optional[int] = None
+    column_note: Optional[ColumnNote] = None
+    column_suggested: Optional[int] = None
 
     report_id: int = Field(foreign_key="report.id", index=True)
     report: Report = Relationship(back_populates="speeches")
