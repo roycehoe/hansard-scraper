@@ -304,3 +304,4 @@ Decisions made while the guide was applied to the whole tree, kept here so the n
 61. A truthiness check on an `Optional[str]` becomes `is None` only where `""` cannot reach the value; otherwise it stays.
 62. A module that runs other stages (`script.py`, `populate/refresh_runs.py`) may call another stage's public session-taking entry point, such as `link_speakers_by_report_ids_and_sitting_ids` or `get_attribution_figures`. Pure logic and private helpers still move down, and no other `populate/` module imports a peer.
 63. A 0 or 1 that ruling 15 keeps inline is passed by keyword where it is a function argument, so the parameter name does the work a constant would.
+64. Ruling 15's domain-number clause reaches 0. A 0 that names a thing (Parliament 0, the Assembly-only row) keeps its name and is compared through it; only a 0 that means none or empty stays inline.
