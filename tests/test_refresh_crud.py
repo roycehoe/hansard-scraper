@@ -30,6 +30,8 @@ _TEXT_SITTING_DATE = datetime(2020, 1, 6)
 _EMPTY_TEXT_SITTING_DATE = datetime(2021, 1, 6)
 _NULL_TEXT_SITTING_DATE = datetime(2022, 1, 6)
 _REPORT_TEXT = "<p>Text</p>"
+_BOUNDARY_STARTED_AT = datetime(2025, 4, 2, 12, tzinfo=timezone.utc)
+_ONE_MICROSECOND = timedelta(microseconds=1)
 _COUNT_COLUMNS = tuple(name for name, field in RefreshRun.model_fields.items() if field.annotation is int)
 
 
@@ -152,10 +154,6 @@ def test_refresh_run_create_and_update_commit(scratch_session: Session) -> None:
     stored_refresh_run = CRUDRefreshRun(scratch_session).get_by_id_for_update(refresh_run_id)
     assert stored_refresh_run is not None
     assert stored_refresh_run.status == RefreshRunStatus.SUCCEEDED
-
-
-_BOUNDARY_STARTED_AT = datetime(2025, 4, 2, 12, tzinfo=timezone.utc)
-_ONE_MICROSECOND = timedelta(microseconds=1)
 
 
 def _add_refresh_run(scratch_session: Session, started_at: datetime, status: RefreshRunStatus) -> int:
