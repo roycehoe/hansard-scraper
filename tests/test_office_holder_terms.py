@@ -101,7 +101,7 @@ def test_president_in_the_parliament_15_address_links(scratch_session: Session) 
 def test_heads_of_state_file_has_the_parliament_15_president() -> None:
     heads_of_state = get_heads_of_state()
 
-    presidents = [head for head in heads_of_state if head.name == _PRESIDENT]
+    presidents = [head_of_state for head_of_state in heads_of_state if head_of_state.name == _PRESIDENT]
 
     assert [president.parliament_number for president in presidents].count(_PARLIAMENT_NUMBER) == 1
     assert [president.parliament_number for president in presidents].count(_PREVIOUS_PARLIAMENT_NUMBER) == 0

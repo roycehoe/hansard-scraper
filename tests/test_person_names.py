@@ -9,6 +9,7 @@ from crud.speaker import CRUDSpeaker
 from database.person import Person
 from database.speaker import Speaker
 from enums import PersonDecisionKind
+from exceptions import HansardDataFileError
 from populate import persons as populate_persons_module
 from populate.persons import populate_persons
 from schemas.person_decision import PersonDecision, PersonDecisionMember
@@ -93,6 +94,22 @@ def test_name_decision_does_not_merge_or_split_clusters() -> None:
 
     assert [len(person_cluster.memberships) for person_cluster in cluster_result.clusters] == [2]
     assert _get_canonical_names(speakers, decisions) == ["George Yong-Boon Yeo"]
+
+
+def test_decision_naming_no_speaker_row_raises_data_file_error() -> None:
+    decisions = [_get_decision("No Such Member", 7, PersonDecisionKind.NAME, "No Such Member")]
+
+    with pytest.raises(HansardDataFileError, match="data/person_decisions.json names no speaker row"):
+        cluster_speakers([_get_speaker(1, "Yeo Yong-Boon, George", 7)], decisions)
+
+
+def test_refused_merge_decision_raises_data_file_error() -> None:
+    members = [PersonDecisionMember(name="Ong Teng Cheong", parliament_number=7), PersonDecisionMember(name="Ong Pang Boon", parliament_number=7)]
+    decisions = [PersonDecision(person_name=None, members=members, decision=PersonDecisionKind.MERGE, source="test")]
+    speakers = [_get_speaker(1, "Ong Teng Cheong", 7), _get_speaker(2, "Ong Pang Boon", 7)]
+
+    with pytest.raises(HansardDataFileError, match="data/person_decisions.json merge decision refused"):
+        cluster_speakers(speakers, decisions)
 
 
 def test_data_file_gives_each_name_decision_one_member_and_a_name() -> None:
