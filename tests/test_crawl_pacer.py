@@ -17,6 +17,8 @@ from gateway.hansard_topic import get_hansard_topic_response
 from gateway.http import (
     CRAWL_PACER,
     CRAWL_USER_AGENT,
+    MAX_RETRIES,
+    NO_RESULTS_TEXT,
     async_post_with_retry,
     paced_request,
     send_with_retry,
@@ -28,6 +30,11 @@ _REQUEST_SECONDS = 0.25
 _URL = "https://pacer.test/topic"
 _HTTP_OK = 200
 _HTTP_TOO_MANY_REQUESTS = 429
+_HTTP_BAD_REQUEST = 400
+_HTTP_INTERNAL_SERVER_ERROR = 500
+_HTTP_SERVICE_UNAVAILABLE = 503
+_SYSTEM_ERROR_TEXT = "System error occured"
+_OTHER_BAD_REQUEST_TEXT = "Invalid request"
 _GATHERED_REQUEST_COUNT = 5
 _SYNC_REQUEST_COUNT = 3
 _FIXED_JITTER_SECONDS = 0.5
@@ -222,10 +229,32 @@ def _remove_backoff_delay(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(gateway.http.random, "uniform", _get_fixed_jitter)
 
 
+def _build_sync_response(status_code: int, response_text: str) -> requests.Response:
+    sync_response = requests.Response()
+    sync_response.status_code = status_code
+    sync_response.encoding = "utf-8"
+    sync_response._content = response_text.encode()
+    return sync_response
+
+
+def _get_sync_sender(
+    fake_clock: _FakeClock, recorded_requests: list[_RecordedRequest], sync_responses: list[requests.Response]
+) -> Callable[..., requests.Response]:
+    def send_request(**kwargs: object) -> requests.Response:
+        started_at = fake_clock.now
+        fake_clock.sleep(_REQUEST_SECONDS)
+        recorded_requests.append(_RecordedRequest(started_at, fake_clock.now, None))
+        if len(sync_responses) > 1:
+            return sync_responses.pop(0)
+        return sync_responses[0]
+
+    return send_request
+
+
 def test_sync_transport_error_is_retried_through_the_pacer(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
     _remove_backoff_delay(monkeypatch)
     recorded_requests: list[_RecordedRequest] = []
-    sync_response = requests.Response()
+    sync_response = _build_sync_response(_HTTP_OK, "")
 
     def fake_send() -> requests.Response:
         started_at = fake_clock.now
@@ -255,12 +284,62 @@ def test_sync_transport_error_gives_up_after_the_last_attempt(fake_clock: _FakeC
 
     with pytest.raises(requests.exceptions.Timeout):
         send_with_retry(fake_send)
-    assert len(recorded_requests) == gateway.http._MAX_RETRIES + 1
+    assert len(recorded_requests) == MAX_RETRIES + 1
     _assert_paced(recorded_requests)
 
     monkeypatch.setattr(requests, "post", fake_post)
     with pytest.raises(HansardGatewayError):
         get_hansard_topic_response(_REPORT_ID)
+
+
+@pytest.mark.parametrize(
+    ("status_code", "response_text"),
+    [(_HTTP_SERVICE_UNAVAILABLE, ""), (_HTTP_TOO_MANY_REQUESTS, ""), (_HTTP_BAD_REQUEST, _SYSTEM_ERROR_TEXT)],
+)
+def test_sync_transient_response_is_retried_through_the_pacer(
+    status_code: int, response_text: str, fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _remove_backoff_delay(monkeypatch)
+    recorded_requests: list[_RecordedRequest] = []
+    transient_response = _build_sync_response(status_code, response_text)
+    ok_response = _build_sync_response(_HTTP_OK, "")
+    send_request = _get_sync_sender(fake_clock, recorded_requests, [transient_response] * _FAILED_SEND_COUNT + [ok_response])
+
+    assert send_with_retry(send_request) is ok_response
+    assert len(recorded_requests) == _FAILED_SEND_COUNT + 1
+    _assert_paced(recorded_requests)
+
+
+def test_sync_bad_request_without_the_system_error_text_is_returned_at_once(fake_clock: _FakeClock) -> None:
+    recorded_requests: list[_RecordedRequest] = []
+    bad_request_response = _build_sync_response(_HTTP_BAD_REQUEST, _OTHER_BAD_REQUEST_TEXT)
+
+    assert send_with_retry(_get_sync_sender(fake_clock, recorded_requests, [bad_request_response])) is bad_request_response
+    assert len(recorded_requests) == 1
+
+
+def test_sync_transient_response_gives_up_after_the_last_attempt(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+    _remove_backoff_delay(monkeypatch)
+    recorded_requests: list[_RecordedRequest] = []
+    unavailable_response = _build_sync_response(_HTTP_SERVICE_UNAVAILABLE, "")
+
+    with pytest.raises(requests.HTTPError):
+        send_with_retry(_get_sync_sender(fake_clock, recorded_requests, [unavailable_response]))
+    assert len(recorded_requests) == MAX_RETRIES + 1
+    _assert_paced(recorded_requests)
+
+    monkeypatch.setattr(requests, "post", _get_sync_sender(fake_clock, recorded_requests, [unavailable_response]))
+    with pytest.raises(HansardGatewayError):
+        get_hansard_topic_response(_REPORT_ID)
+
+
+def test_sync_no_results_response_is_sent_once_and_is_an_empty_page(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+    recorded_requests: list[_RecordedRequest] = []
+    no_results_response = _build_sync_response(_HTTP_INTERNAL_SERVER_ERROR, NO_RESULTS_TEXT)
+    monkeypatch.setattr(requests, "post", _get_sync_sender(fake_clock, recorded_requests, [no_results_response]))
+
+    assert get_hansard_search_results(_SEARCH_START_INDEX, _SEARCH_END_INDEX) == []
+    assert len(recorded_requests) == 1
 
 
 def test_async_transport_error_is_retried_through_the_pacer(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:

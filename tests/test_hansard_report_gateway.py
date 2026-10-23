@@ -9,8 +9,11 @@ _SITTING_DATE = "8-4-2025"
 
 
 class _FakeResponse:
+    status_code = 200
+
     def __init__(self, body: object):
         self.body = body
+        self.text = ""
 
     def json(self) -> object:
         return self.body

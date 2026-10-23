@@ -40,6 +40,8 @@ _PAGE_WITHOUT_MEMBER_DATA = (
 
 
 class _FakePageResponse:
+    status_code = 200
+
     def __init__(self, text: str):
         self.text = text
 

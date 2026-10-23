@@ -6,7 +6,7 @@ from typing import Optional
 import requests
 
 from exceptions import HansardGatewayError
-from gateway.http import CRAWL_HEADERS, send_with_retry
+from gateway.http import CRAWL_HEADERS, NO_RESULTS_TEXT, send_with_retry
 from logs import logger
 from schemas.hansard_search_result import HansardSearchResult
 from settings import settings
@@ -64,7 +64,7 @@ def get_hansard_search_results(
         )
         if (
             response.status_code == _HTTP_BAD_REQUEST or response.status_code == _HTTP_INTERNAL_SERVER_ERROR
-        ) and "No Results Found" in response.text:
+        ) and NO_RESULTS_TEXT in response.text:
             return []
         response.raise_for_status()
         body = response.json()
