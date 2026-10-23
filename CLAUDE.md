@@ -51,6 +51,8 @@ python scripts/load_parliament_speakers.py --parliament N
 
 `poetry run pytest` runs the golden fixtures in `tests/`: each is a trimmed source HTML excerpt plus the speech rows the parser must produce. Each parser fix adds a fixture for the defect it closes. Tests run only against the scratch database on port 5435 (`hansard_launch`), and build their own schema there; `tests/conftest.py` refuses any other target.
 
+A push to master deploys the refresh job to production: the `refresh` job of the `hansard` DigitalOcean app has `deploy_on_push: true`. Run `poetry run pytest` before every push.
+
 ## Architecture
 
 This is a scraper for Singapore Parliament Hansard records (sprs.parl.gov.sg). The pipeline runs in stages — each stage's output feeds the next — and `script.py` is the orchestration file that runs stages 5 to 9 (sitting dates, sittings, attendance, speaker links, persons) in order. Stages 2 to 4 (`populate/hansard_responses.py`, `populate/reports.py`, `populate/speeches.py`) are not part of `script.py`; the daily refresh below adds their rows.
@@ -114,8 +116,8 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 **Entity tables** are pure extensions of their raw counterparts — every field from the raw response is preserved with the same value and structure. They exist to provide a stable, first-class DB schema ready for relationships and future enrichment, not to transform or interpret the source data. The one exception: where the raw response leaves a sitting or session number NULL, `Report` and `Sitting` fill it from the header table of the stored text, so those columns can differ from the raw row (see `docs/data-loss-register.md`).
 
 - `HansardWebsiteResponse` — raw API response, one row per Hansard entry
-- `Report` — entity table extending `HansardWebsiteResponse`; has a one-to-many to `Speech`
-- `Speech` — individual utterance with `speaker`, `transcript`, and `ordinal` within the report; has a `speaker_id` FK to `Speaker` (populated in stage 8) and a `kind` (`SpeechKind` enum, Postgres type `speechkind`) saying what the row's text is: SPEECH, PROCEDURAL, CHAMBER_EVENT, EDITORIAL_NOTE, DOCUMENT_TEXT, HEADING or UNCLASSIFIED (see `docs/adr/0009-speech-kind-column.md`); `sitting_date` is NOT NULL and copies its report's date, which every writer sets, so a rum index can return word matches in date order (see `docs/adr/0010-speech-sitting-date-set-by-each-writer.md`)
+- `Report` — entity table extending `HansardWebsiteResponse`; has a one-to-many to `Speech`; `column_start` and `column_end` hold the printed column range of an older-system report, set by `scripts/apply_column_numbers.py`
+- `Speech` — individual utterance with `speaker`, `transcript`, and `ordinal` within the report; has a `speaker_id` FK to `Speaker` (populated in stage 8) and a `kind` (`SpeechKind` enum, Postgres type `speechkind`) saying what the row's text is: SPEECH, PROCEDURAL, CHAMBER_EVENT, EDITORIAL_NOTE, DOCUMENT_TEXT, HEADING or UNCLASSIFIED (see `docs/adr/0009-speech-kind-column.md`); `sitting_date` is NOT NULL and copies its report's date, which every writer sets, so a rum index can return word matches in date order (see `docs/adr/0010-speech-sitting-date-set-by-each-writer.md`); `column_start` is the printed column the row starts in, kept as printed even when it is a likely misprint, and `column_note` (`ColumnNote`, Postgres type `columnnote`) with `column_suggested` carries our reading of it: a likely misprint and the column the marker sequence suggests, a speaker named in the column before, or a marker printed with the letter l for the digit 1
 - `HansardSittingDateResponse` — raw API response, one row per sitting date; handles both old and new API formats with all fields `Optional`
 - `Sitting` — entity table extending `HansardSittingDateResponse`; adds `markdown_content` parsed from `html_full_content`, plus four JSON TEXT columns (`sections`, `annexures`, `vernaculars`, `a2b`) serialised from the API nested lists
 - `Attendance` — one row per name per sitting, parsed from `Sitting.markdown_content` in stage 7; has a `speaker_id` FK to `Speaker` (set in stage 8)
@@ -142,6 +144,8 @@ One-off diagnostic and analysis scripts, not part of the main pipeline.
 
 Every script that calls `validate_can_write` ends a `--commit` run with `vacuum_analyze_written_tables` (`populate/written_tables.py`) on the tables it wrote, so search does not wait for the 04:00 refresh to get a vacuumed table. It raises `HansardWriteCheckError` when a table's `vacuum_count` did not rise, which is what Postgres leaves behind when the role lacks `MAINTAIN` or ownership. A new write script adds the call in the same change.
 
+A write that adds, rewrites or deletes speech rows of an older-system report (Parliaments 0 to 11) also sets their column numbers again, so `speech.column_start` and its note never go stale: `apply_coverage_refill.py` runs the column pass inside its own write, and any other such write, the speech fidelity loop's ship tools included, ends with `python -m scripts.apply_column_numbers --commit --report-id ...` for the reports it touched.
+
 The scripts:
 
 - `diagnose.py` — inspect parsing failures across the corpus
@@ -159,7 +163,8 @@ The scripts:
 - `apply_report_titles.py`: rewrites stored titles and subtitles that the current title rule would change; a dry run unless `--commit`
 - `apply_source_characters.py`: applies `repair_source_characters`, the parser's repair of the characters SPRS sends broken (mojibake, lost closing quotes and the lost characters with one answer, byte-order marks), to stored speech transcripts and labels and report and sitting markdown; a dry run unless `--commit`
 - `audit_characters.py`: read-only count of character faults (U+FFFD, mojibake, control and private-use characters, leftover HTML, unbalanced quotes and parentheses) in every stored text column, with the rows whose raw text does not hold the fault; `--output PATH` keeps the lines in `docs/figures/`
-- `count_column_coverage.py`: read-only count, by system and Parliament, of the reports whose raw HTML holds "Column: N" markers, and of the stored speech rows `utils/column_numbers.py` gives a start column; checks each marker range against the `Start_Col` and `End_Col` of the report head; run as a module
+- `count_column_coverage.py`: read-only count, by system and Parliament, of the reports whose raw HTML holds "Column: N" markers, and of the stored speech rows `utils/column_numbers.py` gives a start column; checks each report range against the `Start_Col` and `End_Col` of the report head; run as a module
+- `apply_column_numbers.py`: sets `report.column_start` and `column_end` and each speech row's `column_start`, `column_note` and `column_suggested` from the column markers in the raw HTML, through `populate/column_numbers.py`; `--report-id` limits it to the reports given; checks the stored counts by Parliament against its plan before it commits; a dry run unless `--commit`; run as a module
 - `apply_speaker_overrides.py`: applies `data/speaker_overrides.json` and the party values of `data/colonial_la_members.json` to stored speaker rows, and straightens the apostrophe in party; a dry run unless `--commit`
 - `complete_truncated_attendance.py`: inserts the attendance rows an interrupted stage 7 run never wrote for sittings 5941, 5988 and 6009, parsed from the stored sitting markdown; checks the per-sitting counts before it commits; a dry run unless `--commit`
 - `apply_constituency_names.py`: rewrites stored attendance location names that `data/constituency_names.json` would change; a dry run unless `--commit`
@@ -177,7 +182,7 @@ The scripts:
 - `validate_api_field_mapping.py`: checks that every non-null field in a live or synthetic API body survives the schema and the ORM mapping
 - `load_parliament_speakers.py`: stores the members of one Parliament (`--parliament N`) that the `Speaker` table lacks, from parliament.gov.sg, with the overrides of `data/speaker_overrides.json`; a dry run unless `--commit`
 
-The speech fidelity loop has its own tools for rewriting stored speech rows. They live outside the repo's tracked tree, in the gitignored `plans/speech-fidelity-loop/bin/`. Run them only for a planned write.
+The speech fidelity loop has its own tools for rewriting stored speech rows. They live outside the repo's tracked tree, in the gitignored `plans/speech-fidelity-loop/bin/`. Run them only for a planned write, and follow a ship that touches Parliaments 0 to 11 with `apply_column_numbers.py --commit --report-id` for its reports.
 
 Scripts log through `logs.logger`; the one script whose stdout is data (`find_presiding_officers.py`, paste-ready `SPEAKER_TERMS` and `DEPUTY_SPEAKER_TERMS` tuple literals) prints that output under `# noqa: T201`. `find_unmatched_attendees.py` writes its JSON template to the path given by `--json`.
 
@@ -278,12 +283,13 @@ hansard-scraper/
 │   ├── speaker_links.py             # Stage 8: resolve names → set speaker_id on Speech + Attendance
 │   ├── persons.py                   # Stage 9: cluster Speaker rows into Person rows
 │   ├── attribution_figures.py       # Reads report and speech rows into the attribution figures
+│   ├── column_numbers.py            # Plans and writes report column ranges and speech start columns and notes, checked by Parliament
 │   ├── refresh_runs.py              # Daily refresh: fetch, check, add rows, link, record the run, alert
 │   ├── written_tables.py            # VACUUM (ANALYZE) the tables a supervised write script wrote, and check the count rose
 │   └── speakers.py                  # Out-of-band: persist scraped Speaker records
 │
 ├── utils/                           # Shared pure utilities (no DB, no HTTP)
-│   ├── column_numbers.py            # A report's column range and each speech row's start column, from the "Column: N" markers in its raw HTML
+│   ├── column_numbers.py            # A report's column range and each speech row's start column and note, from the column markers in its raw HTML
 │   ├── data_files.py                # The only module outside its own test that opens data/: one get_ function per file, each on model_validate_json
 │   ├── json_columns.py              # Serialises a nested list to the JSON text stored in a column
 │   ├── markdown_header.py           # Reads a number such as Sitting No from a stored header table
@@ -323,6 +329,7 @@ hansard-scraper/
     ├── apply_source_characters.py
     ├── audit_characters.py
     ├── count_column_coverage.py
+    ├── apply_column_numbers.py
     ├── apply_speaker_overrides.py
     ├── complete_truncated_attendance.py
     ├── apply_constituency_names.py

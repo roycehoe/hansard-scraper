@@ -17,6 +17,7 @@ from database.speech import Speech
 from exceptions import HansardWriteCheckError
 from gateway.hansard_topic import get_hansard_topic_response
 from logs import logger
+from populate.column_numbers import get_column_number_plan, write_column_number_plan
 from populate.written_tables import vacuum_analyze_written_tables
 from schemas.coverage_refill_plan import CoverageRefillPlan, FetchedHit, FetchedReport
 from schemas.hansard_search_result import HansardSearchResult
@@ -170,11 +171,13 @@ def apply_coverage_refill(plan_path: Path, hits_path: Optional[Path], report_ids
         _validate_can_store_search_results(session, [fetched_hit.search_result for fetched_hit in plan.fetched_hits])
         report_id_to_speech_count = _add_fetched_hits(session, plan.fetched_hits) | _fill_fetched_reports(session, plan.fetched_reports)
         _validate_can_commit_speech_counts(session, report_id_to_speech_count)
+        column_number_plan = get_column_number_plan(session, list(report_id_to_speech_count))
+        write_column_number_plan(session, column_number_plan)
         session.commit()
         vacuum_analyze_written_tables(session, [HansardWebsiteResponse.__tablename__, Report.__tablename__, Speech.__tablename__])
     logger.info(
         f"Committed: {len(plan.fetched_hits)} hits inserted, {len(plan.fetched_reports)} reports filled, "
-        f"{sum(report_id_to_speech_count.values())} speech rows"
+        f"{sum(report_id_to_speech_count.values())} speech rows, {len(column_number_plan.speech_id_to_column_start)} start columns"
     )
 
 
