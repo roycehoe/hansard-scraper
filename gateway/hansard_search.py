@@ -5,7 +5,7 @@ from typing import Optional
 
 import requests
 
-from exceptions import HansardGatewayError
+from exceptions import HansardGatewayError, HansardSearchRangeError
 from gateway.http import CRAWL_HEADERS, NO_RESULTS_TEXT, send_with_retry
 from logs import logger
 from schemas.hansard_search_result import HansardSearchResult
@@ -120,7 +120,7 @@ def get_window_hansard_search_results(from_date: date, to_date: date) -> list[Ha
 
 def get_all_hansard_search_results(from_date: date, to_date: date) -> list[HansardSearchResult]:
     if from_date > to_date:
-        raise HansardGatewayError(f"Search range {from_date} to {to_date} starts after it ends")
+        raise HansardSearchRangeError(f"Search range {from_date} to {to_date} starts after it ends")
     all_hansard_search_results = []
     for month_window in get_month_windows(from_date, to_date):
         window_hansard_search_results = get_window_hansard_search_results(month_window.first_date, month_window.last_date)

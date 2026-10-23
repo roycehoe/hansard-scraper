@@ -6,6 +6,10 @@ class HansardGatewayError(HansardError):
     pass
 
 
+class HansardSearchRangeError(HansardError):
+    pass
+
+
 class HansardMemberListError(HansardError):
     pass
 

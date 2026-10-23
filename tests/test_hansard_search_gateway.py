@@ -4,7 +4,7 @@ from typing import Optional
 import pytest
 import requests
 
-from exceptions import HansardGatewayError
+from exceptions import HansardGatewayError, HansardSearchRangeError
 from gateway import hansard_search
 from gateway.hansard_search import (
     get_all_hansard_search_results,
@@ -109,6 +109,6 @@ def test_first_hit_with_a_total_that_is_not_a_number_raises_gateway_error(monkey
         get_window_hansard_search_results(_FROM_DATE, _TO_DATE)
 
 
-def test_range_that_starts_after_it_ends_raises_gateway_error() -> None:
-    with pytest.raises(HansardGatewayError):
+def test_range_that_starts_after_it_ends_raises_search_range_error() -> None:
+    with pytest.raises(HansardSearchRangeError):
         get_all_hansard_search_results(_TO_DATE, _FROM_DATE)
