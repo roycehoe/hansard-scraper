@@ -185,7 +185,7 @@ hansard-scraper/
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
 ├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag, PersonDecisionKind
-├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshRunError
+├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshRunError / HansardTestGuardError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the scheduled refresh job; runs python refresh.py
 │
@@ -209,7 +209,7 @@ hansard-scraper/
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata
 │
 ├── gateway/                         # HTTP API clients
-│   ├── http.py                      # Crawl pacer (one request at a time, at least 2 s apart, named user agent), async POST with retry (a transient 400 or a transport error), and sync `send_with_retry` (a connection error or timeout)
+│   ├── http.py                      # Crawl pacer (one request at a time, at least 2 s apart, named user agent), async POST with retry and sync `send_with_retry`, alike (a 429, a 5xx other than a "No Results Found" body, a transient 400 or a transport error; five sends)
 │   ├── hansard_search.py           # Paginated Hansard full-text search
 │   ├── hansard_topic.py            # Fetch report HTML by ID (sync + async)
 │   ├── hansard_report.py           # Fetch sitting metadata by date (sync + async)
