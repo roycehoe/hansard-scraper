@@ -38,7 +38,7 @@ The affix carries type, purity, state and intended use, so the reader never open
 | `_verb_noun` | side-effecting or transforming private helper (never `_do_`) | `_merge_wrapped_bold_lines` |
 | `_at` | timestamps, where a model takes one | no column yet |
 | `{key}_to_{value}` | dicts and mappings | `_OCR_FORM_TO_CORRECTED_NAME`, `holder_by_role` is the same idea read backwards and is not the pattern |
-| `noun_to_verb` | an object held in order to act on it | `dates_to_fetch`, `sittings_to_process` |
+| `noun_to_verb` | an object held in order to act on it | `sitting_dates_to_fetch`, `sittings_to_process` |
 | `error` | the variable bound by `except ... as` | `error`, `error_to_record`, `unexpected_failure` |
 
 When naming the variable that holds a call's result, strip only `get_` from the function name: `get_hansard_topic_response` fills a `hansard_topic_response`.
