@@ -152,7 +152,6 @@ def test_refresh_run_create_and_update_commit(scratch_session: Session) -> None:
     stored_refresh_run = CRUDRefreshRun(scratch_session).get_by_id_for_update(refresh_run_id)
     assert stored_refresh_run is not None
     assert stored_refresh_run.status == RefreshRunStatus.SUCCEEDED
-    assert CRUDRefreshRun(scratch_session).get_by_status(RefreshRunStatus.RUNNING) == []
 
 
 _BOUNDARY_STARTED_AT = datetime(2025, 4, 2, 12, tzinfo=timezone.utc)

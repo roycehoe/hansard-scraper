@@ -76,12 +76,6 @@ _TRUNCATED_LINE_TO_ENTRY_LINE: dict[str, str] = {
 }
 
 
-
-
-
-
-
-
 def _build_direct_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str]:
     key_to_count: dict[tuple[str, int], int] = {}
     entries: list[tuple[tuple[str, int], str]] = []
@@ -394,10 +388,6 @@ def extract_section_lines(content: str, section: AttendanceSection) -> list[str]
                 break
 
     return entry_lines
-
-
-
-
 
 
 @dataclass(frozen=True)
