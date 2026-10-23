@@ -134,6 +134,7 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"(?:Original |Main )?[Qq]uestion put,? (?:and|an|arid|anti) (?:agreed|disagreed|negatived|resolved)",
     r"Question put: Ayes",
     r"Division [Bb]ells? rung",
+    r"The voting was as follows",
     r"Motion made,? and Question proposed",
     r"Bill accordingly read the (?:Second|Third) time",
     r"Bill accordingly (?:re)?committed",

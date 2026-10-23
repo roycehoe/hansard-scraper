@@ -1,0 +1,32 @@
+{
+  "why": "The record line 'The voting was as follows:-' before a division list was credited to Mr Speaker instead of having no speaker.",
+  "source_report_id": 38643,
+  "report_version": "sprs2",
+  "report_type": "bill",
+  "title": "FINANCIAL PROCEDURE BILL",
+  "subtitle": null,
+  "original_title": "FINANCIAL PROCEDURE BILL",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\r\n\r\n<head>\r\n\r\n\r\n\r\n<meta http-equiv=\"Content-Type\" content=\"text/html;charset=iso-8859-1\">\r\n\r\n<meta name=\"Parl_No\" content=\"0\">\r\n\r\n<meta name=\"Sess_No\" content=\"1\">\r\n\r\n<meta name=\"Vol_No\" content=\"11\">\r\n\r\n<meta name=\"Sit_No\" content=\"2\">\r\n\r\n<meta name=\"Sit_Date\" content=\"1959-07-15\">\r\n\r\n<meta name=\"Sect_Name\" content=\"BILLS\">\r\n\r\n<meta name=\"Title\" content=\"FINANCIAL PROCEDURE BILL\">\r\n\r\n<meta name=\"MP_Speak\" content=\"Dr Goh Keng Swee (Minister for Finance); Mr K. M. Byrne (Minister for Labour and Law); Mr Lee Kuan Yew (Prime Minister); Mr Ong Eng Guan (Minister for National Development); Inche Mohd. Ali Bin Alwi; Mr A. P. Rajah; Mr S. T. Bani; Sir George Oehlers (Mr Speaker);\">\r\n\r\n<meta name=\"Start_Col\" content=\"21\">\r\n\r\n<meta name=\"End_Col\" content=\"46\">\r\n\r\n</head>\r\n\r\n<body>\r\n\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td>&nbsp;</td></tr></table><table width=\"100%\" border=\"1\" cellpadding=\"1\" cellspacing=\"0\" bordercolor=\"#000000\"><tr><td>\r\n\r\n<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Parliament No:</font></td><td width=\"85%\"><font size=\"2\">0</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Session No:</font></td><td width=\"85%\"><font size=\"2\">1</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Volume No:</font></td><td width=\"85%\"><font size=\"2\">11</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting No:</font></td><td width=\"85%\"><font size=\"2\">2</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">15-07-1959</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Section Name:</font></td><td width=\"85%\"><font size=\"2\">BILLS</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">FINANCIAL PROCEDURE BILL</font></td></tr>\r\n\r\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">MPs Speaking:</font></td><td width=\"85%\"><font size=\"2\">Dr Goh Keng Swee (Minister for Finance); Mr K. M. Byrne (Minister for Labour and Law); Mr Lee Kuan Yew (Prime Minister); Mr Ong Eng Guan (Minister for National Development); Inche Mohd. Ali Bin Alwi; Mr A. P. Rajah; Mr S. T. Bani; Sir George Oehlers (Mr Speaker);</font></td></tr>\r\n\r\n</table></td></tr>\r\n\r\n</table>\r\n\r\n<br><br><font size=\"1\"><b>Column: 21</b></font><br><br>\r\n\r\n<div align=\"center\"><h4>BILLS INTRODUCED</h4></div>\r\n\r\n<div align=\"center\"><b>FINANCIAL PROCEDURE BILL</b></div>\r\n\r\n\r\n\r\n<div align=\"center\"><b>First Reading</b></div>\r\n\r\n\r\n\r\n<br><br>10.03 a.m.\r\n\r\n\r\n\r\n<br><br><!-- Dr Goh Keng Swee (Minister for Finance) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>The Minister for Finance (Dr Goh Keng Swee):</b> Mr\r\n\r\nSpeaker,  I  beg to introduce a Bill intituled  \"An\r\n\r\nOrdinance to provide for the control and management\r\n\r\nof  the  public finances of the State of Singapore,\r\n\r\nand   for   financial  and  accounting   procedure,\r\n\r\nincluding procedure for the collection, custody and\r\n\r\npayment  of  the  public moneys  of  the  State  of\r\n\r\nSingapore,  and the purchase, custody and  disposal\r\n\r\nof  public property, other than land, of the  State\r\n\r\nof Singapore and for matters connected therewith.\"\r\n\r\n\r\n\r\n<br><br><!-- Sir George Oehlers (Mr Speaker) -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Speaker:</b> The Question is that the Bill be read a Second time.\r\n\r\n\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;The voting was as follows:-\r\n\r\n\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;Ayes 30; Noes 12.\r\n\r\n\r\n\r\n<br><br>11.00 a.m.\r\n\r\n\r\n\r\n\r\n\r\n</body>\r\n\r\n</html>",
+  "expected_rows": [
+    [
+      "The Minister for Finance (Dr Goh Keng Swee)",
+      "Mr Speaker, I beg to introduce a Bill intituled \"An Ordinance to provide for the control and management of the public finances of the State of Singapore, and for financial and accounting procedure, including procedure for the collection, custody and payment of the public moneys of the State of Singapore, and the purchase, custody and disposal of public property, other than land, of the State of Singapore and for matters connected therewith.\"",
+      "SPEECH"
+    ],
+    [
+      "Mr Speaker",
+      "The Question is that the Bill be read a Second time.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "The voting was as follows:-",
+      "PROCEDURAL"
+    ],
+    [
+      null,
+      "Ayes 30; Noes 12.",
+      "UNCLASSIFIED"
+    ]
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "why": "A vote list printed under 'The voting was as follows' with no record line was stored as the Speaker's speech; its Ayes and Noes heading is a procedural row with no speaker and the list lines after it have none.",
+  "why": "A vote list printed under 'The voting was as follows' with no record line was stored as the Speaker's speech; its Ayes and Noes heading is a procedural row with no speaker and the list lines after it have none. The 'The voting was as follows' line itself has no speaker either.",
   "source_report_id": 38379,
   "report_version": "sprs2",
   "report_type": "misc",
@@ -14,9 +14,9 @@
       "SPEECH"
     ],
     [
-      "Mr Speaker",
+      null,
       "The voting was as follows: -",
-      "SPEECH"
+      "PROCEDURAL"
     ],
     [
       null,
