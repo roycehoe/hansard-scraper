@@ -31,11 +31,6 @@ def _get_validated_speaker(membership: MembershipPartyAffiliations, speakers: li
 
 def _validate_can_build_spans(membership: MembershipPartyAffiliations) -> None:
     membership_label = _get_membership_label(membership.name, membership.parliament_number)
-    for span in membership.affiliations:
-        if span.source_url is None and span.source_report_id is None:
-            raise HansardPartyAffiliationError(f"{membership_label}: span of {span.party!r} from {span.started_on} has no source")
-        if span.source_url is not None and span.source_report_id is not None:
-            raise HansardPartyAffiliationError(f"{membership_label}: span of {span.party!r} from {span.started_on} has two sources")
     for previous_span, span in pairwise(membership.affiliations):
         if span.started_on <= previous_span.started_on:
             raise HansardPartyAffiliationError(

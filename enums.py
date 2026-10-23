@@ -68,3 +68,9 @@ class RefreshRunStatus(StrEnum):
 class LegislativeAssemblyFlag(StrEnum):
     NO = "1"  # old site left these unflagged, all 1,253 rows
     YES = "2"  # old site flagged these, all 94 rows
+
+
+class PersonDecisionKind(StrEnum):
+    DISTINCT = "distinct"
+    MERGE = "merge"
+    NAME = "name"

@@ -48,7 +48,10 @@ def test_a_row_the_file_puts_in_parliament_zero_moves_from_parliament_one() -> N
 
 def test_a_head_of_state_the_file_puts_in_parliament_zero_moves_too() -> None:
     speakers = [_get_speaker(1, "John Nicoll", 1), _get_speaker(2, "Yusof bin Ishak", 1)]
-    heads_of_state = [HeadOfStateResult(name="John Nicoll", parliament_number=0), HeadOfStateResult(name="Yusof bin Ishak", parliament_number=1)]
+    heads_of_state = [
+        HeadOfStateResult(name="John Nicoll", parliament_number=0, comments="Governor"),
+        HeadOfStateResult(name="Yusof bin Ishak", parliament_number=1, comments="Yang di-Pertuan Negara"),
+    ]
 
     assert get_parliament_changes(speakers, [], heads_of_state) == [ParliamentChange(1, "John Nicoll", 1, 0)]
 

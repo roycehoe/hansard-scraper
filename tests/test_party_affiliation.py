@@ -112,6 +112,17 @@ def test_span_without_the_upper_bound_flag_is_refused() -> None:
         PartyAffiliationSpan.model_validate(span)
 
 
+@pytest.mark.parametrize(
+    ("source_url", "source_report_id"),
+    [(None, None), (_EXAMPLE_URL, _SOURCE_REPORT_ID)],
+)
+def test_party_affiliation_span_refuses_no_source_and_both_sources(source_url: Optional[str], source_report_id: Optional[int]) -> None:
+    span = _get_span(_ALLIANCE, "2006-05-06", source_url=source_url, source_report_id=source_report_id)
+
+    with pytest.raises(ValidationError):
+        PartyAffiliationSpan.model_validate(span)
+
+
 def test_membership_without_affiliations_is_refused() -> None:
     with pytest.raises(ValidationError):
         MembershipPartyAffiliations.model_validate({"name": "Chiam See Tong", "parliament_number": 11, "affiliations": []})
@@ -219,20 +230,6 @@ def test_spans_on_the_same_date_raise() -> None:
     membership = _get_membership(_get_span(_ALLIANCE, "2006-05-06"), _get_span(_PEOPLES_PARTY, "2006-05-06"))
 
     with pytest.raises(HansardPartyAffiliationError, match="not after"):
-        build_party_affiliations([membership], _get_chiam_speakers())
-
-
-def test_span_without_a_source_raises() -> None:
-    membership = _get_membership(_get_span(_ALLIANCE, "2006-05-06", source_url=None))
-
-    with pytest.raises(HansardPartyAffiliationError, match="has no source"):
-        build_party_affiliations([membership], _get_chiam_speakers())
-
-
-def test_span_with_two_sources_raises() -> None:
-    membership = _get_membership(_get_span(_ALLIANCE, "2006-05-06", source_report_id=_SOURCE_REPORT_ID))
-
-    with pytest.raises(HansardPartyAffiliationError, match="two sources"):
         build_party_affiliations([membership], _get_chiam_speakers())
 
 
