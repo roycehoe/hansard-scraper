@@ -174,7 +174,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 
 The speech fidelity loop has its own tools for rewriting stored speech rows. They live outside the repo's tracked tree, in the gitignored `plans/speech-fidelity-loop/bin/`. Run them only for a planned write.
 
-Scripts log through `logs.logger`; the one script whose stdout is data (`find_presiding_officers.py`, a paste-ready dict literal) prints that output under `# noqa: T201`. `find_unmatched_attendees.py` writes its JSON template to the path given by `--json`.
+Scripts log through `logs.logger`; the one script whose stdout is data (`find_presiding_officers.py`, paste-ready `SPEAKER_TERMS` and `DEPUTY_SPEAKER_TERMS` tuple literals) prints that output under `# noqa: T201`. `find_unmatched_attendees.py` writes its JSON template to the path given by `--json`.
 
 ## Module structure
 
