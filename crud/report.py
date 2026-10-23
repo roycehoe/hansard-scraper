@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlmodel import Session, col, delete, func, select
 
 from database.report import Report
+from utils.column_numbers import ReportColumnRange
 from utils.text import TextChange
 
 
@@ -32,6 +33,14 @@ class ReportTextRow:
     subtitle: Optional[str]
     content: Optional[str]
     markdown_content: Optional[str]
+
+
+@dataclass(frozen=True)
+class ReportColumnRow:
+    id: int
+    parliament_number: int
+    column_start: Optional[int]
+    column_end: Optional[int]
 
 
 _STREAM_BATCH = 200
@@ -181,6 +190,34 @@ class CRUDReport:
                 "WHERE report.id = v.id"
             ),
             {"ids": list(report_id_to_sitting_number.keys()), "sitting_numbers": list(report_id_to_sitting_number.values())},
+        )
+
+        return update_result.rowcount
+
+    def get_column_rows_by_ids(self, report_ids: list[int]) -> list[ReportColumnRow]:
+        statement = (
+            select(Report.id, Report.parliament_number, Report.column_start, Report.column_end)
+            .where(col(Report.id).in_(report_ids))
+            .order_by(Report.id)
+        )
+        return [ReportColumnRow(*row) for row in self.session.exec(statement).all()]
+
+    def set_column_ranges_bulk(self, report_column_ranges: list[ReportColumnRange]) -> int:
+        if not report_column_ranges:
+            return 0
+
+        update_result = self.session.execute(
+            text(
+                "UPDATE report SET column_start = v.column_start, column_end = v.column_end "
+                "FROM UNNEST(CAST(:ids AS integer[]), CAST(:column_starts AS integer[]), CAST(:column_ends AS integer[])) "
+                "AS v(id, column_start, column_end) "
+                "WHERE report.id = v.id"
+            ),
+            {
+                "ids": [report_column_range.id for report_column_range in report_column_ranges],
+                "column_starts": [report_column_range.column_start for report_column_range in report_column_ranges],
+                "column_ends": [report_column_range.column_end for report_column_range in report_column_ranges],
+            },
         )
 
         return update_result.rowcount

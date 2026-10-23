@@ -7,6 +7,8 @@ from sqlmodel import Session, col, delete, func, select
 
 from database.report import Report
 from database.speech import Speech
+from enums import ColumnNote
+from utils.column_numbers import SpeechColumnNote
 from utils.text import TextChange
 
 _STREAM_BATCH = 10_000
@@ -78,6 +80,17 @@ class SpeechTextRow:
     report_id: int
     speaker: Optional[str]
     transcript: str
+
+
+@dataclass(frozen=True)
+class SpeechColumnRow:
+    id: int
+    report_id: int
+    speaker: Optional[str]
+    transcript: str
+    column_start: Optional[int]
+    column_note: Optional[ColumnNote]
+    column_suggested: Optional[int]
 
 
 @dataclass(frozen=True)
@@ -173,6 +186,14 @@ class CRUDSpeech:
         )
         return [SpeechRow(*row) for row in self.session.exec(statement).all()]
 
+    def get_column_rows_by_report_ids(self, report_ids: list[int]) -> list[SpeechColumnRow]:
+        statement = (
+            select(Speech.id, Speech.report_id, Speech.speaker, Speech.transcript, Speech.column_start, Speech.column_note, Speech.column_suggested)
+            .where(col(Speech.report_id).in_(report_ids))
+            .order_by(Speech.report_id, Speech.ordinal)
+        )
+        return [SpeechColumnRow(*row) for row in self.session.exec(statement).all()]
+
     def get_text_rows(self) -> Iterable[SpeechTextRow]:
         statement = (
             select(Speech.id, Speech.report_id, Speech.speaker, Speech.transcript)
@@ -259,6 +280,41 @@ class CRUDSpeech:
             ),
             {"ids": list(speech_id_to_speaker_id.keys()), "speaker_ids": list(speech_id_to_speaker_id.values())},
         )
+
+    def set_column_starts_bulk(self, speech_id_to_column_start: dict[int, Optional[int]]) -> int:
+        if not speech_id_to_column_start:
+            return 0
+
+        update_result = self.session.execute(
+            text(
+                "UPDATE speech SET column_start = v.column_start "
+                "FROM UNNEST(CAST(:ids AS integer[]), CAST(:column_starts AS integer[])) AS v(id, column_start) "
+                "WHERE speech.id = v.id"
+            ),
+            {"ids": list(speech_id_to_column_start.keys()), "column_starts": list(speech_id_to_column_start.values())},
+        )
+
+        return update_result.rowcount
+
+    def set_column_notes_bulk(self, speech_column_notes: list[SpeechColumnNote]) -> int:
+        if not speech_column_notes:
+            return 0
+
+        update_result = self.session.execute(
+            text(
+                "UPDATE speech SET column_note = v.column_note, column_suggested = v.column_suggested "
+                "FROM UNNEST(CAST(:ids AS integer[]), CAST(:column_notes AS columnnote[]), CAST(:column_suggesteds AS integer[])) "
+                "AS v(id, column_note, column_suggested) "
+                "WHERE speech.id = v.id"
+            ),
+            {
+                "ids": [speech_column_note.id for speech_column_note in speech_column_notes],
+                "column_notes": [speech_column_note.column_note for speech_column_note in speech_column_notes],
+                "column_suggesteds": [speech_column_note.column_suggested for speech_column_note in speech_column_notes],
+            },
+        )
+
+        return update_result.rowcount
 
     def get_vacuum_count(self) -> int:
         statement = text("SELECT vacuum_count FROM pg_stat_user_tables WHERE relid = 'speech'::regclass")
