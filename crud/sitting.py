@@ -11,7 +11,7 @@ from utils.text import TextChange
 @dataclass(frozen=True)
 class SittingDateRow:
     id: int
-    sitting_date: Optional[str]
+    sitting_date: str
     parlement_no: Optional[int]
     volume_no: Optional[int]
 
@@ -19,7 +19,7 @@ class SittingDateRow:
 @dataclass(frozen=True)
 class SittingNumberRow:
     id: int
-    sitting_date: Optional[str]
+    sitting_date: str
     session_no: Optional[int]
     sitting_no: Optional[int]
     markdown_content: Optional[str]
@@ -81,8 +81,8 @@ class CRUDSitting:
         )
         return list(self.session.exec(statement).all())
 
-    def get_sitting_dates_by_sitting_date_not_null(self) -> set[str]:
-        statement = select(Sitting.sitting_date).where(Sitting.sitting_date.is_not(None))
+    def get_all_sitting_dates(self) -> set[str]:
+        statement = select(Sitting.sitting_date)
         return set(self.session.exec(statement).all())
 
     def get_max_parlement_no(self) -> Optional[int]:

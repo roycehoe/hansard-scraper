@@ -37,6 +37,6 @@ class Speech(SQLModel, table=True):
     )
     sitting_date: datetime
 
-    report_id: Optional[int] = Field(default=None, foreign_key="report.id", index=True)
+    report_id: int = Field(foreign_key="report.id", index=True)
     report: Report = Relationship(back_populates="speeches")
     speaker_id: Optional[int] = Field(default=None, foreign_key="speaker.id")

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from database.hansard_sitting_date_response import HansardSittingDateResponse
 
@@ -25,8 +25,8 @@ class CRUDHansardSittingDateResponse:
         statement = select(HansardSittingDateResponse)
         return list(self.session.exec(statement).all())
 
-    def get_all_sitting_dates(self) -> set[str]:
-        statement = select(HansardSittingDateResponse.sitting_date)
+    def get_sitting_dates_by_sitting_date_not_null(self) -> set[str]:
+        statement = select(HansardSittingDateResponse.sitting_date).where(col(HansardSittingDateResponse.sitting_date).is_not(None))
         return set(self.session.exec(statement).all())
 
     def get_by_sitting_date(self, sitting_date: str) -> Optional[HansardSittingDateResponse]:

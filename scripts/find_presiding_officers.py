@@ -49,8 +49,6 @@ def find_presiding_officers() -> None:
     for sitting in sittings:
         if not sitting.markdown_content:
             continue
-        if sitting.sitting_date is None:
-            continue
         parliament_number = infer_parliament(sitting.parlement_no, sitting.volume_no)
         if parliament_number is None:
             continue

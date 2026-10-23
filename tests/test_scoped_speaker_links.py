@@ -40,6 +40,7 @@ def _build_report(report_id: str) -> Report:
 
 
 def _build_speech(report: Report) -> Speech:
+    assert report.id is not None
     return Speech(ordinal=_ORDINAL, speaker=_SPEAKER_LABEL, transcript="Text", sitting_date=report.sitting_date, report_id=report.id)
 
 
@@ -56,6 +57,8 @@ def test_links_only_the_given_reports_and_sittings_and_never_commits(scratch_ses
         other_sitting,
     ])
     scratch_session.flush()
+    assert sitting.id is not None
+    assert other_sitting.id is not None
     scratch_session.add_all([
         _build_speech(first_report),
         _build_speech(second_report),

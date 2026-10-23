@@ -42,6 +42,7 @@ def _build_report(report_id: str, title: str, report_type: ReportType, sitting_d
 def _seed_one_speech(scratch_session: Session, speaker: Speaker, report: Report, label: str) -> int:
     scratch_session.add_all([speaker, report])
     scratch_session.flush()
+    assert report.id is not None
     speech = Speech(ordinal=_ORDINAL, speaker=label, transcript="Text", sitting_date=report.sitting_date, report_id=report.id)
     scratch_session.add(speech)
     scratch_session.commit()

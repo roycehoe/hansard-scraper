@@ -31,6 +31,7 @@ def _build_report(report_id: str) -> Report:
 
 
 def _build_speech(report_id: Optional[int], ordinal: int, speaker_id: Optional[int]) -> Speech:
+    assert report_id is not None
     return Speech(
         ordinal=ordinal,
         speaker="Mr Tan Ah Kow",

@@ -48,7 +48,7 @@ def populate_hansard_sitting_dates(session: Session) -> None:
     all_sitting_dates = CRUDHansardWebsiteResponse(session).get_all_sitting_dates()
     existing_sitting_dates = CRUDHansardSittingDateResponse(
         session
-    ).get_all_sitting_dates()
+    ).get_sitting_dates_by_sitting_date_not_null()
     sitting_dates_to_fetch = list(all_sitting_dates - existing_sitting_dates)
 
     fetched_sitting_dates = asyncio.run(_fetch_all_sitting_dates(sitting_dates_to_fetch))

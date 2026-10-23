@@ -11,7 +11,7 @@ _BATCH_SIZE = 1_000
 
 def populate_speeches(session: Session) -> None:
     reports = CRUDReport(session).get_all()
-    existing_report_ids = CRUDSpeech(session).get_distinct_report_ids_by_report_id_not_null()
+    existing_report_ids = CRUDSpeech(session).get_distinct_report_ids()
     reports_to_process = [report for report in reports if report.id not in existing_report_ids]
     report_id_to_unattributed_range = {speech_range.report_id: speech_range for speech_range in get_unattributed_speech_ranges()}
     logger.info(f"Parsing speeches for {len(reports_to_process)}/{len(reports)} reports ({len(existing_report_ids)} already done)")

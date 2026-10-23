@@ -62,7 +62,7 @@ class CRUDAttendance:
         self.session.flush()
 
     def get_all(self) -> list[Attendance]:
-        statement = select(Attendance).order_by(Attendance.sitting_id, Attendance.id)
+        statement = select(Attendance).order_by(col(Attendance.sitting_id), Attendance.id)
         return list(self.session.exec(statement).all())
 
     def get_text_rows(self) -> Iterable[AttendanceTextRow]:
@@ -94,12 +94,8 @@ class CRUDAttendance:
         )
         return self.session.exec(statement).one()
 
-    def get_distinct_sitting_ids_by_sitting_id_not_null(self) -> set[int]:
-        statement = (
-            select(Attendance.sitting_id)
-            .distinct()
-            .where(col(Attendance.sitting_id).is_not(None))
-        )
+    def get_distinct_sitting_ids(self) -> set[int]:
+        statement = select(Attendance.sitting_id).distinct()
         return set(self.session.exec(statement).all())
 
     def get_presence_rows_by_speaker_id_not_null(self) -> list[AttendancePresenceRow]:
@@ -110,7 +106,7 @@ class CRUDAttendance:
         return [AttendancePresenceRow(*row) for row in self.session.exec(statement).all()]
 
     def get_sitting_counts(self) -> list[AttendanceSittingCount]:
-        statement = select(Attendance.sitting_id, func.count()).group_by(Attendance.sitting_id)
+        statement = select(Attendance.sitting_id, func.count()).group_by(col(Attendance.sitting_id))
         return [AttendanceSittingCount(*row) for row in self.session.exec(statement).all()]
 
     def get_speaker_rows_by_speaker_id_null(self) -> list[AttendanceSpeakerRow]:

@@ -181,7 +181,7 @@ def test_failed_report_fetch_is_counted_in_the_sitting_dates_summary(
         _get_summary_line(messages, "Hansard sitting dates:")
         == "Hansard sitting dates: 0 stored, 1 fetches failed"
     )
-    assert CRUDHansardSittingDateResponse(scratch_session).get_all_sitting_dates() == set()
+    assert CRUDHansardSittingDateResponse(scratch_session).get_sitting_dates_by_sitting_date_not_null() == set()
 
 
 def test_working_report_fetch_counts_no_failed_fetch_in_the_sitting_dates_summary(
@@ -196,7 +196,7 @@ def test_working_report_fetch_counts_no_failed_fetch_in_the_sitting_dates_summar
         _get_summary_line(messages, "Hansard sitting dates:")
         == "Hansard sitting dates: 1 stored, 0 fetches failed"
     )
-    assert CRUDHansardSittingDateResponse(scratch_session).get_all_sitting_dates() == {_SITTING_DATE}
+    assert CRUDHansardSittingDateResponse(scratch_session).get_sitting_dates_by_sitting_date_not_null() == {_SITTING_DATE}
 
 
 def test_failed_topic_fetch_is_counted_in_the_responses_summary(

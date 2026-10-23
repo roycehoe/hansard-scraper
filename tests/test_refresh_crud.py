@@ -75,8 +75,8 @@ def test_max_and_sitting_date_from_reads(scratch_session: Session) -> None:
         _build_report("with-text", _EARLIER_PARLIAMENT, _TEXT_SITTING_DATE, _REPORT_TEXT),
         _build_report("empty-text", _LATEST_PARLIAMENT, _EMPTY_TEXT_SITTING_DATE, ""),
         _build_report("null-text", _LATEST_PARLIAMENT, _NULL_TEXT_SITTING_DATE, None),
-        Sitting(parlement_no=_EARLIER_PARLIAMENT),
-        Sitting(parlement_no=_LATEST_PARLIAMENT),
+        Sitting(sitting_date=_SITTING_DATE, parlement_no=_EARLIER_PARLIAMENT),
+        Sitting(sitting_date=_SITTING_DATE, parlement_no=_LATEST_PARLIAMENT),
     ])
     scratch_session.flush()
 
@@ -91,13 +91,13 @@ def test_attendance_count_reads_the_database(scratch_session: Session) -> None:
     sitting = Sitting(sitting_date=_SITTING_DATE, parlement_no=_LATEST_PARLIAMENT)
     scratch_session.add_all([speaker, sitting])
     scratch_session.flush()
+    assert sitting.id is not None
     first_attendance = Attendance(sitting_id=sitting.id, speaker_name="Tan Ah Kow")
     second_attendance = Attendance(sitting_id=sitting.id, speaker_name="Lim Ah Lian")
     scratch_session.add_all([first_attendance, second_attendance])
     scratch_session.flush()
     assert first_attendance.id is not None
     assert speaker.id is not None
-    assert sitting.id is not None
 
     CRUDAttendance(scratch_session).set_speaker_ids_bulk({first_attendance.id: speaker.id})
 

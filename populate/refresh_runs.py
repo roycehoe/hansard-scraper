@@ -317,7 +317,7 @@ def _validate_can_accept_parliament_numbers(
 def _load_stored_refresh_state(session: Session, today: date) -> StoredRefreshState:
     stored_sitting_dates = {
         parse_sitting_date(sitting_date_key).date()
-        for sitting_date_key in CRUDHansardSittingDateResponse(session).get_all_sitting_dates()
+        for sitting_date_key in CRUDHansardSittingDateResponse(session).get_sitting_dates_by_sitting_date_not_null()
     }
     if not stored_sitting_dates:
         raise HansardRefreshRunError("No stored sitting to start from")

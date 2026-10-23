@@ -72,7 +72,7 @@ def populate_sitting_details(session: Session) -> None:
     sittings_to_fetch = [
         sitting
         for sitting in sittings
-        if sitting.sitting_date is not None and parse_sitting_date(sitting.sitting_date).date() <= settings.search_to_date
+        if parse_sitting_date(sitting.sitting_date).date() <= settings.search_to_date
     ]
     logger.info(f"Fetching {len(sittings_to_fetch)}/{len(sittings)} sittings without details")
 

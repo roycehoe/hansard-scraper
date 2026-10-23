@@ -259,6 +259,7 @@ def _build_report(seed_report: _SeedReport) -> Report:
 
 
 def _build_speech(report: Report, ordinal: int, seed_speech: _SeedSpeech, speaker_id: Optional[int]) -> Speech:
+    assert report.id is not None
     return Speech(
         ordinal=ordinal,
         speaker=seed_speech.speaker,

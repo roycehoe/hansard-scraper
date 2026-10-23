@@ -252,8 +252,6 @@ def check_link_plausibility() -> None:
         sitting_id_to_sitting_date: dict[int, date] = {}
         sitting_id_to_parliament_number: dict[int, int] = {}
         for sitting in CRUDSitting(session).get_date_rows():
-            if sitting.sitting_date is None:
-                continue
             sitting_id_to_sitting_date[sitting.id] = parse_sitting_date(sitting.sitting_date).date()
             parliament_number = infer_parliament(sitting.parlement_no, sitting.volume_no)
             if parliament_number is not None:
