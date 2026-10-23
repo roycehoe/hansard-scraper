@@ -80,7 +80,7 @@ def test_empty_table_logs_n_a_for_every_breakdown_row(
 
     breakdown_rows = _get_breakdown_rows(logged_messages)
     assert breakdown_rows[0].startswith("  linked rows")
-    assert [row.endswith(_EMPTY_BREAKDOWN_ROW_TAIL) for row in breakdown_rows] == [True] * _BREAKDOWN_ROW_COUNT
+    assert [breakdown_row.endswith(_EMPTY_BREAKDOWN_ROW_TAIL) for breakdown_row in breakdown_rows] == [True] * _BREAKDOWN_ROW_COUNT
 
 
 def test_non_empty_table_logs_exact_headline_lines(
