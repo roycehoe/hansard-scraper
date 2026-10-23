@@ -53,7 +53,7 @@ python scripts/load_parliament_speakers.py --parliament N
 
 ## Architecture
 
-This is a scraper for Singapore Parliament Hansard records (sprs.parl.gov.sg). The pipeline runs in stages — each stage's output feeds the next — and `script.py` is the orchestration file that runs all stages sequentially.
+This is a scraper for Singapore Parliament Hansard records (sprs.parl.gov.sg). The pipeline runs in stages — each stage's output feeds the next — and `script.py` is the orchestration file that runs stages 5 to 9 (sitting dates, sittings, attendance, speaker links, persons) in order. Stages 2 to 4 (`populate/hansard_responses.py`, `populate/reports.py`, `populate/speeches.py`) are not part of `script.py`; the daily refresh below adds their rows.
 
 ### Layer rules
 
@@ -68,7 +68,7 @@ Each folder has a strict responsibility boundary. `populate/` is the only layer 
 | `crud/` | DB read/write helpers | Business logic, HTTP |
 | `populate/` | Pipeline stages: orchestrate gateway + services + crud | — |
 | `utils/` | Shared pure functions | DB access, HTTP |
-| `scripts/` | One-off diagnostics: use Session + crud + services | Raw SQL, direct `select()`/`session.add()` bypassing crud |
+| `scripts/` | One-off diagnostics: use Session + crud + services, and may call gateways | Raw SQL, direct `select()`/`session.add()` bypassing crud |
 
 Every request to SPRS or parliament.gov.sg goes through `paced_request()` or `paced_request_async()` in `gateway/http.py` and sends `CRAWL_HEADERS`.
 
@@ -88,7 +88,7 @@ Every request to SPRS or parliament.gov.sg goes through `paced_request()` or `pa
 
 7. **Extract attendance** (`services/attendance.py` + `populate/attendances.py`) — for each `Sitting`, parses the PRESENT/ABSENT sections from `markdown_content` and writes one `Attendance` row per name found. Sittings with no markdown (every sitting from 10 September 2012) take their rows from the structured `attendance_list` instead, with the same name cleaning and resolution. The constituency in each row's bracket goes through `data/constituency_names.json`, which turns typos and variant spellings into the Elections Department's name and leaves seat types printed in place of a constituency ("Nominated Member", "ex-officio") and other text as printed. A "GRC" suffix is dropped, since the Elections Department leaves it out of the division's name. A list ends at the first line that is not a name entry (a heading, a table row, a line that opens with bold or an asterisk, a date line, or an entry that carries a heading glued to its end). A line in the list with neither a title nor a bracketed constituency is skipped, a name that holds markup is never kept, and a member listed twice in a sitting keeps one row, the present one. Skips sittings already processed.
 
-8. **Wire Speaker foreign keys** (`populate/speaker_links.py`) — resolves speaker/attendee names against the `Speaker` table and sets `speaker_id` on `Attendance` and `Speech` rows. Depends on the `Speaker` table being populated first (see out-of-band step below).
+8. **Wire Speaker foreign keys** (`services/speaker_link.py` + `populate/speaker_links.py`) — resolves speaker/attendee names against the `Speaker` table and sets `speaker_id` on `Attendance` and `Speech` rows. `services/speaker_link.py` holds the resolver (`resolve_speech_rows`, `resolve_attendance_rows` and their helpers); `populate/speaker_links.py` keeps the session-taking passes and entry points. Depends on the `Speaker` table being populated first (see out-of-band step below).
 
 **Out-of-band:** `scripts/scrape_speakers_by_parliament.py` scrapes `parliament.gov.sg` for the full list of speakers per parliament and stores them in the `Speaker` table. This must be run before step 8; it is not part of `script.py`. The source gives one party and one Assembly flag per person, so `data/speaker_overrides.json` corrects the flag and the party per Parliament row, both at scrape time (`services/speaker.py`) and on stored rows (`scripts/apply_speaker_overrides.py`). For colonial-era Legislative Assembly members, run `scripts/load_colonial_la_speakers.py` first. A member who sat only in the Assembly is a Parliament 0 row, and one who sat in both bodies has one row in Parliament 1; `scripts/apply_speaker_parliaments.py` moves stored rows to the Parliament the two colonial data files give them, and runs before the loaders and `apply_speaker_overrides.py` read the changed files. `data/unscraped_members.json` holds the Parliament 13 row of Lee Li Lian, who declined the seat the Hansard still lists her for, so the scrape omits her; `scripts/load_colonial_la_speakers.py` reads it with the colonial file and inserts it after the Parliament moves, and `scripts/clean_attendance.py` needs it to link her six attendance rows. A few members changed party inside one Parliament while a `Speaker` row holds only the ballot party, so `data/party_affiliations.json` records their dated party history; run `python -m scripts.load_party_affiliations` once the `Speaker` table is final (after `apply_speaker_parliaments.py`, the loaders and `apply_speaker_overrides.py`), because it finds each Membership by name and Parliament and refuses unless the stored party is one of the spans' parties.
 
@@ -128,7 +128,7 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 
 `services/speech.py::get_start_of_speech_line` — locates the line in the markdown that marks where speeches begin (the report's own title appears in bold as the first "heading" before actual speeches). Returns `None` if the title can't be matched.
 
-`services/attendance.py`: extracts and resolves names from sitting markdown. `build_speaker_lookups(speakers: list[Speaker]) -> SpeakerLookups` builds all six in-memory lookup dicts from a pre-loaded Speaker list (no DB access). Callers must load Speakers via `crud/speaker.py` and pass the resulting `SpeakerLookups` to `resolve_canonical_name` and `get_sitting_attendance`. The resolution cascade: manual overrides → inverted-name lookup → direct lookup → bin-free lookup → word-set lookup → prefix lookup → spelling normalisation → Haji-prefix stripping → surname-only fallback. The pure name helpers (`strip_title`, which removes 25+ title prefixes such as Dr, BG, RAdm and Tuan Haji before matching, plus `normalize_name`, `period_normalize`, `strip_bin`, `invert_to_natural`, `strip_middle_haji` and `spelling_normalize`) live in `utils/names.py`, because `services/attendance.py` and `services/person.py` both need them. `infer_parliament(parlement_no, volume_no)` derives the parliament number using `VOLUME_TO_PARLIAMENT`. CRUD projections come back as dataclasses declared beside their method (`SpeechRow`, `SpeechSpeakerRow`, `AttendanceSpeakerRow`), never tuples, and CRUD lookups are named for the columns they filter on (`get_speaker_rows_by_speaker_id_null`, `get_by_markdown_content_not_null`).
+`services/attendance.py`: extracts names from sitting markdown and from the structured attendance list. `build_speaker_lookups(speakers: list[Speaker]) -> SpeakerLookups` builds all six in-memory lookup dicts from a pre-loaded Speaker list (no DB access). Callers must load Speakers via `crud/speaker.py` and pass the resulting `SpeakerLookups` to `resolve_canonical_name` and `build_sitting_attendances`, the dispatcher that calls `build_sitting_attendances_from_markdown` and `build_sitting_attendances_from_list`. `resolve_canonical_name`, `SpeakerLookups` and the reference tables behind them live in `utils/speaker_resolution.py`. The resolution cascade: manual overrides → inverted-name lookup → direct lookup → bin-free lookup → word-set lookup → prefix lookup → spelling normalisation → Haji-prefix stripping → surname-only fallback. The pure name helpers (`strip_title`, which removes 25+ title prefixes such as Dr, BG, RAdm and Tuan Haji before matching, plus `normalize_name`, `period_normalize`, `strip_bin`, `invert_to_natural`, `strip_middle_haji` and `spelling_normalize`) live in `utils/names.py`, because `services/attendance.py` and `services/person.py` both need them. `infer_parliament(parlement_no, volume_no)` and `VOLUME_TO_PARLIAMENT` live in `utils/parliament_numbers.py`. CRUD projections come back as dataclasses declared beside their method (`SpeechRow`, `SpeechSpeakerRow`, `AttendanceSpeakerRow`), never tuples, and CRUD lookups are named for the columns they filter on (`get_speaker_rows_by_speaker_id_null`, `get_by_markdown_content_not_null`).
 
 ### Environment
 
@@ -146,6 +146,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `run_exclusion_sanity_check.py` — analyses zero-speech (excluded) documents by checking HTML bold tags vs markdown speaker patterns
 - `find_unmatched_attendees.py` — finds attendance names with no match in the Speaker table, grouped by frequency; outputs a JSON template for `colonial_la_members.json`
 - `attribution_text_share.py` — the three attribution numbers in `docs/vision.md`: ADR 0001 rate, all-rows rate, and share of body text in a linked speech; also per report type within each Parliament group, with the zero-row count and the single-speaker collapse share; `--output PATH` keeps the lines in `docs/figures/`, one file per write
+- `check_link_plausibility.py`: read-only check on stage 8 links: lists linked rows whose person was absent or unlisted that sitting, unlinked speaker strings outside the known-unlinkable classes, and sittings with a short attendance list; `--json FILE` keeps the review list
 - `speech_speaker_match_rate.py` — samples speeches stratified by report type, applies the full `SpeakerLookups` name-resolution pipeline via `resolve_canonical_name`, reports match rate overall and by type
 - `load_colonial_la_speakers.py` — idempotent load of `data/colonial_la_members.json` and `data/unscraped_members.json` into the `Speaker` table; must be run before `populate_speaker_links`
 - `load_heads_of_state.py`: idempotent load of `data/heads_of_state.json` (Governors, the Yang di-Pertuan Negara, Presidents) into the `Speaker` table as non-member rows; run after `load_colonial_la_speakers.py` and before `populate_speaker_links`
@@ -171,7 +172,7 @@ One-off diagnostic and analysis scripts, not part of the main pipeline:
 - `validate_api_field_mapping.py`: checks that every non-null field in a live or synthetic API body survives the schema and the ORM mapping
 - `load_parliament_speakers.py`: stores the members of one Parliament (`--parliament N`) that the `Speaker` table lacks, from parliament.gov.sg, with the overrides of `data/speaker_overrides.json`; a dry run unless `--commit`
 
-The speech fidelity loop has its own tools for rewriting stored speech rows: `dryrun_fix.py` and `dryrun_subset.py` compare the parser against a frozen previous copy, `plan_*.py` build the update plan, `apply_fix*.py` and `ship_delta*.py` write it. Run them only for a planned write.
+The speech fidelity loop has its own tools for rewriting stored speech rows. They live outside the repo's tracked tree, in the gitignored `plans/speech-fidelity-loop/bin/`. Run them only for a planned write.
 
 Scripts log through `logs.logger`; the one script whose stdout is data (`find_presiding_officers.py`, a paste-ready dict literal) prints that output under `# noqa: T201`. `find_unmatched_attendees.py` writes its JSON template to the path given by `--json`.
 
@@ -180,7 +181,7 @@ Scripts log through `logs.logger`; the one script whose stdout is data (`find_pr
 ```
 hansard-scraper/
 │
-├── script.py                        # Pipeline orchestrator — runs all populate stages in order
+├── script.py                        # Pipeline orchestrator — runs populate stages 5 to 9 in order
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
 ├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag
@@ -195,6 +196,9 @@ hansard-scraper/
 │   ├── excluded_report_id.py       # ExcludedReportId: data/excluded_report_ids.json entries
 │   ├── attendance_cleanup.py       # AttendanceCleanup: data/attendance_cleanup.json entries
 │   ├── party_affiliation.py        # MembershipPartyAffiliations / PartyAffiliationSpan: data/party_affiliations.json entries
+│   ├── speaker_link_plan.py        # SpeakerLinkPlan: the plan file of scripts/apply_speaker_links.py
+│   ├── coverage_refill_plan.py     # CoverageRefillPlan / FetchedHit / FetchedReport: the plan file of scripts/apply_coverage_refill.py
+│   ├── sample_sets.py              # SampleSets: the pilot, held-out and regression report ids of the speech sample
 │   ├── speaker_override.py         # SpeakerOverrides: data/speaker_overrides.json
 │   ├── parliament_member_list_response.py  # ParliamentMemberListResponse: the member data in the parliament.gov.sg list page
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata
@@ -217,7 +221,7 @@ hansard-scraper/
 │   ├── attendance.py                # Sitting markdown → Attendance; build_speaker_lookups(list[Speaker]) → SpeakerLookups
 │   ├── attendance_cleanup.py        # Plan for scripts/clean_attendance.py: checks the listed rows, then links or deletes each
 │   ├── person.py                    # Speaker rows → person clusters (name normalisation + review decisions)
-│   ├── role_context.py              # Chairman, Deputy Speaker and carried-role names per speech row
+│   ├── speaker_link.py              # Stage 8 resolver: Chairman, Deputy Speaker and carried-role names, speech and attendance rows → speaker ids
 │   ├── party_affiliation.py         # Party affiliation file + Speaker rows → PartyAffiliation rows; picks the rows not yet stored
 │   ├── api_field_mapping.py         # Fields an API body loses on its way to a row (the refresh halt and validate_api_field_mapping.py)
 │   ├── attribution.py               # Speech row categories and the figures JSON for refresh_run.figures
@@ -261,25 +265,30 @@ hansard-scraper/
 │   ├── sittings.py                  # Stage 6: HansardSittingDateResponse → Sitting
 │   ├── attendances.py               # Stage 7: Sitting → Attendance
 │   ├── speaker_links.py             # Stage 8: resolve names → set speaker_id on Speech + Attendance
-│   ├── speaker_resolution_constants.py  # Reference tables for stage 8 (role terms, office holders)
 │   ├── persons.py                   # Stage 9: cluster Speaker rows into Person rows
 │   ├── attribution_figures.py       # Reads report and speech rows into the attribution figures
 │   ├── refresh_runs.py              # Daily refresh: fetch, check, add rows, link, record the run, alert
 │   └── speakers.py                  # Out-of-band: persist scraped Speaker records
 │
 ├── utils/                           # Shared pure utilities (no DB, no HTTP)
+│   ├── data_files.py                # Reads each hand-kept data/ file through its schema
+│   ├── json_columns.py              # Serialises a nested list to the JSON text stored in a column
 │   ├── markdown_header.py           # Reads a number such as Sitting No from a stored header table
 │   ├── markdown_parser.py           # HTML → clean markdown; merges split bold lines
 │   ├── names.py                     # Pure name helpers shared by services/attendance.py and services/person.py
-│   ├── sitting_dates.py             # Sitting-date parsing and the old/new format cutoff test
+│   ├── parliament_numbers.py        # VOLUME_TO_PARLIAMENT and infer_parliament: the Parliament number of a volume
+│   ├── sitting_dates.py             # Sitting-date parsing, the sitting-date key, the month windows and the old/new format cutoff test
+│   ├── speaker_resolution.py        # Name resolution: build SpeakerLookups, resolve_canonical_name and the OCR and name tables behind it
+│   ├── speaker_resolution_constants.py  # Reference tables for stage 8 (role terms, office holders)
 │   ├── speaker_terms.py             # SPEAKER_TERMS: who presided as Speaker on which dates (stages 7 and 8)
-│   ├── text.py                      # Mojibake fix (cp1252 → UTF-8, titles and markdown) and NUL stripping
+│   ├── text.py                      # Mojibake fix (cp1252 → UTF-8, titles and markdown), NUL stripping and TextChange, the before/after record of a bulk text write
 │   └── write_target.py              # validate_can_write: the guard every write script calls before --commit
 │
 └── scripts/                         # One-off diagnostics (not part of pipeline)
     ├── diagnose.py
     ├── inspect_failures.py
     ├── find_unmatched_attendees.py
+    ├── check_link_plausibility.py
     ├── run_sanity_check.py
     ├── run_no_speech_validation.py
     ├── run_single_speaker_check.py
