@@ -1,4 +1,4 @@
-import sys
+import argparse
 
 from sqlmodel import Session
 
@@ -63,12 +63,14 @@ def log_report_type_samples(session: Session, report_type: str, max_failing: int
         log_report_markdown(hansard_website_response, report)
 
 
-def inspect_failures() -> None:
-    types = sys.argv[1:] if len(sys.argv) > 1 else _DEFAULT_REPORT_TYPES
+def inspect_failures(report_types: list[str]) -> None:
     with Session(engine) as session:
-        for report_type in types:
+        for report_type in report_types:
             log_report_type_samples(session, report_type)
 
 
 if __name__ == "__main__":
-    inspect_failures()
+    parser = argparse.ArgumentParser(description="Show failing and passing speech-start samples per report type")
+    parser.add_argument("report_types", nargs="*", default=list(_DEFAULT_REPORT_TYPES), help="report types to sample; four types by default")
+    arguments = parser.parse_args()
+    inspect_failures(arguments.report_types)
