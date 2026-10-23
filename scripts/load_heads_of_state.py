@@ -36,7 +36,7 @@ def store_heads_of_state(session: Session, is_commit: bool) -> None:
         if speaker.is_member:
             speaker_id_to_is_member[speaker.id] = False
 
-    logger.info(f"Inserted {len(new_speakers)} head-of-state speakers, marked {len(speaker_id_to_is_member)} existing rows as non-members")
+    logger.info(f"Plan: insert {len(new_speakers)} head-of-state speakers, mark {len(speaker_id_to_is_member)} existing rows as non-members")
     if not is_commit:
         logger.info("Dry run: nothing written")
         return
@@ -46,6 +46,7 @@ def store_heads_of_state(session: Session, is_commit: bool) -> None:
     if updated_count != len(speaker_id_to_is_member):
         raise HansardWriteCheckError(f"Updated {updated_count} speaker rows, planned {len(speaker_id_to_is_member)}")
     session.commit()
+    logger.info(f"Committed: {len(new_speakers)} head-of-state speakers inserted, {updated_count} existing rows marked as non-members")
 
 
 def load_heads_of_state(is_commit: bool) -> None:

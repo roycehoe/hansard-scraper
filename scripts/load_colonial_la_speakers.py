@@ -30,13 +30,14 @@ def store_colonial_speakers(session: Session, is_commit: bool) -> None:
         )
         stored_keys.add(member_key)
 
-    logger.info(f"Inserted {len(new_speakers)} hand-typed speakers ({len(members) - len(new_speakers)} already existed)")
+    logger.info(f"Plan: {len(new_speakers)} hand-typed speakers to insert ({len(members) - len(new_speakers)} already existed)")
     if not is_commit:
         logger.info("Dry run: nothing written")
         return
 
     CRUDSpeaker(session).add_many(new_speakers)
     session.commit()
+    logger.info(f"Committed: {len(new_speakers)} hand-typed speakers inserted")
 
 
 def load_colonial_la_speakers(is_commit: bool) -> None:
