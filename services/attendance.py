@@ -1,5 +1,6 @@
 import json
 import re
+from collections import Counter
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Optional
@@ -536,17 +537,31 @@ def build_sitting_attendances(sitting: Sitting, lookups: SpeakerLookups, constit
     return build_sitting_attendances_from_list(sitting, lookups, constituency_lookups)
 
 
+def _drop_equal_attendances(attendances: list[Attendance], other_attendances: list[Attendance]) -> list[Attendance]:
+    other_key_to_unmatched_count = Counter(
+        (other_attendance.speaker_name, other_attendance.is_present, other_attendance.location_name) for other_attendance in other_attendances
+    )
+    unmatched_attendances = []
+    for attendance in attendances:
+        key = (attendance.speaker_name, attendance.is_present, attendance.location_name)
+        if other_key_to_unmatched_count[key] > 0:
+            other_key_to_unmatched_count[key] -= 1
+            continue
+        unmatched_attendances.append(attendance)
+    return unmatched_attendances
+
+
 def get_attendance_name_changes(sitting_id: int, stored_rows: list[Attendance], built_rows: list[Attendance]) -> list[AttendanceNameChange]:
     if len(stored_rows) != len(built_rows):
         raise HansardWriteCheckError(f"Sitting {sitting_id}: {len(stored_rows)} stored attendance rows, stage 7 builds {len(built_rows)}")
+    unmatched_stored_rows = _drop_equal_attendances(stored_rows, built_rows)
+    unmatched_built_rows = _drop_equal_attendances(built_rows, stored_rows)
     name_changes = []
-    for stored_row, built_row in zip(stored_rows, built_rows):
+    for stored_row, built_row in zip(unmatched_stored_rows, unmatched_built_rows):
         if stored_row.is_present != built_row.is_present:
             raise HansardWriteCheckError(f"Attendance row {stored_row.id}: presence {stored_row.is_present}, stage 7 builds {built_row.is_present}")
         if stored_row.location_name != built_row.location_name:
             raise HansardWriteCheckError(f"Attendance row {stored_row.id}: location {stored_row.location_name!r}, stage 7 builds {built_row.location_name!r}")
-        if stored_row.speaker_name == built_row.speaker_name:
-            continue
         name_changes.append(AttendanceNameChange(
             stored_row.id, sitting_id, stored_row.speaker_name, built_row.speaker_name,
             stored_row.is_present, stored_row.location_name, stored_row.speaker_id,
