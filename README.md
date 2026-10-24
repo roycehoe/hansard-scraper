@@ -23,7 +23,7 @@ The record runs from the Legislative Assembly before independence, through the 1
 
 ## How accurate the speaker links are
 
-In a check of 191 reports, 99.4% of the words here were credited to the right person, against 95.5% on sgparliament.com ([comparison](docs/report/sgparliament-comparison-2026-10-18.md)). AI models judged the sample, under rules this project wrote. They saw the two sites as "Site A" and "Site B", so they couldn't tell which was which. No person has read the sample yet. Most of sgparliament.com's errors are presiding officers and heads of state it leaves unlinked, which this project links to the holder of the day.
+In a check of 191 reports, 99.4% of the words here were credited to the right person, against 95.5% on sgparliament.com ([comparison](docs/report/sgparliament-comparison-2026-10-18.md)). AI models judged the sample, under rules this project wrote. They saw the two sites as "Site A" and "Site B", so they couldn't tell which was which. The [checks](docs/report/sgparliament-comparison-2026-10-18.md#method-1) say how the verdicts were tested. Most of sgparliament.com's errors are presiding officers and heads of state it leaves unlinked, which this project links to the holder of the day.
 
 About 98% of the text sits in a speech linked to a member ([figures](docs/figures/2026-10-19-backfill-15.txt)). Most of the rest is text no member spoke, such as "Question put, and agreed to."
 
