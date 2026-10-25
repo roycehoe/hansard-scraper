@@ -1,0 +1,677 @@
+Parliaments 0 to 11: 20911 reports with markdown, 20901 with speech rows, 609933 speech rows
+1. ADR 0001 rate:  517433 / 523437 = 98.85%
+2. All-rows rate:  517433 / 609933 = 84.83%
+3. Text share:     181113808 / 186124654 chars = 97.31%
+Where the body text goes (chars, share of body):
+  linked rows                                                         181113808  97.31%
+  named but unlinked rows                                                501618   0.27%
+  ADR-excluded rows (hon. Members, stage directions)                      80956   0.04%
+  rows with no speaker                                                  4090749   2.20%
+  reports with no rows                                                        0   0.00%
+  dropped inside reports with rows (preamble, headings, labels)          337523   0.18%
+Rows by category: {'no_speaker': 84278, 'linked': 517433, 'named_unlinked': 6004, 'adr_excluded': 2218}
+Parliament 12, beside the headline:
+1. ADR 0001 rate:  82995 / 83600 = 99.28%
+2. All-rows rate:  82995 / 87272 = 95.10%
+3. Text share:     29291499 / 29681686 chars = 98.69%
+Parliament 13, beside the headline:
+1. ADR 0001 rate:  133042 / 134514 = 98.91%
+2. All-rows rate:  133042 / 139601 = 95.30%
+3. Text share:     41854205 / 42329891 chars = 98.88%
+Parliament 14, beside the headline:
+1. ADR 0001 rate:  207422 / 208869 = 99.31%
+2. All-rows rate:  207422 / 215116 = 96.42%
+3. Text share:     59434275 / 60053208 chars = 98.97%
+Parliament 15, beside the headline:
+1. ADR 0001 rate:  62050 / 62292 = 99.61%
+2. All-rows rate:  62050 / 63909 = 97.09%
+3. Text share:     17789381 / 17926068 chars = 99.24%
+Parliaments 0 to 11, by report type:
+  admin-oaths: 73 reports
+    1. ADR 0001 rate:  135 / 135 = 100.00%
+    2. All-rows rate:  135 / 1284 = 10.51%
+    3. Text share:     33745 / 72136 = 46.78% chars
+    Zero-row reports:  0 / 73 = 0.00%
+    Single-speaker collapses, reports: 0 / 73 = 0.00%
+    Single-speaker collapses, body chars: 0 / 72136 = 0.00%
+  atbp: 399 reports
+    1. ADR 0001 rate:  912 / 912 = 100.00%
+    2. All-rows rate:  912 / 1550 = 58.84%
+    3. Text share:     127696 / 150929 = 84.61% chars
+    Zero-row reports:  0 / 399 = 0.00%
+    Single-speaker collapses, reports: 257 / 399 = 64.41%
+    Single-speaker collapses, body chars: 89503 / 150929 = 59.30%
+  bill: 4500 reports
+    1. ADR 0001 rate:  104412 / 105322 = 99.14%
+    2. All-rows rate:  104412 / 138513 = 75.38%
+    3. Text share:     36185605 / 38017511 = 95.18% chars
+    Zero-row reports:  2 / 4500 = 0.04%
+    Single-speaker collapses, reports: 2003 / 4498 = 44.53%
+    Single-speaker collapses, body chars: 518023 / 38017511 = 1.36%
+  bill-intro: 1 reports
+    1. ADR 0001 rate:  15 / 15 = 100.00%
+    2. All-rows rate:  15 / 19 = 78.95%
+    3. Text share:     2331 / 2487 = 93.73% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 2487 = 0.00%
+  budget: 2330 reports
+    1. ADR 0001 rate:  196533 / 201534 = 97.52%
+    2. All-rows rate:  196533 / 232104 = 84.67%
+    3. Text share:     74319088 / 76098372 = 97.66% chars
+    Zero-row reports:  5 / 2330 = 0.21%
+    Single-speaker collapses, reports: 20 / 2325 = 0.86%
+    Single-speaker collapses, body chars: 2214 / 76098372 = 0.00%
+  deputy-speaker: 21 reports
+    1. ADR 0001 rate:  77 / 77 = 100.00%
+    2. All-rows rate:  77 / 91 = 84.62%
+    3. Text share:     7988 / 8718 = 91.63% chars
+    Zero-row reports:  0 / 21 = 0.00%
+    Single-speaker collapses, reports: 0 / 21 = 0.00%
+    Single-speaker collapses, body chars: 0 / 8718 = 0.00%
+  matter-adj: 123 reports
+    1. ADR 0001 rate:  4992 / 4992 = 100.00%
+    2. All-rows rate:  4992 / 5692 = 87.70%
+    3. Text share:     1915738 / 1946238 = 98.43% chars
+    Zero-row reports:  0 / 123 = 0.00%
+    Single-speaker collapses, reports: 0 / 123 = 0.00%
+    Single-speaker collapses, body chars: 0 / 1946238 = 0.00%
+  ministerial-statement: 296 reports
+    1. ADR 0001 rate:  16226 / 16228 = 99.99%
+    2. All-rows rate:  16226 / 17376 = 93.38%
+    3. Text share:     5916474 / 5966137 = 99.17% chars
+    Zero-row reports:  0 / 296 = 0.00%
+    Single-speaker collapses, reports: 12 / 296 = 4.05%
+    Single-speaker collapses, body chars: 1533 / 5966137 = 0.03%
+  misc: 159 reports
+    1. ADR 0001 rate:  2974 / 2989 = 99.50%
+    2. All-rows rate:  2974 / 3476 = 85.56%
+    3. Text share:     1007218 / 1030153 = 97.77% chars
+    Zero-row reports:  0 / 159 = 0.00%
+    Single-speaker collapses, reports: 3 / 159 = 1.89%
+    Single-speaker collapses, body chars: 299 / 1030153 = 0.03%
+  motion: 1976 reports
+    1. ADR 0001 rate:  69361 / 69392 = 99.96%
+    2. All-rows rate:  69361 / 82910 = 83.66%
+    3. Text share:     24694087 / 25403348 = 97.21% chars
+    Zero-row reports:  1 / 1976 = 0.05%
+    Single-speaker collapses, reports: 693 / 1975 = 35.09%
+    Single-speaker collapses, body chars: 120431 / 25403348 = 0.47%
+  obituary-speech: 7 reports
+    1. ADR 0001 rate:  104 / 104 = 100.00%
+    2. All-rows rate:  104 / 113 = 92.04%
+    3. Text share:     28597 / 29029 = 98.51% chars
+    Zero-row reports:  0 / 7 = 0.00%
+    Single-speaker collapses, reports: 0 / 7 = 0.00%
+    Single-speaker collapses, body chars: 0 / 29029 = 0.00%
+  oral-answer: 7381 reports
+    1. ADR 0001 rate:  70530 / 70551 = 99.97%
+    2. All-rows rate:  70530 / 72156 = 97.75%
+    3. Text share:     18938053 / 19149186 = 98.90% chars
+    Zero-row reports:  2 / 7381 = 0.03%
+    Single-speaker collapses, reports: 7 / 7379 = 0.09%
+    Single-speaker collapses, body chars: 505 / 19149186 = 0.00%
+  personal-explanation: 8 reports
+    1. ADR 0001 rate:  90 / 90 = 100.00%
+    2. All-rows rate:  90 / 101 = 89.11%
+    3. Text share:     11010 / 11380 = 96.75% chars
+    Zero-row reports:  0 / 8 = 0.00%
+    Single-speaker collapses, reports: 0 / 8 = 0.00%
+    Single-speaker collapses, body chars: 0 / 11380 = 0.00%
+  petition: 2 reports
+    1. ADR 0001 rate:  17 / 17 = 100.00%
+    2. All-rows rate:  17 / 19 = 89.47%
+    3. Text share:     3073 / 3125 = 98.34% chars
+    Zero-row reports:  0 / 2 = 0.00%
+    Single-speaker collapses, reports: 0 / 2 = 0.00%
+    Single-speaker collapses, body chars: 0 / 3125 = 0.00%
+  president-address: 408 reports
+    1. ADR 0001 rate:  23165 / 23189 = 99.90%
+    2. All-rows rate:  23165 / 25096 = 92.31%
+    3. Text share:     10826551 / 11043645 = 98.03% chars
+    Zero-row reports:  0 / 408 = 0.00%
+    Single-speaker collapses, reports: 261 / 408 = 63.97%
+    Single-speaker collapses, body chars: 931426 / 11043645 = 8.43%
+  speaker: 321 reports
+    1. ADR 0001 rate:  1221 / 1221 = 100.00%
+    2. All-rows rate:  1221 / 1384 = 88.22%
+    3. Text share:     203422 / 218505 = 93.10% chars
+    Zero-row reports:  0 / 321 = 0.00%
+    Single-speaker collapses, reports: 56 / 321 = 17.45%
+    Single-speaker collapses, body chars: 7283 / 218505 = 3.33%
+  tribute: 16 reports
+    1. ADR 0001 rate:  388 / 388 = 100.00%
+    2. All-rows rate:  388 / 420 = 92.38%
+    3. Text share:     123138 / 124617 = 98.81% chars
+    Zero-row reports:  0 / 16 = 0.00%
+    Single-speaker collapses, reports: 0 / 16 = 0.00%
+    Single-speaker collapses, body chars: 0 / 124617 = 0.00%
+  written-answer: 1780 reports
+    1. ADR 0001 rate:  14229 / 14229 = 100.00%
+    2. All-rows rate:  14229 / 14635 = 97.23%
+    3. Text share:     2150650 / 2178105 = 98.74% chars
+    Zero-row reports:  0 / 1780 = 0.00%
+    Single-speaker collapses, reports: 1 / 1780 = 0.06%
+    Single-speaker collapses, body chars: 156 / 2178105 = 0.01%
+  written-answer-na: 1078 reports
+    1. ADR 0001 rate:  6072 / 6072 = 100.00%
+    2. All-rows rate:  6072 / 6301 = 96.37%
+    3. Text share:     1876633 / 1896621 = 98.95% chars
+    Zero-row reports:  0 / 1078 = 0.00%
+    Single-speaker collapses, reports: 0 / 1078 = 0.00%
+    Single-speaker collapses, body chars: 0 / 1896621 = 0.00%
+  yang-di-message: 32 reports
+    1. ADR 0001 rate:  5980 / 5980 = 100.00%
+    2. All-rows rate:  5980 / 6693 = 89.35%
+    3. Text share:     2742711 / 2774412 = 98.86% chars
+    Zero-row reports:  0 / 32 = 0.00%
+    Single-speaker collapses, reports: 0 / 32 = 0.00%
+    Single-speaker collapses, body chars: 0 / 2774412 = 0.00%
+Parliament 12, by report type:
+  admin-oaths: 4 reports
+    1. ADR 0001 rate:  5 / 5 = 100.00%
+    2. All-rows rate:  5 / 129 = 3.88%
+    3. Text share:     483 / 4416 = 10.94% chars
+    Zero-row reports:  0 / 4 = 0.00%
+    Single-speaker collapses, reports: 0 / 4 = 0.00%
+    Single-speaker collapses, body chars: 0 / 4416 = 0.00%
+  atbp: 5 reports
+    1. ADR 0001 rate:  0 / 0 = n/a
+    2. All-rows rate:  0 / 34 = 0.00%
+    3. Text share:     0 / 1287 = 0.00% chars
+    Zero-row reports:  0 / 5 = 0.00%
+    Single-speaker collapses, reports: 0 / 5 = 0.00%
+    Single-speaker collapses, body chars: 0 / 1287 = 0.00%
+  bill: 166 reports
+    1. ADR 0001 rate:  15198 / 15212 = 99.91%
+    2. All-rows rate:  15198 / 16487 = 92.18%
+    3. Text share:     5454929 / 5527177 = 98.69% chars
+    Zero-row reports:  0 / 166 = 0.00%
+    Single-speaker collapses, reports: 1 / 166 = 0.60%
+    Single-speaker collapses, body chars: 301 / 5527177 = 0.01%
+  bill-intro: 147 reports
+    1. ADR 0001 rate:  24 / 24 = 100.00%
+    2. All-rows rate:  24 / 261 = 9.20%
+    3. Text share:     3053 / 45829 = 6.66% chars
+    Zero-row reports:  0 / 147 = 0.00%
+    Single-speaker collapses, reports: 144 / 147 = 97.96%
+    Single-speaker collapses, body chars: 42163 / 45829 = 92.00%
+  budget: 171 reports
+    1. ADR 0001 rate:  30307 / 30874 = 98.16%
+    2. All-rows rate:  30307 / 31778 = 95.37%
+    3. Text share:     10863249 / 10996898 = 98.78% chars
+    Zero-row reports:  0 / 171 = 0.00%
+    Single-speaker collapses, reports: 0 / 171 = 0.00%
+    Single-speaker collapses, body chars: 0 / 10996898 = 0.00%
+  clarification: 9 reports
+    1. ADR 0001 rate:  28 / 29 = 96.55%
+    2. All-rows rate:  28 / 29 = 96.55%
+    3. Text share:     6053 / 6290 = 96.23% chars
+    Zero-row reports:  0 / 9 = 0.00%
+    Single-speaker collapses, reports: 0 / 9 = 0.00%
+    Single-speaker collapses, body chars: 0 / 6290 = 0.00%
+  deputy-speaker: 1 reports
+    1. ADR 0001 rate:  6 / 6 = 100.00%
+    2. All-rows rate:  6 / 7 = 85.71%
+    3. Text share:     926 / 961 = 96.36% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 961 = 0.00%
+  matter-adj: 15 reports
+    1. ADR 0001 rate:  765 / 765 = 100.00%
+    2. All-rows rate:  765 / 852 = 89.79%
+    3. Text share:     276371 / 290768 = 95.05% chars
+    Zero-row reports:  0 / 15 = 0.00%
+    Single-speaker collapses, reports: 0 / 15 = 0.00%
+    Single-speaker collapses, body chars: 0 / 290768 = 0.00%
+  ministerial-statement: 14 reports
+    1. ADR 0001 rate:  1485 / 1485 = 100.00%
+    2. All-rows rate:  1485 / 1515 = 98.02%
+    3. Text share:     544391 / 546060 = 99.69% chars
+    Zero-row reports:  0 / 14 = 0.00%
+    Single-speaker collapses, reports: 0 / 14 = 0.00%
+    Single-speaker collapses, body chars: 0 / 546060 = 0.00%
+  misc: 1 reports
+    1. ADR 0001 rate:  0 / 0 = n/a
+    2. All-rows rate:  0 / 4 = 0.00%
+    3. Text share:     0 / 671 = 0.00% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 671 = 0.00%
+  motion: 245 reports
+    1. ADR 0001 rate:  6034 / 6042 = 99.87%
+    2. All-rows rate:  6034 / 6622 = 91.12%
+    3. Text share:     2132765 / 2174263 = 98.09% chars
+    Zero-row reports:  0 / 245 = 0.00%
+    Single-speaker collapses, reports: 109 / 245 = 44.49%
+    Single-speaker collapses, body chars: 11618 / 2174263 = 0.53%
+  oral-answer: 918 reports
+    1. ADR 0001 rate:  12738 / 12738 = 100.00%
+    2. All-rows rate:  12738 / 12903 = 98.72%
+    3. Text share:     4488879 / 4515337 = 99.41% chars
+    Zero-row reports:  0 / 918 = 0.00%
+    Single-speaker collapses, reports: 0 / 918 = 0.00%
+    Single-speaker collapses, body chars: 0 / 4515337 = 0.00%
+  personal-explanation: 1 reports
+    1. ADR 0001 rate:  7 / 7 = 100.00%
+    2. All-rows rate:  7 / 7 = 100.00%
+    3. Text share:     3888 / 3888 = 100.00% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 3888 = 0.00%
+  president-address: 60 reports
+    1. ADR 0001 rate:  5246 / 5261 = 99.71%
+    2. All-rows rate:  5246 / 5375 = 97.60%
+    3. Text share:     2035873 / 2049623 = 99.33% chars
+    Zero-row reports:  0 / 60 = 0.00%
+    Single-speaker collapses, reports: 0 / 60 = 0.00%
+    Single-speaker collapses, body chars: 0 / 2049623 = 0.00%
+  speaker: 19 reports
+    1. ADR 0001 rate:  115 / 115 = 100.00%
+    2. All-rows rate:  115 / 133 = 86.47%
+    3. Text share:     31685 / 33180 = 95.49% chars
+    Zero-row reports:  0 / 19 = 0.00%
+    Single-speaker collapses, reports: 0 / 19 = 0.00%
+    Single-speaker collapses, body chars: 0 / 33180 = 0.00%
+  tribute: 3 reports
+    1. ADR 0001 rate:  288 / 288 = 100.00%
+    2. All-rows rate:  288 / 310 = 92.90%
+    3. Text share:     91783 / 92394 = 99.34% chars
+    Zero-row reports:  0 / 3 = 0.00%
+    Single-speaker collapses, reports: 0 / 3 = 0.00%
+    Single-speaker collapses, body chars: 0 / 92394 = 0.00%
+  written-answer: 1069 reports
+    1. ADR 0001 rate:  4828 / 4828 = 100.00%
+    2. All-rows rate:  4828 / 4876 = 99.02%
+    3. Text share:     1437604 / 1457265 = 98.65% chars
+    Zero-row reports:  0 / 1069 = 0.00%
+    Single-speaker collapses, reports: 0 / 1069 = 0.00%
+    Single-speaker collapses, body chars: 0 / 1457265 = 0.00%
+  written-answer-na: 1144 reports
+    1. ADR 0001 rate:  5921 / 5921 = 100.00%
+    2. All-rows rate:  5921 / 5950 = 99.51%
+    3. Text share:     1919567 / 1935379 = 99.18% chars
+    Zero-row reports:  0 / 1144 = 0.00%
+    Single-speaker collapses, reports: 0 / 1144 = 0.00%
+    Single-speaker collapses, body chars: 0 / 1935379 = 0.00%
+Parliament 13, by report type:
+  Miscellaneous: 1 reports
+    1. ADR 0001 rate:  0 / 2 = 0.00%
+    2. All-rows rate:  0 / 2 = 0.00%
+    3. Text share:     0 / 485 = 0.00% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 485 = 0.00%
+  admin-oaths: 5 reports
+    1. ADR 0001 rate:  10 / 10 = 100.00%
+    2. All-rows rate:  10 / 137 = 7.30%
+    3. Text share:     1194 / 4817 = 24.79% chars
+    Zero-row reports:  0 / 5 = 0.00%
+    Single-speaker collapses, reports: 0 / 5 = 0.00%
+    Single-speaker collapses, body chars: 0 / 4817 = 0.00%
+  bill: 256 reports
+    1. ADR 0001 rate:  35941 / 36058 = 99.68%
+    2. All-rows rate:  35941 / 38157 = 94.19%
+    3. Text share:     11520975 / 11642232 = 98.96% chars
+    Zero-row reports:  0 / 256 = 0.00%
+    Single-speaker collapses, reports: 0 / 256 = 0.00%
+    Single-speaker collapses, body chars: 0 / 11642232 = 0.00%
+  bill-intro: 208 reports
+    1. ADR 0001 rate:  61 / 64 = 95.31%
+    2. All-rows rate:  61 / 494 = 12.35%
+    3. Text share:     5888 / 71951 = 8.18% chars
+    Zero-row reports:  0 / 208 = 0.00%
+    Single-speaker collapses, reports: 195 / 208 = 93.75%
+    Single-speaker collapses, body chars: 62334 / 71951 = 86.63%
+  budget: 211 reports
+    1. ADR 0001 rate:  42409 / 43532 = 97.42%
+    2. All-rows rate:  42409 / 44708 = 94.86%
+    3. Text share:     13262645 / 13454022 = 98.58% chars
+    Zero-row reports:  0 / 211 = 0.00%
+    Single-speaker collapses, reports: 0 / 211 = 0.00%
+    Single-speaker collapses, body chars: 0 / 13454022 = 0.00%
+  clarification: 8 reports
+    1. ADR 0001 rate:  54 / 55 = 98.18%
+    2. All-rows rate:  54 / 56 = 96.43%
+    3. Text share:     11773 / 12060 = 97.62% chars
+    Zero-row reports:  0 / 8 = 0.00%
+    Single-speaker collapses, reports: 0 / 8 = 0.00%
+    Single-speaker collapses, body chars: 0 / 12060 = 0.00%
+  matter-adj: 35 reports
+    1. ADR 0001 rate:  2077 / 2086 = 99.57%
+    2. All-rows rate:  2077 / 2229 = 93.18%
+    3. Text share:     671386 / 676999 = 99.17% chars
+    Zero-row reports:  0 / 35 = 0.00%
+    Single-speaker collapses, reports: 0 / 35 = 0.00%
+    Single-speaker collapses, body chars: 0 / 676999 = 0.00%
+  ministerial-statement: 38 reports
+    1. ADR 0001 rate:  8013 / 8030 = 99.79%
+    2. All-rows rate:  8013 / 8149 = 98.33%
+    3. Text share:     2521209 / 2526399 = 99.79% chars
+    Zero-row reports:  0 / 38 = 0.00%
+    Single-speaker collapses, reports: 0 / 38 = 0.00%
+    Single-speaker collapses, body chars: 0 / 2526399 = 0.00%
+  misc: 1 reports
+    1. ADR 0001 rate:  10 / 10 = 100.00%
+    2. All-rows rate:  10 / 11 = 90.91%
+    3. Text share:     2324 / 2341 = 99.27% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 2341 = 0.00%
+  motion: 297 reports
+    1. ADR 0001 rate:  6232 / 6256 = 99.62%
+    2. All-rows rate:  6232 / 6919 = 90.07%
+    3. Text share:     1928064 / 1975185 = 97.61% chars
+    Zero-row reports:  0 / 297 = 0.00%
+    Single-speaker collapses, reports: 138 / 297 = 46.46%
+    Single-speaker collapses, body chars: 14669 / 1975185 = 0.74%
+  oral-answer: 1126 reports
+    1. ADR 0001 rate:  17204 / 17379 = 98.99%
+    2. All-rows rate:  17204 / 17548 = 98.04%
+    3. Text share:     5278478 / 5302811 = 99.54% chars
+    Zero-row reports:  0 / 1126 = 0.00%
+    Single-speaker collapses, reports: 0 / 1126 = 0.00%
+    Single-speaker collapses, body chars: 0 / 5302811 = 0.00%
+  personal-explanation: 3 reports
+    1. ADR 0001 rate:  24 / 25 = 96.00%
+    2. All-rows rate:  24 / 25 = 96.00%
+    3. Text share:     5821 / 5844 = 99.61% chars
+    Zero-row reports:  0 / 3 = 0.00%
+    Single-speaker collapses, reports: 0 / 3 = 0.00%
+    Single-speaker collapses, body chars: 0 / 5844 = 0.00%
+  petition: 3 reports
+    1. ADR 0001 rate:  38 / 38 = 100.00%
+    2. All-rows rate:  38 / 41 = 92.68%
+    3. Text share:     6290 / 6395 = 98.36% chars
+    Zero-row reports:  0 / 3 = 0.00%
+    Single-speaker collapses, reports: 0 / 3 = 0.00%
+    Single-speaker collapses, body chars: 0 / 6395 = 0.00%
+  president-address: 59 reports
+    1. ADR 0001 rate:  5246 / 5246 = 100.00%
+    2. All-rows rate:  5246 / 5361 = 97.85%
+    3. Text share:     1793092 / 1800806 = 99.57% chars
+    Zero-row reports:  0 / 59 = 0.00%
+    Single-speaker collapses, reports: 0 / 59 = 0.00%
+    Single-speaker collapses, body chars: 0 / 1800806 = 0.00%
+  speaker: 34 reports
+    1. ADR 0001 rate:  143 / 143 = 100.00%
+    2. All-rows rate:  143 / 162 = 88.27%
+    3. Text share:     27246 / 28667 = 95.04% chars
+    Zero-row reports:  0 / 34 = 0.00%
+    Single-speaker collapses, reports: 0 / 34 = 0.00%
+    Single-speaker collapses, body chars: 0 / 28667 = 0.00%
+  tribute: 3 reports
+    1. ADR 0001 rate:  270 / 270 = 100.00%
+    2. All-rows rate:  270 / 284 = 95.07%
+    3. Text share:     84634 / 85192 = 99.35% chars
+    Zero-row reports:  0 / 3 = 0.00%
+    Single-speaker collapses, reports: 0 / 3 = 0.00%
+    Single-speaker collapses, body chars: 0 / 85192 = 0.00%
+  written-answer: 1634 reports
+    1. ADR 0001 rate:  7014 / 7014 = 100.00%
+    2. All-rows rate:  7014 / 7016 = 99.97%
+    3. Text share:     2073212 / 2072954 = 100.01% chars
+    Zero-row reports:  0 / 1634 = 0.00%
+    Single-speaker collapses, reports: 0 / 1634 = 0.00%
+    Single-speaker collapses, body chars: 0 / 2072954 = 0.00%
+  written-answer-na: 1639 reports
+    1. ADR 0001 rate:  8281 / 8281 = 100.00%
+    2. All-rows rate:  8281 / 8281 = 100.00%
+    3. Text share:     2654850 / 2654866 = 100.00% chars
+    Zero-row reports:  0 / 1639 = 0.00%
+    Single-speaker collapses, reports: 0 / 1639 = 0.00%
+    Single-speaker collapses, body chars: 0 / 2654866 = 0.00%
+  written-statement: 3 reports
+    1. ADR 0001 rate:  15 / 15 = 100.00%
+    2. All-rows rate:  15 / 21 = 71.43%
+    3. Text share:     5124 / 5865 = 87.37% chars
+    Zero-row reports:  0 / 3 = 0.00%
+    Single-speaker collapses, reports: 0 / 3 = 0.00%
+    Single-speaker collapses, body chars: 0 / 5865 = 0.00%
+Parliament 14, by report type:
+  Miscellaneous: 3 reports
+    1. ADR 0001 rate:  30 / 34 = 88.24%
+    2. All-rows rate:  30 / 38 = 78.95%
+    3. Text share:     6674 / 7450 = 89.58% chars
+    Zero-row reports:  0 / 3 = 0.00%
+    Single-speaker collapses, reports: 0 / 3 = 0.00%
+    Single-speaker collapses, body chars: 0 / 7450 = 0.00%
+  admin-oaths: 4 reports
+    1. ADR 0001 rate:  4 / 4 = 100.00%
+    2. All-rows rate:  4 / 147 = 2.72%
+    3. Text share:     509 / 4341 = 11.73% chars
+    Zero-row reports:  0 / 4 = 0.00%
+    Single-speaker collapses, reports: 0 / 4 = 0.00%
+    Single-speaker collapses, body chars: 0 / 4341 = 0.00%
+  bill: 264 reports
+    1. ADR 0001 rate:  44294 / 44304 = 99.98%
+    2. All-rows rate:  44294 / 46251 = 95.77%
+    3. Text share:     12709761 / 12816530 = 99.17% chars
+    Zero-row reports:  0 / 264 = 0.00%
+    Single-speaker collapses, reports: 0 / 264 = 0.00%
+    Single-speaker collapses, body chars: 0 / 12816530 = 0.00%
+  bill-intro: 198 reports
+    1. ADR 0001 rate:  144 / 144 = 100.00%
+    2. All-rows rate:  144 / 571 = 25.22%
+    3. Text share:     12637 / 77128 = 16.38% chars
+    Zero-row reports:  0 / 198 = 0.00%
+    Single-speaker collapses, reports: 171 / 198 = 86.36%
+    Single-speaker collapses, body chars: 57143 / 77128 = 74.09%
+  budget: 235 reports
+    1. ADR 0001 rate:  51831 / 53207 = 97.41%
+    2. All-rows rate:  51831 / 54528 = 95.05%
+    3. Text share:     14682534 / 14910321 = 98.47% chars
+    Zero-row reports:  0 / 235 = 0.00%
+    Single-speaker collapses, reports: 0 / 235 = 0.00%
+    Single-speaker collapses, body chars: 0 / 14910321 = 0.00%
+  clarification: 37 reports
+    1. ADR 0001 rate:  337 / 342 = 98.54%
+    2. All-rows rate:  337 / 343 = 98.25%
+    3. Text share:     73416 / 73802 = 99.48% chars
+    Zero-row reports:  0 / 37 = 0.00%
+    Single-speaker collapses, reports: 0 / 37 = 0.00%
+    Single-speaker collapses, body chars: 0 / 73802 = 0.00%
+  matter-adj: 75 reports
+    1. ADR 0001 rate:  5745 / 5746 = 99.98%
+    2. All-rows rate:  5745 / 6069 = 94.66%
+    3. Text share:     1586409 / 1598100 = 99.27% chars
+    Zero-row reports:  0 / 75 = 0.00%
+    Single-speaker collapses, reports: 0 / 75 = 0.00%
+    Single-speaker collapses, body chars: 0 / 1598100 = 0.00%
+  ministerial-statement: 54 reports
+    1. ADR 0001 rate:  11118 / 11152 = 99.70%
+    2. All-rows rate:  11118 / 11270 = 98.65%
+    3. Text share:     2975764 / 2982798 = 99.76% chars
+    Zero-row reports:  0 / 54 = 0.00%
+    Single-speaker collapses, reports: 0 / 54 = 0.00%
+    Single-speaker collapses, body chars: 0 / 2982798 = 0.00%
+  motion: 419 reports
+    1. ADR 0001 rate:  22164 / 22178 = 99.94%
+    2. All-rows rate:  22164 / 23516 = 94.25%
+    3. Text share:     6056355 / 6184880 = 97.92% chars
+    Zero-row reports:  0 / 419 = 0.00%
+    Single-speaker collapses, reports: 160 / 419 = 38.19%
+    Single-speaker collapses, body chars: 18289 / 6184880 = 0.30%
+  oral-answer: 1392 reports
+    1. ADR 0001 rate:  27402 / 27405 = 99.99%
+    2. All-rows rate:  27402 / 27669 = 99.04%
+    3. Text share:     7755593 / 7791653 = 99.54% chars
+    Zero-row reports:  0 / 1392 = 0.00%
+    Single-speaker collapses, reports: 0 / 1392 = 0.00%
+    Single-speaker collapses, body chars: 0 / 7791653 = 0.00%
+  personal-explanation: 10 reports
+    1. ADR 0001 rate:  169 / 169 = 100.00%
+    2. All-rows rate:  169 / 169 = 100.00%
+    3. Text share:     28697 / 28758 = 99.79% chars
+    Zero-row reports:  0 / 10 = 0.00%
+    Single-speaker collapses, reports: 0 / 10 = 0.00%
+    Single-speaker collapses, body chars: 0 / 28758 = 0.00%
+  petition: 2 reports
+    1. ADR 0001 rate:  27 / 27 = 100.00%
+    2. All-rows rate:  27 / 29 = 93.10%
+    3. Text share:     4429 / 4505 = 98.31% chars
+    Zero-row reports:  0 / 2 = 0.00%
+    Single-speaker collapses, reports: 0 / 2 = 0.00%
+    Single-speaker collapses, body chars: 0 / 4505 = 0.00%
+  point-of-order: 6 reports
+    1. ADR 0001 rate:  268 / 268 = 100.00%
+    2. All-rows rate:  268 / 271 = 98.89%
+    3. Text share:     56805 / 56968 = 99.71% chars
+    Zero-row reports:  0 / 6 = 0.00%
+    Single-speaker collapses, reports: 0 / 6 = 0.00%
+    Single-speaker collapses, body chars: 0 / 56968 = 0.00%
+  president-address: 63 reports
+    1. ADR 0001 rate:  7115 / 7115 = 100.00%
+    2. All-rows rate:  7115 / 7278 = 97.76%
+    3. Text share:     2159569 / 2167475 = 99.64% chars
+    Zero-row reports:  0 / 63 = 0.00%
+    Single-speaker collapses, reports: 0 / 63 = 0.00%
+    Single-speaker collapses, body chars: 0 / 2167475 = 0.00%
+  speaker: 42 reports
+    1. ADR 0001 rate:  234 / 234 = 100.00%
+    2. All-rows rate:  234 / 270 = 86.67%
+    3. Text share:     40699 / 44373 = 91.72% chars
+    Zero-row reports:  0 / 42 = 0.00%
+    Single-speaker collapses, reports: 0 / 42 = 0.00%
+    Single-speaker collapses, body chars: 0 / 44373 = 0.00%
+  tribute: 4 reports
+    1. ADR 0001 rate:  144 / 144 = 100.00%
+    2. All-rows rate:  144 / 156 = 92.31%
+    3. Text share:     35853 / 36166 = 99.13% chars
+    Zero-row reports:  0 / 4 = 0.00%
+    Single-speaker collapses, reports: 0 / 4 = 0.00%
+    Single-speaker collapses, body chars: 0 / 36166 = 0.00%
+  written-answer: 4610 reports
+    1. ADR 0001 rate:  18220 / 18220 = 100.00%
+    2. All-rows rate:  18220 / 18223 = 99.98%
+    3. Text share:     5484085 / 5484519 = 99.99% chars
+    Zero-row reports:  0 / 4610 = 0.00%
+    Single-speaker collapses, reports: 0 / 4610 = 0.00%
+    Single-speaker collapses, body chars: 0 / 5484519 = 0.00%
+  written-answer-na: 3773 reports
+    1. ADR 0001 rate:  17935 / 17935 = 100.00%
+    2. All-rows rate:  17935 / 17936 = 99.99%
+    3. Text share:     5694315 / 5694347 = 100.00% chars
+    Zero-row reports:  0 / 3773 = 0.00%
+    Single-speaker collapses, reports: 0 / 3773 = 0.00%
+    Single-speaker collapses, body chars: 0 / 5694347 = 0.00%
+  written-statement: 66 reports
+    1. ADR 0001 rate:  241 / 241 = 100.00%
+    2. All-rows rate:  241 / 382 = 63.09%
+    3. Text share:     70171 / 89094 = 78.76% chars
+    Zero-row reports:  0 / 66 = 0.00%
+    Single-speaker collapses, reports: 0 / 66 = 0.00%
+    Single-speaker collapses, body chars: 0 / 89094 = 0.00%
+Parliament 15, by report type:
+  admin-oaths: 4 reports
+    1. ADR 0001 rate:  7 / 7 = 100.00%
+    2. All-rows rate:  7 / 133 = 5.26%
+    3. Text share:     556 / 4050 = 13.73% chars
+    Zero-row reports:  0 / 4 = 0.00%
+    Single-speaker collapses, reports: 0 / 4 = 0.00%
+    Single-speaker collapses, body chars: 0 / 4050 = 0.00%
+  bill: 58 reports
+    1. ADR 0001 rate:  14205 / 14207 = 99.99%
+    2. All-rows rate:  14205 / 14710 = 96.57%
+    3. Text share:     4103001 / 4133588 = 99.26% chars
+    Zero-row reports:  0 / 58 = 0.00%
+    Single-speaker collapses, reports: 0 / 58 = 0.00%
+    Single-speaker collapses, body chars: 0 / 4133588 = 0.00%
+  bill-intro: 40 reports
+    1. ADR 0001 rate:  2 / 2 = 100.00%
+    2. All-rows rate:  2 / 84 = 2.38%
+    3. Text share:     147 / 15854 = 0.93% chars
+    Zero-row reports:  0 / 40 = 0.00%
+    Single-speaker collapses, reports: 38 / 40 = 95.00%
+    Single-speaker collapses, body chars: 14482 / 15854 = 91.35%
+  budget: 51 reports
+    1. ADR 0001 rate:  11377 / 11611 = 97.98%
+    2. All-rows rate:  11377 / 11869 = 95.85%
+    3. Text share:     3180284 / 3217166 = 98.85% chars
+    Zero-row reports:  0 / 51 = 0.00%
+    Single-speaker collapses, reports: 0 / 51 = 0.00%
+    Single-speaker collapses, body chars: 0 / 3217166 = 0.00%
+  clarification: 17 reports
+    1. ADR 0001 rate:  113 / 113 = 100.00%
+    2. All-rows rate:  113 / 118 = 95.76%
+    3. Text share:     21858 / 22715 = 96.23% chars
+    Zero-row reports:  0 / 17 = 0.00%
+    Single-speaker collapses, reports: 0 / 17 = 0.00%
+    Single-speaker collapses, body chars: 0 / 22715 = 0.00%
+  matter-adj: 25 reports
+    1. ADR 0001 rate:  1905 / 1905 = 100.00%
+    2. All-rows rate:  1905 / 2017 = 94.45%
+    3. Text share:     516655 / 519952 = 99.37% chars
+    Zero-row reports:  0 / 25 = 0.00%
+    Single-speaker collapses, reports: 0 / 25 = 0.00%
+    Single-speaker collapses, body chars: 0 / 519952 = 0.00%
+  ministerial-statement: 10 reports
+    1. ADR 0001 rate:  2199 / 2199 = 100.00%
+    2. All-rows rate:  2199 / 2231 = 98.57%
+    3. Text share:     573177 / 574529 = 99.76% chars
+    Zero-row reports:  0 / 10 = 0.00%
+    Single-speaker collapses, reports: 0 / 10 = 0.00%
+    Single-speaker collapses, body chars: 0 / 574529 = 0.00%
+  motion: 93 reports
+    1. ADR 0001 rate:  5048 / 5051 = 99.94%
+    2. All-rows rate:  5048 / 5302 = 95.21%
+    3. Text share:     1336076 / 1358047 = 98.38% chars
+    Zero-row reports:  0 / 93 = 0.00%
+    Single-speaker collapses, reports: 30 / 93 = 32.26%
+    Single-speaker collapses, body chars: 3746 / 1358047 = 0.28%
+  oral-answer: 364 reports
+    1. ADR 0001 rate:  8198 / 8200 = 99.98%
+    2. All-rows rate:  8198 / 8270 = 99.13%
+    3. Text share:     2244585 / 2253733 = 99.59% chars
+    Zero-row reports:  0 / 364 = 0.00%
+    Single-speaker collapses, reports: 0 / 364 = 0.00%
+    Single-speaker collapses, body chars: 0 / 2253733 = 0.00%
+  personal-explanation: 3 reports
+    1. ADR 0001 rate:  13 / 13 = 100.00%
+    2. All-rows rate:  13 / 13 = 100.00%
+    3. Text share:     2046 / 2066 = 99.03% chars
+    Zero-row reports:  0 / 3 = 0.00%
+    Single-speaker collapses, reports: 0 / 3 = 0.00%
+    Single-speaker collapses, body chars: 0 / 2066 = 0.00%
+  president-address: 34 reports
+    1. ADR 0001 rate:  3724 / 3724 = 100.00%
+    2. All-rows rate:  3724 / 3820 = 97.49%
+    3. Text share:     1153042 / 1157811 = 99.59% chars
+    Zero-row reports:  0 / 34 = 0.00%
+    Single-speaker collapses, reports: 0 / 34 = 0.00%
+    Single-speaker collapses, body chars: 0 / 1157811 = 0.00%
+  speaker: 11 reports
+    1. ADR 0001 rate:  54 / 54 = 100.00%
+    2. All-rows rate:  54 / 65 = 83.08%
+    3. Text share:     9484 / 10044 = 94.42% chars
+    Zero-row reports:  0 / 11 = 0.00%
+    Single-speaker collapses, reports: 0 / 11 = 0.00%
+    Single-speaker collapses, body chars: 0 / 10044 = 0.00%
+  tribute: 1 reports
+    1. ADR 0001 rate:  85 / 85 = 100.00%
+    2. All-rows rate:  85 / 92 = 92.39%
+    3. Text share:     16977 / 17183 = 98.80% chars
+    Zero-row reports:  0 / 1 = 0.00%
+    Single-speaker collapses, reports: 0 / 1 = 0.00%
+    Single-speaker collapses, body chars: 0 / 17183 = 0.00%
+  written-answer: 2058 reports
+    1. ADR 0001 rate:  7081 / 7081 = 100.00%
+    2. All-rows rate:  7081 / 7083 = 99.97%
+    3. Text share:     2123242 / 2123379 = 99.99% chars
+    Zero-row reports:  0 / 2058 = 0.00%
+    Single-speaker collapses, reports: 0 / 2058 = 0.00%
+    Single-speaker collapses, body chars: 0 / 2123379 = 0.00%
+  written-answer-na: 2003 reports
+    1. ADR 0001 rate:  7923 / 7923 = 100.00%
+    2. All-rows rate:  7923 / 7923 = 100.00%
+    3. Text share:     2473289 / 2473289 = 100.00% chars
+    Zero-row reports:  0 / 2003 = 0.00%
+    Single-speaker collapses, reports: 0 / 2003 = 0.00%
+    Single-speaker collapses, body chars: 0 / 2473289 = 0.00%
+  written-statement: 31 reports
+    1. ADR 0001 rate:  116 / 117 = 99.15%
+    2. All-rows rate:  116 / 179 = 64.80%
+    3. Text share:     34962 / 42662 = 81.95% chars
+    Zero-row reports:  0 / 31 = 0.00%
+    Single-speaker collapses, reports: 0 / 31 = 0.00%
+    Single-speaker collapses, body chars: 0 / 42662 = 0.00%
