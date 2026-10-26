@@ -17,6 +17,8 @@ The goal is in `docs/vision.md`. Its "Measuring progress" section holds the curr
 
 `docs/data-loss-register.md` records everything the pipeline loses between the raw API responses and any derived table. Any change that cleans data adds or updates a row there in the same change, or it is not done. Cleaning means dropping, merging, deduplicating, trimming, normalising, overriding, reclassifying or deleting anything the source holds. It covers parsing and speech rows, and also attendance, persons, memberships, sittings, report titles and the hand overrides in `data/`. The row says what is lost, where in code, why, the cost in counts, whether it can be rebuilt from the raw tables, and who decided.
 
+Where the record prints something, store what it prints and put our reading in a note, as `speech.column_start` keeps the printed column and `column_note` with `column_suggested` holds our reading. See `docs/adr/0013-store-what-the-record-prints.md`.
+
 ## Commands
 
 ```bash
