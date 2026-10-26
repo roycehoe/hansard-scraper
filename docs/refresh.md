@@ -85,7 +85,7 @@ A halt keeps the months committed before it and writes nothing of the month in p
 
 On the first supervised run, read the log's "No sitting response" lines. Each one is a probed date with no sitting, and SPRS should answer it in a shape the run reads as nothing published. If a line shows an answer that looks like a real sitting, stop and check the gateway.
 
-A failure is any other error. The row is `FAILED` and `failure_reason` holds the error type and message. A failure keeps the months committed before it, and their rows stay stored; once a month has committed rows, `failure_reason` starts with "After the data commit". The next run retries.
+A failure is any other error. The row is `FAILED` and `failure_reason` holds the error type and message. A failure keeps the months committed before it, and their rows stay stored; once a month has committed rows, `failure_reason` starts with "After the data commit". The next run retries. A run also ends `FAILED` when every topic answer it fetched has no text (the new non-atbp hits plus the rechecks), and the months it committed earlier stay committed.
 
 A VACUUM that fails, or that Postgres skips, is a failure too. Postgres skips a table the role cannot `MAINTAIN` with only a warning, which the run never sees, so the run compares each table's `vacuum_count` before and after, and raises `HansardRefreshRunError` naming the table when it did not rise. A skip means the `MAINTAIN` grant in "Write role SQL" is missing on that table. The new rows are committed by then and stay, and the next run vacuums again.
 
@@ -112,6 +112,7 @@ Every alert goes to the one Telegram chat, cut to 4,000 characters.
 | Changed report | `Report {report id} of {sitting date} changed on SPRS since it was stored. The stored text was kept.` | After a successful run, or a halted or failed run that committed rows, once per stored report in the 14-day window whose text changed. |
 | Unlinked labels | `Speaker labels with no registry match: {labels}. Add the members to the registry, then link them with scripts/apply_speaker_links.py.` | After a successful run, or a halted or failed run that committed rows, whose new rows hold labels with no registry link, at or under the 5% limit. Up to 20 labels, most rows first, then "and N more". |
 | Held report | `Report {report id} of {sitting date} still has no text after 14 days and will not be fetched again.` | After a successful run, or a halted or failed run that committed rows, for a held hit whose sitting date is 13 or 14 days before the run's date. The two-day span keeps one missed run from losing the alert, so a hit can alert twice. |
+| Many held reports | `{n} new reports came back with no text, above the limit of 5. SPRS may have changed its format.` | After a successful run, or a halted or failed run that committed rows, that holds more than 5 new hits without text. It repeats each day while those hits stay held in the 14-day window. |
 | Halt | `Hansard refresh halted. {reason}` | On every halt. |
 | Failure | `Hansard refresh failed. {error}` | On every failure, including a run that cannot start. For an error the code raises on purpose, `{error}` is its type and message. For any other error it is the type alone, so a database host or user name never reaches the chat. |
 

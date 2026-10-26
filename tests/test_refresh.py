@@ -28,7 +28,11 @@ from database.sitting import Sitting
 from database.speaker import Speaker
 from database.speech import Speech
 from enums import RefreshRunStatus
-from exceptions import HansardGatewayError, HansardRefreshRunError
+from exceptions import (
+    HansardGatewayError,
+    HansardRefreshFailureError,
+    HansardRefreshRunError,
+)
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
     HansardReportOldResponse,
@@ -36,7 +40,7 @@ from schemas.hansard_report_response import (
 from schemas.hansard_search_result import HansardSearchResult
 from schemas.hansard_topic_response import HansardTopicResponse
 from services.hansard_website import get_topic_id
-from services.refresh import SINGAPORE_TIMEZONE
+from services.refresh import MAX_NEW_HITS_WITHOUT_TEXT, SINGAPORE_TIMEZONE
 from settings import settings
 from tests.refresh_fixtures import FakeParliament, load_speaker_rows, seed_stored
 from utils.sitting_dates import get_sitting_date_key, parse_sitting_date
@@ -629,6 +633,40 @@ def test_report_without_text_is_held(
     assert status == RefreshRunStatus.SUCCEEDED
     assert _get_refresh_runs(scratch_engine)[-1].reports_held_without_text == 1
     assert any(message.startswith(f"Report {held_report_id} of") and "still has no text" in message for message in alerts.messages)
+    _assert_success_pinged(alerts)
+
+
+def test_run_where_every_topic_is_an_error_body_fails(
+    scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament, alerts: _AlertRecorder,
+) -> None:
+    seed_stored(scratch_session)
+    for report_id in fake_parliament.report_id_to_topic:
+        fake_parliament.report_id_to_topic[report_id] = {"errorMessage": "Internal error"}
+
+    with pytest.raises(HansardRefreshFailureError):
+        refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
+
+    refresh_run = _get_only_refresh_run(scratch_engine)
+    assert refresh_run.status == RefreshRunStatus.FAILED
+    assert refresh_run.failure_reason is not None
+    assert "error bodies" in refresh_run.failure_reason
+    assert refresh_run.reports_added == 0
+    assert any(message.startswith("Hansard refresh failed.") for message in alerts.messages)
+    _assert_failure_pinged(alerts)
+
+
+@pytest.mark.parametrize(("held_count", "is_alert_expected"), [(MAX_NEW_HITS_WITHOUT_TEXT, False), (MAX_NEW_HITS_WITHOUT_TEXT + 1, True)])
+def test_many_new_hits_without_text_alert_the_same_day(
+    scratch_session: Session, fake_parliament: FakeParliament, alerts: _AlertRecorder, held_count: int, is_alert_expected: bool,
+) -> None:
+    seed_stored(scratch_session)
+    for search_result in fake_parliament.new_search_results[:held_count]:
+        fake_parliament.report_id_to_topic[search_result["reportId"]] = {"resultHTML": {"content": None}}
+
+    status = refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    assert any("came back with no text" in message for message in alerts.messages) == is_alert_expected
     _assert_success_pinged(alerts)
 
 

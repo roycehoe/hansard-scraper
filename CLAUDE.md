@@ -96,7 +96,7 @@ Every request to SPRS or parliament.gov.sg goes through `paced_request()` or `pa
 
 ### Daily refresh
 
-`refresh.py` runs `populate/refresh_runs.py` once a day. It only adds rows: new raw report and sitting rows, their reports, speech rows, sittings and attendance, with stage 8 run on the new rows only. It never re-parses or rewrites a stored row. It commits one month at a time and halts on a new Parliament number, on a field the mapping loses, or when more than 5% of a month's new named speech rows have no registry link; a halt keeps the months before it. After the last month it runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance` before it marks the run `SUCCEEDED`, and a VACUUM that fails or is skipped fails the run. Each run is one `refresh_run` row with its counts and status. A scheduled run cannot commit a `docs/figures/` file, so a run that adds speech rows stores the figures in `refresh_run.figures` instead; supervised writes still commit theirs. See `docs/refresh.md`.
+`refresh.py` runs `populate/refresh_runs.py` once a day. It only adds rows: new raw report and sitting rows, their reports, speech rows, sittings and attendance, with stage 8 run on the new rows only. It never re-parses or rewrites a stored row. It commits one month at a time and halts on a new Parliament number, on a field the mapping loses, or when more than 5% of a month's new named speech rows have no registry link; a halt keeps the months before it. A run also ends `FAILED` when every topic answer it fetched has no text (new non-atbp hits plus rechecks); earlier months stay committed. After the last month it runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance` before it marks the run `SUCCEEDED`, and a VACUUM that fails or is skipped fails the run. Each run is one `refresh_run` row with its counts and status. A scheduled run cannot commit a `docs/figures/` file, so a run that adds speech rows stores the figures in `refresh_run.figures` instead; supervised writes still commit theirs. See `docs/refresh.md`.
 
 ### Sitting date API — two formats
 
@@ -197,7 +197,7 @@ hansard-scraper/
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
 ├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag, PersonDecisionKind
-├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshRunError / HansardTestGuardError
+├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshFailureError / HansardRefreshRunError / HansardTestGuardError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the refresh job (run as `sh refresh.sh`); the build imports `refresh`, so an import error fails it
 │

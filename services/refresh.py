@@ -14,6 +14,7 @@ _MAX_ALERT_LABELS = 20
 _MAX_TELEGRAM_MESSAGE_LENGTH = 4_000
 _PERCENT = 100
 _FIRST_ALERT_WINDOW_DAYS = 1
+MAX_NEW_HITS_WITHOUT_TEXT = 5
 
 
 def get_singapore_today(now: datetime) -> date:
@@ -130,6 +131,25 @@ def build_summary_message(sittings_added: int, reports_added: int, speeches_adde
     if linked_share is not None:
         message_parts.append(f"{linked_share * _PERCENT:.1f}% linked")
     return ", ".join(message_parts)
+
+
+def is_every_topic_an_error_body(topic_count: int, error_body_count: int) -> bool:
+    return topic_count > 0 and error_body_count == topic_count
+
+
+def build_error_bodies_reason(topic_count: int) -> str:
+    return f"All {topic_count} topic answers in the run were error bodies with no text. SPRS may have changed its format."
+
+
+def is_held_report_count_over_limit(held_report_count: int) -> bool:
+    return held_report_count > MAX_NEW_HITS_WITHOUT_TEXT
+
+
+def build_many_held_reports_message(held_report_count: int) -> str:
+    return (
+        f"{held_report_count} new reports came back with no text, above the limit of {MAX_NEW_HITS_WITHOUT_TEXT}. "
+        "SPRS may have changed its format."
+    )
 
 
 def build_changed_report_message(report_id: str, sitting_date: str) -> str:

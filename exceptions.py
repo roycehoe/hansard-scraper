@@ -42,6 +42,10 @@ class HansardRefreshHaltError(HansardError):
     pass
 
 
+class HansardRefreshFailureError(HansardError):
+    pass
+
+
 class HansardRefreshRunError(HansardError):
     pass
 
