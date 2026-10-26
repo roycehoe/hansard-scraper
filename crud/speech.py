@@ -7,8 +7,9 @@ from sqlmodel import Session, col, delete, func, select
 
 from database.report import Report
 from database.speech import Speech
-from enums import ColumnNote
+from enums import ColumnNote, SpeechKind
 from utils.column_numbers import SpeechColumnNote
+from utils.speech_update import SpeechUpdate
 from utils.text import TextChange
 
 _STREAM_BATCH = 10_000
@@ -91,6 +92,17 @@ class SpeechColumnRow:
     column_start: Optional[int]
     column_note: Optional[ColumnNote]
     column_suggested: Optional[int]
+
+
+@dataclass(frozen=True)
+class SpeechParseRow:
+    id: int
+    report_id: int
+    ordinal: int
+    speaker: Optional[str]
+    transcript: str
+    kind: Optional[SpeechKind]
+    speaker_id: Optional[int]
 
 
 @dataclass(frozen=True)
@@ -190,6 +202,14 @@ class CRUDSpeech:
         )
         return [SpeechRow(*row) for row in self.session.exec(statement).all()]
 
+    def get_parse_rows_by_report_ids(self, report_ids: list[int]) -> list[SpeechParseRow]:
+        statement = (
+            select(Speech.id, Speech.report_id, Speech.ordinal, Speech.speaker, Speech.transcript, Speech.kind, Speech.speaker_id)
+            .where(col(Speech.report_id).in_(report_ids))
+            .order_by(Speech.report_id, Speech.ordinal, Speech.id)
+        )
+        return [SpeechParseRow(*row) for row in self.session.exec(statement).all()]
+
     def get_column_rows_by_report_ids(self, report_ids: list[int]) -> list[SpeechColumnRow]:
         statement = (
             select(Speech.id, Speech.report_id, Speech.speaker, Speech.transcript, Speech.column_start, Speech.column_note, Speech.column_suggested)
@@ -271,6 +291,34 @@ class CRUDSpeech:
         statement = delete(Speech).where(col(Speech.report_id).in_(report_ids))
 
         return self.session.exec(statement).rowcount
+
+    def delete_by_ids(self, speech_ids: list[int]) -> int:
+        statement = delete(Speech).where(col(Speech.id).in_(speech_ids))
+
+        return self.session.exec(statement).rowcount
+
+    def update_many(self, speech_updates: list[SpeechUpdate]) -> int:
+        if not speech_updates:
+            return 0
+
+        update_result = self.session.execute(
+            text(
+                "UPDATE speech SET ordinal = v.ordinal, speaker = v.speaker, transcript = v.transcript, kind = v.kind, speaker_id = v.speaker_id "
+                "FROM UNNEST(CAST(:ids AS integer[]), CAST(:ordinals AS integer[]), CAST(:speakers AS text[]), CAST(:transcripts AS text[]), "
+                "CAST(:kinds AS speechkind[]), CAST(:speaker_ids AS integer[])) AS v(id, ordinal, speaker, transcript, kind, speaker_id) "
+                "WHERE speech.id = v.id"
+            ),
+            {
+                "ids": [speech_update.id for speech_update in speech_updates],
+                "ordinals": [speech_update.ordinal for speech_update in speech_updates],
+                "speakers": [speech_update.speaker for speech_update in speech_updates],
+                "transcripts": [speech_update.transcript for speech_update in speech_updates],
+                "kinds": [None if speech_update.kind is None else speech_update.kind.value for speech_update in speech_updates],
+                "speaker_ids": [speech_update.speaker_id for speech_update in speech_updates],
+            },
+        )
+
+        return update_result.rowcount
 
     def set_speaker_ids_bulk(self, speech_id_to_speaker_id: dict[int, Optional[int]]) -> None:
         if not speech_id_to_speaker_id:
