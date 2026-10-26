@@ -1,7 +1,7 @@
 """initial schema
 
 Revision ID: 7d4aee897a69
-Revises:
+Revises: 3e8b5d1a7c42
 Create Date: 2026-06-01 16:14:55.329858
 
 """
@@ -14,7 +14,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = '7d4aee897a69'
-down_revision: Union[str, Sequence[str], None] = None
+down_revision: Union[str, Sequence[str], None] = '3e8b5d1a7c42'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

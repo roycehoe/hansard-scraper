@@ -1,0 +1,408 @@
+"""baseline: the schema before Alembic was added
+
+Revision ID: 3e8b5d1a7c42
+Revises:
+Create Date: 2026-10-26 20:00:00.000000
+
+"""
+from typing import Optional, Sequence, Union
+
+import sqlalchemy as sa
+
+from alembic import op
+
+revision: str = '3e8b5d1a7c42'
+down_revision: Optional[Union[str, Sequence[str]]] = None
+branch_labels: Optional[Union[str, Sequence[str]]] = None
+depends_on: Optional[Union[str, Sequence[str]]] = None
+
+# NOTE: this is the schema 7d4aee897a69 (the first Alembic revision) was written
+# against. It was built by SQLModel.metadata.create_all and the hand-rolled
+# column patches in database/init.py, as they stood in commit 1f6f603^, and it
+# was never recorded as a revision. Production already sits at the head, so
+# production never runs this revision; it exists so an empty database can
+# reach the head.
+
+_TABLES = (
+    'handsardsittingdateresult',
+    'handsardsittingdateresponse',
+    'handsardwebsiteresponse',
+    'mp',
+    'parsingstatistics',
+    'report',
+    'sitting',
+    'sittinga2b',
+    'sittingannexure',
+    'sittingattendance',
+    'sittingptba',
+    'sittingsection',
+    'sittingvernacular',
+    'speech',
+)
+
+_SITTING_FIELDS = (
+    ('online_pdf_file_name', sa.VARCHAR()),
+    ('html_full_content', sa.VARCHAR()),
+    ('ptba_from', sa.VARCHAR()),
+    ('ptba_to', sa.VARCHAR()),
+    ('part_session_str', sa.VARCHAR()),
+    ('start_time_str', sa.VARCHAR()),
+    ('speaker', sa.VARCHAR()),
+    ('attendance_preview_text', sa.VARCHAR()),
+    ('ptba_preview_text', sa.VARCHAR()),
+    ('atb_preview_text', sa.VARCHAR()),
+    ('date_to_display', sa.VARCHAR()),
+    ('pdf_notes', sa.VARCHAR()),
+    ('wa_text', sa.VARCHAR()),
+    ('location_text', sa.VARCHAR()),
+    ('att_start_pg_no', sa.INTEGER()),
+    ('ptba_start_pg_no', sa.INTEGER()),
+    ('atbp_start_pg_no', sa.INTEGER()),
+    ('member_id', sa.VARCHAR()),
+    ('report_type', sa.VARCHAR()),
+    ('portfolio', sa.VARCHAR()),
+    ('member_name', sa.VARCHAR()),
+    ('report_version', sa.VARCHAR()),
+    ('report_start_col', sa.VARCHAR()),
+    ('report_end_col', sa.VARCHAR()),
+    ('title', sa.VARCHAR()),
+    ('column_start', sa.VARCHAR()),
+    ('report_content', sa.VARCHAR()),
+    ('column_end', sa.VARCHAR()),
+    ('report_id', sa.VARCHAR()),
+    ('score', sa.VARCHAR()),
+    ('max_result', sa.VARCHAR()),
+    ('sno', sa.VARCHAR()),
+    ('full_content_flag', sa.VARCHAR()),
+    ('from_month', sa.VARCHAR()),
+    ('from_day', sa.VARCHAR()),
+    ('from_year', sa.VARCHAR()),
+    ('html_content', sa.VARCHAR()),
+    ('subtitle', sa.VARCHAR()),
+    ('content', sa.VARCHAR()),
+    ('mp_names', sa.VARCHAR()),
+    ('html_file_name', sa.VARCHAR()),
+    ('ver_pdf', sa.VARCHAR()),
+    ('foot_notes', sa.VARCHAR()),
+    ('foot_note_question', sa.VARCHAR()),
+    ('foot_note_questions', sa.VARCHAR()),
+    ('foot_note', sa.VARCHAR()),
+    ('atbp_list', sa.VARCHAR()),
+    ('ptba_list', sa.VARCHAR()),
+    ('attendance_list', sa.VARCHAR()),
+    ('pdf_nodes', sa.VARCHAR()),
+    ('clarification_text', sa.VARCHAR()),
+    ('clarification_title', sa.VARCHAR()),
+    ('clarification_sub_title', sa.VARCHAR()),
+    ('question_count', sa.VARCHAR()),
+)
+
+
+def _get_id_column() -> sa.Column:
+    return sa.Column('id', sa.INTEGER(), autoincrement=True, nullable=False)
+
+
+def _get_nullable_columns(*columns: tuple[str, sa.types.TypeEngine]) -> list[sa.Column]:
+    return [sa.Column(name, type_, nullable=True) for name, type_ in columns]
+
+
+def upgrade() -> None:
+    op.create_table(
+        'handsardsittingdateresult',
+        _get_id_column(),
+        *_get_nullable_columns(
+            ('member_id', sa.VARCHAR()),
+            ('volume_no', sa.VARCHAR()),
+            ('report_type', sa.VARCHAR()),
+            ('session_no', sa.VARCHAR()),
+            ('portfolio', sa.VARCHAR()),
+            ('member_name', sa.VARCHAR()),
+            ('report_version', sa.VARCHAR()),
+            ('report_start_col', sa.VARCHAR()),
+            ('sitting_no', sa.VARCHAR()),
+            ('report_end_col', sa.VARCHAR()),
+            ('title', sa.VARCHAR()),
+            ('column_start', sa.VARCHAR()),
+            ('parl_no', sa.VARCHAR()),
+            ('report_content', sa.VARCHAR()),
+            ('column_end', sa.VARCHAR()),
+            ('report_id', sa.VARCHAR()),
+            ('score', sa.VARCHAR()),
+            ('max_result', sa.VARCHAR()),
+            ('sno', sa.VARCHAR()),
+            ('full_content_flag', sa.VARCHAR()),
+            ('from_month', sa.VARCHAR()),
+            ('from_day', sa.VARCHAR()),
+            ('from_year', sa.VARCHAR()),
+            ('html_full_content', sa.VARCHAR()),
+            ('html_content', sa.VARCHAR()),
+            ('subtitle', sa.VARCHAR()),
+            ('sitting_date', sa.VARCHAR()),
+            ('content', sa.VARCHAR()),
+            ('mp_names', sa.VARCHAR()),
+            ('html_file_name', sa.VARCHAR()),
+            ('ver_pdf', sa.VARCHAR()),
+            ('foot_notes', sa.VARCHAR()),
+            ('foot_note_question', sa.VARCHAR()),
+            ('foot_note_questions', sa.VARCHAR()),
+            ('foot_note', sa.VARCHAR()),
+            ('atbp_list', sa.VARCHAR()),
+            ('ptba_list', sa.VARCHAR()),
+            ('attendance_list', sa.VARCHAR()),
+            ('online_pdf_file_name', sa.VARCHAR()),
+            ('pdf_nodes', sa.VARCHAR()),
+            ('clarification_text', sa.VARCHAR()),
+            ('clarification_title', sa.VARCHAR()),
+            ('clarification_sub_title', sa.VARCHAR()),
+            ('ptba_from', sa.VARCHAR()),
+            ('ptba_to', sa.VARCHAR()),
+            ('question_count', sa.VARCHAR()),
+        ),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    # NOTE: the four number columns are VARCHAR here and 7d4aee897a69 converts them to integers;
+    # the table keeps the column order of handsardsittingdateresult, with the later columns last
+    op.create_table(
+        'handsardsittingdateresponse',
+        _get_id_column(),
+        *_get_nullable_columns(
+            ('member_id', sa.VARCHAR()),
+            ('volume_no', sa.VARCHAR()),
+            ('report_type', sa.VARCHAR()),
+            ('session_no', sa.VARCHAR()),
+            ('portfolio', sa.VARCHAR()),
+            ('member_name', sa.VARCHAR()),
+            ('report_version', sa.VARCHAR()),
+            ('report_start_col', sa.VARCHAR()),
+            ('sitting_no', sa.VARCHAR()),
+            ('report_end_col', sa.VARCHAR()),
+            ('title', sa.VARCHAR()),
+            ('column_start', sa.VARCHAR()),
+            ('parlement_no', sa.VARCHAR()),
+            ('report_content', sa.VARCHAR()),
+            ('column_end', sa.VARCHAR()),
+            ('report_id', sa.VARCHAR()),
+            ('score', sa.VARCHAR()),
+            ('max_result', sa.VARCHAR()),
+            ('sno', sa.VARCHAR()),
+            ('full_content_flag', sa.VARCHAR()),
+            ('from_month', sa.VARCHAR()),
+            ('from_day', sa.VARCHAR()),
+            ('from_year', sa.VARCHAR()),
+            ('html_full_content', sa.VARCHAR()),
+            ('html_content', sa.VARCHAR()),
+            ('subtitle', sa.VARCHAR()),
+            ('sitting_date', sa.VARCHAR()),
+            ('content', sa.VARCHAR()),
+            ('mp_names', sa.VARCHAR()),
+            ('html_file_name', sa.VARCHAR()),
+            ('ver_pdf', sa.VARCHAR()),
+            ('foot_notes', sa.VARCHAR()),
+            ('foot_note_question', sa.VARCHAR()),
+            ('foot_note_questions', sa.VARCHAR()),
+            ('foot_note', sa.VARCHAR()),
+            ('atbp_list', sa.VARCHAR()),
+            ('ptba_list', sa.VARCHAR()),
+            ('attendance_list', sa.VARCHAR()),
+            ('online_pdf_file_name', sa.VARCHAR()),
+            ('pdf_nodes', sa.VARCHAR()),
+            ('clarification_text', sa.VARCHAR()),
+            ('clarification_title', sa.VARCHAR()),
+            ('clarification_sub_title', sa.VARCHAR()),
+            ('ptba_from', sa.VARCHAR()),
+            ('ptba_to', sa.VARCHAR()),
+            ('question_count', sa.VARCHAR()),
+            ('part_session_str', sa.TEXT()),
+            ('start_time_str', sa.TEXT()),
+            ('speaker', sa.TEXT()),
+            ('attendance_preview_text', sa.TEXT()),
+            ('ptba_preview_text', sa.TEXT()),
+            ('atb_preview_text', sa.TEXT()),
+            ('date_to_display', sa.TEXT()),
+            ('pdf_notes', sa.TEXT()),
+            ('wa_text', sa.TEXT()),
+            ('location_text', sa.TEXT()),
+            ('att_start_pg_no', sa.INTEGER()),
+            ('ptba_start_pg_no', sa.INTEGER()),
+            ('atbp_start_pg_no', sa.INTEGER()),
+        ),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table(
+        'handsardwebsiteresponse',
+        _get_id_column(),
+        sa.Column('volume_number', sa.VARCHAR(), nullable=False),
+        sa.Column('parliament_number', sa.VARCHAR(), nullable=False),
+        sa.Column('sitting_number', sa.VARCHAR(), nullable=True),
+        sa.Column('sitting_date', sa.VARCHAR(), nullable=False),
+        sa.Column('speech_number', sa.VARCHAR(), nullable=False),
+        sa.Column('title', sa.VARCHAR(), nullable=False),
+        sa.Column('subtitle', sa.VARCHAR(), nullable=True),
+        sa.Column('report_id', sa.VARCHAR(), nullable=False),
+        sa.Column('report_type', sa.VARCHAR(), nullable=False),
+        sa.Column('html_file_name', sa.VARCHAR(), nullable=True),
+        sa.Column('content', sa.VARCHAR(), nullable=True),
+        sa.Column('report_version', sa.VARCHAR(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table(
+        'mp',
+        _get_id_column(),
+        sa.Column('name', sa.VARCHAR(), nullable=False),
+        sa.Column('party', sa.VARCHAR(), nullable=False),
+        sa.Column('is_legislative_assembly', sa.BOOLEAN(), nullable=False),
+        sa.Column('parliament_number', sa.INTEGER(), nullable=False),
+        sa.Column('comments', sa.VARCHAR(), nullable=True),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    # NOTE: 7d4aee897a69 adds report_id to parsingstatistics, so it is not created here
+    op.create_table(
+        'parsingstatistics',
+        _get_id_column(),
+        sa.Column('volume_number', sa.INTEGER(), nullable=False),
+        sa.Column('parliament_number', sa.INTEGER(), nullable=False),
+        sa.Column('sitting_number', sa.INTEGER(), nullable=True),
+        sa.Column('sitting_date', sa.DateTime(), nullable=False),
+        sa.Column('speech_number', sa.INTEGER(), nullable=False),
+        sa.Column('title', sa.VARCHAR(), nullable=False),
+        sa.Column('subtitle', sa.VARCHAR(), nullable=True),
+        sa.Column('has_markdown', sa.BOOLEAN(), nullable=False),
+        sa.Column('has_start_line', sa.BOOLEAN(), nullable=False),
+        sa.Column('can_get_speeches', sa.BOOLEAN(), nullable=False),
+        sa.Column('report_type', sa.VARCHAR(), nullable=False),
+        sa.Column('report_version', sa.VARCHAR(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table(
+        'report',
+        _get_id_column(),
+        sa.Column('volume_number', sa.INTEGER(), nullable=False),
+        sa.Column('parliament_number', sa.INTEGER(), nullable=False),
+        sa.Column('sitting_number', sa.INTEGER(), nullable=True),
+        sa.Column('sitting_date', sa.DateTime(), nullable=False),
+        sa.Column('speech_number', sa.INTEGER(), nullable=False),
+        sa.Column('original_title', sa.VARCHAR(), nullable=False),
+        sa.Column('title', sa.VARCHAR(), nullable=False),
+        sa.Column('subtitle', sa.VARCHAR(), nullable=True),
+        sa.Column('report_id', sa.VARCHAR(), nullable=False),
+        sa.Column('report_type', sa.VARCHAR(), nullable=False),
+        sa.Column('html_file_name', sa.VARCHAR(), nullable=True),
+        sa.Column('content', sa.VARCHAR(), nullable=True),
+        sa.Column('markdown_content', sa.VARCHAR(), nullable=True),
+        sa.Column('report_version', sa.VARCHAR(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table(
+        'sitting',
+        _get_id_column(),
+        *_get_nullable_columns(
+            ('parlement_no', sa.INTEGER()),
+            ('session_no', sa.INTEGER()),
+            ('volume_no', sa.INTEGER()),
+            ('sitting_no', sa.INTEGER()),
+            ('sitting_date', sa.VARCHAR()),
+            *_SITTING_FIELDS,
+            ('markdown_content', sa.VARCHAR()),
+        ),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table(
+        'sittinga2b',
+        _get_id_column(),
+        sa.Column('sitting_id', sa.INTEGER(), nullable=True),
+        sa.Column('date', sa.VARCHAR(), nullable=True),
+        sa.Column('bill', sa.VARCHAR(), nullable=True),
+        sa.Column('atbp_preview_text', sa.VARCHAR(), nullable=True),
+        sa.ForeignKeyConstraint(['sitting_id'], ['handsardsittingdateresponse.id']),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table(
+        'sittingannexure',
+        _get_id_column(),
+        sa.Column('sitting_id', sa.INTEGER(), nullable=True),
+        sa.Column('annexure_id', sa.INTEGER(), nullable=True),
+        sa.Column('sitting_date', sa.VARCHAR(), nullable=True),
+        sa.Column('annexure_title', sa.VARCHAR(), nullable=True),
+        sa.Column('file_path', sa.VARCHAR(), nullable=True),
+        sa.Column('file_name', sa.VARCHAR(), nullable=True),
+        sa.Column('section_type', sa.VARCHAR(), nullable=True),
+        sa.Column('file', sa.VARCHAR(), nullable=True),
+        sa.ForeignKeyConstraint(['sitting_id'], ['handsardsittingdateresponse.id']),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table(
+        'sittingattendance',
+        _get_id_column(),
+        sa.Column('sitting_id', sa.INTEGER(), nullable=True),
+        sa.Column('mp_name', sa.VARCHAR(), nullable=True),
+        sa.Column('attendance', sa.BOOLEAN(), nullable=True),
+        sa.Column('location_name', sa.VARCHAR(), nullable=True),
+        sa.Column('mp_id', sa.INTEGER(), nullable=True),
+        sa.ForeignKeyConstraint(['mp_id'], ['mp.id']),
+        sa.ForeignKeyConstraint(['sitting_id'], ['sitting.id']),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table(
+        'sittingptba',
+        _get_id_column(),
+        sa.Column('sitting_id', sa.INTEGER(), nullable=True),
+        sa.Column('mp_name', sa.VARCHAR(), nullable=True),
+        sa.Column('from_date', sa.VARCHAR(), nullable=True),
+        sa.Column('to_date', sa.VARCHAR(), nullable=True),
+        sa.Column('start_dt_text', sa.VARCHAR(), nullable=True),
+        sa.Column('end_dt_text', sa.VARCHAR(), nullable=True),
+        sa.Column('start_dt_flag', sa.BOOLEAN(), nullable=True),
+        sa.Column('end_dt_flag', sa.BOOLEAN(), nullable=True),
+        sa.ForeignKeyConstraint(['sitting_id'], ['handsardsittingdateresponse.id']),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table(
+        'sittingsection',
+        _get_id_column(),
+        sa.Column('sitting_id', sa.INTEGER(), nullable=True),
+        sa.Column('start_pg_no', sa.INTEGER(), nullable=True),
+        sa.Column('end_pg_no', sa.INTEGER(), nullable=True),
+        sa.Column('title', sa.VARCHAR(), nullable=True),
+        sa.Column('sub_title', sa.VARCHAR(), nullable=True),
+        sa.Column('section_type', sa.VARCHAR(), nullable=True),
+        sa.Column('content', sa.VARCHAR(), nullable=True),
+        sa.Column('clarification_text', sa.VARCHAR(), nullable=True),
+        sa.Column('clarification_title', sa.VARCHAR(), nullable=True),
+        sa.Column('clarification_sub_title', sa.VARCHAR(), nullable=True),
+        sa.Column('report_type', sa.VARCHAR(), nullable=True),
+        sa.Column('question_count', sa.VARCHAR(), nullable=True),
+        sa.Column('foot_notes', sa.VARCHAR(), nullable=True),
+        sa.Column('foot_note_questions', sa.VARCHAR(), nullable=True),
+        sa.Column('question_no', sa.VARCHAR(), nullable=True),
+        sa.ForeignKeyConstraint(['sitting_id'], ['handsardsittingdateresponse.id']),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table(
+        'sittingvernacular',
+        _get_id_column(),
+        sa.Column('sitting_id', sa.INTEGER(), nullable=True),
+        sa.Column('vernacular_id', sa.INTEGER(), nullable=True),
+        sa.Column('sitting_date', sa.VARCHAR(), nullable=True),
+        sa.Column('vernacular_title', sa.VARCHAR(), nullable=True),
+        sa.Column('file_path', sa.VARCHAR(), nullable=True),
+        sa.Column('file_name', sa.VARCHAR(), nullable=True),
+        sa.ForeignKeyConstraint(['sitting_id'], ['handsardsittingdateresponse.id']),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table(
+        'speech',
+        _get_id_column(),
+        sa.Column('ordinal', sa.INTEGER(), nullable=False),
+        sa.Column('speaker', sa.VARCHAR(), nullable=True),
+        sa.Column('transcript', sa.VARCHAR(), nullable=False),
+        sa.Column('report_id', sa.INTEGER(), nullable=True),
+        sa.Column('mp_id', sa.INTEGER(), nullable=True),
+        sa.ForeignKeyConstraint(['mp_id'], ['mp.id']),
+        sa.ForeignKeyConstraint(['report_id'], ['report.id']),
+        sa.PrimaryKeyConstraint('id'),
+    )
+
+
+def downgrade() -> None:
+    for table in reversed(_TABLES):
+        op.drop_table(table)
