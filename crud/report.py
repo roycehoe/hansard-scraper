@@ -82,6 +82,10 @@ class CRUDReport:
         statement = select(Report).where(Report.markdown_content.is_not(None))
         return list(self.session.exec(statement).all())
 
+    def get_ids(self) -> list[int]:
+        statement = select(col(Report.id)).order_by(col(Report.id))
+        return list(self.session.exec(statement).all())
+
     def get_ids_by_markdown_content_not_null(self) -> list[int]:
         statement = select(col(Report.id)).where(col(Report.markdown_content).is_not(None)).order_by(col(Report.id))
         return list(self.session.exec(statement).all())

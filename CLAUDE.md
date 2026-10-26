@@ -174,6 +174,7 @@ The scripts:
 - `apply_attendance_names.py`: sets stored attendance names to the names stage 7 builds, on rows where nothing else differs; pairs the rows equal in name, presence and location first and the rest by position, and refuses a sitting whose rows differ in more than a name; a dry run unless `--commit`
 - `clean_attendance.py`: deletes the attendance rows of `data/attendance_cleanup.json` that the stage 7 parser no longer builds, renames and links its corrections, and links each `Speaker` role row to the presiding officer of its date or deletes it when he has another row; a dry run unless `--commit`
 - `apply_speaker_parliaments.py`: moves the stored Assembly-only speaker rows to the Parliament that `data/colonial_la_members.json` and `data/heads_of_state.json` give them; a dry run unless `--commit`
+- `fresh_vs_stored.py`: read-only comparison of every report's stored speech rows with a fresh parse of its raw text, in read-only transactions over two workers; writes one JSON record per report with its status (same, ordinal only, content, no content, no start line or error), and for a content difference the differing blocks, the words lost and gained and whether only `kind` differs; `--held` marks the reports of a held file and `--report-id` limits it to the reports given; run as a module
 - `apply_fresh_parse.py`: rewrites the stored speech rows and markdown of every report whose fresh parse differs, except the reports of a `--held` file and the reports that differ in `kind` only; pairs stored and parsed rows by speaker and text, keeps the ids of paired rows and the stored `kind` of a paired row whose speaker and text are unchanged, numbers every row 1..n and clears the link of a row whose speaker changes; a dry run writes the plan file, and `--commit` locks the planned reports, builds the plan again, refuses unless it equals the reviewed file, checks the written reports equal the parse, links them through stage 8 and reruns the column pass; run as a module
 - `apply_speaker_links.py`: links the stored speech and attendance rows that stage 8 would link; a dry run writes the plan file, and `--commit` locks the planned rows, checks they are still unlinked, builds the plan again and refuses unless it equals the reviewed file
 - `apply_coverage_refill.py`: stores the hits SPRS lists that the database lacks and fills reports stored with empty text, with their speech rows; a dry run fetches the text into the plan file, and `--commit` checks the hits are still unstored and the reports still empty, writes the plan's text and checks the speech counts; run `apply_speaker_links.py` after it
@@ -216,6 +217,7 @@ hansard-scraper/
 │   ├── unattributed_speech.py      # UnattributedSpeechRange / UnattributedSpeechRanges: data/unattributed_speech.json entries
 │   ├── constituency_names.py       # ConstituencyName / ConstituencyRowName / ConstituencyNames: data/constituency_names.json
 │   ├── speaker_link_plan.py        # SpeakerLinkPlan: the plan file of scripts/apply_speaker_links.py
+│   ├── fresh_vs_stored_report.py   # FreshVsStoredReport / FreshVsStoredReports / RowDifferences: the output file of scripts/fresh_vs_stored.py
 │   ├── fresh_parse_plan.py         # FreshParsePlan / ReportFreshParsePlan / HeldReports: the plan and held files of scripts/apply_fresh_parse.py
 │   ├── attendance_completion_plan.py  # AttendanceCompletionPlan / SittingAttendanceCompletion / PlannedAttendance: the plan file of scripts/complete_truncated_attendance.py
 │   ├── coverage_refill_plan.py     # CoverageRefillPlan / FetchedHit / FetchedReport: the plan file of scripts/apply_coverage_refill.py
@@ -346,6 +348,7 @@ hansard-scraper/
     ├── apply_attendance_names.py
     ├── clean_attendance.py
     ├── apply_speaker_parliaments.py
+    ├── fresh_vs_stored.py
     ├── apply_fresh_parse.py
     ├── apply_speaker_links.py
     ├── load_party_affiliations.py
