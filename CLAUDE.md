@@ -169,6 +169,7 @@ The scripts:
 - `apply_column_numbers.py`: sets `report.column_start` and `column_end` and each speech row's `column_start`, `column_note` and `column_suggested` from the column markers in the raw HTML, through `populate/column_numbers.py`; `--report-id` limits it to the reports given; checks the stored counts by Parliament against its plan before it commits; a dry run unless `--commit`; run as a module
 - `apply_speaker_overrides.py`: applies `data/speaker_overrides.json` and the party values of `data/colonial_la_members.json` to stored speaker rows, and straightens the apostrophe in party; a dry run unless `--commit`
 - `complete_truncated_attendance.py`: inserts the attendance rows stage 7 builds from a sitting's markdown that its stored rows lack, linked as stage 8 links them, in sittings that already hold rows (stage 7 fills a sitting with none); refuses the whole run when a short sitting holds a stored row stage 7 does not build; a dry run writes the plan file, and `--commit` builds the plan again, refuses unless it equals the reviewed file, and checks each sitting's count before it commits
+- `attendance_fresh_vs_stored.py`: read-only comparison of the attendance rows stage 7 builds now with the stored rows, one JSON line per differing or watched row with its printed source lines; `--batches` writes reader files of at most 150 rows per class; run as a module
 - `apply_constituency_names.py`: rewrites stored attendance location names that `data/constituency_names.json` would change; a dry run unless `--commit`
 - `apply_attendance_names.py`: sets stored attendance names to the names stage 7 builds, on rows where nothing else differs; pairs the rows equal in name, presence and location first and the rest by position, and refuses a sitting whose rows differ in more than a name; a dry run unless `--commit`
 - `clean_attendance.py`: deletes the attendance rows of `data/attendance_cleanup.json` that the stage 7 parser no longer builds, renames and links its corrections, and links each `Speaker` role row to the presiding officer of its date or deletes it when he has another row; a dry run unless `--commit`
@@ -337,6 +338,7 @@ hansard-scraper/
     ├── apply_column_numbers.py
     ├── apply_speaker_overrides.py
     ├── complete_truncated_attendance.py
+    ├── attendance_fresh_vs_stored.py
     ├── apply_constituency_names.py
     ├── apply_attendance_names.py
     ├── clean_attendance.py

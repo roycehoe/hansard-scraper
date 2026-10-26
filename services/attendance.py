@@ -288,7 +288,7 @@ def _get_presiding_officer_name(sitting_date: str) -> Optional[str]:
     return names[0] if len(names) == 1 else None
 
 
-def _parse_entry_line(line: str, sitting_date: str) -> Optional[ParsedAttendee]:
+def parse_entry_line(line: str, sitting_date: str) -> Optional[ParsedAttendee]:
     line = line.strip()
     line = _TRUNCATED_LINE_TO_ENTRY_LINE.get(line, line)
     if not line:
@@ -345,7 +345,7 @@ def _drop_masthead_blocks(lines: list[str]) -> list[str]:
     return kept_lines
 
 
-def _split_entry_line(line: str) -> list[str]:
+def split_entry_line(line: str) -> list[str]:
     if _SPEAKER_ENTRY_MARKER in line:
         return [line]
     first_close_index = line.find(CLOSING_PARENTHESIS)
@@ -481,8 +481,8 @@ def build_sitting_attendances_from_markdown(sitting: Sitting, lookups: SpeakerLo
 
     for section, is_present in [(AttendanceSection.PRESENT, True), (AttendanceSection.ABSENT, False)]:
         for line in extract_section_lines(content, section):
-            for entry_line in _split_entry_line(line):
-                parsed = _parse_entry_line(entry_line, sitting.sitting_date)
+            for entry_line in split_entry_line(line):
+                parsed = parse_entry_line(entry_line, sitting.sitting_date)
                 if parsed is None:
                     continue
                 if not parsed.name:
@@ -513,7 +513,7 @@ def build_sitting_attendances_from_list(sitting: Sitting, lookups: SpeakerLookup
             continue
         if entry.mp_name.startswith(_LEAVE_NOTE_PREFIX):
             continue
-        parsed = _parse_entry_line(entry.mp_name, sitting.sitting_date)
+        parsed = parse_entry_line(entry.mp_name, sitting.sitting_date)
         if parsed is None:
             continue
         if not parsed.name:
