@@ -20,7 +20,8 @@ from services.attendance import (
 )
 from utils.data_files import get_constituency_names
 
-_ROW_NAME_COUNT = 8
+_ROW_NAME_COUNT = 51
+_ACTING_ROW_NAME_COUNT = 43
 _GRC_NAME_COUNT = 17
 
 
@@ -148,6 +149,16 @@ def test_data_file_fixes_the_ward_rows_of_the_sitting_of_7_march_2011() -> None:
     assert get_constituency_name("Nee Soon", 11, "7-3-2011", "Lee Bee Wah", lookups) == "Ang Mo Kio"
     assert get_constituency_name("Pioneer", 11, "7-3-2011", "Cedric Foo Chee Keng", lookups) == "West Coast"
     assert get_constituency_name("Pioneer", 12, "1-1-2012", "Someone", lookups) == "Pioneer"
+
+
+def test_data_file_maps_acting_to_ex_officio_only_on_the_rows_that_print_ex_officio() -> None:
+    file_lookups = _get_file_lookups()
+
+    acting_row_names = [row_name for row_name in file_lookups.constituency_names.rows if row_name.printed == "Acting"]
+    assert len(acting_row_names) == _ACTING_ROW_NAME_COUNT
+    assert all(row_name.constituency == "ex-officio" for row_name in acting_row_names)
+    assert get_constituency_name("Acting", 0, "4-12-1957", "Stewart, S.T.", file_lookups.lookups) == "ex-officio"
+    assert get_constituency_name("Acting", 0, "4-12-1957", "Someone", file_lookups.lookups) == "Acting"
 
 
 def test_sitting_markdown_attendance_takes_the_mapped_constituency() -> None:
