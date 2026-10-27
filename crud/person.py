@@ -22,3 +22,9 @@ class CRUDPerson:
 
         self.session.add(person)
         self.session.flush()
+
+    def set_basis(self, person: Person, basis: str) -> None:
+        person.basis = basis
+
+        self.session.add(person)
+        self.session.flush()

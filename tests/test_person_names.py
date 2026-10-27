@@ -125,7 +125,7 @@ def test_populate_persons_renames_a_reused_person_and_leaves_an_unchanged_one(mo
         _get_speaker(2, "Lee Kuan Yew", 2, person_id=11),
         _get_speaker(3, "Goh Chok Tong", 2),
     ]
-    persons = [Person(id=10, canonical_name="Rajaratnam, S"), Person(id=11, canonical_name="Lee Kuan Yew")]
+    persons = [Person(id=10, canonical_name="Rajaratnam, S", basis="single"), Person(id=11, canonical_name="Lee Kuan Yew", basis="single")]
     renamed: list[tuple[int, str]] = []
     created: list[str] = []
     linked: list[dict[int, int]] = []
@@ -141,3 +141,26 @@ def test_populate_persons_renames_a_reused_person_and_leaves_an_unchanged_one(mo
     assert renamed == [(10, "S Rajaratnam")]
     assert created == ["Goh Chok Tong"]
     assert linked == [{3: 12}]
+
+
+def test_populate_persons_recomputes_the_basis_of_a_reused_person(monkeypatch: pytest.MonkeyPatch) -> None:
+    speakers = [
+        _get_speaker(1, "Lee Li Lian", 12, person_id=10),
+        _get_speaker(2, "Lee Li Lian", 13),
+    ]
+    persons = [Person(id=10, canonical_name="Lee Li Lian", basis="single")]
+    basis_changes: list[tuple[int, str]] = []
+    created: list[str] = []
+    linked: list[dict[int, int]] = []
+    monkeypatch.setattr(populate_persons_module, "get_person_decisions", lambda: [])
+    monkeypatch.setattr(CRUDSpeaker, "get_all", lambda self: speakers)
+    monkeypatch.setattr(CRUDSpeaker, "set_person_ids_bulk", lambda self, updates: linked.append(updates))
+    monkeypatch.setattr(CRUDPerson, "get_all", lambda self: persons)
+    monkeypatch.setattr(CRUDPerson, "create", lambda self, person: created.append(person.canonical_name) or 11)
+    monkeypatch.setattr(CRUDPerson, "set_basis", lambda self, person, basis: basis_changes.append((person.id, basis)))
+
+    populate_persons(SimpleNamespace(commit=lambda: None))
+
+    assert basis_changes == [(10, "auto:exact")]
+    assert created == []
+    assert linked == [{2: 10}]

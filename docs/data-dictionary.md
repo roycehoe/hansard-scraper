@@ -165,7 +165,7 @@ One row per individual, grouping the per-parliament `Speaker` rows. Derived and 
 | Field | Type | Meaning |
 |---|---|---|
 | `canonical_name` | str | Display name in "Given Surname" order. Stage 9 takes the most common spelling among the person's speaker rows, inverts a comma form ("Rajaratnam, S" becomes "S Rajaratnam"), and drops honorifics and the decorations BPM and BBM. A `merge` or `name` decision gives the name instead. `speaker.name` keeps the source form. A rerun of stage 9 renames existing persons. |
-| `basis` | str | Which rule formed the group: `auto:exact`, `auto:normalised`, `review:merge` or `single`. |
+| `basis` | str | Which rule formed the group: `auto:exact`, `auto:normalised`, `review:merge` or `single`. Stage 9 recomputes it on every run. |
 | `notes` | str | Free text; unused so far. |
 
 ---
