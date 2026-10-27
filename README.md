@@ -5,7 +5,7 @@
 
 A database of Singapore's parliamentary record, from the Legislative Assembly of 1955 to the present Parliament. The pipeline fetches every report from SPRS, Parliament's search system. A report is one item of business in a sitting, such as a question, a bill or a motion. The pipeline splits each report into speeches and links each speech to the member who gave it.
 
-The website built on this database is [roycehoe/hansard](https://github.com/roycehoe/hansard), live at [hansard.fancybinary.sg](https://hansard.fancybinary.sg).
+The website built on this database is [roycehoe/hansard](https://github.com/roycehoe/hansard), live at [openhansard.sg](https://openhansard.sg).
 
 ## Status
 
@@ -19,7 +19,7 @@ You can build your own copy with the steps under [Setup](#setup). A full crawl s
 
 ## What the record holds
 
-The record runs from the Legislative Assembly before independence, through the 1st to 15th Parliaments. It holds the reports, speeches, people and sittings, and who was present and absent at every sitting. For the dates and counts, see the [coverage page](https://hansard.fancybinary.sg/coverage). Its [methods page](https://hansard.fancybinary.sg/coverage/methods) has the full counts, reports by year and known gaps. The site calls each speech row a paragraph. The site's API is the only source of the dates and totals, so this README does not copy them.
+The record runs from the Legislative Assembly before independence, through the 1st to 15th Parliaments. It holds the reports, speeches, people and sittings, and who was present and absent at every sitting. For the dates and counts, see the [coverage page](https://openhansard.sg/coverage). Its [methods page](https://openhansard.sg/coverage/methods) has the full counts, reports by year and known gaps. The site calls each speech row a paragraph. The site's API is the only source of the dates and totals, so this README does not copy them.
 
 ## How accurate the speaker links are
 
