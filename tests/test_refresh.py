@@ -319,7 +319,7 @@ def test_run_that_adds_nothing_sends_no_message(
     second_run = _get_refresh_runs(scratch_engine)[-1]
     assert second_run.status == RefreshRunStatus.SUCCEEDED
     assert all(getattr(second_run, column) == 0 for column in _ADDED_COUNT_COLUMNS)
-    assert second_run.figures is None
+    assert second_run.figures is not None
     assert second_run.reports_changed == 0
     _assert_nothing_written(scratch_engine, row_counts_before)
     assert alerts.messages == []

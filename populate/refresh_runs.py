@@ -693,8 +693,7 @@ def populate_refresh_runs(session: Session, now: datetime, allowed_parliament_nu
             is_data_committed = run_result.website_responses_added + run_result.sitting_date_responses_added > 0
         if is_every_topic_an_error_body(run_result.topics_fetched, run_result.topics_with_error_body):
             raise HansardRefreshFailureError(build_error_bodies_reason(run_result.topics_fetched))
-        if run_result.speeches_added > 0:
-            run_result.figures = build_attribution_figures_json(get_attribution_figures(session), datetime.now(timezone.utc))
+        run_result.figures = build_attribution_figures_json(get_attribution_figures(session), datetime.now(timezone.utc))
         latest_sitting_date = CRUDReport(session).get_max_sitting_date_by_content_not_null_and_content_not_empty()
         run_result.latest_sitting_date_with_text = None if latest_sitting_date is None else latest_sitting_date.date()
         _vacuum_analyze_tables(session)

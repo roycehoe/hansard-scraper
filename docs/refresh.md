@@ -29,7 +29,7 @@ Then, for each month in order, the run:
 
 After the last month, the run:
 
-14. Computes the attribution figures when the run added speech rows.
+14. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
 15. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
 16. Records the counts and marks the row `SUCCEEDED`.
 17. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
@@ -137,7 +137,7 @@ One row per run. Every count column is `integer NOT NULL` and counts only what t
 | `reports_rechecked` | integer | Stored reports in the 14-day window fetched again |
 | `reports_changed` | integer | Re-fetched reports whose text differs from the stored text |
 | `latest_sitting_date_with_text` | date, NULL | The latest sitting date of any stored report with text, after the run |
-| `figures` | jsonb, NULL | The attribution figures, on a run that added speech rows (see "For batch E") |
+| `figures` | jsonb, NULL | The attribution figures, on every run that reaches the end (see "For batch E") |
 | `halt_reason` | text, NULL | Why the run halted |
 | `failure_reason` | text, NULL | The error type and message, up to 1,000 characters |
 | `started_at` | timestamptz | When the run started |
@@ -153,7 +153,7 @@ One row per run. Every count column is `integer NOT NULL` and counts only what t
 
 ## Figures and the register
 
-`CLAUDE.md` asks every write to the speech table to end with a `docs/figures/` file. A scheduled job cannot commit one, so a run that adds speech rows stores the same figures as `scripts/attribution_text_share.py` in `refresh_run.figures`. Supervised writes still commit their file.
+`CLAUDE.md` asks every write to the speech table to end with a `docs/figures/` file. A scheduled job cannot commit one, so every run stores the same figures as `scripts/attribution_text_share.py` in `refresh_run.figures`. Supervised writes still commit their file.
 
 The register (`docs/data-loss-register.md`) has rows for what the refresh keeps or skips. Their counts grow run by run in `reports_held_without_text`, `reports_without_speech_rows`, `speeches_named_unlinked` and `reports_changed`, and a supervised update of the register reads them from there.
 
