@@ -21,6 +21,7 @@ class Report(SQLModel, table=True):
     __table_args__ = (
         # NOTE: a second index on the primary key, so the person page reads parliament_number without the heap
         Index("ix_report_id_parliament_number", "id", postgresql_include=["parliament_number"]),
+        Index("ix_report_report_type_id", "report_type", "id"),
         Index("ix_report_sitting_date_parliament_number", "sitting_date", "parliament_number"),
         Index("ix_report_title_fts", text("to_tsvector('english', title)"), postgresql_using="gin"),
         Index("ix_report_title_tsv", "title_tsv", postgresql_using="gin"),
