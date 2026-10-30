@@ -54,6 +54,7 @@ erDiagram
         varchar transcript
         speechkind kind
         timestamp sitting_date "copied from report"
+        varchar report_type "copied from report"
         tsvector transcript_tsv "generated from transcript"
     }
 

@@ -43,7 +43,7 @@ def _seed_one_speech(scratch_session: Session, speaker: Speaker, report: Report,
     scratch_session.add_all([speaker, report])
     scratch_session.flush()
     assert report.id is not None
-    speech = Speech(ordinal=_ORDINAL, speaker=label, transcript="Text", sitting_date=report.sitting_date, report_id=report.id)
+    speech = Speech(ordinal=_ORDINAL, speaker=label, transcript="Text", sitting_date=report.sitting_date, report_type=report.report_type, report_id=report.id)
     scratch_session.add(speech)
     scratch_session.commit()
     speech_id = speech.id

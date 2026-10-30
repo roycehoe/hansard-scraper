@@ -33,7 +33,7 @@ def _add_report(session: Session, report_id: str, content: str) -> Report:
 
 def _add_speech(session: Session, report: Report) -> None:
     assert report.id is not None
-    session.add(Speech(ordinal=1, speaker="Mr A", transcript="Hello.", sitting_date=_SITTING_DATE, report_id=report.id))
+    session.add(Speech(ordinal=1, speaker="Mr A", transcript="Hello.", sitting_date=_SITTING_DATE, report_type=report.report_type, report_id=report.id))
     session.commit()
 
 

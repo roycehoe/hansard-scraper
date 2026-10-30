@@ -60,6 +60,7 @@ def _seed_report(session: Session, speech_count: Optional[int] = None) -> Report
             speaker=parsed_speech.speaker,
             transcript=parsed_speech.transcript.replace(_PARSED_PHRASE, _STORED_PHRASE),
             sitting_date=_SITTING_DATE,
+            report_type=report.report_type,
             report_id=report.id,
         )
         for ordinal, parsed_speech in enumerate(parsed_speeches, start=1)

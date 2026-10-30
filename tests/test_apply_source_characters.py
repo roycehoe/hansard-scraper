@@ -48,9 +48,9 @@ def _seed_repairable_and_clean_rows(scratch_session: Session) -> tuple[Report, R
     scratch_session.add_all([broken_report, clean_report, sitting])
     scratch_session.flush()
     assert broken_report.id is not None
-    broken_speech = Speech(ordinal=1, speaker=_BROKEN_TEXT, transcript=_BROKEN_TEXT, sitting_date=_SITTING_DATE, report_id=broken_report.id)
-    clean_speech = Speech(ordinal=2, speaker="Mr A", transcript=_CLEAN_TEXT, sitting_date=_SITTING_DATE, report_id=broken_report.id)
-    emptied_speech = Speech(ordinal=3, speaker="Mr B", transcript=_EMPTIED_TEXT, sitting_date=_SITTING_DATE, report_id=broken_report.id)
+    broken_speech = Speech(ordinal=1, speaker=_BROKEN_TEXT, transcript=_BROKEN_TEXT, sitting_date=_SITTING_DATE, report_type=broken_report.report_type, report_id=broken_report.id)
+    clean_speech = Speech(ordinal=2, speaker="Mr A", transcript=_CLEAN_TEXT, sitting_date=_SITTING_DATE, report_type=broken_report.report_type, report_id=broken_report.id)
+    emptied_speech = Speech(ordinal=3, speaker="Mr B", transcript=_EMPTIED_TEXT, sitting_date=_SITTING_DATE, report_type=broken_report.report_type, report_id=broken_report.id)
     scratch_session.add_all([broken_speech, clean_speech, emptied_speech])
     scratch_session.commit()
     return broken_report, clean_report, sitting, broken_speech, clean_speech, emptied_speech

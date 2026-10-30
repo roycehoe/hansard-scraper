@@ -78,8 +78,8 @@ def test_parliament_15_has_its_own_group(scratch_session: Session) -> None:
     scratch_session.flush()
     assert report.id is not None
     scratch_session.add_all([
-        Speech(ordinal=1, speaker="Mr Tan Ah Kow", transcript="asked about rental flats.", sitting_date=report.sitting_date, report_id=report.id, speaker_id=speaker.id),
-        Speech(ordinal=2, speaker="Mr Lim Boon Heng", transcript="More will be built.", sitting_date=report.sitting_date, report_id=report.id),
+        Speech(ordinal=1, speaker="Mr Tan Ah Kow", transcript="asked about rental flats.", sitting_date=report.sitting_date, report_type=report.report_type, report_id=report.id, speaker_id=speaker.id),
+        Speech(ordinal=2, speaker="Mr Lim Boon Heng", transcript="More will be built.", sitting_date=report.sitting_date, report_type=report.report_type, report_id=report.id),
     ])
     scratch_session.commit()
 

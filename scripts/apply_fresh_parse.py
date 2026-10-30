@@ -207,6 +207,7 @@ def _write_report_plans(session: Session, plan: FreshParsePlan) -> None:
             transcript=insert.transcript,
             kind=insert.kind,
             sitting_date=report_id_to_report[report_plan.report_id].sitting_date,
+            report_type=report_id_to_report[report_plan.report_id].report_type,
             report_id=report_plan.report_id,
         )
         for report_plan in plan.report_plans

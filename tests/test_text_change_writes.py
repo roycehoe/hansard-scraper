@@ -40,7 +40,7 @@ def _build_report(markdown_content: str) -> Report:
 
 
 def _build_speech(report_id: int, speaker: str, transcript: str) -> Speech:
-    return Speech(ordinal=_SPEECH_NUMBER, speaker=speaker, transcript=transcript, sitting_date=_SITTING_DATE, report_id=report_id)
+    return Speech(ordinal=_SPEECH_NUMBER, speaker=speaker, transcript=transcript, sitting_date=_SITTING_DATE, report_type=ReportType.MOTION, report_id=report_id)
 
 
 def test_report_markdown_write_skips_a_row_no_longer_holding_the_before_text(scratch_session: Session) -> None:

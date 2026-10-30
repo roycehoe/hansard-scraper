@@ -43,7 +43,7 @@ def _seed_report(scratch_session: Session) -> tuple[Report, dict]:
     fixture = json.loads(_FIXTURE_PATH.read_text())
     report = _add_report(scratch_session, fixture)
     merged_transcript = " ".join(transcript for _speaker, transcript, _kind in fixture["expected_rows"])
-    scratch_session.add(Speech(ordinal=1, speaker=_STORED_SPEAKER, transcript=merged_transcript, kind=SpeechKind.SPEECH, sitting_date=_SITTING_DATE, report_id=report.id))
+    scratch_session.add(Speech(ordinal=1, speaker=_STORED_SPEAKER, transcript=merged_transcript, kind=SpeechKind.SPEECH, sitting_date=_SITTING_DATE, report_type=report.report_type, report_id=report.id))
     scratch_session.commit()
     return report, fixture
 
@@ -88,6 +88,7 @@ def test_commit_writes_the_parse_and_a_second_dry_run_plans_nothing(
 
     expected_rows = [[ordinal, speaker, transcript, SpeechKind(kind)] for ordinal, (speaker, transcript, kind) in enumerate(fixture["expected_rows"], start=1)]
     assert _get_stored_rows(scratch_session, report) == expected_rows
+    assert set(scratch_session.exec(select(Speech.report_type).where(Speech.report_id == report.id)).all()) == {report.report_type}
     second_plan_path = tmp_path / "second_plan.json"
     apply_fresh_parse_script.apply_fresh_parse(second_plan_path, held_path, is_commit=False)
     assert json.loads(second_plan_path.read_text())["report_plans"] == []
@@ -128,9 +129,9 @@ def test_commit_keeps_the_stored_kind_of_a_paired_row_whose_speaker_and_text_are
     fixture = json.loads(_FIXTURE_PATH.read_text())
     report = _add_report(scratch_session, fixture)
     stored_kinds = [None] + [SpeechKind.UNCLASSIFIED] * (len(fixture["expected_rows"]) - 1)
-    scratch_session.add(Speech(ordinal=1, speaker=_STORED_SPEAKER, transcript="A row the parse does not build", kind=SpeechKind.SPEECH, sitting_date=_SITTING_DATE, report_id=report.id))
+    scratch_session.add(Speech(ordinal=1, speaker=_STORED_SPEAKER, transcript="A row the parse does not build", kind=SpeechKind.SPEECH, sitting_date=_SITTING_DATE, report_type=report.report_type, report_id=report.id))
     for ordinal, ((speaker, transcript, _kind), stored_kind) in enumerate(zip(fixture["expected_rows"], stored_kinds, strict=True), start=2):
-        scratch_session.add(Speech(ordinal=ordinal, speaker=speaker, transcript=transcript, kind=stored_kind, sitting_date=_SITTING_DATE, report_id=report.id))
+        scratch_session.add(Speech(ordinal=ordinal, speaker=speaker, transcript=transcript, kind=stored_kind, sitting_date=_SITTING_DATE, report_type=report.report_type, report_id=report.id))
     scratch_session.commit()
     plan_path = tmp_path / "plan.json"
     held_path = _write_held(tmp_path, [])

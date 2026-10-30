@@ -41,7 +41,7 @@ def _build_report(report_id: str) -> Report:
 
 def _build_speech(report: Report) -> Speech:
     assert report.id is not None
-    return Speech(ordinal=_ORDINAL, speaker=_SPEAKER_LABEL, transcript="Text", sitting_date=report.sitting_date, report_id=report.id)
+    return Speech(ordinal=_ORDINAL, speaker=_SPEAKER_LABEL, transcript="Text", sitting_date=report.sitting_date, report_type=report.report_type, report_id=report.id)
 
 
 def test_links_only_the_given_reports_and_sittings_and_never_commits(scratch_session: Session) -> None:

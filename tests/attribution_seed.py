@@ -265,6 +265,7 @@ def _build_speech(report: Report, ordinal: int, seed_speech: _SeedSpeech, speake
         speaker=seed_speech.speaker,
         transcript=seed_speech.transcript,
         sitting_date=report.sitting_date,
+        report_type=report.report_type,
         report_id=report.id,
         speaker_id=speaker_id if seed_speech.is_linked else None,
     )

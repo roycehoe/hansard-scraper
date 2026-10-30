@@ -37,6 +37,7 @@ def _build_speech(report_id: Optional[int], ordinal: int, speaker_id: Optional[i
         speaker="Mr Tan Ah Kow",
         transcript=f"Speech {ordinal}.",
         sitting_date=_SITTING_DATE,
+        report_type=ReportType.MOTION,
         report_id=report_id,
         speaker_id=speaker_id,
     )

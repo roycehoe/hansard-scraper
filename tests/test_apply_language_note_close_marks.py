@@ -54,6 +54,7 @@ def _seed_report(session: Session) -> Report:
             speaker=parsed_speech.speaker,
             transcript=f"_{parsed_speech.transcript}" if ordinal == 1 else parsed_speech.transcript,
             sitting_date=_SITTING_DATE,
+            report_type=report.report_type,
             report_id=report.id,
         )
         for ordinal, parsed_speech in enumerate(parsed_speeches, start=1)

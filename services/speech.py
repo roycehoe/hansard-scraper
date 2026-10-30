@@ -1349,6 +1349,7 @@ def build_speeches(report: Report, parsed_speeches: list[ParsedSpeech]) -> list[
             transcript=parsed_speech.transcript,
             kind=parsed_speech.kind,
             sitting_date=report.sitting_date,
+            report_type=report.report_type,
             report_id=report.id,
         )
         for ordinal, parsed_speech in enumerate(parsed_speeches, start=1)

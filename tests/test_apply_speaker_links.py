@@ -46,7 +46,7 @@ def _build_report() -> Report:
 
 def _build_speech(report: Report, ordinal: int, speaker_label: str) -> Speech:
     assert report.id is not None
-    return Speech(ordinal=ordinal, speaker=speaker_label, transcript="Text", sitting_date=_SITTING_DATE, report_id=report.id)
+    return Speech(ordinal=ordinal, speaker=speaker_label, transcript="Text", sitting_date=_SITTING_DATE, report_type=report.report_type, report_id=report.id)
 
 
 def _seed_speakers_and_speeches(scratch_session: Session) -> tuple[Speaker, Speaker, Speech, Speech]:

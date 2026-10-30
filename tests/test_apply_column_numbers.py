@@ -51,7 +51,7 @@ def _seed_report(session: Session, report_id: str) -> Report:
     assert report.id is not None
     parsed_speeches = build_report_speeches(report, {}).speeches
     session.add_all(
-        Speech(ordinal=ordinal, speaker=parsed_speech.speaker, transcript=parsed_speech.transcript, sitting_date=_SITTING_DATE, report_id=report.id)
+        Speech(ordinal=ordinal, speaker=parsed_speech.speaker, transcript=parsed_speech.transcript, sitting_date=_SITTING_DATE, report_type=report.report_type, report_id=report.id)
         for ordinal, parsed_speech in enumerate(parsed_speeches, start=1)
     )
     session.commit()

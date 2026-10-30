@@ -43,7 +43,7 @@ def test_sitting_without_a_date_is_refused(scratch_session: Session) -> None:
 
 
 def test_speech_without_a_report_is_refused(scratch_session: Session) -> None:
-    statement = text("INSERT INTO speech (ordinal, transcript, sitting_date) VALUES (1, 'Text', :sitting_date)")
+    statement = text("INSERT INTO speech (ordinal, transcript, sitting_date, report_type) VALUES (1, 'Text', :sitting_date, 'motion')")
 
     with pytest.raises(IntegrityError, match='null value in column "report_id"'):
         scratch_session.execute(statement, {"sitting_date": datetime(2025, 4, 2)})
