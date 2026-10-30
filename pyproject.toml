@@ -43,6 +43,3 @@ ignore = ["ANN204"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
-markers = [
-    "database: needs the scratch database",
-]
