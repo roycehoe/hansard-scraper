@@ -8,7 +8,7 @@ The raw API responses are stored exactly as received and are never rewritten: `H
 
 Two things are not recoverable from the raw layer alone, and each says so below:
 - Row ids. A write that deletes a speech row removes its id. The previous rows live in the `pg_dump` taken before each loop write. Those dumps sit outside git.
-- Two fields the newer system serves are never stored. See "Exceptions to raw first".
+- Two fields the newer system serves are never stored, and the four sitting lists (sections, annexures, vernaculars, a2b) come only from a SPRS fetch. See "Exceptions to raw first".
 
 ## How to read the register
 
@@ -203,11 +203,12 @@ The API reads the tables through a read-only role and writes nothing, so every r
 
 ## Exceptions to raw first
 
-Three places where the raw layer is not the response as received.
+Four places where the raw layer is not the response as received.
 
 - A NUL byte in a fetched report body becomes U+FFFD, not a deletion (`services/hansard_website.py`). The row is described under "Reports and raw rows".
 - The gateway strips NUL bytes from a sitting response before the schema is built, so the stored row is what the schema saw (`utils/text.py::strip_nul`, `STYLE.md` sweep ruling 14, commit `d557ce7`, 1 Jun 2026). Count: not measured.
 - Newer-system reports store only `resultHTML.content`. The other `resultHTML` fields, such as `mpNames` and `footNote`, have no column and are not stored. Footnote text is absent from the record for those reports; the footnote markers stay in the HTML ([ADR 0003](adr/0003-newer-system-raw-mapping.md)). Count (query C15a, measured 26 October 2026 on the replica): 1,004 of the 24,803 newer-system reports hold a footnote marker in the form the parser reads, 2,042 markers in all. A wider scan, read by eye, finds 29 more reports with a marker that holds `&nbsp;` or a zero-width character inside the tag, which that form misses. None of the 24,803 holds a footnote section (`<div class="fns">`), and none of the 34 that use the word "footnote" holds a note's text.
+- The newer-system sitting fields `sections`, `annexures`, `vernaculars` and `a2b` have no raw column, because the raw `hansardsittingdateresponse` table has none for `takesSectionVOList`, `annexureList`, `vernacularList` or `a2bList` ([ADR 0003](adr/0003-newer-system-raw-mapping.md), item 3). They are stored only on `sitting`, and they come only from a SPRS fetch, in `populate/sitting_details.py` (run by `script.py` since `ff427fa`, and by the daily refresh). So they cannot be rebuilt from the raw tables. The fill stage is described in its own row under "Sittings". Count: not measured.
 
 ## A metric change, not a data change
 
