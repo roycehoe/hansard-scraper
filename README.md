@@ -175,7 +175,7 @@ These steps come from reading the code, and nobody has run them end to end on an
 
 `python refresh.py` adds the sittings published since the last stored one. [docs/refresh.md](docs/refresh.md) covers its halts and alerts.
 
-`ruff check .` lints the code. `poetry run basedpyright` type-checks it and fails only on errors that are not in `.basedpyright/baseline.json`. `poetry run pytest` runs the parser fixtures. It needs a separate PostgreSQL database named `hansard_launch` on port 5435, and `tests/conftest.py` refuses any other.
+`ruff check .` lints the code and `poetry run ruff format --check .` checks its formatting. `poetry run basedpyright` type-checks it and fails only on errors that are not in `.basedpyright/baseline.json`. `poetry run pytest` runs the parser fixtures. It needs a separate PostgreSQL database named `hansard_launch` on port 5435, and `tests/conftest.py` refuses any other.
 
 ## Documentation
 

@@ -31,6 +31,7 @@ docker-compose up -d
 # Run linting
 ruff check .
 ruff check --fix .
+ruff format .
 
 # Type check (fails only on errors not in .basedpyright/baseline.json)
 poetry run basedpyright
