@@ -93,10 +93,15 @@ _OLD_FORMAT_KEY_TO_ORM_FIELD = {
 
 
 def _get_orm_field_to_value(orm_object: object) -> dict[str, object]:
-    return {key: value for key, value in vars(orm_object).items() if not key.startswith("_")}
+    return {
+        key: value for key, value in vars(orm_object).items() if not key.startswith("_")
+    }
 
 
-def get_search_result_field_losses(hansard_search_result: HansardSearchResult, hansard_website_response: HansardWebsiteResponse) -> list[str]:
+def get_search_result_field_losses(
+    hansard_search_result: HansardSearchResult,
+    hansard_website_response: HansardWebsiteResponse,
+) -> list[str]:
     raw_key_to_value = hansard_search_result.model_dump(by_alias=True)
     orm_field_to_value = _get_orm_field_to_value(hansard_website_response)
     orm_failures = []
@@ -116,12 +121,16 @@ def _is_non_empty_str(value: object) -> bool:
     return isinstance(value, str) and value != ""
 
 
-def get_topic_field_losses(hansard_topic_response: HansardTopicResponse, html_content: Optional[str]) -> list[str]:
+def get_topic_field_losses(
+    hansard_topic_response: HansardTopicResponse, html_content: Optional[str]
+) -> list[str]:
     if html_content is not None and html_content != "":
         return []
     if _is_non_empty_str(hansard_topic_response.html_content):
         return [_TOPIC_FIELD_LOSS]
-    if hansard_topic_response.result_html is not None and _is_non_empty_str(hansard_topic_response.result_html.content):
+    if hansard_topic_response.result_html is not None and _is_non_empty_str(
+        hansard_topic_response.result_html.content
+    ):
         return [_TOPIC_FIELD_LOSS]
     return []
 
@@ -134,19 +143,25 @@ def get_sitting_date_field_losses(
     orm_field_to_value = _get_orm_field_to_value(hansard_sitting_date_response)
     failures = []
     if isinstance(hansard_report_response, HansardReportNewResponse):
-        metadata = {} if raw_key_to_value["metadata"] is None else raw_key_to_value["metadata"]
+        metadata = (
+            {} if raw_key_to_value["metadata"] is None else raw_key_to_value["metadata"]
+        )
         for metadata_key, orm_field in _NEW_FORMAT_METADATA_KEY_TO_ORM_FIELD.items():
             value = metadata.get(metadata_key)
             if value is None or value == "":
                 continue
             if orm_field_to_value.get(orm_field) is None:
-                failures.append(f"  FAIL  metadata[{metadata_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None")
+                failures.append(
+                    f"  FAIL  metadata[{metadata_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None"
+                )
         for raw_key, orm_field in _NEW_FORMAT_KEY_TO_ORM_FIELD.items():
             value = raw_key_to_value.get(raw_key)
             if value is None or value == "":
                 continue
             if orm_field_to_value.get(orm_field) is None:
-                failures.append(f"  FAIL  raw[{raw_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None")
+                failures.append(
+                    f"  FAIL  raw[{raw_key!r}]={str(value)[:_VALUE_PREVIEW_LENGTH]!r}  →  .{orm_field}=None"
+                )
         return failures
     for raw_key, orm_field in _OLD_FORMAT_KEY_TO_ORM_FIELD.items():
         value = raw_key_to_value.get(raw_key)

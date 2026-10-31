@@ -30,10 +30,15 @@ class CRUDSpeaker:
                 "FROM UNNEST(:ids, :person_ids) AS v(id, person_id) "
                 "WHERE speaker.id = v.id"
             ),
-            {"ids": list(speaker_id_to_person_id.keys()), "person_ids": list(speaker_id_to_person_id.values())},
+            {
+                "ids": list(speaker_id_to_person_id.keys()),
+                "person_ids": list(speaker_id_to_person_id.values()),
+            },
         )
 
-    def set_is_legislative_assembly_bulk(self, speaker_id_to_is_legislative_assembly: dict[int, bool]) -> int:
+    def set_is_legislative_assembly_bulk(
+        self, speaker_id_to_is_legislative_assembly: dict[int, bool]
+    ) -> int:
         if not speaker_id_to_is_legislative_assembly:
             return 0
 
@@ -43,7 +48,12 @@ class CRUDSpeaker:
                 "FROM UNNEST(:ids, :is_legislative_assembly_values) AS v(id, is_legislative_assembly) "
                 "WHERE speaker.id = v.id"
             ),
-            {"ids": list(speaker_id_to_is_legislative_assembly.keys()), "is_legislative_assembly_values": list(speaker_id_to_is_legislative_assembly.values())},
+            {
+                "ids": list(speaker_id_to_is_legislative_assembly.keys()),
+                "is_legislative_assembly_values": list(
+                    speaker_id_to_is_legislative_assembly.values()
+                ),
+            },
         )
 
         return update_result.rowcount
@@ -58,7 +68,10 @@ class CRUDSpeaker:
                 "FROM UNNEST(:ids, :is_member_values) AS v(id, is_member) "
                 "WHERE speaker.id = v.id"
             ),
-            {"ids": list(speaker_id_to_is_member.keys()), "is_member_values": list(speaker_id_to_is_member.values())},
+            {
+                "ids": list(speaker_id_to_is_member.keys()),
+                "is_member_values": list(speaker_id_to_is_member.values()),
+            },
         )
 
         return update_result.rowcount
@@ -73,12 +86,17 @@ class CRUDSpeaker:
                 "FROM UNNEST(:ids, :parties) AS v(id, party) "
                 "WHERE speaker.id = v.id"
             ),
-            {"ids": list(speaker_id_to_party.keys()), "parties": list(speaker_id_to_party.values())},
+            {
+                "ids": list(speaker_id_to_party.keys()),
+                "parties": list(speaker_id_to_party.values()),
+            },
         )
 
         return update_result.rowcount
 
-    def set_parliament_numbers_bulk(self, speaker_id_to_parliament_number: dict[int, int]) -> int:
+    def set_parliament_numbers_bulk(
+        self, speaker_id_to_parliament_number: dict[int, int]
+    ) -> int:
         if not speaker_id_to_parliament_number:
             return 0
 
@@ -88,7 +106,10 @@ class CRUDSpeaker:
                 "FROM UNNEST(:ids, :parliament_numbers) AS v(id, parliament_number) "
                 "WHERE speaker.id = v.id"
             ),
-            {"ids": list(speaker_id_to_parliament_number.keys()), "parliament_numbers": list(speaker_id_to_parliament_number.values())},
+            {
+                "ids": list(speaker_id_to_parliament_number.keys()),
+                "parliament_numbers": list(speaker_id_to_parliament_number.values()),
+            },
         )
 
         return update_result.rowcount

@@ -40,28 +40,59 @@ def load_fixture(name: str) -> dict:
 
 
 def load_speaker_rows() -> list[dict]:
-    return json.loads((_FIXTURE_DIRECTORY / "speakers.json").read_text(encoding="utf-8"))
+    return json.loads(
+        (_FIXTURE_DIRECTORY / "speakers.json").read_text(encoding="utf-8")
+    )
 
 
-def seed_stored(session: Session, speaker_names_to_drop: frozenset[str] = frozenset()) -> None:
+def seed_stored(
+    session: Session, speaker_names_to_drop: frozenset[str] = frozenset()
+) -> None:
     stored_sitting = load_fixture("stored_sitting.json")
-    speakers = [Speaker(**speaker_row) for speaker_row in load_speaker_rows() if speaker_row["name"] not in speaker_names_to_drop]
-    hansard_website_responses = [
-        HansardWebsiteResponse.model_validate(website_response) for website_response in stored_sitting["website_responses"]
+    speakers = [
+        Speaker(**speaker_row)
+        for speaker_row in load_speaker_rows()
+        if speaker_row["name"] not in speaker_names_to_drop
     ]
-    reports = [build_report(hansard_website_response) for hansard_website_response in hansard_website_responses]
-    hansard_sitting_date_response = HansardSittingDateResponse.model_validate(stored_sitting["sitting_date_response"])
+    hansard_website_responses = [
+        HansardWebsiteResponse.model_validate(website_response)
+        for website_response in stored_sitting["website_responses"]
+    ]
+    reports = [
+        build_report(hansard_website_response)
+        for hansard_website_response in hansard_website_responses
+    ]
+    hansard_sitting_date_response = HansardSittingDateResponse.model_validate(
+        stored_sitting["sitting_date_response"]
+    )
     sitting = build_sitting(hansard_sitting_date_response)
     for column in _SITTING_DETAIL_COLUMNS:
         setattr(sitting, column, stored_sitting["sitting_details"][column])
-    session.add_all([*speakers, *hansard_website_responses, *reports, hansard_sitting_date_response, sitting])
+    session.add_all(
+        [
+            *speakers,
+            *hansard_website_responses,
+            *reports,
+            hansard_sitting_date_response,
+            sitting,
+        ]
+    )
     session.flush()
 
-    report_id_to_unattributed_range = {speech_range.report_id: speech_range for speech_range in get_unattributed_speech_ranges()}
+    report_id_to_unattributed_range = {
+        speech_range.report_id: speech_range
+        for speech_range in get_unattributed_speech_ranges()
+    }
     for report in reports:
-        session.add_all(build_report_speeches(report, report_id_to_unattributed_range).speeches)
+        session.add_all(
+            build_report_speeches(report, report_id_to_unattributed_range).speeches
+        )
     constituency_lookups = build_constituency_lookups(get_constituency_names())
-    session.add_all(build_sitting_attendances(sitting, build_speaker_lookups(speakers), constituency_lookups))
+    session.add_all(
+        build_sitting_attendances(
+            sitting, build_speaker_lookups(speakers), constituency_lookups
+        )
+    )
     session.commit()
 
 
@@ -112,15 +143,26 @@ class FakeParliament:
         stored_sitting = load_fixture("stored_sitting.json")
         new_sitting = load_fixture("new_sitting.json")
         stored_website_responses = stored_sitting["website_responses"]
-        self.stored_search_results: list[dict] = [_build_search_result_body(website_response) for website_response in stored_website_responses]
-        self.new_search_results: list[dict] = copy.deepcopy(new_sitting["search_results"])
+        self.stored_search_results: list[dict] = [
+            _build_search_result_body(website_response)
+            for website_response in stored_website_responses
+        ]
+        self.new_search_results: list[dict] = copy.deepcopy(
+            new_sitting["search_results"]
+        )
         self.report_id_to_topic: dict[str, dict] = {
-            website_response["report_id"]: _build_topic_body(website_response["content"], website_response["report_version"])
+            website_response["report_id"]: _build_topic_body(
+                website_response["content"], website_response["report_version"]
+            )
             for website_response in stored_website_responses
         }
         self.report_id_to_topic.update(copy.deepcopy(new_sitting["topics"]))
-        self.stored_sitting_date = _get_date(stored_sitting["sitting_date_response"]["sitting_date"])
-        self.stored_sitting: dict = _build_sitting_body(stored_sitting["sitting_date_response"], stored_sitting["sitting_details"])
+        self.stored_sitting_date = _get_date(
+            stored_sitting["sitting_date_response"]["sitting_date"]
+        )
+        self.stored_sitting: dict = _build_sitting_body(
+            stored_sitting["sitting_date_response"], stored_sitting["sitting_details"]
+        )
         self.new_sitting_date = _get_date(self.new_search_results[0]["sittingDate"])
         self.new_sitting: dict = copy.deepcopy(new_sitting["sitting"])
         self.search_calls: list[tuple[date, date]] = []
@@ -128,17 +170,22 @@ class FakeParliament:
         self.topic_calls: list[str] = []
         self.on_search: Optional[Callable[[], None]] = None
 
-    def get_all_hansard_search_results(self, from_date: date, to_date: date) -> list[HansardSearchResult]:
+    def get_all_hansard_search_results(
+        self, from_date: date, to_date: date
+    ) -> list[HansardSearchResult]:
         self.search_calls.append((from_date, to_date))
         if self.on_search is not None:
             self.on_search()
         return [
             HansardSearchResult.model_validate(search_result)
             for search_result in [*self.stored_search_results, *self.new_search_results]
-            if from_date <= _get_date(search_result["sittingDate"]) and _get_date(search_result["sittingDate"]) <= to_date
+            if from_date <= _get_date(search_result["sittingDate"])
+            and _get_date(search_result["sittingDate"]) <= to_date
         ]
 
-    def get_hansard_report_response(self, sitting_date: str) -> Union[HansardReportOldResponse, HansardReportNewResponse]:
+    def get_hansard_report_response(
+        self, sitting_date: str
+    ) -> Union[HansardReportOldResponse, HansardReportNewResponse]:
         self.sitting_calls.append(sitting_date)
         if _get_date(sitting_date) == self.new_sitting_date:
             return HansardReportNewResponse.model_validate(self.new_sitting)
@@ -146,10 +193,19 @@ class FakeParliament:
             return HansardReportNewResponse.model_validate(self.stored_sitting)
         raise HansardGatewayError("no sitting")
 
-    async def get_hansard_topic_response_async(self, topic_id: str, client: httpx.AsyncClient) -> HansardTopicResponse:
+    async def get_hansard_topic_response_async(
+        self, topic_id: str, client: httpx.AsyncClient
+    ) -> HansardTopicResponse:
         self.topic_calls.append(topic_id)
         for search_result in [*self.stored_search_results, *self.new_search_results]:
             report_id = search_result["reportId"]
-            if get_topic_id(report_id, search_result["htmlFileName"], search_result["reportVersion"]) == topic_id:
+            if (
+                get_topic_id(
+                    report_id,
+                    search_result["htmlFileName"],
+                    search_result["reportVersion"],
+                )
+                == topic_id
+            ):
                 return HansardTopicResponse(**self.report_id_to_topic[report_id])
         raise HansardGatewayError(f"no topic {topic_id}")

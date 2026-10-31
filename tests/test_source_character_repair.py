@@ -13,8 +13,13 @@ from utils.markdown_parser import repair_source_characters
         ("our entrep\ufffdt economy", "our entrep\u00f4t economy"),
         ("risen from \ufffd281.7 million", "risen from \u00a3281.7 million"),
         ("about 4\ufffd% and 2\ufffd per cent", "about 4\ufffd% and 2\ufffd per cent"),
-        ("**\ufeff Er Lee Bee Wah (Ang Mo Kio):**", "** Er Lee Bee Wah (Ang Mo Kio):**"),
+        (
+            "**\ufeff Er Lee Bee Wah (Ang Mo Kio):**",
+            "** Er Lee Bee Wah (Ang Mo Kio):**",
+        ),
     ],
 )
-def test_source_characters_are_repaired_only_where_one_answer_fits(markdown: str, repaired_markdown: str) -> None:
+def test_source_characters_are_repaired_only_where_one_answer_fits(
+    markdown: str, repaired_markdown: str
+) -> None:
     assert repair_source_characters(markdown) == repaired_markdown

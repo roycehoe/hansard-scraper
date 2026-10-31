@@ -355,22 +355,34 @@ def _get_variant_canonical_name(
         return canonical_name
     if is_using_wordset:
         words = normalized.split()
-        wordset_canonical_name = lookups.wordset.get((frozenset(words), len(words), parliament_number))
+        wordset_canonical_name = lookups.wordset.get(
+            (frozenset(words), len(words), parliament_number)
+        )
         if wordset_canonical_name:
             return wordset_canonical_name
-        subset_words = [word for word in period_normalize(name).split() if len(word) > 1]
-        subset_canonical_name = lookups.wordset_subset.get((frozenset(subset_words), parliament_number))
+        subset_words = [
+            word for word in period_normalize(name).split() if len(word) > 1
+        ]
+        subset_canonical_name = lookups.wordset_subset.get(
+            (frozenset(subset_words), parliament_number)
+        )
         if subset_canonical_name:
             return subset_canonical_name
     return lookups.prefix.get((normalized, parliament_number))
 
 
-def resolve_canonical_name(name: str, parliament_number: int, lookups: SpeakerLookups) -> Optional[str]:
+def resolve_canonical_name(
+    name: str, parliament_number: int, lookups: SpeakerLookups
+) -> Optional[str]:
     name = _OCR_FORM_TO_CORRECTED_NAME.get(period_normalize(name), name)
-    canonical_name = NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get((period_normalize(name), parliament_number))
+    canonical_name = NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get(
+        (period_normalize(name), parliament_number)
+    )
     if canonical_name:
         return canonical_name
-    canonical_name = lookups.inverted.get((normalize_for_lookup(name), parliament_number))
+    canonical_name = lookups.inverted.get(
+        (normalize_for_lookup(name), parliament_number)
+    )
     if canonical_name:
         return canonical_name
     canonical_name = _get_variant_canonical_name(name, parliament_number, lookups)
@@ -379,22 +391,27 @@ def resolve_canonical_name(name: str, parliament_number: int, lookups: SpeakerLo
 
     spelling_normalized_name = spelling_normalize(name)
     if spelling_normalized_name != name:
-        canonical_name = _get_variant_canonical_name(spelling_normalized_name, parliament_number, lookups)
+        canonical_name = _get_variant_canonical_name(
+            spelling_normalized_name, parliament_number, lookups
+        )
         if canonical_name:
             return canonical_name
 
     name_without_haji = strip_middle_haji(name)
     if name_without_haji != name:
-        canonical_name = _get_variant_canonical_name(name_without_haji, parliament_number, lookups, is_using_wordset=False)
+        canonical_name = _get_variant_canonical_name(
+            name_without_haji, parliament_number, lookups, is_using_wordset=False
+        )
         if canonical_name:
             return canonical_name
 
     camel_split_name = _CAMEL_CASE_BOUNDARY_RE.sub(r"\1 \2", name)
     if camel_split_name != name:
         camel_split_stripped_name = strip_title(camel_split_name).strip()
-        canonical_name = (
-            NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get((period_normalize(camel_split_stripped_name), parliament_number))
-            or _get_variant_canonical_name(camel_split_stripped_name, parliament_number, lookups)
+        canonical_name = NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get(
+            (period_normalize(camel_split_stripped_name), parliament_number)
+        ) or _get_variant_canonical_name(
+            camel_split_stripped_name, parliament_number, lookups
         )
         if canonical_name:
             return canonical_name

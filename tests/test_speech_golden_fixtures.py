@@ -9,7 +9,9 @@ from utils.markdown_parser import get_cleaned_report_markdown
 _FIXTURE_PATHS = sorted((Path(__file__).parent / "fixtures").glob("*.json"))
 
 
-@pytest.mark.parametrize("fixture_path", _FIXTURE_PATHS, ids=lambda fixture_path: fixture_path.stem)
+@pytest.mark.parametrize(
+    "fixture_path", _FIXTURE_PATHS, ids=lambda fixture_path: fixture_path.stem
+)
 def test_speeches_match_golden_fixture(fixture_path: Path) -> None:
     fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
 
@@ -24,6 +26,13 @@ def test_speeches_match_golden_fixture(fixture_path: Path) -> None:
     )
     assert start_of_speech_line is not None
 
-    speeches = get_speeches(markdown, start_of_speech_line, fixture["report_type"], fixture["report_version"])
+    speeches = get_speeches(
+        markdown,
+        start_of_speech_line,
+        fixture["report_type"],
+        fixture["report_version"],
+    )
 
-    assert [[speech.speaker, speech.transcript, speech.kind] for speech in speeches] == fixture["expected_rows"]
+    assert [
+        [speech.speaker, speech.transcript, speech.kind] for speech in speeches
+    ] == fixture["expected_rows"]

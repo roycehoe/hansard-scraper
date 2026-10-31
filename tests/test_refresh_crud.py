@@ -32,10 +32,17 @@ _NULL_TEXT_SITTING_DATE = datetime(2022, 1, 6)
 _REPORT_TEXT = "<p>Text</p>"
 _BOUNDARY_STARTED_AT = datetime(2025, 4, 2, 12, tzinfo=timezone.utc)
 _ONE_MICROSECOND = timedelta(microseconds=1)
-_COUNT_COLUMNS = tuple(name for name, field in RefreshRun.model_fields.items() if field.annotation is int)
+_COUNT_COLUMNS = tuple(
+    name for name, field in RefreshRun.model_fields.items() if field.annotation is int
+)
 
 
-def _build_report(report_id: str, parliament_number: int, sitting_date: datetime, content: Optional[str]) -> Report:
+def _build_report(
+    report_id: str,
+    parliament_number: int,
+    sitting_date: datetime,
+    content: Optional[str],
+) -> Report:
     return Report(
         volumeNo=parliament_number,
         parlNo=parliament_number,
@@ -54,13 +61,17 @@ def _build_report(report_id: str, parliament_number: int, sitting_date: datetime
 
 def test_add_many_flushes_without_commit(scratch_session: Session) -> None:
     sitting = Sitting(sitting_date=_SITTING_DATE, parlement_no=_LATEST_PARLIAMENT)
-    sitting_date_response = HansardSittingDateResponse(sitting_date=_SITTING_DATE, parlement_no=_LATEST_PARLIAMENT)
+    sitting_date_response = HansardSittingDateResponse(
+        sitting_date=_SITTING_DATE, parlement_no=_LATEST_PARLIAMENT
+    )
 
     CRUDSitting(scratch_session).add_many([sitting])
     CRUDHansardSittingDateResponse(scratch_session).add_many([sitting_date_response])
 
     assert scratch_session.exec(select(Sitting.id)).all() == [sitting.id]
-    assert scratch_session.exec(select(HansardSittingDateResponse.id)).all() == [sitting_date_response.id]
+    assert scratch_session.exec(select(HansardSittingDateResponse.id)).all() == [
+        sitting_date_response.id
+    ]
     scratch_session.rollback()
     assert scratch_session.exec(select(Sitting.id)).all() == []
     assert scratch_session.exec(select(HansardSittingDateResponse.id)).all() == []
@@ -69,25 +80,50 @@ def test_add_many_flushes_without_commit(scratch_session: Session) -> None:
 def test_max_and_sitting_date_from_reads(scratch_session: Session) -> None:
     assert CRUDReport(scratch_session).get_max_parliament_number() is None
     assert CRUDSitting(scratch_session).get_max_parlement_no() is None
-    assert CRUDReport(scratch_session).get_max_sitting_date_by_content_not_null_and_content_not_empty() is None
+    assert (
+        CRUDReport(
+            scratch_session
+        ).get_max_sitting_date_by_content_not_null_and_content_not_empty()
+        is None
+    )
 
-    scratch_session.add_all([
-        _build_report("with-text", _EARLIER_PARLIAMENT, _TEXT_SITTING_DATE, _REPORT_TEXT),
-        _build_report("empty-text", _LATEST_PARLIAMENT, _EMPTY_TEXT_SITTING_DATE, ""),
-        _build_report("null-text", _LATEST_PARLIAMENT, _NULL_TEXT_SITTING_DATE, None),
-        Sitting(sitting_date=_SITTING_DATE, parlement_no=_EARLIER_PARLIAMENT),
-        Sitting(sitting_date=_SITTING_DATE, parlement_no=_LATEST_PARLIAMENT),
-    ])
+    scratch_session.add_all(
+        [
+            _build_report(
+                "with-text", _EARLIER_PARLIAMENT, _TEXT_SITTING_DATE, _REPORT_TEXT
+            ),
+            _build_report(
+                "empty-text", _LATEST_PARLIAMENT, _EMPTY_TEXT_SITTING_DATE, ""
+            ),
+            _build_report(
+                "null-text", _LATEST_PARLIAMENT, _NULL_TEXT_SITTING_DATE, None
+            ),
+            Sitting(sitting_date=_SITTING_DATE, parlement_no=_EARLIER_PARLIAMENT),
+            Sitting(sitting_date=_SITTING_DATE, parlement_no=_LATEST_PARLIAMENT),
+        ]
+    )
     scratch_session.flush()
 
     assert CRUDReport(scratch_session).get_max_parliament_number() == _LATEST_PARLIAMENT
     assert CRUDSitting(scratch_session).get_max_parlement_no() == _LATEST_PARLIAMENT
-    assert CRUDReport(scratch_session).get_max_sitting_date_by_content_not_null_and_content_not_empty() == _TEXT_SITTING_DATE
-    assert CRUDReport(scratch_session).get_report_ids_by_sitting_date_from(_EMPTY_TEXT_SITTING_DATE) == {"empty-text", "null-text"}
+    assert (
+        CRUDReport(
+            scratch_session
+        ).get_max_sitting_date_by_content_not_null_and_content_not_empty()
+        == _TEXT_SITTING_DATE
+    )
+    assert CRUDReport(scratch_session).get_report_ids_by_sitting_date_from(
+        _EMPTY_TEXT_SITTING_DATE
+    ) == {"empty-text", "null-text"}
 
 
 def test_attendance_count_reads_the_database(scratch_session: Session) -> None:
-    speaker = Speaker(name="Tan Ah Kow", party="PAP", is_legislative_assembly=False, parliament_number=_LATEST_PARLIAMENT)
+    speaker = Speaker(
+        name="Tan Ah Kow",
+        party="PAP",
+        is_legislative_assembly=False,
+        parliament_number=_LATEST_PARLIAMENT,
+    )
     sitting = Sitting(sitting_date=_SITTING_DATE, parlement_no=_LATEST_PARLIAMENT)
     scratch_session.add_all([speaker, sitting])
     scratch_session.flush()
@@ -99,9 +135,16 @@ def test_attendance_count_reads_the_database(scratch_session: Session) -> None:
     assert first_attendance.id is not None
     assert speaker.id is not None
 
-    CRUDAttendance(scratch_session).set_speaker_ids_bulk({first_attendance.id: speaker.id})
+    CRUDAttendance(scratch_session).set_speaker_ids_bulk(
+        {first_attendance.id: speaker.id}
+    )
 
-    assert CRUDAttendance(scratch_session).get_count_by_sitting_ids_and_speaker_id_not_null([sitting.id]) == _LINKED_ATTENDANCE_COUNT
+    assert (
+        CRUDAttendance(
+            scratch_session
+        ).get_count_by_sitting_ids_and_speaker_id_not_null([sitting.id])
+        == _LINKED_ATTENDANCE_COUNT
+    )
     assert first_attendance.speaker_id is None
 
 
@@ -121,13 +164,19 @@ def test_vacuum_analyze_adds_one_vacuum_to_each_table(scratch_session: Session) 
     CRUDReport(scratch_session).vacuum_analyze()
     CRUDAttendance(scratch_session).vacuum_analyze()
 
-    assert _get_vacuum_counts(scratch_session) == [vacuum_count + 1 for vacuum_count in vacuum_counts_before]
+    assert _get_vacuum_counts(scratch_session) == [
+        vacuum_count + 1 for vacuum_count in vacuum_counts_before
+    ]
 
 
-def test_vacuum_analyze_leaves_the_session_in_a_transaction(scratch_session: Session) -> None:
+def test_vacuum_analyze_leaves_the_session_in_a_transaction(
+    scratch_session: Session,
+) -> None:
     CRUDSpeech(scratch_session).vacuum_analyze()
 
-    scratch_session.add(Sitting(sitting_date=_SITTING_DATE, parlement_no=_LATEST_PARLIAMENT))
+    scratch_session.add(
+        Sitting(sitting_date=_SITTING_DATE, parlement_no=_LATEST_PARLIAMENT)
+    )
     scratch_session.flush()
     scratch_session.rollback()
 
@@ -141,39 +190,66 @@ def test_refresh_run_create_and_update_commit(scratch_session: Session) -> None:
 
     assert refresh_run.id is not None
     assert refresh_run.status == RefreshRunStatus.RUNNING
-    assert all(getattr(refresh_run, count_column) == 0 for count_column in _COUNT_COLUMNS)
+    assert all(
+        getattr(refresh_run, count_column) == 0 for count_column in _COUNT_COLUMNS
+    )
     assert refresh_run.started_at.tzinfo is not None
     refresh_run_id = refresh_run.id
     scratch_session.rollback()
-    assert CRUDRefreshRun(scratch_session).get_by_id_for_update(refresh_run_id) is not None
+    assert (
+        CRUDRefreshRun(scratch_session).get_by_id_for_update(refresh_run_id) is not None
+    )
 
     refresh_run.status = RefreshRunStatus.SUCCEEDED
     CRUDRefreshRun(scratch_session).update(refresh_run)
     scratch_session.rollback()
 
-    stored_refresh_run = CRUDRefreshRun(scratch_session).get_by_id_for_update(refresh_run_id)
+    stored_refresh_run = CRUDRefreshRun(scratch_session).get_by_id_for_update(
+        refresh_run_id
+    )
     assert stored_refresh_run is not None
     assert stored_refresh_run.status == RefreshRunStatus.SUCCEEDED
 
 
-def _add_refresh_run(scratch_session: Session, started_at: datetime, status: RefreshRunStatus) -> int:
+def _add_refresh_run(
+    scratch_session: Session, started_at: datetime, status: RefreshRunStatus
+) -> int:
     refresh_run = RefreshRun(started_at=started_at, status=status)
     CRUDRefreshRun(scratch_session).create(refresh_run)
     assert refresh_run.id is not None
     return refresh_run.id
 
 
-def test_started_at_reads_exclude_the_bound_before_and_include_it_from(scratch_session: Session) -> None:
-    earlier_run_id = _add_refresh_run(scratch_session, _BOUNDARY_STARTED_AT - _ONE_MICROSECOND, RefreshRunStatus.RUNNING)
-    boundary_run_id = _add_refresh_run(scratch_session, _BOUNDARY_STARTED_AT, RefreshRunStatus.RUNNING)
-    later_run_id = _add_refresh_run(scratch_session, _BOUNDARY_STARTED_AT + _ONE_MICROSECOND, RefreshRunStatus.RUNNING)
+def test_started_at_reads_exclude_the_bound_before_and_include_it_from(
+    scratch_session: Session,
+) -> None:
+    earlier_run_id = _add_refresh_run(
+        scratch_session,
+        _BOUNDARY_STARTED_AT - _ONE_MICROSECOND,
+        RefreshRunStatus.RUNNING,
+    )
+    boundary_run_id = _add_refresh_run(
+        scratch_session, _BOUNDARY_STARTED_AT, RefreshRunStatus.RUNNING
+    )
+    later_run_id = _add_refresh_run(
+        scratch_session,
+        _BOUNDARY_STARTED_AT + _ONE_MICROSECOND,
+        RefreshRunStatus.RUNNING,
+    )
     _add_refresh_run(scratch_session, _BOUNDARY_STARTED_AT, RefreshRunStatus.FAILED)
 
-    runs_before = CRUDRefreshRun(scratch_session).get_by_status_and_started_at_before(RefreshRunStatus.RUNNING, _BOUNDARY_STARTED_AT)
-    runs_from = CRUDRefreshRun(scratch_session).get_by_status_and_started_at_from(RefreshRunStatus.RUNNING, _BOUNDARY_STARTED_AT)
+    runs_before = CRUDRefreshRun(scratch_session).get_by_status_and_started_at_before(
+        RefreshRunStatus.RUNNING, _BOUNDARY_STARTED_AT
+    )
+    runs_from = CRUDRefreshRun(scratch_session).get_by_status_and_started_at_from(
+        RefreshRunStatus.RUNNING, _BOUNDARY_STARTED_AT
+    )
 
     assert {refresh_run.id for refresh_run in runs_before} == {earlier_run_id}
-    assert {refresh_run.id for refresh_run in runs_from} == {boundary_run_id, later_run_id}
+    assert {refresh_run.id for refresh_run in runs_from} == {
+        boundary_run_id,
+        later_run_id,
+    }
 
 
 def test_refresh_run_status_check_rejects_unknown(scratch_session: Session) -> None:
@@ -188,7 +264,9 @@ def test_refresh_run_status_check_rejects_unknown(scratch_session: Session) -> N
     scratch_session.rollback()
 
 
-def test_get_by_id_for_update_reads_the_stored_status(scratch_engine: Engine, scratch_session: Session) -> None:
+def test_get_by_id_for_update_reads_the_stored_status(
+    scratch_engine: Engine, scratch_session: Session
+) -> None:
     refresh_run = RefreshRun()
     CRUDRefreshRun(scratch_session).create(refresh_run)
     refresh_run_id = refresh_run.id
@@ -201,7 +279,9 @@ def test_get_by_id_for_update_reads_the_stored_status(scratch_engine: Engine, sc
         other_session.add(other_refresh_run)
         other_session.commit()
 
-    stored_refresh_run = CRUDRefreshRun(scratch_session).get_by_id_for_update(refresh_run_id)
+    stored_refresh_run = CRUDRefreshRun(scratch_session).get_by_id_for_update(
+        refresh_run_id
+    )
 
     assert stored_refresh_run is not None
     assert stored_refresh_run.status == RefreshRunStatus.FAILED

@@ -24,11 +24,15 @@ _REVISION = "c5cea5c26a58"
 _TEST_SCHEMA_PREFIX = "test_"
 _TEST_SCHEMA_SUFFIX_LENGTH = 12
 _VERSION_TABLE = "alembic_version"
-_NOT_NULL_COLUMNS = frozenset({("sitting", "sitting_date"), ("speech", "report_id"), ("attendance", "sitting_id")})
+_NOT_NULL_COLUMNS = frozenset(
+    {("sitting", "sitting_date"), ("speech", "report_id"), ("attendance", "sitting_id")}
+)
 _NULLABLE = "YES"
 _NOT_NULLABLE = "NO"
 _MODIFY_NULLABLE = "modify_nullable"
-_TABLE_SCHEMA_STATEMENT = text("SELECT relnamespace::regnamespace::text FROM pg_class WHERE oid = to_regclass(:table_name)")
+_TABLE_SCHEMA_STATEMENT = text(
+    "SELECT relnamespace::regnamespace::text FROM pg_class WHERE oid = to_regclass(:table_name)"
+)
 _COLUMN_NULLABILITY_STATEMENT = text(
     "SELECT table_name, column_name, is_nullable FROM information_schema.columns "
     "WHERE table_schema = current_schema() "
@@ -43,7 +47,9 @@ def test_sitting_without_a_date_is_refused(scratch_session: Session) -> None:
 
 
 def test_speech_without_a_report_is_refused(scratch_session: Session) -> None:
-    statement = text("INSERT INTO speech (ordinal, transcript, sitting_date, report_type) VALUES (1, 'Text', :sitting_date, 'motion')")
+    statement = text(
+        "INSERT INTO speech (ordinal, transcript, sitting_date, report_type) VALUES (1, 'Text', :sitting_date, 'motion')"
+    )
 
     with pytest.raises(IntegrityError, match='null value in column "report_id"'):
         scratch_session.execute(statement, {"sitting_date": datetime(2025, 4, 2)})
@@ -57,10 +63,17 @@ def test_attendance_without_a_sitting_is_refused(scratch_session: Session) -> No
 
 
 def _validate_can_migrate_schema(connection: Connection, schema: str) -> None:
-    for table_name in (*(table.name for table in SQLModel.metadata.sorted_tables), _VERSION_TABLE):
-        table_schema = connection.execute(_TABLE_SCHEMA_STATEMENT, {"table_name": table_name}).scalar_one_or_none()
+    for table_name in (
+        *(table.name for table in SQLModel.metadata.sorted_tables),
+        _VERSION_TABLE,
+    ):
+        table_schema = connection.execute(
+            _TABLE_SCHEMA_STATEMENT, {"table_name": table_name}
+        ).scalar_one_or_none()
         if table_schema != schema:
-            raise HansardTestGuardError(f"Table {table_name} resolves to schema {table_schema}, not {schema}")
+            raise HansardTestGuardError(
+                f"Table {table_name} resolves to schema {table_schema}, not {schema}"
+            )
 
 
 @pytest.fixture
@@ -70,15 +83,20 @@ def migration_connection() -> Iterator[Connection]:
     with admin_engine.begin() as connection:
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS rum"))
         connection.execute(text(f'CREATE SCHEMA "{schema}"'))
-    engine = create_engine(settings.database_url, connect_args={"options": f"-csearch_path={schema},public"})
+    engine = create_engine(
+        settings.database_url,
+        connect_args={"options": f"-csearch_path={schema},public"},
+    )
     try:
         # NOTE: a checked create sees public's tables through the search path and would create nothing
         SQLModel.metadata.create_all(engine, checkfirst=False)
         with engine.connect() as connection:
-            connection.execute(text(
-                f'CREATE TABLE "{schema}".{_VERSION_TABLE} '
-                "(version_num VARCHAR(32) NOT NULL, CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num))"
-            ))
+            connection.execute(
+                text(
+                    f'CREATE TABLE "{schema}".{_VERSION_TABLE} '
+                    "(version_num VARCHAR(32) NOT NULL, CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num))"
+                )
+            )
             _validate_can_migrate_schema(connection, schema)
             yield connection
     finally:
@@ -95,10 +113,17 @@ def _build_config(connection: Connection) -> Config:
 
 
 def _get_column_nullability(connection: Connection) -> dict[tuple[str, str], str]:
-    return {(table_name, column_name): is_nullable for table_name, column_name, is_nullable in connection.execute(_COLUMN_NULLABILITY_STATEMENT)}
+    return {
+        (table_name, column_name): is_nullable
+        for table_name, column_name, is_nullable in connection.execute(
+            _COLUMN_NULLABILITY_STATEMENT
+        )
+    }
 
 
-def _collect_metadata_diffs(diffs: list, revision: object, migration_context: MigrationContext) -> list:
+def _collect_metadata_diffs(
+    diffs: list, revision: object, migration_context: MigrationContext
+) -> list:
     diffs.extend(compare_metadata(migration_context, SQLModel.metadata))
     return []
 
@@ -106,7 +131,9 @@ def _collect_metadata_diffs(diffs: list, revision: object, migration_context: Mi
 def _get_nullable_diff_columns(config: Config) -> set[tuple[str, str]]:
     script_directory = ScriptDirectory.from_config(config)
     diffs: list = []
-    with EnvironmentContext(config, script_directory, fn=partial(_collect_metadata_diffs, diffs)):
+    with EnvironmentContext(
+        config, script_directory, fn=partial(_collect_metadata_diffs, diffs)
+    ):
         script_directory.run_env()
     return {
         (table_name, column_name)
@@ -117,16 +144,22 @@ def _get_nullable_diff_columns(config: Config) -> set[tuple[str, str]]:
     }
 
 
-def test_migration_sets_not_null_and_downgrade_drops_it(migration_connection: Connection) -> None:
+def test_migration_sets_not_null_and_downgrade_drops_it(
+    migration_connection: Connection,
+) -> None:
     config = _build_config(migration_connection)
     command.stamp(config, _REVISION)
 
     command.downgrade(config, _DOWN_REVISION)
 
-    assert _get_column_nullability(migration_connection) == dict.fromkeys(_NOT_NULL_COLUMNS, _NULLABLE)
+    assert _get_column_nullability(migration_connection) == dict.fromkeys(
+        _NOT_NULL_COLUMNS, _NULLABLE
+    )
     assert _get_nullable_diff_columns(config) == _NOT_NULL_COLUMNS
 
     command.upgrade(config, _REVISION)
 
-    assert _get_column_nullability(migration_connection) == dict.fromkeys(_NOT_NULL_COLUMNS, _NOT_NULLABLE)
+    assert _get_column_nullability(migration_connection) == dict.fromkeys(
+        _NOT_NULL_COLUMNS, _NOT_NULLABLE
+    )
     assert _get_nullable_diff_columns(config) == set()

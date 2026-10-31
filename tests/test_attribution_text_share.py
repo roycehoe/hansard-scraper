@@ -80,20 +80,30 @@ def test_empty_table_logs_n_a_for_every_breakdown_row(
 
     breakdown_rows = _get_breakdown_rows(logged_messages)
     assert breakdown_rows[0].startswith("  linked rows")
-    assert [breakdown_row.endswith(_EMPTY_BREAKDOWN_ROW_TAIL) for breakdown_row in breakdown_rows] == [True] * _BREAKDOWN_ROW_COUNT
+    assert [
+        breakdown_row.endswith(_EMPTY_BREAKDOWN_ROW_TAIL)
+        for breakdown_row in breakdown_rows
+    ] == [True] * _BREAKDOWN_ROW_COUNT
 
 
 def test_non_empty_table_logs_exact_headline_lines(
     monkeypatch: pytest.MonkeyPatch, logged_messages: list[str]
 ) -> None:
-    category_to_row_count = Counter({LINKED_CATEGORY: 3, NAMED_UNLINKED_CATEGORY: 1, NO_SPEAKER_CATEGORY: 4})
-    category_to_character_count = Counter({
-        LINKED_CATEGORY: 3,
-        NAMED_UNLINKED_CATEGORY: 2,
-        ADR_EXCLUDED_CATEGORY: 0,
-        NO_SPEAKER_CATEGORY: 4,
-    })
-    _log_figures(monkeypatch, _get_group_figures(category_to_row_count, category_to_character_count, 10))
+    category_to_row_count = Counter(
+        {LINKED_CATEGORY: 3, NAMED_UNLINKED_CATEGORY: 1, NO_SPEAKER_CATEGORY: 4}
+    )
+    category_to_character_count = Counter(
+        {
+            LINKED_CATEGORY: 3,
+            NAMED_UNLINKED_CATEGORY: 2,
+            ADR_EXCLUDED_CATEGORY: 0,
+            NO_SPEAKER_CATEGORY: 4,
+        }
+    )
+    _log_figures(
+        monkeypatch,
+        _get_group_figures(category_to_row_count, category_to_character_count, 10),
+    )
 
     assert "1. ADR 0001 rate:  3 / 4 = 75.00%" in logged_messages
     assert "2. All-rows rate:  3 / 8 = 37.50%" in logged_messages
@@ -101,10 +111,16 @@ def test_non_empty_table_logs_exact_headline_lines(
     assert _get_breakdown_rows(logged_messages) == [
         _get_breakdown_row("linked rows", 3, " 30.00%"),
         _get_breakdown_row("named but unlinked rows", 2, " 20.00%"),
-        _get_breakdown_row("ADR-excluded rows (hon. Members, stage directions)", 0, "  0.00%"),
+        _get_breakdown_row(
+            "ADR-excluded rows (hon. Members, stage directions)", 0, "  0.00%"
+        ),
         _get_breakdown_row("rows with no speaker", 4, " 40.00%"),
         _get_breakdown_row("reports with no rows", 0, "  0.00%"),
-        _get_breakdown_row("dropped inside reports with rows (preamble, headings, labels)", 1, " 10.00%"),
+        _get_breakdown_row(
+            "dropped inside reports with rows (preamble, headings, labels)",
+            1,
+            " 10.00%",
+        ),
     ]
 
 
@@ -120,7 +136,12 @@ def test_breakdown_percent_keeps_its_width(
     expected_percent: str,
 ) -> None:
     category_to_character_count = Counter({LINKED_CATEGORY: linked_character_count})
-    _log_figures(monkeypatch, _get_group_figures(Counter(), category_to_character_count, body_total))
+    _log_figures(
+        monkeypatch,
+        _get_group_figures(Counter(), category_to_character_count, body_total),
+    )
 
     linked_row = _get_breakdown_rows(logged_messages)[0]
-    assert linked_row == _get_breakdown_row("linked rows", linked_character_count, expected_percent)
+    assert linked_row == _get_breakdown_row(
+        "linked rows", linked_character_count, expected_percent
+    )

@@ -3,24 +3,66 @@ from typing import Optional
 
 # NOTE: longest first, so a shorter prefix never matches ahead of a longer one.
 TITLE_PREFIXES = (
-    "The Honourable Mr ", "The Honourable Mrs ", "The Honourable Dr ",
-    "The Honourable Miss ", "The Honourable Ms ", "The Honourable Inche ",
-    "The Honourable Encik ", "The Honourable ",
-    "The Hon. Mr ", "The Hon. Mrs ", "The Hon. Dr ",
-    "The Hon. Miss ", "The Hon. Ms ", "The Hon. Inche ",
+    "The Honourable Mr ",
+    "The Honourable Mrs ",
+    "The Honourable Dr ",
+    "The Honourable Miss ",
+    "The Honourable Ms ",
+    "The Honourable Inche ",
+    "The Honourable Encik ",
+    "The Honourable ",
+    "The Hon. Mr ",
+    "The Hon. Mrs ",
+    "The Hon. Dr ",
+    "The Hon. Miss ",
+    "The Hon. Ms ",
+    "The Hon. Inche ",
     "The Hon. ",
-    "Assoc. Prof. ", "Assoc Prof ",
-    "Er Dr ", "Er ",
-    "BG (NS) ", "BG [NS] ", "MG [NS] ", "MG (NS) ",
-    "RAdm (NS) ", "RAdm ",
-    "BG ", "MG ",
-    "Prof. ", "Prof ",
-    "Maj. ", "Maj ",
-    "Dr. ", "Dr, ", "Mr. ", "Mr, ", "Mi. ", "mr ", "Dr ", "Mr ", "Mrs ", "Miss ", "Ms ", "Mdm ", "Madam ",
-    "Inche ", "Encik ", "Sir ", "Dato ", "Tun Dato ", "Tun ",
-    "Asst Prof ", "Asst. Prof. ",
-    "Tuan Haji ", "Haji ", "Hj. ", "Hj ",
-    "Cdre (Res) ", "Cdre ", "[NS] ", "(NS) ",
+    "Assoc. Prof. ",
+    "Assoc Prof ",
+    "Er Dr ",
+    "Er ",
+    "BG (NS) ",
+    "BG [NS] ",
+    "MG [NS] ",
+    "MG (NS) ",
+    "RAdm (NS) ",
+    "RAdm ",
+    "BG ",
+    "MG ",
+    "Prof. ",
+    "Prof ",
+    "Maj. ",
+    "Maj ",
+    "Dr. ",
+    "Dr, ",
+    "Mr. ",
+    "Mr, ",
+    "Mi. ",
+    "mr ",
+    "Dr ",
+    "Mr ",
+    "Mrs ",
+    "Miss ",
+    "Ms ",
+    "Mdm ",
+    "Madam ",
+    "Inche ",
+    "Encik ",
+    "Sir ",
+    "Dato ",
+    "Tun Dato ",
+    "Tun ",
+    "Asst Prof ",
+    "Asst. Prof. ",
+    "Tuan Haji ",
+    "Haji ",
+    "Hj. ",
+    "Hj ",
+    "Cdre (Res) ",
+    "Cdre ",
+    "[NS] ",
+    "(NS) ",
 )
 
 OPENING_PARENTHESIS = "("
@@ -29,7 +71,9 @@ LABEL_COLON = ":"
 MP_NAME_SEPARATOR = ";"
 INVERTED_NAME_SEPARATOR = ", "
 
-_INVERTED_TITLE_SUFFIXES = frozenset({"Dr", "Mdm", "Mr", "Mrs", "Ms", "Prof", "Assoc Prof", "RAdm", "BG"})
+_INVERTED_TITLE_SUFFIXES = frozenset(
+    {"Dr", "Mdm", "Mr", "Mrs", "Ms", "Prof", "Assoc Prof", "RAdm", "BG"}
+)
 
 _MIN_INVERTED_TITLE_SUFFIX_PART_COUNT = 3
 
@@ -70,7 +114,8 @@ def spelling_normalize(name: str) -> str:
     normalized = normalized.replace("-", " ")
     normalized = re.sub(
         _SPACED_INITIALS_PATTERN,
-        lambda initials_match: initials_match.group(1) + initials_match.group(2).replace(" ", ""),
+        lambda initials_match: initials_match.group(1)
+        + initials_match.group(2).replace(" ", ""),
         normalized,
     )
     return re.sub(_WHITESPACE_RUN_PATTERN, " ", normalized).strip()
@@ -80,7 +125,7 @@ def strip_title(text: str) -> str:
     while True:
         for prefix in TITLE_PREFIXES:
             if text.startswith(prefix):
-                text = text[len(prefix):]
+                text = text[len(prefix) :]
                 break
         else:
             return text
@@ -90,6 +135,9 @@ def invert_to_natural(speaker_name: str) -> Optional[str]:
     if INVERTED_NAME_SEPARATOR not in speaker_name:
         return None
     parts = speaker_name.split(INVERTED_NAME_SEPARATOR)
-    if len(parts) >= _MIN_INVERTED_TITLE_SUFFIX_PART_COUNT and parts[-1] in _INVERTED_TITLE_SUFFIXES:
+    if (
+        len(parts) >= _MIN_INVERTED_TITLE_SUFFIX_PART_COUNT
+        and parts[-1] in _INVERTED_TITLE_SUFFIXES
+    ):
         return strip_title(f"{' '.join(parts[1:-1])} {parts[0]}").strip()
     return strip_title(f"{INVERTED_NAME_SEPARATOR.join(parts[1:])} {parts[0]}").strip()

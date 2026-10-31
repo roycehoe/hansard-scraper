@@ -43,15 +43,23 @@ async def _fetch_html_content(
 ) -> FetchedHtmlContent:
     try:
         hansard_topic_response = await get_hansard_topic_response_async(
-            get_topic_id(search_result.report_id, search_result.html_file_name, search_result.report_version),
+            get_topic_id(
+                search_result.report_id,
+                search_result.html_file_name,
+                search_result.report_version,
+            ),
             client,
         )
     except HansardGatewayError as error:
         logger.warning(f"No content for {search_result.report_id}: {error}")
         return FetchedHtmlContent(None, True)
-    html_content = get_topic_html_content(hansard_topic_response, search_result.report_version)
+    html_content = get_topic_html_content(
+        hansard_topic_response, search_result.report_version
+    )
     if html_content is None:
-        logger.warning(f"No content for {search_result.report_id}: the response holds no text")
+        logger.warning(
+            f"No content for {search_result.report_id}: the response holds no text"
+        )
     return FetchedHtmlContent(html_content, False)
 
 
@@ -62,37 +70,73 @@ async def _fetch_website_response(
     total: int,
 ) -> FetchedWebsiteResponse:
     fetched_html_content = await _fetch_html_content(search_result, client)
-    hansard_website_response = build_hansard_website_response(search_result, fetched_html_content.html_content)
+    hansard_website_response = build_hansard_website_response(
+        search_result, fetched_html_content.html_content
+    )
     completed = next(progress)
     logger.info(f"{completed}/{total}")
-    return FetchedWebsiteResponse(hansard_website_response, fetched_html_content.is_fetch_failed)
+    return FetchedWebsiteResponse(
+        hansard_website_response, fetched_html_content.is_fetch_failed
+    )
 
 
-async def _fetch_all(search_results: list[HansardSearchResult]) -> list[FetchedWebsiteResponse]:
+async def _fetch_all(
+    search_results: list[HansardSearchResult],
+) -> list[FetchedWebsiteResponse]:
     progress = itertools.count(1)
     total = len(search_results)
 
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
         return await asyncio.gather(
-            *[_fetch_website_response(search_result, client, progress, total) for search_result in search_results]
+            *[
+                _fetch_website_response(search_result, client, progress, total)
+                for search_result in search_results
+            ]
         )
 
 
 def populate_hansard_responses(session: Session) -> None:
-    all_hansard_search_results = get_all_hansard_search_results(settings.search_from_date, settings.search_to_date)
+    all_hansard_search_results = get_all_hansard_search_results(
+        settings.search_from_date, settings.search_to_date
+    )
     existing_report_ids = CRUDHansardWebsiteResponse(session).get_all_report_ids()
     # NOTE: the search can return one hit twice, so keep the first hit per report_id.
     report_id_to_first_search_result = {}
     for search_result in all_hansard_search_results:
-        report_id_to_first_search_result.setdefault(search_result.report_id, search_result)
-    new_search_results = [search_result for search_result in report_id_to_first_search_result.values() if search_result.report_id not in existing_report_ids]
-    excluded_report_ids = {excluded_report_id.report_id for excluded_report_id in get_excluded_report_ids()}
-    search_results_to_fetch = [search_result for search_result in new_search_results if search_result.report_id not in excluded_report_ids]
-    logger.info(f"Excluded {len(new_search_results) - len(search_results_to_fetch)} hits listed in {EXCLUDED_REPORT_IDS_FILE.name}")
-    logger.info(f"Fetching {len(search_results_to_fetch)}/{len(all_hansard_search_results)} ({len(existing_report_ids)} already in DB)")
+        report_id_to_first_search_result.setdefault(
+            search_result.report_id, search_result
+        )
+    new_search_results = [
+        search_result
+        for search_result in report_id_to_first_search_result.values()
+        if search_result.report_id not in existing_report_ids
+    ]
+    excluded_report_ids = {
+        excluded_report_id.report_id for excluded_report_id in get_excluded_report_ids()
+    }
+    search_results_to_fetch = [
+        search_result
+        for search_result in new_search_results
+        if search_result.report_id not in excluded_report_ids
+    ]
+    logger.info(
+        f"Excluded {len(new_search_results) - len(search_results_to_fetch)} hits listed in {EXCLUDED_REPORT_IDS_FILE.name}"
+    )
+    logger.info(
+        f"Fetching {len(search_results_to_fetch)}/{len(all_hansard_search_results)} ({len(existing_report_ids)} already in DB)"
+    )
 
     fetched_website_responses = asyncio.run(_fetch_all(search_results_to_fetch))
-    hansard_website_responses = [fetched_website_response.hansard_website_response for fetched_website_response in fetched_website_responses]
+    hansard_website_responses = [
+        fetched_website_response.hansard_website_response
+        for fetched_website_response in fetched_website_responses
+    ]
     CRUDHansardWebsiteResponse(session).create_many(hansard_website_responses)
-    failed_fetches = sum(1 for fetched_website_response in fetched_website_responses if fetched_website_response.is_fetch_failed)
-    logger.info(f"Hansard responses: {len(hansard_website_responses)} stored, {failed_fetches} fetches failed")
+    failed_fetches = sum(
+        1
+        for fetched_website_response in fetched_website_responses
+        if fetched_website_response.is_fetch_failed
+    )
+    logger.info(
+        f"Hansard responses: {len(hansard_website_responses)} stored, {failed_fetches} fetches failed"
+    )

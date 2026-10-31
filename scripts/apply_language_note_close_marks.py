@@ -35,21 +35,33 @@ class LanguageNoteCloseMarkPlan:
 
 
 def _is_close_mark_change(stored_transcript: str, parsed_transcript: str) -> bool:
-    return stored_transcript.startswith("_") and stored_transcript[1:].lstrip() == parsed_transcript
+    return (
+        stored_transcript.startswith("_")
+        and stored_transcript[1:].lstrip() == parsed_transcript
+    )
 
 
-def _add_report(plan: LanguageNoteCloseMarkPlan, report: Report, speech_rows: list[SpeechRow], report_id_to_unattributed_range: dict[int, UnattributedSpeechRange]) -> None:
-    parsed_speeches = build_report_speeches(report, report_id_to_unattributed_range).speeches
+def _add_report(
+    plan: LanguageNoteCloseMarkPlan,
+    report: Report,
+    speech_rows: list[SpeechRow],
+    report_id_to_unattributed_range: dict[int, UnattributedSpeechRange],
+) -> None:
+    parsed_speeches = build_report_speeches(
+        report, report_id_to_unattributed_range
+    ).speeches
     if len(parsed_speeches) != len(speech_rows):
         plan.unaligned_report_ids.append(report.id)
         return
     transcript_changes = [
         TextChange(speech_row.id, speech_row.transcript, parsed_speech.transcript)
         for speech_row, parsed_speech in zip(speech_rows, parsed_speeches, strict=True)
-        if speech_row.speaker == parsed_speech.speaker and _is_close_mark_change(speech_row.transcript, parsed_speech.transcript)
+        if speech_row.speaker == parsed_speech.speaker
+        and _is_close_mark_change(speech_row.transcript, parsed_speech.transcript)
     ]
     different_row_count = sum(
-        speech_row.speaker != parsed_speech.speaker or speech_row.transcript != parsed_speech.transcript
+        speech_row.speaker != parsed_speech.speaker
+        or speech_row.transcript != parsed_speech.transcript
         for speech_row, parsed_speech in zip(speech_rows, parsed_speeches, strict=True)
     )
     plan.other_difference_row_count += different_row_count - len(transcript_changes)
@@ -59,8 +71,15 @@ def _add_report(plan: LanguageNoteCloseMarkPlan, report: Report, speech_rows: li
 
 
 def _get_language_note_close_mark_plan(session: Session) -> LanguageNoteCloseMarkPlan:
-    report_id_to_unattributed_range = {speech_range.report_id: speech_range for speech_range in get_unattributed_speech_ranges()}
-    report_ids = sorted(CRUDSpeech(session).get_report_ids_by_transcript_regex(_LEADING_UNDERSCORE_PATTERN))
+    report_id_to_unattributed_range = {
+        speech_range.report_id: speech_range
+        for speech_range in get_unattributed_speech_ranges()
+    }
+    report_ids = sorted(
+        CRUDSpeech(session).get_report_ids_by_transcript_regex(
+            _LEADING_UNDERSCORE_PATTERN
+        )
+    )
     plan = LanguageNoteCloseMarkPlan(len(report_ids))
     for start in range(0, len(report_ids), _REPORT_BATCH):
         batch_report_ids = report_ids[start : start + _REPORT_BATCH]
@@ -68,17 +87,30 @@ def _get_language_note_close_mark_plan(session: Session) -> LanguageNoteCloseMar
         for speech_row in CRUDSpeech(session).get_rows_by_report_ids(batch_report_ids):
             report_id_to_speech_rows[speech_row.report_id].append(speech_row)
         for report in CRUDReport(session).get_by_ids(batch_report_ids):
-            _add_report(plan, report, report_id_to_speech_rows[report.id], report_id_to_unattributed_range)
+            _add_report(
+                plan,
+                report,
+                report_id_to_speech_rows[report.id],
+                report_id_to_unattributed_range,
+            )
         session.expunge_all()
     return plan
 
 
-def _write_language_note_close_marks(session: Session, plan: LanguageNoteCloseMarkPlan) -> None:
-    written_count = CRUDSpeech(session).set_transcripts_bulk_by_transcript(plan.transcript_changes)
+def _write_language_note_close_marks(
+    session: Session, plan: LanguageNoteCloseMarkPlan
+) -> None:
+    written_count = CRUDSpeech(session).set_transcripts_bulk_by_transcript(
+        plan.transcript_changes
+    )
     if written_count != len(plan.transcript_changes):
-        raise HansardWriteCheckError(f"Rows changed since the plan was made: planned {len(plan.transcript_changes)}, written {written_count}")
+        raise HansardWriteCheckError(
+            f"Rows changed since the plan was made: planned {len(plan.transcript_changes)}, written {written_count}"
+        )
     if _get_language_note_close_mark_plan(session).transcript_changes:
-        raise HansardWriteCheckError("Rows the close mark rule rewrites remain after the update")
+        raise HansardWriteCheckError(
+            "Rows the close mark rule rewrites remain after the update"
+        )
 
 
 def apply_language_note_close_marks(is_commit: bool) -> None:
@@ -104,11 +136,19 @@ def apply_language_note_close_marks(is_commit: bool) -> None:
             f"Committed: {len(plan.transcript_changes):,} transcripts. Column pass over their reports: {len(column_number_plan.report_column_ranges):,} report column ranges,"
             f" {len(column_number_plan.speech_id_to_column_start):,} speech start columns and {len(column_number_plan.speech_column_notes):,} speech column notes rewritten"
         )
-        vacuum_analyze_written_tables(session, [Speech.__tablename__, Report.__tablename__])
+        vacuum_analyze_written_tables(
+            session, [Speech.__tablename__, Report.__tablename__]
+        )
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Drop the italic close mark a language note left open at the start of stored transcripts, as the parser now does")
-    parser.add_argument("--commit", action="store_true", help="write, then set the column numbers of the reports written again; without it the script only reports the plan")
+    parser = argparse.ArgumentParser(
+        description="Drop the italic close mark a language note left open at the start of stored transcripts, as the parser now does"
+    )
+    parser.add_argument(
+        "--commit",
+        action="store_true",
+        help="write, then set the column numbers of the reports written again; without it the script only reports the plan",
+    )
     arguments = parser.parse_args()
     apply_language_note_close_marks(arguments.commit)

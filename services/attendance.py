@@ -50,16 +50,26 @@ _MIN_MULTIWORD_SURNAME_LENGTH = 2
 _MIN_REARRANGEABLE_WORD_COUNT = 3
 _MIN_WORDSET_SUBSET_WORDS = 3
 
-_LEAVE_NOTE_PREFIX = "For information on permission given to Members for leave of absence"
+_LEAVE_NOTE_PREFIX = (
+    "For information on permission given to Members for leave of absence"
+)
 
-_SECTION_END_RE = re.compile(r"#|\||\*\*|\*[^\s*]|\d{1,2}(?:st|nd|rd|th) [A-Za-z]+,? \d{4}$|(?:Mr|Mdm) Speaker, preceded by")
+_SECTION_END_RE = re.compile(
+    r"#|\||\*\*|\*[^\s*]|\d{1,2}(?:st|nd|rd|th) [A-Za-z]+,? \d{4}$|(?:Mr|Mdm) Speaker, preceded by"
+)
 _MARKUP_RE = re.compile(r"[*|#_\[\]]")
 _SPEAKER_OFFICE_NAME = "speaker"
 
-_TITLE_ALTERNATION = "|".join(re.escape(prefix.strip()) for prefix in TITLE_PREFIXES if prefix[0].isalpha())
+_TITLE_ALTERNATION = "|".join(
+    re.escape(prefix.strip()) for prefix in TITLE_PREFIXES if prefix[0].isalpha()
+)
 _ENTRY_LINE_RE = re.compile(rf"^(?:{_TITLE_ALTERNATION})\s+[A-Z][^()]{{0,80}}\(")
-_NEXT_ENTRY_START_RE = re.compile(rf"(?<=[\s.,;)\d])(?:{_TITLE_ALTERNATION})\s+[A-Z][^()]{{0,80}}\(")
-_SECTION_HEADER_RE = re.compile(r"^(?:\*{2}|#+)?\s*(?:PRESENT|ABSENT)\s*:(?:\*{2})?\s*$", re.IGNORECASE)
+_NEXT_ENTRY_START_RE = re.compile(
+    rf"(?<=[\s.,;)\d])(?:{_TITLE_ALTERNATION})\s+[A-Z][^()]{{0,80}}\("
+)
+_SECTION_HEADER_RE = re.compile(
+    r"^(?:\*{2}|#+)?\s*(?:PRESENT|ABSENT)\s*:(?:\*{2})?\s*$", re.IGNORECASE
+)
 _MASTHEAD_LINE = "## PARLIAMENTARY DEBATES"
 _SPEAKER_ENTRY_MARKER = "SPEAKER"
 _NAME_TRAILING_CHARACTERS = ", "
@@ -84,7 +94,9 @@ def _build_direct_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str]:
         key = (period_normalize(speaker.name), speaker.parliament_number)
         key_to_count[key] = key_to_count.get(key, 0) + 1
         entries.append((key, speaker.name))
-    return {key: canonical_name for key, canonical_name in entries if key_to_count[key] == 1}
+    return {
+        key: canonical_name for key, canonical_name in entries if key_to_count[key] == 1
+    }
 
 
 def _build_bin_free_lookup(
@@ -97,7 +109,11 @@ def _build_bin_free_lookup(
         key = (period_normalize(strip_bin(speaker.name)), speaker.parliament_number)
         key_to_count[key] = key_to_count.get(key, 0) + 1
         entries.append((key, speaker.name))
-    return {key: canonical_name for key, canonical_name in entries if key_to_count[key] == 1 and key not in direct}
+    return {
+        key: canonical_name
+        for key, canonical_name in entries
+        if key_to_count[key] == 1 and key not in direct
+    }
 
 
 def _build_inverted_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str]:
@@ -114,7 +130,9 @@ def _build_inverted_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str
             surname_words = surname.split()
             if len(surname_words) >= _MIN_MULTIWORD_SURNAME_LENGTH:
                 surname_key = (normalize_for_lookup(surname), parliament_number)
-                surname_key_to_count[surname_key] = surname_key_to_count.get(surname_key, 0) + 1
+                surname_key_to_count[surname_key] = (
+                    surname_key_to_count.get(surname_key, 0) + 1
+                )
                 surname_only_entries.append((surname_key, speaker.name))
         else:
             words = speaker.name.split()
@@ -122,16 +140,24 @@ def _build_inverted_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str
                 rearranged = f"{words[-1]} {' '.join(words[1:-1])} {words[0]}"
                 if rearranged != speaker.name:
                     rearranged_stripped = strip_title(rearranged).strip()
-                    rearranged_key = (normalize_for_lookup(rearranged_stripped), parliament_number)
+                    rearranged_key = (
+                        normalize_for_lookup(rearranged_stripped),
+                        parliament_number,
+                    )
                     if rearranged_key not in inverted:
                         inverted[rearranged_key] = speaker.name
     for surname_key, canonical_name in surname_only_entries:
-        if surname_key_to_count.get(surname_key, 0) == 1 and surname_key not in inverted:
+        if (
+            surname_key_to_count.get(surname_key, 0) == 1
+            and surname_key not in inverted
+        ):
             inverted[surname_key] = canonical_name
     return inverted
 
 
-def _build_wordset_lookup(speakers: list[Speaker]) -> dict[tuple[frozenset, int, int], str]:
+def _build_wordset_lookup(
+    speakers: list[Speaker],
+) -> dict[tuple[frozenset, int, int], str]:
     triples: list[tuple[str, str, int]] = []
     for speaker in speakers:
         natural = invert_to_natural(speaker.name)
@@ -152,7 +178,9 @@ def _build_wordset_lookup(speakers: list[Speaker]) -> dict[tuple[frozenset, int,
     return wordset
 
 
-def _build_wordset_subset_lookup(speakers: list[Speaker]) -> dict[tuple[frozenset, int], str]:
+def _build_wordset_subset_lookup(
+    speakers: list[Speaker],
+) -> dict[tuple[frozenset, int], str]:
     triples: list[tuple[str, str, int]] = []
     for speaker in speakers:
         natural = invert_to_natural(speaker.name)
@@ -199,7 +227,9 @@ def _build_prefix_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str]:
     return prefix
 
 
-def _build_surname_fallback_lookup(speakers: list[Speaker]) -> dict[tuple[str, int], str]:
+def _build_surname_fallback_lookup(
+    speakers: list[Speaker],
+) -> dict[tuple[str, int], str]:
     surname_key_to_count: dict[tuple[str, int], int] = {}
     surname_entries: list[tuple[tuple[str, int], str]] = []
     for speaker in speakers:
@@ -213,7 +243,11 @@ def _build_surname_fallback_lookup(speakers: list[Speaker]) -> dict[tuple[str, i
         surname_key = (last_word, speaker.parliament_number)
         surname_key_to_count[surname_key] = surname_key_to_count.get(surname_key, 0) + 1
         surname_entries.append((surname_key, speaker.name))
-    return {key: canonical_name for key, canonical_name in surname_entries if surname_key_to_count[key] == 1}
+    return {
+        key: canonical_name
+        for key, canonical_name in surname_entries
+        if surname_key_to_count[key] == 1
+    }
 
 
 def build_speaker_lookups(speakers: list[Speaker]) -> SpeakerLookups:
@@ -250,7 +284,9 @@ def _get_closing_parenthesis_index(text: str, open_index: int) -> Optional[int]:
 def _strip_name_decorations(name_part: str) -> str:
     # NOTE: the role suffix goes first, so a mixed-case role title never blocks the all-caps honorific strip.
     name = strip_title(name_part.strip())
-    name = _OFFICIAL_ROLE_SUFFIX_RE.sub("", name).rstrip(_NAME_TRAILING_CHARACTERS).strip()
+    name = (
+        _OFFICIAL_ROLE_SUFFIX_RE.sub("", name).rstrip(_NAME_TRAILING_CHARACTERS).strip()
+    )
     name = _HONORIFIC_SUFFIX_RE.sub("", name).rstrip(_NAME_TRAILING_CHARACTERS).strip()
     return _ISLAMIC_SUFFIX_RE.sub("", name).strip()
 
@@ -264,9 +300,19 @@ def _parse_name_and_location(text: str) -> ParsedAttendee:
         return ParsedAttendee(_strip_name_decorations(text), None)
     close_index = _get_closing_parenthesis_index(text, first_open)
     if close_index is None:
-        return ParsedAttendee(_strip_name_decorations(text[:first_open].rstrip(_NAME_TRAILING_CHARACTERS + CLOSING_PARENTHESIS)), None)
+        return ParsedAttendee(
+            _strip_name_decorations(
+                text[:first_open].rstrip(
+                    _NAME_TRAILING_CHARACTERS + CLOSING_PARENTHESIS
+                )
+            ),
+            None,
+        )
     constituency = text[first_open + 1 : close_index].strip()
-    return ParsedAttendee(_strip_name_decorations(text[:first_open].rstrip(_NAME_TRAILING_CHARACTERS)), constituency)
+    return ParsedAttendee(
+        _strip_name_decorations(text[:first_open].rstrip(_NAME_TRAILING_CHARACTERS)),
+        constituency,
+    )
 
 
 def parse_speaker_line(line: str) -> ParsedAttendee:
@@ -275,7 +321,9 @@ def parse_speaker_line(line: str) -> ParsedAttendee:
     if match is None:
         return ParsedAttendee(_SPEAKER_ENTRY_MARKER, None)
     inner = match.group(1).strip()
-    name_before_constituency = line[: match.start()].partition(_SPEAKER_ENTRY_MARKER)[2].strip()
+    name_before_constituency = (
+        line[: match.start()].partition(_SPEAKER_ENTRY_MARKER)[2].strip()
+    )
     if name_before_constituency:
         return ParsedAttendee(_strip_name_decorations(name_before_constituency), inner)
     inner_stripped = strip_title(inner)
@@ -308,7 +356,11 @@ def parse_entry_line(line: str, sitting_date: str) -> Optional[ParsedAttendee]:
     if strip_title(line) == line and OPENING_PARENTHESIS not in line:
         return None
 
-    parsed = parse_speaker_line(line) if _SPEAKER_ENTRY_MARKER in line else _parse_name_and_location(strip_title(line))
+    parsed = (
+        parse_speaker_line(line)
+        if _SPEAKER_ENTRY_MARKER in line
+        else _parse_name_and_location(strip_title(line))
+    )
     if _MARKUP_RE.search(parsed.name):
         return None
     if parsed.name.lower() != _SPEAKER_OFFICE_NAME:
@@ -321,7 +373,9 @@ def parse_entry_line(line: str, sitting_date: str) -> Optional[ParsedAttendee]:
 
 
 def _get_masthead_end_index(lines: list[str], masthead_index: int) -> Optional[int]:
-    for line_index in range(masthead_index + 1, min(masthead_index + _MAX_MASTHEAD_LINES, len(lines))):
+    for line_index in range(
+        masthead_index + 1, min(masthead_index + _MAX_MASTHEAD_LINES, len(lines))
+    ):
         stripped = lines[line_index].strip()
         if _SECTION_HEADER_RE.match(stripped):
             return None
@@ -351,7 +405,14 @@ def split_entry_line(line: str) -> list[str]:
     first_close_index = line.find(CLOSING_PARENTHESIS)
     if first_close_index == -1:
         return [line]
-    bounds = [0, *(match.start() for match in _NEXT_ENTRY_START_RE.finditer(line, first_close_index)), len(line)]
+    bounds = [
+        0,
+        *(
+            match.start()
+            for match in _NEXT_ENTRY_START_RE.finditer(line, first_close_index)
+        ),
+        len(line),
+    ]
     return [line[start:end] for start, end in zip(bounds, bounds[1:])]
 
 
@@ -364,18 +425,30 @@ def extract_section_lines(content: str, section: AttendanceSection) -> list[str]
     # NOTE: a page masthead reprinted inside a list is not its end when a member entry follows it.
     lines = _drop_masthead_blocks(content.split("\n"))
     is_in_section = False
-    other_section = AttendanceSection.ABSENT if section == AttendanceSection.PRESENT else AttendanceSection.PRESENT
+    other_section = (
+        AttendanceSection.ABSENT
+        if section == AttendanceSection.PRESENT
+        else AttendanceSection.PRESENT
+    )
     entry_lines = []
 
     for line in lines:
         stripped = line.strip()
 
         if not is_in_section:
-            if re.match(rf"^(?:\*{{2}}|#+)?\s*{section}\s*:(?:\*{{2}})?\s*$", stripped, re.IGNORECASE):
+            if re.match(
+                rf"^(?:\*{{2}}|#+)?\s*{section}\s*:(?:\*{{2}})?\s*$",
+                stripped,
+                re.IGNORECASE,
+            ):
                 is_in_section = True
             continue
 
-        if re.match(rf"^(?:\*{{2}}|#+)?\s*{other_section}\s*:(?:\*{{2}})?\s*$", stripped, re.IGNORECASE):
+        if re.match(
+            rf"^(?:\*{{2}}|#+)?\s*{other_section}\s*:(?:\*{{2}})?\s*$",
+            stripped,
+            re.IGNORECASE,
+        ):
             break
         if _SECTION_END_RE.match(stripped) or stripped == HORIZONTAL_RULE:
             break
@@ -395,7 +468,9 @@ def extract_section_lines(content: str, section: AttendanceSection) -> list[str]
 class ConstituencyLookups:
     printed_parliament_to_constituency: dict[tuple[str, Optional[int]], str]
     printed_to_constituency: dict[str, str]
-    sitting_speaker_printed_to_constituency: dict[tuple[Optional[str], Optional[str], str], str]
+    sitting_speaker_printed_to_constituency: dict[
+        tuple[Optional[str], Optional[str], str], str
+    ]
 
 
 @dataclass(frozen=True)
@@ -418,16 +493,27 @@ class LocationChange:
     location_name_after: str
 
 
-def build_constituency_lookups(constituency_names: ConstituencyNames) -> ConstituencyLookups:
+def build_constituency_lookups(
+    constituency_names: ConstituencyNames,
+) -> ConstituencyLookups:
     return ConstituencyLookups(
         printed_parliament_to_constituency={
             (name.printed, name.parliament_number): name.constituency
             for name in constituency_names.names
             if name.parliament_number is not None
         },
-        printed_to_constituency={name.printed: name.constituency for name in constituency_names.names if name.parliament_number is None},
+        printed_to_constituency={
+            name.printed: name.constituency
+            for name in constituency_names.names
+            if name.parliament_number is None
+        },
         sitting_speaker_printed_to_constituency={
-            (row_name.sitting_date, row_name.speaker_name, row_name.printed): row_name.constituency for row_name in constituency_names.rows
+            (
+                row_name.sitting_date,
+                row_name.speaker_name,
+                row_name.printed,
+            ): row_name.constituency
+            for row_name in constituency_names.rows
         },
     )
 
@@ -441,24 +527,44 @@ def get_constituency_name(
 ) -> Optional[str]:
     if printed is None:
         return None
-    row_constituency = lookups.sitting_speaker_printed_to_constituency.get((sitting_date, speaker_name, printed))
+    row_constituency = lookups.sitting_speaker_printed_to_constituency.get(
+        (sitting_date, speaker_name, printed)
+    )
     if row_constituency is not None:
         return row_constituency
-    parliament_constituency = lookups.printed_parliament_to_constituency.get((printed, parliament_number))
+    parliament_constituency = lookups.printed_parliament_to_constituency.get(
+        (printed, parliament_number)
+    )
     if parliament_constituency is not None:
         return parliament_constituency
     return lookups.printed_to_constituency.get(printed, printed)
 
 
-def get_location_changes(attendance_location_rows: list[AttendanceLocationRow], lookups: ConstituencyLookups) -> list[LocationChange]:
+def get_location_changes(
+    attendance_location_rows: list[AttendanceLocationRow], lookups: ConstituencyLookups
+) -> list[LocationChange]:
     location_changes = []
     for attendance_location_row in attendance_location_rows:
         location_name_after = get_constituency_name(
-            attendance_location_row.location_name, infer_parliament(attendance_location_row.parlement_no, attendance_location_row.volume_no), attendance_location_row.sitting_date, attendance_location_row.speaker_name, lookups
+            attendance_location_row.location_name,
+            infer_parliament(
+                attendance_location_row.parlement_no, attendance_location_row.volume_no
+            ),
+            attendance_location_row.sitting_date,
+            attendance_location_row.speaker_name,
+            lookups,
         )
         if location_name_after == attendance_location_row.location_name:
             continue
-        location_changes.append(LocationChange(attendance_location_row.id, attendance_location_row.speaker_name, attendance_location_row.sitting_date, attendance_location_row.location_name, location_name_after))
+        location_changes.append(
+            LocationChange(
+                attendance_location_row.id,
+                attendance_location_row.speaker_name,
+                attendance_location_row.sitting_date,
+                attendance_location_row.location_name,
+                location_name_after,
+            )
+        )
     return location_changes
 
 
@@ -466,12 +572,16 @@ def _drop_repeated_attendees(attendances: list[Attendance]) -> list[Attendance]:
     speaker_name_to_attendance: dict[Optional[str], Attendance] = {}
     for attendance in attendances:
         kept_attendance = speaker_name_to_attendance.get(attendance.speaker_name)
-        if kept_attendance is None or (attendance.is_present and not kept_attendance.is_present):
+        if kept_attendance is None or (
+            attendance.is_present and not kept_attendance.is_present
+        ):
             speaker_name_to_attendance[attendance.speaker_name] = attendance
     return list(speaker_name_to_attendance.values())
 
 
-def build_sitting_attendances_from_markdown(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
+def build_sitting_attendances_from_markdown(
+    sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups
+) -> list[Attendance]:
     if not sitting.markdown_content:
         return []
 
@@ -479,7 +589,10 @@ def build_sitting_attendances_from_markdown(sitting: Sitting, lookups: SpeakerLo
     content = sitting.markdown_content
     attendances = []
 
-    for section, is_present in [(AttendanceSection.PRESENT, True), (AttendanceSection.ABSENT, False)]:
+    for section, is_present in [
+        (AttendanceSection.PRESENT, True),
+        (AttendanceSection.ABSENT, False),
+    ]:
         for line in extract_section_lines(content, section):
             for entry_line in split_entry_line(line):
                 parsed = parse_entry_line(entry_line, sitting.sitting_date)
@@ -488,19 +601,33 @@ def build_sitting_attendances_from_markdown(sitting: Sitting, lookups: SpeakerLo
                 if not parsed.name:
                     continue
                 name = normalize_name(parsed.name)
-                canonical_name = None if parliament_number is None else resolve_canonical_name(name, parliament_number, lookups)
+                canonical_name = (
+                    None
+                    if parliament_number is None
+                    else resolve_canonical_name(name, parliament_number, lookups)
+                )
                 speaker_name = canonical_name or name
-                attendances.append(Attendance(
-                    sitting_id=sitting.id,
-                    speaker_name=speaker_name,
-                    is_present=is_present,
-                    location_name=get_constituency_name(parsed.constituency, parliament_number, sitting.sitting_date, speaker_name, constituency_lookups),
-                ))
+                attendances.append(
+                    Attendance(
+                        sitting_id=sitting.id,
+                        speaker_name=speaker_name,
+                        is_present=is_present,
+                        location_name=get_constituency_name(
+                            parsed.constituency,
+                            parliament_number,
+                            sitting.sitting_date,
+                            speaker_name,
+                            constituency_lookups,
+                        ),
+                    )
+                )
 
     return _drop_repeated_attendees(attendances)
 
 
-def build_sitting_attendances_from_list(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
+def build_sitting_attendances_from_list(
+    sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups
+) -> list[Attendance]:
     if sitting.attendance_list is None:
         return []
 
@@ -519,27 +646,50 @@ def build_sitting_attendances_from_list(sitting: Sitting, lookups: SpeakerLookup
         if not parsed.name:
             continue
         name = normalize_name(parsed.name)
-        canonical_name = None if parliament_number is None else resolve_canonical_name(name, parliament_number, lookups)
+        canonical_name = (
+            None
+            if parliament_number is None
+            else resolve_canonical_name(name, parliament_number, lookups)
+        )
         speaker_name = canonical_name or name
-        attendances.append(Attendance(
-            sitting_id=sitting.id,
-            speaker_name=speaker_name,
-            is_present=entry.attendance,
-            location_name=get_constituency_name(parsed.constituency, parliament_number, sitting.sitting_date, speaker_name, constituency_lookups),
-        ))
+        attendances.append(
+            Attendance(
+                sitting_id=sitting.id,
+                speaker_name=speaker_name,
+                is_present=entry.attendance,
+                location_name=get_constituency_name(
+                    parsed.constituency,
+                    parliament_number,
+                    sitting.sitting_date,
+                    speaker_name,
+                    constituency_lookups,
+                ),
+            )
+        )
 
     return _drop_repeated_attendees(attendances)
 
 
-def build_sitting_attendances(sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups) -> list[Attendance]:
+def build_sitting_attendances(
+    sitting: Sitting, lookups: SpeakerLookups, constituency_lookups: ConstituencyLookups
+) -> list[Attendance]:
     if sitting.markdown_content is not None:
-        return build_sitting_attendances_from_markdown(sitting, lookups, constituency_lookups)
+        return build_sitting_attendances_from_markdown(
+            sitting, lookups, constituency_lookups
+        )
     return build_sitting_attendances_from_list(sitting, lookups, constituency_lookups)
 
 
-def _drop_equal_attendances(attendances: list[Attendance], other_attendances: list[Attendance]) -> list[Attendance]:
+def _drop_equal_attendances(
+    attendances: list[Attendance], other_attendances: list[Attendance]
+) -> list[Attendance]:
     other_key_to_unmatched_count = Counter(
-        (other_attendance.speaker_name, other_attendance.is_present, other_attendance.location_name) for other_attendance in other_attendances
+        (
+            other_attendance.speaker_name,
+            other_attendance.is_present,
+            other_attendance.location_name,
+        )
+        for other_attendance in other_attendances
     )
     unmatched_attendances = []
     for attendance in attendances:
@@ -551,19 +701,34 @@ def _drop_equal_attendances(attendances: list[Attendance], other_attendances: li
     return unmatched_attendances
 
 
-def get_attendance_name_changes(sitting_id: int, stored_rows: list[Attendance], built_rows: list[Attendance]) -> list[AttendanceNameChange]:
+def get_attendance_name_changes(
+    sitting_id: int, stored_rows: list[Attendance], built_rows: list[Attendance]
+) -> list[AttendanceNameChange]:
     if len(stored_rows) != len(built_rows):
-        raise HansardWriteCheckError(f"Sitting {sitting_id}: {len(stored_rows)} stored attendance rows, stage 7 builds {len(built_rows)}")
+        raise HansardWriteCheckError(
+            f"Sitting {sitting_id}: {len(stored_rows)} stored attendance rows, stage 7 builds {len(built_rows)}"
+        )
     unmatched_stored_rows = _drop_equal_attendances(stored_rows, built_rows)
     unmatched_built_rows = _drop_equal_attendances(built_rows, stored_rows)
     name_changes = []
     for stored_row, built_row in zip(unmatched_stored_rows, unmatched_built_rows):
         if stored_row.is_present != built_row.is_present:
-            raise HansardWriteCheckError(f"Attendance row {stored_row.id}: presence {stored_row.is_present}, stage 7 builds {built_row.is_present}")
+            raise HansardWriteCheckError(
+                f"Attendance row {stored_row.id}: presence {stored_row.is_present}, stage 7 builds {built_row.is_present}"
+            )
         if stored_row.location_name != built_row.location_name:
-            raise HansardWriteCheckError(f"Attendance row {stored_row.id}: location {stored_row.location_name!r}, stage 7 builds {built_row.location_name!r}")
-        name_changes.append(AttendanceNameChange(
-            stored_row.id, sitting_id, stored_row.speaker_name, built_row.speaker_name,
-            stored_row.is_present, stored_row.location_name, stored_row.speaker_id,
-        ))
+            raise HansardWriteCheckError(
+                f"Attendance row {stored_row.id}: location {stored_row.location_name!r}, stage 7 builds {built_row.location_name!r}"
+            )
+        name_changes.append(
+            AttendanceNameChange(
+                stored_row.id,
+                sitting_id,
+                stored_row.speaker_name,
+                built_row.speaker_name,
+                stored_row.is_present,
+                stored_row.location_name,
+                stored_row.speaker_id,
+            )
+        )
     return name_changes

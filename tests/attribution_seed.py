@@ -60,8 +60,16 @@ _SEED_REPORTS = (
             "Question put, and agreed to.\n"
         ),
         speeches=(
-            _SeedSpeech("Mr Tan Ah Kow (Bishan)", True, "asked the Minister for National Development how many grants were paid last year."),
-            _SeedSpeech("Mr Lim Boon Heng", False, "Sir, the Ministry paid 4,210 grants last year."),
+            _SeedSpeech(
+                "Mr Tan Ah Kow (Bishan)",
+                True,
+                "asked the Minister for National Development how many grants were paid last year.",
+            ),
+            _SeedSpeech(
+                "Mr Lim Boon Heng",
+                False,
+                "Sir, the Ministry paid 4,210 grants last year.",
+            ),
             _SeedSpeech("hon. Members", False, "Hear, hear."),
             _SeedSpeech(None, False, "Question put, and agreed to."),
         ),
@@ -79,8 +87,16 @@ _SEED_REPORTS = (
             "Question put, and agreed to.\n"
         ),
         speeches=(
-            _SeedSpeech("Mr Tan Ah Kow (Bishan)", True, "Sir, I beg to move that this House calls for a review of transport fares."),
-            _SeedSpeech("(In Mandarin) Mr Lim Boon Heng", False, "The fares rose twice in two years."),
+            _SeedSpeech(
+                "Mr Tan Ah Kow (Bishan)",
+                True,
+                "Sir, I beg to move that this House calls for a review of transport fares.",
+            ),
+            _SeedSpeech(
+                "(In Mandarin) Mr Lim Boon Heng",
+                False,
+                "The fares rose twice in two years.",
+            ),
             _SeedSpeech("Mr Lim Boon Heng", False, "I support the motion."),
             _SeedSpeech(None, False, "Question put, and agreed to."),
         ),
@@ -123,8 +139,16 @@ _SEED_REPORTS = (
             "Question No 2 was deferred.\n"
         ),
         speeches=(
-            _SeedSpeech("Mr Tan Ah Kow (Bishan-Toa Payoh)", True, "asked the Minister for Health what the median waiting time is at polyclinics."),
-            _SeedSpeech("The Minister for Health (Mr Lim Boon Heng)", False, "The median waiting time is 40 minutes."),
+            _SeedSpeech(
+                "Mr Tan Ah Kow (Bishan-Toa Payoh)",
+                True,
+                "asked the Minister for Health what the median waiting time is at polyclinics.",
+            ),
+            _SeedSpeech(
+                "The Minister for Health (Mr Lim Boon Heng)",
+                False,
+                "The median waiting time is 40 minutes.",
+            ),
             _SeedSpeech("Hon Members", False, "Hear, hear."),
             _SeedSpeech(None, False, "Question No 2 was deferred."),
         ),
@@ -142,9 +166,19 @@ _SEED_REPORTS = (
             "Resolved, that this House supports the plan.\n"
         ),
         speeches=(
-            _SeedSpeech("Mr Tan Ah Kow (Bishan-Toa Payoh)", True, "Madam, I beg to move that this House supports the plan for successful ageing."),
-            _SeedSpeech("(In Malay) Mr Lim Boon Heng", False, "The plan needs more day care centres."),
-            _SeedSpeech("Mr Lim Boon Heng", False, "I support the motion with one reservation."),
+            _SeedSpeech(
+                "Mr Tan Ah Kow (Bishan-Toa Payoh)",
+                True,
+                "Madam, I beg to move that this House supports the plan for successful ageing.",
+            ),
+            _SeedSpeech(
+                "(In Malay) Mr Lim Boon Heng",
+                False,
+                "The plan needs more day care centres.",
+            ),
+            _SeedSpeech(
+                "Mr Lim Boon Heng", False, "I support the motion with one reservation."
+            ),
             _SeedSpeech(None, False, "Resolved, that this House supports the plan."),
         ),
     ),
@@ -158,7 +192,11 @@ _SEED_REPORTS = (
             "The Ministry reviews school bus fares each year with the operators and the schools.\n"
         ),
         speeches=(
-            _SeedSpeech("Mr Tan Ah Kow", True, "The Ministry reviews school bus fares each year with the operators and the schools."),
+            _SeedSpeech(
+                "Mr Tan Ah Kow",
+                True,
+                "The Ministry reviews school bus fares each year with the operators and the schools.",
+            ),
         ),
     ),
     _SeedReport(
@@ -174,7 +212,11 @@ _SEED_REPORTS = (
             "The Minister for Transport tabled the answer.\n"
         ),
         speeches=(
-            _SeedSpeech("Mr Tan Ah Kow (Bishan-Toa Payoh)", True, "asked the Minister for Transport how many kilometres of cycling paths will be built by 2020."),
+            _SeedSpeech(
+                "Mr Tan Ah Kow (Bishan-Toa Payoh)",
+                True,
+                "asked the Minister for Transport how many kilometres of cycling paths will be built by 2020.",
+            ),
             _SeedSpeech("Mr Lim Boon Heng", False, "About 700 kilometres."),
             _SeedSpeech("Hon Members", False, "Hear, hear."),
             _SeedSpeech(None, False, "The Minister for Transport tabled the answer."),
@@ -193,9 +235,19 @@ _SEED_REPORTS = (
             "Question put, and agreed to.\n"
         ),
         speeches=(
-            _SeedSpeech("Mr Tan Ah Kow (Bishan-Toa Payoh)", True, "Mr Speaker, I beg to move the motion standing in my name."),
-            _SeedSpeech("(In Tamil) Mr Lim Boon Heng", False, "Workers need help to retrain."),
-            _SeedSpeech("Mr Lim Boon Heng", False, "Sir, the motion has my support, and I will say why in three parts."),
+            _SeedSpeech(
+                "Mr Tan Ah Kow (Bishan-Toa Payoh)",
+                True,
+                "Mr Speaker, I beg to move the motion standing in my name.",
+            ),
+            _SeedSpeech(
+                "(In Tamil) Mr Lim Boon Heng", False, "Workers need help to retrain."
+            ),
+            _SeedSpeech(
+                "Mr Lim Boon Heng",
+                False,
+                "Sir, the motion has my support, and I will say why in three parts.",
+            ),
             _SeedSpeech(None, False, "Question put, and agreed to."),
         ),
     ),
@@ -212,8 +264,14 @@ _SEED_REPORTS = (
             "Question No 5 was answered in writing.\n"
         ),
         speeches=(
-            _SeedSpeech("Mr Tan Ah Kow (Bishan-Toa Payoh)", True, "asked the Minister for Health what share of seniors are vaccinated."),
-            _SeedSpeech("Mr Lim Boon Heng", False, "Nine in ten seniors are vaccinated."),
+            _SeedSpeech(
+                "Mr Tan Ah Kow (Bishan-Toa Payoh)",
+                True,
+                "asked the Minister for Health what share of seniors are vaccinated.",
+            ),
+            _SeedSpeech(
+                "Mr Lim Boon Heng", False, "Nine in ten seniors are vaccinated."
+            ),
             _SeedSpeech("Hon Members", False, "Hear, hear."),
             _SeedSpeech(None, False, "Question No 5 was answered in writing."),
         ),
@@ -231,8 +289,14 @@ _SEED_REPORTS = (
             "Question put, and agreed to.\n"
         ),
         speeches=(
-            _SeedSpeech("Mr Tan Ah Kow (Bishan-Toa Payoh)", True, "Mr Speaker, I beg to move that this House calls for faster climate action."),
-            _SeedSpeech("(In Mandarin) Mr Lim Boon Heng", False, "Sea levels will rise."),
+            _SeedSpeech(
+                "Mr Tan Ah Kow (Bishan-Toa Payoh)",
+                True,
+                "Mr Speaker, I beg to move that this House calls for faster climate action.",
+            ),
+            _SeedSpeech(
+                "(In Mandarin) Mr Lim Boon Heng", False, "Sea levels will rise."
+            ),
             _SeedSpeech("Mr Lim Boon Heng", False, "I support the motion."),
             _SeedSpeech(None, False, "Question put, and agreed to."),
         ),
@@ -258,7 +322,9 @@ def _build_report(seed_report: _SeedReport) -> Report:
     )
 
 
-def _build_speech(report: Report, ordinal: int, seed_speech: _SeedSpeech, speaker_id: Optional[int]) -> Speech:
+def _build_speech(
+    report: Report, ordinal: int, seed_speech: _SeedSpeech, speaker_id: Optional[int]
+) -> Speech:
     assert report.id is not None
     return Speech(
         ordinal=ordinal,
@@ -273,7 +339,12 @@ def _build_speech(report: Report, ordinal: int, seed_speech: _SeedSpeech, speake
 
 def seed_attribution_rows(session: Session) -> None:
     parliament_to_speaker = {
-        parliament_number: Speaker(name=_SPEAKER_NAME, party=_SPEAKER_PARTY, is_legislative_assembly=False, parliament_number=parliament_number)
+        parliament_number: Speaker(
+            name=_SPEAKER_NAME,
+            party=_SPEAKER_PARTY,
+            is_legislative_assembly=False,
+            parliament_number=parliament_number,
+        )
         for parliament_number in _PARLIAMENT_TO_SITTING_DATE
     }
     reports = [_build_report(seed_report) for seed_report in _SEED_REPORTS]
@@ -281,7 +352,12 @@ def seed_attribution_rows(session: Session) -> None:
     session.flush()
 
     speeches = [
-        _build_speech(report, ordinal, seed_speech, parliament_to_speaker[seed_report.parliament_number].id)
+        _build_speech(
+            report,
+            ordinal,
+            seed_speech,
+            parliament_to_speaker[seed_report.parliament_number].id,
+        )
         for seed_report, report in zip(_SEED_REPORTS, reports)
         for ordinal, seed_speech in enumerate(seed_report.speeches, start=1)
     ]

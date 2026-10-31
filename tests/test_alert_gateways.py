@@ -43,7 +43,9 @@ class _RequestRecorder:
         return _FakeResponse()
 
 
-def _raise_telegram_connection_error(url: str, json: object, timeout: object) -> _FakeResponse:
+def _raise_telegram_connection_error(
+    url: str, json: object, timeout: object
+) -> _FakeResponse:
     raise requests.exceptions.ConnectionError(_FAILED_TELEGRAM_URL)
 
 
@@ -73,7 +75,9 @@ def test_healthchecks_ping_gets_the_ping_url(monkeypatch: pytest.MonkeyPatch) ->
 
 
 def test_telegram_failure_hides_the_bot_token(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(gateway.telegram.requests, "post", _raise_telegram_connection_error)
+    monkeypatch.setattr(
+        gateway.telegram.requests, "post", _raise_telegram_connection_error
+    )
 
     with pytest.raises(HansardGatewayError) as error_info:
         send_telegram_message(_SECRET_BOT_TOKEN, _CHAT_ID, _TEXT)
@@ -83,8 +87,12 @@ def test_telegram_failure_hides_the_bot_token(monkeypatch: pytest.MonkeyPatch) -
     assert error_info.value.__suppress_context__ is True
 
 
-def test_healthchecks_failure_hides_the_ping_url(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(gateway.healthchecks.requests, "get", _raise_ping_connection_error)
+def test_healthchecks_failure_hides_the_ping_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        gateway.healthchecks.requests, "get", _raise_ping_connection_error
+    )
 
     with pytest.raises(HansardGatewayError) as error_info:
         send_healthchecks_ping(_FAILED_PING_URL)
@@ -95,7 +103,9 @@ def test_healthchecks_failure_hides_the_ping_url(monkeypatch: pytest.MonkeyPatch
 
 
 @pytest.mark.parametrize("ping_url", [_PING_URL, f"{_PING_URL}/"])
-def test_healthchecks_failure_ping_gets_the_fail_url(ping_url: str, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_healthchecks_failure_ping_gets_the_fail_url(
+    ping_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
     recorder = _RequestRecorder()
     monkeypatch.setattr(gateway.healthchecks.requests, "get", recorder.get)
 
@@ -105,8 +115,12 @@ def test_healthchecks_failure_ping_gets_the_fail_url(ping_url: str, monkeypatch:
     assert recorder.timeouts[0] is not None
 
 
-def test_healthchecks_failure_ping_failure_hides_the_ping_url(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(gateway.healthchecks.requests, "get", _raise_ping_connection_error)
+def test_healthchecks_failure_ping_failure_hides_the_ping_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        gateway.healthchecks.requests, "get", _raise_ping_connection_error
+    )
 
     with pytest.raises(HansardGatewayError) as error_info:
         send_healthchecks_failure_ping(_FAILED_PING_URL)

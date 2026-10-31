@@ -20,7 +20,9 @@ class CRUDTableHash:
     def get_table_hash(self, table_name: str) -> TableHash:
         connection = self.session.connection()
         quote = connection.dialect.identifier_preparer.quote
-        primary_key = inspect(connection).get_pk_constraint(table_name)["constrained_columns"]
+        primary_key = inspect(connection).get_pk_constraint(table_name)[
+            "constrained_columns"
+        ]
         # NOTE: a table with no primary key is ordered by its row text, so equal content still hashes equal
         order_by = ", ".join(quote(column) for column in primary_key) or "row_text"
         statement = text(

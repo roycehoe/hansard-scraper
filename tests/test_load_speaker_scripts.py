@@ -46,7 +46,9 @@ class _CommitRecorder:
         self.original_commit()
 
 
-def _record_commits(session: Session, monkeypatch: pytest.MonkeyPatch) -> _CommitRecorder:
+def _record_commits(
+    session: Session, monkeypatch: pytest.MonkeyPatch
+) -> _CommitRecorder:
     recorder = _CommitRecorder(session.commit)
     monkeypatch.setattr(session, "commit", recorder.commit)
     return recorder
@@ -57,16 +59,21 @@ def _get_member(name: str) -> ParliamentMember:
         full_name=name,
         party_affliation=_PARTY,
         legislative_assembly=LegislativeAssemblyFlag.NO,
-        parliament_session=[ParliamentMemberSession(parliament_sessions_id=_SESSION_ID)],
+        parliament_session=[
+            ParliamentMemberSession(parliament_sessions_id=_SESSION_ID)
+        ],
     )
 
 
 def _get_parliament_member_list_response() -> ParliamentMemberListResponse:
     return ParliamentMemberListResponse(
         mps=ParliamentMembers(
-            meta=ParliamentMembersMeta(filter_count=len(_SCRAPED_NAMES)), data=[_get_member(name) for name in _SCRAPED_NAMES]
+            meta=ParliamentMembersMeta(filter_count=len(_SCRAPED_NAMES)),
+            data=[_get_member(name) for name in _SCRAPED_NAMES],
         ),
-        options=[ParliamentOption(title=_PARLIAMENT_TITLE, parliament_sessions=[_SESSION_ID])],
+        options=[
+            ParliamentOption(title=_PARLIAMENT_TITLE, parliament_sessions=[_SESSION_ID])
+        ],
     )
 
 
@@ -75,31 +82,49 @@ def _refuse_write_target(database_url: str) -> None:
 
 
 def _get_colonial_member_count() -> int:
-    return len({(member.name, member.parliament_number) for member in get_colonial_members() + get_unscraped_members()})
+    return len(
+        {
+            (member.name, member.parliament_number)
+            for member in get_colonial_members() + get_unscraped_members()
+        }
+    )
 
 
 def _seed_head_of_state_member(session: Session) -> Speaker:
     head_of_state = get_heads_of_state()[0]
-    speaker = Speaker(name=head_of_state.name, party=_PARTY, is_legislative_assembly=False, parliament_number=head_of_state.parliament_number)
+    speaker = Speaker(
+        name=head_of_state.name,
+        party=_PARTY,
+        is_legislative_assembly=False,
+        parliament_number=head_of_state.parliament_number,
+    )
     session.add(speaker)
     session.commit()
     return speaker
 
 
-def test_colonial_dry_run_inserts_nothing(scratch_session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_colonial_dry_run_inserts_nothing(
+    scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
     recorder = _record_commits(scratch_session, monkeypatch)
 
-    load_colonial_la_speakers_script.store_colonial_speakers(scratch_session, is_commit=False)
+    load_colonial_la_speakers_script.store_colonial_speakers(
+        scratch_session, is_commit=False
+    )
 
     scratch_session.rollback()
     assert CRUDSpeaker(scratch_session).get_all() == []
     assert recorder.commit_count == 0
 
 
-def test_colonial_commit_inserts_each_member_once_in_one_commit(scratch_session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_colonial_commit_inserts_each_member_once_in_one_commit(
+    scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
     recorder = _record_commits(scratch_session, monkeypatch)
 
-    load_colonial_la_speakers_script.store_colonial_speakers(scratch_session, is_commit=True)
+    load_colonial_la_speakers_script.store_colonial_speakers(
+        scratch_session, is_commit=True
+    )
 
     scratch_session.rollback()
     assert len(CRUDSpeaker(scratch_session).get_all()) == _get_colonial_member_count()
@@ -107,14 +132,20 @@ def test_colonial_commit_inserts_each_member_once_in_one_commit(scratch_session:
 
 
 def test_colonial_second_commit_inserts_nothing(scratch_session: Session) -> None:
-    load_colonial_la_speakers_script.store_colonial_speakers(scratch_session, is_commit=True)
-    load_colonial_la_speakers_script.store_colonial_speakers(scratch_session, is_commit=True)
+    load_colonial_la_speakers_script.store_colonial_speakers(
+        scratch_session, is_commit=True
+    )
+    load_colonial_la_speakers_script.store_colonial_speakers(
+        scratch_session, is_commit=True
+    )
 
     scratch_session.rollback()
     assert len(CRUDSpeaker(scratch_session).get_all()) == _get_colonial_member_count()
 
 
-def test_heads_of_state_dry_run_inserts_and_marks_nothing(scratch_session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_heads_of_state_dry_run_inserts_and_marks_nothing(
+    scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
     seeded_speaker = _seed_head_of_state_member(scratch_session)
     recorder = _record_commits(scratch_session, monkeypatch)
 
@@ -142,8 +173,14 @@ def test_heads_of_state_commit_inserts_the_missing_rows_and_marks_the_stored_mem
     assert recorder.commit_count == 1
 
 
-def test_scrape_dry_run_inserts_nothing(scratch_session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(populate_speakers_module, "get_parliament_member_list_response", _get_parliament_member_list_response)
+def test_scrape_dry_run_inserts_nothing(
+    scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        populate_speakers_module,
+        "get_parliament_member_list_response",
+        _get_parliament_member_list_response,
+    )
     recorder = _record_commits(scratch_session, monkeypatch)
 
     populate_speakers(scratch_session, is_commit=False)
@@ -153,23 +190,37 @@ def test_scrape_dry_run_inserts_nothing(scratch_session: Session, monkeypatch: p
     assert recorder.commit_count == 0
 
 
-def test_scrape_commit_inserts_every_member_in_one_commit(scratch_session: Session, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(populate_speakers_module, "get_parliament_member_list_response", _get_parliament_member_list_response)
+def test_scrape_commit_inserts_every_member_in_one_commit(
+    scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        populate_speakers_module,
+        "get_parliament_member_list_response",
+        _get_parliament_member_list_response,
+    )
     recorder = _record_commits(scratch_session, monkeypatch)
 
     populate_speakers(scratch_session, is_commit=True)
 
     scratch_session.rollback()
-    assert sorted(speaker.name for speaker in CRUDSpeaker(scratch_session).get_all()) == sorted(_SCRAPED_NAMES)
+    assert sorted(
+        speaker.name for speaker in CRUDSpeaker(scratch_session).get_all()
+    ) == sorted(_SCRAPED_NAMES)
     assert recorder.commit_count == 1
 
 
 @pytest.mark.parametrize(
     ("script_module", "load_speakers"),
     [
-        (load_colonial_la_speakers_script, load_colonial_la_speakers_script.load_colonial_la_speakers),
+        (
+            load_colonial_la_speakers_script,
+            load_colonial_la_speakers_script.load_colonial_la_speakers,
+        ),
         (load_heads_of_state_script, load_heads_of_state_script.load_heads_of_state),
-        (scrape_speakers_by_parliament_script, scrape_speakers_by_parliament_script.scrape_speakers_by_parliament),
+        (
+            scrape_speakers_by_parliament_script,
+            scrape_speakers_by_parliament_script.scrape_speakers_by_parliament,
+        ),
     ],
 )
 def test_refused_write_target_raises_before_any_row_is_written(
@@ -181,7 +232,11 @@ def test_refused_write_target_raises_before_any_row_is_written(
 ) -> None:
     monkeypatch.setattr(script_module, "validate_can_write", _refuse_write_target)
     monkeypatch.setattr(script_module, "engine", scratch_engine)
-    monkeypatch.setattr(populate_speakers_module, "get_parliament_member_list_response", _get_parliament_member_list_response)
+    monkeypatch.setattr(
+        populate_speakers_module,
+        "get_parliament_member_list_response",
+        _get_parliament_member_list_response,
+    )
 
     with pytest.raises(HansardWriteTargetError, match=_REFUSAL_MESSAGE):
         load_speakers(True)

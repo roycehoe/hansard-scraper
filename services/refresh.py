@@ -26,18 +26,28 @@ def get_recheck_start_date(today: date) -> date:
 
 
 def get_probe_start_date(latest_stored_sitting_date: date, today: date) -> date:
-    return min(latest_stored_sitting_date + timedelta(days=1), get_recheck_start_date(today))
+    return min(
+        latest_stored_sitting_date + timedelta(days=1), get_recheck_start_date(today)
+    )
 
 
 def get_dates_between(first_date: date, last_date: date) -> list[date]:
-    return [first_date + timedelta(days=day_offset) for day_offset in range((last_date - first_date).days + 1)]
+    return [
+        first_date + timedelta(days=day_offset)
+        for day_offset in range((last_date - first_date).days + 1)
+    ]
 
 
-def is_published_sitting_response(hansard_report_response: Union[HansardReportOldResponse, HansardReportNewResponse]) -> bool:
+def is_published_sitting_response(
+    hansard_report_response: Union[HansardReportOldResponse, HansardReportNewResponse],
+) -> bool:
     if hansard_report_response.error_code is not None:
         return False
     if isinstance(hansard_report_response, HansardReportNewResponse):
-        if hansard_report_response.metadata is not None and hansard_report_response.metadata.sitting_no is not None:
+        if (
+            hansard_report_response.metadata is not None
+            and hansard_report_response.metadata.sitting_no is not None
+        ):
             return True
         if hansard_report_response.attendance_list is None:
             return False
@@ -49,14 +59,20 @@ def is_published_sitting_response(hansard_report_response: Union[HansardReportOl
 
 def is_held_report_alert_due(sitting_date: date, today: date) -> bool:
     recheck_start_date = get_recheck_start_date(today)
-    return recheck_start_date <= sitting_date and sitting_date <= recheck_start_date + timedelta(days=_FIRST_ALERT_WINDOW_DAYS)
+    return (
+        recheck_start_date <= sitting_date
+        and sitting_date
+        <= recheck_start_date + timedelta(days=_FIRST_ALERT_WINDOW_DAYS)
+    )
 
 
 def get_content_hash(content: str) -> str:
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
 
-def get_unlinked_share(linked_row_count: int, named_unlinked_row_count: int) -> Optional[float]:
+def get_unlinked_share(
+    linked_row_count: int, named_unlinked_row_count: int
+) -> Optional[float]:
     named_row_count = linked_row_count + named_unlinked_row_count
     try:
         return named_unlinked_row_count / named_row_count
@@ -76,7 +92,10 @@ def get_unexpected_parliament_numbers(
     return sorted(
         parliament_number
         for parliament_number in parliament_numbers
-        if (stored_max_parliament_number is None or parliament_number > stored_max_parliament_number)
+        if (
+            stored_max_parliament_number is None
+            or parliament_number > stored_max_parliament_number
+        )
         and parliament_number != allowed_parliament_number
     )
 
@@ -90,7 +109,9 @@ def build_failure_message(reason: str) -> str:
 
 
 def build_new_parliament_reason(parliament_numbers: list[int]) -> str:
-    parliament_numbers_text = ", ".join(str(parliament_number) for parliament_number in parliament_numbers)
+    parliament_numbers_text = ", ".join(
+        str(parliament_number) for parliament_number in parliament_numbers
+    )
     return (
         f"New Parliament number {parliament_numbers_text} in the fetched responses. "
         "Load its members, then run refresh.py --allow-parliament N."
@@ -102,14 +123,21 @@ def build_field_mapping_reason(field_losses: list[str]) -> str:
 
 
 def _get_label_list_text(label_to_row_count: dict[str, int]) -> str:
-    labels = sorted(label_to_row_count, key=lambda label: (-label_to_row_count[label], label))
-    label_list_text = "; ".join(f"{label} ({label_to_row_count[label]} rows)" for label in labels[:_MAX_ALERT_LABELS])
+    labels = sorted(
+        label_to_row_count, key=lambda label: (-label_to_row_count[label], label)
+    )
+    label_list_text = "; ".join(
+        f"{label} ({label_to_row_count[label]} rows)"
+        for label in labels[:_MAX_ALERT_LABELS]
+    )
     if len(labels) > _MAX_ALERT_LABELS:
         return f"{label_list_text} and {len(labels) - _MAX_ALERT_LABELS} more"
     return label_list_text
 
 
-def build_unlinked_reason(unlinked_share: float, label_to_row_count: dict[str, int]) -> str:
+def build_unlinked_reason(
+    unlinked_share: float, label_to_row_count: dict[str, int]
+) -> str:
     return (
         f"{unlinked_share * _PERCENT:.1f}% of new speech rows have a speaker label with no registry link, "
         f"above the {_UNLINKED_HALT_SHARE * _PERCENT:.0f}% limit. Labels: {_get_label_list_text(label_to_row_count)}."
@@ -122,7 +150,12 @@ def _get_count_text(count: int, noun: str) -> str:
     return f"{count:,} {noun}s"
 
 
-def build_summary_message(sittings_added: int, reports_added: int, speeches_added: int, linked_share: Optional[float]) -> str:
+def build_summary_message(
+    sittings_added: int,
+    reports_added: int,
+    speeches_added: int,
+    linked_share: Optional[float],
+) -> str:
     message_parts = [
         _get_count_text(sittings_added, "sitting"),
         _get_count_text(reports_added, "report"),

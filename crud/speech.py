@@ -137,16 +137,22 @@ class CRUDSpeech:
 
     def get_speaker_rows_by_speaker_id_null(self) -> Iterable[SpeechSpeakerRow]:
         statement = (
-            select(Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date)
+            select(
+                Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date
+            )
             .join(Report)
             .where(col(Speech.speaker_id).is_(None))
             .execution_options(yield_per=_STREAM_BATCH)
         )
         return (SpeechSpeakerRow(*row) for row in self.session.exec(statement))
 
-    def get_speaker_rows_by_report_ids_and_speaker_id_null(self, report_ids: list[int]) -> list[SpeechSpeakerRow]:
+    def get_speaker_rows_by_report_ids_and_speaker_id_null(
+        self, report_ids: list[int]
+    ) -> list[SpeechSpeakerRow]:
         statement = (
-            select(Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date)
+            select(
+                Speech.id, Speech.speaker, Report.parliament_number, Report.sitting_date
+            )
             .join(Report)
             .where(col(Speech.report_id).in_(report_ids))
             .where(col(Speech.speaker_id).is_(None))
@@ -155,14 +161,22 @@ class CRUDSpeech:
 
     def get_link_rows_by_speaker_id_not_null(self) -> Iterable[SpeechLinkRow]:
         statement = (
-            select(Speech.report_id, Speech.ordinal, Speech.speaker, Speech.speaker_id, Speech.transcript)
+            select(
+                Speech.report_id,
+                Speech.ordinal,
+                Speech.speaker,
+                Speech.speaker_id,
+                Speech.transcript,
+            )
             .where(col(Speech.speaker_id).is_not(None))
             .order_by(Speech.report_id, Speech.ordinal)
             .execution_options(yield_per=_STREAM_BATCH)
         )
         return (SpeechLinkRow(*row) for row in self.session.exec(statement))
 
-    def get_speaker_counts_by_speaker_id_null_and_speaker_not_null(self) -> list[SpeakerStringCount]:
+    def get_speaker_counts_by_speaker_id_null_and_speaker_not_null(
+        self,
+    ) -> list[SpeakerStringCount]:
         statement = (
             select(Speech.speaker, func.count())
             .where(col(Speech.speaker_id).is_(None))
@@ -171,7 +185,9 @@ class CRUDSpeech:
         )
         return [SpeakerStringCount(*row) for row in self.session.exec(statement).all()]
 
-    def get_report_ids_by_speaker_id_null_and_speaker_regex(self, pattern: str) -> list[int]:
+    def get_report_ids_by_speaker_id_null_and_speaker_regex(
+        self, pattern: str
+    ) -> list[int]:
         statement = (
             select(Speech.report_id)
             .distinct()
@@ -181,10 +197,16 @@ class CRUDSpeech:
         return list(self.session.exec(statement).all())
 
     def get_report_ids_by_transcript_regex(self, pattern: str) -> list[int]:
-        statement = select(Speech.report_id).distinct().where(col(Speech.transcript).regexp_match(pattern))
+        statement = (
+            select(Speech.report_id)
+            .distinct()
+            .where(col(Speech.transcript).regexp_match(pattern))
+        )
         return list(self.session.exec(statement).all())
 
-    def get_report_ids_by_report_ids_and_speaker_id_null_and_speaker_regex(self, report_ids: list[int], pattern: str) -> list[int]:
+    def get_report_ids_by_report_ids_and_speaker_id_null_and_speaker_regex(
+        self, report_ids: list[int], pattern: str
+    ) -> list[int]:
         statement = (
             select(Speech.report_id)
             .distinct()
@@ -196,23 +218,50 @@ class CRUDSpeech:
 
     def get_rows_by_report_ids(self, report_ids: list[int]) -> list[SpeechRow]:
         statement = (
-            select(Speech.id, Speech.ordinal, Speech.speaker, Speech.transcript, Speech.report_id, Speech.speaker_id)
+            select(
+                Speech.id,
+                Speech.ordinal,
+                Speech.speaker,
+                Speech.transcript,
+                Speech.report_id,
+                Speech.speaker_id,
+            )
             .where(col(Speech.report_id).in_(report_ids))
             .order_by(Speech.report_id, Speech.ordinal)
         )
         return [SpeechRow(*row) for row in self.session.exec(statement).all()]
 
-    def get_parse_rows_by_report_ids(self, report_ids: list[int]) -> list[SpeechParseRow]:
+    def get_parse_rows_by_report_ids(
+        self, report_ids: list[int]
+    ) -> list[SpeechParseRow]:
         statement = (
-            select(Speech.id, Speech.report_id, Speech.ordinal, Speech.speaker, Speech.transcript, Speech.kind, Speech.speaker_id)
+            select(
+                Speech.id,
+                Speech.report_id,
+                Speech.ordinal,
+                Speech.speaker,
+                Speech.transcript,
+                Speech.kind,
+                Speech.speaker_id,
+            )
             .where(col(Speech.report_id).in_(report_ids))
             .order_by(Speech.report_id, Speech.ordinal, Speech.id)
         )
         return [SpeechParseRow(*row) for row in self.session.exec(statement).all()]
 
-    def get_column_rows_by_report_ids(self, report_ids: list[int]) -> list[SpeechColumnRow]:
+    def get_column_rows_by_report_ids(
+        self, report_ids: list[int]
+    ) -> list[SpeechColumnRow]:
         statement = (
-            select(Speech.id, Speech.report_id, Speech.speaker, Speech.transcript, Speech.column_start, Speech.column_note, Speech.column_suggested)
+            select(
+                Speech.id,
+                Speech.report_id,
+                Speech.speaker,
+                Speech.transcript,
+                Speech.column_start,
+                Speech.column_note,
+                Speech.column_suggested,
+            )
             .where(col(Speech.report_id).in_(report_ids))
             .order_by(Speech.report_id, Speech.ordinal)
         )
@@ -226,12 +275,22 @@ class CRUDSpeech:
         )
         return (SpeechTextRow(*row) for row in self.session.exec(statement))
 
-    def get_transcript_rows_by_transcript_regex(self, pattern: str) -> list[SpeechTranscriptRow]:
-        statement = select(Speech.id, Speech.transcript).where(col(Speech.transcript).regexp_match(pattern)).order_by(Speech.id)
+    def get_transcript_rows_by_transcript_regex(
+        self, pattern: str
+    ) -> list[SpeechTranscriptRow]:
+        statement = (
+            select(Speech.id, Speech.transcript)
+            .where(col(Speech.transcript).regexp_match(pattern))
+            .order_by(Speech.id)
+        )
         return [SpeechTranscriptRow(*row) for row in self.session.exec(statement).all()]
 
     def get_label_rows_by_speaker_regex(self, pattern: str) -> list[SpeechLabelRow]:
-        statement = select(Speech.id, Speech.speaker).where(col(Speech.speaker).regexp_match(pattern)).order_by(Speech.id)
+        statement = (
+            select(Speech.id, Speech.speaker)
+            .where(col(Speech.speaker).regexp_match(pattern))
+            .order_by(Speech.id)
+        )
         return [SpeechLabelRow(*row) for row in self.session.exec(statement).all()]
 
     def set_speakers_bulk_by_speaker(self, text_changes: list[TextChange]) -> int:
@@ -274,13 +333,23 @@ class CRUDSpeech:
 
         return update_result.rowcount
 
-    def get_speaker_id_rows_by_ids_for_update(self, speech_ids: list[int]) -> list[SpeechSpeakerIdRow]:
-        statement = select(Speech.id, Speech.speaker_id).where(col(Speech.id).in_(speech_ids)).with_for_update()
+    def get_speaker_id_rows_by_ids_for_update(
+        self, speech_ids: list[int]
+    ) -> list[SpeechSpeakerIdRow]:
+        statement = (
+            select(Speech.id, Speech.speaker_id)
+            .where(col(Speech.id).in_(speech_ids))
+            .with_for_update()
+        )
         return [SpeechSpeakerIdRow(*row) for row in self.session.exec(statement).all()]
 
-    def get_parliament_rows_by_speaker_not_null_and_parliament_number(self, parliament_number: int) -> list[SpeechParliamentRow]:
+    def get_parliament_rows_by_speaker_not_null_and_parliament_number(
+        self, parliament_number: int
+    ) -> list[SpeechParliamentRow]:
         statement = (
-            select(Speech.id, Speech.speaker, Report.report_type, Report.parliament_number)
+            select(
+                Speech.id, Speech.speaker, Report.report_type, Report.parliament_number
+            )
             .join(Report)
             .where(Speech.speaker.is_not(None))
             .where(Report.parliament_number == parliament_number)
@@ -312,15 +381,24 @@ class CRUDSpeech:
                 "ids": [speech_update.id for speech_update in speech_updates],
                 "ordinals": [speech_update.ordinal for speech_update in speech_updates],
                 "speakers": [speech_update.speaker for speech_update in speech_updates],
-                "transcripts": [speech_update.transcript for speech_update in speech_updates],
-                "kinds": [None if speech_update.kind is None else speech_update.kind.value for speech_update in speech_updates],
-                "speaker_ids": [speech_update.speaker_id for speech_update in speech_updates],
+                "transcripts": [
+                    speech_update.transcript for speech_update in speech_updates
+                ],
+                "kinds": [
+                    None if speech_update.kind is None else speech_update.kind.value
+                    for speech_update in speech_updates
+                ],
+                "speaker_ids": [
+                    speech_update.speaker_id for speech_update in speech_updates
+                ],
             },
         )
 
         return update_result.rowcount
 
-    def set_speaker_ids_bulk(self, speech_id_to_speaker_id: dict[int, Optional[int]]) -> None:
+    def set_speaker_ids_bulk(
+        self, speech_id_to_speaker_id: dict[int, Optional[int]]
+    ) -> None:
         if not speech_id_to_speaker_id:
             return
 
@@ -330,10 +408,15 @@ class CRUDSpeech:
                 "FROM UNNEST(:ids, CAST(:speaker_ids AS integer[])) AS v(id, speaker_id) "
                 "WHERE speech.id = v.id"
             ),
-            {"ids": list(speech_id_to_speaker_id.keys()), "speaker_ids": list(speech_id_to_speaker_id.values())},
+            {
+                "ids": list(speech_id_to_speaker_id.keys()),
+                "speaker_ids": list(speech_id_to_speaker_id.values()),
+            },
         )
 
-    def set_column_starts_bulk(self, speech_id_to_column_start: dict[int, Optional[int]]) -> int:
+    def set_column_starts_bulk(
+        self, speech_id_to_column_start: dict[int, Optional[int]]
+    ) -> int:
         if not speech_id_to_column_start:
             return 0
 
@@ -343,7 +426,10 @@ class CRUDSpeech:
                 "FROM UNNEST(CAST(:ids AS integer[]), CAST(:column_starts AS integer[])) AS v(id, column_start) "
                 "WHERE speech.id = v.id"
             ),
-            {"ids": list(speech_id_to_column_start.keys()), "column_starts": list(speech_id_to_column_start.values())},
+            {
+                "ids": list(speech_id_to_column_start.keys()),
+                "column_starts": list(speech_id_to_column_start.values()),
+            },
         )
 
         return update_result.rowcount
@@ -360,20 +446,32 @@ class CRUDSpeech:
                 "WHERE speech.id = v.id"
             ),
             {
-                "ids": [speech_column_note.id for speech_column_note in speech_column_notes],
-                "column_notes": [speech_column_note.column_note for speech_column_note in speech_column_notes],
-                "column_suggesteds": [speech_column_note.column_suggested for speech_column_note in speech_column_notes],
+                "ids": [
+                    speech_column_note.id for speech_column_note in speech_column_notes
+                ],
+                "column_notes": [
+                    speech_column_note.column_note
+                    for speech_column_note in speech_column_notes
+                ],
+                "column_suggesteds": [
+                    speech_column_note.column_suggested
+                    for speech_column_note in speech_column_notes
+                ],
             },
         )
 
         return update_result.rowcount
 
     def get_vacuum_count(self) -> int:
-        statement = text("SELECT vacuum_count FROM pg_stat_user_tables WHERE relid = 'speech'::regclass")
+        statement = text(
+            "SELECT vacuum_count FROM pg_stat_user_tables WHERE relid = 'speech'::regclass"
+        )
         return self.session.execute(statement).scalar_one()
 
     # NOTE: the commit hands the autocommit connection back, so the session's next statement runs in a transaction
     def vacuum_analyze(self) -> None:
         statement = text("VACUUM (ANALYZE) speech")
-        self.session.connection(execution_options={"isolation_level": "AUTOCOMMIT"}).execute(statement)
+        self.session.connection(
+            execution_options={"isolation_level": "AUTOCOMMIT"}
+        ).execute(statement)
         self.session.commit()

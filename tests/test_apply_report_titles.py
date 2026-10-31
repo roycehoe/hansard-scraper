@@ -47,9 +47,17 @@ def _seed_reports(scratch_session: Session) -> tuple[Report, Report]:
     return stale_report, current_report
 
 
-def _get_stored_titles(scratch_session: Session, seeded: tuple[Report, Report]) -> list[tuple[str, str | None]]:
+def _get_stored_titles(
+    scratch_session: Session, seeded: tuple[Report, Report]
+) -> list[tuple[str, str | None]]:
     scratch_session.expire_all()
-    return [(report.title, report.subtitle) for report in (scratch_session.get_one(Report, seeded_report.id) for seeded_report in seeded)]
+    return [
+        (report.title, report.subtitle)
+        for report in (
+            scratch_session.get_one(Report, seeded_report.id)
+            for seeded_report in seeded
+        )
+    ]
 
 
 _BEFORE = [(_STALE_TITLE, None), (_CURRENT_TITLE, None)]
@@ -57,7 +65,10 @@ _AFTER = [(_BUILT_TITLE, _BUILT_SUBTITLE), (_CURRENT_TITLE, None)]
 
 
 def test_dry_run_writes_the_plan_and_changes_no_row(
-    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(apply_report_titles_script, "engine", scratch_engine)
     seeded = _seed_reports(scratch_session)
@@ -85,15 +96,26 @@ def test_commit_refuses_after_a_planned_row_changes(
     monkeypatch.setattr(apply_report_titles_script, "engine", scratch_engine)
     seeded = _seed_reports(scratch_session)
     stale_report, _ = seeded
-    stale_changes = [TitleChange(stale_report.id, _STALE_TITLE, None, _BUILT_TITLE, _BUILT_SUBTITLE)]
+    stale_changes = [
+        TitleChange(stale_report.id, _STALE_TITLE, None, _BUILT_TITLE, _BUILT_SUBTITLE)
+    ]
     scratch_session.get_one(Report, stale_report.id).title = "changed after the plan"
     scratch_session.commit()
-    monkeypatch.setattr(apply_report_titles_script, "_get_title_changes", lambda title_rows: stale_changes)
+    monkeypatch.setattr(
+        apply_report_titles_script,
+        "_get_title_changes",
+        lambda title_rows: stale_changes,
+    )
 
-    with pytest.raises(HansardWriteCheckError, match="title changed since the plan was made"):
+    with pytest.raises(
+        HansardWriteCheckError, match="title changed since the plan was made"
+    ):
         apply_report_titles_script.apply_report_titles(is_commit=True, plan_path=None)
 
-    assert _get_stored_titles(scratch_session, seeded) == [("changed after the plan", None), (_CURRENT_TITLE, None)]
+    assert _get_stored_titles(scratch_session, seeded) == [
+        ("changed after the plan", None),
+        (_CURRENT_TITLE, None),
+    ]
 
 
 def test_commit_on_an_unchanged_state_writes_exactly_the_plan(
@@ -112,7 +134,11 @@ def test_commit_refuses_the_protected_local_port_and_writes_nothing(
 ) -> None:
     monkeypatch.setattr(apply_report_titles_script, "engine", scratch_engine)
     seeded = _seed_reports(scratch_session)
-    monkeypatch.setattr(apply_report_titles_script, "settings", SimpleNamespace(database_url=_PROTECTED_DATABASE_URL))
+    monkeypatch.setattr(
+        apply_report_titles_script,
+        "settings",
+        SimpleNamespace(database_url=_PROTECTED_DATABASE_URL),
+    )
 
     with pytest.raises(HansardWriteTargetError, match="5432"):
         apply_report_titles_script.apply_report_titles(is_commit=True, plan_path=None)

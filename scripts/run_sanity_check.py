@@ -82,10 +82,17 @@ def run_sanity_check() -> None:
 
     with Session(engine) as session:
         stored_reports = CRUDReport(session).get_by_ids(report_ids)
-        report_id_strings = {stored_report.report_id for stored_report in stored_reports}
+        report_id_strings = {
+            stored_report.report_id for stored_report in stored_reports
+        }
 
-        hansard_website_responses = CRUDHansardWebsiteResponse(session).get_by_report_ids(report_id_strings)
-    report_id_to_hansard_website_response = {hansard_website_response.report_id: hansard_website_response for hansard_website_response in hansard_website_responses}
+        hansard_website_responses = CRUDHansardWebsiteResponse(
+            session
+        ).get_by_report_ids(report_id_strings)
+    report_id_to_hansard_website_response = {
+        hansard_website_response.report_id: hansard_website_response
+        for hansard_website_response in hansard_website_responses
+    }
 
     logger.info(f"Sample Report IDs:       {len(report_ids)}")
     logger.info(f"Stored Reports found:    {len(stored_reports)}")
@@ -95,22 +102,36 @@ def run_sanity_check() -> None:
     issues: list[Union[_MissingHansardWebsiteResponse, _FailedReport]] = []
     stats = _SanityStats()
 
-    logger.info(f"{'report_id':<14} {'type':<22} {'md':>2} {'sl':>2} {'sp':>4} {'v':>2}  checks")
+    logger.info(
+        f"{'report_id':<14} {'type':<22} {'md':>2} {'sl':>2} {'sp':>4} {'v':>2}  checks"
+    )
     logger.info("-" * _SEPARATOR_WIDTH)
 
-    for stored_report in sorted(stored_reports, key=lambda stored_report: stored_report.report_type):
-        hansard_website_response = report_id_to_hansard_website_response.get(stored_report.report_id)
+    for stored_report in sorted(
+        stored_reports, key=lambda stored_report: stored_report.report_type
+    ):
+        hansard_website_response = report_id_to_hansard_website_response.get(
+            stored_report.report_id
+        )
         stats.total += 1
 
         if hansard_website_response is None:
             stats.no_hansard_website_response += 1
-            issues.append(_MissingHansardWebsiteResponse(stored_report.report_id, stored_report.report_type))
-            logger.info(f"{stored_report.report_id:<14} {stored_report.report_type:<22} {'?':>2} {'?':>2} {'?':>4} {'?':>2}  NO HansardWebsiteResponse found")
+            issues.append(
+                _MissingHansardWebsiteResponse(
+                    stored_report.report_id, stored_report.report_type
+                )
+            )
+            logger.info(
+                f"{stored_report.report_id:<14} {stored_report.report_type:<22} {'?':>2} {'?':>2} {'?':>4} {'?':>2}  NO HansardWebsiteResponse found"
+            )
             continue
 
         if hansard_website_response.content is None:
             stats.no_content += 1
-            logger.info(f"{stored_report.report_id:<14} {stored_report.report_type:<22} {'-':>2} {'-':>2} {'-':>4} {'-':>2}  no content (expected for some types)")
+            logger.info(
+                f"{stored_report.report_id:<14} {stored_report.report_type:<22} {'-':>2} {'-':>2} {'-':>4} {'-':>2}  no content (expected for some types)"
+            )
             continue
 
         regenerated_report = build_report(hansard_website_response)
@@ -124,11 +145,15 @@ def run_sanity_check() -> None:
 
         if regenerated_report.title != stored_report.title:
             stats.title_mismatch += 1
-            checks.append(f"{_Check.TITLE_MISMATCH}(stored={stored_report.title!r} regen={regenerated_report.title!r})")
+            checks.append(
+                f"{_Check.TITLE_MISMATCH}(stored={stored_report.title!r} regen={regenerated_report.title!r})"
+            )
 
         if regenerated_report.subtitle != stored_report.subtitle:
             stats.subtitle_mismatch += 1
-            checks.append(f"{_Check.SUBTITLE_MISMATCH}(stored={stored_report.subtitle!r} regen={regenerated_report.subtitle!r})")
+            checks.append(
+                f"{_Check.SUBTITLE_MISMATCH}(stored={stored_report.subtitle!r} regen={regenerated_report.subtitle!r})"
+            )
 
         start_line = _get_start_line(regenerated_report)
         if start_line is None and regenerated_report.markdown_content:
@@ -139,13 +164,20 @@ def run_sanity_check() -> None:
             []
             if start_line is None
             else get_speeches(
-                regenerated_report.markdown_content, start_line, regenerated_report.report_type, regenerated_report.report_version
+                regenerated_report.markdown_content,
+                start_line,
+                regenerated_report.report_type,
+                regenerated_report.report_version,
             )
         )
         if start_line is not None and len(speeches) == 0:
             stats.no_speeches += 1
             checks.append(_Check.NO_SPEECHES.value)
-        invalid = [speech for speech in speeches if not speech.speaker or not speech.transcript.strip()]
+        invalid = [
+            speech
+            for speech in speeches
+            if not speech.speaker or not speech.transcript.strip()
+        ]
         if invalid:
             stats.invalid_speeches += 1
             checks.append(f"{_Check.INVALID_SPEECHES}({len(invalid)})")
@@ -160,19 +192,23 @@ def run_sanity_check() -> None:
 
         start_line_flag = "Y" if start_line is not None else "N"
         checks_text = "  ".join(checks)
-        logger.info(f"{stored_report.report_id:<14} {stored_report.report_type:<22} {markdown_flag:>2} {start_line_flag:>2} {speech_count:>4} {valid_flag:>2}  {checks_text}")
+        logger.info(
+            f"{stored_report.report_id:<14} {stored_report.report_type:<22} {markdown_flag:>2} {start_line_flag:>2} {speech_count:>4} {valid_flag:>2}  {checks_text}"
+        )
 
         if is_failed:
-            issues.append(_FailedReport(
-                stored_report.report_id,
-                stored_report.report_type,
-                checks,
-                stored_report.title,
-                regenerated_report.title,
-                stored_report.subtitle,
-                regenerated_report.subtitle,
-                (regenerated_report.markdown_content or "")[:_SNIPPET_LENGTH],
-            ))
+            issues.append(
+                _FailedReport(
+                    stored_report.report_id,
+                    stored_report.report_type,
+                    checks,
+                    stored_report.title,
+                    regenerated_report.title,
+                    stored_report.subtitle,
+                    regenerated_report.subtitle,
+                    (regenerated_report.markdown_content or "")[:_SNIPPET_LENGTH],
+                )
+            )
 
     logger.info("")
     logger.info("=" * _SEPARATOR_WIDTH)
@@ -191,14 +227,18 @@ def run_sanity_check() -> None:
     content_records = stats.total - stats.no_hansard_website_response - stats.no_content
     if content_records > 0:
         pass_rate = stats.passed / content_records * _PERCENT
-        logger.info(f"Pass rate (content records): {stats.passed}/{content_records} = {pass_rate:.1f}%")
+        logger.info(
+            f"Pass rate (content records): {stats.passed}/{content_records} = {pass_rate:.1f}%"
+        )
 
     if issues:
         logger.info("")
         logger.info("=== ISSUE DETAILS ===")
         for issue in issues:
             if isinstance(issue, _MissingHansardWebsiteResponse):
-                logger.info(f"\n  [NO HWR]  report_id={issue.report_id} type={issue.report_type}")
+                logger.info(
+                    f"\n  [NO HWR]  report_id={issue.report_id} type={issue.report_type}"
+                )
                 continue
             logger.info(f"\n  report_id={issue.report_id}  type={issue.report_type}")
             logger.info(f"  checks: {issue.checks}")
@@ -208,7 +248,9 @@ def run_sanity_check() -> None:
             if _Check.SUBTITLE_MISMATCH in str(issue.checks):
                 logger.info(f"  subtitle stored: {issue.subtitle_stored!r}")
                 logger.info(f"  subtitle regen:  {issue.subtitle_regenerated!r}")
-            if _Check.NO_START_LINE in str(issue.checks) or _Check.NO_SPEECHES in str(issue.checks):
+            if _Check.NO_START_LINE in str(issue.checks) or _Check.NO_SPEECHES in str(
+                issue.checks
+            ):
                 logger.info("  markdown snippet:")
                 for line in issue.markdown_snippet.splitlines()[:_SNIPPET_LINES_SHOWN]:
                     logger.info(f"    {line}")

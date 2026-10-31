@@ -18,7 +18,9 @@ def get_month_windows(first_date: date, last_date: date) -> list[MonthWindow]:
     window_first_date = first_date
     while window_first_date <= last_date:
         month_last_date = date(
-            window_first_date.year, window_first_date.month, calendar.monthrange(window_first_date.year, window_first_date.month)[1]
+            window_first_date.year,
+            window_first_date.month,
+            calendar.monthrange(window_first_date.year, window_first_date.month)[1],
         )
         window_last_date = min(month_last_date, last_date)
         month_windows.append(MonthWindow(window_first_date, window_last_date))

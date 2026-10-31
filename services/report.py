@@ -40,9 +40,11 @@ def _split_off_subtitle(title: str) -> ReportHeader:
     bracket_start = _get_trailing_bracket_start(title)
     if bracket_start is None:
         return ReportHeader(title=title)
-    if not any(character.islower() for character in title[bracket_start + 1:-1]):
+    if not any(character.islower() for character in title[bracket_start + 1 : -1]):
         return ReportHeader(title=title)
-    return ReportHeader(title=title[:bracket_start].strip(), subtitle=title[bracket_start:])
+    return ReportHeader(
+        title=title[:bracket_start].strip(), subtitle=title[bracket_start:]
+    )
 
 
 def _split_title_parts(title: str) -> list[str]:
@@ -67,13 +69,19 @@ def build_report_header(raw_title: str) -> ReportHeader:
     if len(part_titles) != 1:
         return _split_off_subtitle(raw_title)
 
-    subtitles = [part_header.subtitle for part_header in part_headers if part_header.subtitle is not None]
+    subtitles = [
+        part_header.subtitle
+        for part_header in part_headers
+        if part_header.subtitle is not None
+    ]
     if not subtitles:
         return ReportHeader(title=part_titles.pop())
     return ReportHeader(title=part_titles.pop(), subtitle=subtitles[-1])
 
 
-def _get_sitting_number(raw_sitting_number: Optional[str], markdown_content: Optional[str]) -> Optional[int]:
+def _get_sitting_number(
+    raw_sitting_number: Optional[str], markdown_content: Optional[str]
+) -> Optional[int]:
     if raw_sitting_number is not None:
         return int(raw_sitting_number)
     if markdown_content is None:
@@ -82,11 +90,15 @@ def _get_sitting_number(raw_sitting_number: Optional[str], markdown_content: Opt
 
 
 def build_report(hansard_website_response: HansardWebsiteResponse) -> Report:
-    sitting_date = datetime.strptime(hansard_website_response.sitting_date, _SITTING_DATE_FORMAT)
+    sitting_date = datetime.strptime(
+        hansard_website_response.sitting_date, _SITTING_DATE_FORMAT
+    )
     raw_title = fix_mojibake(hansard_website_response.title)
     report_header = build_report_header(raw_title)
     markdown_content = (
-        get_cleaned_report_markdown(hansard_website_response.content, hansard_website_response.report_version)
+        get_cleaned_report_markdown(
+            hansard_website_response.content, hansard_website_response.report_version
+        )
         if hansard_website_response.content is not None
         else None
     )
@@ -94,7 +106,9 @@ def build_report(hansard_website_response: HansardWebsiteResponse) -> Report:
     return Report(
         volumeNo=int(hansard_website_response.volume_number),
         parlNo=int(hansard_website_response.parliament_number),
-        sittingNo=_get_sitting_number(hansard_website_response.sitting_number, markdown_content),
+        sittingNo=_get_sitting_number(
+            hansard_website_response.sitting_number, markdown_content
+        ),
         sittingDate=sitting_date,
         sno=int(hansard_website_response.speech_number),
         original_title=raw_title,

@@ -40,36 +40,75 @@ def _build_report(markdown_content: str) -> Report:
 
 
 def _build_speech(report_id: int, speaker: str, transcript: str) -> Speech:
-    return Speech(ordinal=_SPEECH_NUMBER, speaker=speaker, transcript=transcript, sitting_date=_SITTING_DATE, report_type=ReportType.MOTION, report_id=report_id)
+    return Speech(
+        ordinal=_SPEECH_NUMBER,
+        speaker=speaker,
+        transcript=transcript,
+        sitting_date=_SITTING_DATE,
+        report_type=ReportType.MOTION,
+        report_id=report_id,
+    )
 
 
-def test_report_markdown_write_skips_a_row_no_longer_holding_the_before_text(scratch_session: Session) -> None:
+def test_report_markdown_write_skips_a_row_no_longer_holding_the_before_text(
+    scratch_session: Session,
+) -> None:
     report = _build_report(_BEFORE_TEXT)
     scratch_session.add(report)
     scratch_session.flush()
     text_changes = [TextChange(report.id, _BEFORE_TEXT, _AFTER_TEXT)]
 
-    assert CRUDReport(scratch_session).set_markdown_contents_bulk_by_markdown_content(text_changes) == 1
+    assert (
+        CRUDReport(scratch_session).set_markdown_contents_bulk_by_markdown_content(
+            text_changes
+        )
+        == 1
+    )
     assert scratch_session.exec(select(Report.markdown_content)).all() == [_AFTER_TEXT]
-    assert CRUDReport(scratch_session).set_markdown_contents_bulk_by_markdown_content(text_changes) == 0
+    assert (
+        CRUDReport(scratch_session).set_markdown_contents_bulk_by_markdown_content(
+            text_changes
+        )
+        == 0
+    )
     assert scratch_session.exec(select(Report.markdown_content)).all() == [_AFTER_TEXT]
-    assert CRUDReport(scratch_session).set_markdown_contents_bulk_by_markdown_content([]) == 0
+    assert (
+        CRUDReport(scratch_session).set_markdown_contents_bulk_by_markdown_content([])
+        == 0
+    )
 
 
-def test_sitting_markdown_write_skips_a_row_no_longer_holding_the_before_text(scratch_session: Session) -> None:
+def test_sitting_markdown_write_skips_a_row_no_longer_holding_the_before_text(
+    scratch_session: Session,
+) -> None:
     sitting = Sitting(sitting_date=_SITTING_DATE_KEY, markdown_content=_BEFORE_TEXT)
     scratch_session.add(sitting)
     scratch_session.flush()
     text_changes = [TextChange(sitting.id, _BEFORE_TEXT, _AFTER_TEXT)]
 
-    assert CRUDSitting(scratch_session).set_markdown_contents_bulk_by_markdown_content(text_changes) == 1
+    assert (
+        CRUDSitting(scratch_session).set_markdown_contents_bulk_by_markdown_content(
+            text_changes
+        )
+        == 1
+    )
     assert scratch_session.exec(select(Sitting.markdown_content)).all() == [_AFTER_TEXT]
-    assert CRUDSitting(scratch_session).set_markdown_contents_bulk_by_markdown_content(text_changes) == 0
+    assert (
+        CRUDSitting(scratch_session).set_markdown_contents_bulk_by_markdown_content(
+            text_changes
+        )
+        == 0
+    )
     assert scratch_session.exec(select(Sitting.markdown_content)).all() == [_AFTER_TEXT]
-    assert CRUDSitting(scratch_session).set_markdown_contents_bulk_by_markdown_content([]) == 0
+    assert (
+        CRUDSitting(scratch_session).set_markdown_contents_bulk_by_markdown_content([])
+        == 0
+    )
 
 
-def test_speech_label_write_skips_a_row_no_longer_holding_the_before_text(scratch_session: Session) -> None:
+def test_speech_label_write_skips_a_row_no_longer_holding_the_before_text(
+    scratch_session: Session,
+) -> None:
     report = _build_report(_OTHER_TEXT)
     scratch_session.add(report)
     scratch_session.flush()
@@ -85,7 +124,9 @@ def test_speech_label_write_skips_a_row_no_longer_holding_the_before_text(scratc
     assert CRUDSpeech(scratch_session).set_speakers_bulk_by_speaker([]) == 0
 
 
-def test_speech_transcript_write_skips_a_row_no_longer_holding_the_before_text(scratch_session: Session) -> None:
+def test_speech_transcript_write_skips_a_row_no_longer_holding_the_before_text(
+    scratch_session: Session,
+) -> None:
     report = _build_report(_OTHER_TEXT)
     scratch_session.add(report)
     scratch_session.flush()
@@ -94,8 +135,14 @@ def test_speech_transcript_write_skips_a_row_no_longer_holding_the_before_text(s
     scratch_session.flush()
     text_changes = [TextChange(speech.id, _BEFORE_TEXT, _AFTER_TEXT)]
 
-    assert CRUDSpeech(scratch_session).set_transcripts_bulk_by_transcript(text_changes) == 1
+    assert (
+        CRUDSpeech(scratch_session).set_transcripts_bulk_by_transcript(text_changes)
+        == 1
+    )
     assert scratch_session.exec(select(Speech.transcript)).all() == [_AFTER_TEXT]
-    assert CRUDSpeech(scratch_session).set_transcripts_bulk_by_transcript(text_changes) == 0
+    assert (
+        CRUDSpeech(scratch_session).set_transcripts_bulk_by_transcript(text_changes)
+        == 0
+    )
     assert scratch_session.exec(select(Speech.transcript)).all() == [_AFTER_TEXT]
     assert CRUDSpeech(scratch_session).set_transcripts_bulk_by_transcript([]) == 0

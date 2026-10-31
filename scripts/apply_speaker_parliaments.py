@@ -24,7 +24,9 @@ def apply_speaker_parliaments(is_commit: bool, plan_path: Optional[Path]) -> Non
     colonial_members = get_colonial_members()
     heads_of_state = get_heads_of_state()
     with Session(engine) as session:
-        parliament_changes = get_parliament_changes(CRUDSpeaker(session).get_all(), colonial_members, heads_of_state)
+        parliament_changes = get_parliament_changes(
+            CRUDSpeaker(session).get_all(), colonial_members, heads_of_state
+        )
         for parliament_change in parliament_changes:
             logger.info(
                 f"Speaker {parliament_change.id} {parliament_change.name}: "
@@ -32,27 +34,51 @@ def apply_speaker_parliaments(is_commit: bool, plan_path: Optional[Path]) -> Non
             )
         logger.info(f"Plan: {len(parliament_changes)} Parliament changes")
         if plan_path is not None:
-            plan_path.write_text(json.dumps([asdict(parliament_change) for parliament_change in parliament_changes], indent=1, ensure_ascii=False))
+            plan_path.write_text(
+                json.dumps(
+                    [
+                        asdict(parliament_change)
+                        for parliament_change in parliament_changes
+                    ],
+                    indent=1,
+                    ensure_ascii=False,
+                )
+            )
         if not is_commit:
             logger.info("Dry run: nothing written")
             return
 
         updated_count = CRUDSpeaker(session).set_parliament_numbers_bulk(
-            {parliament_change.id: parliament_change.parliament_number_after for parliament_change in parliament_changes}
+            {
+                parliament_change.id: parliament_change.parliament_number_after
+                for parliament_change in parliament_changes
+            }
         )
         if updated_count != len(parliament_changes):
-            raise HansardWriteCheckError(f"Updated {updated_count} speaker rows, planned {len(parliament_changes)}")
+            raise HansardWriteCheckError(
+                f"Updated {updated_count} speaker rows, planned {len(parliament_changes)}"
+            )
         session.expire_all()
-        if get_parliament_changes(CRUDSpeaker(session).get_all(), colonial_members, heads_of_state):
-            raise HansardWriteCheckError("Parliament changes not applied after the update")
+        if get_parliament_changes(
+            CRUDSpeaker(session).get_all(), colonial_members, heads_of_state
+        ):
+            raise HansardWriteCheckError(
+                "Parliament changes not applied after the update"
+            )
         session.commit()
         logger.info(f"Committed: {len(parliament_changes)} Parliament changes")
         vacuum_analyze_written_tables(session, [Speaker.__tablename__])
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Move the Assembly-only speaker rows to the Parliament that data/colonial_la_members.json and data/heads_of_state.json give them")
-    parser.add_argument("--commit", action="store_true", help="write; without it the script only reports the plan")
+    parser = argparse.ArgumentParser(
+        description="Move the Assembly-only speaker rows to the Parliament that data/colonial_la_members.json and data/heads_of_state.json give them"
+    )
+    parser.add_argument(
+        "--commit",
+        action="store_true",
+        help="write; without it the script only reports the plan",
+    )
     parser.add_argument("--plan", type=Path, help="write the plan as JSON to this path")
     arguments = parser.parse_args()
     apply_speaker_parliaments(arguments.commit, arguments.plan)

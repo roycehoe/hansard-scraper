@@ -13,7 +13,11 @@ _CREATE_TABLE = "CREATE TABLE"
 
 def _get_upgrade_sql() -> str:
     output = io.StringIO()
-    command.upgrade(Config(str(_ALEMBIC_INI), output_buffer=output), f"{_DOWN_REVISION}:{_REVISION}", sql=True)
+    command.upgrade(
+        Config(str(_ALEMBIC_INI), output_buffer=output),
+        f"{_DOWN_REVISION}:{_REVISION}",
+        sql=True,
+    )
     return output.getvalue()
 
 
@@ -26,7 +30,10 @@ def test_upgrade_creates_only_refresh_run() -> None:
     assert "DROP" not in upgrade_sql
     assert "CREATE TYPE" not in upgrade_sql
     assert "CREATE INDEX ix_refresh_run_started_at" in upgrade_sql
-    assert "CONSTRAINT ck_refresh_run_status CHECK (status IN ('RUNNING', 'SUCCEEDED', 'HALTED', 'FAILED'))" in upgrade_sql
+    assert (
+        "CONSTRAINT ck_refresh_run_status CHECK (status IN ('RUNNING', 'SUCCEEDED', 'HALTED', 'FAILED'))"
+        in upgrade_sql
+    )
     for line in upgrade_sql.splitlines():
         if "UPDATE" in line:
             assert "alembic_version" in line

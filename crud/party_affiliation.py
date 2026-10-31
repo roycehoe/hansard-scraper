@@ -12,5 +12,7 @@ class CRUDPartyAffiliation:
         self.session.flush()
 
     def get_by_speaker_ids(self, speaker_ids: list[int]) -> list[PartyAffiliation]:
-        statement = select(PartyAffiliation).where(col(PartyAffiliation.speaker_id).in_(speaker_ids))
+        statement = select(PartyAffiliation).where(
+            col(PartyAffiliation.speaker_id).in_(speaker_ids)
+        )
         return list(self.session.exec(statement).all())

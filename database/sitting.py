@@ -12,7 +12,10 @@ class Sitting(SQLModel, table=True):
     @classmethod
     def strip_nul(cls, data: object) -> object:
         if isinstance(data, dict):
-            return {key: value.replace("\x00", "") if isinstance(value, str) else value for key, value in data.items()}
+            return {
+                key: value.replace("\x00", "") if isinstance(value, str) else value
+                for key, value in data.items()
+            }
         return data
 
     id: Optional[int] = Field(default=None, primary_key=True)

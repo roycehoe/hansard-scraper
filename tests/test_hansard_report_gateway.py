@@ -40,7 +40,9 @@ def no_op_pacer(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.parametrize("body", [None, []])
-def test_body_that_is_not_an_object_raises_gateway_error(body: object, monkeypatch: pytest.MonkeyPatch, no_op_pacer: None) -> None:
+def test_body_that_is_not_an_object_raises_gateway_error(
+    body: object, monkeypatch: pytest.MonkeyPatch, no_op_pacer: None
+) -> None:
     def fake_post(**kwargs: object) -> _FakeResponse:
         assert kwargs["timeout"] == REQUEST_TIMEOUT_SECONDS
         return _FakeResponse(body)

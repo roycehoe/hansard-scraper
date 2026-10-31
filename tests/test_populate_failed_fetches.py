@@ -43,20 +43,30 @@ def messages() -> Iterator[list[str]]:
 
 
 def _get_summary_line(messages: list[str], prefix: str) -> str:
-    summary_lines = [message.strip() for message in messages if message.startswith(prefix)]
+    summary_lines = [
+        message.strip() for message in messages if message.startswith(prefix)
+    ]
     assert len(summary_lines) == 1
     return summary_lines[0]
 
 
-async def _fail_topic_fetch(topic_id: str, client: httpx.AsyncClient) -> HansardTopicResponse:
+async def _fail_topic_fetch(
+    topic_id: str, client: httpx.AsyncClient
+) -> HansardTopicResponse:
     raise HansardGatewayError(f"no topic {topic_id}")
 
 
-async def _fetch_topic_with_text(topic_id: str, client: httpx.AsyncClient) -> HansardTopicResponse:
-    return HansardTopicResponse.model_validate({"resultHTML": {"content": _TOPIC_CONTENT}})
+async def _fetch_topic_with_text(
+    topic_id: str, client: httpx.AsyncClient
+) -> HansardTopicResponse:
+    return HansardTopicResponse.model_validate(
+        {"resultHTML": {"content": _TOPIC_CONTENT}}
+    )
 
 
-async def _fetch_topic_without_text(topic_id: str, client: httpx.AsyncClient) -> HansardTopicResponse:
+async def _fetch_topic_without_text(
+    topic_id: str, client: httpx.AsyncClient
+) -> HansardTopicResponse:
     return HansardTopicResponse.model_validate({"resultHTML": {}})
 
 
@@ -73,12 +83,18 @@ async def _fetch_report(
 
 
 def _fetch_search_results(from_date: date, to_date: date) -> list[HansardSearchResult]:
-    return [HansardSearchResult.model_validate(load_fixture("new_sitting.json")["search_results"][0])]
+    return [
+        HansardSearchResult.model_validate(
+            load_fixture("new_sitting.json")["search_results"][0]
+        )
+    ]
 
 
 def _seed_website_response_without_content(session: Session) -> None:
     website_response = load_fixture("stored_sitting.json")["website_responses"][0]
-    session.add(HansardWebsiteResponse.model_validate({**website_response, "content": None}))
+    session.add(
+        HansardWebsiteResponse.model_validate({**website_response, "content": None})
+    )
     session.commit()
 
 
@@ -96,7 +112,9 @@ def test_failed_topic_fetch_is_counted_in_the_contents_summary(
     scratch_session: Session, messages: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _seed_website_response_without_content(scratch_session)
-    monkeypatch.setattr(hansard_response_contents, "get_hansard_topic_response_async", _fail_topic_fetch)
+    monkeypatch.setattr(
+        hansard_response_contents, "get_hansard_topic_response_async", _fail_topic_fetch
+    )
 
     populate_hansard_response_contents(scratch_session)
 
@@ -104,14 +122,21 @@ def test_failed_topic_fetch_is_counted_in_the_contents_summary(
         _get_summary_line(messages, "Hansard response contents:")
         == "Hansard response contents: 0 ids filled, 1 ids failed, 1 fetches failed"
     )
-    assert [website_response.content for website_response in CRUDHansardWebsiteResponse(scratch_session).get_all()] == [None]
+    assert [
+        website_response.content
+        for website_response in CRUDHansardWebsiteResponse(scratch_session).get_all()
+    ] == [None]
 
 
 def test_working_topic_fetch_counts_no_failed_fetch_in_the_contents_summary(
     scratch_session: Session, messages: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _seed_website_response_without_content(scratch_session)
-    monkeypatch.setattr(hansard_response_contents, "get_hansard_topic_response_async", _fetch_topic_with_text)
+    monkeypatch.setattr(
+        hansard_response_contents,
+        "get_hansard_topic_response_async",
+        _fetch_topic_with_text,
+    )
 
     populate_hansard_response_contents(scratch_session)
 
@@ -125,7 +150,11 @@ def test_topic_without_text_is_not_counted_as_a_failed_fetch_in_the_contents_sum
     scratch_session: Session, messages: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _seed_website_response_without_content(scratch_session)
-    monkeypatch.setattr(hansard_response_contents, "get_hansard_topic_response_async", _fetch_topic_without_text)
+    monkeypatch.setattr(
+        hansard_response_contents,
+        "get_hansard_topic_response_async",
+        _fetch_topic_without_text,
+    )
 
     populate_hansard_response_contents(scratch_session)
 
@@ -139,7 +168,9 @@ def test_failed_report_fetch_is_counted_in_the_sitting_details_summary(
     scratch_session: Session, messages: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     sitting = _seed_sitting_without_details(scratch_session)
-    monkeypatch.setattr(sitting_details, "get_hansard_report_response_async", _fail_report_fetch)
+    monkeypatch.setattr(
+        sitting_details, "get_hansard_report_response_async", _fail_report_fetch
+    )
 
     populate_sitting_details(scratch_session)
 
@@ -159,7 +190,9 @@ def test_working_report_fetch_counts_no_failed_fetch_in_the_sitting_details_summ
     scratch_session: Session, messages: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _seed_sitting_without_details(scratch_session)
-    monkeypatch.setattr(sitting_details, "get_hansard_report_response_async", _fetch_report)
+    monkeypatch.setattr(
+        sitting_details, "get_hansard_report_response_async", _fetch_report
+    )
 
     populate_sitting_details(scratch_session)
 
@@ -173,7 +206,9 @@ def test_failed_report_fetch_is_counted_in_the_sitting_dates_summary(
     scratch_session: Session, messages: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _seed_website_response_without_content(scratch_session)
-    monkeypatch.setattr(hansard_sitting_dates, "get_hansard_report_response_async", _fail_report_fetch)
+    monkeypatch.setattr(
+        hansard_sitting_dates, "get_hansard_report_response_async", _fail_report_fetch
+    )
 
     populate_hansard_sitting_dates(scratch_session)
 
@@ -181,14 +216,21 @@ def test_failed_report_fetch_is_counted_in_the_sitting_dates_summary(
         _get_summary_line(messages, "Hansard sitting dates:")
         == "Hansard sitting dates: 0 stored, 1 fetches failed"
     )
-    assert CRUDHansardSittingDateResponse(scratch_session).get_sitting_dates_by_sitting_date_not_null() == set()
+    assert (
+        CRUDHansardSittingDateResponse(
+            scratch_session
+        ).get_sitting_dates_by_sitting_date_not_null()
+        == set()
+    )
 
 
 def test_working_report_fetch_counts_no_failed_fetch_in_the_sitting_dates_summary(
     scratch_session: Session, messages: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _seed_website_response_without_content(scratch_session)
-    monkeypatch.setattr(hansard_sitting_dates, "get_hansard_report_response_async", _fetch_report)
+    monkeypatch.setattr(
+        hansard_sitting_dates, "get_hansard_report_response_async", _fetch_report
+    )
 
     populate_hansard_sitting_dates(scratch_session)
 
@@ -196,40 +238,72 @@ def test_working_report_fetch_counts_no_failed_fetch_in_the_sitting_dates_summar
         _get_summary_line(messages, "Hansard sitting dates:")
         == "Hansard sitting dates: 1 stored, 0 fetches failed"
     )
-    assert CRUDHansardSittingDateResponse(scratch_session).get_sitting_dates_by_sitting_date_not_null() == {_SITTING_DATE}
+    assert CRUDHansardSittingDateResponse(
+        scratch_session
+    ).get_sitting_dates_by_sitting_date_not_null() == {_SITTING_DATE}
 
 
 def test_failed_topic_fetch_is_counted_in_the_responses_summary(
     scratch_session: Session, messages: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(hansard_responses, "get_all_hansard_search_results", _fetch_search_results)
-    monkeypatch.setattr(hansard_responses, "get_hansard_topic_response_async", _fail_topic_fetch)
+    monkeypatch.setattr(
+        hansard_responses, "get_all_hansard_search_results", _fetch_search_results
+    )
+    monkeypatch.setattr(
+        hansard_responses, "get_hansard_topic_response_async", _fail_topic_fetch
+    )
 
     populate_hansard_responses(scratch_session)
 
-    assert _get_summary_line(messages, "Hansard responses:") == "Hansard responses: 1 stored, 1 fetches failed"
-    assert [website_response.content for website_response in CRUDHansardWebsiteResponse(scratch_session).get_all()] == [None]
+    assert (
+        _get_summary_line(messages, "Hansard responses:")
+        == "Hansard responses: 1 stored, 1 fetches failed"
+    )
+    assert [
+        website_response.content
+        for website_response in CRUDHansardWebsiteResponse(scratch_session).get_all()
+    ] == [None]
 
 
 def test_working_topic_fetch_counts_no_failed_fetch_in_the_responses_summary(
     scratch_session: Session, messages: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(hansard_responses, "get_all_hansard_search_results", _fetch_search_results)
-    monkeypatch.setattr(hansard_responses, "get_hansard_topic_response_async", _fetch_topic_with_text)
+    monkeypatch.setattr(
+        hansard_responses, "get_all_hansard_search_results", _fetch_search_results
+    )
+    monkeypatch.setattr(
+        hansard_responses, "get_hansard_topic_response_async", _fetch_topic_with_text
+    )
 
     populate_hansard_responses(scratch_session)
 
-    assert _get_summary_line(messages, "Hansard responses:") == "Hansard responses: 1 stored, 0 fetches failed"
-    assert [website_response.content for website_response in CRUDHansardWebsiteResponse(scratch_session).get_all()] == [_TOPIC_CONTENT]
+    assert (
+        _get_summary_line(messages, "Hansard responses:")
+        == "Hansard responses: 1 stored, 0 fetches failed"
+    )
+    assert [
+        website_response.content
+        for website_response in CRUDHansardWebsiteResponse(scratch_session).get_all()
+    ] == [_TOPIC_CONTENT]
 
 
 def test_topic_without_text_is_not_counted_as_a_failed_fetch_in_the_responses_summary(
     scratch_session: Session, messages: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(hansard_responses, "get_all_hansard_search_results", _fetch_search_results)
-    monkeypatch.setattr(hansard_responses, "get_hansard_topic_response_async", _fetch_topic_without_text)
+    monkeypatch.setattr(
+        hansard_responses, "get_all_hansard_search_results", _fetch_search_results
+    )
+    monkeypatch.setattr(
+        hansard_responses, "get_hansard_topic_response_async", _fetch_topic_without_text
+    )
 
     populate_hansard_responses(scratch_session)
 
-    assert _get_summary_line(messages, "Hansard responses:") == "Hansard responses: 1 stored, 0 fetches failed"
-    assert [website_response.content for website_response in CRUDHansardWebsiteResponse(scratch_session).get_all()] == [None]
+    assert (
+        _get_summary_line(messages, "Hansard responses:")
+        == "Hansard responses: 1 stored, 0 fetches failed"
+    )
+    assert [
+        website_response.content
+        for website_response in CRUDHansardWebsiteResponse(scratch_session).get_all()
+    ] == [None]

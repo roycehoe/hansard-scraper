@@ -20,29 +20,56 @@ _SEARCH_SITTING_NUMBER = 4
 
 def test_report_without_a_search_sitting_number_takes_the_header_one() -> None:
     hansard_website_response = HansardWebsiteResponse(
-        volumeNo="83", parlNo="11", sittingNo=None, sittingDate="22-10-2007", sno="1", title="PENAL CODE (AMENDMENT) BILL",
-        reportId="00075611-WA.00072393-ZZ_1##", reportType="bill", htmlFileName="012_20071022_S0003_T0002",
-        content=f"<html><body>{_HEADER_TABLE}<p>Text</p></body></html>", reportVersion="sprs2",
+        volumeNo="83",
+        parlNo="11",
+        sittingNo=None,
+        sittingDate="22-10-2007",
+        sno="1",
+        title="PENAL CODE (AMENDMENT) BILL",
+        reportId="00075611-WA.00072393-ZZ_1##",
+        reportType="bill",
+        htmlFileName="012_20071022_S0003_T0002",
+        content=f"<html><body>{_HEADER_TABLE}<p>Text</p></body></html>",
+        reportVersion="sprs2",
     )
 
-    assert build_report(hansard_website_response).sitting_number == _HEADER_SITTING_NUMBER
+    assert (
+        build_report(hansard_website_response).sitting_number == _HEADER_SITTING_NUMBER
+    )
 
 
 def test_report_keeps_the_search_sitting_number() -> None:
     hansard_website_response = HansardWebsiteResponse(
-        volumeNo="83", parlNo="11", sittingNo=str(_SEARCH_SITTING_NUMBER), sittingDate="22-10-2007", sno="1", title="PENAL CODE (AMENDMENT) BILL",
-        reportId="00075611-WA.00072393-ZZ_1##", reportType="bill", htmlFileName="012_20071022_S0003_T0002",
-        content=f"<html><body>{_HEADER_TABLE}<p>Text</p></body></html>", reportVersion="sprs2",
+        volumeNo="83",
+        parlNo="11",
+        sittingNo=str(_SEARCH_SITTING_NUMBER),
+        sittingDate="22-10-2007",
+        sno="1",
+        title="PENAL CODE (AMENDMENT) BILL",
+        reportId="00075611-WA.00072393-ZZ_1##",
+        reportType="bill",
+        htmlFileName="012_20071022_S0003_T0002",
+        content=f"<html><body>{_HEADER_TABLE}<p>Text</p></body></html>",
+        reportVersion="sprs2",
     )
 
-    assert build_report(hansard_website_response).sitting_number == _SEARCH_SITTING_NUMBER
+    assert (
+        build_report(hansard_website_response).sitting_number == _SEARCH_SITTING_NUMBER
+    )
 
 
-def test_older_system_sitting_takes_session_and_sitting_numbers_from_its_header() -> None:
+def test_older_system_sitting_takes_session_and_sitting_numbers_from_its_header() -> (
+    None
+):
     hansard_sitting_date_response = HansardSittingDateResponse(
-        volume_no=83, sitting_date="22-10-2007", html_full_content=f"<html><body>{_HEADER_TABLE}<p>PRESENT:</p></body></html>",
+        volume_no=83,
+        sitting_date="22-10-2007",
+        html_full_content=f"<html><body>{_HEADER_TABLE}<p>PRESENT:</p></body></html>",
     )
 
     sitting = build_sitting(hansard_sitting_date_response)
 
-    assert (sitting.session_no, sitting.sitting_no) == (_HEADER_SESSION_NUMBER, _HEADER_SITTING_NUMBER)
+    assert (sitting.session_no, sitting.sitting_no) == (
+        _HEADER_SESSION_NUMBER,
+        _HEADER_SITTING_NUMBER,
+    )

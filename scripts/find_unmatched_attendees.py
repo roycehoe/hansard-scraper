@@ -76,7 +76,10 @@ def _is_resolved(name: str, parliament_number: int, lookups: SpeakerLookups) -> 
         return True
     if parliament_number == COLONIAL_PARLIAMENT_NUMBER:
         for fallback_parliament_number in COLONIAL_PARLIAMENT_FALLBACKS:
-            if resolve_canonical_name(name, fallback_parliament_number, lookups) is not None:
+            if (
+                resolve_canonical_name(name, fallback_parliament_number, lookups)
+                is not None
+            ):
                 return True
     return False
 
@@ -89,7 +92,9 @@ def find_unmatched(is_verbose: bool = False) -> dict[UnmatchedCategory, Counter[
     lookups = build_speaker_lookups(speakers)
     constituency_lookups = build_constituency_lookups(get_constituency_names())
 
-    category_to_counter: dict[UnmatchedCategory, Counter[str]] = {category: Counter() for category in UnmatchedCategory}
+    category_to_counter: dict[UnmatchedCategory, Counter[str]] = {
+        category: Counter() for category in UnmatchedCategory
+    }
     total = len(sittings)
 
     for sitting_number, sitting in enumerate(sittings, 1):
@@ -98,7 +103,9 @@ def find_unmatched(is_verbose: bool = False) -> dict[UnmatchedCategory, Counter[
         parliament_number = infer_parliament(sitting.parlement_no, sitting.volume_no)
         if parliament_number is None:
             continue
-        for attendance_record in build_sitting_attendances_from_markdown(sitting, lookups, constituency_lookups):
+        for attendance_record in build_sitting_attendances_from_markdown(
+            sitting, lookups, constituency_lookups
+        ):
             if not attendance_record.speaker_name:
                 continue
             if _is_resolved(attendance_record.speaker_name, parliament_number, lookups):
@@ -112,7 +119,8 @@ def find_unmatched(is_verbose: bool = False) -> dict[UnmatchedCategory, Counter[
 def find_unmatched_attendees() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--json", metavar="FILE",
+        "--json",
+        metavar="FILE",
         help="Write candidate JSON template to FILE (ready to merge into colonial_la_members.json)",
     )
     parser.add_argument("--verbose", action="store_true")
@@ -122,11 +130,15 @@ def find_unmatched_attendees() -> None:
     category_to_counter = find_unmatched(is_verbose=arguments.verbose)
 
     candidates = category_to_counter[UnmatchedCategory.CANDIDATE]
-    total_unmatched = sum(sum(counter.values()) for counter in category_to_counter.values())
+    total_unmatched = sum(
+        sum(counter.values()) for counter in category_to_counter.values()
+    )
     total_candidates = sum(candidates.values())
 
     logger.info(f"\nUnmatched attendance rows: {total_unmatched}")
-    logger.info(f"  Candidates (likely real people, no Speaker entry): {total_candidates}")
+    logger.info(
+        f"  Candidates (likely real people, no Speaker entry): {total_candidates}"
+    )
     for category, counter in category_to_counter.items():
         if category == UnmatchedCategory.CANDIDATE:
             continue
@@ -141,12 +153,23 @@ def find_unmatched_attendees() -> None:
             logger.info(f"  {count:>6}  {name}")
 
     if arguments.json:
-        template = [{"name": name, "party": _TEMPLATE_PARTY, "parliament_number": COLONIAL_PARLIAMENT_NUMBER, "is_legislative_assembly": True, "comments": None} for name, _ in candidates.most_common()]
+        template = [
+            {
+                "name": name,
+                "party": _TEMPLATE_PARTY,
+                "parliament_number": COLONIAL_PARLIAMENT_NUMBER,
+                "is_legislative_assembly": True,
+                "comments": None,
+            }
+            for name, _ in candidates.most_common()
+        ]
         path = arguments.json
         with open(path, "w") as file:
             json.dump(template, file, indent=2, ensure_ascii=False)
         logger.info(f"\nWrote {len(template)}-entry template to {path}")
-        logger.info("Edit party/parliament_number/comments, then append to data/colonial_la_members.json")
+        logger.info(
+            "Edit party/parliament_number/comments, then append to data/colonial_la_members.json"
+        )
 
 
 if __name__ == "__main__":

@@ -25,13 +25,21 @@ def get_parliament_member_list_response() -> ParliamentMemberListResponse:
             )
         )
         response.raise_for_status()
-        flight_data = "".join(json.loads(chunk) for chunk in _FLIGHT_CHUNK_RE.findall(response.text))
-        member_list, _ = json.JSONDecoder().raw_decode(flight_data, flight_data.index(_MEMBER_LIST_MARKER))
-        parliament_member_list_response = ParliamentMemberListResponse.model_validate(member_list)
+        flight_data = "".join(
+            json.loads(chunk) for chunk in _FLIGHT_CHUNK_RE.findall(response.text)
+        )
+        member_list, _ = json.JSONDecoder().raw_decode(
+            flight_data, flight_data.index(_MEMBER_LIST_MARKER)
+        )
+        parliament_member_list_response = ParliamentMemberListResponse.model_validate(
+            member_list
+        )
     except requests.exceptions.RequestException as error:
         raise HansardGatewayError("Member list request failed") from error
     except ValueError as error:
-        raise HansardGatewayError("Member list page holds no readable member data") from error
+        raise HansardGatewayError(
+            "Member list page holds no readable member data"
+        ) from error
     member_count = len(parliament_member_list_response.mps.data)
     if member_count != parliament_member_list_response.mps.meta.filter_count:
         raise HansardGatewayError(

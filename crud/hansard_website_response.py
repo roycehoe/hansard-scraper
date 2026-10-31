@@ -7,7 +7,9 @@ class CRUDHansardWebsiteResponse:
     def __init__(self, session: Session):
         self.session = session
 
-    def create_many(self, hansard_website_responses: list[HansardWebsiteResponse]) -> None:
+    def create_many(
+        self, hansard_website_responses: list[HansardWebsiteResponse]
+    ) -> None:
         self.session.add_all(hansard_website_responses)
         self.session.commit()
 
@@ -20,14 +22,20 @@ class CRUDHansardWebsiteResponse:
         return list(self.session.exec(statement).all())
 
     def get_by_report_type(self, report_type: str) -> list[HansardWebsiteResponse]:
-        statement = select(HansardWebsiteResponse).where(HansardWebsiteResponse.report_type == report_type)
+        statement = select(HansardWebsiteResponse).where(
+            HansardWebsiteResponse.report_type == report_type
+        )
         return list(self.session.exec(statement).all())
 
     def get_by_report_ids(self, report_ids: set[str]) -> list[HansardWebsiteResponse]:
-        statement = select(HansardWebsiteResponse).where(col(HansardWebsiteResponse.report_id).in_(report_ids))
+        statement = select(HansardWebsiteResponse).where(
+            col(HansardWebsiteResponse.report_id).in_(report_ids)
+        )
         return list(self.session.exec(statement).all())
 
-    def get_by_content_null_and_report_version(self, report_version: str) -> list[HansardWebsiteResponse]:
+    def get_by_content_null_and_report_version(
+        self, report_version: str
+    ) -> list[HansardWebsiteResponse]:
         statement = (
             select(HansardWebsiteResponse)
             .where(HansardWebsiteResponse.content.is_(None))

@@ -30,7 +30,9 @@ class CRUDRefreshRun:
         )
         return self.session.exec(statement).first()
 
-    def get_by_status_and_started_at_before(self, status: RefreshRunStatus, started_before: datetime) -> list[RefreshRun]:
+    def get_by_status_and_started_at_before(
+        self, status: RefreshRunStatus, started_before: datetime
+    ) -> list[RefreshRun]:
         statement = (
             select(RefreshRun)
             .where(RefreshRun.status == status)
@@ -38,7 +40,9 @@ class CRUDRefreshRun:
         )
         return list(self.session.exec(statement).all())
 
-    def get_by_status_and_started_at_from(self, status: RefreshRunStatus, started_from: datetime) -> list[RefreshRun]:
+    def get_by_status_and_started_at_from(
+        self, status: RefreshRunStatus, started_from: datetime
+    ) -> list[RefreshRun]:
         statement = (
             select(RefreshRun)
             .where(RefreshRun.status == status)

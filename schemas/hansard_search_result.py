@@ -45,7 +45,9 @@ class HansardSearchResult(BaseModel):
     atbp_list: Optional[list] = None
     ptba_list: Optional[list] = None
     attendance_list: Optional[list] = None
-    online_pdf_file_name: Optional[object] = Field(default=None, alias="onlinePDFFileName")
+    online_pdf_file_name: Optional[object] = Field(
+        default=None, alias="onlinePDFFileName"
+    )
     pdf_nodes: Optional[object] = None
     clarification_text: Optional[object] = None
     clarification_title: Optional[object] = None

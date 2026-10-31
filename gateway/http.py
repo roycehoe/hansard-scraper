@@ -43,7 +43,10 @@ class CrawlPacer:
     def get_wait_seconds(self) -> float:
         if self.last_request_ended_at is None:
             return 0.0
-        return max(0.0, settings.crawl_gap_seconds - (self.clock() - self.last_request_ended_at))
+        return max(
+            0.0,
+            settings.crawl_gap_seconds - (self.clock() - self.last_request_ended_at),
+        )
 
     # NOTE: each asyncio.run starts a new loop, and an asyncio.Lock cannot be shared across loops
     def get_async_lock(self) -> asyncio.Lock:
@@ -85,14 +88,19 @@ def _is_transient_failure(response: Union[httpx.Response, requests.Response]) ->
         return True
     if response.status_code >= _HTTP_SERVER_ERROR_FLOOR:
         return NO_RESULTS_TEXT not in response.text
-    return response.status_code == _HTTP_BAD_REQUEST and _TRANSIENT_BAD_REQUEST_TEXT in response.text
+    return (
+        response.status_code == _HTTP_BAD_REQUEST
+        and _TRANSIENT_BAD_REQUEST_TEXT in response.text
+    )
 
 
 def _get_backoff_seconds(attempt: int) -> float:
-    return _BASE_DELAY * (_BACKOFF_BASE ** attempt) + random.uniform(0, 1)
+    return _BASE_DELAY * (_BACKOFF_BASE**attempt) + random.uniform(0, 1)
 
 
-async def async_post_with_retry(client: httpx.AsyncClient, url: str, json: Optional[dict] = None) -> httpx.Response:
+async def async_post_with_retry(
+    client: httpx.AsyncClient, url: str, json: Optional[dict] = None
+) -> httpx.Response:
     for attempt in range(MAX_RETRIES + 1):
         try:
             async with paced_request_async():

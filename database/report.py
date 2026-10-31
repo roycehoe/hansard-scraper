@@ -12,7 +12,9 @@ from sqlmodel import Field, Relationship, SQLModel
 
 EmptyStrNoneInt = Annotated[
     Optional[int],
-    BeforeValidator(lambda value: None if isinstance(value, str) and value.strip() == "" else value),
+    BeforeValidator(
+        lambda value: None if isinstance(value, str) and value.strip() == "" else value
+    ),
 ]
 
 
@@ -20,11 +22,28 @@ class Report(SQLModel, table=True):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
     __table_args__ = (
         # NOTE: a second index on the primary key, so the person page reads parliament_number without the heap
-        Index("ix_report_id_parliament_number", "id", postgresql_include=["parliament_number"]),
-        Index("ix_report_parliament_number_sitting_date", "parliament_number", "sitting_date", postgresql_include=["volume_number", "sitting_number", "id"]),
+        Index(
+            "ix_report_id_parliament_number",
+            "id",
+            postgresql_include=["parliament_number"],
+        ),
+        Index(
+            "ix_report_parliament_number_sitting_date",
+            "parliament_number",
+            "sitting_date",
+            postgresql_include=["volume_number", "sitting_number", "id"],
+        ),
         Index("ix_report_report_type_id", "report_type", "id"),
-        Index("ix_report_sitting_date_parliament_number", "sitting_date", "parliament_number"),
-        Index("ix_report_title_fts", text("to_tsvector('english', title)"), postgresql_using="gin"),
+        Index(
+            "ix_report_sitting_date_parliament_number",
+            "sitting_date",
+            "parliament_number",
+        ),
+        Index(
+            "ix_report_title_fts",
+            text("to_tsvector('english', title)"),
+            postgresql_using="gin",
+        ),
         Index("ix_report_title_tsv", "title_tsv", postgresql_using="gin"),
     )
 
@@ -41,7 +60,10 @@ class Report(SQLModel, table=True):
     subtitle: Optional[str] = None
     title_tsv: Optional[str] = Field(
         default=None,
-        sa_column=Column(TSVECTOR, Computed("to_tsvector('english'::regconfig, title)", persisted=True)),
+        sa_column=Column(
+            TSVECTOR,
+            Computed("to_tsvector('english'::regconfig, title)", persisted=True),
+        ),
     )
     report_id: str = Field(alias="reportId", unique=True)
     report_type: str = Field(alias="reportType")

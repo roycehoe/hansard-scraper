@@ -37,7 +37,9 @@ def _log_plan(plan: ColumnNumberPlan) -> None:
         total_counts.reports_with_range += counts.reports_with_range
         total_counts.rows += counts.rows
         total_counts.rows_with_column += counts.rows_with_column
-        total_counts.missing_column_reason_counts.update(counts.missing_column_reason_counts)
+        total_counts.missing_column_reason_counts.update(
+            counts.missing_column_reason_counts
+        )
         total_counts.column_note_counts.update(counts.column_note_counts)
     _log_counts("All", total_counts)
     logger.info(
@@ -50,7 +52,14 @@ def apply_column_numbers(report_ids: list[int], is_commit: bool) -> None:
     if is_commit:
         validate_can_write(settings.database_url)
     with Session(engine) as session:
-        plan = get_column_number_plan(session, report_ids or [report_header_row.id for report_header_row in CRUDReport(session).get_header_rows()])
+        plan = get_column_number_plan(
+            session,
+            report_ids
+            or [
+                report_header_row.id
+                for report_header_row in CRUDReport(session).get_header_rows()
+            ],
+        )
         _log_plan(plan)
         if not is_commit:
             logger.info("Dry run: nothing written")
@@ -59,12 +68,27 @@ def apply_column_numbers(report_ids: list[int], is_commit: bool) -> None:
         write_column_number_plan(session, plan)
         session.commit()
         logger.info("Committed")
-        vacuum_analyze_written_tables(session, [Report.__tablename__, Speech.__tablename__])
+        vacuum_analyze_written_tables(
+            session, [Report.__tablename__, Speech.__tablename__]
+        )
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Set each report's column range and each speech row's start column and column note from the column markers in the raw HTML")
-    parser.add_argument("--report-id", type=int, nargs="+", action="extend", default=[], help="only these reports; without it every report")
-    parser.add_argument("--commit", action="store_true", help="write, and check the stored counts by Parliament against the plan; without it the script only reports the plan")
+    parser = argparse.ArgumentParser(
+        description="Set each report's column range and each speech row's start column and column note from the column markers in the raw HTML"
+    )
+    parser.add_argument(
+        "--report-id",
+        type=int,
+        nargs="+",
+        action="extend",
+        default=[],
+        help="only these reports; without it every report",
+    )
+    parser.add_argument(
+        "--commit",
+        action="store_true",
+        help="write, and check the stored counts by Parliament against the plan; without it the script only reports the plan",
+    )
     arguments = parser.parse_args()
     apply_column_numbers(arguments.report_id, arguments.commit)

@@ -23,9 +23,16 @@ def load_party_affiliations(is_commit: bool) -> None:
         validate_can_write(settings.database_url)
     memberships = get_party_affiliations()
     with Session(engine) as session:
-        party_affiliations = build_party_affiliations(memberships, CRUDSpeaker(session).get_all())
-        speaker_ids = [party_affiliation.speaker_id for party_affiliation in party_affiliations]
-        unstored_party_affiliations = get_unstored_party_affiliations(party_affiliations, CRUDPartyAffiliation(session).get_by_speaker_ids(speaker_ids))
+        party_affiliations = build_party_affiliations(
+            memberships, CRUDSpeaker(session).get_all()
+        )
+        speaker_ids = [
+            party_affiliation.speaker_id for party_affiliation in party_affiliations
+        ]
+        unstored_party_affiliations = get_unstored_party_affiliations(
+            party_affiliations,
+            CRUDPartyAffiliation(session).get_by_speaker_ids(speaker_ids),
+        )
         for party_affiliation in unstored_party_affiliations:
             logger.info(
                 f"Insert speaker {party_affiliation.speaker_id}: {party_affiliation.party!r} "
@@ -42,15 +49,26 @@ def load_party_affiliations(is_commit: bool) -> None:
 
         CRUDPartyAffiliation(session).add_many(unstored_party_affiliations)
         session.expire_all()
-        if get_unstored_party_affiliations(party_affiliations, CRUDPartyAffiliation(session).get_by_speaker_ids(speaker_ids)):
-            raise HansardWriteCheckError("Party affiliations are not stored after the insert")
+        if get_unstored_party_affiliations(
+            party_affiliations,
+            CRUDPartyAffiliation(session).get_by_speaker_ids(speaker_ids),
+        ):
+            raise HansardWriteCheckError(
+                "Party affiliations are not stored after the insert"
+            )
         session.commit()
         logger.info(f"Committed: {len(unstored_party_affiliations)} rows inserted")
         vacuum_analyze_written_tables(session, [PartyAffiliation.__tablename__])
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Store the dated party history of data/party_affiliations.json, skipping the rows already stored")
-    parser.add_argument("--commit", action="store_true", help="write; without it the script only reports the plan")
+    parser = argparse.ArgumentParser(
+        description="Store the dated party history of data/party_affiliations.json, skipping the rows already stored"
+    )
+    parser.add_argument(
+        "--commit",
+        action="store_true",
+        help="write; without it the script only reports the plan",
+    )
     arguments = parser.parse_args()
     load_party_affiliations(arguments.commit)

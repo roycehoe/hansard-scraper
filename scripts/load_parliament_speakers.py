@@ -20,27 +20,46 @@ from utils.data_files import get_speaker_overrides
 from utils.write_target import validate_can_write
 
 
-def store_new_speakers(session: Session, parliament_number: int, is_commit: bool) -> None:
-    stored_keys = {(speaker.name, speaker.parliament_number) for speaker in CRUDSpeaker(session).get_all()}
+def store_new_speakers(
+    session: Session, parliament_number: int, is_commit: bool
+) -> None:
+    stored_keys = {
+        (speaker.name, speaker.parliament_number)
+        for speaker in CRUDSpeaker(session).get_all()
+    }
     speaker_results = [
         speaker_result
-        for speaker_result in build_speaker_results(get_parliament_member_list_response())
+        for speaker_result in build_speaker_results(
+            get_parliament_member_list_response()
+        )
         if speaker_result.parliament_number == parliament_number
     ]
     if not speaker_results:
-        raise HansardMemberListError(f"No member list for parliament {parliament_number}")
+        raise HansardMemberListError(
+            f"No member list for parliament {parliament_number}"
+        )
     speaker_overrides = get_speaker_overrides()
-    name_parliament_to_is_legislative_assembly = get_name_parliament_to_is_legislative_assembly(speaker_overrides)
+    name_parliament_to_is_legislative_assembly = (
+        get_name_parliament_to_is_legislative_assembly(speaker_overrides)
+    )
     name_parliament_to_party = get_name_parliament_to_party(speaker_overrides)
     new_speakers = [
-        build_speaker(speaker_result, name_parliament_to_is_legislative_assembly, name_parliament_to_party)
+        build_speaker(
+            speaker_result,
+            name_parliament_to_is_legislative_assembly,
+            name_parliament_to_party,
+        )
         for speaker_result in speaker_results
         if (speaker_result.name, speaker_result.parliament_number) not in stored_keys
     ]
     skipped = len(speaker_results) - len(new_speakers)
     for speaker in new_speakers:
-        logger.info(f"New member: {speaker.name} ({speaker.party}), Parliament {speaker.parliament_number}")
-    logger.info(f"{len(new_speakers)} new members for Parliament {parliament_number}, {skipped} already stored")
+        logger.info(
+            f"New member: {speaker.name} ({speaker.party}), Parliament {speaker.parliament_number}"
+        )
+    logger.info(
+        f"{len(new_speakers)} new members for Parliament {parliament_number}, {skipped} already stored"
+    )
     if not is_commit:
         logger.info("Dry run: nothing written")
         return
@@ -60,8 +79,20 @@ def load_parliament_speakers(parliament_number: int, is_commit: bool) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Store the members of one Parliament that the speaker table lacks, from parliament.gov.sg")
-    parser.add_argument("--parliament", type=int, required=True, help="the Parliament number whose member list to load")
-    parser.add_argument("--commit", action="store_true", dest="is_commit", help="write; without it the script only reports the plan")
+    parser = argparse.ArgumentParser(
+        description="Store the members of one Parliament that the speaker table lacks, from parliament.gov.sg"
+    )
+    parser.add_argument(
+        "--parliament",
+        type=int,
+        required=True,
+        help="the Parliament number whose member list to load",
+    )
+    parser.add_argument(
+        "--commit",
+        action="store_true",
+        dest="is_commit",
+        help="write; without it the script only reports the plan",
+    )
     arguments = parser.parse_args()
     load_parliament_speakers(arguments.parliament, arguments.is_commit)

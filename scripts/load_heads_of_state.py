@@ -16,7 +16,10 @@ _NON_PARTISAN_PARTY = "Non-partisan"
 
 
 def store_heads_of_state(session: Session, is_commit: bool) -> None:
-    name_and_parliament_number_to_speaker = {(speaker.name, speaker.parliament_number): speaker for speaker in CRUDSpeaker(session).get_all()}
+    name_and_parliament_number_to_speaker = {
+        (speaker.name, speaker.parliament_number): speaker
+        for speaker in CRUDSpeaker(session).get_all()
+    }
     new_speakers = []
     speaker_id_to_is_member = {}
     for head_of_state in get_heads_of_state():
@@ -37,7 +40,9 @@ def store_heads_of_state(session: Session, is_commit: bool) -> None:
         if speaker.is_member:
             speaker_id_to_is_member[speaker.id] = False
 
-    logger.info(f"Plan: insert {len(new_speakers)} head-of-state speakers, mark {len(speaker_id_to_is_member)} existing rows as non-members")
+    logger.info(
+        f"Plan: insert {len(new_speakers)} head-of-state speakers, mark {len(speaker_id_to_is_member)} existing rows as non-members"
+    )
     if not is_commit:
         logger.info("Dry run: nothing written")
         return
@@ -45,9 +50,13 @@ def store_heads_of_state(session: Session, is_commit: bool) -> None:
     CRUDSpeaker(session).add_many(new_speakers)
     updated_count = CRUDSpeaker(session).set_is_member_bulk(speaker_id_to_is_member)
     if updated_count != len(speaker_id_to_is_member):
-        raise HansardWriteCheckError(f"Updated {updated_count} speaker rows, planned {len(speaker_id_to_is_member)}")
+        raise HansardWriteCheckError(
+            f"Updated {updated_count} speaker rows, planned {len(speaker_id_to_is_member)}"
+        )
     session.commit()
-    logger.info(f"Committed: {len(new_speakers)} head-of-state speakers inserted, {updated_count} existing rows marked as non-members")
+    logger.info(
+        f"Committed: {len(new_speakers)} head-of-state speakers inserted, {updated_count} existing rows marked as non-members"
+    )
 
 
 def load_heads_of_state(is_commit: bool) -> None:
@@ -60,7 +69,13 @@ def load_heads_of_state(is_commit: bool) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Store the heads of state of data/heads_of_state.json as non-member speakers")
-    parser.add_argument("--commit", action="store_true", help="write; without it the script only reports the plan")
+    parser = argparse.ArgumentParser(
+        description="Store the heads of state of data/heads_of_state.json as non-member speakers"
+    )
+    parser.add_argument(
+        "--commit",
+        action="store_true",
+        help="write; without it the script only reports the plan",
+    )
     arguments = parser.parse_args()
     load_heads_of_state(arguments.commit)

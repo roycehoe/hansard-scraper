@@ -10,7 +10,9 @@ from utils.markdown_header import (
 from utils.markdown_parser import get_cleaned_sitting_markdown
 
 
-def _get_number(stored_number: Optional[int], markdown: Optional[str], field_name: str) -> Optional[int]:
+def _get_number(
+    stored_number: Optional[int], markdown: Optional[str], field_name: str
+) -> Optional[int]:
     if stored_number is not None:
         return stored_number
     if markdown is None:
@@ -23,7 +25,9 @@ def build_sitting(hansard_sitting_date_response: HansardSittingDateResponse) -> 
     # it must become None before Pydantic coerces to int.
     column_to_value = {
         key: (None if value == "" else value)
-        for key, value in hansard_sitting_date_response.model_dump(exclude={"id"}).items()
+        for key, value in hansard_sitting_date_response.model_dump(
+            exclude={"id"}
+        ).items()
     }
     markdown = (
         get_cleaned_sitting_markdown(hansard_sitting_date_response.html_full_content)
@@ -31,6 +35,10 @@ def build_sitting(hansard_sitting_date_response: HansardSittingDateResponse) -> 
         else None
     )
     column_to_value["markdown_content"] = markdown
-    column_to_value["session_no"] = _get_number(column_to_value["session_no"], markdown, SESSION_NUMBER_FIELD)
-    column_to_value["sitting_no"] = _get_number(column_to_value["sitting_no"], markdown, SITTING_NUMBER_FIELD)
+    column_to_value["session_no"] = _get_number(
+        column_to_value["session_no"], markdown, SESSION_NUMBER_FIELD
+    )
+    column_to_value["sitting_no"] = _get_number(
+        column_to_value["sitting_no"], markdown, SITTING_NUMBER_FIELD
+    )
     return Sitting.model_validate(column_to_value)

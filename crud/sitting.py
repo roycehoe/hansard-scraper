@@ -89,29 +89,45 @@ class CRUDSitting:
         statement = select(func.max(Sitting.parlement_no))
         return self.session.exec(statement).one()
 
-    def get_date_markdown_rows_by_sitting_dates_and_markdown_content_not_null(self, sitting_dates: list[str]) -> list[SittingDateMarkdownRow]:
+    def get_date_markdown_rows_by_sitting_dates_and_markdown_content_not_null(
+        self, sitting_dates: list[str]
+    ) -> list[SittingDateMarkdownRow]:
         statement = (
             select(Sitting.sitting_date, Sitting.markdown_content)
             .where(col(Sitting.sitting_date).in_(sitting_dates))
             .where(Sitting.markdown_content.is_not(None))
         )
-        return [SittingDateMarkdownRow(*row) for row in self.session.exec(statement).all()]
+        return [
+            SittingDateMarkdownRow(*row) for row in self.session.exec(statement).all()
+        ]
 
-    def get_date_sections_rows_by_sitting_dates_and_sections_not_null(self, sitting_dates: list[str]) -> list[SittingDateSectionsRow]:
+    def get_date_sections_rows_by_sitting_dates_and_sections_not_null(
+        self, sitting_dates: list[str]
+    ) -> list[SittingDateSectionsRow]:
         statement = (
             select(Sitting.sitting_date, Sitting.sections)
             .where(col(Sitting.sitting_date).in_(sitting_dates))
             .where(Sitting.sections.is_not(None))
         )
-        return [SittingDateSectionsRow(*row) for row in self.session.exec(statement).all()]
+        return [
+            SittingDateSectionsRow(*row) for row in self.session.exec(statement).all()
+        ]
 
     def get_date_rows(self) -> list[SittingDateRow]:
-        statement = select(Sitting.id, Sitting.sitting_date, Sitting.parlement_no, Sitting.volume_no)
+        statement = select(
+            Sitting.id, Sitting.sitting_date, Sitting.parlement_no, Sitting.volume_no
+        )
         return [SittingDateRow(*row) for row in self.session.exec(statement).all()]
 
     def get_number_rows(self) -> Iterable[SittingNumberRow]:
         statement = (
-            select(Sitting.id, Sitting.sitting_date, Sitting.session_no, Sitting.sitting_no, Sitting.markdown_content)
+            select(
+                Sitting.id,
+                Sitting.sitting_date,
+                Sitting.session_no,
+                Sitting.sitting_no,
+                Sitting.markdown_content,
+            )
             .order_by(Sitting.id)
             .execution_options(yield_per=_STREAM_BATCH)
         )
@@ -125,11 +141,19 @@ class CRUDSitting:
         )
         return (SittingTextRow(*row) for row in self.session.exec(statement))
 
-    def get_markdown_rows_by_markdown_content_regex(self, pattern: str) -> list[SittingMarkdownRow]:
-        statement = select(Sitting.id, Sitting.markdown_content).where(col(Sitting.markdown_content).regexp_match(pattern)).order_by(Sitting.id)
+    def get_markdown_rows_by_markdown_content_regex(
+        self, pattern: str
+    ) -> list[SittingMarkdownRow]:
+        statement = (
+            select(Sitting.id, Sitting.markdown_content)
+            .where(col(Sitting.markdown_content).regexp_match(pattern))
+            .order_by(Sitting.id)
+        )
         return [SittingMarkdownRow(*row) for row in self.session.exec(statement).all()]
 
-    def set_markdown_contents_bulk_by_markdown_content(self, text_changes: list[TextChange]) -> int:
+    def set_markdown_contents_bulk_by_markdown_content(
+        self, text_changes: list[TextChange]
+    ) -> int:
         if not text_changes:
             return 0
 
@@ -149,7 +173,9 @@ class CRUDSitting:
 
         return update_result.rowcount
 
-    def set_session_numbers_bulk(self, sitting_id_to_session_number: dict[int, int]) -> int:
+    def set_session_numbers_bulk(
+        self, sitting_id_to_session_number: dict[int, int]
+    ) -> int:
         if not sitting_id_to_session_number:
             return 0
 
@@ -159,12 +185,17 @@ class CRUDSitting:
                 "FROM UNNEST(:ids, :session_numbers) AS v(id, session_no) "
                 "WHERE sitting.id = v.id"
             ),
-            {"ids": list(sitting_id_to_session_number.keys()), "session_numbers": list(sitting_id_to_session_number.values())},
+            {
+                "ids": list(sitting_id_to_session_number.keys()),
+                "session_numbers": list(sitting_id_to_session_number.values()),
+            },
         )
 
         return update_result.rowcount
 
-    def set_sitting_numbers_bulk(self, sitting_id_to_sitting_number: dict[int, int]) -> int:
+    def set_sitting_numbers_bulk(
+        self, sitting_id_to_sitting_number: dict[int, int]
+    ) -> int:
         if not sitting_id_to_sitting_number:
             return 0
 
@@ -174,7 +205,10 @@ class CRUDSitting:
                 "FROM UNNEST(:ids, :sitting_numbers) AS v(id, sitting_no) "
                 "WHERE sitting.id = v.id"
             ),
-            {"ids": list(sitting_id_to_sitting_number.keys()), "sitting_numbers": list(sitting_id_to_sitting_number.values())},
+            {
+                "ids": list(sitting_id_to_sitting_number.keys()),
+                "sitting_numbers": list(sitting_id_to_sitting_number.values()),
+            },
         )
 
         return update_result.rowcount

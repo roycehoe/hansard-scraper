@@ -22,7 +22,9 @@ def _get_holder_on(terms: tuple[tuple[date, date, str], ...], day: date) -> list
     return [name for first, last, name in terms if first <= day <= last]
 
 
-def _build_report(report_id: str, title: str, report_type: ReportType, sitting_date: datetime) -> Report:
+def _build_report(
+    report_id: str, title: str, report_type: ReportType, sitting_date: datetime
+) -> Report:
     return Report(
         volumeNo=_PARLIAMENT_NUMBER,
         parlNo=_PARLIAMENT_NUMBER,
@@ -39,11 +41,20 @@ def _build_report(report_id: str, title: str, report_type: ReportType, sitting_d
     )
 
 
-def _seed_one_speech(scratch_session: Session, speaker: Speaker, report: Report, label: str) -> int:
+def _seed_one_speech(
+    scratch_session: Session, speaker: Speaker, report: Report, label: str
+) -> int:
     scratch_session.add_all([speaker, report])
     scratch_session.flush()
     assert report.id is not None
-    speech = Speech(ordinal=_ORDINAL, speaker=label, transcript="Text", sitting_date=report.sitting_date, report_type=report.report_type, report_id=report.id)
+    speech = Speech(
+        ordinal=_ORDINAL,
+        speaker=label,
+        transcript="Text",
+        sitting_date=report.sitting_date,
+        report_type=report.report_type,
+        report_id=report.id,
+    )
     scratch_session.add(speech)
     scratch_session.commit()
     speech_id = speech.id
@@ -66,8 +77,15 @@ def test_president_after_13_september_2023_is_tharman() -> None:
 
 
 def test_bare_prime_minister_in_parliament_15_links(scratch_session: Session) -> None:
-    speaker = Speaker(name=_PRIME_MINISTER, party="PAP", is_legislative_assembly=False, parliament_number=_PARLIAMENT_NUMBER)
-    report = _build_report("prime-minister-report", "MOTION", ReportType.MOTION, datetime(2025, 9, 22))
+    speaker = Speaker(
+        name=_PRIME_MINISTER,
+        party="PAP",
+        is_legislative_assembly=False,
+        parliament_number=_PARLIAMENT_NUMBER,
+    )
+    report = _build_report(
+        "prime-minister-report", "MOTION", ReportType.MOTION, datetime(2025, 9, 22)
+    )
 
     speech_id = _seed_one_speech(scratch_session, speaker, report, "The Prime Minister")
     report_id = report.id
@@ -76,7 +94,12 @@ def test_bare_prime_minister_in_parliament_15_links(scratch_session: Session) ->
 
     link_speakers_by_report_ids_and_sitting_ids(scratch_session, [report_id], [])
 
-    assert scratch_session.exec(select(Speech.speaker_id).where(Speech.id == speech_id)).one() == speaker_id
+    assert (
+        scratch_session.exec(
+            select(Speech.speaker_id).where(Speech.id == speech_id)
+        ).one()
+        == speaker_id
+    )
 
 
 def test_president_in_the_parliament_15_address_links(scratch_session: Session) -> None:
@@ -87,7 +110,12 @@ def test_president_in_the_parliament_15_address_links(scratch_session: Session) 
         parliament_number=_PARLIAMENT_NUMBER,
         is_member=False,
     )
-    report = _build_report("president-address-report", "PRESIDENT'S ADDRESS", ReportType.PRESIDENT_ADDRESS, datetime(2025, 9, 5))
+    report = _build_report(
+        "president-address-report",
+        "PRESIDENT'S ADDRESS",
+        ReportType.PRESIDENT_ADDRESS,
+        datetime(2025, 9, 5),
+    )
 
     speech_id = _seed_one_speech(scratch_session, speaker, report, "The President")
     report_id = report.id
@@ -96,13 +124,26 @@ def test_president_in_the_parliament_15_address_links(scratch_session: Session) 
 
     link_speakers_by_report_ids_and_sitting_ids(scratch_session, [report_id], [])
 
-    assert scratch_session.exec(select(Speech.speaker_id).where(Speech.id == speech_id)).one() == speaker_id
+    assert (
+        scratch_session.exec(
+            select(Speech.speaker_id).where(Speech.id == speech_id)
+        ).one()
+        == speaker_id
+    )
 
 
 def test_heads_of_state_file_has_the_parliament_15_president() -> None:
     heads_of_state = get_heads_of_state()
 
-    presidents = [head_of_state for head_of_state in heads_of_state if head_of_state.name == _PRESIDENT]
+    presidents = [
+        head_of_state
+        for head_of_state in heads_of_state
+        if head_of_state.name == _PRESIDENT
+    ]
 
-    assert [president.parliament_number for president in presidents].count(_PARLIAMENT_NUMBER) == 1
-    assert [president.parliament_number for president in presidents].count(_PREVIOUS_PARLIAMENT_NUMBER) == 0
+    assert [president.parliament_number for president in presidents].count(
+        _PARLIAMENT_NUMBER
+    ) == 1
+    assert [president.parliament_number for president in presidents].count(
+        _PREVIOUS_PARLIAMENT_NUMBER
+    ) == 0

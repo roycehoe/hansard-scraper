@@ -16,7 +16,9 @@ class RefreshRun(SQLModel, table=True):
     __tablename__ = "refresh_run"
     __table_args__ = (
         CheckConstraint(
-            "status IN (" + ", ".join(f"'{status.value}'" for status in RefreshRunStatus) + ")",
+            "status IN ("
+            + ", ".join(f"'{status.value}'" for status in RefreshRunStatus)
+            + ")",
             name="ck_refresh_run_status",
         ),
         Index("ix_refresh_run_started_at", "started_at"),
@@ -38,11 +40,24 @@ class RefreshRun(SQLModel, table=True):
     reports_rechecked: int = 0
     reports_changed: int = 0
     latest_sitting_date_with_text: Optional[date] = None
-    figures: Optional[dict[str, object]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
-    halt_reason: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
-    failure_reason: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
+    figures: Optional[dict[str, object]] = Field(
+        default=None, sa_column=Column(JSONB, nullable=True)
+    )
+    halt_reason: Optional[str] = Field(
+        default=None, sa_column=Column(Text, nullable=True)
+    )
+    failure_reason: Optional[str] = Field(
+        default=None, sa_column=Column(Text, nullable=True)
+    )
 
-    started_at: datetime = Field(default_factory=_get_utc_now, sa_column=Column(DateTime(timezone=True), nullable=False))
-    finished_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True), nullable=True))
+    started_at: datetime = Field(
+        default_factory=_get_utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+    finished_at: Optional[datetime] = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
 
-    status: RefreshRunStatus = Field(default=RefreshRunStatus.RUNNING, sa_column=Column(Text, nullable=False))
+    status: RefreshRunStatus = Field(
+        default=RefreshRunStatus.RUNNING, sa_column=Column(Text, nullable=False)
+    )

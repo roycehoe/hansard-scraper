@@ -67,7 +67,9 @@ def _get_record_count(loaded: object) -> int:
     return sum(len(value) for _, value in loaded if isinstance(value, list))
 
 
-def _get_object_paths(node: object, path: tuple[object, ...] = ()) -> list[tuple[object, ...]]:
+def _get_object_paths(
+    node: object, path: tuple[object, ...] = ()
+) -> list[tuple[object, ...]]:
     if isinstance(node, dict):
         paths = [path]
         for key, child in node.items():
@@ -93,10 +95,18 @@ def test_a_getter_returns_the_records_of_its_file(getter: Callable[[], object]) 
     assert _get_record_count(getter()) > 0
 
 
-def test_a_mistyped_key_raises_data_file_error_naming_the_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_a_mistyped_key_raises_data_file_error_naming_the_file(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     speaker_overrides_file = tmp_path / _SPEAKER_OVERRIDES_FILE_NAME
-    speaker_overrides_file.write_text(json.dumps({"legislative_assembly_overrides": [], "party_overrides": [], _TYPO_KEY: 1}))
-    monkeypatch.setattr(data_files_module, "_SPEAKER_OVERRIDES_FILE", speaker_overrides_file)
+    speaker_overrides_file.write_text(
+        json.dumps(
+            {"legislative_assembly_overrides": [], "party_overrides": [], _TYPO_KEY: 1}
+        )
+    )
+    monkeypatch.setattr(
+        data_files_module, "_SPEAKER_OVERRIDES_FILE", speaker_overrides_file
+    )
 
     with pytest.raises(HansardDataFileError) as error:
         get_speaker_overrides()
@@ -105,11 +115,18 @@ def test_a_mistyped_key_raises_data_file_error_naming_the_file(monkeypatch: pyte
     assert _TYPO_KEY in str(error.value)
 
 
-def test_a_list_file_error_names_the_record_index(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_a_list_file_error_names_the_record_index(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     excluded_report_ids_file = tmp_path / _EXCLUDED_REPORT_IDS_FILE_NAME
-    records = [{"report_id": "a", "kept_report_id": "b", "reason": "A reason."}, {"report_id": "c", "kept_report_id": "d"}]
+    records = [
+        {"report_id": "a", "kept_report_id": "b", "reason": "A reason."},
+        {"report_id": "c", "kept_report_id": "d"},
+    ]
     excluded_report_ids_file.write_text(json.dumps(records))
-    monkeypatch.setattr(data_files_module, "EXCLUDED_REPORT_IDS_FILE", excluded_report_ids_file)
+    monkeypatch.setattr(
+        data_files_module, "EXCLUDED_REPORT_IDS_FILE", excluded_report_ids_file
+    )
 
     with pytest.raises(HansardDataFileError) as error:
         get_excluded_report_ids()
@@ -118,24 +135,36 @@ def test_a_list_file_error_names_the_record_index(monkeypatch: pytest.MonkeyPatc
     assert "1.reason" in str(error.value)
 
 
-def test_a_missing_file_is_not_a_data_file_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(data_files_module, "_SPEAKER_OVERRIDES_FILE", tmp_path / _SPEAKER_OVERRIDES_FILE_NAME)
+def test_a_missing_file_is_not_a_data_file_error(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(
+        data_files_module,
+        "_SPEAKER_OVERRIDES_FILE",
+        tmp_path / _SPEAKER_OVERRIDES_FILE_NAME,
+    )
 
     with pytest.raises(FileNotFoundError):
         get_speaker_overrides()
 
 
-def test_a_malformed_json_file_raises_data_file_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_a_malformed_json_file_raises_data_file_error(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     speaker_overrides_file = tmp_path / _SPEAKER_OVERRIDES_FILE_NAME
     speaker_overrides_file.write_text("{not json")
-    monkeypatch.setattr(data_files_module, "_SPEAKER_OVERRIDES_FILE", speaker_overrides_file)
+    monkeypatch.setattr(
+        data_files_module, "_SPEAKER_OVERRIDES_FILE", speaker_overrides_file
+    )
 
     with pytest.raises(HansardDataFileError, match="json_invalid"):
         get_speaker_overrides()
 
 
 @pytest.mark.parametrize(("file_name", "schema"), _DATA_FILE_SCHEMAS)
-def test_every_model_of_a_data_file_refuses_an_unknown_key(file_name: str, schema: type[BaseModel]) -> None:
+def test_every_model_of_a_data_file_refuses_an_unknown_key(
+    file_name: str, schema: type[BaseModel]
+) -> None:
     file_bytes = (_DATA_DIRECTORY / file_name).read_bytes()
 
     for path in _get_object_paths(json.loads(file_bytes)):
@@ -160,14 +189,19 @@ def test_person_decision_refuses_an_unlisted_decision_value() -> None:
 
 
 def test_person_decision_refuses_a_name_decision_with_two_members() -> None:
-    members = [{"name": "Terence Ho Wee San", "parliament_number": 13}, {"name": "Terence Ho", "parliament_number": 15}]
+    members = [
+        {"name": "Terence Ho Wee San", "parliament_number": 13},
+        {"name": "Terence Ho", "parliament_number": 15},
+    ]
 
     with pytest.raises(ValidationError, match="exactly one member"):
         PersonDecision.model_validate(_get_person_decision(members=members))
 
 
 @pytest.mark.parametrize("person_name", [None, ""])
-def test_person_decision_refuses_a_name_decision_without_a_name(person_name: Optional[str]) -> None:
+def test_person_decision_refuses_a_name_decision_without_a_name(
+    person_name: Optional[str],
+) -> None:
     with pytest.raises(ValidationError, match="needs a person_name"):
         PersonDecision.model_validate(_get_person_decision(person_name=person_name))
 
@@ -175,11 +209,18 @@ def test_person_decision_refuses_a_name_decision_without_a_name(person_name: Opt
 @pytest.mark.parametrize("decision", ["distinct", "merge"])
 def test_person_decision_refuses_a_link_decision_with_one_member(decision: str) -> None:
     with pytest.raises(ValidationError, match="at least two members"):
-        PersonDecision.model_validate(_get_person_decision(decision=decision, person_name=None))
+        PersonDecision.model_validate(
+            _get_person_decision(decision=decision, person_name=None)
+        )
 
 
 def test_hand_kept_member_refuses_a_missing_comments_key() -> None:
-    member = {"name": "David Marshall", "party": "Labour Front", "is_legislative_assembly": True, "parliament_number": 0}
+    member = {
+        "name": "David Marshall",
+        "party": "Labour Front",
+        "is_legislative_assembly": True,
+        "parliament_number": 0,
+    }
 
     with pytest.raises(ValidationError):
         HandKeptMember.model_validate(member)
@@ -187,4 +228,6 @@ def test_hand_kept_member_refuses_a_missing_comments_key() -> None:
 
 def test_head_of_state_refuses_a_missing_comments_key() -> None:
     with pytest.raises(ValidationError):
-        HeadOfStateResult.model_validate({"name": "John Nicoll", "parliament_number": 0})
+        HeadOfStateResult.model_validate(
+            {"name": "John Nicoll", "parliament_number": 0}
+        )

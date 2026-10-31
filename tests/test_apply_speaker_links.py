@@ -24,7 +24,12 @@ _PROTECTED_DATABASE_URL = "postgresql://user:password@localhost:5432/hansard"
 
 
 def _build_speaker(name: str) -> Speaker:
-    return Speaker(name=name, party="WP", is_legislative_assembly=False, parliament_number=_PARLIAMENT_NUMBER)
+    return Speaker(
+        name=name,
+        party="WP",
+        is_legislative_assembly=False,
+        parliament_number=_PARLIAMENT_NUMBER,
+    )
 
 
 def _build_report() -> Report:
@@ -46,10 +51,19 @@ def _build_report() -> Report:
 
 def _build_speech(report: Report, ordinal: int, speaker_label: str) -> Speech:
     assert report.id is not None
-    return Speech(ordinal=ordinal, speaker=speaker_label, transcript="Text", sitting_date=_SITTING_DATE, report_type=report.report_type, report_id=report.id)
+    return Speech(
+        ordinal=ordinal,
+        speaker=speaker_label,
+        transcript="Text",
+        sitting_date=_SITTING_DATE,
+        report_type=report.report_type,
+        report_id=report.id,
+    )
 
 
-def _seed_speakers_and_speeches(scratch_session: Session) -> tuple[Speaker, Speaker, Speech, Speech]:
+def _seed_speakers_and_speeches(
+    scratch_session: Session,
+) -> tuple[Speaker, Speaker, Speech, Speech]:
     speaker = _build_speaker(_SPEAKER_NAME)
     other_speaker = _build_speaker(_OTHER_SPEAKER_NAME)
     report = _build_report()
@@ -68,22 +82,33 @@ def _get_stored_speaker_id(scratch_session: Session, speech: Speech) -> int | No
 
 
 def test_dry_run_writes_the_plan_and_changes_no_row(
-    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(apply_speaker_links_script, "engine", scratch_engine)
-    speaker, _, linkable_speech, unlinkable_speech = _seed_speakers_and_speeches(scratch_session)
+    speaker, _, linkable_speech, unlinkable_speech = _seed_speakers_and_speeches(
+        scratch_session
+    )
     plan_path = tmp_path / "plan.json"
 
     apply_speaker_links_script.apply_speaker_links(plan_path, is_commit=False)
 
     plan = json.loads(plan_path.read_text())
-    assert plan == {"speech_id_to_speaker_id": {str(linkable_speech.id): speaker.id}, "attendance_id_to_speaker_id": {}}
+    assert plan == {
+        "speech_id_to_speaker_id": {str(linkable_speech.id): speaker.id},
+        "attendance_id_to_speaker_id": {},
+    }
     assert _get_stored_speaker_id(scratch_session, linkable_speech) is None
     assert _get_stored_speaker_id(scratch_session, unlinkable_speech) is None
 
 
 def test_commit_refuses_after_a_planned_row_changes(
-    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(apply_speaker_links_script, "engine", scratch_engine)
     _, other_speaker, linkable_speech, _ = _seed_speakers_and_speeches(scratch_session)
@@ -99,10 +124,15 @@ def test_commit_refuses_after_a_planned_row_changes(
 
 
 def test_commit_on_an_unchanged_state_writes_exactly_the_plan(
-    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(apply_speaker_links_script, "engine", scratch_engine)
-    speaker, _, linkable_speech, unlinkable_speech = _seed_speakers_and_speeches(scratch_session)
+    speaker, _, linkable_speech, unlinkable_speech = _seed_speakers_and_speeches(
+        scratch_session
+    )
     plan_path = tmp_path / "plan.json"
     apply_speaker_links_script.apply_speaker_links(plan_path, is_commit=False)
 
@@ -113,13 +143,20 @@ def test_commit_on_an_unchanged_state_writes_exactly_the_plan(
 
 
 def test_commit_refuses_the_protected_local_port_and_writes_nothing(
-    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(apply_speaker_links_script, "engine", scratch_engine)
     _, _, linkable_speech, _ = _seed_speakers_and_speeches(scratch_session)
     plan_path = tmp_path / "plan.json"
     apply_speaker_links_script.apply_speaker_links(plan_path, is_commit=False)
-    monkeypatch.setattr(apply_speaker_links_script, "settings", SimpleNamespace(database_url=_PROTECTED_DATABASE_URL))
+    monkeypatch.setattr(
+        apply_speaker_links_script,
+        "settings",
+        SimpleNamespace(database_url=_PROTECTED_DATABASE_URL),
+    )
 
     with pytest.raises(HansardWriteTargetError, match="5432"):
         apply_speaker_links_script.apply_speaker_links(plan_path, is_commit=True)

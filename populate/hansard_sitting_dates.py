@@ -22,7 +22,9 @@ _HTTP_TIMEOUT_SECONDS = 120
 @dataclass(frozen=True)
 class FetchedSittingDate:
     sitting_date: str
-    hansard_report_response: Optional[Union[HansardReportOldResponse, HansardReportNewResponse]]
+    hansard_report_response: Optional[
+        Union[HansardReportOldResponse, HansardReportNewResponse]
+    ]
 
 
 async def _fetch_sitting_date_response(
@@ -30,17 +32,24 @@ async def _fetch_sitting_date_response(
     client: httpx.AsyncClient,
 ) -> FetchedSittingDate:
     try:
-        hansard_report_response = await get_hansard_report_response_async(sitting_date, client)
+        hansard_report_response = await get_hansard_report_response_async(
+            sitting_date, client
+        )
         return FetchedSittingDate(sitting_date, hansard_report_response)
     except HansardGatewayError as error:
         logger.warning(f"Skipping {sitting_date}: {error}")
         return FetchedSittingDate(sitting_date, None)
 
 
-async def _fetch_all_sitting_dates(sitting_dates: list[str]) -> list[FetchedSittingDate]:
+async def _fetch_all_sitting_dates(
+    sitting_dates: list[str],
+) -> list[FetchedSittingDate]:
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT_SECONDS) as client:
         return await asyncio.gather(
-            *[_fetch_sitting_date_response(sitting_date, client) for sitting_date in sitting_dates]
+            *[
+                _fetch_sitting_date_response(sitting_date, client)
+                for sitting_date in sitting_dates
+            ]
         )
 
 
@@ -51,7 +60,9 @@ def populate_hansard_sitting_dates(session: Session) -> None:
     ).get_sitting_dates_by_sitting_date_not_null()
     sitting_dates_to_fetch = list(all_sitting_dates - existing_sitting_dates)
 
-    fetched_sitting_dates = asyncio.run(_fetch_all_sitting_dates(sitting_dates_to_fetch))
+    fetched_sitting_dates = asyncio.run(
+        _fetch_all_sitting_dates(sitting_dates_to_fetch)
+    )
 
     failed_fetches = 0
     for i, fetched_sitting_date in enumerate(fetched_sitting_dates, start=1):
@@ -62,7 +73,11 @@ def populate_hansard_sitting_dates(session: Session) -> None:
         logger.info(f"{i}/{len(sitting_dates_to_fetch)}: {sitting_date}")
 
         hansard_report_response = fetched_sitting_date.hansard_report_response
-        hansard_sitting_date_response = build_hansard_sitting_date_response(hansard_report_response, sitting_date)
+        hansard_sitting_date_response = build_hansard_sitting_date_response(
+            hansard_report_response, sitting_date
+        )
 
         CRUDHansardSittingDateResponse(session).create(hansard_sitting_date_response)
-    logger.info(f"Hansard sitting dates: {len(sitting_dates_to_fetch) - failed_fetches} stored, {failed_fetches} fetches failed")
+    logger.info(
+        f"Hansard sitting dates: {len(sitting_dates_to_fetch) - failed_fetches} stored, {failed_fetches} fetches failed"
+    )

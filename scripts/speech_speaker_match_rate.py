@@ -33,7 +33,9 @@ def speech_speaker_match_rate() -> None:
 
     with Session(engine) as session:
         speakers = CRUDSpeaker(session).get_all()
-        all_rows: list[SpeechReportTypeRow] = CRUDSpeech(session).get_report_type_rows_by_speaker_not_null()
+        all_rows: list[SpeechReportTypeRow] = CRUDSpeech(
+            session
+        ).get_report_type_rows_by_speaker_not_null()
 
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int] = {
         (speaker.name, speaker.parliament_number): speaker.id
@@ -58,26 +60,42 @@ def speech_speaker_match_rate() -> None:
     for speech_row in sample:
         name = strip_title(speech_row.speaker.rstrip(":").strip())
         name = normalize_name(name)
-        canonical_name = resolve_canonical_name(name, speech_row.parliament_number, lookups) if name else None
-        is_found = canonical_name is not None and (canonical_name, speech_row.parliament_number) in name_parliament_number_to_speaker_id
+        canonical_name = (
+            resolve_canonical_name(name, speech_row.parliament_number, lookups)
+            if name
+            else None
+        )
+        is_found = (
+            canonical_name is not None
+            and (canonical_name, speech_row.parliament_number)
+            in name_parliament_number_to_speaker_id
+        )
 
         report_type_to_stats[speech_row.report_type].total += 1
         if is_found:
             matched += 1
             report_type_to_stats[speech_row.report_type].matched += 1
         else:
-            report_type_to_unmatched_speakers[speech_row.report_type].append(speech_row.speaker)
+            report_type_to_unmatched_speakers[speech_row.report_type].append(
+                speech_row.speaker
+            )
 
     total = len(sample)
-    logger.info(f"\nOverall: {matched}/{total} = {matched/total*_PERCENT:.1f}%\n")
+    logger.info(f"\nOverall: {matched}/{total} = {matched / total * _PERCENT:.1f}%\n")
     logger.info(f"{'Report type':<30} {'Matched':>8} {'Total':>7} {'Rate':>7}")
     logger.info("-" * _SEPARATOR_WIDTH)
     for report_type, stats in sorted(report_type_to_stats.items()):
         matched_count, total_count = stats.matched, stats.total
         rate = matched_count / total_count * _PERCENT if total_count else 0
-        logger.info(f"{report_type:<30} {matched_count:>8} {total_count:>7} {rate:>6.1f}%")
+        logger.info(
+            f"{report_type:<30} {matched_count:>8} {total_count:>7} {rate:>6.1f}%"
+        )
 
-    all_unmatched = [unmatched_speaker for unmatched_speakers in report_type_to_unmatched_speakers.values() for unmatched_speaker in unmatched_speakers]
+    all_unmatched = [
+        unmatched_speaker
+        for unmatched_speakers in report_type_to_unmatched_speakers.values()
+        for unmatched_speaker in unmatched_speakers
+    ]
     top = Counter(all_unmatched).most_common(_TOP_UNMATCHED)
     logger.info(f"\nTop {_TOP_UNMATCHED} unmatched speaker strings:")
     for speaker, count in top:

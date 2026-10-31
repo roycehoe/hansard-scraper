@@ -10,13 +10,17 @@ _NUL_CHARACTER = "\x00"
 _NUL_REPLACEMENT = "�"
 
 
-def get_topic_id(report_id: str, html_file_name: Optional[str], report_version: str) -> str:
+def get_topic_id(
+    report_id: str, html_file_name: Optional[str], report_version: str
+) -> str:
     if report_version == ReportVersion.SPRS3:
         return report_id.rstrip(_NEWER_SYSTEM_ID_SUFFIX)
     return html_file_name or report_id
 
 
-def get_topic_html_content(hansard_topic_response: HansardTopicResponse, report_version: str) -> Optional[str]:
+def get_topic_html_content(
+    hansard_topic_response: HansardTopicResponse, report_version: str
+) -> Optional[str]:
     if report_version == ReportVersion.SPRS3:
         if hansard_topic_response.result_html is None:
             return None

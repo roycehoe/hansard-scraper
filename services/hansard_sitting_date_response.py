@@ -16,9 +16,13 @@ def _get_int(value: object, field_name: str, sitting_date: str) -> Optional[int]
     try:
         return int(value)
     except TypeError as error:
-        raise HansardSittingReportError(f"Sitting {sitting_date}: {field_name} {value!r} is not an integer") from error
+        raise HansardSittingReportError(
+            f"Sitting {sitting_date}: {field_name} {value!r} is not an integer"
+        ) from error
     except ValueError as error:
-        raise HansardSittingReportError(f"Sitting {sitting_date}: {field_name} {value!r} is not an integer") from error
+        raise HansardSittingReportError(
+            f"Sitting {sitting_date}: {field_name} {value!r} is not an integer"
+        ) from error
 
 
 def _serialise_list(value: object) -> object:
@@ -27,12 +31,20 @@ def _serialise_list(value: object) -> object:
     return json.dumps(value) if isinstance(value, list) else value
 
 
-def build_old_hansard_sitting_date_response(hansard_report_response: HansardReportOldResponse, sitting_date: str) -> HansardSittingDateResponse:
+def build_old_hansard_sitting_date_response(
+    hansard_report_response: HansardReportOldResponse, sitting_date: str
+) -> HansardSittingDateResponse:
     return HansardSittingDateResponse(
         parlement_no=_get_int(hansard_report_response.parl_no, "parl_no", sitting_date),
-        session_no=_get_int(hansard_report_response.session_no, "session_no", sitting_date),
-        volume_no=_get_int(hansard_report_response.volume_no, "volume_no", sitting_date),
-        sitting_no=_get_int(hansard_report_response.sitting_no, "sitting_no", sitting_date),
+        session_no=_get_int(
+            hansard_report_response.session_no, "session_no", sitting_date
+        ),
+        volume_no=_get_int(
+            hansard_report_response.volume_no, "volume_no", sitting_date
+        ),
+        sitting_no=_get_int(
+            hansard_report_response.sitting_no, "sitting_no", sitting_date
+        ),
         sitting_date=sitting_date,
         online_pdf_file_name=hansard_report_response.online_pdf_file_name,
         html_full_content=hansard_report_response.html_full_content,
@@ -78,8 +90,14 @@ def build_old_hansard_sitting_date_response(hansard_report_response: HansardRepo
     )
 
 
-def build_new_hansard_sitting_date_response(hansard_report_response: HansardReportNewResponse, sitting_date: str) -> HansardSittingDateResponse:
-    metadata = hansard_report_response.metadata if hansard_report_response.metadata is not None else HansardReportMetadata()
+def build_new_hansard_sitting_date_response(
+    hansard_report_response: HansardReportNewResponse, sitting_date: str
+) -> HansardSittingDateResponse:
+    metadata = (
+        hansard_report_response.metadata
+        if hansard_report_response.metadata is not None
+        else HansardReportMetadata()
+    )
 
     return HansardSittingDateResponse(
         parlement_no=metadata.parliment_no,
@@ -109,8 +127,13 @@ def build_new_hansard_sitting_date_response(hansard_report_response: HansardRepo
 
 
 def build_hansard_sitting_date_response(
-    hansard_report_response: Union[HansardReportOldResponse, HansardReportNewResponse], sitting_date_key: str
+    hansard_report_response: Union[HansardReportOldResponse, HansardReportNewResponse],
+    sitting_date_key: str,
 ) -> HansardSittingDateResponse:
     if isinstance(hansard_report_response, HansardReportNewResponse):
-        return build_new_hansard_sitting_date_response(hansard_report_response, sitting_date_key)
-    return build_old_hansard_sitting_date_response(hansard_report_response, sitting_date_key)
+        return build_new_hansard_sitting_date_response(
+            hansard_report_response, sitting_date_key
+        )
+    return build_old_hansard_sitting_date_response(
+        hansard_report_response, sitting_date_key
+    )

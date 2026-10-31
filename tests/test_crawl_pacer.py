@@ -45,7 +45,9 @@ _REPORT_ID = "x"
 _SITTING_DATE = "8-4-2025"
 _SYNC_GATEWAY_REQUEST_COUNT = 3
 _SPEAKER_REQUEST_COUNT = 2
-_MEMBER_LIST_PAGE_FILE = Path(__file__).parent / "fixtures" / "parliament_member_list_page.html"
+_MEMBER_LIST_PAGE_FILE = (
+    Path(__file__).parent / "fixtures" / "parliament_member_list_page.html"
+)
 _FAILED_SEND_COUNT = 2
 _ASYNC_ATTEMPT_COUNT = 2
 
@@ -99,12 +101,20 @@ def fake_clock(monkeypatch: pytest.MonkeyPatch) -> _FakeClock:
     return fake_clock
 
 
-def _get_async_handler(fake_clock: _FakeClock, recorded_requests: list[_RecordedRequest], status_codes: list[int]) -> _AsyncHandler:
+def _get_async_handler(
+    fake_clock: _FakeClock,
+    recorded_requests: list[_RecordedRequest],
+    status_codes: list[int],
+) -> _AsyncHandler:
     async def handle_request(request: httpx.Request) -> httpx.Response:
         started_at = fake_clock.now
         fake_clock.sleep(_REQUEST_SECONDS)
         await asyncio.sleep(0)
-        recorded_requests.append(_RecordedRequest(started_at, fake_clock.now, request.headers.get("User-Agent")))
+        recorded_requests.append(
+            _RecordedRequest(
+                started_at, fake_clock.now, request.headers.get("User-Agent")
+            )
+        )
         if len(status_codes) > 1:
             return httpx.Response(status_codes.pop(0))
         return httpx.Response(status_codes[0])
@@ -118,7 +128,12 @@ def _get_fixed_jitter(low: float, high: float) -> float:
 
 async def _post_gathered_requests(handler: _AsyncHandler) -> None:
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        await asyncio.gather(*(async_post_with_retry(client, _URL, {}) for _ in range(_GATHERED_REQUEST_COUNT)))
+        await asyncio.gather(
+            *(
+                async_post_with_retry(client, _URL, {})
+                for _ in range(_GATHERED_REQUEST_COUNT)
+            )
+        )
 
 
 async def _post_one_request(handler: _AsyncHandler) -> httpx.Response:
@@ -129,25 +144,43 @@ async def _post_one_request(handler: _AsyncHandler) -> httpx.Response:
 def _assert_paced(recorded_requests: list[_RecordedRequest]) -> None:
     for previous_request, next_request in pairwise(recorded_requests):
         assert next_request.started_at >= previous_request.ended_at
-        assert next_request.started_at - previous_request.ended_at >= settings.crawl_gap_seconds
+        assert (
+            next_request.started_at - previous_request.ended_at
+            >= settings.crawl_gap_seconds
+        )
 
 
-def test_gathered_requests_go_one_at_a_time_two_seconds_apart(fake_clock: _FakeClock) -> None:
+def test_gathered_requests_go_one_at_a_time_two_seconds_apart(
+    fake_clock: _FakeClock,
+) -> None:
     recorded_requests: list[_RecordedRequest] = []
 
-    asyncio.run(_post_gathered_requests(_get_async_handler(fake_clock, recorded_requests, [_HTTP_OK])))
+    asyncio.run(
+        _post_gathered_requests(
+            _get_async_handler(fake_clock, recorded_requests, [_HTTP_OK])
+        )
+    )
 
     assert len(recorded_requests) == _GATHERED_REQUEST_COUNT
-    assert all(recorded_request.user_agent == CRAWL_USER_AGENT for recorded_request in recorded_requests)
+    assert all(
+        recorded_request.user_agent == CRAWL_USER_AGENT
+        for recorded_request in recorded_requests
+    )
     _assert_paced(recorded_requests)
 
 
-def test_retries_are_paced(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_retries_are_paced(
+    fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(gateway.http, "_BASE_DELAY", 0.0)
     monkeypatch.setattr(gateway.http.random, "uniform", _get_fixed_jitter)
     recorded_requests: list[_RecordedRequest] = []
 
-    response = asyncio.run(_post_one_request(_get_async_handler(fake_clock, recorded_requests, list(_RETRY_STATUS_CODES))))
+    response = asyncio.run(
+        _post_one_request(
+            _get_async_handler(fake_clock, recorded_requests, list(_RETRY_STATUS_CODES))
+        )
+    )
 
     assert len(recorded_requests) == len(_RETRY_STATUS_CODES)
     _assert_paced(recorded_requests)
@@ -179,13 +212,19 @@ def test_a_failed_request_still_counts_toward_the_gap(fake_clock: _FakeClock) ->
     assert started_at - _REQUEST_SECONDS >= settings.crawl_gap_seconds
 
 
-def test_sync_gateways_send_the_user_agent_and_are_paced(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_sync_gateways_send_the_user_agent_and_are_paced(
+    fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     recorded_requests: list[_RecordedRequest] = []
 
-    def fake_post(url: str, json: object, headers: dict, **kwargs: object) -> _FakeSyncResponse:
+    def fake_post(
+        url: str, json: object, headers: dict, **kwargs: object
+    ) -> _FakeSyncResponse:
         started_at = fake_clock.now
         fake_clock.sleep(_REQUEST_SECONDS)
-        recorded_requests.append(_RecordedRequest(started_at, fake_clock.now, headers["User-Agent"]))
+        recorded_requests.append(
+            _RecordedRequest(started_at, fake_clock.now, headers["User-Agent"])
+        )
         if url == settings.hansard_search_url:
             return _FakeSyncResponse([])
         return _FakeSyncResponse({})
@@ -197,11 +236,16 @@ def test_sync_gateways_send_the_user_agent_and_are_paced(fake_clock: _FakeClock,
     get_hansard_report_response(_SITTING_DATE)
 
     assert len(recorded_requests) == _SYNC_GATEWAY_REQUEST_COUNT
-    assert all(recorded_request.user_agent == CRAWL_USER_AGENT for recorded_request in recorded_requests)
+    assert all(
+        recorded_request.user_agent == CRAWL_USER_AGENT
+        for recorded_request in recorded_requests
+    )
     _assert_paced(recorded_requests)
 
 
-def test_speaker_requests_send_the_user_agent_and_are_paced(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_speaker_requests_send_the_user_agent_and_are_paced(
+    fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     recorded_requests: list[_RecordedRequest] = []
 
     member_list_page = _MEMBER_LIST_PAGE_FILE.read_text()
@@ -209,7 +253,9 @@ def test_speaker_requests_send_the_user_agent_and_are_paced(fake_clock: _FakeClo
     def fake_get(url: str, headers: dict, **kwargs: object) -> _FakeSyncResponse:
         started_at = fake_clock.now
         fake_clock.sleep(_REQUEST_SECONDS)
-        recorded_requests.append(_RecordedRequest(started_at, fake_clock.now, headers["User-Agent"]))
+        recorded_requests.append(
+            _RecordedRequest(started_at, fake_clock.now, headers["User-Agent"])
+        )
         member_list_response = _FakeSyncResponse(None)
         member_list_response.text = member_list_page
         return member_list_response
@@ -220,7 +266,10 @@ def test_speaker_requests_send_the_user_agent_and_are_paced(fake_clock: _FakeClo
         get_parliament_member_list_response()
 
     assert len(recorded_requests) == _SPEAKER_REQUEST_COUNT
-    assert all(recorded_request.user_agent == CRAWL_USER_AGENT for recorded_request in recorded_requests)
+    assert all(
+        recorded_request.user_agent == CRAWL_USER_AGENT
+        for recorded_request in recorded_requests
+    )
     _assert_paced(recorded_requests)
 
 
@@ -238,7 +287,9 @@ def _build_sync_response(status_code: int, response_text: str) -> requests.Respo
 
 
 def _get_sync_sender(
-    fake_clock: _FakeClock, recorded_requests: list[_RecordedRequest], sync_responses: list[requests.Response]
+    fake_clock: _FakeClock,
+    recorded_requests: list[_RecordedRequest],
+    sync_responses: list[requests.Response],
 ) -> Callable[..., requests.Response]:
     def send_request(**kwargs: object) -> requests.Response:
         started_at = fake_clock.now
@@ -251,7 +302,9 @@ def _get_sync_sender(
     return send_request
 
 
-def test_sync_transport_error_is_retried_through_the_pacer(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_sync_transport_error_is_retried_through_the_pacer(
+    fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     _remove_backoff_delay(monkeypatch)
     recorded_requests: list[_RecordedRequest] = []
     sync_response = _build_sync_response(_HTTP_OK, "")
@@ -269,7 +322,9 @@ def test_sync_transport_error_is_retried_through_the_pacer(fake_clock: _FakeCloc
     _assert_paced(recorded_requests)
 
 
-def test_sync_transport_error_gives_up_after_the_last_attempt(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_sync_transport_error_gives_up_after_the_last_attempt(
+    fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     _remove_backoff_delay(monkeypatch)
     recorded_requests: list[_RecordedRequest] = []
 
@@ -294,55 +349,93 @@ def test_sync_transport_error_gives_up_after_the_last_attempt(fake_clock: _FakeC
 
 @pytest.mark.parametrize(
     ("status_code", "response_text"),
-    [(_HTTP_SERVICE_UNAVAILABLE, ""), (_HTTP_TOO_MANY_REQUESTS, ""), (_HTTP_BAD_REQUEST, _SYSTEM_ERROR_TEXT)],
+    [
+        (_HTTP_SERVICE_UNAVAILABLE, ""),
+        (_HTTP_TOO_MANY_REQUESTS, ""),
+        (_HTTP_BAD_REQUEST, _SYSTEM_ERROR_TEXT),
+    ],
 )
 def test_sync_transient_response_is_retried_through_the_pacer(
-    status_code: int, response_text: str, fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch
+    status_code: int,
+    response_text: str,
+    fake_clock: _FakeClock,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _remove_backoff_delay(monkeypatch)
     recorded_requests: list[_RecordedRequest] = []
     transient_response = _build_sync_response(status_code, response_text)
     ok_response = _build_sync_response(_HTTP_OK, "")
-    send_request = _get_sync_sender(fake_clock, recorded_requests, [transient_response] * _FAILED_SEND_COUNT + [ok_response])
+    send_request = _get_sync_sender(
+        fake_clock,
+        recorded_requests,
+        [transient_response] * _FAILED_SEND_COUNT + [ok_response],
+    )
 
     assert send_with_retry(send_request) is ok_response
     assert len(recorded_requests) == _FAILED_SEND_COUNT + 1
     _assert_paced(recorded_requests)
 
 
-def test_sync_bad_request_without_the_system_error_text_is_returned_at_once(fake_clock: _FakeClock) -> None:
+def test_sync_bad_request_without_the_system_error_text_is_returned_at_once(
+    fake_clock: _FakeClock,
+) -> None:
     recorded_requests: list[_RecordedRequest] = []
-    bad_request_response = _build_sync_response(_HTTP_BAD_REQUEST, _OTHER_BAD_REQUEST_TEXT)
+    bad_request_response = _build_sync_response(
+        _HTTP_BAD_REQUEST, _OTHER_BAD_REQUEST_TEXT
+    )
 
-    assert send_with_retry(_get_sync_sender(fake_clock, recorded_requests, [bad_request_response])) is bad_request_response
+    assert (
+        send_with_retry(
+            _get_sync_sender(fake_clock, recorded_requests, [bad_request_response])
+        )
+        is bad_request_response
+    )
     assert len(recorded_requests) == 1
 
 
-def test_sync_transient_response_gives_up_after_the_last_attempt(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_sync_transient_response_gives_up_after_the_last_attempt(
+    fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     _remove_backoff_delay(monkeypatch)
     recorded_requests: list[_RecordedRequest] = []
     unavailable_response = _build_sync_response(_HTTP_SERVICE_UNAVAILABLE, "")
 
     with pytest.raises(requests.HTTPError):
-        send_with_retry(_get_sync_sender(fake_clock, recorded_requests, [unavailable_response]))
+        send_with_retry(
+            _get_sync_sender(fake_clock, recorded_requests, [unavailable_response])
+        )
     assert len(recorded_requests) == MAX_RETRIES + 1
     _assert_paced(recorded_requests)
 
-    monkeypatch.setattr(requests, "post", _get_sync_sender(fake_clock, recorded_requests, [unavailable_response]))
+    monkeypatch.setattr(
+        requests,
+        "post",
+        _get_sync_sender(fake_clock, recorded_requests, [unavailable_response]),
+    )
     with pytest.raises(HansardGatewayError):
         get_hansard_topic_response(_REPORT_ID)
 
 
-def test_sync_no_results_response_is_sent_once_and_is_an_empty_page(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_sync_no_results_response_is_sent_once_and_is_an_empty_page(
+    fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     recorded_requests: list[_RecordedRequest] = []
-    no_results_response = _build_sync_response(_HTTP_INTERNAL_SERVER_ERROR, NO_RESULTS_TEXT)
-    monkeypatch.setattr(requests, "post", _get_sync_sender(fake_clock, recorded_requests, [no_results_response]))
+    no_results_response = _build_sync_response(
+        _HTTP_INTERNAL_SERVER_ERROR, NO_RESULTS_TEXT
+    )
+    monkeypatch.setattr(
+        requests,
+        "post",
+        _get_sync_sender(fake_clock, recorded_requests, [no_results_response]),
+    )
 
     assert get_hansard_search_results(_SEARCH_START_INDEX, _SEARCH_END_INDEX) == []
     assert len(recorded_requests) == 1
 
 
-def test_async_transport_error_is_retried_through_the_pacer(fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_async_transport_error_is_retried_through_the_pacer(
+    fake_clock: _FakeClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     _remove_backoff_delay(monkeypatch)
     recorded_requests: list[_RecordedRequest] = []
 
@@ -350,7 +443,11 @@ def test_async_transport_error_is_retried_through_the_pacer(fake_clock: _FakeClo
         started_at = fake_clock.now
         fake_clock.sleep(_REQUEST_SECONDS)
         await asyncio.sleep(0)
-        recorded_requests.append(_RecordedRequest(started_at, fake_clock.now, request.headers.get("User-Agent")))
+        recorded_requests.append(
+            _RecordedRequest(
+                started_at, fake_clock.now, request.headers.get("User-Agent")
+            )
+        )
         if len(recorded_requests) == 1:
             raise httpx.ConnectError("connection refused", request=request)
         return httpx.Response(_HTTP_OK)
@@ -366,4 +463,7 @@ _LETTER_CRAWL_GAP_SECONDS = 2.0
 
 
 def test_crawl_gap_defaults_to_the_gap_the_letter_promises() -> None:
-    assert AppSettings.model_fields["crawl_gap_seconds"].default == _LETTER_CRAWL_GAP_SECONDS
+    assert (
+        AppSettings.model_fields["crawl_gap_seconds"].default
+        == _LETTER_CRAWL_GAP_SECONDS
+    )

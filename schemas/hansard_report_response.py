@@ -105,7 +105,9 @@ class HansardReportNewResponse(BaseModel):
     html_full_content: Optional[str] = None
     attendance_list: Optional[list] = None
     ptba_list: Optional[object] = None
-    takes_section_vo_list: Optional[object] = Field(default=None, alias="takesSectionVOList")
+    takes_section_vo_list: Optional[object] = Field(
+        default=None, alias="takesSectionVOList"
+    )
     annexure_list: Optional[object] = None
     vernacular_list: Optional[object] = None
     a2b_list: Optional[object] = Field(default=None, alias="a2bList")

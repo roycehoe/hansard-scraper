@@ -62,19 +62,25 @@ _FIELD_LOSS = "  FAIL  raw['title']='x'  →  .title=None"
 
 
 def test_singapore_today_is_the_local_calendar_date() -> None:
-    assert get_singapore_today(datetime(2025, 4, 19, 20, 0, tzinfo=timezone.utc)) == date(2025, 4, 20)
+    assert get_singapore_today(
+        datetime(2025, 4, 19, 20, 0, tzinfo=timezone.utc)
+    ) == date(2025, 4, 20)
 
 
 def test_probe_starts_at_the_window_when_the_last_sitting_is_recent() -> None:
     latest_stored_sitting_date = _TODAY - timedelta(days=_RECENT_STORED_DAYS_AGO)
 
-    assert get_probe_start_date(latest_stored_sitting_date, _TODAY) == _TODAY - timedelta(days=RECHECK_WINDOW_DAYS)
+    assert get_probe_start_date(
+        latest_stored_sitting_date, _TODAY
+    ) == _TODAY - timedelta(days=RECHECK_WINDOW_DAYS)
 
 
 def test_probe_starts_after_the_last_sitting_when_it_is_old() -> None:
     latest_stored_sitting_date = _TODAY - timedelta(days=_OLD_STORED_DAYS_AGO)
 
-    assert get_probe_start_date(latest_stored_sitting_date, _TODAY) == latest_stored_sitting_date + timedelta(days=1)
+    assert get_probe_start_date(
+        latest_stored_sitting_date, _TODAY
+    ) == latest_stored_sitting_date + timedelta(days=1)
 
 
 def test_recheck_starts_fourteen_days_back() -> None:
@@ -82,11 +88,17 @@ def test_recheck_starts_fourteen_days_back() -> None:
 
 
 def test_dates_between_are_inclusive_and_ascending() -> None:
-    assert get_dates_between(_FIRST_DATE, _LAST_DATE) == [date(2025, 4, 1), date(2025, 4, 2), date(2025, 4, 3)]
+    assert get_dates_between(_FIRST_DATE, _LAST_DATE) == [
+        date(2025, 4, 1),
+        date(2025, 4, 2),
+        date(2025, 4, 3),
+    ]
 
 
 def test_month_windows_inside_one_month_is_one_window() -> None:
-    assert get_month_windows(_FIRST_DATE, _LAST_DATE) == [MonthWindow(_FIRST_DATE, _LAST_DATE)]
+    assert get_month_windows(_FIRST_DATE, _LAST_DATE) == [
+        MonthWindow(_FIRST_DATE, _LAST_DATE)
+    ]
 
 
 def test_month_windows_split_at_each_month_end() -> None:
@@ -109,12 +121,28 @@ def test_sitting_date_key_is_unpadded() -> None:
 
 
 def test_published_sitting_responses() -> None:
-    assert not is_published_sitting_response(HansardReportNewResponse.model_validate({"errorCode": "404", "metadata": {"sittingNO": 1}}))
-    assert is_published_sitting_response(HansardReportNewResponse.model_validate({"metadata": {"sittingNO": 1}}))
-    assert is_published_sitting_response(HansardReportNewResponse.model_validate({"metadata": {}, "attendanceList": [_ATTENDANCE_ENTRY]}))
-    assert not is_published_sitting_response(HansardReportNewResponse.model_validate({"metadata": {}, "attendanceList": []}))
-    assert is_published_sitting_response(HansardReportOldResponse.model_validate({"sittingNo": 1}))
-    assert not is_published_sitting_response(HansardReportOldResponse.model_validate({}))
+    assert not is_published_sitting_response(
+        HansardReportNewResponse.model_validate(
+            {"errorCode": "404", "metadata": {"sittingNO": 1}}
+        )
+    )
+    assert is_published_sitting_response(
+        HansardReportNewResponse.model_validate({"metadata": {"sittingNO": 1}})
+    )
+    assert is_published_sitting_response(
+        HansardReportNewResponse.model_validate(
+            {"metadata": {}, "attendanceList": [_ATTENDANCE_ENTRY]}
+        )
+    )
+    assert not is_published_sitting_response(
+        HansardReportNewResponse.model_validate({"metadata": {}, "attendanceList": []})
+    )
+    assert is_published_sitting_response(
+        HansardReportOldResponse.model_validate({"sittingNo": 1})
+    )
+    assert not is_published_sitting_response(
+        HansardReportOldResponse.model_validate({})
+    )
 
 
 def test_held_report_alert_is_due_on_the_window_first_two_days_only() -> None:
@@ -133,7 +161,10 @@ def test_content_hash_is_stable_and_changes_on_one_character() -> None:
 
 def test_unlinked_share_is_none_with_no_named_rows() -> None:
     assert get_unlinked_share(0, 0) is None
-    assert get_unlinked_share(_LINKED_ROW_COUNT, _UNLINKED_ROW_COUNT_AT_LIMIT) == _SHARE_AT_LIMIT
+    assert (
+        get_unlinked_share(_LINKED_ROW_COUNT, _UNLINKED_ROW_COUNT_AT_LIMIT)
+        == _SHARE_AT_LIMIT
+    )
 
 
 def test_unlinked_share_halts_only_above_five_percent() -> None:
@@ -142,13 +173,21 @@ def test_unlinked_share_halts_only_above_five_percent() -> None:
 
 
 def test_unexpected_parliament_numbers() -> None:
-    parliament_numbers = {_STORED_MAX_PARLIAMENT_NUMBER, _NEW_PARLIAMENT_NUMBER, _LATER_PARLIAMENT_NUMBER}
+    parliament_numbers = {
+        _STORED_MAX_PARLIAMENT_NUMBER,
+        _NEW_PARLIAMENT_NUMBER,
+        _LATER_PARLIAMENT_NUMBER,
+    }
 
-    assert get_unexpected_parliament_numbers(parliament_numbers, _STORED_MAX_PARLIAMENT_NUMBER, None) == [
+    assert get_unexpected_parliament_numbers(
+        parliament_numbers, _STORED_MAX_PARLIAMENT_NUMBER, None
+    ) == [
         _NEW_PARLIAMENT_NUMBER,
         _LATER_PARLIAMENT_NUMBER,
     ]
-    assert get_unexpected_parliament_numbers(parliament_numbers, _STORED_MAX_PARLIAMENT_NUMBER, _NEW_PARLIAMENT_NUMBER) == [
+    assert get_unexpected_parliament_numbers(
+        parliament_numbers, _STORED_MAX_PARLIAMENT_NUMBER, _NEW_PARLIAMENT_NUMBER
+    ) == [
         _LATER_PARLIAMENT_NUMBER,
     ]
     assert get_unexpected_parliament_numbers(parliament_numbers, None, None) == [
@@ -184,22 +223,30 @@ def test_labels_sort_by_row_count_then_label() -> None:
 
 
 def test_unlinked_reason_names_the_share_and_labels() -> None:
-    reason = build_unlinked_reason(_UNLINKED_SHARE, {_UNLINKED_LABEL: _UNLINKED_LABEL_ROW_COUNT})
+    reason = build_unlinked_reason(
+        _UNLINKED_SHARE, {_UNLINKED_LABEL: _UNLINKED_LABEL_ROW_COUNT}
+    )
 
     assert "6.0%" in reason
     assert "Mr Nobody (3 rows)" in reason
 
 
 def test_new_parliament_reason_names_the_numbers() -> None:
-    assert "New Parliament number 15, 16" in build_new_parliament_reason([_NEW_PARLIAMENT_NUMBER, _LATER_PARLIAMENT_NUMBER])
+    assert "New Parliament number 15, 16" in build_new_parliament_reason(
+        [_NEW_PARLIAMENT_NUMBER, _LATER_PARLIAMENT_NUMBER]
+    )
 
 
 def test_field_mapping_reason_names_the_first_loss() -> None:
-    assert build_field_mapping_reason([_FIELD_LOSS, _FIELD_LOSS]).startswith("2 fields failed the field mapping check. First: FAIL")
+    assert build_field_mapping_reason([_FIELD_LOSS, _FIELD_LOSS]).startswith(
+        "2 fields failed the field mapping check. First: FAIL"
+    )
 
 
 def test_telegram_text_is_cut_to_the_cap() -> None:
-    assert len(get_telegram_text("x" * (_MAX_TELEGRAM_LENGTH + 1))) == _MAX_TELEGRAM_LENGTH
+    assert (
+        len(get_telegram_text("x" * (_MAX_TELEGRAM_LENGTH + 1))) == _MAX_TELEGRAM_LENGTH
+    )
 
 
 def test_no_message_carries_an_em_dash_or_please() -> None:
@@ -208,7 +255,9 @@ def test_no_message_carries_an_em_dash_or_please() -> None:
         build_failure_message("Reason."),
         build_new_parliament_reason([_NEW_PARLIAMENT_NUMBER]),
         build_field_mapping_reason([_FIELD_LOSS]),
-        build_unlinked_reason(_UNLINKED_SHARE, {_UNLINKED_LABEL: _UNLINKED_LABEL_ROW_COUNT}),
+        build_unlinked_reason(
+            _UNLINKED_SHARE, {_UNLINKED_LABEL: _UNLINKED_LABEL_ROW_COUNT}
+        ),
         build_summary_message(*_SUMMARY_COUNTS, _SUMMARY_LINKED_SHARE),
         build_changed_report_message(_REPORT_ID, _SITTING_DATE_KEY),
         build_unlinked_labels_message({_UNLINKED_LABEL: _UNLINKED_LABEL_ROW_COUNT}),

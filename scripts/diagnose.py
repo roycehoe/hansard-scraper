@@ -33,8 +33,12 @@ class BaselineResults:
 def _get_speech_start(report: Report) -> Optional[int]:
     return (
         get_start_of_speech_line(
-            report.markdown_content, report.title, report.subtitle, report.original_title,
-            report.report_type, report.report_version,
+            report.markdown_content,
+            report.title,
+            report.subtitle,
+            report.original_title,
+            report.report_type,
+            report.report_version,
         )
         if report.markdown_content is not None
         else None
@@ -56,13 +60,17 @@ def get_report_type_speech_stats(session: Session) -> dict[str, ReportTypeSpeech
         if start is None:
             continue
         report_type_to_counts[report_type].has_start_line += 1
-        get_speeches(report.markdown_content, start, report.report_type, report.report_version)
+        get_speeches(
+            report.markdown_content, start, report.report_type, report.report_version
+        )
         report_type_to_counts[report_type].can_get_speeches += 1
 
     return dict(report_type_to_counts)
 
 
-def get_baseline_results(hansard_website_responses: list[HansardWebsiteResponse]) -> BaselineResults:
+def get_baseline_results(
+    hansard_website_responses: list[HansardWebsiteResponse],
+) -> BaselineResults:
     baseline_results = BaselineResults()
     for hansard_website_response in hansard_website_responses:
         report = build_report(hansard_website_response)
@@ -72,7 +80,9 @@ def get_baseline_results(hansard_website_responses: list[HansardWebsiteResponse]
         if start is None:
             baseline_results.failed_start_line.append(hansard_website_response.id)
             continue
-        get_speeches(report.markdown_content, start, report.report_type, report.report_version)
+        get_speeches(
+            report.markdown_content, start, report.report_type, report.report_version
+        )
         baseline_results.passed.append(hansard_website_response.id)
     return baseline_results
 
@@ -82,7 +92,11 @@ def diagnose() -> None:
         logger.info("=== Setup: report_type speech stats ===")
         report_type_to_counts = get_report_type_speech_stats(session)
         no_speech_types = set()
-        for report_type, speech_statistics in sorted(report_type_to_counts.items(), key=lambda entry: entry[1].has_markdown, reverse=True):
+        for report_type, speech_statistics in sorted(
+            report_type_to_counts.items(),
+            key=lambda entry: entry[1].has_markdown,
+            reverse=True,
+        ):
             has_markdown = speech_statistics.has_markdown
             has_start_line = speech_statistics.has_start_line
             can_get_speeches = speech_statistics.can_get_speeches
@@ -91,20 +105,32 @@ def diagnose() -> None:
                 marker = " <-- ZERO SPEECHES"
             else:
                 marker = ""
-            logger.info(f"  {report_type:30s} total={speech_statistics.total:4d} has_md={has_markdown:4d} has_start={has_start_line:4d} speeches={can_get_speeches:4d}{marker}")
+            logger.info(
+                f"  {report_type:30s} total={speech_statistics.total:4d} has_md={has_markdown:4d} has_start={has_start_line:4d} speeches={can_get_speeches:4d}{marker}"
+            )
 
-        logger.info(f"\nNo-speech report types (excluded from target): {no_speech_types}")
+        logger.info(
+            f"\nNo-speech report types (excluded from target): {no_speech_types}"
+        )
 
         logger.info("\n=== Baseline (excluding no-speech types) ===")
         all_hansard_website_responses = CRUDHansardWebsiteResponse(session).get_all()
         target_with_markdown = [
-            hansard_website_response for hansard_website_response in all_hansard_website_responses
-            if hansard_website_response.report_type not in no_speech_types and build_report(hansard_website_response).markdown_content is not None
+            hansard_website_response
+            for hansard_website_response in all_hansard_website_responses
+            if hansard_website_response.report_type not in no_speech_types
+            and build_report(hansard_website_response).markdown_content is not None
         ]
         baseline_results = get_baseline_results(target_with_markdown)
-        total = len(baseline_results.passed) + len(baseline_results.failed_start_line) + len(baseline_results.failed_speeches)
+        total = (
+            len(baseline_results.passed)
+            + len(baseline_results.failed_start_line)
+            + len(baseline_results.failed_speeches)
+        )
         percentage = _PERCENT * len(baseline_results.passed) / total if total else 0
-        logger.info(f"  Pass: {len(baseline_results.passed)}/{total} ({percentage:.1f}%)")
+        logger.info(
+            f"  Pass: {len(baseline_results.passed)}/{total} ({percentage:.1f}%)"
+        )
         logger.info(f"  Fail has_start_line: {len(baseline_results.failed_start_line)}")
         logger.info(f"  Fail can_get_speeches: {len(baseline_results.failed_speeches)}")
 

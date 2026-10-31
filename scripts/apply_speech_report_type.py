@@ -27,23 +27,35 @@ def apply_speech_report_type(is_commit: bool) -> None:
         transaction = connection.begin()
         current_revision = MigrationContext.configure(connection).get_current_revision()
         if current_revision != _PREVIOUS_REVISION:
-            raise HansardWriteCheckError(f"The database is at {current_revision}, not {_PREVIOUS_REVISION}")
+            raise HansardWriteCheckError(
+                f"The database is at {current_revision}, not {_PREVIOUS_REVISION}"
+            )
         alembic_config.attributes["connection"] = connection
         command.upgrade(alembic_config, _REVISION)
         command.check(alembic_config)
         if not is_commit:
             transaction.rollback()
-            logger.info(f"Dry run: migration {_REVISION} and alembic check passed, then rolled back")
+            logger.info(
+                f"Dry run: migration {_REVISION} and alembic check passed, then rolled back"
+            )
             return
 
         transaction.commit()
-    logger.info(f"Committed: migration {_REVISION}, speech copied with its report type and swapped in")
+    logger.info(
+        f"Committed: migration {_REVISION}, speech copied with its report type and swapped in"
+    )
     with Session(engine) as session:
         vacuum_analyze_written_tables(session, [Speech.__tablename__])
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run migration 82478ba59541 and alembic check in one transaction: rolled back unless --commit")
-    parser.add_argument("--commit", action="store_true", help="commit the copied speech table; without it the transaction rolls back")
+    parser = argparse.ArgumentParser(
+        description="Run migration 82478ba59541 and alembic check in one transaction: rolled back unless --commit"
+    )
+    parser.add_argument(
+        "--commit",
+        action="store_true",
+        help="commit the copied speech table; without it the transaction rolls back",
+    )
     arguments = parser.parse_args()
     apply_speech_report_type(arguments.commit)

@@ -49,23 +49,33 @@ class ChairRole(StrEnum):
 
 
 CHAIRMAN_RE = re.compile(r"^(?:the ?|mr ?)?chairman:?$", re.IGNORECASE)
-_ANNOTATION_RE = re.compile(r"\[([^\]\[]{0,90}?)\s*(?:temporarily\s+)?in the Chair\]", re.IGNORECASE)
+_ANNOTATION_RE = re.compile(
+    r"\[([^\]\[]{0,90}?)\s*(?:temporarily\s+)?in the Chair\]", re.IGNORECASE
+)
 _CHAIR_EVENT_RE = re.compile(
     r"Thereupon,? (?:Mr|Mdm) (Deputy Speaker|Speaker)\s*(?:\([^)]*\))? (?:left|took|resumed|vacated)[^.]{0,30}the Chair",
     re.IGNORECASE,
 )
 _HEADER_RE = re.compile(r"MPs Speaking:\|([^\n]*)")
-_HEADER_TAG_RE = re.compile(r"^\s*(.*?)\s*\((?:Mr|Mdm) (Deputy Speaker|Speaker)\)\s*$", re.IGNORECASE)
+_HEADER_TAG_RE = re.compile(
+    r"^\s*(.*?)\s*\((?:Mr|Mdm) (Deputy Speaker|Speaker)\)\s*$", re.IGNORECASE
+)
 _SPEAKER_ROLE_RE = re.compile(r"^(?:Mr|Mdm)\s*Speaker$", re.IGNORECASE)
 _DEPUTY_ROLE_RE = re.compile(r"^(?:Mr|Mdm)\s*Deputy\s*Speaker$", re.IGNORECASE)
 _DEPUTY_MENTION_RE = re.compile(r"Deputy\s*Speaker", re.IGNORECASE)
 _NAMED_DEPUTY_RE = re.compile(r"Deputy\s*Speaker\s*\(([^)]+)\)", re.IGNORECASE)
 _TITLE_RE = re.compile(r"^(?:Mr|Mdm|Dr|Sir|Mrs|Ms)\s+")
 BARE_DEPUTY_RE = re.compile(r"^mr deputy speaker:?$", re.IGNORECASE)
-_NAMED_DEPUTY_ROW_RE = re.compile(r"^(?:Mr|Mdm)\s*Deputy\s*Speaker\s*\(([^)]+)\)", re.IGNORECASE)
-_NAMED_DEPUTY_LABEL_RE = re.compile(r"(?:Mr|Mdm)\s*Deputy\s*Speaker\s*\(([^)]+)\)\s*:", re.IGNORECASE)
+_NAMED_DEPUTY_ROW_RE = re.compile(
+    r"^(?:Mr|Mdm)\s*Deputy\s*Speaker\s*\(([^)]+)\)", re.IGNORECASE
+)
+_NAMED_DEPUTY_LABEL_RE = re.compile(
+    r"(?:Mr|Mdm)\s*Deputy\s*Speaker\s*\(([^)]+)\)\s*:", re.IGNORECASE
+)
 _SPEAKER_LABEL_RE = re.compile(r"\b(?:Mr|Mdm|Madam)\s*Speaker\s*:", re.IGNORECASE)
-_SUSPENSION_RE = re.compile(r"Sitting (?:was )?suspended|Sitting resumed|resumed at \d", re.IGNORECASE)
+_SUSPENSION_RE = re.compile(
+    r"Sitting (?:was )?suspended|Sitting resumed|resumed at \d", re.IGNORECASE
+)
 _MEMBER_LABEL_TAIL = r"\s*(?:\([^)]*\))?\s*:"
 _LABEL_TRAILING_CHARACTERS = ";, "
 _NON_LETTER_RE = re.compile(r"[^a-z ]")
@@ -81,7 +91,13 @@ CARRIED_ROLES = ("The Chief Secretary",)
 _WOMAN_SPEAKER_LABEL = "Mdm Speaker"
 _WOMAN_TITLE_PREFIX = "Mdm"
 _SPEAKER_LABELS = ("Mr Speaker", _WOMAN_SPEAKER_LABEL)
-_DEPUTY_SPEAKER_LABELS = ("Mr Deputy Speaker", "Mr DeputySpeaker", "Mdm Deputy Speaker", "Mdm DeputySpeaker", "The Deputy Speaker")
+_DEPUTY_SPEAKER_LABELS = (
+    "Mr Deputy Speaker",
+    "Mr DeputySpeaker",
+    "Mdm Deputy Speaker",
+    "Mdm DeputySpeaker",
+    "The Deputy Speaker",
+)
 
 DATE_DEPENDENT_ROLES = (*DATED_ROLE_TERMS, *_SPEAKER_LABELS, *_DEPUTY_SPEAKER_LABELS)
 
@@ -103,7 +119,11 @@ _TITLE_DOT_PREFIX_RE = re.compile(r"^(Mr|Mrs|Dr|Ms)\.\s+")
 _GLUED_TITLE_RE = re.compile(r"^(Mr|Mrs|Dr|Ms|Mdm)([A-Z])")
 _TITLED_RE = re.compile(r"^(?:Mr|Mrs|Ms|Mdm|Dr|Miss|Inche|Encik|Assoc|Prof|Er)\b")
 
-_ADDRESS_TITLES = ("GOVERNOR'S ADDRESS", "PRESIDENT'S ADDRESS", "YANG DI-PERTUAN NEGARA'S SPEECH")
+_ADDRESS_TITLES = (
+    "GOVERNOR'S ADDRESS",
+    "PRESIDENT'S ADDRESS",
+    "YANG DI-PERTUAN NEGARA'S SPEECH",
+)
 
 # NOTE: SPRS prints these labels without the opening bracket.
 _LABELS_MISSING_OPENING_BRACKET = {
@@ -158,16 +178,24 @@ def _get_header_holders(markdown: str) -> dict[str, set[str]]:
     for entry in header.group(1).split(MP_NAME_SEPARATOR):
         tag = _HEADER_TAG_RE.match(entry.replace(ASTERISK, ""))
         if tag is not None:
-            role_to_holder_names.setdefault(tag.group(2).lower(), set()).add(_TITLE_RE.sub("", tag.group(1).strip()))
+            role_to_holder_names.setdefault(tag.group(2).lower(), set()).add(
+                _TITLE_RE.sub("", tag.group(1).strip())
+            )
     return role_to_holder_names
 
 
-def _get_positions(normalized_text: str, speech_rows: list[SpeechRow]) -> list[Optional[int]]:
+def _get_positions(
+    normalized_text: str, speech_rows: list[SpeechRow]
+) -> list[Optional[int]]:
     positions: list[Optional[int]] = []
     cursor = 0
     for speech_row in speech_rows:
         key = _normalize_text(speech_row.transcript)[:_ALIGN_KEY_LENGTH]
-        found = normalized_text.find(key, cursor) if len(key) >= _MIN_ALIGN_KEY_LENGTH else -1
+        found = (
+            normalized_text.find(key, cursor)
+            if len(key) >= _MIN_ALIGN_KEY_LENGTH
+            else -1
+        )
         positions.append(found if found >= 0 else None)
         if found >= 0:
             cursor = found + 1
@@ -178,32 +206,63 @@ def _get_name_words(name: str) -> set[str]:
     return set(_NON_LETTER_RE.sub("", name.lower()).split()) - _TITLE_WORDS
 
 
-def _is_other_name_in_annotations(annotations: list[ChairAnnotation], name: str) -> bool:
+def _is_other_name_in_annotations(
+    annotations: list[ChairAnnotation], name: str
+) -> bool:
     for annotation in annotations:
         named = _PARENTHESIS_RE.search(_normalize_text(annotation.text))
-        if named is not None and not (_get_name_words(named.group(1)) & _get_name_words(name)):
+        if named is not None and not (
+            _get_name_words(named.group(1)) & _get_name_words(name)
+        ):
             return True
     return False
 
 
-def _get_bound_position(positions: list[Optional[int]], index: int, annotations: list[ChairAnnotation]) -> Optional[int]:
+def _get_bound_position(
+    positions: list[Optional[int]], index: int, annotations: list[ChairAnnotation]
+) -> Optional[int]:
     if positions[index] is not None:
         return positions[index]
-    low = next((positions[row_index] for row_index in range(index - 1, -1, -1) if positions[row_index] is not None), 0)
-    high = next((positions[row_index] for row_index in range(index + 1, len(positions)) if positions[row_index] is not None), None)
-    if any(low <= annotation.position < (high if high is not None else math.inf) for annotation in annotations):
+    low = next(
+        (
+            positions[row_index]
+            for row_index in range(index - 1, -1, -1)
+            if positions[row_index] is not None
+        ),
+        0,
+    )
+    high = next(
+        (
+            positions[row_index]
+            for row_index in range(index + 1, len(positions))
+            if positions[row_index] is not None
+        ),
+        None,
+    )
+    if any(
+        low <= annotation.position < (high if high is not None else math.inf)
+        for annotation in annotations
+    ):
         return None
     return low + 1
 
 
 def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int, str]:
     normalized_text = _normalize_text(markdown)
-    annotations = [ChairAnnotation(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalized_text)]
-    events = [(match.start(), match.group(1).lower()) for match in _CHAIR_EVENT_RE.finditer(normalized_text)]
+    annotations = [
+        ChairAnnotation(match.start(), match.group(1))
+        for match in _ANNOTATION_RE.finditer(normalized_text)
+    ]
+    events = [
+        (match.start(), match.group(1).lower())
+        for match in _CHAIR_EVENT_RE.finditer(normalized_text)
+    ]
     role_to_holder_names = _get_header_holders(markdown)
     is_header_present = bool(_HEADER_RE.search(markdown))
     is_deputy_named = bool(_DEPUTY_MENTION_RE.search(normalized_text))
-    suspension_positions = [match.start() for match in _SUSPENSION_RE.finditer(normalized_text)]
+    suspension_positions = [
+        match.start() for match in _SUSPENSION_RE.finditer(normalized_text)
+    ]
     positions = _get_positions(normalized_text, speech_rows)
     speech_id_to_name: dict[int, str] = {}
     for index, speech_row in enumerate(speech_rows):
@@ -212,31 +271,61 @@ def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int,
         position = _get_bound_position(positions, index, annotations)
         if position is None:
             continue
-        preceding = [annotation for annotation in annotations if annotation.position < position]
-        after_roles = {role for event_position, role in events if event_position >= position - _EVENT_SLACK}
-        before_roles = {role for event_position, role in events if event_position < position - _EVENT_SLACK}
+        preceding = [
+            annotation for annotation in annotations if annotation.position < position
+        ]
+        after_roles = {
+            role
+            for event_position, role in events
+            if event_position >= position - _EVENT_SLACK
+        }
+        before_roles = {
+            role
+            for event_position, role in events
+            if event_position < position - _EVENT_SLACK
+        }
         if preceding:
             annotation_position = preceding[-1].position
             text = _normalize_text(preceding[-1].text)
             named_deputy = _NAMED_DEPUTY_RE.search(text)
-            if named_deputy is not None or not (_SPEAKER_ROLE_RE.match(text) or _DEPUTY_ROLE_RE.match(text)):
-                if any(annotation_position < event_position < position for event_position, _ in events):
+            if named_deputy is not None or not (
+                _SPEAKER_ROLE_RE.match(text) or _DEPUTY_ROLE_RE.match(text)
+            ):
+                if any(
+                    annotation_position < event_position < position
+                    for event_position, _ in events
+                ):
                     continue
-                speech_id_to_name[speech_row.id] = named_deputy.group(1).strip() if named_deputy is not None else text
+                speech_id_to_name[speech_row.id] = (
+                    named_deputy.group(1).strip() if named_deputy is not None else text
+                )
             elif _SPEAKER_ROLE_RE.match(text):
                 holders = role_to_holder_names.get(ChairRole.SPEAKER, set())
-                if after_roles == {ChairRole.SPEAKER} and not before_roles and len(holders) == 1:
+                if (
+                    after_roles == {ChairRole.SPEAKER}
+                    and not before_roles
+                    and len(holders) == 1
+                ):
                     speech_id_to_name[speech_row.id] = next(iter(holders))
                 # NOTE: a Deputy Speaker named anywhere in the report, or a suspension, may hand over the chair without a note, so the header's Speaker takes the chair only without either.
                 elif (
                     len(holders) == 1
                     and not is_deputy_named
-                    and not any(annotation_position < event_position < position for event_position, _ in events)
-                    and not any(annotation_position < suspension_position < position for suspension_position in suspension_positions)
+                    and not any(
+                        annotation_position < event_position < position
+                        for event_position, _ in events
+                    )
+                    and not any(
+                        annotation_position < suspension_position < position
+                        for suspension_position in suspension_positions
+                    )
                 ):
                     speech_id_to_name[speech_row.id] = next(iter(holders))
                 # NOTE: with no MPs Speaking header, the annotation goes to stage 8, which finds the Speaker in SPEAKER_TERMS.
-                elif not is_header_present and not any(annotation_position < event_position < position for event_position, _ in events):
+                elif not is_header_present and not any(
+                    annotation_position < event_position < position
+                    for event_position, _ in events
+                ):
                     speech_id_to_name[speech_row.id] = text
             continue
         if len(after_roles) != 1:
@@ -250,11 +339,23 @@ def get_chairman_names(markdown: str, speech_rows: list[SpeechRow]) -> dict[int,
     return speech_id_to_name
 
 
-def get_deputy_speaker_names(markdown: str, speech_rows: list[SpeechRow]) -> DeputySpeakerNames:
+def get_deputy_speaker_names(
+    markdown: str, speech_rows: list[SpeechRow]
+) -> DeputySpeakerNames:
     normalized_text = _normalize_text(markdown)
-    annotations = [ChairAnnotation(match.start(), match.group(1)) for match in _ANNOTATION_RE.finditer(normalized_text)]
-    position_to_deputy_match = {annotation.position: _NAMED_DEPUTY_RE.search(_normalize_text(annotation.text)) for annotation in annotations}
-    position_to_deputy_name = {position: _TITLE_RE.sub("", match.group(1).strip()) for position, match in position_to_deputy_match.items() if match is not None}
+    annotations = [
+        ChairAnnotation(match.start(), match.group(1))
+        for match in _ANNOTATION_RE.finditer(normalized_text)
+    ]
+    position_to_deputy_match = {
+        annotation.position: _NAMED_DEPUTY_RE.search(_normalize_text(annotation.text))
+        for annotation in annotations
+    }
+    position_to_deputy_name = {
+        position: _TITLE_RE.sub("", match.group(1).strip())
+        for position, match in position_to_deputy_match.items()
+        if match is not None
+    }
     events = [match.start() for match in _CHAIR_EVENT_RE.finditer(normalized_text)]
     positions = _get_positions(normalized_text, speech_rows)
     speech_id_to_deputy_name: dict[int, str] = {}
@@ -270,14 +371,22 @@ def get_deputy_speaker_names(markdown: str, speech_rows: list[SpeechRow]) -> Dep
         position = _get_bound_position(positions, index, annotations)
         if position is None:
             continue
-        preceding = [annotation.position for annotation in annotations if annotation.position < position]
+        preceding = [
+            annotation.position
+            for annotation in annotations
+            if annotation.position < position
+        ]
         deputy_name = position_to_deputy_name.get(preceding[-1]) if preceding else None
-        if deputy_name is not None and not any(preceding[-1] < event_position < position for event_position in events):
+        if deputy_name is not None and not any(
+            preceding[-1] < event_position < position for event_position in events
+        ):
             speech_id_to_deputy_name[speech_row.id] = deputy_name
     mentioned = set(position_to_deputy_name.values()) | labelled
     header = _HEADER_RE.search(markdown)
-    for entry in (header.group(1).split(MP_NAME_SEPARATOR) if header is not None else []):
-        name = _TITLE_RE.sub("", _TRAILING_PARENTHETICAL_RE.sub("", entry.replace(ASTERISK, "").strip()))
+    for entry in header.group(1).split(MP_NAME_SEPARATOR) if header is not None else []:
+        name = _TITLE_RE.sub(
+            "", _TRAILING_PARENTHETICAL_RE.sub("", entry.replace(ASTERISK, "").strip())
+        )
         if name:
             mentioned.add(name)
     return DeputySpeakerNames(speech_id_to_deputy_name, labelled, mentioned)
@@ -287,11 +396,24 @@ def _get_chair_marks(text: str) -> list[ChairMark]:
     chair_marks = []
     for match in _ANNOTATION_RE.finditer(text):
         named_deputy_match = _NAMED_DEPUTY_RE.search(match.group(1))
-        chair_marks.append(ChairMark(match.start(), match.end(), None if named_deputy_match is None else named_deputy_match.group(1).strip()))
+        chair_marks.append(
+            ChairMark(
+                match.start(),
+                match.end(),
+                None
+                if named_deputy_match is None
+                else named_deputy_match.group(1).strip(),
+            )
+        )
     for match in _NAMED_DEPUTY_LABEL_RE.finditer(text):
-        chair_marks.append(ChairMark(match.start(), match.end(), match.group(1).strip()))
+        chair_marks.append(
+            ChairMark(match.start(), match.end(), match.group(1).strip())
+        )
     for pattern in (_CHAIR_EVENT_RE, _SPEAKER_LABEL_RE, _SUSPENSION_RE):
-        chair_marks.extend(ChairMark(match.start(), match.end(), None) for match in pattern.finditer(text))
+        chair_marks.extend(
+            ChairMark(match.start(), match.end(), None)
+            for match in pattern.finditer(text)
+        )
     return sorted(chair_marks, key=lambda chair_mark: chair_mark.position)
 
 
@@ -307,7 +429,13 @@ def build_sitting_text_from_sections(sections: str) -> SittingText:
     for raw_section in json.loads(sections):
         section = HansardReportSection.model_validate(raw_section)
         title = "" if section.title is None else _normalize_text(section.title)
-        body = "" if section.content is None else _normalize_text(get_cleaned_report_markdown(section.content, ReportVersion.SPRS3))
+        body = (
+            ""
+            if section.content is None
+            else _normalize_text(
+                get_cleaned_report_markdown(section.content, ReportVersion.SPRS3)
+            )
+        )
         part = f"{title} {body} "
         section_spans.append(SectionSpan(title.lower(), length, length + len(part)))
         parts.append(part)
@@ -316,63 +444,100 @@ def build_sitting_text_from_sections(sections: str) -> SittingText:
     return SittingText(text, section_spans, _get_chair_marks(text))
 
 
-def _get_chair_deputy_name(sitting_text: SittingText, chair_mark_positions: list[int], position: int) -> Optional[str]:
+def _get_chair_deputy_name(
+    sitting_text: SittingText, chair_mark_positions: list[int], position: int
+) -> Optional[str]:
     index = bisect.bisect_left(chair_mark_positions, position)
     if index == 0:
         return None
     last_chair_mark = sitting_text.chair_marks[index - 1]
     if last_chair_mark.deputy_name is None:
         return None
-    member_label_re = re.compile(re.escape(last_chair_mark.deputy_name) + _MEMBER_LABEL_TAIL)
+    member_label_re = re.compile(
+        re.escape(last_chair_mark.deputy_name) + _MEMBER_LABEL_TAIL
+    )
     if member_label_re.search(sitting_text.text, last_chair_mark.end, position):
         return None
     if index < len(sitting_text.chair_marks):
         next_deputy_name = sitting_text.chair_marks[index].deputy_name
-        if next_deputy_name is not None and _get_name_words(next_deputy_name) & _get_name_words(last_chair_mark.deputy_name):
+        if next_deputy_name is not None and _get_name_words(
+            next_deputy_name
+        ) & _get_name_words(last_chair_mark.deputy_name):
             return None
     return last_chair_mark.deputy_name
 
 
-def _get_section_positions(sitting_text: SittingText, section_span: SectionSpan, speech_rows: list[SpeechRow]) -> list[Optional[int]]:
+def _get_section_positions(
+    sitting_text: SittingText, section_span: SectionSpan, speech_rows: list[SpeechRow]
+) -> list[Optional[int]]:
     section_text = sitting_text.text[section_span.start : section_span.end]
-    return [None if position is None else position + section_span.start for position in _get_positions(section_text, speech_rows)]
+    return [
+        None if position is None else position + section_span.start
+        for position in _get_positions(section_text, speech_rows)
+    ]
 
 
 # NOTE: two sections of a sitting can share a title, one per reading, so the report is aligned in the one that places most of its rows, and in none on a tie.
-def _get_sitting_positions(sitting_text: SittingText, report_title: str, speech_rows: list[SpeechRow]) -> Optional[list[Optional[int]]]:
+def _get_sitting_positions(
+    sitting_text: SittingText, report_title: str, speech_rows: list[SpeechRow]
+) -> Optional[list[Optional[int]]]:
     title = _normalize_text(report_title).lower()
-    section_spans = [section_span for section_span in sitting_text.section_spans if section_span.title == title]
+    section_spans = [
+        section_span
+        for section_span in sitting_text.section_spans
+        if section_span.title == title
+    ]
     if not section_spans:
         return _get_positions(sitting_text.text, speech_rows)
-    section_positions = [_get_section_positions(sitting_text, section_span, speech_rows) for section_span in section_spans]
-    aligned_counts = [sum(position is not None for position in positions) for positions in section_positions]
+    section_positions = [
+        _get_section_positions(sitting_text, section_span, speech_rows)
+        for section_span in section_spans
+    ]
+    aligned_counts = [
+        sum(position is not None for position in positions)
+        for positions in section_positions
+    ]
     most_aligned = max(aligned_counts)
     if aligned_counts.count(most_aligned) > 1:
         return None
     return section_positions[aligned_counts.index(most_aligned)]
 
 
-def get_sitting_deputy_speaker_names(sitting_text: SittingText, report_title: str, speech_rows: list[SpeechRow]) -> dict[int, str]:
+def get_sitting_deputy_speaker_names(
+    sitting_text: SittingText, report_title: str, speech_rows: list[SpeechRow]
+) -> dict[int, str]:
     positions = _get_sitting_positions(sitting_text, report_title, speech_rows)
     if positions is None:
         return {}
-    chair_mark_positions = [chair_mark.position for chair_mark in sitting_text.chair_marks]
-    chair_mark_annotations = [ChairAnnotation(chair_mark.position, "") for chair_mark in sitting_text.chair_marks]
+    chair_mark_positions = [
+        chair_mark.position for chair_mark in sitting_text.chair_marks
+    ]
+    chair_mark_annotations = [
+        ChairAnnotation(chair_mark.position, "")
+        for chair_mark in sitting_text.chair_marks
+    ]
     speech_id_to_deputy_name = {}
     for index, speech_row in enumerate(speech_rows):
-        if not speech_row.speaker or not BARE_DEPUTY_RE.match(speech_row.speaker.strip()):
+        if not speech_row.speaker or not BARE_DEPUTY_RE.match(
+            speech_row.speaker.strip()
+        ):
             continue
         position = _get_bound_position(positions, index, chair_mark_annotations)
         if position is None:
             continue
-        deputy_name = _get_chair_deputy_name(sitting_text, chair_mark_positions, position)
+        deputy_name = _get_chair_deputy_name(
+            sitting_text, chair_mark_positions, position
+        )
         if deputy_name is not None:
             speech_id_to_deputy_name[speech_row.id] = deputy_name
     return speech_id_to_deputy_name
 
 
 def get_deputy_speaker_names_in_text(text: str) -> set[str]:
-    names = {_TITLE_RE.sub("", match.group(1).strip()) for match in _NAMED_DEPUTY_RE.finditer(_normalize_text(text))}
+    names = {
+        _TITLE_RE.sub("", match.group(1).strip())
+        for match in _NAMED_DEPUTY_RE.finditer(_normalize_text(text))
+    }
     names |= _get_header_holders(text).get(ChairRole.DEPUTY_SPEAKER, set())
     return names
 
@@ -389,7 +554,11 @@ def get_carried_role_names(speech_rows: list[SpeechRow]) -> dict[int, str]:
             if speaker == role and holder is not None:
                 speech_id_to_name[speech_row.id] = holder
             elif speaker.startswith(role + _CARRIED_HOLDER_OPENER):
-                role_to_holder[role] = speaker[len(role + _CARRIED_HOLDER_OPENER) :].rstrip(CLOSING_PARENTHESIS).strip()
+                role_to_holder[role] = (
+                    speaker[len(role + _CARRIED_HOLDER_OPENER) :]
+                    .rstrip(CLOSING_PARENTHESIS)
+                    .strip()
+                )
     return speech_id_to_name
 
 
@@ -407,11 +576,21 @@ def _clean_speaker_label(speaker_label: str) -> str:
     speaker_label = _TRAILING_NAME_DOT_RE.sub("", speaker_label)
     if _UPPERCASE_TITLE_RE.match(speaker_label) and speaker_label.isupper():
         speaker_label = speaker_label.title()
-    speaker_label = _WHITESPACE_RE.sub(" ", speaker_label).rstrip(_LABEL_TRAILING_CHARACTERS).strip()
-    if speaker_label.count(OPENING_PARENTHESIS) > speaker_label.count(CLOSING_PARENTHESIS):
+    speaker_label = (
+        _WHITESPACE_RE.sub(" ", speaker_label)
+        .rstrip(_LABEL_TRAILING_CHARACTERS)
+        .strip()
+    )
+    if speaker_label.count(OPENING_PARENTHESIS) > speaker_label.count(
+        CLOSING_PARENTHESIS
+    ):
         cut = speaker_label.rfind(OPENING_PARENTHESIS)
         inner = speaker_label[cut + 1 :].strip()
-        speaker_label = f"{speaker_label[:cut]}({inner})" if _TITLED_RE.match(inner) else speaker_label[:cut].strip()
+        speaker_label = (
+            f"{speaker_label[:cut]}({inner})"
+            if _TITLED_RE.match(inner)
+            else speaker_label[:cut].strip()
+        )
     inverted = _INVERTED_NAME_RE.match(speaker_label)
     if inverted is not None:
         speaker_label = f"{inverted.group(2)} {inverted.group(1)}"
@@ -454,7 +633,11 @@ def _resolve_with_parliament_fallback(
         return ResolvedName(canonical_name, parliament_number)
     for fallback_parliament_number in COLONIAL_PARLIAMENT_FALLBACKS:
         candidate = resolve_canonical_name(name, fallback_parliament_number, lookups)
-        if candidate and (candidate, fallback_parliament_number) in name_parliament_number_to_speaker_id:
+        if (
+            candidate
+            and (candidate, fallback_parliament_number)
+            in name_parliament_number_to_speaker_id
+        ):
             return ResolvedName(candidate, fallback_parliament_number)
     return ResolvedName(None, parliament_number)
 
@@ -465,8 +648,16 @@ def _get_speaker_id(
     lookups: SpeakerLookups,
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
-    resolved_name = _resolve_with_parliament_fallback(name, parliament_number, lookups, name_parliament_number_to_speaker_id)
-    return name_parliament_number_to_speaker_id.get((resolved_name.canonical_name, resolved_name.parliament_number)) if resolved_name.canonical_name else None
+    resolved_name = _resolve_with_parliament_fallback(
+        name, parliament_number, lookups, name_parliament_number_to_speaker_id
+    )
+    return (
+        name_parliament_number_to_speaker_id.get(
+            (resolved_name.canonical_name, resolved_name.parliament_number)
+        )
+        if resolved_name.canonical_name
+        else None
+    )
 
 
 def _get_presiding_officer_id(
@@ -477,7 +668,9 @@ def _get_presiding_officer_id(
 ) -> Optional[int]:
     if not name:
         return None
-    return _get_speaker_id(name, parliament_number, lookups, name_parliament_number_to_speaker_id)
+    return _get_speaker_id(
+        name, parliament_number, lookups, name_parliament_number_to_speaker_id
+    )
 
 
 def _resolve_presiding_officer(
@@ -492,7 +685,9 @@ def _resolve_presiding_officer(
         is_woman_label = speaker_label == _WOMAN_SPEAKER_LABEL
         if is_woman_label != (holder in SPEAKER_WOMEN):
             return None
-        return _get_presiding_officer_id(holder, parliament_number, lookups, name_parliament_number_to_speaker_id)
+        return _get_presiding_officer_id(
+            holder, parliament_number, lookups, name_parliament_number_to_speaker_id
+        )
     if speaker_label.startswith(_DEPUTY_SPEAKER_LABELS):
         named_match = _PARENTHESIS_RE.search(speaker_label)
         terms = (
@@ -505,7 +700,9 @@ def _resolve_presiding_officer(
             if named_match is not None
             else _get_holder_on(terms, sitting_date)
         )
-        return _get_presiding_officer_id(name, parliament_number, lookups, name_parliament_number_to_speaker_id)
+        return _get_presiding_officer_id(
+            name, parliament_number, lookups, name_parliament_number_to_speaker_id
+        )
     return None
 
 
@@ -515,14 +712,20 @@ def _resolve_attendance_speaker_id(
     lookups: SpeakerLookups,
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
-    speaker_id = name_parliament_number_to_speaker_id.get((speaker_name, parliament_number))
+    speaker_id = name_parliament_number_to_speaker_id.get(
+        (speaker_name, parliament_number)
+    )
     if speaker_id is not None:
         return speaker_id
     name = normalize_name(strip_title(speaker_name))
-    return _get_speaker_id(name, parliament_number, lookups, name_parliament_number_to_speaker_id)
+    return _get_speaker_id(
+        name, parliament_number, lookups, name_parliament_number_to_speaker_id
+    )
 
 
-def _get_role_key(speaker_label: str, parliament_number: int) -> Optional[tuple[str, int]]:
+def _get_role_key(
+    speaker_label: str, parliament_number: int
+) -> Optional[tuple[str, int]]:
     if parliament_number != COLONIAL_PARLIAMENT_NUMBER:
         return (speaker_label, parliament_number)
     for fallback_parliament_number in COLONIAL_PARLIAMENT_FALLBACKS:
@@ -538,14 +741,24 @@ def resolve_speech_speaker_id(
     lookups: SpeakerLookups,
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
-    if speaker in NON_SPEAKERS or speaker.startswith(OPENING_PARENTHESIS) or speaker.startswith(EMPHASIS_MARK):
+    if (
+        speaker in NON_SPEAKERS
+        or speaker.startswith(OPENING_PARENTHESIS)
+        or speaker.startswith(EMPHASIS_MARK)
+    ):
         return None
 
     speaker_label = _clean_speaker_label(speaker.rstrip(LABEL_COLON).strip())
 
-    if speaker_label in _SPEAKER_LABELS or speaker_label.startswith(_DEPUTY_SPEAKER_LABELS):
+    if speaker_label in _SPEAKER_LABELS or speaker_label.startswith(
+        _DEPUTY_SPEAKER_LABELS
+    ):
         return _resolve_presiding_officer(
-            speaker_label, parliament_number, sitting_date, lookups, name_parliament_number_to_speaker_id
+            speaker_label,
+            parliament_number,
+            sitting_date,
+            lookups,
+            name_parliament_number_to_speaker_id,
         )
 
     dated_role_terms = DATED_ROLE_TERMS.get(speaker_label)
@@ -553,19 +766,30 @@ def resolve_speech_speaker_id(
         holder = _get_holder_on(dated_role_terms, sitting_date)
         if holder is None:
             return None
-        return _get_speaker_id(holder, parliament_number, lookups, name_parliament_number_to_speaker_id)
+        return _get_speaker_id(
+            holder, parliament_number, lookups, name_parliament_number_to_speaker_id
+        )
 
     role_key = _get_role_key(speaker_label, parliament_number)
     if role_key is not None:
         role_name = ROLE_ONLY_SPEAKERS.get(role_key)
         if role_name is not None:
             _, role_key_parliament_number = role_key
-            return _get_speaker_id(role_name, role_key_parliament_number, lookups, name_parliament_number_to_speaker_id)
+            return _get_speaker_id(
+                role_name,
+                role_key_parliament_number,
+                lookups,
+                name_parliament_number_to_speaker_id,
+            )
 
     parenthesised_matches = list(_PARENTHESIS_RE.finditer(speaker_label))
     if parenthesised_matches:
         title_match = next(
-            (match for match in reversed(parenthesised_matches) if _is_title_in_parentheses(match)),
+            (
+                match
+                for match in reversed(parenthesised_matches)
+                if _is_title_in_parentheses(match)
+            ),
             None,
         )
         if title_match is not None:
@@ -578,7 +802,9 @@ def resolve_speech_speaker_id(
     if not name:
         return None
 
-    return _get_speaker_id(name, parliament_number, lookups, name_parliament_number_to_speaker_id)
+    return _get_speaker_id(
+        name, parliament_number, lookups, name_parliament_number_to_speaker_id
+    )
 
 
 @dataclass(frozen=True)
@@ -599,13 +825,18 @@ def resolve_attendance_rows(
         total += 1
         if not attendance_row.speaker_name:
             continue
-        parliament_number = infer_parliament(attendance_row.parlement_no, attendance_row.volume_no)
+        parliament_number = infer_parliament(
+            attendance_row.parlement_no, attendance_row.volume_no
+        )
         if parliament_number is None:
             continue
         key = (attendance_row.speaker_name, parliament_number)
         if key not in key_to_speaker_id:
             key_to_speaker_id[key] = _resolve_attendance_speaker_id(
-                attendance_row.speaker_name, parliament_number, lookups, name_parliament_number_to_speaker_id
+                attendance_row.speaker_name,
+                parliament_number,
+                lookups,
+                name_parliament_number_to_speaker_id,
             )
         if key_to_speaker_id[key] is not None:
             attendance_id_to_speaker_id[attendance_row.id] = key_to_speaker_id[key]
@@ -624,11 +855,19 @@ def resolve_speech_rows(
         total += 1
         if not speech_row.speaker:
             continue
-        date_key = speech_row.sitting_date if speech_row.speaker.startswith(DATE_DEPENDENT_ROLES) else None
+        date_key = (
+            speech_row.sitting_date
+            if speech_row.speaker.startswith(DATE_DEPENDENT_ROLES)
+            else None
+        )
         key = (speech_row.speaker, speech_row.parliament_number, date_key)
         if key not in key_to_speaker_id:
             key_to_speaker_id[key] = resolve_speech_speaker_id(
-                speech_row.speaker, speech_row.parliament_number, speech_row.sitting_date, lookups, name_parliament_number_to_speaker_id
+                speech_row.speaker,
+                speech_row.parliament_number,
+                speech_row.sitting_date,
+                lookups,
+                name_parliament_number_to_speaker_id,
             )
         if key_to_speaker_id[key] is not None:
             speech_id_to_speaker_id[speech_row.id] = key_to_speaker_id[key]
@@ -636,7 +875,9 @@ def resolve_speech_rows(
 
 
 # NOTE: a bare head-of-state string is the holder only in the Address itself; the same strings in addenda and adjournment reports are parser errors and stay unlinked.
-def get_head_of_state_names(title: str, sitting_date: datetime, speech_rows: list[SpeechRow]) -> dict[int, str]:
+def get_head_of_state_names(
+    title: str, sitting_date: datetime, speech_rows: list[SpeechRow]
+) -> dict[int, str]:
     if not title.upper().startswith(_ADDRESS_TITLES):
         return {}
     speech_id_to_name = {}
@@ -657,7 +898,12 @@ def get_speaker_id_for_name(
     lookups: SpeakerLookups,
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> Optional[int]:
-    return _get_speaker_id(normalize_name(strip_title(name)), parliament_number, lookups, name_parliament_number_to_speaker_id)
+    return _get_speaker_id(
+        normalize_name(strip_title(name)),
+        parliament_number,
+        lookups,
+        name_parliament_number_to_speaker_id,
+    )
 
 
 def get_speaker_ids_for_names(
@@ -666,5 +912,10 @@ def get_speaker_ids_for_names(
     lookups: SpeakerLookups,
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
 ) -> set[int]:
-    found = (get_speaker_id_for_name(name, parliament_number, lookups, name_parliament_number_to_speaker_id) for name in names)
+    found = (
+        get_speaker_id_for_name(
+            name, parliament_number, lookups, name_parliament_number_to_speaker_id
+        )
+        for name in names
+    )
     return {speaker_id for speaker_id in found if speaker_id is not None}

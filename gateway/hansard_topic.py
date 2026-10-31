@@ -31,9 +31,13 @@ def get_hansard_topic_response(report_id: str) -> HansardTopicResponse:
         raise HansardGatewayError(f"Topic request failed for {report_id}") from error
 
 
-async def get_hansard_topic_response_async(report_id: str, client: httpx.AsyncClient) -> HansardTopicResponse:
+async def get_hansard_topic_response_async(
+    report_id: str, client: httpx.AsyncClient
+) -> HansardTopicResponse:
     try:
-        response = await async_post_with_retry(client, settings.hansard_topic_url, {"id": report_id})
+        response = await async_post_with_retry(
+            client, settings.hansard_topic_url, {"id": report_id}
+        )
         return HansardTopicResponse(**response.json())
     except httpx.RequestError as error:
         raise HansardGatewayError(f"Topic request failed for {report_id}") from error

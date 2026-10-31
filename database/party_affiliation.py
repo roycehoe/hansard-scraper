@@ -10,7 +10,12 @@ from enums import DatePrecision
 
 
 class PartyAffiliation(SQLModel, table=True):
-    __table_args__ = (CheckConstraint("num_nonnulls(source_url, source_report_id) = 1", name="ck_partyaffiliation_exactly_one_source"),)
+    __table_args__ = (
+        CheckConstraint(
+            "num_nonnulls(source_url, source_report_id) = 1",
+            name="ck_partyaffiliation_exactly_one_source",
+        ),
+    )
 
     id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -22,5 +27,7 @@ class PartyAffiliation(SQLModel, table=True):
 
     is_started_on_upper_bound: bool
 
-    source_report_id: Optional[int] = Field(default=None, foreign_key="report.id", index=True)
+    source_report_id: Optional[int] = Field(
+        default=None, foreign_key="report.id", index=True
+    )
     speaker_id: int = Field(foreign_key="speaker.id", index=True)

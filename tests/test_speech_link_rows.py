@@ -30,7 +30,9 @@ def _build_report(report_id: str) -> Report:
     )
 
 
-def _build_speech(report_id: Optional[int], ordinal: int, speaker_id: Optional[int]) -> Speech:
+def _build_speech(
+    report_id: Optional[int], ordinal: int, speaker_id: Optional[int]
+) -> Speech:
     assert report_id is not None
     return Speech(
         ordinal=ordinal,
@@ -44,17 +46,24 @@ def _build_speech(report_id: Optional[int], ordinal: int, speaker_id: Optional[i
 
 
 def test_link_rows_come_in_report_and_ordinal_order(scratch_session: Session) -> None:
-    speaker = Speaker(name="Tan Ah Kow", party="PAP", is_legislative_assembly=False, parliament_number=_PARLIAMENT_NUMBER)
+    speaker = Speaker(
+        name="Tan Ah Kow",
+        party="PAP",
+        is_legislative_assembly=False,
+        parliament_number=_PARLIAMENT_NUMBER,
+    )
     first_report = _build_report("motion-1")
     second_report = _build_report("motion-2")
     scratch_session.add_all([speaker, first_report, second_report])
     scratch_session.commit()
-    scratch_session.add_all([
-        _build_speech(second_report.id, 2, speaker.id),
-        _build_speech(first_report.id, 3, speaker.id),
-        _build_speech(second_report.id, 1, speaker.id),
-        _build_speech(first_report.id, 1, speaker.id),
-    ])
+    scratch_session.add_all(
+        [
+            _build_speech(second_report.id, 2, speaker.id),
+            _build_speech(first_report.id, 3, speaker.id),
+            _build_speech(second_report.id, 1, speaker.id),
+            _build_speech(first_report.id, 1, speaker.id),
+        ]
+    )
     scratch_session.commit()
 
     link_rows = CRUDSpeech(scratch_session).get_link_rows_by_speaker_id_not_null()

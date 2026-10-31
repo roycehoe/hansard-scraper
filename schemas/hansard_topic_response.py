@@ -54,7 +54,9 @@ class HansardTopicResponse(BaseModel):
     atbp_list: Optional[object] = None
     ptba_list: Optional[object] = None
     attendance_list: Optional[object] = None
-    online_pdf_file_name: Optional[object] = Field(default=None, alias="onlinePDFFileName")
+    online_pdf_file_name: Optional[object] = Field(
+        default=None, alias="onlinePDFFileName"
+    )
     pdf_nodes: Optional[object] = None
     clarification_text: Optional[object] = None
     clarification_title: Optional[object] = None
@@ -63,7 +65,9 @@ class HansardTopicResponse(BaseModel):
     ptba_to: Optional[object] = None
     question_count: Optional[object] = None
     result_data: Optional[object] = None
-    result_html: Optional[HansardTopicResultHtml] = Field(default=None, alias="resultHTML")
+    result_html: Optional[HansardTopicResultHtml] = Field(
+        default=None, alias="resultHTML"
+    )
     type: Optional[object] = None
     error_code: Optional[object] = None
     description: Optional[object] = None

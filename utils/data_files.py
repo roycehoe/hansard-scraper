@@ -39,7 +39,9 @@ def _get_data_file(path: Path, schema: type[_SchemaT]) -> _SchemaT:
     try:
         return schema.model_validate_json(path.read_bytes())
     except ValidationError as error:
-        raise HansardDataFileError(f"{path.name} does not match its schema: {error}") from error
+        raise HansardDataFileError(
+            f"{path.name} does not match its schema: {error}"
+        ) from error
 
 
 def get_excluded_report_ids() -> list[ExcludedReportId]:

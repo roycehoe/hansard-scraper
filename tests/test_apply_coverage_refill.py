@@ -35,11 +35,15 @@ _SEARCH_RESULT = {
 }
 
 
-def _fetch_topic_content(report_id: str, html_file_name: str | None, report_version: str) -> str:
+def _fetch_topic_content(
+    report_id: str, html_file_name: str | None, report_version: str
+) -> str:
     return _TOPIC_CONTENT
 
 
-def _fail_fetch_topic_content(report_id: str, html_file_name: str | None, report_version: str) -> str:
+def _fail_fetch_topic_content(
+    report_id: str, html_file_name: str | None, report_version: str
+) -> str:
     raise AssertionError("Commit must not fetch from SPRS")
 
 
@@ -51,20 +55,32 @@ def _write_hits(tmp_path: Path) -> Path:
 
 def _get_row_counts(scratch_session: Session) -> tuple[int, int, int]:
     scratch_session.expire_all()
-    return tuple(len(scratch_session.exec(select(table)).all()) for table in (HansardWebsiteResponse, Report, Speech))
+    return tuple(
+        len(scratch_session.exec(select(table)).all())
+        for table in (HansardWebsiteResponse, Report, Speech)
+    )
 
 
 def test_dry_run_writes_the_plan_and_changes_no_row(
-    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(apply_coverage_refill_script, "engine", scratch_engine)
-    monkeypatch.setattr(apply_coverage_refill_script, "_fetch_topic_content", _fetch_topic_content)
+    monkeypatch.setattr(
+        apply_coverage_refill_script, "_fetch_topic_content", _fetch_topic_content
+    )
     plan_path = tmp_path / "plan.json"
 
-    apply_coverage_refill_script.apply_coverage_refill(plan_path, _write_hits(tmp_path), [], is_commit=False)
+    apply_coverage_refill_script.apply_coverage_refill(
+        plan_path, _write_hits(tmp_path), [], is_commit=False
+    )
 
     plan = json.loads(plan_path.read_text())
-    assert [fetched_hit["search_result"]["reportId"] for fetched_hit in plan["fetched_hits"]] == [_REPORT_ID]
+    assert [
+        fetched_hit["search_result"]["reportId"] for fetched_hit in plan["fetched_hits"]
+    ] == [_REPORT_ID]
     assert plan["fetched_hits"][0]["content"] == _TOPIC_CONTENT
     assert plan["fetched_hits"][0]["speech_count"] == _SPEECH_COUNT
     assert plan["fetched_reports"] == []
@@ -72,31 +88,57 @@ def test_dry_run_writes_the_plan_and_changes_no_row(
 
 
 def test_commit_refuses_after_a_planned_hit_is_stored(
-    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(apply_coverage_refill_script, "engine", scratch_engine)
-    monkeypatch.setattr(apply_coverage_refill_script, "_fetch_topic_content", _fetch_topic_content)
+    monkeypatch.setattr(
+        apply_coverage_refill_script, "_fetch_topic_content", _fetch_topic_content
+    )
     plan_path = tmp_path / "plan.json"
-    apply_coverage_refill_script.apply_coverage_refill(plan_path, _write_hits(tmp_path), [], is_commit=False)
-    scratch_session.add(build_report(build_hansard_website_response(HansardSearchResult.model_validate(_SEARCH_RESULT), None)))
+    apply_coverage_refill_script.apply_coverage_refill(
+        plan_path, _write_hits(tmp_path), [], is_commit=False
+    )
+    scratch_session.add(
+        build_report(
+            build_hansard_website_response(
+                HansardSearchResult.model_validate(_SEARCH_RESULT), None
+            )
+        )
+    )
     scratch_session.commit()
 
     with pytest.raises(HansardWriteCheckError, match="already stored as reports"):
-        apply_coverage_refill_script.apply_coverage_refill(plan_path, None, [], is_commit=True)
+        apply_coverage_refill_script.apply_coverage_refill(
+            plan_path, None, [], is_commit=True
+        )
 
     assert _get_row_counts(scratch_session) == (0, 1, 0)
 
 
 def test_commit_on_an_unchanged_state_writes_exactly_the_plan(
-    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(apply_coverage_refill_script, "engine", scratch_engine)
-    monkeypatch.setattr(apply_coverage_refill_script, "_fetch_topic_content", _fetch_topic_content)
+    monkeypatch.setattr(
+        apply_coverage_refill_script, "_fetch_topic_content", _fetch_topic_content
+    )
     plan_path = tmp_path / "plan.json"
-    apply_coverage_refill_script.apply_coverage_refill(plan_path, _write_hits(tmp_path), [], is_commit=False)
-    monkeypatch.setattr(apply_coverage_refill_script, "_fetch_topic_content", _fail_fetch_topic_content)
+    apply_coverage_refill_script.apply_coverage_refill(
+        plan_path, _write_hits(tmp_path), [], is_commit=False
+    )
+    monkeypatch.setattr(
+        apply_coverage_refill_script, "_fetch_topic_content", _fail_fetch_topic_content
+    )
 
-    apply_coverage_refill_script.apply_coverage_refill(plan_path, None, [], is_commit=True)
+    apply_coverage_refill_script.apply_coverage_refill(
+        plan_path, None, [], is_commit=True
+    )
 
     assert _get_row_counts(scratch_session) == (1, 1, _SPEECH_COUNT)
     stored_report = scratch_session.exec(select(Report)).one()
@@ -105,15 +147,28 @@ def test_commit_on_an_unchanged_state_writes_exactly_the_plan(
 
 
 def test_commit_refuses_the_protected_local_port_and_writes_nothing(
-    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(apply_coverage_refill_script, "engine", scratch_engine)
-    monkeypatch.setattr(apply_coverage_refill_script, "_fetch_topic_content", _fetch_topic_content)
+    monkeypatch.setattr(
+        apply_coverage_refill_script, "_fetch_topic_content", _fetch_topic_content
+    )
     plan_path = tmp_path / "plan.json"
-    apply_coverage_refill_script.apply_coverage_refill(plan_path, _write_hits(tmp_path), [], is_commit=False)
-    monkeypatch.setattr(apply_coverage_refill_script, "settings", SimpleNamespace(database_url=_PROTECTED_DATABASE_URL))
+    apply_coverage_refill_script.apply_coverage_refill(
+        plan_path, _write_hits(tmp_path), [], is_commit=False
+    )
+    monkeypatch.setattr(
+        apply_coverage_refill_script,
+        "settings",
+        SimpleNamespace(database_url=_PROTECTED_DATABASE_URL),
+    )
 
     with pytest.raises(HansardWriteTargetError, match="5432"):
-        apply_coverage_refill_script.apply_coverage_refill(plan_path, None, [], is_commit=True)
+        apply_coverage_refill_script.apply_coverage_refill(
+            plan_path, None, [], is_commit=True
+        )
 
     assert _get_row_counts(scratch_session) == (0, 0, 0)

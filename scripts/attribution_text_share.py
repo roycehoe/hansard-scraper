@@ -32,25 +32,49 @@ def _get_share(numerator: int, denominator: int) -> str:
 
 def _log_report_type_figures(report_type: str, figures: ReportTypeFigures) -> None:
     linked_row_count = figures.category_to_row_count[LINKED_CATEGORY]
-    adr_denominator = linked_row_count + figures.category_to_row_count[NAMED_UNLINKED_CATEGORY]
+    adr_denominator = (
+        linked_row_count + figures.category_to_row_count[NAMED_UNLINKED_CATEGORY]
+    )
     reports_with_rows = figures.report_count - figures.zero_row_report_count
     logger.info(f"  {report_type}: {figures.report_count} reports")
-    logger.info(f"    1. ADR 0001 rate:  {_get_share(linked_row_count, adr_denominator)}")
-    logger.info(f"    2. All-rows rate:  {_get_share(linked_row_count, sum(figures.category_to_row_count.values()))}")
-    logger.info(f"    3. Text share:     {_get_share(figures.category_to_character_count[LINKED_CATEGORY], figures.body_total)} chars")
-    logger.info(f"    Zero-row reports:  {_get_share(figures.zero_row_report_count, figures.report_count)}")
-    logger.info(f"    Single-speaker collapses, reports: {_get_share(figures.collapse_report_count, reports_with_rows)}")
-    logger.info(f"    Single-speaker collapses, body chars: {_get_share(figures.collapse_character_count, figures.body_total)}")
+    logger.info(
+        f"    1. ADR 0001 rate:  {_get_share(linked_row_count, adr_denominator)}"
+    )
+    logger.info(
+        f"    2. All-rows rate:  {_get_share(linked_row_count, sum(figures.category_to_row_count.values()))}"
+    )
+    logger.info(
+        f"    3. Text share:     {_get_share(figures.category_to_character_count[LINKED_CATEGORY], figures.body_total)} chars"
+    )
+    logger.info(
+        f"    Zero-row reports:  {_get_share(figures.zero_row_report_count, figures.report_count)}"
+    )
+    logger.info(
+        f"    Single-speaker collapses, reports: {_get_share(figures.collapse_report_count, reports_with_rows)}"
+    )
+    logger.info(
+        f"    Single-speaker collapses, body chars: {_get_share(figures.collapse_character_count, figures.body_total)}"
+    )
 
 
-def _log_rates(category_to_row_count: Counter[str], category_to_character_count: Counter[str], body_total: int) -> None:
+def _log_rates(
+    category_to_row_count: Counter[str],
+    category_to_character_count: Counter[str],
+    body_total: int,
+) -> None:
     rows_total = sum(category_to_row_count.values())
     linked_row_count = category_to_row_count[LINKED_CATEGORY]
     linked_character_count = category_to_character_count[LINKED_CATEGORY]
     adr_denominator = linked_row_count + category_to_row_count[NAMED_UNLINKED_CATEGORY]
-    logger.info(f"1. ADR 0001 rate:  {linked_row_count} / {adr_denominator} = {_get_percent(linked_row_count, adr_denominator)}")
-    logger.info(f"2. All-rows rate:  {linked_row_count} / {rows_total} = {_get_percent(linked_row_count, rows_total)}")
-    logger.info(f"3. Text share:     {linked_character_count} / {body_total} chars = {_get_percent(linked_character_count, body_total)}")
+    logger.info(
+        f"1. ADR 0001 rate:  {linked_row_count} / {adr_denominator} = {_get_percent(linked_row_count, adr_denominator)}"
+    )
+    logger.info(
+        f"2. All-rows rate:  {linked_row_count} / {rows_total} = {_get_percent(linked_row_count, rows_total)}"
+    )
+    logger.info(
+        f"3. Text share:     {linked_character_count} / {body_total} chars = {_get_percent(linked_character_count, body_total)}"
+    )
 
 
 def attribution_text_share(output_path: Optional[Path]) -> None:
@@ -66,32 +90,56 @@ def attribution_text_share(output_path: Optional[Path]) -> None:
     body_in_zero_row_reports = headline_figures.body_in_zero_row_reports
     stored_character_count = sum(category_to_character_count.values())
 
-    logger.info(f"{headline_figures.group}: {headline_figures.report_count} reports with markdown, "
-          f"{headline_figures.reports_with_rows_count} with speech rows, {sum(category_to_row_count.values())} speech rows")
+    logger.info(
+        f"{headline_figures.group}: {headline_figures.report_count} reports with markdown, "
+        f"{headline_figures.reports_with_rows_count} with speech rows, {sum(category_to_row_count.values())} speech rows"
+    )
     _log_rates(category_to_row_count, category_to_character_count, body_total)
     logger.info("Where the body text goes (chars, share of body):")
     for label, character_count in (
         ("linked rows", category_to_character_count[LINKED_CATEGORY]),
-        ("named but unlinked rows", category_to_character_count[NAMED_UNLINKED_CATEGORY]),
-        ("ADR-excluded rows (hon. Members, stage directions)", category_to_character_count[ADR_EXCLUDED_CATEGORY]),
+        (
+            "named but unlinked rows",
+            category_to_character_count[NAMED_UNLINKED_CATEGORY],
+        ),
+        (
+            "ADR-excluded rows (hon. Members, stage directions)",
+            category_to_character_count[ADR_EXCLUDED_CATEGORY],
+        ),
         ("rows with no speaker", category_to_character_count[NO_SPEAKER_CATEGORY]),
         ("reports with no rows", body_in_zero_row_reports),
-        ("dropped inside reports with rows (preamble, headings, labels)",
-         body_total - stored_character_count - body_in_zero_row_reports),
+        (
+            "dropped inside reports with rows (preamble, headings, labels)",
+            body_total - stored_character_count - body_in_zero_row_reports,
+        ),
     ):
-        logger.info(f"  {label:<64} {character_count:>12} {_get_percent(character_count, body_total):>7}")
+        logger.info(
+            f"  {label:<64} {character_count:>12} {_get_percent(character_count, body_total):>7}"
+        )
     logger.info(f"Rows by category: {dict(category_to_row_count)}")
     for group_figures in reported_figures:
         logger.info(f"{group_figures.group}, beside the headline:")
-        _log_rates(group_figures.category_to_row_count, group_figures.category_to_character_count, group_figures.body_total)
+        _log_rates(
+            group_figures.category_to_row_count,
+            group_figures.category_to_character_count,
+            group_figures.body_total,
+        )
 
     for group_figures in attribution_figures:
         logger.info(f"{group_figures.group}, by report type:")
         for report_type in sorted(group_figures.report_type_to_figures):
-            _log_report_type_figures(report_type, group_figures.report_type_to_figures[report_type])
+            _log_report_type_figures(
+                report_type, group_figures.report_type_to_figures[report_type]
+            )
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="The three attribution numbers, by Parliament group and by report type")
-    parser.add_argument("--output", type=Path, help="also write the log lines to this file, such as docs/figures/2026-10-17-round8.txt")
+    parser = argparse.ArgumentParser(
+        description="The three attribution numbers, by Parliament group and by report type"
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="also write the log lines to this file, such as docs/figures/2026-10-17-round8.txt",
+    )
     attribution_text_share(parser.parse_args().output)

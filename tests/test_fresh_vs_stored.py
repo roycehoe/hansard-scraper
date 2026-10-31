@@ -3,13 +3,19 @@ from scripts.fresh_vs_stored import compare_rows, get_row_differences, tokenize
 
 
 def test_equal_rows_with_gapless_ordinals_are_same() -> None:
-    rows = [ComparedSpeechRow(speaker="A", transcript="one", kind=None), ComparedSpeechRow(speaker="B", transcript="two", kind=None)]
+    rows = [
+        ComparedSpeechRow(speaker="A", transcript="one", kind=None),
+        ComparedSpeechRow(speaker="B", transcript="two", kind=None),
+    ]
 
     assert compare_rows(rows, [1, 2], rows) == FreshVsStoredStatus.SAME
 
 
 def test_equal_rows_with_gapped_ordinals_are_ordinal_only() -> None:
-    rows = [ComparedSpeechRow(speaker="A", transcript="one", kind=None), ComparedSpeechRow(speaker="B", transcript="two", kind=None)]
+    rows = [
+        ComparedSpeechRow(speaker="A", transcript="one", kind=None),
+        ComparedSpeechRow(speaker="B", transcript="two", kind=None),
+    ]
 
     assert compare_rows(rows, [1, 3], rows) == FreshVsStoredStatus.ORDINAL_ONLY
 

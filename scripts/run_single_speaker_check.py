@@ -20,7 +20,8 @@ def run_single_speaker_check() -> None:
         reports = CRUDReport(session).get_by_markdown_content_not_null()
 
     single_speaker = [
-        report for report in reports
+        report
+        for report in reports
         if len(extract_mps_speaking(report.markdown_content)) == 1
     ]
     logger.info(f"Single-speaker docs: {len(single_speaker)}")
@@ -41,14 +42,23 @@ def run_single_speaker_check() -> None:
         if start_line is None:
             report_type_to_no_start_count[report.report_type] += 1
             continue
-        speeches = get_speeches(report.markdown_content, start_line, report.report_type, report.report_version)
+        speeches = get_speeches(
+            report.markdown_content,
+            start_line,
+            report.report_type,
+            report.report_version,
+        )
         if speeches:
             report_type_to_passed_count[report.report_type] += 1
         else:
             report_type_to_failed_count[report.report_type] += 1
 
     all_types = sorted(
-        set(list(report_type_to_passed_count) + list(report_type_to_failed_count) + list(report_type_to_no_start_count))
+        set(
+            list(report_type_to_passed_count)
+            + list(report_type_to_failed_count)
+            + list(report_type_to_no_start_count)
+        )
     )
 
     total_passed = sum(report_type_to_passed_count.values())
@@ -63,7 +73,9 @@ def run_single_speaker_check() -> None:
         no_start = report_type_to_no_start_count.get(report_type, 0)
         logger.info(f"{report_type:<28} {passed:>6} {failed:>6} {no_start:>9}")
     logger.info("-" * _TABLE_WIDTH)
-    logger.info(f"{'TOTAL':<28} {total_passed:>6} {total_failed:>6} {total_no_start:>9}")
+    logger.info(
+        f"{'TOTAL':<28} {total_passed:>6} {total_failed:>6} {total_no_start:>9}"
+    )
     logger.info("")
     total = total_passed + total_failed + total_no_start
     percentage = _PERCENT * total_passed / total if total else 0

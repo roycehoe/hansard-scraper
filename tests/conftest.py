@@ -13,8 +13,15 @@ from exceptions import HansardTestGuardError
 
 _SCRATCH_DATABASE_URL = "postgresql://user:password@localhost:5435/hansard_launch"
 _ROUTING_ENV_VARS = (
-    "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy",
-    "PGHOSTADDR", "PGSERVICE", "PGSERVICEFILE",
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "ALL_PROXY",
+    "http_proxy",
+    "https_proxy",
+    "all_proxy",
+    "PGHOSTADDR",
+    "PGSERVICE",
+    "PGSERVICEFILE",
 )
 
 for routing_env_var in _ROUTING_ENV_VARS:
@@ -57,11 +64,20 @@ _validate_can_use_database_url(settings.database_url)
 
 
 @event.listens_for(Engine, "do_connect")
-def _refuse_non_scratch_connection(dialect: object, connection_record: object, connection_args: tuple, connection_params: dict) -> None:
+def _refuse_non_scratch_connection(
+    dialect: object,
+    connection_record: object,
+    connection_args: tuple,
+    connection_params: dict,
+) -> None:
     if connection_args:
-        raise HansardTestGuardError("Tests refuse a positional database connection string")
+        raise HansardTestGuardError(
+            "Tests refuse a positional database connection string"
+        )
     if connection_params.get("host") not in _LOOPBACK_HOSTS:
-        raise HansardTestGuardError(f"Tests refuse database host {connection_params.get('host')}")
+        raise HansardTestGuardError(
+            f"Tests refuse database host {connection_params.get('host')}"
+        )
     if "hostaddr" in connection_params:
         raise HansardTestGuardError("Tests refuse a database hostaddr")
     if "service" in connection_params:
@@ -71,9 +87,13 @@ def _refuse_non_scratch_connection(dialect: object, connection_record: object, c
     if connection_params.get("port") is None:
         raise HansardTestGuardError("Tests refuse a database connection with no port")
     if int(connection_params["port"]) != _SCRATCH_PORT:
-        raise HansardTestGuardError(f"Tests refuse database port {connection_params['port']}")
+        raise HansardTestGuardError(
+            f"Tests refuse database port {connection_params['port']}"
+        )
     if connection_params.get("dbname") != _SCRATCH_DATABASE:
-        raise HansardTestGuardError(f"Tests refuse database {connection_params.get('dbname')}")
+        raise HansardTestGuardError(
+            f"Tests refuse database {connection_params.get('dbname')}"
+        )
 
 
 _ORIGINAL_SOCKET_CONNECT: Callable[..., None] = socket.socket.connect
@@ -99,7 +119,9 @@ def _connect_ex_to_loopback(self: socket.socket, address: object) -> int:
     return _ORIGINAL_SOCKET_CONNECT_EX(self, address)
 
 
-def _create_loopback_connection(address: tuple, *args: object, **kwargs: object) -> socket.socket:
+def _create_loopback_connection(
+    address: tuple, *args: object, **kwargs: object
+) -> socket.socket:
     _validate_can_connect_to_host(address[0])
     return _ORIGINAL_CREATE_CONNECTION(address, *args, **kwargs)
 
@@ -117,7 +139,9 @@ socket.getaddrinfo = _get_loopback_address_info
 
 def _validate_can_use_test_schema(engine: Engine, schema: str) -> None:
     with engine.connect() as connection:
-        statement = text("SELECT table_name FROM information_schema.tables WHERE table_schema = :schema")
+        statement = text(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema = :schema"
+        )
         table_names = set(connection.execute(statement, {"schema": schema}).scalars())
     if table_names != {table.name for table in SQLModel.metadata.sorted_tables}:
         raise HansardTestGuardError(f"Test schema {schema} does not hold every table")
@@ -130,7 +154,10 @@ def scratch_engine() -> Iterator[Engine]:
     with admin_engine.begin() as connection:
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS rum"))
         connection.execute(text(f'CREATE SCHEMA "{schema}"'))
-    engine = create_engine(_SCRATCH_DATABASE_URL, connect_args={"options": f"-csearch_path={schema},public"})
+    engine = create_engine(
+        _SCRATCH_DATABASE_URL,
+        connect_args={"options": f"-csearch_path={schema},public"},
+    )
     try:
         # NOTE: a checked create sees public's tables through the search path and would create nothing
         SQLModel.metadata.create_all(engine, checkfirst=False)
@@ -151,5 +178,7 @@ def scratch_session(scratch_engine: Engine) -> Iterator[Session]:
         schema = connection.execute(text("SELECT current_schema()")).scalar_one()
         if not schema.startswith(_TEST_SCHEMA_PREFIX):
             raise HansardTestGuardError(f"Tests refuse to empty schema {schema}")
-        table_names = ", ".join(f'"{schema}"."{table.name}"' for table in SQLModel.metadata.sorted_tables)
+        table_names = ", ".join(
+            f'"{schema}"."{table.name}"' for table in SQLModel.metadata.sorted_tables
+        )
         connection.execute(text(f"TRUNCATE {table_names} RESTART IDENTITY CASCADE"))

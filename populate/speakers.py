@@ -15,12 +15,20 @@ from utils.data_files import get_speaker_overrides
 def populate_speakers(session: Session, is_commit: bool) -> None:
     speaker_results = build_speaker_results(get_parliament_member_list_response())
     speaker_overrides = get_speaker_overrides()
-    name_parliament_to_is_legislative_assembly = get_name_parliament_to_is_legislative_assembly(speaker_overrides)
+    name_parliament_to_is_legislative_assembly = (
+        get_name_parliament_to_is_legislative_assembly(speaker_overrides)
+    )
     name_parliament_to_party = get_name_parliament_to_party(speaker_overrides)
     for i, speaker_result in enumerate(speaker_results, start=1):
-        logger.info(f"{i}/{len(speaker_results)}: {speaker_result.name} (Parliament {speaker_result.parliament_number})")
+        logger.info(
+            f"{i}/{len(speaker_results)}: {speaker_result.name} (Parliament {speaker_result.parliament_number})"
+        )
     speakers = [
-        build_speaker(speaker_result, name_parliament_to_is_legislative_assembly, name_parliament_to_party)
+        build_speaker(
+            speaker_result,
+            name_parliament_to_is_legislative_assembly,
+            name_parliament_to_party,
+        )
         for speaker_result in speaker_results
     ]
     if not is_commit:

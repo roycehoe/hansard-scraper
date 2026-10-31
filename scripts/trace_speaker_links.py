@@ -54,10 +54,13 @@ def trace_speaker_links() -> None:
         reports = [
             (report.id, report.parliament_number, report.sitting_date)
             for report in CRUDReport(session).get_all()
-            if report.parliament_number is not None and report.parliament_number <= HEADLINE_MAX_PARLIAMENT
+            if report.parliament_number is not None
+            and report.parliament_number <= HEADLINE_MAX_PARLIAMENT
         ]
         name_parliament_number_to_speaker_id = {
-            (speaker.name, speaker.parliament_number): speaker.id for speaker in speakers if speaker.id is not None
+            (speaker.name, speaker.parliament_number): speaker.id
+            for speaker in speakers
+            if speaker.id is not None
         }
         speaker_id_to_name = {speaker.id: speaker.name for speaker in speakers}
         lookups = build_speaker_lookups(speakers)
@@ -65,23 +68,50 @@ def trace_speaker_links() -> None:
         key_to_speaker_id_counts: dict[Key, Counter[int]] = {}
         for start in range(0, len(reports), REPORT_BATCH):
             batch = reports[start : start + REPORT_BATCH]
-            report_id_to_parliament_number_and_sitting_date = {report_id: (parliament_number, sitting_date) for report_id, parliament_number, sitting_date in batch}
-            for speech_row in CRUDSpeech(session).get_rows_by_report_ids(list(report_id_to_parliament_number_and_sitting_date)):
+            report_id_to_parliament_number_and_sitting_date = {
+                report_id: (parliament_number, sitting_date)
+                for report_id, parliament_number, sitting_date in batch
+            }
+            for speech_row in CRUDSpeech(session).get_rows_by_report_ids(
+                list(report_id_to_parliament_number_and_sitting_date)
+            ):
                 if not speech_row.speaker or speech_row.speaker_id is None:
                     continue
-                parliament_number, sitting_date = report_id_to_parliament_number_and_sitting_date[speech_row.report_id]
-                date_key = sitting_date if speech_row.speaker.startswith(DATE_DEPENDENT_ROLES) else None
-                key_to_speaker_id_counts.setdefault((speech_row.speaker, parliament_number, date_key), Counter())[speech_row.speaker_id] += 1
+                parliament_number, sitting_date = (
+                    report_id_to_parliament_number_and_sitting_date[
+                        speech_row.report_id
+                    ]
+                )
+                date_key = (
+                    sitting_date
+                    if speech_row.speaker.startswith(DATE_DEPENDENT_ROLES)
+                    else None
+                )
+                key_to_speaker_id_counts.setdefault(
+                    (speech_row.speaker, parliament_number, date_key), Counter()
+                )[speech_row.speaker_id] += 1
 
-    total_rows = sum(sum(counter.values()) for counter in key_to_speaker_id_counts.values())
+    total_rows = sum(
+        sum(counter.values()) for counter in key_to_speaker_id_counts.values()
+    )
     agree_key_count = 0
     agree_row_count = 0
     context_key_count = 0
     context_row_count = 0
     stale: list[StaleLink] = []
-    for (speaker, parliament_number, sitting_date), counts in key_to_speaker_id_counts.items():
+    for (
+        speaker,
+        parliament_number,
+        sitting_date,
+    ), counts in key_to_speaker_id_counts.items():
         key_row_count = sum(counts.values())
-        resolved = resolve_speech_speaker_id(speaker, parliament_number, sitting_date, lookups, name_parliament_number_to_speaker_id)
+        resolved = resolve_speech_speaker_id(
+            speaker,
+            parliament_number,
+            sitting_date,
+            lookups,
+            name_parliament_number_to_speaker_id,
+        )
         if resolved is None and _is_context_linked(speaker):
             context_key_count += 1
             context_row_count += key_row_count
@@ -89,17 +119,37 @@ def trace_speaker_links() -> None:
             agree_key_count += 1
             agree_row_count += key_row_count
         else:
-            bad_rows = sum(row_count for speaker_id, row_count in counts.items() if speaker_id != resolved)
-            stale.append(StaleLink(bad_rows, speaker, parliament_number, sitting_date, counts, resolved))
+            bad_rows = sum(
+                row_count
+                for speaker_id, row_count in counts.items()
+                if speaker_id != resolved
+            )
+            stale.append(
+                StaleLink(
+                    bad_rows, speaker, parliament_number, sitting_date, counts, resolved
+                )
+            )
 
     stale_rows = sum(stale_link.bad_row_count for stale_link in stale)
     logger.info(f"Total: {len(key_to_speaker_id_counts)} keys, {total_rows} rows")
     logger.info(f"Agree: {agree_key_count} keys, {agree_row_count} rows")
-    logger.info(f"Context-linked, not re-evaluated: {context_key_count} keys, {context_row_count} rows")
+    logger.info(
+        f"Context-linked, not re-evaluated: {context_key_count} keys, {context_row_count} rows"
+    )
     logger.info(f"Stale: {len(stale)} keys, {stale_rows} rows")
-    for stale_link in sorted(stale, key=lambda stale_link: (-stale_link.bad_row_count, stale_link.speaker, stale_link.parliament_number)):
+    for stale_link in sorted(
+        stale,
+        key=lambda stale_link: (
+            -stale_link.bad_row_count,
+            stale_link.speaker,
+            stale_link.parliament_number,
+        ),
+    ):
         stored_text = ", ".join(
-            f"{speaker_id} {speaker_id_to_name.get(speaker_id)!r} x{row_count}" for speaker_id, row_count in sorted(stale_link.speaker_id_to_row_count.items())
+            f"{speaker_id} {speaker_id_to_name.get(speaker_id)!r} x{row_count}"
+            for speaker_id, row_count in sorted(
+                stale_link.speaker_id_to_row_count.items()
+            )
         )
         logger.info(
             f"{stale_link.bad_row_count:>6}  {stale_link.speaker!r}  P{stale_link.parliament_number}  "
