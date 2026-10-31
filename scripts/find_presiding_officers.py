@@ -37,9 +37,9 @@ def _print_terms(
             min(name_to_dates[best_name]),
             max(name_to_dates[best_name]),
         )
-        print(
+        print(  # noqa: T201 stdout is the tuple literal to paste into the source
             f'    (date({first_day.year}, {first_day.month}, {first_day.day}), date({last_day.year}, {last_day.month}, {last_day.day}), "{best_name}"),'
-        )  # noqa: T201 stdout is the tuple literal to paste into the source
+        )
     print(")")  # noqa: T201 stdout is the tuple literal to paste into the source
 
 
