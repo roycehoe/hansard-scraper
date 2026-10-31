@@ -198,6 +198,10 @@ The fetcher sends one request at a time and waits at least 2 seconds between req
 
 Quote speeches from the Official Report on [SPRS](https://sprs.parl.gov.sg/search/), which is the authoritative record.
 
+## Contributing
+
+Open an issue before you open a pull request. [CONTRIBUTING.md](CONTRIBUTING.md) says how.
+
 ## License
 
 The code is under the [MIT license](LICENSE). The license does not cover the text of the reports, which belongs to Parliament.
