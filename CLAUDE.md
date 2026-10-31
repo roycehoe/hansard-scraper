@@ -32,6 +32,9 @@ docker-compose up -d
 ruff check .
 ruff check --fix .
 
+# Type check (fails only on errors not in .basedpyright/baseline.json)
+poetry run basedpyright
+
 # Run the main scraping/processing pipeline
 python script.py
 

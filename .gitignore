@@ -2,6 +2,7 @@
 *.json
 !sample.json
 !data/*.json
+!.basedpyright/baseline.json
 .claude/worktrees/
 .claude/settings.local.json
 plans/

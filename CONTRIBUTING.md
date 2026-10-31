@@ -16,7 +16,7 @@ Keep each pull request to one change. Subjects follow Conventional Commits, such
 
 ## Checks
 
-CI runs `poetry run ruff check .`, `poetry run pytest` and `docker build .` on every pull request. The tests need a separate PostgreSQL database named `hansard_launch` on port 5435, on a server with the `rum` extension installed; `tests/conftest.py` refuses any other.
+CI runs `poetry run ruff check .`, `poetry run basedpyright`, `poetry run pytest` and `docker build .` on every pull request. The tests need a separate PostgreSQL database named `hansard_launch` on port 5435, on a server with the `rum` extension installed; `tests/conftest.py` refuses any other.
 
 - A parser fix adds a golden fixture in `tests/` for the defect it closes.
 - Before and after a change to parsing or linking, run `python scripts/attribution_text_share.py` and quote the three numbers it logs.
