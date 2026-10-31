@@ -3,7 +3,9 @@
   <img alt="Singapore Parliamentary Record" src="docs/images/banner-light.svg">
 </picture>
 
-A database of Singapore's parliamentary record, from the Legislative Assembly of 1955 to the present Parliament. The pipeline fetches every report from SPRS, Parliament's search system. A report is one item of business in a sitting, such as a question, a bill or a motion. The pipeline splits each report into speeches and links each speech to the member who gave it.
+The database is for researchers who need every speech by one member across the record. On SPRS, Parliament's search system, each report is one page of text, and a speaker is a printed name with no link to the member.
+
+A database of Singapore's parliamentary record, from the Legislative Assembly of 1955 to the present Parliament. The pipeline fetches every report from SPRS. A report is one item of business in a sitting, such as a question, a bill or a motion. The pipeline splits each report into speeches and links each speech to the member who gave it.
 
 The website built on this database is [roycehoe/hansard](https://github.com/roycehoe/hansard), live at [openhansard.sg](https://openhansard.sg).
 
