@@ -1,5 +1,6 @@
 import json
 from collections.abc import Callable
+from datetime import date
 from pathlib import Path
 from typing import Optional
 
@@ -7,10 +8,15 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 import utils.data_files as data_files_module
+from enums import HandCheckFormOfAddress
 from exceptions import HansardDataFileError
 from schemas.attendance_cleanup import AttendanceCleanup
 from schemas.constituency_names import ConstituencyNames
 from schemas.excluded_report_id import ExcludedReportIds
+from schemas.hand_check_office_holder import (
+    HandCheckOfficeHolder,
+    HandCheckOfficeHolders,
+)
 from schemas.hand_kept_member import HandKeptMember, HandKeptMembers
 from schemas.head_of_state import HeadOfStateResult, HeadsOfState
 from schemas.party_affiliation import PartyAffiliationMemberships
@@ -22,6 +28,7 @@ from utils.data_files import (
     get_colonial_members,
     get_constituency_names,
     get_excluded_report_ids,
+    get_hand_check_office_holders,
     get_heads_of_state,
     get_party_affiliations,
     get_person_decisions,
@@ -36,6 +43,7 @@ _DATA_FILE_SCHEMAS = (
     ("colonial_la_members.json", HandKeptMembers),
     ("constituency_names.json", ConstituencyNames),
     ("excluded_report_ids.json", ExcludedReportIds),
+    ("hand_check_office_holders.json", HandCheckOfficeHolders),
     ("heads_of_state.json", HeadsOfState),
     ("party_affiliations.json", PartyAffiliationMemberships),
     ("person_decisions.json", PersonDecisions),
@@ -58,6 +66,7 @@ _DATA_FILE_GETTERS = (
 _TYPO_KEY = "typo_key"
 _SPEAKER_OVERRIDES_FILE_NAME = "speaker_overrides.json"
 _EXCLUDED_REPORT_IDS_FILE_NAME = "excluded_report_ids.json"
+_HAND_CHECK_OFFICE_HOLDERS_FILE_NAME = "hand_check_office_holders.json"
 
 
 def _get_record_count(loaded: object) -> int:
@@ -88,6 +97,18 @@ def _get_person_decision(**fields: object) -> dict[str, object]:
         "source": "A source.",
     }
     return person_decision | fields
+
+
+def _get_hand_check_office_holder(**fields: object) -> dict[str, object]:
+    hand_check_office_holder: dict[str, object] = {
+        "office": "Speaker",
+        "holder": "Yeoh Ghim Seng",
+        "form_of_address": "MR",
+        "first_day": "1970-01-01",
+        "last_day": None,
+        "source_url": "https://example.org/speaker",
+    }
+    return hand_check_office_holder | fields
 
 
 @pytest.mark.parametrize("getter", _DATA_FILE_GETTERS)
@@ -231,3 +252,73 @@ def test_head_of_state_refuses_a_missing_comments_key() -> None:
         HeadOfStateResult.model_validate(
             {"name": "John Nicoll", "parliament_number": 0}
         )
+
+
+def test_the_office_holder_getter_returns_the_records_of_its_file(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    office_holders_file = tmp_path / _HAND_CHECK_OFFICE_HOLDERS_FILE_NAME
+    office_holders_file.write_text(json.dumps([_get_hand_check_office_holder()]))
+    monkeypatch.setattr(
+        data_files_module, "_HAND_CHECK_OFFICE_HOLDERS_FILE", office_holders_file
+    )
+
+    office_holders = get_hand_check_office_holders()
+
+    assert [office_holder.holder for office_holder in office_holders] == [
+        "Yeoh Ghim Seng"
+    ]
+    assert office_holders[0].form_of_address == HandCheckFormOfAddress.MR
+    assert office_holders[0].first_day == date(1970, 1, 1)
+    assert office_holders[0].last_day is None
+
+
+def test_a_mistyped_office_holder_key_raises_data_file_error_naming_the_file(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    office_holders_file = tmp_path / _HAND_CHECK_OFFICE_HOLDERS_FILE_NAME
+    office_holders_file.write_text(
+        json.dumps([_get_hand_check_office_holder(**{_TYPO_KEY: 1})])
+    )
+    monkeypatch.setattr(
+        data_files_module, "_HAND_CHECK_OFFICE_HOLDERS_FILE", office_holders_file
+    )
+
+    with pytest.raises(HansardDataFileError) as error:
+        get_hand_check_office_holders()
+
+    assert _HAND_CHECK_OFFICE_HOLDERS_FILE_NAME in str(error.value)
+    assert _TYPO_KEY in str(error.value)
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "office",
+        "holder",
+        "form_of_address",
+        "first_day",
+        "last_day",
+        "source_url",
+    ],
+)
+def test_hand_check_office_holder_refuses_a_missing_key(key: str) -> None:
+    office_holder = _get_hand_check_office_holder()
+    del office_holder[key]
+
+    with pytest.raises(ValidationError, match=key):
+        HandCheckOfficeHolder.model_validate(office_holder)
+
+
+@pytest.mark.parametrize("form_of_address", ["Mr", "Mdm", "mr", ""])
+def test_hand_check_office_holder_refuses_a_form_of_address_outside_the_enum(
+    form_of_address: str,
+) -> None:
+    office_holder = _get_hand_check_office_holder(form_of_address=form_of_address)
+
+    with pytest.raises(ValidationError, match="form_of_address"):
+        HandCheckOfficeHolder.model_validate(office_holder)
+
+
+def test_the_committed_office_holder_file_reads_through_its_getter() -> None:
+    assert isinstance(get_hand_check_office_holders(), list)

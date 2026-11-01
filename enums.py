@@ -89,3 +89,8 @@ class PersonDecisionKind(StrEnum):
     DISTINCT = "distinct"
     MERGE = "merge"
     NAME = "name"
+
+
+class HandCheckFormOfAddress(StrEnum):
+    MR = "MR"
+    MDM = "MDM"

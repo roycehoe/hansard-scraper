@@ -7,6 +7,10 @@ from exceptions import HansardDataFileError
 from schemas.attendance_cleanup import AttendanceCleanup
 from schemas.constituency_names import ConstituencyNames
 from schemas.excluded_report_id import ExcludedReportId, ExcludedReportIds
+from schemas.hand_check_office_holder import (
+    HandCheckOfficeHolder,
+    HandCheckOfficeHolders,
+)
 from schemas.hand_kept_member import HandKeptMember, HandKeptMembers
 from schemas.head_of_state import HeadOfStateResult, HeadsOfState
 from schemas.party_affiliation import (
@@ -31,6 +35,7 @@ _UNATTRIBUTED_SPEECH_FILE = _DATA_DIRECTORY / "unattributed_speech.json"
 _PARTY_AFFILIATIONS_FILE = _DATA_DIRECTORY / "party_affiliations.json"
 _ATTENDANCE_CLEANUP_FILE = _DATA_DIRECTORY / "attendance_cleanup.json"
 _PERSON_DECISIONS_FILE = _DATA_DIRECTORY / "person_decisions.json"
+_HAND_CHECK_OFFICE_HOLDERS_FILE = _DATA_DIRECTORY / "hand_check_office_holders.json"
 
 _SchemaT = TypeVar("_SchemaT", bound=BaseModel)
 
@@ -82,3 +87,7 @@ def get_attendance_cleanup() -> AttendanceCleanup:
 
 def get_person_decisions() -> list[PersonDecision]:
     return _get_data_file(_PERSON_DECISIONS_FILE, PersonDecisions).root
+
+
+def get_hand_check_office_holders() -> list[HandCheckOfficeHolder]:
+    return _get_data_file(_HAND_CHECK_OFFICE_HOLDERS_FILE, HandCheckOfficeHolders).root
