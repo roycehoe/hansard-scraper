@@ -197,6 +197,7 @@ The scripts:
 - `build_hand_check_plants.py`: read-only; builds one round of the human hand check's planted errors (15 wrong member, 15 non-speech line credited to a member) from rows outside the main snapshot, and writes the planted snapshot rows, a sealed key file and the key's SHA-256; the non-speech lines come from uncredited procedural rows and caption notes; leaves out role-labelled rows; refuses to overwrite a plants file or a key; `--round` picks the seed and `--previous-plants` leaves an earlier round's rows out; run as a module
 - `build_hand_check_packets.py`: read-only; builds the human hand check's reader packets from a draw's snapshot and, for a rerun, a plants file: reads the stored SPRS answer (`report.content`) of every sampled and planted report and stops if one has none, matches every row to the report's paragraphs, checks a seeded 50 of the sampled reports against today's SPRS (its only requests; a gateway error, an error answer, an empty answer or more than 2 differing reports stops the build with nothing written), and writes `records/packets.json` and shuffled `batches/sonnet` and `batches/opus` trees of `packets.md` (batches of at most 50 packets or 80,000 characters, cut per reader; the Opus packets never show the script's word differences, and the Sonnet packets show them, numbered, only on inexact packets) that show a random packet id and never a speech, report or speaker id or the row's kind; the output directory must not exist yet; run as a module
 - `compare_hand_check_text.py`: the hand check's published text check, read only and needing no database: reruns the normalisation and word diff of `utils/hand_check_text.py` on each packet's snapshot text and matched SPRS paragraphs, and writes a TSV of packet id, match status, the differences left and any stray `**` or `__` the row holds and its matched paragraph lacks; run as a module
+- `list_hand_check_flags.py`: the hand check's flag list, read only and needing no database: refuses unless each packet has exactly one valid verdict from each reader given (`--sonnet-verdicts` and `--opus-verdicts`, directories of `verdicts.jsonl` files; run 1 needs both, a later run needs at least one, and a run past run 2 is refused), and unless a Sonnet line on an inexact packet carries one difference class per script difference and every other line carries none; with `--key` and `--key-hash` it also refuses unless the sealed plant key's SHA-256 equals the committed hash file, then scores each given reader's catches per plant (a plant is caught when the speaker verdict is not right) and leaves the plants out of the flags; flags a sampled row when a given reader's speaker verdict is not right, the packet holds a word difference, the match is not exact, or the report's live check against today's SPRS differs; `--earlier-flags` is required from run 2 and keeps every row flagged in an earlier run, each reader's verdict from its latest run; writes the flag list as JSON (never over an existing file) and a summary text file (flags by reason, speaker verdicts by reader, recall and the readers that missed a plant, match status, gap check, role credits, rows in held reports); run as a module
 
 The speech fidelity loop has its own tools for rewriting stored speech rows. They live outside the repo's tracked tree, in the gitignored `plans/speech-fidelity-loop/bin/`. Run them only for a planned write, and follow a ship that touches Parliaments 0 to 11 with `apply_column_numbers.py --commit --report-id` for its reports.
 
@@ -210,7 +211,7 @@ hansard-scraper/
 ├── script.py                        # Pipeline orchestrator — runs populate stages 5 to 9 in order
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
-├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus, HandCheckSpeakerVerdict, HandCheckDifferenceClass, HandCheckErrorTier
+├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus, HandCheckSpeakerVerdict, HandCheckDifferenceClass, HandCheckErrorTier, HandCheckFlagReason
 ├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshFailureError / HansardRefreshRunError / HansardTestGuardError / HansardHandCheckError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the refresh job (run as `sh refresh.sh`); the build imports `refresh`, so an import error fails it
@@ -238,6 +239,7 @@ hansard-scraper/
 │   ├── hand_check_plant_key.py     # HandCheckPlantKey / HandCheckPlant: the sealed key file of scripts/build_hand_check_plants.py
 │   ├── hand_check_packet.py        # HandCheckPackets / HandCheckPacket / HandCheckWordDifference / HandCheckGapCheck / HandCheckRoleSection: the packet records file of the human hand check
 │   ├── hand_check_verdict.py       # HandCheckVerdict: one line of a reader's verdicts.jsonl in the hand check
+│   ├── hand_check_flag.py          # HandCheckFlag / HandCheckFlags: the flag list of scripts/list_hand_check_flags.py
 │   ├── speaker_override.py         # SpeakerOverrides: data/speaker_overrides.json
 │   ├── parliament_member_list_response.py  # ParliamentMemberListResponse: the member data in the parliament.gov.sg list page
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata
@@ -375,5 +377,6 @@ hansard-scraper/
     ├── build_hand_check_plants.py
     ├── build_hand_check_packets.py
     ├── compare_hand_check_text.py
+    ├── list_hand_check_flags.py
     └── load_parliament_speakers.py
 ```

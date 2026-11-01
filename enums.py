@@ -134,3 +134,10 @@ class HandCheckErrorTier(StrEnum):
     A = "A"
     B = "B"
     C = "C"
+
+
+class HandCheckFlagReason(StrEnum):
+    SPEAKER_VERDICT = "SPEAKER_VERDICT"
+    TEXT_DIFFERENCE = "TEXT_DIFFERENCE"
+    MATCH_STATUS = "MATCH_STATUS"
+    LIVE_TEXT_DIFFERS = "LIVE_TEXT_DIFFERS"
