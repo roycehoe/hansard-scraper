@@ -110,3 +110,9 @@ class HandCheckMatchStatus(StrEnum):
 class HandCheckLiveCheckStatus(StrEnum):
     EQUAL = "EQUAL"
     DIFFERS = "DIFFERS"
+
+
+class HandCheckAnswerStatus(StrEnum):
+    TEXT = "TEXT"
+    NO_CONTENT = "NO_CONTENT"
+    ERROR = "ERROR"
