@@ -99,3 +99,14 @@ class HandCheckFormOfAddress(StrEnum):
 class HandCheckPlantKind(StrEnum):
     WRONG_MEMBER = "WRONG_MEMBER"
     CREDITED_NON_SPEECH_LINE = "CREDITED_NON_SPEECH_LINE"
+
+
+class HandCheckMatchStatus(StrEnum):
+    EXACT = "EXACT"
+    INEXACT = "INEXACT"
+    NOT_FOUND = "NOT_FOUND"
+
+
+class HandCheckLiveCheckStatus(StrEnum):
+    EQUAL = "EQUAL"
+    DIFFERS = "DIFFERS"
