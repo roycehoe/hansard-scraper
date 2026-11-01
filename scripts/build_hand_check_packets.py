@@ -1,10 +1,13 @@
 import html
 import re
 from dataclasses import dataclass
+from datetime import date
 from typing import Optional
+from urllib.parse import quote
 
-from enums import HandCheckMatchStatus
-from schemas.hand_check_packet import HandCheckGapCheck
+from enums import HandCheckFormOfAddress, HandCheckMatchStatus, ReportVersion
+from schemas.hand_check_office_holder import HandCheckOfficeHolder
+from schemas.hand_check_packet import HandCheckGapCheck, HandCheckRoleSection
 from utils.hand_check_text import normalize_hand_check_text
 
 _HEAD_BLOCK_RE = re.compile(r"<head\b.*?</head\s*>", re.IGNORECASE | re.DOTALL)
@@ -46,6 +49,42 @@ _OTHER_TAG_RE = re.compile(
 _WHITESPACE_RE = re.compile(r"\s+")
 _BOLD_TAG_NAMES = frozenset({"b", "strong"})
 _ITALIC_TAG_NAMES = frozenset({"i", "em"})
+_SPEAKER_OFFICE = "Speaker"
+_DEPUTY_SPEAKER_OFFICE = "Deputy Speaker"
+_CHAIR_OFFICES = (_SPEAKER_OFFICE, _DEPUTY_SPEAKER_OFFICE)
+_WOMAN_PRINTED_FORMS_OF_ADDRESS = frozenset({"mdm", "madam"})
+_CHAIRMAN_LABEL_RE = re.compile(r"^(?:The|Mr|Mdm|Madam)\s+Chairman$", re.IGNORECASE)
+_SPEAKER_LABEL_RE = re.compile(r"^(?:Mr|Mdm|Madam)\s+Speaker$", re.IGNORECASE)
+_DEPUTY_SPEAKER_LABEL_RE = re.compile(
+    r"^(?:Mr|Mdm|Madam|The)\s+Deputy\s*Speaker$", re.IGNORECASE
+)
+_ARTICLE_OFFICE_LABEL_RE = re.compile(
+    r"^(?:The|His Excellency the)\s+([^()]+)$", re.IGNORECASE
+)
+_PRINTED_FORM_OF_ADDRESS_RE = re.compile(r"^(Mr|Mdm|Madam)\b", re.IGNORECASE)
+_MAX_CHAIR_LINE_LENGTH = 200
+_CHAIR_EVENT_RE = re.compile(
+    r"^[\[(]?(?:Thereupon\b|(?:Mr|Mdm|Madam)\s+(?:Deputy\s+)?Speaker\b).{0,150}?\b(?:left|took|resumed|vacated|assumed)\s+the\s+Chair\b",
+    re.IGNORECASE,
+)
+_MPS_SPEAKING_TAG_RE = re.compile(
+    r"^MPs? Speaking:.*\(\s*(?:Mr|Mdm|Madam)\s*(?:Deputy\s*)?Speaker\s*\)",
+    re.IGNORECASE,
+)
+_PRESIDING_LABEL_RE = re.compile(
+    r"^(?:Mr|Mdm|Madam|The)\s+(?:Deputy\s+)?Speaker\b", re.IGNORECASE
+)
+_SUSPENSION_RE = re.compile(
+    r"Sitting (?:was )?suspended|Sitting resumed|resumed at \d", re.IGNORECASE
+)
+_LAST_MARK_PREFIX = "Last mark before the row: "
+_BEFORE_ROW_LINE_PREFIX = "Between that mark and the row: "
+_AFTER_ROW_LINE_PREFIX = "Between the row and the next mark: "
+_FIRST_MARK_PREFIX = "First mark after the row: "
+_SPRS_SEARCH_URL = "https://sprs.parl.gov.sg/search"
+_SPRS3_TOPIC_URL = f"{_SPRS_SEARCH_URL}/#/sprs3topic"
+_SPRS2_TOPIC_URL = f"{_SPRS_SEARCH_URL}/#/topic"
+_NEWER_SYSTEM_ID_SUFFIX = "#"
 
 
 @dataclass(frozen=True)
@@ -367,3 +406,181 @@ def get_gap_check(
         skipped_paragraphs=skipped_paragraphs,
         next_source_text=None,
     )
+
+
+@dataclass(frozen=True)
+class ChairLine:
+    text: str
+    is_mark: bool
+    report_title: str
+
+
+def _get_last_mark_index(chair_lines: list[ChairLine]) -> Optional[int]:
+    for index in range(len(chair_lines) - 1, -1, -1):
+        if chair_lines[index].is_mark:
+            return index
+    return None
+
+
+def _has_chair_mark(chair_lines: list[ChairLine]) -> bool:
+    return _get_last_mark_index(chair_lines) is not None
+
+
+def _get_chair_line_text(chair_line: ChairLine) -> str:
+    return f"{chair_line.text} (report: {chair_line.report_title})"
+
+
+def get_chair_marks(
+    before_lines: list[ChairLine], after_lines: list[ChairLine]
+) -> list[str]:
+    chair_marks = []
+    last_mark_index = _get_last_mark_index(before_lines)
+    if last_mark_index is not None:
+        chair_marks.append(
+            f"{_LAST_MARK_PREFIX}{_get_chair_line_text(before_lines[last_mark_index])}"
+        )
+        chair_marks.extend(
+            f"{_BEFORE_ROW_LINE_PREFIX}{_get_chair_line_text(chair_line)}"
+            for chair_line in before_lines[last_mark_index + 1 :]
+        )
+    first_mark_index = next(
+        (index for index, chair_line in enumerate(after_lines) if chair_line.is_mark),
+        None,
+    )
+    if first_mark_index is not None:
+        chair_marks.extend(
+            f"{_AFTER_ROW_LINE_PREFIX}{_get_chair_line_text(chair_line)}"
+            for chair_line in after_lines[:first_mark_index]
+        )
+        chair_marks.append(
+            f"{_FIRST_MARK_PREFIX}{_get_chair_line_text(after_lines[first_mark_index])}"
+        )
+    return chair_marks
+
+
+def get_label_office(label: str) -> Optional[str]:
+    if _CHAIRMAN_LABEL_RE.match(label) is not None:
+        return None
+    if _SPEAKER_LABEL_RE.match(label) is not None:
+        return _SPEAKER_OFFICE
+    if _DEPUTY_SPEAKER_LABEL_RE.match(label) is not None:
+        return _DEPUTY_SPEAKER_OFFICE
+    article_match = _ARTICLE_OFFICE_LABEL_RE.match(label)
+    if article_match is None:
+        return None
+    return _WHITESPACE_RE.sub(" ", article_match.group(1)).strip()
+
+
+def get_office_holders_on(
+    office: str, sitting_day: date, office_holders: list[HandCheckOfficeHolder]
+) -> list[HandCheckOfficeHolder]:
+    return [
+        office_holder
+        for office_holder in office_holders
+        if office_holder.office.casefold() == office.casefold()
+        and office_holder.first_day <= sitting_day
+        and (office_holder.last_day is None or sitting_day <= office_holder.last_day)
+    ]
+
+
+def _get_printed_form_of_address(label: str) -> Optional[HandCheckFormOfAddress]:
+    printed_match = _PRINTED_FORM_OF_ADDRESS_RE.match(label)
+    if printed_match is None:
+        return None
+    if printed_match.group(1).casefold() in _WOMAN_PRINTED_FORMS_OF_ADDRESS:
+        return HandCheckFormOfAddress.MDM
+    return HandCheckFormOfAddress.MR
+
+
+def is_chair_label(
+    label: str, sitting_day: date, office_holders: list[HandCheckOfficeHolder]
+) -> bool:
+    if _CHAIRMAN_LABEL_RE.match(label) is not None:
+        return True
+    if get_label_office(label) != _DEPUTY_SPEAKER_OFFICE:
+        return False
+    deputy_speakers = get_office_holders_on(
+        _DEPUTY_SPEAKER_OFFICE, sitting_day, office_holders
+    )
+    form_of_address = _get_printed_form_of_address(label)
+    if form_of_address is not None:
+        deputy_speakers = [
+            deputy_speaker
+            for deputy_speaker in deputy_speakers
+            if deputy_speaker.form_of_address == form_of_address
+        ]
+    return len(deputy_speakers) > 1
+
+
+def get_chair_lines(
+    paragraphs: list[SourceParagraph],
+    report_title: str,
+    sitting_day: date,
+    office_holders: list[HandCheckOfficeHolder],
+) -> list[ChairLine]:
+    chair_lines = []
+    for paragraph in paragraphs:
+        if paragraph.label is not None:
+            is_mark = _PRESIDING_LABEL_RE.match(
+                paragraph.label
+            ) is not None and not is_chair_label(
+                paragraph.label, sitting_day, office_holders
+            )
+            if is_mark:
+                chair_lines.append(ChairLine(f"{paragraph.label}:", True, report_title))
+            continue
+        text = normalize_hand_check_text(paragraph.full_html)
+        if _MPS_SPEAKING_TAG_RE.match(text) is not None:
+            chair_lines.append(
+                ChairLine(render_source_html(paragraph.full_html), True, report_title)
+            )
+            continue
+        if len(text) > _MAX_CHAIR_LINE_LENGTH:
+            continue
+        if _CHAIR_NOTE_RE.match(text) is not None:
+            chair_lines.append(ChairLine(text, True, report_title))
+            continue
+        if _CHAIR_EVENT_RE.match(text) is not None:
+            chair_lines.append(ChairLine(text, True, report_title))
+            continue
+        if _SUSPENSION_RE.search(text) is not None:
+            chair_lines.append(ChairLine(text, False, report_title))
+    return chair_lines
+
+
+def get_role_section(
+    label: str, sitting_day: date, office_holders: list[HandCheckOfficeHolder]
+) -> Optional[HandCheckRoleSection]:
+    if is_chair_label(label, sitting_day, office_holders):
+        return HandCheckRoleSection(
+            is_chair_label=True,
+            office=None,
+            office_holders=[
+                office_holder
+                for chair_office in _CHAIR_OFFICES
+                for office_holder in get_office_holders_on(
+                    chair_office, sitting_day, office_holders
+                )
+            ],
+            chair_marks=[],
+        )
+    office = get_label_office(label)
+    if office is None:
+        return None
+    return HandCheckRoleSection(
+        is_chair_label=False,
+        office=office,
+        office_holders=get_office_holders_on(office, sitting_day, office_holders),
+        chair_marks=[],
+    )
+
+
+# NOTE: this repeats get_official_record_url in the site's api/utils/official_record.py, and the site has no test of it. Change the two together.
+def get_official_record_url(
+    report_id: str, report_version: str, html_file_name: Optional[str]
+) -> str:
+    if report_version == ReportVersion.SPRS3:
+        return f"{_SPRS3_TOPIC_URL}?reportid={quote(report_id.rstrip(_NEWER_SYSTEM_ID_SUFFIX), safe='')}"
+    if html_file_name is None:
+        return _SPRS_SEARCH_URL
+    return f"{_SPRS2_TOPIC_URL}?reportid={quote(html_file_name, safe='')}"
