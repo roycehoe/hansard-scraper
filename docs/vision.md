@@ -57,6 +57,8 @@ Bold speaker labels come first. For a report with none, attribution follows a fa
 2. Otherwise the report type decides: the speaker line of an atbp report, the minister of a President's Address addendum (or the President when no ministry heading appears), the mover of an adjournment motion, and the presenter of a bill or, in the newer system, a bill introduction.
 3. If neither applies, the report stays unattributed. Multi-speaker appendix documents and authorless procedural orders get no invented speaker.
 
+The atbp credit is deliberate, although nobody speaks a notice of assent. The Speaker writes and signs it, so its words are his, and it stands in for an announcement he would otherwise make in the House. Royce ruled to keep it on 1 Nov 2026, after the accuracy sample counted one as an error.
+
 ### Diagnostic tooling as a first-class concern
 Targeted validation and inspection tools live alongside the main pipeline. Nothing exports statistics automatically. `scripts/attribution_text_share.py` prints the attribution figures by Parliament group and by report type when it is run, with the zero-row reports and single-speaker collapses, and `--output` keeps a copy in a file. `CLAUDE.md` asks for it before and after every parsing or linking change. These tools make it possible to audit specific failure categories without re-running the full pipeline.
 
