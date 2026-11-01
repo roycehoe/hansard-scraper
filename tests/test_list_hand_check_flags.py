@@ -219,6 +219,11 @@ def _list_flags(
     return output_paths
 
 
+def _assert_no_output_written(tmp_path: Path, run_number: int) -> None:
+    assert not (tmp_path / f"flags-run-{run_number}.json").exists()
+    assert not (tmp_path / f"summary-run-{run_number}.txt").exists()
+
+
 def _get_written_flags(flags_path: Path) -> list[HandCheckFlag]:
     return HandCheckFlags.model_validate_json(
         flags_path.read_text(encoding="utf-8")
@@ -981,8 +986,7 @@ def test_the_key_is_not_opened_while_a_verdict_is_missing(tmp_path: Path) -> Non
                 tmp_path / "missing-key.json", tmp_path / "missing-key.sha256"
             ),
         )
-    assert not (tmp_path / "flags-run-1.json").exists()
-    assert not (tmp_path / "summary-run-1.txt").exists()
+    _assert_no_output_written(tmp_path, 1)
 
 
 def test_the_key_is_not_opened_while_a_class_count_is_wrong(tmp_path: Path) -> None:
@@ -1011,8 +1015,7 @@ def test_the_key_is_not_opened_while_a_class_count_is_wrong(tmp_path: Path) -> N
                 tmp_path / "missing-key.json", tmp_path / "missing-key.sha256"
             ),
         )
-    assert not (tmp_path / "flags-run-1.json").exists()
-    assert not (tmp_path / "summary-run-1.txt").exists()
+    _assert_no_output_written(tmp_path, 1)
 
 
 def test_a_key_that_differs_from_its_committed_hash_stops_the_run_and_writes_nothing(
@@ -1032,8 +1035,7 @@ def test_a_key_that_differs_from_its_committed_hash_stops_the_run_and_writes_not
             _build_right_verdicts(packets),
             plant_key_paths=plant_key_paths,
         )
-    assert not (tmp_path / "flags-run-1.json").exists()
-    assert not (tmp_path / "summary-run-1.txt").exists()
+    _assert_no_output_written(tmp_path, 1)
 
 
 @pytest.mark.parametrize(
@@ -1051,8 +1053,7 @@ def test_run_1_refuses_a_missing_reader(
             _build_right_verdicts(packets) if is_sonnet_given else None,
             _build_right_verdicts(packets) if is_opus_given else None,
         )
-    assert not (tmp_path / "flags-run-1.json").exists()
-    assert not (tmp_path / "summary-run-1.txt").exists()
+    _assert_no_output_written(tmp_path, 1)
 
 
 def test_a_third_run_is_refused(tmp_path: Path) -> None:
@@ -1071,8 +1072,7 @@ def test_a_third_run_is_refused(tmp_path: Path) -> None:
             run_number=3,
             earlier_flags_path=earlier_flags_path,
         )
-    assert not (tmp_path / "flags-run-3.json").exists()
-    assert not (tmp_path / "summary-run-3.txt").exists()
+    _assert_no_output_written(tmp_path, 3)
 
 
 def test_a_later_run_with_no_reader_is_refused(tmp_path: Path) -> None:
@@ -1090,8 +1090,7 @@ def test_a_later_run_with_no_reader_is_refused(tmp_path: Path) -> None:
             run_number=2,
             earlier_flags_path=earlier_flags_path,
         )
-    assert not (tmp_path / "flags-run-2.json").exists()
-    assert not (tmp_path / "summary-run-2.txt").exists()
+    _assert_no_output_written(tmp_path, 2)
 
 
 def test_a_run_without_a_key_flags_every_reasoned_row_and_scores_nothing(
@@ -1295,8 +1294,7 @@ def test_a_later_run_without_the_earlier_flag_list_is_refused(
             _build_right_verdicts(packets),
             run_number=2,
         )
-    assert not (tmp_path / "flags-run-2.json").exists()
-    assert not (tmp_path / "summary-run-2.txt").exists()
+    _assert_no_output_written(tmp_path, 2)
 
 
 def test_an_existing_flag_list_is_not_overwritten(tmp_path: Path) -> None:

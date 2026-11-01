@@ -177,7 +177,7 @@ def get_speech_id_to_next_row(
 def build_snapshot_row(
     speech_snapshot_row: SpeechSnapshotRow,
     next_row: Optional[SpeechParseRow],
-    speaker_id_to_speaker: dict[Optional[int], Speaker],
+    speaker_id_to_speaker: dict[int, Speaker],
     person_id_to_canonical_name: dict[Optional[int], str],
 ) -> HandCheckSnapshotRow:
     if speech_snapshot_row.speaker_id is None:
@@ -293,7 +293,9 @@ def draw_hand_check_sample(
             list(report_ids)
         )
         speaker_id_to_speaker = {
-            speaker.id: speaker for speaker in CRUDSpeaker(session).get_all()
+            speaker.id: speaker
+            for speaker in CRUDSpeaker(session).get_all()
+            if speaker.id is not None
         }
         person_id_to_canonical_name = {
             person.id: person.canonical_name for person in CRUDPerson(session).get_all()

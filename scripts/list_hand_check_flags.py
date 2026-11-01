@@ -178,6 +178,12 @@ def get_missed_reader_line(missed_reader_names: list[str]) -> str:
     return f"Readers that missed a plant: {', '.join(missed_reader_names) or 'none'}"
 
 
+def _is_speaker_verdict_not_right(verdict: Optional[HandCheckVerdict]) -> bool:
+    return (
+        verdict is not None and verdict.speaker_verdict != HandCheckSpeakerVerdict.RIGHT
+    )
+
+
 def get_flag_reasons(
     packet: HandCheckPacket,
     sonnet_verdict: Optional[HandCheckVerdict],
@@ -185,9 +191,8 @@ def get_flag_reasons(
 ) -> list[HandCheckFlagReason]:
     reasons = []
     if any(
-        verdict.speaker_verdict != HandCheckSpeakerVerdict.RIGHT
+        _is_speaker_verdict_not_right(verdict)
         for verdict in (sonnet_verdict, opus_verdict)
-        if verdict is not None
     ):
         reasons.append(HandCheckFlagReason.SPEAKER_VERDICT)
     if packet.word_differences:
@@ -274,12 +279,6 @@ def get_union_of_flags(
     return [speech_id_to_flag[speech_id] for speech_id in sorted(speech_id_to_flag)]
 
 
-def _is_speaker_verdict_not_right(verdict: Optional[HandCheckVerdict]) -> bool:
-    return (
-        verdict is not None and verdict.speaker_verdict != HandCheckSpeakerVerdict.RIGHT
-    )
-
-
 def get_summary_lines(
     run_number: int,
     sampled_packets: list[HandCheckPacket],
@@ -341,16 +340,11 @@ def get_summary_lines(
     return lines
 
 
-def list_hand_check_flags(
-    packets_path: Path,
+def _validate_can_write_flags(
     sonnet_verdicts_path: Optional[Path],
     opus_verdicts_path: Optional[Path],
-    flags_path: Path,
-    summary_path: Path,
     run_number: int,
-    plant_key_paths: Optional[PlantKeyPaths],
     earlier_flags_path: Optional[Path],
-    held_reports_path: Optional[Path],
 ) -> None:
     if run_number > _FIRST_RUN_NUMBER and earlier_flags_path is None:
         raise HansardHandCheckError(
@@ -376,6 +370,22 @@ def list_hand_check_flags(
         raise HansardHandCheckError(
             f"Run {run_number} needs at least one reader's verdicts (--sonnet-verdicts or --opus-verdicts)"
         )
+
+
+def list_hand_check_flags(
+    packets_path: Path,
+    sonnet_verdicts_path: Optional[Path],
+    opus_verdicts_path: Optional[Path],
+    flags_path: Path,
+    summary_path: Path,
+    run_number: int,
+    plant_key_paths: Optional[PlantKeyPaths],
+    earlier_flags_path: Optional[Path],
+    held_reports_path: Optional[Path],
+) -> None:
+    _validate_can_write_flags(
+        sonnet_verdicts_path, opus_verdicts_path, run_number, earlier_flags_path
+    )
     packets = HandCheckPackets.model_validate_json(
         packets_path.read_text(encoding="utf-8")
     ).root

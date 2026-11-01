@@ -682,7 +682,13 @@ def test_a_rendered_packet_shows_none_of_the_ids_or_the_kind() -> None:
         rendered_packet = build_hand_check_packets_script.render_packet(
             packet, is_for_sonnet
         ).replace(packet.official_record_url, "")
-        for hidden_text in ("9876543", "8765432", "7654321", "00123456-ZZ", "SPEECH"):
+        for hidden_text in (
+            str(_SPEECH_ID),
+            str(_REPORT_ID),
+            str(_SPEAKER_ID),
+            "00123456-ZZ",
+            "SPEECH",
+        ):
             assert hidden_text not in rendered_packet
 
 

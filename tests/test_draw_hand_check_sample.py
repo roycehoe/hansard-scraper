@@ -123,10 +123,10 @@ def test_the_frame_groups_the_streamed_ids_without_reordering_them() -> None:
 
 def test_the_allocation_sums_to_the_sample_size_by_largest_remainder() -> None:
     group_to_frame_count = {
-        "first": 5160,
+        "first": 5_160,
         "second": 830,
-        "third": 1330,
-        "fourth": 2070,
+        "third": 1_330,
+        "fourth": 2_070,
         "fifth": 620,
     }
 

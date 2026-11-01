@@ -882,11 +882,9 @@ def _get_match_status_text(match_status: HandCheckMatchStatus) -> str:
     return match_status.value.replace("_", " ").lower()
 
 
-def _get_office_holder_lines(
-    office_holders: list[HandCheckOfficeHolder], empty_line: str
-) -> list[str]:
+def _get_office_holder_lines(office_holders: list[HandCheckOfficeHolder]) -> list[str]:
     if not office_holders:
-        return [empty_line]
+        return [_NO_TABLE_ENTRY_TEXT]
     return [
         f"- {office_holder.holder} ({office_holder.form_of_address}), "
         f"{office_holder.first_day.isoformat()} to "
@@ -902,9 +900,7 @@ def _get_role_section_lines(role_section: HandCheckRoleSection) -> list[str]:
             "",
             "### Role section",
             "Chair label. Table entries for the Speaker and the Deputy Speaker on the sitting date:",
-            *_get_office_holder_lines(
-                role_section.office_holders, _NO_TABLE_ENTRY_TEXT
-            ),
+            *_get_office_holder_lines(role_section.office_holders),
             "Chair marks:",
             *(
                 [f"- {chair_mark}" for chair_mark in role_section.chair_marks]
@@ -916,7 +912,7 @@ def _get_role_section_lines(role_section: HandCheckRoleSection) -> list[str]:
         "",
         "### Role section",
         f"Office label: {role_section.office}. Table entries for that office on the sitting date:",
-        *_get_office_holder_lines(role_section.office_holders, _NO_TABLE_ENTRY_TEXT),
+        *_get_office_holder_lines(role_section.office_holders),
     ]
 
 
@@ -1045,13 +1041,6 @@ def get_batches(rendered_packets: list[str]) -> list[list[str]]:
     batch: list[str] = []
     batch_length = 0
     for rendered_packet in rendered_packets:
-        if len(rendered_packet) > _BATCH_CHARACTER_LIMIT:
-            if batch:
-                batches.append(batch)
-            batches.append([rendered_packet])
-            batch = []
-            batch_length = 0
-            continue
         if batch and (
             len(batch) == _BATCH_PACKET_LIMIT
             or batch_length + len(rendered_packet) > _BATCH_CHARACTER_LIMIT
@@ -1154,6 +1143,21 @@ def _get_earlier_chair_lines(
     return chair_lines
 
 
+def _has_chair_label_row(
+    snapshot_rows: list[HandCheckSnapshotRow],
+    office_holders: list[HandCheckOfficeHolder],
+) -> bool:
+    return any(
+        snapshot_row.speaker is not None
+        and is_chair_label(
+            snapshot_row.speaker,
+            snapshot_row.sitting_date.date(),
+            office_holders,
+        )
+        for snapshot_row in snapshot_rows
+    )
+
+
 def build_hand_check_packets(
     snapshot_path: Path,
     plants_path: Optional[Path],
@@ -1192,14 +1196,8 @@ def build_hand_check_packets(
         hansard_report_id_to_earlier_chair_lines = {
             report.report_id: _get_earlier_chair_lines(session, report, office_holders)
             for report in reports
-            if any(
-                snapshot_row.speaker is not None
-                and is_chair_label(
-                    snapshot_row.speaker,
-                    snapshot_row.sitting_date.date(),
-                    office_holders,
-                )
-                for snapshot_row in hansard_report_id_to_rows[report.report_id]
+            if _has_chair_label_row(
+                hansard_report_id_to_rows[report.report_id], office_holders
             )
         }
     hansard_report_id_to_live_check = {

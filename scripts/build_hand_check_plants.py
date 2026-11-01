@@ -143,32 +143,32 @@ def write_plant_files(
 
 
 def build_snapshot_row(
-    source: SpeechSnapshotRow,
+    speech_snapshot_row: SpeechSnapshotRow,
     next_row: Optional[SpeechParseRow],
-    label: Optional[str],
+    speaker_label: Optional[str],
     speaker_id: int,
     transcript: str,
     lookups: CreditLookups,
 ) -> HandCheckSnapshotRow:
     speaker = lookups.speaker_id_to_speaker[speaker_id]
     return HandCheckSnapshotRow(
-        speech_id=source.id,
-        report_id=source.report_id,
-        hansard_report_id=source.hansard_report_id,
-        html_file_name=source.html_file_name,
-        report_version=source.report_version,
-        report_type=source.report_type,
-        parliament_number=source.parliament_number,
-        sitting_date=source.sitting_date,
-        report_title=source.title,
-        ordinal=source.ordinal,
-        speaker=label,
+        speech_id=speech_snapshot_row.id,
+        report_id=speech_snapshot_row.report_id,
+        hansard_report_id=speech_snapshot_row.hansard_report_id,
+        html_file_name=speech_snapshot_row.html_file_name,
+        report_version=speech_snapshot_row.report_version,
+        report_type=speech_snapshot_row.report_type,
+        parliament_number=speech_snapshot_row.parliament_number,
+        sitting_date=speech_snapshot_row.sitting_date,
+        report_title=speech_snapshot_row.title,
+        ordinal=speech_snapshot_row.ordinal,
+        speaker=speaker_label,
         speaker_id=speaker_id,
         speaker_name=speaker.name,
         person_name=None
         if speaker.person_id is None
         else lookups.person_id_to_canonical_name[speaker.person_id],
-        kind=source.kind,
+        kind=speech_snapshot_row.kind,
         transcript=transcript,
         next_speaker=None if next_row is None else next_row.speaker,
         next_transcript=None if next_row is None else next_row.transcript,
@@ -258,7 +258,7 @@ def _get_planted_row(
     return plant_wrong_member(source, speaker_id, next_row, generator.random(), lookups)
 
 
-def _draw_planted_row(
+def _pop_planted_row(
     kind: HandCheckPlantKind,
     candidate_speech_ids: list[int],
     generator: random.Random,
@@ -336,7 +336,7 @@ def build_hand_check_plants(
             )
             for _ in range(count):
                 planted_rows.append(
-                    _draw_planted_row(
+                    _pop_planted_row(
                         kind, candidate_speech_ids, generator, session, lookups
                     )
                 )

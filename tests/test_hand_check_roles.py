@@ -391,8 +391,8 @@ def test_the_chair_marks_of_the_thereupon_report_are_its_tag_before_and_the_chai
     assert build_hand_check_packets_script.get_chair_marks(
         before_lines, after_lines
     ) == [
-        "Last mark before the row: " + _TAG_LINE + " (report: A Sample Title)",
-        "First mark after the row: " + _THEREUPON_LINE + " (report: A Sample Title)",
+        "Last mark before the row: " + _TAG_LINE + _TITLE_SUFFIX,
+        "First mark after the row: " + _THEREUPON_LINE + _TITLE_SUFFIX,
     ]
 
 
