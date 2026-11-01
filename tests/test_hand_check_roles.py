@@ -14,6 +14,10 @@ _TITLE_SUFFIX = " (report: A Sample Title)"
 _DAY = date(2010, 5, 5)
 _TAG_LINE = "MPs Speaking: Dr Tony Tan Keng Yam (Minister for Defence); Mr Chew Heng Ching (Mr Deputy Speaker);"
 _THEREUPON_LINE = "Thereupon, Mr Deputy Speaker left the Chair of the Committee and took the Chair of the House."
+_WRAPPED_THEREUPON_LINE = (
+    "[(proc text) Thereupon Mdm Speaker left the Chair of the Committee and took the"
+    " Chair of the House. (proc text)]"
+)
 _CHAIR_CHANGE_HTML = (
     "<p><b>Mr Speaker:</b> Order.</p><p>Sitting suspended at 4.00 pm.</p><p>Sitting resumed at 4.30 pm.</p>"
     "<h4>[Mr Deputy Speaker in the Chair]</h4><p><b>The Chairman:</b> Yes.</p>"
@@ -316,6 +320,17 @@ def test_suspension_lines_are_chair_lines_that_are_not_marks() -> None:
 
 
 @pytest.mark.parametrize(
+    "line", ["Sitting accordingly suspended", "Sitting accordingly suspended at"]
+)
+def test_a_sitting_accordingly_suspended_line_is_a_chair_line_that_is_not_a_mark(
+    line: str,
+) -> None:
+    assert _get_chair_lines(f"<p>{line}</p>") == [
+        build_hand_check_packets_script.ChairLine(line, False, _TITLE)
+    ]
+
+
+@pytest.mark.parametrize(
     "report_html",
     [
         "<p>Mr Speaker said he is in the Chair of the day.</p>",
@@ -345,6 +360,7 @@ def test_text_that_only_mentions_the_chair_is_not_a_chair_line(
             "[Mdm Speaker temporarily in the Chair]",
         ),
         ("<p>Mr Speaker left the Chair.</p>", "Mr Speaker left the Chair."),
+        (f"<p>{_WRAPPED_THEREUPON_LINE}</p>", _WRAPPED_THEREUPON_LINE),
     ],
 )
 def test_a_chair_label_a_chair_note_and_a_left_the_chair_line_are_marks(

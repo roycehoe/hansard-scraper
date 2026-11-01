@@ -44,6 +44,7 @@ from services.hansard_website import get_topic_html_content, get_topic_id
 from settings import settings
 from utils.data_files import get_hand_check_office_holders
 from utils.hand_check_text import get_word_differences, normalize_hand_check_text
+from utils.markdown_parser import PROC_TEXT_CLOSE_TAG, PROC_TEXT_OPEN_TAG
 
 _HEAD_BLOCK_RE = re.compile(r"<head\b.*?</head\s*>", re.IGNORECASE | re.DOTALL)
 _COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
@@ -113,7 +114,8 @@ _PRESIDING_LABEL_RE = re.compile(
     r"^(?:Mr|Mdm|Madam|The)\s+(?:Deputy\s+)?Speaker\b", re.IGNORECASE
 )
 _SUSPENSION_RE = re.compile(
-    r"Sitting (?:was )?suspended|Sitting resumed|resumed at \d", re.IGNORECASE
+    r"Sitting (?:was |accordingly )?suspended|Sitting resumed|resumed at \d",
+    re.IGNORECASE,
 )
 _LAST_MARK_PREFIX = "Last mark before the row: "
 _BEFORE_ROW_LINE_PREFIX = "Between that mark and the row: "
@@ -621,15 +623,19 @@ def get_chair_lines(
                 ChairLine(render_source_html(paragraph.full_html), True, report_title)
             )
             continue
-        if len(text) > _MAX_CHAIR_LINE_LENGTH:
+        # NOTE: the newer system wraps a whole procedural line in "[(proc text) ... (proc text)]" (register line 33), so the chair patterns read the line inside
+        unwrapped_text = text.removeprefix(PROC_TEXT_OPEN_TAG).removesuffix(
+            PROC_TEXT_CLOSE_TAG
+        )
+        if len(unwrapped_text) > _MAX_CHAIR_LINE_LENGTH:
             continue
-        if _CHAIR_NOTE_RE.match(text) is not None:
+        if _CHAIR_NOTE_RE.match(unwrapped_text) is not None:
             chair_lines.append(ChairLine(text, True, report_title))
             continue
-        if _CHAIR_EVENT_RE.match(text) is not None:
+        if _CHAIR_EVENT_RE.match(unwrapped_text) is not None:
             chair_lines.append(ChairLine(text, True, report_title))
             continue
-        if _SUSPENSION_RE.search(text) is not None:
+        if _SUSPENSION_RE.search(unwrapped_text) is not None:
             chair_lines.append(ChairLine(text, False, report_title))
     return chair_lines
 
