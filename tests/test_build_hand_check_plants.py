@@ -125,7 +125,7 @@ def _build_editorial_note_rows() -> list[SpeechTranscriptRow]:
 
 
 def test_the_nearest_credited_row_above_skips_uncredited_rows_and_rows_below() -> None:
-    rows = [
+    parse_rows = [
         _build_row(1, 1, 1),
         _build_row(2, 2, None),
         _build_row(3, 3, 2),
@@ -134,18 +134,18 @@ def test_the_nearest_credited_row_above_skips_uncredited_rows_and_rows_below() -
     ]
 
     nearest_above_ordinal_four = (
-        build_hand_check_plants_script.get_nearest_credited_row_above(rows, 4)
+        build_hand_check_plants_script.get_nearest_credited_row_above(parse_rows, 4)
     )
     nearest_above_ordinal_three = (
-        build_hand_check_plants_script.get_nearest_credited_row_above(rows, 3)
+        build_hand_check_plants_script.get_nearest_credited_row_above(parse_rows, 3)
     )
 
-    assert nearest_above_ordinal_four == rows[2]
-    assert nearest_above_ordinal_three == rows[0]
+    assert nearest_above_ordinal_four == parse_rows[2]
+    assert nearest_above_ordinal_three == parse_rows[0]
 
 
 def test_no_credited_row_above_gives_none() -> None:
-    rows = [_build_row(1, 1, 1), _build_row(2, 2, None), _build_row(3, 3, None)]
+    parse_rows = [_build_row(1, 1, 1), _build_row(2, 2, None), _build_row(3, 3, None)]
     uncredited_rows = [
         _build_row(1, 1, None),
         _build_row(2, 2, None),
@@ -153,7 +153,8 @@ def test_no_credited_row_above_gives_none() -> None:
     ]
 
     assert (
-        build_hand_check_plants_script.get_nearest_credited_row_above(rows, 1) is None
+        build_hand_check_plants_script.get_nearest_credited_row_above(parse_rows, 1)
+        is None
     )
     assert (
         build_hand_check_plants_script.get_nearest_credited_row_above(
@@ -164,16 +165,16 @@ def test_no_credited_row_above_gives_none() -> None:
 
 
 def test_the_next_row_is_the_one_after_it_in_the_list() -> None:
-    rows = [_build_row(1, 5, 1), _build_row(2, 5, 1), _build_row(3, 6, 1)]
+    parse_rows = [_build_row(1, 5, 1), _build_row(2, 5, 1), _build_row(3, 6, 1)]
 
-    assert build_hand_check_plants_script.get_next_row(rows, 1) == rows[1]
-    assert build_hand_check_plants_script.get_next_row(rows, 2) == rows[2]
+    assert build_hand_check_plants_script.get_next_row(parse_rows, 1) == parse_rows[1]
+    assert build_hand_check_plants_script.get_next_row(parse_rows, 2) == parse_rows[2]
 
 
 def test_the_last_row_of_a_report_has_no_next_row() -> None:
-    rows = [_build_row(1, 5, 1), _build_row(2, 5, 1), _build_row(3, 6, 1)]
+    parse_rows = [_build_row(1, 5, 1), _build_row(2, 5, 1), _build_row(3, 6, 1)]
 
-    assert build_hand_check_plants_script.get_next_row(rows, 3) is None
+    assert build_hand_check_plants_script.get_next_row(parse_rows, 3) is None
     assert build_hand_check_plants_script.get_next_row([], 1) is None
 
 

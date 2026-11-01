@@ -31,6 +31,7 @@ from schemas.hand_check_snapshot import (
 from services.speech import APPENDIX_LINK_CAPTION_RE
 from settings import settings
 
+_FIRST_ROUND_NUMBER = 1
 _PLANT_ROUND_TO_SEED = {1: 20_261_103, 2: 20_261_104}
 _PLANT_ISOLATION_LEVEL = "REPEATABLE READ"
 _PLANT_KIND_TO_COUNT = {
@@ -59,9 +60,9 @@ class PlantedRow:
 
 
 def get_nearest_credited_row_above(
-    rows: list[SpeechParseRow], ordinal: int
+    parse_rows: list[SpeechParseRow], ordinal: int
 ) -> Optional[SpeechParseRow]:
-    for report_row in reversed(rows):
+    for report_row in reversed(parse_rows):
         if report_row.ordinal < ordinal and report_row.speaker_id is not None:
             return report_row
     return None
@@ -399,7 +400,10 @@ if __name__ == "__main__":
         help="the one-line SHA-256 file to commit before any reader starts; written with mode x, so it may not exist yet",
     )
     arguments = parser.parse_args()
-    if arguments.round_number != 1 and arguments.previous_plants is None:
+    if (
+        arguments.round_number != _FIRST_ROUND_NUMBER
+        and arguments.previous_plants is None
+    ):
         parser.error("--previous-plants is required from round 2")
     build_hand_check_plants(
         arguments.round_number,

@@ -204,37 +204,37 @@ def test_an_appendix_caption_row_matches_the_paragraph_that_has_no_label() -> No
 
 
 def test_markup_and_spacing_do_not_stop_an_exact_match() -> None:
-    row = (
+    transcript = (
         "Mr Deputy Speaker,  Sir, I would like to report that the **Committee** of"
         "  Supply has made progress"
     )
 
     assert _get_source_match(
-        SPRS2_COMMITTEE_HTML, "Dr Tony Tan Keng Yam", row
+        SPRS2_COMMITTEE_HTML, "Dr Tony Tan Keng Yam", transcript
     ) == _build_source_match(HandCheckMatchStatus.EXACT, 4, 4)
 
 
 def test_a_row_with_a_dropped_word_is_inexact_and_spans_every_paragraph_it_touches() -> (
     None
 ):
-    row = _JOINED_ROW.replace("as the default position", "as default position")
+    transcript = _JOINED_ROW.replace("as the default position", "as default position")
 
     assert _get_source_match(
-        SPRS3_ORAL_ANSWER_HTML, _ORAL_ANSWER_LABEL, row
+        SPRS3_ORAL_ANSWER_HTML, _ORAL_ANSWER_LABEL, transcript
     ) == _build_source_match(HandCheckMatchStatus.INEXACT, 2, 3)
 
 
 def test_a_row_whose_ending_was_cut_is_inexact_and_the_run_still_reaches_the_last_words() -> (
     None
 ):
-    row = (
+    transcript = (
         "Therefore, it is more prudent to have our current rules as the default position."
         " However, financial institutions may approve property loan applications where"
         " the borrowers' TDSR exceed 60% in exceptional cases."
     )
 
     assert _get_source_match(
-        SPRS3_ORAL_ANSWER_HTML, _ORAL_ANSWER_LABEL, row
+        SPRS3_ORAL_ANSWER_HTML, _ORAL_ANSWER_LABEL, transcript
     ) == _build_source_match(HandCheckMatchStatus.INEXACT, 2, 3)
 
 

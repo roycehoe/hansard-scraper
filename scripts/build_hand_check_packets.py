@@ -785,16 +785,16 @@ def _get_packet_word_differences(
 
 
 def _get_row_role_section(
-    row: HandCheckSnapshotRow,
+    snapshot_row: HandCheckSnapshotRow,
     paragraphs: list[SourceParagraph],
     source_match: SourceMatch,
     office_holders: list[HandCheckOfficeHolder],
     earlier_chair_lines: list[ChairLine],
 ) -> Optional[HandCheckRoleSection]:
-    if row.speaker is None:
+    if snapshot_row.speaker is None:
         return None
-    sitting_day = row.sitting_date.date()
-    role_section = get_role_section(row.speaker, sitting_day, office_holders)
+    sitting_day = snapshot_row.sitting_date.date()
+    role_section = get_role_section(snapshot_row.speaker, sitting_day, office_holders)
     if role_section is None:
         return None
     if not role_section.is_chair_label:
@@ -803,7 +803,7 @@ def _get_row_role_section(
         return role_section
     own_before_lines = get_chair_lines(
         paragraphs[: source_match.run.first_index],
-        row.report_title,
+        snapshot_row.report_title,
         sitting_day,
         office_holders,
     )
@@ -814,7 +814,7 @@ def _get_row_role_section(
     )
     after_lines = get_chair_lines(
         paragraphs[source_match.run.last_index + 1 :],
-        row.report_title,
+        snapshot_row.report_title,
         sitting_day,
         office_holders,
     )
@@ -825,46 +825,51 @@ def _get_row_role_section(
 
 def build_packet(
     packet_id: str,
-    row: HandCheckSnapshotRow,
+    snapshot_row: HandCheckSnapshotRow,
     paragraphs: list[SourceParagraph],
     live_check: Optional[LiveCheck],
     office_holders: list[HandCheckOfficeHolder],
     earlier_chair_lines: list[ChairLine],
 ) -> HandCheckPacket:
     source_match = get_source_match(
-        paragraphs, row.speaker, row.transcript, row.next_transcript
+        paragraphs,
+        snapshot_row.speaker,
+        snapshot_row.transcript,
+        snapshot_row.next_transcript,
     )
     matched_source_html = get_matched_source_html(paragraphs, source_match)
     return HandCheckPacket(
         packet_id=packet_id,
-        snapshot=row,
+        snapshot=snapshot_row,
         official_record_url=get_official_record_url(
-            row.hansard_report_id, row.report_version, row.html_file_name
+            snapshot_row.hansard_report_id,
+            snapshot_row.report_version,
+            snapshot_row.html_file_name,
         ),
         match_status=source_match.status,
         matched_source_html=matched_source_html,
         context_paragraphs=get_context_paragraphs(paragraphs, source_match),
         after_paragraph=get_after_paragraph(paragraphs, source_match),
         word_differences=_get_packet_word_differences(
-            source_match, matched_source_html, row.transcript
+            source_match, matched_source_html, snapshot_row.transcript
         ),
         gap_check=(
             None
             if source_match.run is None
             else get_gap_check(
-                paragraphs, source_match.run.last_index, row.next_transcript
+                paragraphs, source_match.run.last_index, snapshot_row.next_transcript
             )
         ),
         role_section=_get_row_role_section(
-            row, paragraphs, source_match, office_holders, earlier_chair_lines
+            snapshot_row, paragraphs, source_match, office_holders, earlier_chair_lines
         ),
         live_check_status=None if live_check is None else live_check.status,
         live_match_status=(
             get_source_match(
                 live_check.live_paragraphs,
-                row.speaker,
-                row.transcript,
-                row.next_transcript,
+                snapshot_row.speaker,
+                snapshot_row.transcript,
+                snapshot_row.next_transcript,
             ).status
             if live_check is not None
             and live_check.status == HandCheckLiveCheckStatus.DIFFERS
@@ -969,22 +974,22 @@ def _get_live_check_text_lines(
 
 
 def render_packet(packet: HandCheckPacket, is_for_sonnet: bool) -> str:
-    row = packet.snapshot
+    snapshot_row = packet.snapshot
     lines = [
         f"## Packet {packet.packet_id}",
         "",
         "### Label and credited person",
-        f"Label: {_NO_LABEL_TEXT if row.speaker is None else row.speaker}",
-        f"Credited to: {row.speaker_name}",
-        f"Linked person: {_NO_PERSON_TEXT if row.person_name is None else row.person_name}",
+        f"Label: {_NO_LABEL_TEXT if snapshot_row.speaker is None else snapshot_row.speaker}",
+        f"Credited to: {snapshot_row.speaker_name}",
+        f"Linked person: {_NO_PERSON_TEXT if snapshot_row.person_name is None else snapshot_row.person_name}",
         "",
         "### Report",
-        row.report_title,
-        f"Sitting date: {row.sitting_date.day} {row.sitting_date:%B %Y}",
-        f"Report type: {row.report_type}",
+        snapshot_row.report_title,
+        f"Sitting date: {snapshot_row.sitting_date.day} {snapshot_row.sitting_date:%B %Y}",
+        f"Report type: {snapshot_row.report_type}",
         "",
         "### Snapshot text",
-        row.transcript,
+        snapshot_row.transcript,
         "",
         "### Context",
         *(
@@ -1102,22 +1107,24 @@ def write_hand_check_packets(
     return directory_name_to_batch_count
 
 
-def _fetch_live_text(row: HandCheckSnapshotRow) -> str:
+def _fetch_live_text(snapshot_row: HandCheckSnapshotRow) -> str:
     topic_id = get_topic_id(
-        row.hansard_report_id, row.html_file_name, row.report_version
+        snapshot_row.hansard_report_id,
+        snapshot_row.html_file_name,
+        snapshot_row.report_version,
     )
     logger.info(f"Fetching live SPRS topic {topic_id}")
     try:
         topic_answer = classify_topic_answer(
-            get_hansard_topic_response(topic_id), row.report_version
+            get_hansard_topic_response(topic_id), snapshot_row.report_version
         )
     except HansardGatewayError as error:
         raise HansardHandCheckError(
-            f"The live check request failed for {row.hansard_report_id}"
+            f"The live check request failed for {snapshot_row.hansard_report_id}"
         ) from error
     if topic_answer.text is None:
         raise HansardHandCheckError(
-            f"The live check answer for {row.hansard_report_id} holds no text ({topic_answer.status}): {topic_answer.note}"
+            f"The live check answer for {snapshot_row.hansard_report_id} holds no text ({topic_answer.status}): {topic_answer.note}"
         )
     return topic_answer.text
 
@@ -1164,18 +1171,20 @@ def build_hand_check_packets(
     )
     snapshot_rows = [*sample_rows, *plant_rows]
     hansard_report_id_to_rows: dict[str, list[HandCheckSnapshotRow]] = {}
-    for row in snapshot_rows:
-        hansard_report_id_to_rows.setdefault(row.hansard_report_id, []).append(row)
+    for snapshot_row in snapshot_rows:
+        hansard_report_id_to_rows.setdefault(snapshot_row.hansard_report_id, []).append(
+            snapshot_row
+        )
     speech_id_to_packet_id = dict(
         zip(
-            (row.speech_id for row in snapshot_rows),
+            (snapshot_row.speech_id for snapshot_row in snapshot_rows),
             get_packet_ids(len(snapshot_rows)),
         )
     )
     office_holders = get_hand_check_office_holders()
     with Session(build_read_only_engine(settings.database_url)) as session:
         reports = CRUDReport(session).get_by_ids(
-            sorted({row.report_id for row in snapshot_rows})
+            sorted({snapshot_row.report_id for snapshot_row in snapshot_rows})
         )
         hansard_report_id_to_stored_text = get_validated_stored_texts(
             list(hansard_report_id_to_rows), reports
@@ -1184,9 +1193,13 @@ def build_hand_check_packets(
             report.report_id: _get_earlier_chair_lines(session, report, office_holders)
             for report in reports
             if any(
-                row.speaker is not None
-                and is_chair_label(row.speaker, row.sitting_date.date(), office_holders)
-                for row in hansard_report_id_to_rows[report.report_id]
+                snapshot_row.speaker is not None
+                and is_chair_label(
+                    snapshot_row.speaker,
+                    snapshot_row.sitting_date.date(),
+                    office_holders,
+                )
+                for snapshot_row in hansard_report_id_to_rows[report.report_id]
             )
         }
     hansard_report_id_to_live_check = {
@@ -1195,25 +1208,25 @@ def build_hand_check_packets(
             hansard_report_id_to_stored_text[hansard_report_id],
         )
         for hansard_report_id in get_live_check_hansard_report_ids(
-            [row.hansard_report_id for row in sample_rows]
+            [snapshot_row.hansard_report_id for snapshot_row in sample_rows]
         )
     }
     validate_can_build_after_live_check(hansard_report_id_to_live_check)
     packets: list[HandCheckPacket] = []
-    for hansard_report_id, rows in hansard_report_id_to_rows.items():
+    for hansard_report_id, report_snapshot_rows in hansard_report_id_to_rows.items():
         paragraphs = split_source_paragraphs(
             hansard_report_id_to_stored_text[hansard_report_id]
         )
         packets.extend(
             build_packet(
-                speech_id_to_packet_id[row.speech_id],
-                row,
+                speech_id_to_packet_id[snapshot_row.speech_id],
+                snapshot_row,
                 paragraphs,
                 hansard_report_id_to_live_check.get(hansard_report_id),
                 office_holders,
                 hansard_report_id_to_earlier_chair_lines.get(hansard_report_id, []),
             )
-            for row in rows
+            for snapshot_row in report_snapshot_rows
         )
 
     directory_name_to_batch_count = write_hand_check_packets(packets, output_directory)

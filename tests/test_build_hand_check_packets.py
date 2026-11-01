@@ -139,7 +139,7 @@ def _build_live_checks(
 
 def _build_packet(
     report_html: str,
-    row: HandCheckSnapshotRow,
+    snapshot_row: HandCheckSnapshotRow,
     live_check: Optional[build_hand_check_packets_script.LiveCheck] = None,
     office_holders: Optional[list[HandCheckOfficeHolder]] = None,
     earlier_chair_lines: Optional[
@@ -148,7 +148,7 @@ def _build_packet(
 ) -> HandCheckPacket:
     return build_hand_check_packets_script.build_packet(
         _PACKET_ID,
-        row,
+        snapshot_row,
         build_hand_check_packets_script.split_source_paragraphs(report_html),
         live_check,
         [] if office_holders is None else office_holders,
@@ -448,12 +448,12 @@ def test_no_packets_make_no_batches() -> None:
 
 
 def test_an_exact_row_in_a_report_with_a_next_row_makes_a_full_packet() -> None:
-    row = _build_row(_MINISTER_LABEL, _JOINED_ROW, _NEXT_ROW)
+    snapshot_row = _build_row(_MINISTER_LABEL, _JOINED_ROW, _NEXT_ROW)
 
-    packet = _build_packet(SPRS3_ORAL_ANSWER_HTML, row)
+    packet = _build_packet(SPRS3_ORAL_ANSWER_HTML, snapshot_row)
 
     assert packet.packet_id == _PACKET_ID
-    assert packet.snapshot == row
+    assert packet.snapshot == snapshot_row
     assert packet.official_record_url == _OFFICIAL_RECORD_URL
     assert packet.match_status == HandCheckMatchStatus.EXACT
     assert packet.word_differences == []

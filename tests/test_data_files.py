@@ -189,14 +189,14 @@ def test_every_model_of_a_data_file_refuses_an_unknown_key(
     file_bytes = (_DATA_DIRECTORY / file_name).read_bytes()
 
     for path in _get_object_paths(json.loads(file_bytes)):
-        data = json.loads(file_bytes)
-        node = data
+        data_file_content = json.loads(file_bytes)
+        node = data_file_content
         for step in path:
             node = node[step]
         node[_TYPO_KEY] = 1
 
         with pytest.raises(ValidationError, match=_TYPO_KEY):
-            schema.model_validate(data)
+            schema.model_validate(data_file_content)
 
 
 def test_person_decision_refuses_an_unknown_key() -> None:

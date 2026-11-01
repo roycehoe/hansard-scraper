@@ -72,9 +72,12 @@ def test_the_snapshot_file_reads_back_to_an_equal_snapshot() -> None:
 
 
 def test_the_plant_file_reads_back_to_equal_rows() -> None:
-    rows = HandCheckSnapshotRows([_build_row(), _build_last_row()])
+    snapshot_rows = HandCheckSnapshotRows([_build_row(), _build_last_row()])
 
-    assert HandCheckSnapshotRows.model_validate_json(rows.model_dump_json()) == rows
+    assert (
+        HandCheckSnapshotRows.model_validate_json(snapshot_rows.model_dump_json())
+        == snapshot_rows
+    )
 
 
 @pytest.mark.parametrize(
@@ -89,11 +92,11 @@ def test_the_plant_file_reads_back_to_equal_rows() -> None:
     ],
 )
 def test_a_snapshot_row_refuses_a_missing_optional_field(field: str) -> None:
-    data = _build_row().model_dump()
-    del data[field]
+    snapshot_row_fields = _build_row().model_dump()
+    del snapshot_row_fields[field]
 
     with pytest.raises(ValidationError, match=field):
-        HandCheckSnapshotRow.model_validate(data)
+        HandCheckSnapshotRow.model_validate(snapshot_row_fields)
 
 
 def test_a_frame_summary_refuses_a_read_time_without_a_timezone() -> None:

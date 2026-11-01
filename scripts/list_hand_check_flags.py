@@ -25,6 +25,7 @@ from schemas.hand_check_verdict import HandCheckVerdict
 _VERDICTS_FILE_NAME = "verdicts.jsonl"
 _LISTED_PACKET_ID_COUNT = 5
 _ONE_SIDED_ALPHA = 0.05
+_FIRST_RUN_NUMBER = 1
 _MAX_RUN_NUMBER = 2
 
 
@@ -351,7 +352,7 @@ def list_hand_check_flags(
     earlier_flags_path: Optional[Path],
     held_reports_path: Optional[Path],
 ) -> None:
-    if run_number > 1 and earlier_flags_path is None:
+    if run_number > _FIRST_RUN_NUMBER and earlier_flags_path is None:
         raise HansardHandCheckError(
             f"Run {run_number} needs the flag list of the run before (--earlier-flags)"
         )
@@ -359,15 +360,19 @@ def list_hand_check_flags(
         raise HansardHandCheckError(
             f"Run {run_number} is refused: the plan allows one rerun, so run {_MAX_RUN_NUMBER} is the last (P4)"
         )
-    if run_number == 1 and sonnet_verdicts_path is None:
+    if run_number == _FIRST_RUN_NUMBER and sonnet_verdicts_path is None:
         raise HansardHandCheckError(
             "Run 1 needs both readers' verdicts (--sonnet-verdicts and --opus-verdicts)"
         )
-    if run_number == 1 and opus_verdicts_path is None:
+    if run_number == _FIRST_RUN_NUMBER and opus_verdicts_path is None:
         raise HansardHandCheckError(
             "Run 1 needs both readers' verdicts (--sonnet-verdicts and --opus-verdicts)"
         )
-    if run_number > 1 and sonnet_verdicts_path is None and opus_verdicts_path is None:
+    if (
+        run_number > _FIRST_RUN_NUMBER
+        and sonnet_verdicts_path is None
+        and opus_verdicts_path is None
+    ):
         raise HansardHandCheckError(
             f"Run {run_number} needs at least one reader's verdicts (--sonnet-verdicts or --opus-verdicts)"
         )
