@@ -194,6 +194,7 @@ The scripts:
 - `validate_api_field_mapping.py`: checks that every non-null field in a live or synthetic API body survives the schema and the ORM mapping
 - `load_parliament_speakers.py`: stores the members of one Parliament (`--parliament N`) that the `Speaker` table lacks, from parliament.gov.sg, with the overrides of `data/speaker_overrides.json`; a dry run unless `--commit`
 - `draw_hand_check_sample.py`: read-only draw of the human hand check's sample. In one read-only repeatable-read transaction it streams the speech id and Parliament number of every speech row with a speaker id, ordered by the database by Parliament, report version, report type, sitting date, SPRS report id, ordinal and speech id (`COLLATE "C"` on the three string columns, so the order is byte order), splits them into the Parliament groups of `services/attribution.py::get_group` as they arrive, allocates the sample by largest remainder, and picks rows by systematic sampling from a start drawn with the seed. Writes `snapshot.json` (the drawn rows with their credited names and the next row of the report) to `--snapshot-directory`, and `draw.tsv` (speech id, group, frame position) and `draw-summary.txt` (database label, read time, seed, group counts, allocation, starts, frame hash, weight spread) to `--record-directory`. `--pilot` draws 20 rows with the pilot seed and overwrites earlier files; otherwise it draws 1,000 with the main seed, refuses when the weights spread by more than 3% and refuses to overwrite an existing file. Logs the database label, never the URL; run as a module
+- `build_hand_check_plants.py`: read-only; builds one round of the human hand check's planted errors (15 wrong member, 15 non-speech line credited to a member) from rows outside the main snapshot, and writes the planted snapshot rows, a sealed key file and the key's SHA-256; the non-speech lines come from uncredited procedural rows and caption notes; leaves out role-labelled rows; refuses to overwrite a plants file or a key; `--round` picks the seed and `--previous-plants` leaves an earlier round's rows out; run as a module
 
 The speech fidelity loop has its own tools for rewriting stored speech rows. They live outside the repo's tracked tree, in the gitignored `plans/speech-fidelity-loop/bin/`. Run them only for a planned write, and follow a ship that touches Parliaments 0 to 11 with `apply_column_numbers.py --commit --report-id` for its reports.
 
@@ -207,7 +208,7 @@ hansard-scraper/
 ├── script.py                        # Pipeline orchestrator — runs populate stages 5 to 9 in order
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
-├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress
+├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind
 ├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshFailureError / HansardRefreshRunError / HansardTestGuardError / HansardHandCheckError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the refresh job (run as `sh refresh.sh`); the build imports `refresh`, so an import error fails it
@@ -232,6 +233,7 @@ hansard-scraper/
 │   ├── coverage_refill_plan.py     # CoverageRefillPlan / FetchedHit / FetchedReport: the plan file of scripts/apply_coverage_refill.py
 │   ├── sample_sets.py              # SampleSets: the pilot, held-out and regression report ids of the speech sample
 │   ├── hand_check_snapshot.py      # HandCheckSnapshotRow / HandCheckFrameSummary / HandCheckSnapshot / HandCheckSnapshotRows: the snapshot file of the human hand check's draw (a frame summary and the drawn rows), and a bare list of the same rows
+│   ├── hand_check_plant_key.py     # HandCheckPlantKey / HandCheckPlant: the sealed key file of scripts/build_hand_check_plants.py
 │   ├── speaker_override.py         # SpeakerOverrides: data/speaker_overrides.json
 │   ├── parliament_member_list_response.py  # ParliamentMemberListResponse: the member data in the parliament.gov.sg list page
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata
@@ -366,5 +368,6 @@ hansard-scraper/
     ├── apply_speaker_links.py
     ├── load_party_affiliations.py
     ├── draw_hand_check_sample.py
+    ├── build_hand_check_plants.py
     └── load_parliament_speakers.py
 ```

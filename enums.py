@@ -94,3 +94,8 @@ class PersonDecisionKind(StrEnum):
 class HandCheckFormOfAddress(StrEnum):
     MR = "MR"
     MDM = "MDM"
+
+
+class HandCheckPlantKind(StrEnum):
+    WRONG_MEMBER = "WRONG_MEMBER"
+    CREDITED_NON_SPEECH_LINE = "CREDITED_NON_SPEECH_LINE"

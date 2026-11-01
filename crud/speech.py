@@ -353,6 +353,17 @@ class CRUDSpeech:
         )
         return [SpeechTranscriptRow(*row) for row in self.session.exec(statement).all()]
 
+    def get_transcript_rows_by_speaker_id_null_and_kind(
+        self, kind: SpeechKind
+    ) -> list[SpeechTranscriptRow]:
+        statement = (
+            select(Speech.id, Speech.transcript)
+            .where(col(Speech.speaker_id).is_(None))
+            .where(Speech.kind == kind)
+            .order_by(Speech.id)
+        )
+        return [SpeechTranscriptRow(*row) for row in self.session.exec(statement).all()]
+
     def get_label_rows_by_speaker_regex(self, pattern: str) -> list[SpeechLabelRow]:
         statement = (
             select(Speech.id, Speech.speaker)

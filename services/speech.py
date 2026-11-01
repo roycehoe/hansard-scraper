@@ -254,7 +254,7 @@ _COLUMN_REFERENCE_NOTE_RE = re.compile(
 )
 _UNDERSCORE_RULE_RE = re.compile(r"^_{20,}$")
 # NOTE: a caption is all capitals or opens with the document's label; speech that ends on a column reference ("will appear in the Official Report. (Cols. 395 - 398)") is neither.
-_APPENDIX_LINK_CAPTION_RE = re.compile(
+APPENDIX_LINK_CAPTION_RE = re.compile(
     r"^[\s_*]*(?:[^a-z]+|(?:Appendix|Annex|Table|Chart)(?: [\w\"]{1,4})?(?: [-–] [^.?!]+| to [^.?!]+)?)"
     r"\s*\(Cols?\.?\s*\d+(?:\s*-\s*\d+)?\)[\s_*]*$"
 )
@@ -794,7 +794,7 @@ def _get_note_kind(line: str) -> Optional[SpeechKind]:
         return bracketed_note_kind
     if _SUPPLY_HEADER_NOTE_RE.match(line):
         return SpeechKind.HEADING
-    if _APPENDIX_LINK_CAPTION_RE.match(line):
+    if APPENDIX_LINK_CAPTION_RE.match(line):
         return SpeechKind.EDITORIAL_NOTE
     if _HOUSE_ROSE_NOTE_RE.match(line):
         return SpeechKind.PROCEDURAL
