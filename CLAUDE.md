@@ -210,7 +210,7 @@ hansard-scraper/
 ├── script.py                        # Pipeline orchestrator — runs populate stages 5 to 9 in order
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
-├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus
+├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus, HandCheckSpeakerVerdict, HandCheckDifferenceClass, HandCheckErrorTier
 ├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshFailureError / HansardRefreshRunError / HansardTestGuardError / HansardHandCheckError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the refresh job (run as `sh refresh.sh`); the build imports `refresh`, so an import error fails it
@@ -237,6 +237,7 @@ hansard-scraper/
 │   ├── hand_check_snapshot.py      # HandCheckSnapshotRow / HandCheckFrameSummary / HandCheckSnapshot / HandCheckSnapshotRows: the snapshot file of the human hand check's draw (a frame summary and the drawn rows), and a bare list of the same rows
 │   ├── hand_check_plant_key.py     # HandCheckPlantKey / HandCheckPlant: the sealed key file of scripts/build_hand_check_plants.py
 │   ├── hand_check_packet.py        # HandCheckPackets / HandCheckPacket / HandCheckWordDifference / HandCheckGapCheck / HandCheckRoleSection: the packet records file of the human hand check
+│   ├── hand_check_verdict.py       # HandCheckVerdict: one line of a reader's verdicts.jsonl in the hand check
 │   ├── speaker_override.py         # SpeakerOverrides: data/speaker_overrides.json
 │   ├── parliament_member_list_response.py  # ParliamentMemberListResponse: the member data in the parliament.gov.sg list page
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata

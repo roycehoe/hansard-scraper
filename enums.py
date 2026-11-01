@@ -116,3 +116,21 @@ class HandCheckAnswerStatus(StrEnum):
     TEXT = "TEXT"
     NO_CONTENT = "NO_CONTENT"
     ERROR = "ERROR"
+
+
+class HandCheckSpeakerVerdict(StrEnum):
+    RIGHT = "RIGHT"
+    WRONG = "WRONG"
+    RECORD_DOES_NOT_SAY = "RECORD_DOES_NOT_SAY"
+
+
+class HandCheckDifferenceClass(StrEnum):
+    LISTED_CHANGE = "LISTED_CHANGE"
+    SUBSTANTIVE = "SUBSTANTIVE"
+    COSMETIC = "COSMETIC"
+
+
+class HandCheckErrorTier(StrEnum):
+    A = "A"
+    B = "B"
+    C = "C"
