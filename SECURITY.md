@@ -4,6 +4,8 @@
 
 Email royceinbox@hotmail.com with "Security" in the subject. Do not open a public issue for a vulnerability.
 
+Or use GitHub's private form: [report a vulnerability](https://github.com/roycehoe/hansard-scraper/security/advisories/new).
+
 Say which file or script is affected, the steps to reproduce it, and what an attacker could do with it.
 
 Royce Hoe maintains this repository and reads each report himself.
