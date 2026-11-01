@@ -56,6 +56,7 @@ _DATA_FILE_GETTERS = (
     get_colonial_members,
     get_constituency_names,
     get_excluded_report_ids,
+    get_hand_check_office_holders,
     get_heads_of_state,
     get_party_affiliations,
     get_person_decisions,
@@ -318,7 +319,3 @@ def test_hand_check_office_holder_refuses_a_form_of_address_outside_the_enum(
 
     with pytest.raises(ValidationError, match="form_of_address"):
         HandCheckOfficeHolder.model_validate(office_holder)
-
-
-def test_the_committed_office_holder_file_reads_through_its_getter() -> None:
-    assert isinstance(get_hand_check_office_holders(), list)
