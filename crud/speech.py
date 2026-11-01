@@ -105,6 +105,30 @@ class SpeechParseRow:
     speaker_id: Optional[int]
 
 
+@dataclass(frozen=True, slots=True)
+class SpeechFrameRow:
+    id: int
+    parliament_number: int
+
+
+@dataclass(frozen=True)
+class SpeechSnapshotRow:
+    id: int
+    report_id: int
+    hansard_report_id: str
+    html_file_name: Optional[str]
+    report_version: str
+    report_type: str
+    parliament_number: int
+    sitting_date: datetime
+    title: str
+    ordinal: int
+    speaker: Optional[str]
+    speaker_id: Optional[int]
+    kind: Optional[SpeechKind]
+    transcript: str
+
+
 @dataclass(frozen=True)
 class SpeakerStringCount:
     speaker: str
@@ -173,6 +197,24 @@ class CRUDSpeech:
             .execution_options(yield_per=_STREAM_BATCH)
         )
         return (SpeechLinkRow(*row) for row in self.session.exec(statement))
+
+    def get_frame_rows_by_speaker_id_not_null(self) -> Iterable[SpeechFrameRow]:
+        statement = (
+            select(Speech.id, Report.parliament_number)
+            .join(Report, Report.id == Speech.report_id)
+            .where(col(Speech.speaker_id).is_not(None))
+            .order_by(
+                Report.parliament_number,
+                col(Report.report_version).collate("C"),
+                col(Report.report_type).collate("C"),
+                Report.sitting_date,
+                col(Report.report_id).collate("C"),
+                Speech.ordinal,
+                Speech.id,
+            )
+            .execution_options(yield_per=_STREAM_BATCH)
+        )
+        return (SpeechFrameRow(*row) for row in self.session.exec(statement))
 
     def get_speaker_counts_by_speaker_id_null_and_speaker_not_null(
         self,
@@ -248,6 +290,32 @@ class CRUDSpeech:
             .order_by(Speech.report_id, Speech.ordinal, Speech.id)
         )
         return [SpeechParseRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_snapshot_rows_by_ids(
+        self, speech_ids: list[int]
+    ) -> list[SpeechSnapshotRow]:
+        statement = (
+            select(
+                Speech.id,
+                Speech.report_id,
+                Report.report_id,
+                Report.html_file_name,
+                Report.report_version,
+                Report.report_type,
+                Report.parliament_number,
+                Report.sitting_date,
+                Report.title,
+                Speech.ordinal,
+                Speech.speaker,
+                Speech.speaker_id,
+                Speech.kind,
+                Speech.transcript,
+            )
+            .join(Report, Report.id == Speech.report_id)
+            .where(col(Speech.id).in_(speech_ids))
+            .order_by(Speech.id)
+        )
+        return [SpeechSnapshotRow(*row) for row in self.session.exec(statement).all()]
 
     def get_column_rows_by_report_ids(
         self, report_ids: list[int]

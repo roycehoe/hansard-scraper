@@ -7,11 +7,11 @@ from sqlmodel import Session
 from crud.table_hash import TableHash
 from database.sitting import Sitting
 from scripts.compare_table_hashes import (
-    get_database_label,
     get_lines,
     get_read_only_session,
     get_table_hashes,
 )
+from utils.database_label import get_database_label
 
 
 def _add_sitting(session: Session, sitting_id: int, parlement_no: int) -> None:

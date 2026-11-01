@@ -3,11 +3,12 @@ from pathlib import Path
 from typing import Optional
 
 from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine, make_url
+from sqlalchemy.engine import Engine
 from sqlmodel import Session
 
 from crud.table_hash import CRUDTableHash, TableHash
 from logs import logger
+from utils.database_label import get_database_label
 
 
 def get_read_only_session(engine: Engine) -> Session:
@@ -21,11 +22,6 @@ def get_table_hashes(engine: Engine) -> dict[str, TableHash]:
             table_name: CRUDTableHash(session).get_table_hash(table_name)
             for table_name in table_names
         }
-
-
-def get_database_label(database_url: str) -> str:
-    url = make_url(database_url)
-    return f"{url.host}:{url.port}/{url.database}"
 
 
 def _get_table_text(table_hash: Optional[TableHash]) -> str:

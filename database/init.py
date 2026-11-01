@@ -1,6 +1,7 @@
 from collections.abc import Iterator
 from pathlib import Path
 
+from sqlalchemy.engine import Engine
 from sqlmodel import Session, create_engine
 
 from alembic import command
@@ -13,12 +14,25 @@ _KEEPALIVE_CONNECT_ARGS = {
     "keepalives_interval": 10,
     "keepalives_count": 6,
 }
+_READ_ONLY_CONNECT_OPTIONS = "-c default_transaction_read_only=on"
 
 engine = create_engine(
     url=settings.database_url, pool_pre_ping=True, connect_args=_KEEPALIVE_CONNECT_ARGS
 )
 
 _ALEMBIC_INI = Path(__file__).parent.parent / "alembic.ini"
+
+
+def build_read_only_engine(database_url: str) -> Engine:
+    # NOTE: the connect option is a second guard beside the read only execution option
+    return create_engine(
+        url=database_url,
+        pool_pre_ping=True,
+        connect_args={
+            **_KEEPALIVE_CONNECT_ARGS,
+            "options": _READ_ONLY_CONNECT_OPTIONS,
+        },
+    ).execution_options(postgresql_readonly=True)
 
 
 def create_db_and_tables() -> None:
