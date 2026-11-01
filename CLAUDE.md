@@ -310,6 +310,7 @@ hansard-scraper/
 │   ├── column_numbers.py            # A report's column range and each speech row's start column and note, from the column markers in its raw HTML
 │   ├── data_files.py                # The only module outside its own test that opens data/: one get_ function per file, each on model_validate_json
 │   ├── database_label.py            # get_database_label: the host, port and database name of a database URL, never the user or password
+│   ├── hand_check_text.py           # normalize_hand_check_text and get_word_differences: the text rules of the human hand check
 │   ├── json_columns.py              # Serialises a nested list to the JSON text stored in a column
 │   ├── markdown_header.py           # Reads a number such as Sitting No from a stored header table
 │   ├── markdown_parser.py           # HTML → clean markdown; merges split bold lines
