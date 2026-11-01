@@ -53,6 +53,9 @@ _PARAGRAPH_BREAK_RE = re.compile(
     re.IGNORECASE,
 )
 _HEADING_OPENING_RE = re.compile(r"<h[1-6]\b", re.IGNORECASE)
+_PREFORMATTED_OPENING_RE = re.compile(r"<pre\b", re.IGNORECASE)
+_PREFORMATTED_CLOSING_RE = re.compile(r"</pre\b", re.IGNORECASE)
+_LINE_BREAK_RE = re.compile(r"\r?\n")
 _PAGE_FURNITURE_RE = re.compile(r"^(?:Column|Page)(?:\s+No)?\s*:\s*\d+$", re.IGNORECASE)
 # NOTE: the older system prints "<b>Mr Speaker:</b>" and the newer "<strong>Mr Speaker</strong>:", or no colon in a question.
 _LABEL_RE = re.compile(
@@ -219,17 +222,27 @@ def split_source_paragraphs(report_html: str) -> list[SourceParagraph]:
     body_html = _COMMENT_RE.sub("", _HEAD_BLOCK_RE.sub("", report_html))
     pieces = _PARAGRAPH_BREAK_RE.split(body_html)
     paragraphs = []
-    for opening_tag, paragraph_html in zip([""] + pieces[1::2], pieces[0::2]):
-        text = normalize_hand_check_text(paragraph_html)
-        if text == "":
-            continue
-        if _PAGE_FURNITURE_RE.match(text) is not None:
-            continue
-        paragraphs.append(
-            _build_source_paragraph(
-                paragraph_html, _HEADING_OPENING_RE.match(opening_tag) is not None
-            )
+    is_preformatted = False
+    for opening_tag, piece_html in zip([""] + pieces[1::2], pieces[0::2]):
+        if _PREFORMATTED_OPENING_RE.match(opening_tag) is not None:
+            is_preformatted = True
+        elif _PREFORMATTED_CLOSING_RE.match(opening_tag) is not None:
+            is_preformatted = False
+        # NOTE: the parser keeps each line of a preformatted block (it joins only wrapped prose), so each line is a paragraph
+        paragraph_htmls = (
+            _LINE_BREAK_RE.split(piece_html) if is_preformatted else [piece_html]
         )
+        for paragraph_html in paragraph_htmls:
+            text = normalize_hand_check_text(paragraph_html)
+            if text == "":
+                continue
+            if _PAGE_FURNITURE_RE.match(text) is not None:
+                continue
+            paragraphs.append(
+                _build_source_paragraph(
+                    paragraph_html, _HEADING_OPENING_RE.match(opening_tag) is not None
+                )
+            )
     return paragraphs
 
 

@@ -46,6 +46,17 @@ _SKIPPING_HTML = (
     "<p>2.41 pm</p><h4>[Mr Speaker in the Chair]</h4>"
     "<p><b>Mr B:</b> Next words of the row.</p>"
 )
+# NOTE: trimmed from report 014_19710325_S0003_T0026, a written answer that prints its table in a preformatted block
+_PREFORMATTED_TABLE_HTML = (
+    "<br><br><!-- Mr E. W. Barker -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr E. W. Barker:</b> Sir,"
+    " the number of shop-houses\r\n\r\naffected    by   urban   renewal   and   Government"
+    "\r\n\r\ndevelopment projects and cleared in 1969  and  1970\r\n\r\nis as follows:"
+    "\r\n\r\n\r\n\r\n<pre>\r\n\r\n                           1969    1970\r\n\r\n"
+    "        Urban renewal       212      97\r\n\r\n"
+    "        Other projects      172     174\r\n\r\n</pre>\r\n\r\n\r\n\r\n"
+    "The number of shopkeepers so affected, who have\r\n\r\nvacated Housing and"
+    " Development Board premises"
+)
 _ORAL_ANSWER_PARAGRAPH_COUNT = 5
 _JOINED_ROW_CONTEXT_PARAGRAPH_COUNT = 3
 _ORAL_ANSWER_LABEL = (
@@ -195,6 +206,38 @@ def test_a_row_joined_across_a_column_marker_matches_two_paragraphs() -> None:
     assert _get_source_match(
         SPRS2_APPENDIX_HTML, "Mr Speaker", _APPENDIX_ROW
     ) == _build_source_match(HandCheckMatchStatus.EXACT, 7, 8)
+
+
+def test_each_line_of_a_preformatted_table_is_a_paragraph() -> None:
+    paragraphs = build_hand_check_packets_script.split_source_paragraphs(
+        _PREFORMATTED_TABLE_HTML
+    )
+
+    assert [
+        normalize_hand_check_text(paragraph.body_html) for paragraph in paragraphs
+    ] == [
+        "Sir, the number of shop-houses affected by urban renewal and Government"
+        " development projects and cleared in 1969 and 1970 is as follows:",
+        "1969 1970",
+        "Urban renewal 212 97",
+        "Other projects 172 174",
+        "The number of shopkeepers so affected, who have vacated Housing and"
+        " Development Board premises",
+    ]
+
+
+def test_a_row_of_preformatted_lines_matches_those_lines() -> None:
+    assert _get_source_match(
+        _PREFORMATTED_TABLE_HTML,
+        "Mr E. W. Barker",
+        "Urban renewal       212      97",
+        "Other projects      172     174",
+    ) == _build_source_match(HandCheckMatchStatus.EXACT, 2, 2)
+    assert _get_source_match(
+        _PREFORMATTED_TABLE_HTML,
+        "Mr E. W. Barker",
+        "Urban renewal 212 97 Other projects 172 174",
+    ) == _build_source_match(HandCheckMatchStatus.EXACT, 2, 3)
 
 
 def test_an_appendix_caption_row_matches_the_paragraph_that_has_no_label() -> None:
