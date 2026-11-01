@@ -229,6 +229,7 @@ hansard-scraper/
 │   ├── attendance_completion_plan.py  # AttendanceCompletionPlan / SittingAttendanceCompletion / PlannedAttendance: the plan file of scripts/complete_truncated_attendance.py
 │   ├── coverage_refill_plan.py     # CoverageRefillPlan / FetchedHit / FetchedReport: the plan file of scripts/apply_coverage_refill.py
 │   ├── sample_sets.py              # SampleSets: the pilot, held-out and regression report ids of the speech sample
+│   ├── hand_check_snapshot.py      # HandCheckSnapshotRow / HandCheckFrameSummary / HandCheckSnapshot / HandCheckSnapshotRows: the snapshot file of the human hand check's draw (a frame summary and the drawn rows), and a bare list of the same rows
 │   ├── speaker_override.py         # SpeakerOverrides: data/speaker_overrides.json
 │   ├── parliament_member_list_response.py  # ParliamentMemberListResponse: the member data in the parliament.gov.sg list page
 │   └── speaker.py                   # SpeakerResult — party and parliament metadata
