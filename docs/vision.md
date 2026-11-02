@@ -192,6 +192,8 @@ Each of the 19 parses differently from its stored rows. The 7 held under D1 can 
 
 Overall: not done. Tests 1 to 9 pass, test 7 with a listed residue, test 9 on being public only: serving the whole corpus is not checked, and takedowns are excluded by design. Test 10, freshness, is not met: the deliberate failure alerted on 30 October 2026, and on 2 November the 14 latest runs held 11 scheduled successes in a row, 3 short. The pre-launch re-parse ran as write #8 on 18 October, and write #9 released 60 of the 126 reports it held.
 
+Upkeep serves the goal at the top of this file with a standing aim, which Royce put on 24 October 2026: "credit every word uttered in parliament to the person who said it, even procedural speeches." So every kind of serious error a check finds is fixed, however few rows it touches, and the accuracy work has no end point.
+
 Once test 10 passes, the scraper is in upkeep. It runs the daily refresh, fixes the errors readers report, and fixes every kind of serious (Tier A) error a hand check finds. No kind is too small to fix, because Royce rejected a size floor. A hand check runs once a quarter, and after any write that changes more than 1% of credited rows (hansard `docs/adr/0009-ai-readers-person-judges-flags.md`).
 
 ### Gaps, by who owns them
