@@ -28,7 +28,7 @@ from services.attribution import get_group
 from settings import settings
 from utils.database_label import get_database_label
 
-_MAIN_SEED = 20_261_102
+_MAIN_SEED = 20_261_111
 _PILOT_SEED = 20_261_101
 _MAIN_SAMPLE_SIZE = 1_000
 _PILOT_SAMPLE_SIZE = 20

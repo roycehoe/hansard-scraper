@@ -325,7 +325,7 @@ def test_the_live_check_choice_follows_the_committed_seed() -> None:
 
     assert build_hand_check_packets_script.get_live_check_hansard_report_ids(
         hansard_report_ids
-    ) == random.Random(20_261_105).sample(
+    ) == random.Random(20_261_114).sample(
         sorted(hansard_report_ids), _LIVE_CHECK_REPORT_COUNT
     )
 
