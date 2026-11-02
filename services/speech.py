@@ -267,7 +267,8 @@ _OATH_LINE_RE = re.compile(
 _PROCEDURAL_RECORD_LINE_RE = re.compile(
     r"^[\s_*]*(?:Petition handed to the Clerk|Thereupon,? (?:the Clerk|a count)"
     r"|After (?:one|two|three) minutes?[\s_*]*[-–—]*[\s_*]*$|Certificate of Urgency signed by the President"
-    r"|Members summoned into (?:the )?Chamber|\(?Whereupon\b|The Clerk (?:handed|then|read))"
+    r"|Members summoned into (?:the )?Chamber|\(?Whereupon\b|The Clerk (?:handed|then|read)"
+    r"|Notice taken that \w+ Members were (?:not )?present|Members summoned as if for a division)"
 )
 _WRITTEN_STATEMENT_NOTE_RE = re.compile(
     r"^[\s_*]*Written [Ss]tatement by .{1,200}?Standing Order"
