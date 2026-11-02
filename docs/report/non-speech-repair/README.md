@@ -14,4 +14,4 @@ Before the write, four hand-read passes covered every reset family and line kind
 | `summary.json` | Changed, matched, targeted and linked counts by line kind, and the stale-report split |
 | `target_sample.json` | 40 random targets, read by hand: all non-speech |
 
-The figures before and after are in [vision.md](../../vision.md) "Measuring progress".
+The figures before and after are in [figures-history.md](../figures-history.md).
