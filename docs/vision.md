@@ -1,6 +1,6 @@
 # Vision
 
-A complete, queryable record of Singapore's parliamentary proceedings — from the colonial Legislative Assembly through the present — for researchers studying political history at scale.
+A complete, queryable record of Singapore's parliamentary proceedings — from the colonial Legislative Assembly through the present — for researchers studying political history at scale. The site built on it, openhansard.sg, is for people who read Hansard: someone who wants to find what an MP said and send it on, look up their own MP, quote a paragraph in an article, or question the name above it (hansard `docs/user-testing.md`).
 
 The at-scale part of that goal needs the database published, and Parliament's terms of use require written permission to reproduce the content. The project will not ask for it. On 2 November 2026 Royce ruled to wait for a takedown request instead, and to act on one if Parliament sends it. The site's `docs/corrections.md` and `docs/takedown.md` promise to take a report off the site within 2 working days of such a request. The database stays unpublished, so this file counts the bulk-researcher goal as not met, and the done tests below leave it out.
 
