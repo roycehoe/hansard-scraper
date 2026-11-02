@@ -13,6 +13,7 @@ from utils.markdown_parser import (
     ASTERISK,
     BOLD_MARKER,
     BYTE_ORDER_MARK,
+    EMPHASIS_MARK,
     HORIZONTAL_RULE,
     PROC_TEXT_CLOSE_TAG,
     PROC_TEXT_OPEN_TAG,
@@ -772,6 +773,28 @@ def _merge_wrapped_bold_lines(lines: list[str]) -> list[str]:
     return merged
 
 
+def _is_split_italic_title(line: str) -> bool:
+    return (
+        _ITALIC_TITLE_RE.match(line + EMPHASIS_MARK) is not None
+        and _get_non_speech_kind(line) is None
+    )
+
+
+# NOTE: the older system closes some titles after a line break ("<I>Title<BR></I>"), which leaves the closing "_" alone on the next line.
+def _close_split_italic_titles(lines: list[str]) -> list[str]:
+    closed: list[str] = []
+    for line in lines:
+        if (
+            line.strip() == EMPHASIS_MARK
+            and closed
+            and _is_split_italic_title(closed[-1].strip())
+        ):
+            closed[-1] = closed[-1].strip() + EMPHASIS_MARK
+            continue
+        closed.append(line)
+    return closed
+
+
 def _split_division_records(lines: list[str]) -> list[str]:
     return [part for line in lines for part in _DIVISION_RECORD_SPLIT_RE.split(line)]
 
@@ -1221,7 +1244,9 @@ def _parse_speeches(
     preamble_speeches: list[ParsedSpeech] = []
     speeches: list[ParsedSpeech] = []
     lines = _split_division_records(
-        _merge_wrapped_bold_lines(markdown.splitlines()[start_of_speech_line + 1 :])
+        _close_split_italic_titles(
+            _merge_wrapped_bold_lines(markdown.splitlines()[start_of_speech_line + 1 :])
+        )
     )
     footnote_line_indexes = _get_footnote_line_indexes(lines)
     for line_index, line in enumerate(lines):
