@@ -7,6 +7,7 @@ import secrets
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date
+from functools import partial
 from pathlib import Path
 from typing import Optional
 from urllib.parse import quote
@@ -386,6 +387,20 @@ def _is_followed_by_next_row(
     return _is_row_start(body_texts[next_index], next_row_text)
 
 
+def _get_run_placement(
+    paragraphs: list[SourceParagraph],
+    body_texts: list[str],
+    turn_label_keys: list[str],
+    next_row_text: Optional[str],
+    row_label_key: str,
+    run: SourceRun,
+) -> tuple[bool, bool]:
+    return (
+        _is_followed_by_next_row(paragraphs, body_texts, run.last_index, next_row_text),
+        turn_label_keys[run.first_index] == row_label_key,
+    )
+
+
 def get_source_match(
     paragraphs: list[SourceParagraph],
     speaker: Optional[str],
@@ -402,26 +417,31 @@ def get_source_match(
     turn_label_keys = _get_turn_label_keys(paragraphs)
     row_label_key = _get_label_key(speaker)
     exact_runs = _get_exact_runs(row_text, body_texts, full_texts)
-    if exact_runs:
-        next_row_text = (
-            None
-            if next_transcript is None
-            else normalize_hand_check_text(next_transcript)
-        )
-        # NOTE: a short reply can repeat word for word, so the run whose next paragraph starts the next row wins, then the run under the row's own label.
-        best_exact_run = max(
-            exact_runs,
-            key=lambda exact_run: (
-                _is_followed_by_next_row(
-                    paragraphs, body_texts, exact_run.last_index, next_row_text
-                ),
-                turn_label_keys[exact_run.first_index] == row_label_key,
-            ),
-        )
+    next_row_text = (
+        None if next_transcript is None else normalize_hand_check_text(next_transcript)
+    )
+    get_placement = partial(
+        _get_run_placement,
+        paragraphs,
+        body_texts,
+        turn_label_keys,
+        next_row_text,
+        row_label_key,
+    )
+    # NOTE: a short reply can repeat word for word, so the run whose next paragraph starts the next row wins, then the run under the row's own label.
+    best_exact_run = max(exact_runs, key=get_placement, default=None)
+    if best_exact_run is not None and any(get_placement(best_exact_run)):
         return SourceMatch(HandCheckMatchStatus.EXACT, best_exact_run)
     closest_run = _get_closest_run(
         row_text, body_texts, full_texts, turn_label_keys, row_label_key
     )
+    # NOTE: a reply repeated under another label can be the only exact copy when the row's own paragraph also holds a line the parser cut into the next row, so a run under the row's own label wins over it
+    is_closest_run_under_row_label = (
+        closest_run is not None
+        and turn_label_keys[closest_run.first_index] == row_label_key
+    )
+    if best_exact_run is not None and not is_closest_run_under_row_label:
+        return SourceMatch(HandCheckMatchStatus.EXACT, best_exact_run)
     if closest_run is not None:
         return SourceMatch(HandCheckMatchStatus.INEXACT, closest_run)
     return SourceMatch(HandCheckMatchStatus.NOT_FOUND, None)

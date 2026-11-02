@@ -318,6 +318,35 @@ def test_a_repeated_reply_with_no_label_tie_takes_the_first_run_in_the_report() 
     ) == _build_source_match(HandCheckMatchStatus.EXACT, 0, 0)
 
 
+# NOTE: trimmed from report 12665 (bill-366, 8 May 2019), which prints "Yes, please." under the Speaker with a slide note, and later under the Deputy Speaker
+_REPEATED_REPLY_HTML = (
+    "<p><strong>Mr Speaker</strong>: Yes, please. [<em>A slide was shown to hon Members.</em>]</p>"
+    "<p><strong>Assoc Prof Walter Theseira</strong>: Thank you, Sir.</p>"
+    "<p><strong>Mr Deputy Speaker</strong>: Yes, please.</p>"
+    "<p><strong>Mr Saktiandi Supaat</strong>: (<em>In Malay</em>): Thank you.</p>"
+)
+
+
+def test_a_reply_whose_own_paragraph_holds_a_cut_line_takes_its_own_paragraph_over_an_exact_copy_under_another_label() -> (
+    None
+):
+    assert _get_source_match(
+        _REPEATED_REPLY_HTML,
+        "Mr Speaker",
+        "Yes, please.",
+        "[_A slide was shown to hon Members._]",
+    ) == _build_source_match(HandCheckMatchStatus.INEXACT, 0, 0)
+
+
+def test_the_exact_copy_of_a_repeated_reply_still_matches_under_its_own_label() -> None:
+    assert _get_source_match(
+        _REPEATED_REPLY_HTML,
+        "Mr Deputy Speaker",
+        "Yes, please.",
+        "(In Malay): Thank you.",
+    ) == _build_source_match(HandCheckMatchStatus.EXACT, 2, 2)
+
+
 def test_the_matched_source_drops_the_first_label_and_keeps_later_paragraphs_whole() -> (
     None
 ):
