@@ -149,6 +149,7 @@ _PROCEDURAL_LINE_ANCHORS = (
     r"Bill (?:accordingly )?read a (?:Second|Third|second|third) time",
     r"Bill reported,? without [Aa]mendment",
     r"Bill considered in Committee",
+    r"Motion (?:and Schedule(?: [A-Z])? )?(?:accordingly )?(?:committed to|considered in) (?:the )?Committee of Supply",
     r"(?:(?:First|Second|Third) [Rr]esolution|Resolutions?) (?:to be )?reported",
     r"Resolved(?:[,.]|[\s*_]*$)",
     r"Order for Second Reading read",
