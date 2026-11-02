@@ -2,7 +2,7 @@
 
 A complete, queryable record of Singapore's parliamentary proceedings — from the colonial Legislative Assembly through the present — for researchers studying political history at scale.
 
-The at-scale part of that goal waits on Parliament's permission. Its terms of use require written permission to reproduce the content, and the project has not yet asked for it. Until Parliament gives it, the database stays unpublished, and this file counts the bulk-researcher goal as neither met nor failed.
+The at-scale part of that goal needs the database published, and Parliament's terms of use require written permission to reproduce the content. The project will not ask for it. On 2 November 2026 Royce ruled to wait for a takedown request instead, and to act on one if Parliament sends it. The site's `docs/corrections.md` and `docs/takedown.md` promise to take a report off the site within 2 working days of such a request. The database stays unpublished, so this file counts the bulk-researcher goal as not met, and the done tests below leave it out.
 
 ---
 
