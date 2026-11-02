@@ -271,6 +271,11 @@ _PROCEDURAL_RECORD_LINE_RE = re.compile(
     r"|Members summoned into (?:the )?Chamber|\(?Whereupon\b|The Clerk (?:handed|then|read)"
     r"|Notice taken that \w+ Members were (?:not )?present|Members summoned as if for a division)"
 )
+# NOTE: the clerk's record that a paper was handed in ("Certificate of Urgency handed in.", "Plans handed in to the Clerk."); a line with a first or second person or an auxiliary is speech about handing something in
+_HANDED_IN_RECORD_LINE_RE = re.compile(
+    r"^(?!.*\b(?:I|[Ww]e|[Yy]ou|[Mm]y|[Oo]ur|Sir|have|has|had|been|was|were|is|are)\b)[\s_*]*[A-Z][^.?!\"“”\[\]]{0,120}?"
+    r" handed in(?: to the Clerk)?(?: and distributed to hon\. Members)?(?: The [A-Z][\w ]{0,60})?[\s_*]*\.[\s_*]*$"
+)
 _WRITTEN_STATEMENT_NOTE_RE = re.compile(
     r"^[\s_*]*Written [Ss]tatement by .{1,200}?Standing Order"
 )
@@ -839,7 +844,11 @@ def _get_non_speech_kind(line: str) -> Optional[SpeechKind]:
         return note_kind
     if _PLAIN_CHAMBER_EVENT_RE.match(line):
         return SpeechKind.CHAMBER_EVENT
-    if _OATH_LINE_RE.match(line) or _PROCEDURAL_RECORD_LINE_RE.match(line):
+    if (
+        _OATH_LINE_RE.match(line)
+        or _PROCEDURAL_RECORD_LINE_RE.match(line)
+        or _HANDED_IN_RECORD_LINE_RE.match(line)
+    ):
         return SpeechKind.PROCEDURAL
     if not _PROCEDURAL_LINE_RE.match(line):
         return None
