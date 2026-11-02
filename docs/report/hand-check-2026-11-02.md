@@ -8,17 +8,19 @@ The rules are in [hand-check-rulebook.md](../hand-check-rulebook.md), and the ru
 
 | Claim | Rows in 1,000 | Ceiling (one-sided exact, 95%) |
 |---|---|---|
-| Credited wrongly | 5 (3 Tier A, 2 Tier C) | 1.05% |
+| Credited wrongly | 4 (2 Tier A, 2 Tier C) | 0.91% |
 | Substantive text error | 0 | 0.30% |
-| Any error | 8 | 1.44% |
+| Any error | 7 | 1.31% |
 
-Each ceiling holds at 95% on its own, not jointly. "Any error" adds the 3 cosmetic text errors (Tier C) to the wrong credits; no row has both. Tier A alone is 3 of 1,000, a ceiling of 0.77%. The shares are counts out of 1,000, not weighted.[^weights]
+Each ceiling holds at 95% on its own, not jointly. "Any error" adds the 3 cosmetic text errors (Tier C) to the wrong credits; no row has both. Tier A alone is 2 of 1,000, a ceiling of 0.63%. The shares are counts out of 1,000, not weighted.[^weights]
+
+These figures count row 157 (speech 838418) as right. Royce first marked it a Tier A wrong credit, then re-ruled it right on 2 November 2026, after this report was first written, because the packet had shown him the wrong source paragraph (see "Fix status, 2 November 2026"). Before the re-ruling the check had 5 wrong credits (ceiling 1.05%) and 8 errors of any kind (1.44%).
 
 Each reader caught 30 of 30 planted errors, so each catches at least 90.5% of errors of those two kinds (one-sided exact, 95%).
 
 The sample holds no row whose source could not be found and no row whose credit the record cannot settle after Royce's verdicts, so neither adds to the wrong count.
 
-[^weights]: Weighted by each group's share of the frame, the wrong-credit share is 0.50% and the any-error share 0.80%. The five groups' weights differ by at most 0.39%, so weighting moves neither share by more than 0.01 points.
+[^weights]: Weighted by each group's share of the frame, the wrong-credit share is 0.40% and the any-error share 0.70%. The five groups' weights differ by at most 0.39%, so weighting moves neither share by more than 0.01 points.
 
 ## Older and newer system
 
@@ -26,17 +28,16 @@ The Parliament website moved to a newer system on 10 September 2012. The check r
 
 | Sitting date | Rows | Credited wrongly | Substantive | Any error | Ceiling, credited wrongly | Ceiling, substantive | Ceiling, any error |
 |---|---|---|---|---|---|---|---|
-| Before 10 September 2012 | 532 | 5 | 0 | 6 | 1.97% | 0.56% | 2.21% |
+| Before 10 September 2012 | 532 | 4 | 0 | 5 | 1.71% | 0.56% | 1.97% |
 | From 10 September 2012 | 468 | 0 | 0 | 2 | 0.64% | 0.64% | 1.34% |
 
-## The eight errors
+## The seven errors
 
 | # | Speech | Sitting | What the row shows | Verdict |
 |---|---|---|---|---|
 | 29 | 242655 | 1965-06-16 | The time stamp "4.10 p.m." is credited to Lim Kim San. | credited wrongly, Tier C (row) |
 | 34 | 936385 | 1958-10-08 | The procedural line "Motion and Schedule considered in Committee of Supply." is credited to Chew Swee Kee. | credited wrongly, Tier A (row) |
 | 86 | 927784 | 1963-04-09 | The quorum record "Notice taken that thirteen Members were not present ..." is credited to Seow Peck Leng. | credited wrongly, Tier A (row) |
-| 157 | 838418 | 1976-03-22 | "Sir, I beg to move," is printed under Mr Hwang Soo Jin and credited to Chin Harn Tong. | credited wrongly, Tier A (row) |
 | 446 | 999719 | 2007-09-20 | The italic heading "Return of moneys in management fund and sinking fund" is credited to S Jayakumar. | credited wrongly, Tier C (row) |
 | 510 | 876656 | 2009-05-29 | The row puts a space between the italic "bao buey" and the closing quote, which the record prints together. | cosmetic, Tier C (row) |
 | 919 | 1522366 | 2025-01-07 | The raised footnote 2 after "seniors" is written "[2]" (register line 71). | cosmetic, Tier C (row) |
@@ -44,30 +45,32 @@ The Parliament website moved to a newer system on 10 September 2012. The check r
 
 The time stamp row (speech 242655) sits in report 38090, one of the 66 reports write #9 held, which keep rows from an older parser ("The residue behind test 7" in [vision.md](../vision.md)). It is the only error among the 11 sampled rows in held reports.
 
+Row 157 (speech 838418) was on this list as a Tier A wrong credit until Royce re-ruled it right (see "Fix status, 2 November 2026").
+
 ### Fix status, 2 November 2026
 
-The verdicts and figures above stay as judged. Each fix below is in the scraper's code but not yet in the database, so the site still shows every row as it was judged. Counts come from a fresh parse of every report on the replica before and after the fixes, compared row by row. Every changed row is one of the kinds below. A write plan covering all the fixes is built but not applied. The write is Royce's to run.
+The verdicts and figures above stay as judged, except row 157, which Royce re-ruled right. Each fix below is in the scraper's code but not yet in the database, so the site still shows every row as it was judged. Counts come from a fresh parse of every report on the replica before and after the fixes, compared row by row. Every changed row is one of the kinds below. A write plan covering all the fixes is built but not applied. The write is Royce's to run.
 
 - **Row 29, speech 242655, the time stamp.** State: fixed in code, not yet in the database. The parser already gives a bare time stamp no row (data-loss register, line 100). The row is still stored because report 38090 has been held since write #9. The write plan releases 38090 alone. Rebuilding it deletes 7 rows: the 5 time stamps, 4 of them credited (ordinals 2, 11, 16, 37 and 71), and 2 heading lines (ordinals 36 and 78). It also moves 6 "Amendment(s) agreed to." lines from a member to no speaker, kind PROCEDURAL (ordinals 46, 53, 61, 70, 75 and 83). No word of speech changes. Commit `4286b51` drops 3 stamp forms the rule missed ("5.45 p. m.", "9.03 p m.", and "7.50 p.m." with its full stop on the next line): 3 rows in 3 other reports. 85 credited stamps stay in 23 other held reports.
 - **Row 34, speech 936385, "Motion and Schedule considered in Committee of Supply."** State: fixed in code, not yet in the database. Commit `d9ee171` gives a Committee of Supply record line no speaker: 110 rows in 46 reports. 75 record lines become PROCEDURAL, and 35 rows after them lose the mover's credit (32 "Schedule" captions, 2 "Head" captions that become headings, 1 quoted question). 2 of the 110 sit in report 40380, held since write #9, which keeps its rows.
 - **Row 86, speech 927784, the quorum record.** State: fixed in code, not yet in the database. Commit `9d450e7` gives a quorum record no speaker and keeps the turn: 17 rows in 12 reports, and 1 row elsewhere that already had no speaker changes kind only.
-- **Row 157, speech 838418, "Sir, I beg to move,".** The verdict stands as Royce gave it. The packet showed the wrong source paragraph. Report 34920 prints the line twice. This row is the first, printed under `<b>Mr Chin Harn Tong (Aljunied)</b>(<i>In Mandarin</i>):` and followed by the BAA 1105 amendment, as the stored next row is. The packet builder left the language note in the paragraph's text, so that paragraph did not match exactly, and the packet showed the second, under Mr Hwang Soo Jin. On the record the credit to Chin Harn Tong looks right, and the stored rows equal a fresh parse. Commit `49617da` makes a language note before the label's colon part of the label. The packets were built before it. Re-matching all 1,030 changes 7: this one, and 6 whose only difference was the language note, which now match exactly. Whether the row counts as an error is Royce's to rule.
+- **Row 157, speech 838418, "Sir, I beg to move,".** State: not a site error; packet builder fixed. Royce re-ruled the row right in chat on 2 November 2026, after first marking it a Tier A wrong credit, because the packet showed the wrong source paragraph. Report 34920 prints the line twice. This row is the first, printed under `<b>Mr Chin Harn Tong (Aljunied)</b>(<i>In Mandarin</i>):` and followed by the BAA 1105 amendment, as the stored next row is. The packet builder left the language note in the paragraph's text, so that paragraph did not match exactly, and the packet showed the second, under Mr Hwang Soo Jin. On the record the credit to Chin Harn Tong is right, and the stored rows equal a fresh parse, so the database needs no change. Commit `49617da` makes a language note before the label's colon part of the label. The packets were built before it. Re-matching all 1,030 changes 7: this one, and 6 whose only difference was the language note, which now match exactly.
 - **Row 446, speech 999719, the italic heading.** State: fixed in code, not yet in the database. The record closes the italic after a line break, which left the heading's closing `_` alone on the next line. Commit `4e666ff` reads such a line as a heading: 197 rows in 70 reports move from a member to no speaker, kind HEADING, and each gains its closing `_`. One heading before the first label (report 21568) now gets no row, as an italic heading there already does. 5 of the 197 sit in report 23268, held since write #9, which keeps its rows.
 
 Follow-up 5 is built in `5009bf3` (rulebook section 3 rule 6, section 10 and ADR 0015) and `8957ceb` (the packet builder). Rebuilt with it, packet `498bed812370` settles to John Mammen, with "[Mr SPEAKER in the Chair]" shown as a later change of chair, and packet `4b1dd45eed7b` settles to Lim Biow Chuan. A correction to "Two credits Royce found right": the 2019 mark is also printed in the topic text of the CareShield Life and Long-Term Care Bill (report 12330). The packet missed it because it took earlier reports in speech-number order, which put the question-time report and its "Mr Speaker:" after that bill. Follow-up 6 is still open: write #10 has no `docs/figures/` file.
 
 ## Who gave each verdict
 
-Both readers gave the same speaker verdict, with the same tier, on all 1,000 rows: 993 right, 5 wrong and 2 "record doesn't say". The script found a difference in 53 rows, none of them among the 7. That makes 60 flags.
+Both readers gave the same speaker verdict, with the same tier, on all 1,000 rows: 993 right, 5 wrong and 2 "record doesn't say". Their "wrong" on row 157 came from the packet's wrong source paragraph. The script found a difference in 53 rows, none of them among the 7. That makes 60 flags.
 
-Royce's verdicts are in the review page's database, one document per flagged row. Each field records who wrote it, either his viewer id or `claude-cluster-ruling`. The counts below come from those fields.
+Royce's verdicts are in the review page's database, one document per flagged row. Each field records who wrote it: his viewer id, `claude-cluster-ruling`, or `claude-relayed-ruling` for the one verdict he gave in chat. The counts below come from those fields.
 
-| Verdict | Marked by Royce on the row | Set by a cluster ruling |
-|---|---|---|
-| Speaker | 15 | 45 |
-| Text | 12 | 48 |
+| Verdict | Marked by Royce on the row | Set by a cluster ruling | Ruled by Royce in chat |
+|---|---|---|---|
+| Speaker | 14 | 45 | 1 |
+| Text | 12 | 48 | 0 |
 
-Royce marked 15 rows himself: all 7 speaker flags and 8 of the 53 text flags. On 3 of those 8 (speeches 99979, 105103 and 550969) his speaker verdict stands and the text verdict comes from a kind ruling below. For the 48 text verdicts he did not mark himself, he read examples of each kind of difference and ruled on the kind, on 2 November 2026:
+Royce marked 15 rows himself: all 7 speaker flags and 8 of the 53 text flags. He later re-ruled one speaker verdict in chat (row 157), so 14 speaker verdicts stand as he marked them on the page. On 3 of those 8 (speeches 99979, 105103 and 550969) his speaker verdict stands and the text verdict comes from a kind ruling below. For the 48 text verdicts he did not mark himself, he read examples of each kind of difference and ruled on the kind, on 2 November 2026:
 
 1. A question number left out of the row is a listed change (data-loss register line 87): 30 rows, including rows he had first marked cosmetic.
 2. A language note such as "(In Mandarin):" left out of the row is a listed change (register line 84): 11 rows.
@@ -76,7 +79,7 @@ Royce marked 15 rows himself: all 7 speaker flags and 8 of the 53 text flags. On
 
 The coordinating agent sorted the rows into these four kinds and wrote the verdicts as `claude-cluster-ruling`. On the 45 rows where it wrote every field, it also wrote the speaker verdict "right", because both readers said right and the row was not flagged for its speaker. Before this report was written, each cluster-ruled row's script difference was checked against its kind, and all fit. Two rows hold more than the number: in one the source paragraph also holds the previous member's question, which sits on the row before; in the other the label is printed without a colon.
 
-Royce's own marks were saved between 07:16 and 07:51 SGT on 2 November, except his text verdict on row 3 of the review page (speech 851153), which he marked as matching at 08:53 SGT. That row was flagged for its speaker only. The store shows the cluster-ruling writes at 07:53 and 07:55 SGT; their `_at` fields hold a fixed 08:30 SGT stamp rather than the write time.
+Royce's own marks were saved between 07:16 and 07:51 SGT on 2 November, except his text verdict on row 3 of the review page (speech 851153), which he marked as matching at 08:53 SGT. That row was flagged for its speaker only. The store shows the cluster-ruling writes at 07:53 and 07:55 SGT; their `_at` fields hold a fixed 08:30 SGT stamp rather than the write time. An agent wrote his re-ruling of row 157 at 12:52 SGT, with the writer `claude-relayed-ruling` and the reason in the row's note.
 
 ### Two credits Royce found right
 
@@ -89,7 +92,7 @@ Both readers answered "record doesn't say" on two chair labels (review-page rows
 
 Royce's verdict is final. Three of his row marks use a different class from the one the rulebook's list of changes would give. Two of them change no figure.
 
-- Speech 1522366: the raised footnote 2 written "[2]". The rulebook classes this as a listed change (register line 71). Royce marked it cosmetic, Tier C, with the note "We should incorporate footnotes, hoverable element". It counts as cosmetic here. As a listed change, cosmetic errors would be 2 and any error 7, a ceiling of 1.31%.
+- Speech 1522366: the raised footnote 2 written "[2]". The rulebook classes this as a listed change (register line 71). Royce marked it cosmetic, Tier C, with the note "We should incorporate footnotes, hoverable element". It counts as cosmetic here. As a listed change, cosmetic errors would be 2 and any error 6, a ceiling of 1.18%.
 - Speech 1046800, and the 2 cluster rows like it: a chamber event cut out into the next row. The rulebook classes this as a listed change (register line 82); Royce marked it as matching. Neither class is an error.
 - Speech 1453228: "life-" and "savings" are split by a column break, and the row joins them with no space. Register line 36 lists that join; Royce marked it as matching. Neither class is an error.
 
@@ -153,7 +156,7 @@ None of these was built when the check was written. Follow-ups 1 and 5 were buil
 
 ## All 1,000 rows
 
-Rows are in draw order: by group, then frame position. "Speech" is the speech id, as in `hand-check/draw.tsv`. Sonnet and Opus give each reader's speaker verdict, with the tier of a wrong credit. A row with Royce's verdicts was flagged. "row" means he marked that field on the row, and "cluster" that one of his rulings above set it. A row with no Royce verdict was not flagged: both readers said right and the script found its text equal to the record's.
+Rows are in draw order: by group, then frame position. "Speech" is the speech id, as in `hand-check/draw.tsv`. Sonnet and Opus give each reader's speaker verdict, with the tier of a wrong credit. A row with Royce's verdicts was flagged. "row" means he marked that field on the row, "cluster" that one of his rulings above set it, and "chat" that he ruled it in chat and an agent wrote it to the review page. A row with no Royce verdict was not flagged: both readers said right and the script found its text equal to the record's.
 
 | # | Speech | Group | Paragraph | Official Report | Sonnet | Opus | Royce, speaker | Royce, text | Note |
 |---|---|---|---|---|---|---|---|---|---|
@@ -313,7 +316,7 @@ Rows are in draw order: by group, then frame position. "Speech" is the speech id
 | 154 | 630658 | 0 to 11 | [site](https://openhansard.sg/reports/00069311-ZZ.00056049-ZZ_1%23id003_19750321_S0002_T00021-budget?s=55&q=mr+deputy+speaker+sir+if+the+complainant+refunds) | [SPRS](https://sprs.parl.gov.sg/search/#/topic?reportid=003_19750321_S0002_T0002) | right | right |  |  |  |
 | 155 | 1035065 | 0 to 11 | [site](https://openhansard.sg/reports/00069321-ZZ.00056269-ZZ_1%23id011_19760315_S0003_T00042-budget?s=77&q=there+are+many+indications+of+inability+or+reluctance) | [SPRS](https://sprs.parl.gov.sg/search/#/topic?reportid=011_19760315_S0003_T0004) | right | right |  |  |  |
 | 156 | 1096169 | 0 to 11 | [site](https://openhansard.sg/reports/00069323-ZZ.00056284-ZZ_1%23id003_19760317_S0002_T00032-budget?s=169&q=to+come+to+the+member+for+punggol+he) | [SPRS](https://sprs.parl.gov.sg/search/#/topic?reportid=003_19760317_S0002_T0003) | right | right |  |  |  |
-| 157 | 838418 | 0 to 11 | [site](https://openhansard.sg/reports/00069326-ZZ.00056312-ZZ_1%23id006_19760322_S0002_T00022-budget?s=28&q=sir+i+beg+to+move) | [SPRS](https://sprs.parl.gov.sg/search/#/topic?reportid=006_19760322_S0002_T0002) | wrong (A) | wrong (A) | wrong (A), row | matches, row | "Sir, I beg to move," is printed under Mr Hwang Soo Jin and credited to Chin Harn Tong. |
+| 157 | 838418 | 0 to 11 | [site](https://openhansard.sg/reports/00069326-ZZ.00056312-ZZ_1%23id006_19760322_S0002_T00022-budget?s=28&q=sir+i+beg+to+move) | [SPRS](https://sprs.parl.gov.sg/search/#/topic?reportid=006_19760322_S0002_T0002) | wrong (A) | wrong (A) | right, chat | matches, row | Royce first marked it wrong (A), then re-ruled it right: the packet showed the wrong source paragraph (see "Fix status, 2 November 2026"). |
 | 158 | 216952 | 0 to 11 | [site](https://openhansard.sg/reports/00069267-ZZ.00055190-ZZ_1%23id003_19721025_S0002_T00021-ministerial-statement?s=10&q=may+i+also+take+this+opportunity+to+answer) | [SPRS](https://sprs.parl.gov.sg/search/#/topic?reportid=003_19721025_S0002_T0002) | right | right |  |  |  |
 | 159 | 214264 | 0 to 11 | [site](https://openhansard.sg/reports/00069283-ZZ.00055462-ZZ_1%23id007_19730725_S0003_T00161-oral-answer?s=18&q=mr+speaker+sir+it+is+not+a+question) | [SPRS](https://sprs.parl.gov.sg/search/#/topic?reportid=007_19730725_S0003_T0016) | right | right |  |  |  |
 | 160 | 964350 | 0 to 11 | [site](https://openhansard.sg/reports/00069318-ZZ.00056175-ZZ_1%23id010_19751111_S0004_T00201-oral-answer?s=5&q=1+engineer) | [SPRS](https://sprs.parl.gov.sg/search/#/topic?reportid=010_19751111_S0004_T0020) | right | right |  |  |  |
