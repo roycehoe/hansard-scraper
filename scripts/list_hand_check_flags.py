@@ -8,6 +8,7 @@ from typing import Optional
 from pydantic import ValidationError
 
 from enums import (
+    HandCheckDifferenceKind,
     HandCheckFlagReason,
     HandCheckLiveCheckStatus,
     HandCheckMatchStatus,
@@ -195,9 +196,19 @@ def get_flag_reasons(
         for verdict in (sonnet_verdict, opus_verdict)
     ):
         reasons.append(HandCheckFlagReason.SPEAKER_VERDICT)
-    if packet.word_differences:
+    has_untaught_difference = any(
+        word_difference.kind is None for word_difference in packet.word_differences
+    )
+    if has_untaught_difference:
         reasons.append(HandCheckFlagReason.TEXT_DIFFERENCE)
-    if packet.match_status != HandCheckMatchStatus.EXACT:
+    is_explained_by_taught_kinds = (
+        bool(packet.word_differences) and not has_untaught_difference
+    )
+    # NOTE: an inexact match whose every difference is of a taught kind adds no flag either, or teaching the kinds would clear no row (Royce, 2 Nov 2026).
+    if (
+        packet.match_status != HandCheckMatchStatus.EXACT
+        and not is_explained_by_taught_kinds
+    ):
         reasons.append(HandCheckFlagReason.MATCH_STATUS)
     if packet.live_check_status == HandCheckLiveCheckStatus.DIFFERS:
         reasons.append(HandCheckFlagReason.LIVE_TEXT_DIFFERS)
@@ -307,6 +318,12 @@ def get_summary_lines(
         for role_section in role_sections
         if not role_section.is_chair_label and role_section.office_holders
     )
+    kind_to_count = Counter(
+        word_difference.kind
+        for packet in sampled_packets
+        for word_difference in packet.word_differences
+        if word_difference.kind is not None
+    )
     lines = [
         f"Hand check flags, run {run_number}",
         f"Sampled rows: {len(sampled_packets)}",
@@ -324,6 +341,8 @@ def get_summary_lines(
             f"  {status.value}: {match_status_to_count[status]}"
             for status in HandCheckMatchStatus
         ),
+        "Word differences of a taught kind, which add no flag:",
+        *(f"  {kind.value}: {kind_to_count[kind]}" for kind in HandCheckDifferenceKind),
         f"Gap check: {gap_count} of {len(gap_checks)} checked rows are not followed by the next source paragraph",
         f"Role credits (packet side): {len(role_sections)} rows",
         f"  chair label with a chair mark: {chair_mark_count}",

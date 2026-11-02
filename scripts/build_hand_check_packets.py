@@ -46,7 +46,11 @@ from schemas.hansard_topic_response import HansardTopicResponse
 from services.hansard_website import get_topic_html_content, get_topic_id
 from settings import settings
 from utils.data_files import get_hand_check_office_holders
-from utils.hand_check_text import get_word_differences, normalize_hand_check_text
+from utils.hand_check_text import (
+    RowContext,
+    get_word_differences,
+    normalize_hand_check_text,
+)
 from utils.markdown_parser import PROC_TEXT_CLOSE_TAG, PROC_TEXT_OPEN_TAG
 from utils.sitting_dates import get_sitting_date_key
 
@@ -812,7 +816,10 @@ def get_earlier_reports(sitting_reports: list[Report], report: Report) -> list[R
 
 
 def _get_packet_word_differences(
-    source_match: SourceMatch, matched_source_html: str, transcript: str
+    source_match: SourceMatch,
+    matched_source_html: str,
+    context_paragraphs: list[str],
+    snapshot_row: HandCheckSnapshotRow,
 ) -> list[HandCheckWordDifference]:
     if source_match.run is None:
         return []
@@ -821,8 +828,18 @@ def _get_packet_word_differences(
             operation=word_difference.operation,
             source_words=word_difference.source_words,
             row_words=word_difference.row_words,
+            kind=word_difference.kind,
         )
-        for word_difference in get_word_differences(matched_source_html, transcript)
+        for word_difference in get_word_differences(
+            matched_source_html,
+            snapshot_row.transcript,
+            RowContext(
+                speaker=snapshot_row.speaker,
+                turn_first_paragraph=next(iter(context_paragraphs), None),
+                next_speaker=snapshot_row.next_speaker,
+                next_transcript=snapshot_row.next_transcript,
+            ),
+        )
     ]
 
 
@@ -880,6 +897,7 @@ def build_packet(
         snapshot_row.next_transcript,
     )
     matched_source_html = get_matched_source_html(paragraphs, source_match)
+    context_paragraphs = get_context_paragraphs(paragraphs, source_match)
     return HandCheckPacket(
         packet_id=packet_id,
         snapshot=snapshot_row,
@@ -890,10 +908,10 @@ def build_packet(
         ),
         match_status=source_match.status,
         matched_source_html=matched_source_html,
-        context_paragraphs=get_context_paragraphs(paragraphs, source_match),
+        context_paragraphs=context_paragraphs,
         after_paragraph=get_after_paragraph(paragraphs, source_match),
         word_differences=_get_packet_word_differences(
-            source_match, matched_source_html, snapshot_row.transcript
+            source_match, matched_source_html, context_paragraphs, snapshot_row
         ),
         gap_check=(
             None

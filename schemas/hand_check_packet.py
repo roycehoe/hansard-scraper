@@ -2,7 +2,11 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, RootModel
 
-from enums import HandCheckLiveCheckStatus, HandCheckMatchStatus
+from enums import (
+    HandCheckDifferenceKind,
+    HandCheckLiveCheckStatus,
+    HandCheckMatchStatus,
+)
 from schemas.hand_check_office_holder import HandCheckOfficeHolder
 from schemas.hand_check_snapshot import HandCheckSnapshotRow
 
@@ -13,6 +17,7 @@ class HandCheckWordDifference(BaseModel):
     operation: str
     source_words: str
     row_words: str
+    kind: Optional[HandCheckDifferenceKind] = None
 
 
 class HandCheckGapCheck(BaseModel):

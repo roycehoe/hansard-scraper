@@ -136,6 +136,13 @@ class HandCheckErrorTier(StrEnum):
     C = "C"
 
 
+class HandCheckDifferenceKind(StrEnum):
+    QUESTION_NUMBER = "QUESTION_NUMBER"
+    LANGUAGE_NOTE = "LANGUAGE_NOTE"
+    LABEL = "LABEL"
+    CHAMBER_EVENT_CUT = "CHAMBER_EVENT_CUT"
+
+
 class HandCheckFlagReason(StrEnum):
     SPEAKER_VERDICT = "SPEAKER_VERDICT"
     TEXT_DIFFERENCE = "TEXT_DIFFERENCE"

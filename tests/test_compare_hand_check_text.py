@@ -136,6 +136,20 @@ def test_a_line_has_the_id_the_status_and_every_difference() -> None:
     )
 
 
+def test_a_difference_of_a_taught_kind_carries_its_kind() -> None:
+    packet = _build_packet(
+        "k1",
+        "asked the Minister",
+        "<p>(In Mandarin): asked the Minister</p>",
+        HandCheckMatchStatus.INEXACT,
+    )
+
+    assert (
+        compare_hand_check_text_script.get_text_check_line(packet)
+        == 'k1\tINEXACT\tdelete "(In Mandarin):" -> "" (LANGUAGE_NOTE)\t'
+    )
+
+
 def test_a_row_with_stray_markdown_the_source_lacks_is_counted() -> None:
     stray_markdown_packet = _build_packet(
         "k1",

@@ -1,6 +1,10 @@
+from typing import Optional
+
 import pytest
 
+from enums import HandCheckDifferenceKind
 from utils.hand_check_text import (
+    RowContext,
     WordDifference,
     get_word_differences,
     normalize_hand_check_text,
@@ -172,3 +176,159 @@ def test_an_empty_row_deletes_every_source_word() -> None:
     assert get_word_differences("", "one two") == [
         WordDifference("insert", "", "one two")
     ]
+
+
+def _build_row_context(
+    speaker: Optional[str] = "Mr Tan",
+    turn_first_paragraph: Optional[str] = None,
+    next_speaker: Optional[str] = "Mr Tan",
+    next_transcript: Optional[str] = None,
+) -> RowContext:
+    return RowContext(speaker, turn_first_paragraph, next_speaker, next_transcript)
+
+
+@pytest.mark.parametrize(
+    ("source_text", "speaker", "kind"),
+    [
+        (
+            "(In Mandarin): asked the Minister",
+            "Mr Tan",
+            HandCheckDifferenceKind.LANGUAGE_NOTE,
+        ),
+        (
+            "Mr Tan(In Malay): asked the Minister",
+            "Mr Tan",
+            HandCheckDifferenceKind.LANGUAGE_NOTE,
+        ),
+        (
+            "_(In English):_ asked the Minister",
+            "Mr Tan",
+            HandCheckDifferenceKind.LANGUAGE_NOTE,
+        ),
+        (": asked the Minister", "Mr Tan", HandCheckDifferenceKind.LABEL),
+        (
+            "The Chairman (Mr Lee): asked the Minister",
+            "The Chairman (Mr Lee)",
+            HandCheckDifferenceKind.LABEL,
+        ),
+    ],
+)
+def test_a_label_note_or_colon_left_at_the_start_of_the_source_is_recorded_with_its_kind(
+    source_text: str, speaker: str, kind: HandCheckDifferenceKind
+) -> None:
+    [word_difference] = get_word_differences(
+        source_text, "asked the Minister", _build_row_context(speaker)
+    )
+
+    assert word_difference.operation == "delete"
+    assert word_difference.kind == kind
+
+
+@pytest.mark.parametrize(
+    ("source_text", "turn_first_paragraph"),
+    [
+        ("12. asked the Minister", "12. <B>Mr Tan</B> asked the Minister"),
+        ("27 asked the Minister", "27 Mr Tan asked the Minister"),
+        ("55 Mr Tan asked the Minister", "55 Mr Tan asked the Minister"),
+        ("8. asked the Minister", "8.Mr Tan asked the Minister"),
+    ],
+)
+def test_a_number_the_turn_prints_before_the_label_is_a_question_number(
+    source_text: str, turn_first_paragraph: str
+) -> None:
+    [word_difference] = get_word_differences(
+        source_text,
+        "asked the Minister",
+        _build_row_context(turn_first_paragraph=turn_first_paragraph),
+    )
+
+    assert word_difference.kind == HandCheckDifferenceKind.QUESTION_NUMBER
+
+
+@pytest.mark.parametrize(
+    "turn_first_paragraph",
+    [None, "<B>Mr Tan</B>: First, the rates.", "12. Mr Lim asked the Minister"],
+)
+def test_a_number_the_turn_does_not_print_before_the_label_has_no_kind(
+    turn_first_paragraph: Optional[str],
+) -> None:
+    assert get_word_differences(
+        "12. asked the Minister",
+        "asked the Minister",
+        _build_row_context(turn_first_paragraph=turn_first_paragraph),
+    ) == [WordDifference("delete", "12.", "")]
+
+
+@pytest.mark.parametrize(
+    ("source_text", "speaker"),
+    [
+        ("Mr Lim: asked the Minister", "Mr Tan"),
+        ("Order. asked the Minister", "Mr Tan"),
+        ("Mr Tan: asked the Minister", None),
+    ],
+)
+def test_other_words_left_at_the_start_of_the_source_have_no_kind(
+    source_text: str, speaker: Optional[str]
+) -> None:
+    [word_difference] = get_word_differences(
+        source_text, "asked the Minister", _build_row_context(speaker)
+    )
+
+    assert word_difference.kind is None
+
+
+def test_a_label_inside_the_paragraph_has_no_kind() -> None:
+    assert get_word_differences("one Mr Tan: two", "one two", _build_row_context()) == [
+        WordDifference("delete", "Mr Tan:", "")
+    ]
+
+
+def test_a_cut_out_direction_that_is_the_next_chamber_event_row_is_a_chamber_event_cut() -> (
+    None
+):
+    assert get_word_differences(
+        "one two [Interruption].",
+        "one two",
+        _build_row_context(next_speaker=None, next_transcript="[Interruption]."),
+    ) == [
+        WordDifference(
+            "delete", "[Interruption].", "", HandCheckDifferenceKind.CHAMBER_EVENT_CUT
+        )
+    ]
+
+
+@pytest.mark.parametrize(
+    ("next_speaker", "next_transcript", "source_text"),
+    [
+        ("Mr Tan", "[Applause.]", "one two [Applause.]"),
+        (None, "Thank you.", "one two [Applause.]"),
+        (None, "three four", "one two three four"),
+    ],
+)
+def test_other_words_cut_from_the_paragraph_have_no_kind(
+    next_speaker: Optional[str], next_transcript: str, source_text: str
+) -> None:
+    [word_difference] = get_word_differences(
+        source_text,
+        "one two",
+        _build_row_context(next_speaker=next_speaker, next_transcript=next_transcript),
+    )
+
+    assert word_difference.kind is None
+
+
+def test_an_insert_or_a_replace_has_no_kind() -> None:
+    row_context = _build_row_context(
+        turn_first_paragraph="12. Mr Tan one", next_speaker=None, next_transcript="[A]"
+    )
+
+    assert get_word_differences("12. one", "13. one", row_context) == [
+        WordDifference("replace", "12.", "13.")
+    ]
+    assert get_word_differences("one", "[A] one", row_context) == [
+        WordDifference("insert", "", "[A]")
+    ]
+
+
+def test_without_a_row_context_no_difference_has_a_kind() -> None:
+    assert get_word_differences(": one", "one") == [WordDifference("delete", ":", "")]

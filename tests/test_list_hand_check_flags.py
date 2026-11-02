@@ -10,6 +10,7 @@ import pytest
 import scripts.list_hand_check_flags as list_hand_check_flags_script
 from enums import (
     HandCheckDifferenceClass,
+    HandCheckDifferenceKind,
     HandCheckErrorTier,
     HandCheckFlagReason,
     HandCheckFormOfAddress,
@@ -305,6 +306,57 @@ def test_a_match_status_that_is_not_exact_adds_the_match_status_reason(
         _build_verdict("k1"),
         _build_verdict("k1"),
     ) == [HandCheckFlagReason.MATCH_STATUS]
+
+
+def test_an_inexact_row_whose_every_difference_is_taught_has_no_flag_reason() -> None:
+    taught_differences = [
+        HandCheckWordDifference(
+            operation="delete",
+            source_words="12.",
+            row_words="",
+            kind=HandCheckDifferenceKind.QUESTION_NUMBER,
+        ),
+        HandCheckWordDifference(
+            operation="delete",
+            source_words="[Applause.]",
+            row_words="",
+            kind=HandCheckDifferenceKind.CHAMBER_EVENT_CUT,
+        ),
+    ]
+
+    assert (
+        list_hand_check_flags_script.get_flag_reasons(
+            _build_packet(
+                "k1",
+                1,
+                HandCheckMatchStatus.INEXACT,
+                word_differences=taught_differences,
+            ),
+            _build_verdict("k1"),
+            None,
+        )
+        == []
+    )
+
+
+def test_an_untaught_difference_beside_a_taught_one_flags_the_row() -> None:
+    word_differences = [
+        HandCheckWordDifference(
+            operation="delete",
+            source_words="(In Malay):",
+            row_words="",
+            kind=HandCheckDifferenceKind.LANGUAGE_NOTE,
+        ),
+        *_build_differences(1),
+    ]
+
+    assert list_hand_check_flags_script.get_flag_reasons(
+        _build_packet(
+            "k1", 1, HandCheckMatchStatus.INEXACT, word_differences=word_differences
+        ),
+        _build_verdict("k1"),
+        None,
+    ) == [HandCheckFlagReason.TEXT_DIFFERENCE, HandCheckFlagReason.MATCH_STATUS]
 
 
 def test_a_live_check_that_differs_adds_the_live_text_differs_reason() -> None:
@@ -811,7 +863,18 @@ def test_the_summary_counts_reasons_status_gap_and_role_credits() -> None:
             ),
         ),
         _build_packet("k4", 4, HandCheckMatchStatus.NOT_FOUND),
-        _build_packet("k5", 5),
+        _build_packet(
+            "k5",
+            5,
+            word_differences=[
+                HandCheckWordDifference(
+                    operation="delete",
+                    source_words="12.",
+                    row_words="",
+                    kind=HandCheckDifferenceKind.QUESTION_NUMBER,
+                )
+            ],
+        ),
     ]
     flags = [
         _build_flag(
@@ -838,6 +901,8 @@ def test_the_summary_counts_reasons_status_gap_and_role_credits() -> None:
     assert "  chair label with a chair mark: 1" in lines
     assert "  office label with a table entry: 1" in lines
     assert "  no chair mark or table entry: 1" in lines
+    assert "  QUESTION_NUMBER: 1" in lines
+    assert "  LABEL: 0" in lines
 
 
 def test_the_summary_counts_speaker_verdicts_that_are_not_right_by_reader() -> None:

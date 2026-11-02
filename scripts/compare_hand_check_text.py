@@ -5,7 +5,7 @@ from pathlib import Path
 from enums import HandCheckMatchStatus
 from logs import logger
 from schemas.hand_check_packet import HandCheckPacket, HandCheckPackets
-from utils.hand_check_text import WordDifference, get_word_differences
+from utils.hand_check_text import RowContext, WordDifference, get_word_differences
 
 _HEADER_LINE = "packet_id\tmatch_status\tdifferences\tstray_markdown"
 _DIFFERENCE_SEPARATOR = " | "
@@ -16,7 +16,16 @@ _STRAY_MARKDOWN_SEPARATOR = " "
 def get_text_check_differences(packet: HandCheckPacket) -> list[WordDifference]:
     if packet.match_status == HandCheckMatchStatus.NOT_FOUND:
         return []
-    return get_word_differences(packet.matched_source_html, packet.snapshot.transcript)
+    return get_word_differences(
+        packet.matched_source_html,
+        packet.snapshot.transcript,
+        RowContext(
+            speaker=packet.snapshot.speaker,
+            turn_first_paragraph=next(iter(packet.context_paragraphs), None),
+            next_speaker=packet.snapshot.next_speaker,
+            next_transcript=packet.snapshot.next_transcript,
+        ),
+    )
 
 
 def get_stray_markdown_markers(packet: HandCheckPacket) -> list[str]:
@@ -33,6 +42,7 @@ def get_stray_markdown_markers(packet: HandCheckPacket) -> list[str]:
 def get_text_check_line(packet: HandCheckPacket) -> str:
     differences_text = _DIFFERENCE_SEPARATOR.join(
         f'{difference.operation} "{difference.source_words}" -> "{difference.row_words}"'
+        + ("" if difference.kind is None else f" ({difference.kind.value})")
         for difference in get_text_check_differences(packet)
     )
     stray_markdown_text = _STRAY_MARKDOWN_SEPARATOR.join(
