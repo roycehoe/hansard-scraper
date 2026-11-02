@@ -24,11 +24,20 @@ from schemas.hand_check_packet import (
     HandCheckWordDifference,
 )
 from schemas.hand_check_snapshot import HandCheckSnapshotRow
+from schemas.hansard_report_response import HansardReportSection
 from schemas.hansard_topic_response import (
     HansardTopicResponse,
     HansardTopicResultHtml,
 )
-from tests.hand_check_source_html import SPRS2_COMMITTEE_HTML, SPRS3_ORAL_ANSWER_HTML
+from tests.hand_check_source_html import (
+    SPRS2_COMMITTEE_HTML,
+    SPRS2_REFERENDUM_COMMITTEE_HTML,
+    SPRS3_BILL_DEBATE_HTML,
+    SPRS3_DEBATE_RESUMED_HTML,
+    SPRS3_MOTION_HTML,
+    SPRS3_ORAL_ANSWER_HTML,
+    SPRS3_QUESTION_TIME_END_HTML,
+)
 
 _TAG_LINE = "MPs Speaking: Dr Tony Tan Keng Yam (Minister for Defence); Mr Chew Heng Ching (Mr Deputy Speaker);"
 _THEREUPON_LINE = "Thereupon, Mr Deputy Speaker left the Chair of the Committee and took the Chair of the House."
@@ -51,6 +60,14 @@ _OFFICIAL_RECORD_URL = (
     "https://sprs.parl.gov.sg/search/#/sprs3topic?reportid=00123456-ZZ.00123457-ZZ_1"
 )
 _PACKET_ID = "abc123def456"
+_SITTING_DAY = date(2010, 5, 5)
+_QUESTION_TIME_TITLE = (
+    "Mother Tongue Language Exemption for Special Educational Needs Students"
+)
+_BILL_DEBATE_TITLE = "CareShield Life and Long-Term Care Bill"
+_MOTION_TITLE = "Time Limit for Senior Minister of State's Speech"
+_DEBATE_RESUMED_TITLE = "Reciprocal Enforcement of Foreign Judgments (Amendment) Bill"
+_LIM_BIOW_CHUAN_NOTE = "[Deputy Speaker (Mr Lim Biow Chuan) in the Chair]"
 _INEXACT_ROW = _JOINED_ROW.replace("as the default position", "as default position")
 _SUPERSCRIPT_HTML = "<p><b>Mr A:</b> The total for the year was 248<sup>1</sup> people in all of the country.</p>"
 _SUPERSCRIPT_ROW = "The total for the year was 248[1] people in all of the country."
@@ -121,6 +138,26 @@ def _build_report(
         htmlFileName=None,
         reportVersion=ReportVersion.SPRS3,
     )
+
+
+def _build_two_deputy_speakers() -> list[HandCheckOfficeHolder]:
+    return [
+        _build_holder("Deputy Speaker", "Charles Chong"),
+        _build_holder("Deputy Speaker", "Lim Biow Chuan"),
+    ]
+
+
+def _build_sitting_sections() -> list[HansardReportSection]:
+    return [
+        HansardReportSection(
+            title=_QUESTION_TIME_TITLE, content=SPRS3_QUESTION_TIME_END_HTML
+        ),
+        HansardReportSection(title=_BILL_DEBATE_TITLE, content=SPRS3_BILL_DEBATE_HTML),
+        HansardReportSection(title=f"{_MOTION_TITLE} ", content=SPRS3_MOTION_HTML),
+        HansardReportSection(
+            title=_DEBATE_RESUMED_TITLE, content=SPRS3_DEBATE_RESUMED_HTML
+        ),
+    ]
 
 
 def _build_live_checks(
@@ -545,7 +582,9 @@ def test_a_chair_label_takes_the_marks_of_its_own_report_before_and_after_the_ro
     assert packet.role_section.office_holders == [speaker]
     assert packet.role_section.chair_marks == [
         "Last mark before the row: " + _TAG_LINE + " (report: A Sample Title)",
-        "First mark after the row: " + _THEREUPON_LINE + " (report: A Sample Title)",
+        "Later change of chair after the row: "
+        + _THEREUPON_LINE
+        + " (report: A Sample Title)",
     ]
 
 
@@ -604,6 +643,113 @@ def test_a_bare_deputy_label_on_a_day_with_two_deputies_is_not_a_chair_mark() ->
     assert packet.role_section is not None
     assert packet.role_section.chair_marks == [
         "Last mark before the row: [Mr Deputy Speaker in the Chair] (report: A Sample Title)"
+    ]
+
+
+def test_a_chair_note_after_a_chairman_row_is_a_later_change_of_chair() -> None:
+    packet = _build_packet(
+        SPRS2_REFERENDUM_COMMITTEE_HTML,
+        _build_row("The Chairman", "Order. This can come later.", None),
+        office_holders=[
+            _build_holder("Speaker", "George Oehlers"),
+            _build_holder("Deputy Speaker", "John Mammen"),
+        ],
+    )
+
+    assert packet.role_section is not None
+    assert packet.role_section.chair_marks == [
+        "Last mark before the row: [Mr DEPUTY SPEAKER (Mr Mammen) in the Chair] (report: A Sample Title)",
+        "Later change of chair after the row: [Mr SPEAKER in the Chair] (report: A Sample Title)",
+    ]
+    assert (
+        "- Later change of chair after the row: [Mr SPEAKER in the Chair] (report: A Sample Title)"
+        in build_hand_check_packets_script.render_packet(packet, is_for_sonnet=False)
+    )
+
+
+def test_the_earlier_section_texts_come_nearest_first_from_the_section_before_the_reports_own() -> (
+    None
+):
+    assert build_hand_check_packets_script.get_earlier_section_texts(
+        _build_sitting_sections(), SPRS3_DEBATE_RESUMED_HTML
+    ) == [
+        build_hand_check_packets_script.EarlierText(_MOTION_TITLE, SPRS3_MOTION_HTML),
+        build_hand_check_packets_script.EarlierText(
+            _BILL_DEBATE_TITLE, SPRS3_BILL_DEBATE_HTML
+        ),
+        build_hand_check_packets_script.EarlierText(
+            _QUESTION_TIME_TITLE, SPRS3_QUESTION_TIME_END_HTML
+        ),
+    ]
+
+
+def test_no_earlier_section_texts_are_taken_when_no_section_holds_the_reports_text() -> (
+    None
+):
+    assert (
+        build_hand_check_packets_script.get_earlier_section_texts(
+            _build_sitting_sections(), "<p>Some other text.</p>"
+        )
+        is None
+    )
+
+
+def test_no_earlier_section_texts_are_taken_when_two_sections_hold_the_reports_text() -> (
+    None
+):
+    sitting_sections = [*_build_sitting_sections(), *_build_sitting_sections()]
+
+    assert (
+        build_hand_check_packets_script.get_earlier_section_texts(
+            sitting_sections, SPRS3_DEBATE_RESUMED_HTML
+        )
+        is None
+    )
+
+
+def test_the_earlier_chair_lines_stop_at_the_nearest_text_with_a_mark() -> None:
+    earlier_texts = build_hand_check_packets_script.get_earlier_section_texts(
+        _build_sitting_sections(), SPRS3_DEBATE_RESUMED_HTML
+    )
+    assert earlier_texts is not None
+
+    assert build_hand_check_packets_script.get_earlier_chair_lines(
+        earlier_texts, _SITTING_DAY, _build_two_deputy_speakers()
+    ) == [
+        build_hand_check_packets_script.ChairLine(
+            "Mr Speaker:", True, _BILL_DEBATE_TITLE
+        ),
+        build_hand_check_packets_script.ChairLine(
+            "Sitting accordingly suspended", False, _BILL_DEBATE_TITLE
+        ),
+        build_hand_check_packets_script.ChairLine(
+            "Sitting resumed at 4.25 pm", False, _BILL_DEBATE_TITLE
+        ),
+        build_hand_check_packets_script.ChairLine(
+            _LIM_BIOW_CHUAN_NOTE, True, _BILL_DEBATE_TITLE, is_chair_change=True
+        ),
+    ]
+
+
+def test_a_deputy_row_takes_the_mark_printed_in_the_sitting_before_it() -> None:
+    office_holders = _build_two_deputy_speakers()
+    earlier_texts = build_hand_check_packets_script.get_earlier_section_texts(
+        _build_sitting_sections(), SPRS3_DEBATE_RESUMED_HTML
+    )
+    assert earlier_texts is not None
+
+    packet = _build_packet(
+        SPRS3_DEBATE_RESUMED_HTML,
+        _build_row("Mr Deputy Speaker", "Mr Dennis Tan.", None),
+        office_holders=office_holders,
+        earlier_chair_lines=build_hand_check_packets_script.get_earlier_chair_lines(
+            earlier_texts, _SITTING_DAY, office_holders
+        ),
+    )
+
+    assert packet.role_section is not None
+    assert packet.role_section.chair_marks == [
+        f"Last mark before the row: {_LIM_BIOW_CHUAN_NOTE} (report: {_BILL_DEBATE_TITLE})"
     ]
 
 

@@ -41,3 +41,30 @@ SPRS3_ORAL_ANSWER_HTML = (
     "<p>60% in exceptional cases. Such exceptions must be approved by the financial institutions' credit committees, in line with the policies set by their board of directors.</p>"
     "<p><strong>\tMs Sylvia Lim (Aljunied)</strong>: Madam, a supplementary question for the Minister.</p>"
 )
+SPRS2_REFERENDUM_COMMITTEE_HTML = (
+    '<br><br>10.46 p.m.\r\n\r\n<br><br><div align="center"><b>   [Mr DEPUTY SPEAKER (Mr Mammen) in the Chair]</b></div>\r\n\r\n'
+    "<br><br>&nbsp;&nbsp;&nbsp;&nbsp;Mr Mammen, Sir, speaking about the rural areas, how does the Government control\r\n\r\nthe holding of mass rallies?\r\n\r\n"
+    "<br><br><!-- Mr Mammen -->&nbsp;&nbsp;&nbsp;&nbsp;<b>The Chairman:</b> Order. This can come later.\r\n\r\n"
+    "<br><br><!-- Mr David Marshall -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr David Marshall:</b> That is fair enough.\r\n\r\n"
+    '<br><br><div align="center"><h4>[Mr SPEAKER in the Chair]</h4></div>\r\n\r\n'
+    "<br><br>&nbsp;&nbsp;&nbsp;&nbsp;<b>The Chairman:</b> Clause 41 - an amendment in the name of the Minister.\r\n\r\n"
+)
+SPRS3_QUESTION_TIME_END_HTML = (
+    "<p>That, MOE will certainly not compromise on.</p><h6>2.00 pm</h6>"
+    "<p><strong>Mr Speaker</strong>: Order. End of Question Time. Introduction of Government Bills.</p>"
+)
+SPRS3_BILL_DEBATE_HTML = (
+    "<p><strong>Mr Speaker</strong>: Order. I propose to take a break now. I suspend the Sitting and will take the Chair at 4.25 pm.</p>"
+    '<p class="ql-align-right"><em>&nbsp;Sitting accordingly suspended</em></p>'
+    '<p class="ql-align-right"><em>&nbsp;at 4.06 pm until 4.25 pm.</em></p>'
+    '<p class="ql-align-center"><em>Sitting resumed at 4.25 pm</em></p>'
+    '<p class="ql-align-center"><strong>[Deputy Speaker (Mr Lim Biow Chuan) in the Chair]</strong></p>'
+    '<h4 class="ql-align-center">&nbsp;<strong>CareShield Life and Long-Term Care Bill</strong></h4>'
+    "<p><strong>Mr Deputy Speaker</strong>: Order. Mr Seah Kian Peng.</p>"
+)
+SPRS3_MOTION_HTML = "<p><strong>Mr Deputy Speaker</strong>: Deputy Whip. Senior Minister of State Ms Sim Ann.</p>"
+SPRS3_DEBATE_RESUMED_HTML = (
+    "<h6>6.50 pm</h6><p>[(proc text) Debate resumed. (proc text)]</p>"
+    "<p><strong>Mr Deputy Speaker:&nbsp;</strong>Mr Dennis Tan.</p>"
+    "<p><strong>Mr Dennis Tan Lip Fong (Non-Constituency Member)</strong>: Mr Deputy Speaker, Sir, I declare my interest as a practising lawyer.</p>"
+)

@@ -282,7 +282,9 @@ def test_the_chair_lines_of_a_committee_report_are_its_header_tag_and_its_chair_
 ):
     assert _get_chair_lines(SPRS2_COMMITTEE_HTML) == [
         build_hand_check_packets_script.ChairLine(_TAG_LINE, True, _TITLE),
-        build_hand_check_packets_script.ChairLine(_THEREUPON_LINE, True, _TITLE),
+        build_hand_check_packets_script.ChairLine(
+            _THEREUPON_LINE, True, _TITLE, is_chair_change=True
+        ),
     ]
 
 
@@ -294,7 +296,7 @@ def test_the_chair_lines_of_a_speaker_report_are_its_tag_its_note_and_its_chair_
             "MPs Speaking: Dr Yeoh Ghim Seng (Mr Speaker);", True, _TITLE
         ),
         build_hand_check_packets_script.ChairLine(
-            "[Mr Speaker in the Chair]", True, _TITLE
+            "[Mr Speaker in the Chair]", True, _TITLE, is_chair_change=True
         ),
         build_hand_check_packets_script.ChairLine("Mr Speaker:", True, _TITLE),
     ]
@@ -310,10 +312,13 @@ def test_suspension_lines_are_chair_lines_that_are_not_marks() -> None:
             "Sitting resumed at 4.30 pm.", False, _TITLE
         ),
         build_hand_check_packets_script.ChairLine(
-            "[Mr Deputy Speaker in the Chair]", True, _TITLE
+            "[Mr Deputy Speaker in the Chair]", True, _TITLE, is_chair_change=True
         ),
         build_hand_check_packets_script.ChairLine(
-            "Thereupon, Mdm Speaker resumed the Chair.", True, _TITLE
+            "Thereupon, Mdm Speaker resumed the Chair.",
+            True,
+            _TITLE,
+            is_chair_change=True,
         ),
         build_hand_check_packets_script.ChairLine("Mdm Speaker:", True, _TITLE),
     ]
@@ -349,25 +354,29 @@ def test_text_that_only_mentions_the_chair_is_not_a_chair_line(
 
 
 @pytest.mark.parametrize(
-    ("report_html", "line"),
+    ("report_html", "line", "is_chair_change"),
     [
         (
             "<p><b>Mr Deputy Speaker (Mr Charles Chong):</b> Order.</p>",
             "Mr Deputy Speaker (Mr Charles Chong):",
+            False,
         ),
         (
             "<p>[Mdm Speaker temporarily in the Chair]</p>",
             "[Mdm Speaker temporarily in the Chair]",
+            True,
         ),
-        ("<p>Mr Speaker left the Chair.</p>", "Mr Speaker left the Chair."),
-        (f"<p>{_WRAPPED_THEREUPON_LINE}</p>", _WRAPPED_THEREUPON_LINE),
+        ("<p>Mr Speaker left the Chair.</p>", "Mr Speaker left the Chair.", True),
+        (f"<p>{_WRAPPED_THEREUPON_LINE}</p>", _WRAPPED_THEREUPON_LINE, True),
     ],
 )
 def test_a_chair_label_a_chair_note_and_a_left_the_chair_line_are_marks(
-    report_html: str, line: str
+    report_html: str, line: str, is_chair_change: bool
 ) -> None:
     assert _get_chair_lines(report_html) == [
-        build_hand_check_packets_script.ChairLine(line, True, _TITLE)
+        build_hand_check_packets_script.ChairLine(
+            line, True, _TITLE, is_chair_change=is_chair_change
+        )
     ]
 
 
@@ -380,13 +389,17 @@ def test_a_bare_deputy_label_on_a_two_deputy_day_is_not_a_mark() -> None:
     ]
 
     assert chair_lines == [
-        build_hand_check_packets_script.ChairLine(_DEPUTY_SPEAKER_NOTE, True, _TITLE)
+        build_hand_check_packets_script.ChairLine(
+            _DEPUTY_SPEAKER_NOTE, True, _TITLE, is_chair_change=True
+        )
     ]
     assert build_hand_check_packets_script.get_chair_marks(chair_lines, []) == [
         f"Last mark before the row: {_DEPUTY_SPEAKER_NOTE}{_TITLE_SUFFIX}"
     ]
     assert _get_chair_lines(_DEPUTY_SPEAKER_NOTE_HTML, one_holder) == [
-        build_hand_check_packets_script.ChairLine(_DEPUTY_SPEAKER_NOTE, True, _TITLE),
+        build_hand_check_packets_script.ChairLine(
+            _DEPUTY_SPEAKER_NOTE, True, _TITLE, is_chair_change=True
+        ),
         build_hand_check_packets_script.ChairLine("Mr Deputy Speaker:", True, _TITLE),
     ]
 
@@ -408,7 +421,7 @@ def test_the_chair_marks_of_the_thereupon_report_are_its_tag_before_and_the_chai
         before_lines, after_lines
     ) == [
         "Last mark before the row: " + _TAG_LINE + _TITLE_SUFFIX,
-        "First mark after the row: " + _THEREUPON_LINE + _TITLE_SUFFIX,
+        "Later change of chair after the row: " + _THEREUPON_LINE + _TITLE_SUFFIX,
     ]
 
 
@@ -423,7 +436,7 @@ def test_a_suspension_between_the_last_mark_and_the_row_is_listed_after_the_mark
         f"Last mark before the row: Mr Speaker:{_TITLE_SUFFIX}",
         f"Between that mark and the row: Sitting suspended at 4.00 pm.{_TITLE_SUFFIX}",
         f"Between that mark and the row: Sitting resumed at 4.30 pm.{_TITLE_SUFFIX}",
-        f"First mark after the row: [Mr Deputy Speaker in the Chair]{_TITLE_SUFFIX}",
+        f"Later change of chair after the row: [Mr Deputy Speaker in the Chair]{_TITLE_SUFFIX}",
     ]
 
 
@@ -451,6 +464,34 @@ def test_a_suspension_between_the_row_and_the_next_mark_is_listed_before_that_ma
         f"Last mark before the row: [Mr Speaker in the Chair]{_TITLE_SUFFIX}",
         f"Between the row and the next mark: Sitting suspended at 4.00 pm.{_TITLE_SUFFIX}",
         f"First mark after the row: Mr Speaker:{_TITLE_SUFFIX}",
+    ]
+
+
+def test_a_chair_note_after_the_row_is_listed_as_a_later_change_of_chair() -> None:
+    before_lines = [
+        build_hand_check_packets_script.ChairLine(
+            "[Mr DEPUTY SPEAKER (Mr Mammen) in the Chair]",
+            True,
+            _TITLE,
+            is_chair_change=True,
+        )
+    ]
+    after_lines = [
+        build_hand_check_packets_script.ChairLine(
+            "Sitting suspended at 4.00 pm.", False, _TITLE
+        ),
+        build_hand_check_packets_script.ChairLine(
+            "[Mr SPEAKER in the Chair]", True, _TITLE, is_chair_change=True
+        ),
+        build_hand_check_packets_script.ChairLine("Mr Speaker:", True, _TITLE),
+    ]
+
+    assert build_hand_check_packets_script.get_chair_marks(
+        before_lines, after_lines
+    ) == [
+        f"Last mark before the row: [Mr DEPUTY SPEAKER (Mr Mammen) in the Chair]{_TITLE_SUFFIX}",
+        f"Between the row and the next mark: Sitting suspended at 4.00 pm.{_TITLE_SUFFIX}",
+        f"Later change of chair after the row: [Mr SPEAKER in the Chair]{_TITLE_SUFFIX}",
     ]
 
 

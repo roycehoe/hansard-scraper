@@ -1,5 +1,6 @@
 import argparse
 import html
+import json
 import random
 import re
 import secrets
@@ -14,6 +15,7 @@ from sqlmodel import Session
 
 import database.speech  # noqa: F401 registers Speech so the Report relationship resolves
 from crud.report import CRUDReport
+from crud.sitting import CRUDSitting
 from database.init import build_read_only_engine
 from database.report import Report
 from enums import (
@@ -39,12 +41,14 @@ from schemas.hand_check_snapshot import (
     HandCheckSnapshotRow,
     HandCheckSnapshotRows,
 )
+from schemas.hansard_report_response import HansardReportSection
 from schemas.hansard_topic_response import HansardTopicResponse
 from services.hansard_website import get_topic_html_content, get_topic_id
 from settings import settings
 from utils.data_files import get_hand_check_office_holders
 from utils.hand_check_text import get_word_differences, normalize_hand_check_text
 from utils.markdown_parser import PROC_TEXT_CLOSE_TAG, PROC_TEXT_OPEN_TAG
+from utils.sitting_dates import get_sitting_date_key
 
 _HEAD_BLOCK_RE = re.compile(r"<head\b.*?</head\s*>", re.IGNORECASE | re.DOTALL)
 _COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
@@ -121,6 +125,7 @@ _LAST_MARK_PREFIX = "Last mark before the row: "
 _BEFORE_ROW_LINE_PREFIX = "Between that mark and the row: "
 _AFTER_ROW_LINE_PREFIX = "Between the row and the next mark: "
 _FIRST_MARK_PREFIX = "First mark after the row: "
+_LATER_CHANGE_PREFIX = "Later change of chair after the row: "
 _SPRS_SEARCH_URL = "https://sprs.parl.gov.sg/search"
 _SPRS3_TOPIC_URL = f"{_SPRS_SEARCH_URL}/#/sprs3topic"
 _SPRS2_TOPIC_URL = f"{_SPRS_SEARCH_URL}/#/topic"
@@ -501,6 +506,7 @@ class ChairLine:
     text: str
     is_mark: bool
     report_title: str
+    is_chair_change: bool = False
 
 
 def _get_last_mark_index(chair_lines: list[ChairLine]) -> Optional[int]:
@@ -536,13 +542,15 @@ def get_chair_marks(
         None,
     )
     if first_mark_index is not None:
+        first_mark = after_lines[first_mark_index]
         chair_marks.extend(
             f"{_AFTER_ROW_LINE_PREFIX}{_get_chair_line_text(chair_line)}"
             for chair_line in after_lines[:first_mark_index]
         )
-        chair_marks.append(
-            f"{_FIRST_MARK_PREFIX}{_get_chair_line_text(after_lines[first_mark_index])}"
+        first_mark_prefix = (
+            _LATER_CHANGE_PREFIX if first_mark.is_chair_change else _FIRST_MARK_PREFIX
         )
+        chair_marks.append(f"{first_mark_prefix}{_get_chair_line_text(first_mark)}")
     return chair_marks
 
 
@@ -630,10 +638,14 @@ def get_chair_lines(
         if len(unwrapped_text) > _MAX_CHAIR_LINE_LENGTH:
             continue
         if _CHAIR_NOTE_RE.match(unwrapped_text) is not None:
-            chair_lines.append(ChairLine(text, True, report_title))
+            chair_lines.append(
+                ChairLine(text, True, report_title, is_chair_change=True)
+            )
             continue
         if _CHAIR_EVENT_RE.match(unwrapped_text) is not None:
-            chair_lines.append(ChairLine(text, True, report_title))
+            chair_lines.append(
+                ChairLine(text, True, report_title, is_chair_change=True)
+            )
             continue
         if _SUSPENSION_RE.search(unwrapped_text) is not None:
             chair_lines.append(ChairLine(text, False, report_title))
@@ -1137,22 +1149,40 @@ def _fetch_live_text(snapshot_row: HandCheckSnapshotRow) -> str:
     return topic_answer.text
 
 
-def _get_earlier_chair_lines(
-    session: Session,
-    report: Report,
+@dataclass(frozen=True)
+class EarlierText:
+    title: str
+    html: str
+
+
+# NOTE: the sections run in the order of the sitting, which speech_number does not on every day, and a report whose text no section equals falls back to speech_number order
+def get_earlier_section_texts(
+    sitting_sections: list[HansardReportSection], report_html: str
+) -> Optional[list[EarlierText]]:
+    section_indexes = [
+        index
+        for index, sitting_section in enumerate(sitting_sections)
+        if sitting_section.content == report_html
+    ]
+    if len(section_indexes) != 1:
+        return None
+    return [
+        EarlierText((sitting_section.title or "").strip(), sitting_section.content)
+        for sitting_section in reversed(sitting_sections[: section_indexes[0]])
+        if sitting_section.content is not None
+    ]
+
+
+def get_earlier_chair_lines(
+    earlier_texts: list[EarlierText],
+    sitting_day: date,
     office_holders: list[HandCheckOfficeHolder],
 ) -> list[ChairLine]:
-    sitting_day = report.sitting_date.date()
-    earlier_reports = get_earlier_reports(
-        CRUDReport(session).get_by_sitting_dates([report.sitting_date]), report
-    )
     chair_lines: list[ChairLine] = []
-    for earlier_report in earlier_reports:
-        if earlier_report.content is None:
-            continue
+    for earlier_text in earlier_texts:
         earlier_lines = get_chair_lines(
-            split_source_paragraphs(earlier_report.content),
-            earlier_report.title,
+            split_source_paragraphs(earlier_text.html),
+            earlier_text.title,
             sitting_day,
             office_holders,
         )
@@ -1160,6 +1190,32 @@ def _get_earlier_chair_lines(
         if _has_chair_mark(earlier_lines):
             break
     return chair_lines
+
+
+def _get_earlier_texts(session: Session, report: Report) -> list[EarlierText]:
+    if report.report_version == ReportVersion.SPRS3 and report.content is not None:
+        section_rows = CRUDSitting(
+            session
+        ).get_date_sections_rows_by_sitting_dates_and_sections_not_null(
+            [get_sitting_date_key(report.sitting_date)]
+        )
+        for section_row in section_rows:
+            sitting_sections = [
+                HansardReportSection.model_validate(raw_section)
+                for raw_section in json.loads(section_row.sections)
+            ]
+            earlier_section_texts = get_earlier_section_texts(
+                sitting_sections, report.content
+            )
+            if earlier_section_texts is not None:
+                return earlier_section_texts
+    return [
+        EarlierText(earlier_report.title, earlier_report.content)
+        for earlier_report in get_earlier_reports(
+            CRUDReport(session).get_by_sitting_dates([report.sitting_date]), report
+        )
+        if earlier_report.content is not None
+    ]
 
 
 def _has_chair_label_row(
@@ -1213,7 +1269,11 @@ def build_hand_check_packets(
             list(hansard_report_id_to_rows), reports
         )
         hansard_report_id_to_earlier_chair_lines = {
-            report.report_id: _get_earlier_chair_lines(session, report, office_holders)
+            report.report_id: get_earlier_chair_lines(
+                _get_earlier_texts(session, report),
+                report.sitting_date.date(),
+                office_holders,
+            )
             for report in reports
             if _has_chair_label_row(
                 hansard_report_id_to_rows[report.report_id], office_holders
