@@ -3,6 +3,7 @@ from datetime import datetime
 import pytest
 
 import database.speech  # noqa: F401 registers Speech so the Report relationship resolves
+from crud.attendance import AttendanceSpeakerRow
 from crud.speech import SpeechSpeakerRow
 from database.speaker import Speaker
 from exceptions import HansardWriteCheckError
@@ -10,7 +11,7 @@ from schemas.hand_kept_member import HandKeptMember
 from schemas.head_of_state import HeadOfStateResult
 from services.attendance import build_speaker_lookups
 from services.speaker import ParliamentChange, get_parliament_changes
-from services.speaker_link import resolve_speech_rows
+from services.speaker_link import resolve_attendance_rows, resolve_speech_rows
 from utils.data_files import (
     get_colonial_members,
     get_heads_of_state,
@@ -192,6 +193,16 @@ def test_volumes_of_1955_to_1959_are_parliament_zero() -> None:
         for volume, parliament in VOLUME_TO_PARLIAMENT.items()
         if volume <= _LAST_ASSEMBLY_VOLUME
     )
+
+
+def test_andrew_fong_of_the_1963_assembly_links_to_fong_sip_chee() -> None:
+    resolved_speaker_ids = resolve_attendance_rows(
+        [AttendanceSpeakerRow(21122, "Andrew Fong", None, 22)],
+        build_speaker_lookups([_get_speaker(19, "Fong Sip Chee", 1)]),
+        {("Fong Sip Chee", 1): 19},
+    )
+
+    assert resolved_speaker_ids.id_to_speaker_id == {21122: 19}
 
 
 def test_the_chief_minister_of_7_june_1956_is_david_marshall() -> None:

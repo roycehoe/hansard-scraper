@@ -247,6 +247,8 @@ NAME_PARLIAMENT_TO_CANONICAL_SPEAKER: dict[tuple[str, int], str] = {
     ("rahamat", 1): "Rahmat Bin Kenap",
     ("koo young", 1): "Koo Yong",
     ("chew chin han", 1): "Chew Chin Harn",
+    # Wikipedia: Andrew Fong Sip Chee, Stamford from 1963
+    ("andrew fong", 1): "Fong Sip Chee",
     ("hart", 0): "Hart, T.M.",
     ("goode", 0): "Goode, W.A.C.",
     ("butterfield", 0): "Butterfield, C.H.",
