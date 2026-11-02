@@ -412,7 +412,8 @@ _BOLD_ONLY_LINE_RE = re.compile(r"^\*\*([^*]+)\*\*\s*$")
 _BOLD_OPENING_RE = re.compile(r"^\*\*(?!\*)")
 _LEADING_BOLD_ARTIFACT_RE = re.compile(r"^(\*{4})+")
 _TIME_MARKER_RE = re.compile(
-    r"^\d{1,2}(?:\s*[.:]\s*\d{2})?\s*(?:[ap]\.?m|noon|midnight)\.?$", re.IGNORECASE
+    r"^\d{1,2}(?:\s*[.:]\s*\d{2})?\s*(?:[ap]\.?\s?m|noon|midnight)\.?(?:\s\.)?$",
+    re.IGNORECASE,
 )
 _MARKDOWN_HEADING_RE = re.compile(r"^#{1,6}(\s|$)")
 REPORT_HEADER_FIELD_RE = re.compile(
