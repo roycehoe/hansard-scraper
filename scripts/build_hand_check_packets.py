@@ -62,11 +62,17 @@ _PREFORMATTED_OPENING_RE = re.compile(r"<pre\b", re.IGNORECASE)
 _PREFORMATTED_CLOSING_RE = re.compile(r"</pre\b", re.IGNORECASE)
 _LINE_BREAK_RE = re.compile(r"\r?\n")
 _PAGE_FURNITURE_RE = re.compile(r"^(?:Column|Page)(?:\s+No)?\s*:\s*\d+$", re.IGNORECASE)
+# NOTE: the HTML form of the language note the parser strips from a label (`_LANGUAGE_NOTE` in services/speech.py), as in "<b>Mr Chin Harn Tong (Aljunied)</b>(<i>In Mandarin</i>):"
+_LANGUAGE_NOTE_HTML = (
+    r"(?:<[^>]*>)*\((?:\s|&nbsp;|<[^>]*>)*(?:in|dalam)\s+"
+    r"(?:Mandar\w+|Malay|English|Tamil|Hokkien|Cantonese|Teochew|Hakka)"
+    r"(?:\s|&nbsp;|<[^>]*>)*\)(?:<[^>]*>)*"
+)
 # NOTE: the older system prints "<b>Mr Speaker:</b>" and the newer "<strong>Mr Speaker</strong>:", or no colon in a question.
 _LABEL_RE = re.compile(
     r"^(?P<prefix>(?:\s|&nbsp;|\d{1,3}[.\\]*|<(?!/?(?:b|strong)\b)[^>]*>)*)"
     r"<(?P<tag>b|strong)\b[^>]*>(?P<label>.*?)</(?P=tag)\s*>"
-    r"(?P<colon>(?:\s|&nbsp;)*:)?",
+    r"(?P<colon>(?:\s|&nbsp;)*(?P<note>" + _LANGUAGE_NOTE_HTML + r"(?:\s|&nbsp;)*)?:)?",
     re.IGNORECASE | re.DOTALL,
 )
 _PLAIN_CHAIR_LABEL_RE = re.compile(
@@ -210,10 +216,15 @@ def _build_source_paragraph(paragraph_html: str, is_heading: bool) -> SourcePara
     label = label_text.rstrip(_LABEL_TRAILING_CHARACTERS)
     if _LETTER_RE.search(label) is None:
         return unlabelled_paragraph
-    rest_html = paragraph_html[label_match.end() :]
-    is_colon_printed = label_match.group("colon") is not None or label_text.endswith(
-        ":"
+    is_colon_in_label = label_text.endswith(":")
+    # NOTE: a language note after a label that already holds its colon is the transcript's, as the parser reads it
+    body_start = (
+        label_match.start("colon")
+        if is_colon_in_label and label_match.group("note") is not None
+        else label_match.end()
     )
+    rest_html = paragraph_html[body_start:]
+    is_colon_printed = label_match.group("colon") is not None or is_colon_in_label
     is_question_form = (
         normalize_hand_check_text(rest_html) != ""
         and _NAME_OPENING_RE.match(label) is not None

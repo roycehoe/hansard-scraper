@@ -571,3 +571,45 @@ def test_the_gap_check_is_not_the_next_row_when_a_paragraph_remains_and_no_row_f
     ) == HandCheckGapCheck(
         is_next_row=False, skipped_paragraphs=[], next_source_text=_APPENDIX_CAPTION
     )
+
+
+# NOTE: report 34920 (22 March 1976) prints this motion twice, the first time with a language note between the bold name and the colon
+_LANGUAGE_NOTE_LABEL_HTML = (
+    "<br><br><!-- Mr Chin Harn Tong -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Chin Harn Tong (Aljunied)</b>(<i>In Mandarin</i>): Sir, I beg\r\n\r\nto move,"
+    "\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;That the sum to be allocated for Head U be reduced by $10 in respect of subhead BAA 1105*."
+    "\r\n\r\n<br><br><!-- Mr Hwang Soo Jin -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Hwang Soo Jin:</b> Sir, I beg to move,"
+    "\r\n\r\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;That the sum to be allocated for Head U be reduced by $10 in respect of subhead DAA 1109*."
+)
+
+
+def test_a_language_note_before_the_colon_belongs_to_the_label() -> None:
+    [first_paragraph, *_] = build_hand_check_packets_script.split_source_paragraphs(
+        _LANGUAGE_NOTE_LABEL_HTML
+    )
+
+    assert first_paragraph.label == "Mr Chin Harn Tong (Aljunied)"
+    assert normalize_hand_check_text(first_paragraph.body_html) == (
+        "Sir, I beg to move,"
+    )
+
+
+def test_a_repeated_motion_takes_the_paragraph_under_the_label_with_a_language_note() -> (
+    None
+):
+    assert _get_source_match(
+        _LANGUAGE_NOTE_LABEL_HTML,
+        "Mr Chin Harn Tong (Aljunied)",
+        "Sir, I beg to move,",
+        "That the sum to be allocated for Head U be reduced by $10 in respect of subhead BAA 1105*.",
+    ) == _build_source_match(HandCheckMatchStatus.EXACT, 0, 0)
+
+
+def test_a_language_note_after_the_colon_stays_in_the_compared_text() -> None:
+    [paragraph] = build_hand_check_packets_script.split_source_paragraphs(
+        "<p><b>Mr Chin Harn Tong (Aljunied):</b> (<i>In Mandarin</i>): Sir, I beg to move,</p>"
+    )
+
+    assert paragraph.label == "Mr Chin Harn Tong (Aljunied)"
+    assert normalize_hand_check_text(paragraph.body_html) == (
+        "(In Mandarin): Sir, I beg to move,"
+    )
