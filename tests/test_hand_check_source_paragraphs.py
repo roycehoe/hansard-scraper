@@ -347,6 +347,26 @@ def test_the_exact_copy_of_a_repeated_reply_still_matches_under_its_own_label() 
     ) == _build_source_match(HandCheckMatchStatus.EXACT, 2, 2)
 
 
+# NOTE: trimmed from report 22117 (5 February 2009), where two members' vernacular pointers open with the same words and only the first prints "Appendix A *." with a space
+_TWO_POINTERS_HTML = (
+    "<p><b>Mr Hawazi Daipi:</b> Mr Speaker, Sir, I speak in support of the Budget.</p>"
+    "<p>(<i>In Malay</i>): [<i>For vernacular speech, please refer to </i><i>Appendix A</i> <i>*.</i>] Sir, I feel that all Singaporeans must draw lessons.</p>"
+    "<p><b>Dr Lam Pin Min (Ang Mo Kio):</b> Mr Speaker, in Mandarin, please.</p>"
+    "<p>(<i>In Mandarin</i>): [<i>For vernacular speech, please refer to </i><i>Appendix A</i><i>*.</i> ] Singapore's social policies espouse strong Asian values and family structures.</p>"
+)
+
+
+def test_a_run_that_crosses_into_another_turn_gives_way_to_a_run_inside_the_rows_turn() -> (
+    None
+):
+    assert _get_source_match(
+        _TWO_POINTERS_HTML,
+        "Dr Lam Pin Min (Ang Mo Kio)",
+        "[_For vernacular speech, please refer to_ _Appendix A_ _*._ ] Singapore's social"
+        " policies espouse strong Asian values and family structures.",
+    ) == _build_source_match(HandCheckMatchStatus.INEXACT, 3, 3)
+
+
 def test_the_matched_source_drops_the_first_label_and_keeps_later_paragraphs_whole() -> (
     None
 ):

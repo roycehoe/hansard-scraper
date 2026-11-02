@@ -314,6 +314,7 @@ def _get_closest_run(
     row_label_key: str,
 ) -> Optional[SourceRun]:
     row_words = row_text.split(" ")
+    wide_run: Optional[SourceRun] = None
     for probe_word_count in _PROBE_WORD_COUNTS:
         probe_length = min(probe_word_count, len(row_words))
         first_probe = " ".join(row_words[:probe_length])
@@ -341,9 +342,15 @@ def _get_closest_run(
             ),
             None,
         )
-        if last_index is not None:
-            return SourceRun(first_index, last_index)
-    return None
+        if last_index is None:
+            continue
+        run = SourceRun(first_index, last_index)
+        # NOTE: a row sits in one turn, so a run that crosses into another turn gives way to a shorter probe's run inside one
+        if len(set(turn_label_keys[first_index : last_index + 1])) == 1:
+            return run
+        if wide_run is None:
+            wide_run = run
+    return wide_run
 
 
 def _is_row_start(source_text: str, row_text: str) -> bool:
