@@ -229,6 +229,8 @@ Each report except 38147 parses differently from its stored rows. Of the 49 in t
 
 Overall: not done. Tests 1 to 9 pass, test 7 with a listed residue, test 9 on being public only: serving the whole corpus is not checked, and takedowns are excluded by design. Test 10, freshness, is not met: the deliberate failure alerted on 30 October 2026, and on 2 November the 14 latest runs held 11 scheduled successes in a row, 3 short. The pre-launch re-parse ran as write #8 on 18 October, and write #9 released 60 of the 126 reports it held.
 
+Once test 10 passes, the scraper is in upkeep. It runs the daily refresh, fixes the errors readers report, and fixes every kind of serious (Tier A) error a hand check finds. No kind is too small to fix, because Royce rejected a size floor. A hand check runs once a quarter, and after any write that changes more than 1% of credited rows (hansard `docs/adr/0009-ai-readers-person-judges-flags.md`).
+
 ### Gaps, by who owns them
 
 - The source imposes: unnamed chairs ("The Chairman" where the report gives no chair, 9,043 rows, and 67 "Mr Chairman", after the Chairman links of 22 October), collective "hon. Members", bare "Mr Deputy Speaker" on two-holder days (454 rows across the table after the sitting-level links, which ADR 0002's refusals leave unlinked), annex pages that are lists of links, procedural lines with no speaker, and column markers the record skips, misprints or prints out of order (29,027 rows of Parliaments 0 to 11 with no column, 42 rows with a column that is likely misprinted and says so in a note).
