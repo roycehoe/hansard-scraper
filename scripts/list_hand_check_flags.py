@@ -356,11 +356,7 @@ def _validate_can_write_flags(
         )
     if run_number == _FIRST_RUN_NUMBER and sonnet_verdicts_path is None:
         raise HansardHandCheckError(
-            "Run 1 needs both readers' verdicts (--sonnet-verdicts and --opus-verdicts)"
-        )
-    if run_number == _FIRST_RUN_NUMBER and opus_verdicts_path is None:
-        raise HansardHandCheckError(
-            "Run 1 needs both readers' verdicts (--sonnet-verdicts and --opus-verdicts)"
+            "Run 1 needs the Sonnet reader's verdicts (--sonnet-verdicts)"
         )
     if (
         run_number > _FIRST_RUN_NUMBER
@@ -500,7 +496,7 @@ if __name__ == "__main__":
         "--run-number",
         type=int,
         default=1,
-        help="1 for the first run, which needs both readers; 2 for the rerun of plan P4, which needs at least one",
+        help="1 for the first run, which needs the Sonnet reader; 2 for the rerun of plan P4, which needs at least one reader",
     )
     parser.add_argument(
         "--key",

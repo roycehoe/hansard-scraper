@@ -1038,22 +1038,29 @@ def test_a_key_that_differs_from_its_committed_hash_stops_the_run_and_writes_not
     _assert_no_output_written(tmp_path, 1)
 
 
-@pytest.mark.parametrize(
-    ("is_sonnet_given", "is_opus_given"), [(False, True), (True, False)]
-)
-def test_run_1_refuses_a_missing_reader(
-    tmp_path: Path, is_sonnet_given: bool, is_opus_given: bool
-) -> None:
+def test_run_1_refuses_a_missing_sonnet_reader(tmp_path: Path) -> None:
     packets = [_build_packet("k1", 1)]
 
-    with pytest.raises(HansardHandCheckError, match="Run 1 needs both readers"):
-        _list_flags(
-            tmp_path,
-            packets,
-            _build_right_verdicts(packets) if is_sonnet_given else None,
-            _build_right_verdicts(packets) if is_opus_given else None,
-        )
+    with pytest.raises(HansardHandCheckError, match="Run 1 needs the Sonnet reader"):
+        _list_flags(tmp_path, packets, None, _build_right_verdicts(packets))
     _assert_no_output_written(tmp_path, 1)
+
+
+def test_run_1_runs_with_the_sonnet_reader_alone(tmp_path: Path) -> None:
+    packets = [_build_packet("k1", 1), _build_packet("k2", 2)]
+    sonnet_verdicts = [
+        _build_verdict("k1", HandCheckSpeakerVerdict.WRONG),
+        _build_verdict("k2"),
+    ]
+
+    output_paths = _list_flags(tmp_path, packets, sonnet_verdicts, None)
+
+    flags = HandCheckFlags.model_validate_json(
+        output_paths.flags_path.read_text(encoding="utf-8")
+    ).root
+    assert [(flag.packet_id, flag.opus_speaker_verdict) for flag in flags] == [
+        ("k1", None)
+    ]
 
 
 def test_a_third_run_is_refused(tmp_path: Path) -> None:
