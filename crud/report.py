@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Sequence
 
 from sqlalchemy import text
 from sqlmodel import Session, col, delete, func, select
@@ -41,6 +41,13 @@ class ReportColumnRow:
     parliament_number: int
     column_start: Optional[int]
     column_end: Optional[int]
+
+
+@dataclass(frozen=True)
+class ReportAskerReportRow:
+    id: int
+    parliament_number: int
+    sitting_date: datetime
 
 
 _STREAM_BATCH = 200
@@ -257,6 +264,31 @@ class CRUDReport:
             .order_by(Report.id)
         )
         return [ReportColumnRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_asker_report_rows_by_report_types(
+        self, report_types: Sequence[str]
+    ) -> list[ReportAskerReportRow]:
+        statement = (
+            select(Report.id, Report.parliament_number, Report.sitting_date)
+            .where(col(Report.report_type).in_(report_types))
+            .order_by(Report.id)
+        )
+        return [
+            ReportAskerReportRow(*row) for row in self.session.exec(statement).all()
+        ]
+
+    def get_asker_report_rows_by_ids_and_report_types(
+        self, report_ids: list[int], report_types: Sequence[str]
+    ) -> list[ReportAskerReportRow]:
+        statement = (
+            select(Report.id, Report.parliament_number, Report.sitting_date)
+            .where(col(Report.id).in_(report_ids))
+            .where(col(Report.report_type).in_(report_types))
+            .order_by(Report.id)
+        )
+        return [
+            ReportAskerReportRow(*row) for row in self.session.exec(statement).all()
+        ]
 
     def set_column_ranges_bulk(
         self, report_column_ranges: list[ReportColumnRange]
