@@ -5,11 +5,13 @@ from types import SimpleNamespace
 
 import pytest
 from sqlalchemy.engine import Engine
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 import scripts.remove_excluded_reports as remove_excluded_reports_script
 from database.report import Report
+from database.report_asker import ReportAsker
 from database.speech import Speech
+from enums import ReportAskerSource
 from exceptions import HansardWriteCheckError, HansardWriteTargetError
 from schemas.excluded_report_id import ExcludedReportId
 
@@ -54,6 +56,23 @@ def _add_speech(session: Session, report: Report) -> None:
     session.commit()
 
 
+def _add_askers(session: Session, report_id: str, asker_count: int) -> None:
+    report = session.exec(
+        select(Report).where(col(Report.report_id) == report_id)
+    ).one()
+    assert report.id is not None
+    session.add_all(
+        ReportAsker(
+            ordinal=ordinal,
+            printed_name=f"Mr {ordinal}",
+            source=ReportAskerSource.ASKED_LINE,
+            report_id=report.id,
+        )
+        for ordinal in range(1, asker_count + 1)
+    )
+    session.commit()
+
+
 def _seed_duplicate(session: Session, excluded_content: str = _TEXT) -> None:
     for report_id, content in (
         (_KEPT_REPORT_ID, _TEXT),
@@ -86,6 +105,17 @@ def _get_report_ids(session: Session) -> list[str]:
 def _get_speech_count(session: Session) -> int:
     session.expire_all()
     return len(session.exec(select(Speech.id)).all())
+
+
+def _get_asker_report_ids(session: Session) -> list[str]:
+    session.expire_all()
+    return sorted(
+        session.exec(
+            select(Report.report_id).join(
+                ReportAsker, col(ReportAsker.report_id) == col(Report.id)
+            )
+        ).all()
+    )
 
 
 def test_dry_run_writes_the_plan_and_no_rows(
@@ -135,6 +165,25 @@ def test_commit_deletes_exactly_the_planned_report_and_speeches(
     remove_excluded_reports_script.remove_excluded_reports(True, None)
     assert _get_report_ids(scratch_session) == [_KEPT_REPORT_ID]
     assert _get_speech_count(scratch_session) == 1
+
+
+def test_commit_deletes_the_removed_reports_askers_and_keeps_the_others(
+    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_askers(scratch_session, _EXCLUDED_REPORT_ID, 2)
+    _add_askers(scratch_session, _KEPT_REPORT_ID, 1)
+    assert _get_asker_report_ids(scratch_session) == [
+        _EXCLUDED_REPORT_ID,
+        _EXCLUDED_REPORT_ID,
+        _KEPT_REPORT_ID,
+    ]
+
+    remove_excluded_reports_script.remove_excluded_reports(True, None)
+
+    assert _get_report_ids(scratch_session) == [_KEPT_REPORT_ID]
+    assert _get_asker_report_ids(scratch_session) == [_KEPT_REPORT_ID]
 
 
 def test_commit_refuses_the_protected_local_port(

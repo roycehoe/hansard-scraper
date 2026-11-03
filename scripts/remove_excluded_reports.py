@@ -7,9 +7,11 @@ from typing import Optional
 from sqlmodel import Session
 
 from crud.report import CRUDReport
+from crud.report_asker import CRUDReportAsker
 from crud.speech import CRUDSpeech
 from database.init import engine
 from database.report import Report
+from database.report_asker import ReportAsker
 from database.speech import Speech
 from exceptions import HansardWriteCheckError
 from logs import logger
@@ -27,6 +29,7 @@ class ReportRemoval:
     kept_report_id: str
     kept_id: int
     speech_count: int
+    asker_count: int
 
 
 def _get_validated_removal(
@@ -68,6 +71,7 @@ def _get_validated_removal(
         kept_report.report_id,
         kept_report.id,
         len(speech_rows),
+        len(CRUDReportAsker(session).get_rows_by_report_ids([report.id])),
     )
 
 
@@ -106,8 +110,13 @@ def _get_removals(
 
 def _remove_reports(session: Session, removals: list[ReportRemoval]) -> None:
     report_ids = [removal.id for removal in removals]
+    deleted_asker_count = CRUDReportAsker(session).delete_by_report_ids(report_ids)
     deleted_speech_count = CRUDSpeech(session).delete_by_report_ids(report_ids)
     deleted_report_count = CRUDReport(session).delete_by_ids(report_ids)
+    if deleted_asker_count != sum(removal.asker_count for removal in removals):
+        raise HansardWriteCheckError(
+            f"Deleted {deleted_asker_count} asker rows, planned {sum(removal.asker_count for removal in removals)}"
+        )
     if deleted_speech_count != sum(removal.speech_count for removal in removals):
         raise HansardWriteCheckError(
             f"Deleted {deleted_speech_count} speech rows, planned {sum(removal.speech_count for removal in removals)}"
@@ -129,10 +138,10 @@ def remove_excluded_reports(is_commit: bool, plan_path: Optional[Path]) -> None:
         removals = _get_removals(session, excluded_report_ids)
         for removal in removals:
             logger.info(
-                f"Remove report {removal.id} ({removal.report_id}), {removal.speech_count} speech rows; keep {removal.kept_id}"
+                f"Remove report {removal.id} ({removal.report_id}), {removal.speech_count} speech rows, {removal.asker_count} asker rows; keep {removal.kept_id}"
             )
         logger.info(
-            f"Plan: {len(removals)} reports, {sum(removal.speech_count for removal in removals)} speech rows"
+            f"Plan: {len(removals)} reports, {sum(removal.speech_count for removal in removals)} speech rows, {sum(removal.asker_count for removal in removals)} asker rows"
         )
         if plan_path is not None:
             plan_path.write_text(
@@ -146,13 +155,18 @@ def remove_excluded_reports(is_commit: bool, plan_path: Optional[Path]) -> None:
         session.commit()
         logger.info(f"Committed: {len(removals)} reports removed")
         vacuum_analyze_written_tables(
-            session, [Speech.__tablename__, Report.__tablename__]
+            session,
+            [
+                Speech.__tablename__,
+                ReportAsker.__tablename__,
+                Report.__tablename__,
+            ],
         )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Delete the stored reports listed in data/excluded_report_ids.json and their speech rows"
+        description="Delete the stored reports listed in data/excluded_report_ids.json and their speech and asker rows"
     )
     parser.add_argument(
         "--commit",
