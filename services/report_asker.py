@@ -183,7 +183,7 @@ def _get_stood_candidates(
 
 
 def _get_speaker_row_candidate(
-    speech_asker_row: SpeechAskerRow, is_stood_block_row: bool
+    speech_asker_row: SpeechAskerRow, is_to_ask_line_counted: bool
 ) -> Optional[AskerCandidate]:
     if speech_asker_row.speaker is None:
         return None
@@ -202,7 +202,7 @@ def _get_speaker_row_candidate(
             None,
             None,
         )
-    if is_stood_block_row:
+    if not is_to_ask_line_counted:
         return None
     if _TO_ASK_LINE_PATTERN.search(speech_asker_row.transcript):
         return AskerCandidate(
@@ -270,8 +270,12 @@ def get_asker_candidates(
                 )
             )
             continue
+        is_to_ask_line_counted = row_index not in stood_block_row_indexes and all(
+            asker_candidate.source != ReportAskerSource.ASKED_LINE
+            for asker_candidate in asker_candidates
+        )
         speaker_row_candidate = _get_speaker_row_candidate(
-            speech_asker_row, row_index in stood_block_row_indexes
+            speech_asker_row, is_to_ask_line_counted
         )
         if speaker_row_candidate is not None:
             asker_candidates.append(speaker_row_candidate)

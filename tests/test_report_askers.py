@@ -1095,6 +1095,50 @@ def test_second_to_ask_row_of_a_stood_block_is_its_own_candidate() -> None:
     ]
 
 
+def test_to_ask_rows_that_stood_over_after_an_asked_row_credit_no_one() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr Cheong Yuen Chee",
+            205,
+            "asked the Minister for Law, the Environment and Science and Technology what measures are being taken to prevent further occurrences of contaminated food",
+        ),
+        _build_row(
+            9,
+            SpeechKind.SPEECH,
+            "Mr Speaker",
+            270,
+            "Pursuant to Standing Order 21(2), the following Questions on the Order Paper accordingly stood over to the next available sitting of Parliament.",
+        ),
+        _build_row(
+            10,
+            SpeechKind.SPEECH,
+            "Mr S. Dhanabalan",
+            249,
+            "To ask the Minister for Home Affairs and Education how many drug rehabilitation centres there are in Singapore",
+        ),
+        _build_row(
+            11,
+            SpeechKind.SPEECH,
+            "Mr Teo Chong Tee",
+            263,
+            "To ask the Minister for Home Affairs and Education if part-time National Servicemen residing in Pulau Tekong can be assigned patrol duties",
+        ),
+    ]
+
+    assert get_asker_candidates(speech_asker_rows) == [
+        AskerCandidate(
+            row_ordinal=1,
+            source=ReportAskerSource.ASKED_LINE,
+            printed_name="Mr Cheong Yuen Chee",
+            speaker_id=205,
+            reader_printed_name=None,
+            reader_speaker_id=None,
+        ),
+    ]
+
+
 def test_addendum_text_that_says_a_member_asked_credits_no_one() -> None:
     speech_asker_rows = [
         _build_row(
