@@ -428,10 +428,68 @@
                 }
             },
             {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 22,
+                    "endColumn": 31,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 38,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 22,
+                    "endColumn": 31,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 38,
+                    "lineCount": 1
+                }
+            },
+            {
                 "code": "reportAttributeAccessIssue",
                 "range": {
                     "startColumn": 29,
                     "endColumn": 37,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./crud/report_asker.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 16,
+                    "endColumn": 36,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 15,
+                    "endColumn": 43,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 33,
+                    "endColumn": 42,
                     "lineCount": 1
                 }
             }
@@ -810,6 +868,14 @@
                 }
             },
             {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 13,
+                    "lineCount": 9
+                }
+            },
+            {
                 "code": "reportArgumentType",
                 "range": {
                     "startColumn": 22,
@@ -1056,6 +1122,16 @@
                 "range": {
                     "startColumn": 19,
                     "endColumn": 78,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./database/report_asker.py": [
+            {
+                "code": "reportAssignmentType",
+                "range": {
+                    "startColumn": 20,
+                    "endColumn": 34,
                     "lineCount": 1
                 }
             }
@@ -1534,6 +1610,16 @@
                 }
             }
         ],
+        "./scripts/apply_report_askers.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 48,
+                    "endColumn": 73,
+                    "lineCount": 1
+                }
+            }
+        ],
         "./scripts/apply_report_titles.py": [
             {
                 "code": "reportArgumentType",
@@ -1970,9 +2056,17 @@
             {
                 "code": "reportArgumentType",
                 "range": {
-                    "startColumn": 21,
-                    "endColumn": 65,
+                    "startColumn": 61,
+                    "endColumn": 70,
                     "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 13,
+                    "lineCount": 5
                 }
             }
         ],
@@ -2555,6 +2649,32 @@
                     "startColumn": 59,
                     "endColumn": 68,
                     "lineCount": 1
+                }
+            }
+        ],
+        "./tests/test_apply_report_askers.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 25,
+                    "endColumn": 54,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 25,
+                    "endColumn": 56,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 13,
+                    "lineCount": 5
                 }
             }
         ],
