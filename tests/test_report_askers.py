@@ -1,6 +1,8 @@
 from dataclasses import replace
 from typing import Optional
 
+import pytest
+
 from crud.speech import SpeechAskerRow
 from enums import ReportAskerSource, SpeechKind
 from services.report_asker import (
@@ -433,6 +435,325 @@ def test_stood_line_takes_no_reader_from_beyond_the_next_stood_line() -> None:
             reader_speaker_id=800,
         ),
     ]
+
+
+_ABSENT_FILER_READ_OUT_TRANSCRIPTS = [
+    "Mr Speaker, Sir, since the Member for Potong Pasir is not here, I ask Question No. 4.",
+    "Sir, I have been asked by the Member for Mountbatten to raise Question No. 2.",
+    "Sir, I have been requested by the Member for Mount-batten to ask Question No. 3.",
+    "Sir, I have been asked by Mr Teong Eng Siong to raise Question No. 2.",
+    "Sir, I have been asked by Mr Ch'ng Jit Koon to raise question No. 3.",
+    "Mr Speaker, Sir, in the absence of Mr P. Govindaswamy, may I ask Question No. 1?",
+    "Mr Speaker, Sir, as Mr Chia Thye Poh is not here, I am asking this question on his behalf.",
+    "Mr Speaker, Sir, in the absence of Madam Chan Choy Sion, may I ask Question No. 20?",
+    "As Mr Poh Ber Liak is absent, I would like to put the question to the Minister for Labour.",
+]
+_NOT_ABSENT_FILER_READ_OUT_TRANSCRIPTS = [
+    "Mr Speaker, Sir, I have been asked by my Minister to reply.",
+    "Sir, I have been asked by the Prime Minister to reply to this question.",
+    "I have been asked by the Minister to answer.",
+    "Mr Speaker, Sir, I have been requested by the Hon. the Prime Minister to reply to the question.",
+    "Mr Speaker, Sir, I have been asked by my colleague, the Minister for Labour, to reply",
+    "In the absence of AMD, doctors may also recommend the treatment.",
+    "In the absence of a donee or deputy, the doctor-in-charge decides.",
+]
+
+
+def _get_reader_printed_name(transcript: str) -> Optional[str]:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "The following Question stood in the name of Mr Filer Name -",
+        ),
+        _build_row(2, SpeechKind.SPEECH, "Mr Stand In", 1, transcript),
+    ]
+
+    return get_asker_candidates(speech_asker_rows)[0].reader_printed_name
+
+
+@pytest.mark.parametrize("transcript", _ABSENT_FILER_READ_OUT_TRANSCRIPTS)
+def test_row_that_says_the_filer_is_absent_is_the_reader(transcript: str) -> None:
+    assert _get_reader_printed_name(transcript) == "Mr Stand In"
+
+
+@pytest.mark.parametrize("transcript", _NOT_ABSENT_FILER_READ_OUT_TRANSCRIPTS)
+def test_row_that_names_a_minister_or_no_member_is_not_the_reader(
+    transcript: str,
+) -> None:
+    assert _get_reader_printed_name(transcript) is None
+
+
+def test_report_35981_member_asked_by_the_member_for_mountbatten_is_the_reader() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "The following Question stood in the name of Mr Ng Yeow Chong -",
+        ),
+        _build_row(
+            2,
+            SpeechKind.DOCUMENT_TEXT,
+            None,
+            None,
+            "2. To ask the Minister for Law and National Development when work will commence on the construction of a hawkers' emporium and high-rise flats on a site in Old Kallang Airport Estate which was cleared for redevelopment in early 1970, and whether the flats will include 5-room units.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.CHAMBER_EVENT,
+            None,
+            None,
+            "Mr Hwang Soo Jin (Jalan Kayu) rose -",
+        ),
+        _build_row(4, SpeechKind.SPEECH, "Mr Speaker", 127, "Mr Hwang Soo Jin."),
+        _build_row(
+            5,
+            SpeechKind.SPEECH,
+            "Mr Hwang Soo Jin",
+            87,
+            "Sir, I have been asked by the Member for Mountbatten to raise Question No. 2.",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert asker_candidates == [
+        AskerCandidate(
+            row_ordinal=1,
+            source=ReportAskerSource.STOOD_IN_NAME_LINE,
+            printed_name="Mr Ng Yeow Chong",
+            speaker_id=None,
+            reader_printed_name="Mr Hwang Soo Jin",
+            reader_speaker_id=87,
+        )
+    ]
+
+
+def test_report_37878_member_asking_in_the_absence_of_the_filer_is_the_reader() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "The following Question stood in the name of Mr P. Govindaswamy ---",
+        ),
+        _build_row(
+            2,
+            SpeechKind.DOCUMENT_TEXT,
+            None,
+            None,
+            "1. To ask the Minister for Law and National Development whether the Government is aware that during heavy rains Cheng Cheok Street and Tapah Street are flooded and whether the Government has any plans to remedy the situation.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Mr Ng Yeow Chong (Mountbatten)",
+            42,
+            "Mr Speaker, Sir, in the absence of Mr P. Govindaswamy, may I ask Question No. 1?",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert asker_candidates == [
+        AskerCandidate(
+            row_ordinal=1,
+            source=ReportAskerSource.STOOD_IN_NAME_LINE,
+            printed_name="Mr P. Govindaswamy",
+            speaker_id=None,
+            reader_printed_name="Mr Ng Yeow Chong (Mountbatten)",
+            reader_speaker_id=42,
+        )
+    ]
+
+
+def test_report_38031_member_who_puts_the_question_because_the_filer_is_absent_is_the_reader() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "The following Question stood in the name of Mr Poh Ber Liak :-",
+        ),
+        _build_row(
+            2,
+            SpeechKind.DOCUMENT_TEXT,
+            None,
+            None,
+            "13. To ask the Minister for Labour if he will make a statement on the strike of workers at Hup Seng Bee-Hoon Factory at Changi Road, 10 m.s., in July, 1965.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.CHAMBER_EVENT,
+            None,
+            None,
+            "Inche Mohd. Ariff Bin Suradi (Kampong Kembangan) rose ---",
+        ),
+        _build_row(
+            4,
+            SpeechKind.SPEECH,
+            "Mr Ho See Beng (Bras Basah)",
+            25,
+            "A supplementary question, Sir.",
+        ),
+        _build_row(
+            5,
+            SpeechKind.SPEECH,
+            "Mr Speaker",
+            2,
+            "Order. Mr Ho, you are somewhat late. I have called the Question. Inche Mohd. Ariff.",
+        ),
+        _build_row(
+            6,
+            SpeechKind.SPEECH,
+            "Inche Mohd. Ariff Bin Suradi",
+            40,
+            "As Mr Poh Ber Liak is absent, I would like to put the question to the Minister for Labour.",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert asker_candidates == [
+        AskerCandidate(
+            row_ordinal=1,
+            source=ReportAskerSource.STOOD_IN_NAME_LINE,
+            printed_name="Mr Poh Ber Liak",
+            speaker_id=None,
+            reader_printed_name="Inche Mohd. Ariff Bin Suradi",
+            reader_speaker_id=40,
+        )
+    ]
+
+
+def test_minister_saying_he_was_asked_by_my_minister_to_reply_is_not_the_reader() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "The following Question stood in the name of Mr Poh Ber Liak :-",
+        ),
+        _build_row(
+            2,
+            SpeechKind.DOCUMENT_TEXT,
+            None,
+            None,
+            "13. To ask the Minister for Labour if he will make a statement on the strike of workers.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Mr Jek Yeun Thong",
+            26,
+            "Mr Speaker, Sir, I have been asked by my Minister to reply.",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert asker_candidates == [
+        AskerCandidate(
+            row_ordinal=1,
+            source=ReportAskerSource.STOOD_IN_NAME_LINE,
+            printed_name="Mr Poh Ber Liak",
+            speaker_id=None,
+            reader_printed_name=None,
+            reader_speaker_id=None,
+        )
+    ]
+
+
+def test_numbered_read_out_is_preferred_over_an_earlier_absent_filer_read_out() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "The following Question stood in the name of Mr Poh Ber Liak :-",
+        ),
+        _build_row(
+            2,
+            SpeechKind.DOCUMENT_TEXT,
+            None,
+            None,
+            "13. To ask the Minister for Labour if he will make a statement on the strike of workers.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Mr Ho See Beng (Bras Basah)",
+            25,
+            "As Mr Poh Ber Liak is absent, I would like to put the question to the Minister for Labour.",
+        ),
+        _build_row(
+            4,
+            SpeechKind.SPEECH,
+            "Inche Mohd. Ariff Bin Suradi",
+            40,
+            "Question No. 13, Sir.",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert asker_candidates == [
+        AskerCandidate(
+            row_ordinal=1,
+            source=ReportAskerSource.STOOD_IN_NAME_LINE,
+            printed_name="Mr Poh Ber Liak",
+            speaker_id=None,
+            reader_printed_name="Inche Mohd. Ariff Bin Suradi",
+            reader_speaker_id=40,
+        )
+    ]
+
+
+def test_absent_filer_read_out_beyond_the_next_stood_line_is_no_reader() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "The following Question stood in the name of Mr Poh Ber Liak :-",
+        ),
+        _build_row(
+            2,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "The following Question stood in the name of Mr Teong Eng Siong :-",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Inche Mohd. Ariff Bin Suradi",
+            40,
+            "As Mr Teong Eng Siong is absent, I would like to put the question to the Minister for Labour.",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert [
+        (asker_candidate.printed_name, asker_candidate.reader_speaker_id)
+        for asker_candidate in asker_candidates
+    ] == [("Mr Poh Ber Liak", None), ("Mr Teong Eng Siong", 40)]
 
 
 def test_stood_line_naming_three_filers_credits_each_and_a_filer_reading_out_is_no_reader() -> (

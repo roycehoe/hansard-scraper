@@ -38,6 +38,17 @@ _READ_OUT_PATTERN = re.compile(
     r"question\s+(?:no\.?\s*|number\s*)?(?P<number>\d+)",
     re.IGNORECASE,
 )
+_MEMBER_REFERENCE_REGEX = (
+    r"(?:the member for|mr|mrs|mdm|madam|miss|ms|dr|inche|encik|tuan haji|haji)\b"
+)
+_ABSENT_FILER_READ_OUT_PATTERN = re.compile(
+    r"^\W*(?:mr speaker,?\s*)?(?:sir,?\s*)?(?:"
+    r"(?:since|as)\s[^.]{1,80}?\s(?:is|was)\s(?:not here|absent)\b"
+    r"|(?:in the absence of|i have been (?:asked|requested) by)\s+"
+    + _MEMBER_REFERENCE_REGEX
+    + r")",
+    re.IGNORECASE,
+)
 _RESPECTIVELY_SUFFIX_PATTERN = re.compile(r"\s+respectively$", re.IGNORECASE)
 _FILER_SEPARATOR_PATTERN = re.compile(r",\s+|\s+and\s+", re.IGNORECASE)
 _LETTER_PATTERN = re.compile(r"[^\W\d_]")
@@ -101,23 +112,39 @@ def _get_stood_question_number(
     return int(match.group("number"))
 
 
+def _is_non_filer_member_speech(
+    speech_asker_row: SpeechAskerRow, filer_names: tuple[str, ...]
+) -> bool:
+    if speech_asker_row.kind != SpeechKind.SPEECH:
+        return False
+    if speech_asker_row.speaker is None:
+        return False
+    if speech_asker_row.speaker_id is None:
+        return False
+    if _ROLE_LABEL_PATTERN.search(speech_asker_row.speaker):
+        return False
+    return not speech_asker_row.speaker.lower().startswith(filer_names)
+
+
 def _get_read_out_number(
     speech_asker_row: SpeechAskerRow, filer_names: tuple[str, ...]
 ) -> Optional[int]:
-    if speech_asker_row.kind != SpeechKind.SPEECH:
-        return None
-    if speech_asker_row.speaker is None:
-        return None
-    if speech_asker_row.speaker_id is None:
-        return None
-    if _ROLE_LABEL_PATTERN.search(speech_asker_row.speaker):
-        return None
-    if speech_asker_row.speaker.lower().startswith(filer_names):
+    if not _is_non_filer_member_speech(speech_asker_row, filer_names):
         return None
     match = _READ_OUT_PATTERN.search(speech_asker_row.transcript)
     if match is None:
         return None
     return int(match.group("number"))
+
+
+def _is_absent_filer_read_out(
+    speech_asker_row: SpeechAskerRow, filer_names: tuple[str, ...]
+) -> bool:
+    if not _is_non_filer_member_speech(speech_asker_row, filer_names):
+        return False
+    return (
+        _ABSENT_FILER_READ_OUT_PATTERN.search(speech_asker_row.transcript) is not None
+    )
 
 
 def _get_reader_row(
@@ -128,11 +155,6 @@ def _get_reader_row(
 ) -> Optional[SpeechAskerRow]:
     question_number = _get_stood_question_number(speech_asker_rows, stood_line)
     first_row_index = stood_line.row_index + 1
-    if question_number is not None:
-        for speech_asker_row in speech_asker_rows[first_row_index:]:
-            if _get_read_out_number(speech_asker_row, filer_names) == question_number:
-                return speech_asker_row
-        return None
     next_stood_row_index = min(
         (
             other_stood_line.row_index
@@ -141,8 +163,19 @@ def _get_reader_row(
         ),
         default=len(speech_asker_rows),
     )
-    for speech_asker_row in speech_asker_rows[first_row_index:next_stood_row_index]:
+    stood_block_rows = speech_asker_rows[first_row_index:next_stood_row_index]
+    if question_number is not None:
+        for speech_asker_row in speech_asker_rows[first_row_index:]:
+            if _get_read_out_number(speech_asker_row, filer_names) == question_number:
+                return speech_asker_row
+        for speech_asker_row in stood_block_rows:
+            if _is_absent_filer_read_out(speech_asker_row, filer_names):
+                return speech_asker_row
+        return None
+    for speech_asker_row in stood_block_rows:
         if _get_read_out_number(speech_asker_row, filer_names) is not None:
+            return speech_asker_row
+        if _is_absent_filer_read_out(speech_asker_row, filer_names):
             return speech_asker_row
     return None
 
