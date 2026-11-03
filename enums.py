@@ -48,6 +48,13 @@ class ColumnNote(StrEnum):
     PRINTED_WITH_L_FOR_1 = "PRINTED_WITH_L_FOR_1"
 
 
+class ReportAskerSource(StrEnum):
+    ASKED_LINE = "ASKED_LINE"
+    TO_ASK_LINE = "TO_ASK_LINE"
+    STOOD_IN_NAME_LINE = "STOOD_IN_NAME_LINE"
+    NAME_IN_TEXT = "NAME_IN_TEXT"
+
+
 class MissingColumnReason(StrEnum):
     NO_MARKERS = "NO_MARKERS"
     TEXT_NOT_FOUND = "TEXT_NOT_FOUND"

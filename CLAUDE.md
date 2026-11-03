@@ -131,6 +131,7 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 - `Attendance` — one row per name per sitting, parsed from `Sitting.markdown_content` in stage 7; has a `speaker_id` FK to `Speaker` (set in stage 8)
 - `Speaker` — everyone who appears in the Hansard record, scraped from parliament.gov.sg; keyed by name, party, parliament number, and whether they are a Legislative Assembly member (not all are MPs)
 - `PartyAffiliation` — one row per party a Membership sat for, with the date it began (`started_on`, and `started_on_precision`, a `DatePrecision` of DAY or MONTH, Postgres type `dateprecision`; a MONTH date is stored as the first of the month), `is_started_on_upper_bound` (true when `started_on` is the earliest day a source shows the new party, not the day of the change), one plain sentence for the footnote (`event`), exactly one source (`source_url` for a page outside the corpus, or `source_report_id`, an FK to `Report`, for a Hansard report in it; a check constraint holds this), and a `speaker_id` FK to `Speaker`; the `Speaker` row keeps the ballot party and this table adds the history
+- `ReportAsker` — one row per asker of a parliamentary question in a report: `ordinal` (order of first appearance, unique with `report_id`), `printed_name` as the record prints it, `source` (a `ReportAskerSource`, Postgres type `reportaskersource`, saying which rule found the name), `reader_printed_name` (the member who read out a question that stood in an absent member's name, otherwise NULL), a `report_id` FK to `Report`, a `speaker_id` FK to `Speaker` that is NULL when the printed name resolves to no single Membership, and a `reader_speaker_id` FK to `Speaker` for the reader
 
 ### Key parsing logic
 
@@ -213,7 +214,7 @@ hansard-scraper/
 ├── script.py                        # Pipeline orchestrator — runs populate stages 5 to 9 in order
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
-├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus, HandCheckSpeakerVerdict, HandCheckDifferenceClass, HandCheckDifferenceKind, HandCheckErrorTier, HandCheckFlagReason
+├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, ReportAskerSource, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus, HandCheckSpeakerVerdict, HandCheckDifferenceClass, HandCheckDifferenceKind, HandCheckErrorTier, HandCheckFlagReason
 ├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshFailureError / HansardRefreshRunError / HansardTestGuardError / HansardHandCheckError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the refresh job (run as `sh refresh.sh`); the build imports `refresh`, so an import error fails it
@@ -283,6 +284,7 @@ hansard-scraper/
 │   ├── person.py                    # Person: one row per clustered identity
 │   ├── party_affiliation.py         # PartyAffiliation: dated party history within a Membership + speaker_id FK
 │   ├── refresh_run.py               # RefreshRun: one row per refresh run, its counts, figures and status
+│   ├── report_asker.py              # ReportAsker: one row per asker of a parliamentary question + report_id, speaker_id and reader_speaker_id FKs
 │   └── speaker.py                   # Speaker: name, party, parliament number, LA flag, person_id FK
 │
 ├── crud/                            # DB read/write helpers (one file per table)

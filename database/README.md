@@ -10,9 +10,11 @@ erDiagram
     sitting |o--o{ attendance : "sitting_id"
     report |o--o{ speech : "report_id"
     report |o--o{ partyaffiliation : "source_report_id"
+    report ||--o{ report_asker : "report_id"
     speaker |o--o{ attendance : "speaker_id"
     speaker |o--o{ speech : "speaker_id"
     speaker ||--o{ partyaffiliation : "speaker_id"
+    speaker |o--o{ report_asker : "speaker_id"
     person |o--o{ speaker : "person_id"
 
     hansardwebsiteresponse {
@@ -122,6 +124,17 @@ erDiagram
         dateprecision started_on_precision "DAY or MONTH"
         bool is_started_on_upper_bound
         varchar event
+    }
+
+    report_asker {
+        int id PK
+        int report_id FK "unique with ordinal"
+        int speaker_id FK "null when the name resolves to no single Membership"
+        int reader_speaker_id FK "who read out a question in an absent member's name"
+        int ordinal
+        varchar printed_name "name as printed"
+        reportaskersource source
+        varchar reader_printed_name
     }
 
     refresh_run {
