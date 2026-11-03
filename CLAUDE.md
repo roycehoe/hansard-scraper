@@ -271,6 +271,7 @@ hansard-scraper/
 │   ├── attribution.py               # Speech row categories and the figures JSON for refresh_run.figures
 │   ├── character_audit.py           # Character fault signatures and pair balance for scripts/audit_characters.py
 │   ├── refresh.py                   # Refresh rules: dates, halt checks and alert text
+│   ├── report_asker.py              # Speech rows of a parliamentary question → its askers, and the reader of a question that stood in an absent member's name
 │   └── speaker.py                   # SpeakerResult → Speaker DB entity
 │
 ├── database/                        # SQLModel table definitions

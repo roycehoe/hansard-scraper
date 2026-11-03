@@ -95,6 +95,17 @@ class SpeechColumnRow:
 
 
 @dataclass(frozen=True)
+class SpeechAskerRow:
+    id: int
+    report_id: int
+    ordinal: int
+    speaker: Optional[str]
+    transcript: str
+    kind: Optional[SpeechKind]
+    speaker_id: Optional[int]
+
+
+@dataclass(frozen=True)
 class SpeechParseRow:
     id: int
     report_id: int
@@ -334,6 +345,24 @@ class CRUDSpeech:
             .order_by(Speech.report_id, Speech.ordinal)
         )
         return [SpeechColumnRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_asker_rows_by_report_ids(
+        self, report_ids: list[int]
+    ) -> list[SpeechAskerRow]:
+        statement = (
+            select(
+                Speech.id,
+                Speech.report_id,
+                Speech.ordinal,
+                Speech.speaker,
+                Speech.transcript,
+                Speech.kind,
+                Speech.speaker_id,
+            )
+            .where(col(Speech.report_id).in_(report_ids))
+            .order_by(Speech.report_id, Speech.ordinal)
+        )
+        return [SpeechAskerRow(*row) for row in self.session.exec(statement).all()]
 
     def get_text_rows(self) -> Iterable[SpeechTextRow]:
         statement = (
