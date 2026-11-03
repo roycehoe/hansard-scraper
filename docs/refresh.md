@@ -24,15 +24,16 @@ Then, for each month in order, the run:
 9. Halts if any field of a fetched body is lost on its way to a row, or if a fetched sitting carries a new Parliament number.
 10. Writes the raw report rows, the reports, their speech rows, the raw sitting rows, the sittings and their attendance rows. A hit whose topic has no text is not stored (see "Halts and how to clear each").
 11. Runs stage 8, the speaker links, on the new speech and attendance rows only.
-12. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
-13. Commits the month. A halt or a failure rolls back only the month in progress.
+12. Finds the askers of the new parliamentary question reports (`oral-answer`, `written-answer` and `written-answer-na`) and inserts one `report_asker` row for each asker. It reads the speaker links that step 11 set, and it never deletes: the role has no DELETE and a new report has no rows.
+13. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
+14. Commits the month. A halt or a failure rolls back only the month in progress.
 
 After the last month, the run:
 
-14. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
-15. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
-16. Records the counts and marks the row `SUCCEEDED`.
-17. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
+15. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
+16. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
+17. Records the counts and marks the row `SUCCEEDED`.
+18. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
 
 `refresh.py` exits 0 on success, 2 on a halt and 1 on a failure, after the failure's error propagates.
 
@@ -194,9 +195,11 @@ GRANT USAGE ON SCHEMA public TO hansard_refresh;
 GRANT SELECT ON hansardwebsiteresponse, hansardsittingdateresponse, report, speech, sitting, attendance, speaker, refresh_run TO hansard_refresh;
 GRANT INSERT ON hansardwebsiteresponse, hansardsittingdateresponse, report, speech, sitting, attendance, refresh_run TO hansard_refresh;
 GRANT UPDATE (speaker_id) ON speech, attendance TO hansard_refresh;
+GRANT SELECT, INSERT ON report_asker TO hansard_refresh;
 GRANT UPDATE ON refresh_run TO hansard_refresh;
 GRANT MAINTAIN ON speech, report, attendance TO hansard_refresh;
 GRANT USAGE ON SEQUENCE hansardwebsiteresponse_id_seq, hansardsittingdateresponse_id_seq, report_id_seq, speech_id_seq, sitting_id_seq, sittingattendance_id_seq, refresh_run_id_seq TO hansard_refresh;
+GRANT USAGE ON SEQUENCE report_asker_id_seq TO hansard_refresh;
 GRANT SELECT (id, website_responses_added, sitting_date_responses_added, sittings_added, reports_added, speeches_added, speeches_linked, speeches_named_unlinked, attendances_added, attendances_linked, reports_held_without_text, reports_without_speech_rows, reports_rechecked, reports_changed, latest_sitting_date_with_text, figures, started_at, finished_at, status) ON refresh_run TO <the API's read-only role>;
 ```
 

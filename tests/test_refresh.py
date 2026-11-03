@@ -24,6 +24,7 @@ from database.party_affiliation import PartyAffiliation
 from database.person import Person
 from database.refresh_run import RefreshRun
 from database.report import Report
+from database.report_asker import ReportAsker
 from database.sitting import Sitting
 from database.speaker import Speaker
 from database.speech import Speech
@@ -33,6 +34,7 @@ from exceptions import (
     HansardRefreshFailureError,
     HansardRefreshRunError,
 )
+from populate.report_askers import REPORT_ASKER_REPORT_TYPES
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
     HansardReportOldResponse,
@@ -407,6 +409,27 @@ def test_clean_run_adds_rows_and_links_them(
             )
             == 0
         )
+        new_question_report_ids = {
+            search_result["reportId"]
+            for search_result in fake_parliament.new_search_results
+            if search_result["reportType"] in REPORT_ASKER_REPORT_TYPES
+        }
+        report_id_asker_names = [
+            (report_id, asker_name)
+            for report_id, asker_name in session.exec(
+                select(Report.report_id, Speaker.name)
+                .join(ReportAsker, col(ReportAsker.report_id) == col(Report.id))
+                .join(Speaker, col(ReportAsker.speaker_id) == col(Speaker.id))
+            ).all()
+        ]
+        assert len(report_id_asker_names) == len(new_question_report_ids)
+        assert {
+            report_id for report_id, _ in report_id_asker_names
+        } == new_question_report_ids
+        assert (
+            "written-answer-na-17735#",
+            "Jamus Jerome Lim",
+        ) in report_id_asker_names
 
 
 def test_run_that_adds_nothing_sends_no_message(
