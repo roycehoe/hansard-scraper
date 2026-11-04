@@ -432,7 +432,7 @@ def _get_answerer_source(
     if speaker_id is None:
         return None
     office = speaker_id_to_office.get(speaker_id)
-    if office is None:
+    if office is None or office.source == OfficeSource.PARLIAMENT_GUESS:
         return None
     if is_government_office(office.printed):
         return ParticipantRoleSource.OFFICE_ON_THE_DAY

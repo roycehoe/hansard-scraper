@@ -34,6 +34,7 @@ _HENG_CHEE_HOW_SPEAKER_ID = 826
 _SIM_ANN_SPEAKER_ID = 990
 _VASOO_SPEAKER_ID = 411
 _CHARLES_CHONG_SPEAKER_ID = 619
+_TEO_CHONG_TEE_SPEAKER_ID = 338
 
 
 @dataclass(frozen=True)
@@ -3333,5 +3334,75 @@ def test_report_12949_later_holders_response_to_an_earlier_clarification_is_not_
             15,
             "The Senior Parliamentary Secretary to the Minister for Education (Ms Low Yen Ling)",
             1082,
+        )
+    ]
+
+
+_REPORT_33485_TITLE = "PUBLIC ASSISTANCE ALLOWANCE"
+_REPORT_33485_ROWS = """
+1 | SPEECH | 298 | Mr Hwang Soo Jin | asked the Acting Minister for Social Affairs (a) how many people have had their public assistance allowance withdrawn in 1980; and (b) whether his Ministry ensures that every recipient of such allowance will be able to o
+2 | SPEECH | 273 | The Acting Minister for Social Affairs (Dr Ahmad Mattar) | Mr Speaker, Sir, a total of 1,984 Public Assistance recipients had their allowances withdrawn last year, 1,586 or 80% of the total were supported by children or close relatives. Another 239 or 12% lost their allowances b
+3 | SPEECH | 273 | The Acting Minister for Social Affairs (Dr Ahmad Mattar) | On the second part of the hon. Member's question, my Ministry does ensure that Public Assistance allowance is not withdrawn unless the recipient has adequate alternative means of support. In particular, a recipient will
+4 | SPEECH | 338 | Mr Teo Chong Tee (Changi) | Mr Speaker, Sir, despite the Hon. Minister's assurance that the Public Assistance allowance is not withdrawn unless the recipient has adequate alternative means of support, I still receive a large number of appeals from constituents who complain about the stoppage of public assistance allowance. I am sure many of my colleagues in this House face the same problems with their constituents.
+5 | SPEECH |  | Some hon. Members | Yes.
+6 | SPEECH | 338 | Mr Teo Chong Tee | For example, in my Constituency there were about 210 public assistance recipients in 1979, and in 1980 the number was drastically reduced to about 90. Maybe the Director of Social Welfare is too strict in carrying out this exercise. May I ask what steps has the Hon. Minister taken to ensure that fair judgment is given to each and every case?
+7 | SPEECH | 273 | Dr Ahmad Mattar | Mr Speaker, Sir, as you know, I have on many occasions in this House enunciated the principles which govern the administration of the Public Assistance Scheme. The application of these principles on individual cases call
+8 | SPEECH | 273 | Dr Ahmad Mattar | Sir, with a view to ensuring some measure of uniformity of standards in the administration of Public Assistance Scheme, I have recently set up a Committee called the Public Assistance Review Committee, or PARC. I chair t
+9 | SPEECH | 295 | Mr Ho See Beng | May I ask the Acting Minister for Social Affairs how much money has he saved from stopping this allowance to the 1,600-odd recipients?
+10 | SPEECH | 273 | Dr Ahmad Mattar | Mr Speaker, Sir, I cannot give offhand the amount that has been "saved", as the Member put it. Perhaps if he wants, he can put in another question for Oral Answer. But since he is a Member of the PARC, he will know soon.
+11 | SPEECH | 295 | Mr Ho See Beng | Does the Minister also know how much the good name of the Socialist Government like the PAP Government has suffered because of this withdrawal?
+12 | SPEECH | 273 | Dr Ahmad Mattar | That is why the PARC is set up.
+13 | SPEECH | 326 | Mr Seah Mui Kok (Bukit Ho Swee) | Sir, I am glad that the Acting Minister for Social Affairs has given us the assurance that there is a Public Assistance Review Committee to review the public assistance allowance that is given to the poor people. But I w
+14 | SPEECH | 326 | Mr Seah Mui Kok (Bukit Ho Swee) | Therefore, Sir, I want the assurance of this Review Committee that in cases where the son or daughter who gives such kind of assurance in writing in order to save face but does not actually give the money to the parents,
+15 | SPEECH | 273 | Dr Ahmad Mattar | Mr Speaker, Sir, first of all, I would like to request the hon. Member for Bukit Ho Swee to submit to me this particular case or similar cases he has in mind. What I would like to say is that I would assure the House tha
+16 | SPEECH | 326 | Mr Seah Mui Kok | Mr Speaker, Sir, "submit another Question" - this is the style of the Minister. But no. What I want to know is this, can the Minister give us an assurance that the son or daughter who has given a written assurance of giv
+17 | SPEECH | 273 | Dr Ahmad Mattar | Sir, first of all, I would request the hon. Member for Bukit Ho Swee to give me the particular case he is talking about. If the sons or daughters, as he has said, had pledged or made written statements to say that they a
+18 | SPEECH | 298 | Mr Hwang Soo Jin (Jalan Kayu) | Mr Speaker, Sir, two supplementary questions. First of all, to have 1,984 cases withdrawn within a course of one year. Does it not suggest that, in the first instance, there must be something wrong with the approving sys
+19 | SPEECH | 273 | Dr Ahmad Mattar | As to the second question, Sir, it is my policy, which I have directed to the officials of the Ministry, to keep Members of Parliament informed of the outcome of their appeals referred to the Ministry.
+20 | SPEECH |  | Some hon. Members | No!
+21 | SPEECH | 273 | Dr Ahmad Mattar | In particular, those Members of Parliament who refer their cases to me personally, I make sure that I reply to them personally too.
+22 | SPEECH | 273 | Dr Ahmad Mattar | On the first question about the breakdown which the hon. Member for Jalan Kayu has asked for, the reasons for withdrawing the allowances are as follows.
+23 | SPEECH | 298 | Mr Hwang Soo Jin | On a point of clarification, Sir. I do not think I have asked for a breakdown. All that I said was that to have a situation where 1,984 cases are withdrawn within a course of one year, there must be something basically w
+24 | SPEECH | 273 | Dr Ahmad Mattar | Sir, the Member's request will be looked into.
+"""
+
+
+def test_report_33485_office_guessed_from_the_parliament_does_not_make_an_answerer() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_33485_TITLE,
+        _REPORT_33485_ROWS,
+        speaker_id_to_office={
+            _TEO_CHONG_TEE_SPEAKER_ID: Office(
+                "The Parliamentary Secretary to the Minister for Social Affairs",
+                OfficeSource.PARLIAMENT_GUESS,
+            )
+        },
+    )
+
+    assert _get_person_rows(labelled_report, _TEO_CHONG_TEE_SPEAKER_ID) == [
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            4,
+            "Mr Teo Chong Tee (Changi)",
+            338,
+        )
+    ]
+    assert _summarise_office_marks(
+        [
+            report_participant
+            for report_participant in labelled_report.participants
+            if report_participant.speaker_id == _TEO_CHONG_TEE_SPEAKER_ID
+        ]
+    ) == [
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            338,
+            None,
+            "The Parliamentary Secretary to the Minister for Social Affairs",
+            OfficeClass.PARLIAMENTARY_SECRETARY,
+            OfficeSource.PARLIAMENT_GUESS,
         )
     ]
