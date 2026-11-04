@@ -25,6 +25,7 @@ _PASSING_LINE = "Bill read a Third time and passed."
 @pytest.fixture(autouse=True)
 def _no_bill_title_corrections(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(apply_act_links_script, "get_bill_title_corrections", list)
+    monkeypatch.setattr(apply_act_links_script, "get_hand_kept_bills", list)
 
 
 class _LogRecorder:

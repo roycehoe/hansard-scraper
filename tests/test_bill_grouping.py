@@ -5,6 +5,7 @@ import pytest
 from crud.report import ReportSittingDateTitleRow
 from exceptions import HansardHandKeptEntryError
 from schemas.bill_title_correction import BillTitleCorrection
+from schemas.hand_kept_bill import HandKeptBill
 from services.bill import BillGrouping, group_bills
 from utils.title_key import get_title_key
 
@@ -20,12 +21,16 @@ def _group(
     third_reading_report_ids: set[int],
     first_reading_report_ids: frozenset[int] = frozenset(),
     title_corrections: list[BillTitleCorrection] = [],
+    hand_kept_bills: list[HandKeptBill] = [],
+    hand_kept_report_rows: list[ReportSittingDateTitleRow] = [],
 ) -> BillGrouping:
     return group_bills(
         report_rows,
         first_reading_report_ids,
         frozenset(third_reading_report_ids),
         title_corrections,
+        hand_kept_bills,
+        hand_kept_report_rows or report_rows,
     )
 
 
@@ -314,4 +319,100 @@ def test_a_correction_for_a_report_that_is_not_a_bill_report_raises() -> None:
             [_report_row(1, datetime(2019, 10, 7), "Tax Bill")],
             set(),
             title_corrections=[_correction(9, "Tax Bill", "Taxes Bill")],
+        )
+
+
+def _hand_kept_bill(title: str, report_ids: list[int]) -> HandKeptBill:
+    return HandKeptBill(title=title, report_ids=report_ids, reason="A reason.")
+
+
+def test_a_hand_kept_bill_replaces_the_rule_built_bills_of_a_renamed_bill() -> None:
+    grouping = _group(
+        [
+            _report_row(
+                3,
+                datetime(2004, 10, 19),
+                "BUILDING MAINTENANCE AND STRATA MANAGEMENT BILL",
+            ),
+            _report_row(
+                1, datetime(2004, 2, 6), "BUILDING MAINTENANCE AND MANAGEMENT BILL"
+            ),
+            _report_row(
+                2, datetime(2004, 4, 19), "BUILDING MAINTENANCE AND MANAGEMENT BILL"
+            ),
+            _report_row(4, datetime(2004, 5, 1), "MONEYLENDERS BILL"),
+        ],
+        {3},
+        hand_kept_bills=[
+            _hand_kept_bill(
+                "BUILDING MAINTENANCE AND STRATA MANAGEMENT BILL", [3, 1, 2]
+            )
+        ],
+    )
+
+    assert [
+        (bill_group.title_key, bill_group.report_ids, bill_group.is_passed)
+        for bill_group in grouping.bill_groups
+    ] == [
+        ("buildingmaintenanceandstratamanagementbill", [1, 2, 3], True),
+        ("moneylendersbill", [4], False),
+    ]
+    assert grouping.bill_groups[0].first_sitting_date == datetime(2004, 2, 6)
+    assert grouping.bill_groups[0].last_sitting_date == datetime(2004, 10, 19)
+
+
+def test_a_hand_kept_bill_joins_a_report_that_is_not_a_bill_report() -> None:
+    motion_row = _report_row(
+        9, datetime(1960, 11, 16), "ADJOURNMENT TO A LATER DAY MOTION"
+    )
+
+    grouping = _group(
+        [_report_row(1, datetime(1960, 5, 1), "MONEYLENDERS BILL")],
+        set(),
+        hand_kept_bills=[
+            _hand_kept_bill(
+                "CRIMINAL LAW (TEMPORARY PROVISIONS) (AMENDMENT NO. 2) BILL", [9]
+            )
+        ],
+        hand_kept_report_rows=[motion_row],
+    )
+
+    assert [bill_group.report_ids for bill_group in grouping.bill_groups] == [[1], [9]]
+    assert (
+        grouping.bill_groups[1].title_key
+        == "criminallawtemporaryprovisionsamendmentno2bill"
+    )
+
+
+def test_a_hand_kept_bill_takes_its_report_out_of_the_skipped_reports() -> None:
+    grouping = _group(
+        [_report_row(1, datetime(1960, 11, 16), "ADJOURNMENT")],
+        set(),
+        hand_kept_bills=[_hand_kept_bill("ESTATE BILL", [1])],
+    )
+
+    assert grouping.skipped_report_rows == []
+    assert [bill_group.report_ids for bill_group in grouping.bill_groups] == [[1]]
+
+
+def test_a_hand_kept_bill_that_splits_a_rule_built_bill_raises() -> None:
+    with pytest.raises(HansardHandKeptEntryError, match="splits the bill"):
+        _group(
+            [
+                _report_row(1, datetime(2004, 2, 6), "ESTATE BILL"),
+                _report_row(2, datetime(2004, 4, 19), "ESTATE BILL"),
+            ],
+            set(),
+            hand_kept_bills=[_hand_kept_bill("ESTATE BILL", [1])],
+        )
+
+
+def test_a_hand_kept_bill_listing_a_report_that_is_not_stored_raises() -> None:
+    with pytest.raises(
+        HansardHandKeptEntryError, match="report 7, which is not stored"
+    ):
+        _group(
+            [_report_row(1, datetime(2004, 2, 6), "ESTATE BILL")],
+            set(),
+            hand_kept_bills=[_hand_kept_bill("ESTATE BILL", [1, 7])],
         )

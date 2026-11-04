@@ -18,6 +18,7 @@ from schemas.hand_check_office_holder import (
     HandCheckOfficeHolder,
     HandCheckOfficeHolders,
 )
+from schemas.hand_kept_bill import HandKeptBills
 from schemas.hand_kept_member import HandKeptMember, HandKeptMembers
 from schemas.head_of_state import HeadOfStateResult, HeadsOfState
 from schemas.party_affiliation import PartyAffiliationMemberships
@@ -31,6 +32,7 @@ from utils.data_files import (
     get_constituency_names,
     get_excluded_report_ids,
     get_hand_check_office_holders,
+    get_hand_kept_bills,
     get_heads_of_state,
     get_party_affiliations,
     get_person_decisions,
@@ -47,6 +49,7 @@ _DATA_FILE_SCHEMAS = (
     ("constituency_names.json", ConstituencyNames),
     ("excluded_report_ids.json", ExcludedReportIds),
     ("hand_check_office_holders.json", HandCheckOfficeHolders),
+    ("hand_kept_bills.json", HandKeptBills),
     ("heads_of_state.json", HeadsOfState),
     ("party_affiliations.json", PartyAffiliationMemberships),
     ("person_decisions.json", PersonDecisions),
@@ -61,6 +64,7 @@ _DATA_FILE_GETTERS = (
     get_constituency_names,
     get_excluded_report_ids,
     get_hand_check_office_holders,
+    get_hand_kept_bills,
     get_heads_of_state,
     get_party_affiliations,
     get_person_decisions,

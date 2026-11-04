@@ -264,6 +264,24 @@ class CRUDSpeech:
             )
         return list(self.session.exec(statement).all())
 
+    def get_report_ids_by_report_ids_and_transcript_regex_and_transcript_not_regexes(
+        self,
+        report_ids: list[int],
+        pattern: str,
+        not_patterns: tuple[str, ...],
+    ) -> list[int]:
+        statement = (
+            select(Speech.report_id)
+            .distinct()
+            .where(col(Speech.report_id).in_(report_ids))
+            .where(col(Speech.transcript).regexp_match(pattern, flags="i"))
+        )
+        for not_pattern in not_patterns:
+            statement = statement.where(
+                not_(col(Speech.transcript).regexp_match(not_pattern, flags="i"))
+            )
+        return list(self.session.exec(statement).all())
+
     def get_report_ids_by_report_ids_and_speaker_id_null_and_speaker_regex(
         self, report_ids: list[int], pattern: str
     ) -> list[int]:

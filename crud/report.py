@@ -181,6 +181,19 @@ class CRUDReport:
             for row in self.session.exec(statement).all()
         ]
 
+    def get_sitting_date_title_rows_by_ids(
+        self, report_ids: list[int]
+    ) -> list[ReportSittingDateTitleRow]:
+        statement = (
+            select(Report.id, Report.sitting_date, Report.title)
+            .where(col(Report.id).in_(report_ids))
+            .order_by(col(Report.sitting_date), col(Report.id))
+        )
+        return [
+            ReportSittingDateTitleRow(*row)
+            for row in self.session.exec(statement).all()
+        ]
+
     def delete_by_ids(self, report_ids: list[int]) -> int:
         statement = delete(Report).where(col(Report.id).in_(report_ids))
 

@@ -1,0 +1,57 @@
+[
+  {
+    "title": "BUILDING MAINTENANCE AND STRATA MANAGEMENT BILL",
+    "report_ids": [
+      24791,
+      24626,
+      43096
+    ],
+    "reason": "The Select Committee changed the short title in committee, so the first and second readings print BUILDING MAINTENANCE AND MANAGEMENT BILL and the third reading prints the new title."
+  },
+  {
+    "title": "CONSTITUTION OF THE REPUBLIC OF SINGAPORE (AMENDMENT) BILL",
+    "report_ids": [
+      30387,
+      30353,
+      30339,
+      30195
+    ],
+    "reason": "The 1989 Nominated Members bill (Bill No. 41/1989) was read as Amendment No. 2 and its Select Committee changed the title, so its third reading prints Amendment."
+  },
+  {
+    "title": "CONSTITUTION OF THE REPUBLIC OF SINGAPORE (AMENDMENT) BILL",
+    "report_ids": [
+      31194,
+      31150,
+      30923
+    ],
+    "reason": "The 1987 bill (Bill No. 24/1987) was read as Amendment No. 2 and its Select Committee changed the title, so its third reading prints Amendment."
+  },
+  {
+    "title": "MAINTENANCE OF PARENTS BILL",
+    "report_ids": [
+      28913,
+      28818,
+      28816,
+      28791,
+      28232
+    ],
+    "reason": "The Select Committee kept the bill for 463 days after its 1994 second reading, so the rule splits it at the 366 day gap, but the 1995 third reading passes the same bill."
+  },
+  {
+    "title": "GOOD SHEPHERD NUNS BILL",
+    "report_ids": [
+      40256,
+      40223,
+      40159
+    ],
+    "reason": "The bill was introduced under the long title REVEREND MOTHER SUPERIOR OF THE CONGREGATION OF GOOD SHEPHERD NUNS IN MALAYA BILL and its later readings print the short one."
+  },
+  {
+    "title": "CRIMINAL LAW (TEMPORARY PROVISIONS) (AMENDMENT NO. 2) BILL",
+    "report_ids": [
+      39429
+    ],
+    "reason": "All three readings of the bill sit in one motion report titled ADJOURNMENT TO A LATER DAY MOTION."
+  }
+]

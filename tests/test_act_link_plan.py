@@ -68,7 +68,7 @@ def test_plan_groups_bill_reports_and_reads_third_reading_lines(
 
     write_harvest(tmp_path)
 
-    plan = get_act_link_plan(scratch_session, tmp_path, [])
+    plan = get_act_link_plan(scratch_session, tmp_path, [], [])
 
     assert [
         (planned_bill.title_key, planned_bill.report_ids, planned_bill.is_passed)
@@ -170,7 +170,7 @@ def test_plan_splits_at_a_first_reading_line_but_not_at_a_new_clause_or_a_mentio
     )
     write_harvest(tmp_path)
 
-    plan = get_act_link_plan(scratch_session, tmp_path, [])
+    plan = get_act_link_plan(scratch_session, tmp_path, [], [])
 
     assert [
         (planned_bill.report_ids, planned_bill.is_passed) for planned_bill in plan.bills

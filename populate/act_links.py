@@ -24,6 +24,7 @@ from schemas.act_link_plan import (
     UnparsedEntry,
 )
 from schemas.bill_title_correction import BillTitleCorrection
+from schemas.hand_kept_bill import HandKeptBill
 from schemas.harvested_act import HarvestedAct, HarvestedActs
 from services.act_history import (
     ParsedHistoryEntry,
@@ -117,9 +118,18 @@ def get_act_link_plan(
     session: Session,
     harvest_directory: Path,
     bill_title_corrections: list[BillTitleCorrection],
+    hand_kept_bills: list[HandKeptBill],
 ) -> ActLinkPlan:
     report_rows = CRUDReport(session).get_sitting_date_title_rows_by_report_types(
         _BILL_REPORT_TYPES
+    )
+    hand_kept_report_ids = [
+        report_id
+        for hand_kept_bill in hand_kept_bills
+        for report_id in hand_kept_bill.report_ids
+    ]
+    hand_kept_report_rows = CRUDReport(session).get_sitting_date_title_rows_by_ids(
+        hand_kept_report_ids
     )
     first_reading_report_ids = CRUDSpeech(
         session
@@ -131,14 +141,23 @@ def get_act_link_plan(
     ).get_report_ids_by_report_types_and_transcript_regex_and_transcript_not_regexes(
         _BILL_REPORT_TYPES, THIRD_READING_PATTERN, NOT_THIRD_READING_PATTERNS
     )
+    hand_kept_third_reading_report_ids = CRUDSpeech(
+        session
+    ).get_report_ids_by_report_ids_and_transcript_regex_and_transcript_not_regexes(
+        hand_kept_report_ids, THIRD_READING_PATTERN, NOT_THIRD_READING_PATTERNS
+    )
     bill_grouping = group_bills(
         report_rows,
         frozenset(first_reading_report_ids),
-        frozenset(third_reading_report_ids),
+        frozenset(third_reading_report_ids)
+        | frozenset(hand_kept_third_reading_report_ids),
         bill_title_corrections,
+        hand_kept_bills,
+        hand_kept_report_rows,
     )
     report_id_to_sitting_date: dict[int, date] = {
-        report_row.id: report_row.sitting_date.date() for report_row in report_rows
+        report_row.id: report_row.sitting_date.date()
+        for report_row in report_rows + hand_kept_report_rows
     }
     title_key_to_linkable_bills: dict[str, list[LinkableBill]] = defaultdict(list)
     for bill_index, bill_group in enumerate(bill_grouping.bill_groups):

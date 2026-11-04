@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from crud.report import ReportSittingDateTitleRow
 from exceptions import HansardHandKeptEntryError
 from schemas.bill_title_correction import BillTitleCorrection
+from schemas.hand_kept_bill import HandKeptBill
 from utils.title_key import get_title_key
 
 FIRST_READING_PATTERN = r"\yread (a|the|for the) first time"
@@ -99,11 +100,53 @@ def _build_corrected_report_rows(
     ]
 
 
+def _build_hand_kept_bill_group(
+    hand_kept_bill: HandKeptBill,
+    report_id_to_row: dict[int, ReportSittingDateTitleRow],
+    third_reading_report_ids: frozenset[int],
+) -> BillGroup:
+    hand_kept_rows: list[ReportSittingDateTitleRow] = []
+    for report_id in hand_kept_bill.report_ids:
+        report_row = report_id_to_row.get(report_id)
+        if report_row is None:
+            raise HansardHandKeptEntryError(
+                f"hand_kept_bills.json: {hand_kept_bill.title!r} lists report "
+                f"{report_id}, which is not stored"
+            )
+        hand_kept_rows.append(report_row)
+    hand_kept_rows.sort(key=lambda report_row: (report_row.sitting_date, report_row.id))
+    return BillGroup(
+        hand_kept_bill.title,
+        get_title_key(hand_kept_bill.title),
+        hand_kept_rows[0].sitting_date,
+        hand_kept_rows[-1].sitting_date,
+        any(report_row.id in third_reading_report_ids for report_row in hand_kept_rows),
+        [report_row.id for report_row in hand_kept_rows],
+    )
+
+
+def _validate_can_replace_bill_groups(
+    hand_kept_bill: HandKeptBill, bill_groups: list[BillGroup]
+) -> None:
+    hand_kept_report_ids = set(hand_kept_bill.report_ids)
+    for bill_group in bill_groups:
+        group_report_ids = set(bill_group.report_ids)
+        if group_report_ids & hand_kept_report_ids and not (
+            group_report_ids <= hand_kept_report_ids
+        ):
+            raise HansardHandKeptEntryError(
+                f"hand_kept_bills.json: {hand_kept_bill.title!r} splits the bill "
+                f"{bill_group.title!r} of reports {bill_group.report_ids}"
+            )
+
+
 def group_bills(
     report_rows: list[ReportSittingDateTitleRow],
     first_reading_report_ids: frozenset[int],
     third_reading_report_ids: frozenset[int],
     title_corrections: list[BillTitleCorrection],
+    hand_kept_bills: list[HandKeptBill],
+    hand_kept_report_rows: list[ReportSittingDateTitleRow],
 ) -> BillGrouping:
     title_key_to_open_bill: dict[str, _OpenBill] = {}
     bill_groups: list[BillGroup] = []
@@ -141,6 +184,32 @@ def group_bills(
     bill_groups.extend(
         _build_bill_group(open_bill) for open_bill in title_key_to_open_bill.values()
     )
+    report_id_to_row = {
+        report_row.id: report_row for report_row in hand_kept_report_rows
+    }
+    hand_kept_report_ids = {
+        report_id
+        for hand_kept_bill in hand_kept_bills
+        for report_id in hand_kept_bill.report_ids
+    }
+    for hand_kept_bill in hand_kept_bills:
+        _validate_can_replace_bill_groups(hand_kept_bill, bill_groups)
+    hand_kept_groups = [
+        _build_hand_kept_bill_group(
+            hand_kept_bill, report_id_to_row, third_reading_report_ids
+        )
+        for hand_kept_bill in hand_kept_bills
+    ]
+    bill_groups = [
+        bill_group
+        for bill_group in bill_groups
+        if hand_kept_report_ids.isdisjoint(bill_group.report_ids)
+    ] + hand_kept_groups
+    skipped_report_rows = [
+        report_row
+        for report_row in skipped_report_rows
+        if report_row.id not in hand_kept_report_ids
+    ]
     return BillGrouping(
         sorted(
             bill_groups,
