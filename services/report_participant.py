@@ -151,6 +151,24 @@ def _get_kept_asker_candidates(
     return kept_asker_candidates
 
 
+def _get_government_row_ordinals(
+    participant_rows: list[_ParticipantRow], speaker_id_to_office: dict[int, Office]
+) -> frozenset[int]:
+    government_row_ordinals: set[int] = set()
+    for participant_row in participant_rows:
+        if _has_government_label_office(participant_row.label):
+            government_row_ordinals.add(participant_row.ordinal)
+            continue
+        office = (
+            None
+            if participant_row.speaker_id is None
+            else speaker_id_to_office.get(participant_row.speaker_id)
+        )
+        if office is not None and is_government_office(office.printed):
+            government_row_ordinals.add(participant_row.ordinal)
+    return frozenset(government_row_ordinals)
+
+
 def _get_question_ordinals(
     question_row_ordinals: frozenset[int], asker_candidates: list[AskerCandidate]
 ) -> frozenset[int]:
@@ -474,6 +492,8 @@ def _build_row_participant(
             return None
         if person_key in report_roles.reader_person_keys:
             return None
+        if person_key in report_roles.answerer_person_keys:
+            return None
         return _build_other_role_participant(
             participant_row, ParticipantRole.UNLABELLED, ParticipantRoleSource.NO_RULE
         )
@@ -612,10 +632,14 @@ def get_participants(
     question_row_ordinals: frozenset[int],
     speaker_id_to_office: dict[int, Office],
 ) -> list[ParticipantCandidate]:
-    question_ordinals = _get_question_ordinals(question_row_ordinals, asker_candidates)
+    participant_rows = _get_participant_rows(speech_asker_rows)
+    question_ordinals = _get_question_ordinals(
+        question_row_ordinals
+        - _get_government_row_ordinals(participant_rows, speaker_id_to_office),
+        asker_candidates,
+    )
     if not question_ordinals:
         return []
-    participant_rows = _get_participant_rows(speech_asker_rows)
     kept_asker_candidates = _get_kept_asker_candidates(asker_candidates)
     asker_participants = _build_asker_participants(kept_asker_candidates)
     reader_participants = _build_reader_participants(kept_asker_candidates)

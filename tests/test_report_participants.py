@@ -2284,3 +2284,56 @@ def test_report_18267_office_holder_who_mentions_a_supplementary_question_is_an_
             990,
         )
     ]
+
+
+_REPORT_6260_TITLE = "Affordability of Rising Public Housing Prices and Impact of Prices on Marriage and Fertility Rates"
+_REPORT_6260_ROWS = """
+1 |  | 1238 | Mr Yip Hon Weng | asked the Minister for National Development (a) what measures are being taken to address the growing sentiment that Singapore property market is unaffordable for the masses; (b) how will the recent adjustments to manpower policies impact property prices; and (c) beyond existing cooling measures, what else will the Government do to ensure housing remains affordable for Singaporeans if housing market conditions do not improve.
+2 |  | 1205 | Ms Hazel Poa | asked the Minister for National Development whether the Ministry has conducted or will conduct studies on the impact of rising public housing prices on marriage and fertility rates.
+3 |  | 1151 | The Minister for National Development (Mr Desmond Lee) | Mr Speaker, Sir, Question No 2 on today's Order Paper on the issue of marriage and parenthood is also relevant to this question on public housing affordability. As such, may I request, Sir, that the answers to Question Nos 1 and 2 be provided first, and the supplementary questions from Members on both questions be taken together thereafter.
+4 |  | 1223 | Mr Speaker | Please proceed.
+5 |  | 1151 | Mr Desmond Lee | Thank you, Sir. This reply will also respond to the Member's question for 3 October on affordability benchmarks for public housing.
+"""
+
+
+def test_report_6260_ministers_opening_line_is_not_a_read_out() -> None:
+    labelled_report = _label_report(
+        _REPORT_6260_TITLE,
+        _REPORT_6260_ROWS,
+        speaker_id_to_office={
+            1151: Office(
+                "Minister for National Development", OfficeSource.ATTENDANCE_LIST
+            )
+        },
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mr Yip Hon Weng",
+            1238,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            2,
+            "Ms Hazel Poa",
+            1205,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            3,
+            "The Minister for National Development (Mr Desmond Lee)",
+            1151,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            ParticipantRoleSource.CHAIR_LABEL,
+            4,
+            "Mr Speaker",
+            1223,
+        ),
+    ]
