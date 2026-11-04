@@ -329,6 +329,7 @@ hansard-scraper/
 │   └── speakers.py                  # Out-of-band: persist scraped Speaker records
 │
 ├── utils/                           # Shared pure utilities (no DB, no HTTP)
+│   ├── asker_candidate.py           # AskerCandidate: one asker found in a question's speech rows, before it is resolved or stored
 │   ├── column_numbers.py            # A report's column range and each speech row's start column and note, from the column markers in its raw HTML
 │   ├── data_files.py                # The only module outside its own test that opens data/: one get_ function per file, each on model_validate_json
 │   ├── database_label.py            # get_database_label: the host, port and database name of a database URL, never the user or password

@@ -14,12 +14,9 @@ from exceptions import HansardWriteCheckError
 from logs import logger
 from services.attendance import build_speaker_lookups
 from services.attribution import get_group
-from services.report_asker import (
-    AskerCandidate,
-    build_report_askers,
-    get_asker_candidates,
-)
+from services.report_asker import build_report_askers, get_asker_candidates
 from services.speaker_link import resolve_speech_speaker_id
+from utils.asker_candidate import AskerCandidate
 from utils.speaker_resolution import SpeakerLookups
 
 REPORT_ASKER_REPORT_TYPES = (

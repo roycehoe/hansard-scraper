@@ -5,16 +5,10 @@ from typing import Optional, Union
 from crud.speech import SpeechAskerRow
 from database.report_asker import ReportAsker
 from enums import ReportAskerSource, SpeechKind
-from utils.names import TITLE_PREFIXES
+from utils.asker_candidate import AskerCandidate
+from utils.names import CHAIR_FORM_PATTERN, TITLE_PREFIXES
 
-_CHAIR_FORM_PATTERN = re.compile(
-    r"^(?:Mr|Mdm|Madam)\s+(?:Deputy\s+)?Speaker\b"
-    r"|^(?:The\s+)?(?:Deputy\s+)?(?:Speaker|Chairman)\b",
-    re.IGNORECASE,
-)
-_ROLE_LABEL_PATTERN = re.compile(
-    _CHAIR_FORM_PATTERN.pattern + r"|^The\s", re.IGNORECASE
-)
+_ROLE_LABEL_PATTERN = re.compile(CHAIR_FORM_PATTERN.pattern + r"|^The\s", re.IGNORECASE)
 _ASKED_LINE_PATTERN = re.compile(
     r"^\s*(?:\(\s*by private notice[^)]*\)\s*)?"
     r"(?:asked(?:\s*the)?\b|ask\s+the\s+(?:\w+\s+){0,3}minister\b)",
@@ -58,17 +52,6 @@ _NAME_IN_TEXT_PATTERN = re.compile(
     + r").{0,80}?)\s+asked\s*the\b",
     re.IGNORECASE,
 )
-
-
-@dataclass(frozen=True)
-class AskerCandidate:
-    row_ordinal: int
-    source: ReportAskerSource
-    printed_name: str
-    speaker_id: Optional[int]
-    reader_printed_name: Optional[str]
-    reader_speaker_id: Optional[int]
-    reader_row_ordinal: Optional[int]
 
 
 @dataclass(frozen=True)
@@ -269,7 +252,7 @@ def _get_name_in_text_candidate(
     if match is None:
         return None
     printed_name = match.group("name")
-    if _CHAIR_FORM_PATTERN.search(printed_name):
+    if CHAIR_FORM_PATTERN.search(printed_name):
         return None
     return AskerCandidate(
         speech_asker_row.ordinal,

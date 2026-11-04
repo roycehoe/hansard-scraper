@@ -5,11 +5,8 @@ import pytest
 
 from crud.speech import SpeechAskerRow
 from enums import ReportAskerSource, SpeechKind
-from services.report_asker import (
-    AskerCandidate,
-    build_report_askers,
-    get_asker_candidates,
-)
+from services.report_asker import build_report_askers, get_asker_candidates
+from utils.asker_candidate import AskerCandidate
 
 _REPORT_ID = 1
 
