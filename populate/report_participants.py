@@ -297,6 +297,7 @@ def _build_planned_rows(
             [], build_report_question_states(report_row.id, [not_a_question_state])
         )
     participant_candidates = get_participants(
+        report_row.title,
         read_inline_speakers(speech_asker_rows, get_inline_speaker_id),
         asker_candidates,
         question_row_ordinals,

@@ -704,11 +704,14 @@ def _get_first_answer_ordinal(
 
 
 def get_participants(
+    title: str,
     speech_asker_rows: list[SpeechAskerRow],
     asker_candidates: list[AskerCandidate],
     question_row_ordinals: frozenset[int],
     speaker_id_to_office: dict[int, Office],
 ) -> list[ParticipantCandidate]:
+    if _STOOD_OVER_LIST_TITLE_PATTERN.search(title):
+        return []
     participant_rows = _get_participant_rows(speech_asker_rows)
     kept_asker_candidates = _get_kept_asker_candidates(asker_candidates)
     asker_participants = _build_asker_participants(kept_asker_candidates)

@@ -96,6 +96,7 @@ def _label_report(
             [], build_report_question_states(_REPORT_ID, [not_a_question_state])
         )
     participant_candidates = get_participants(
+        title,
         read_inline_speakers(speech_asker_rows, (inline_label_to_speaker_id or {}).get),
         asker_candidates,
         question_row_ordinals,
@@ -1702,84 +1703,13 @@ def test_title_of_an_annex_with_an_asker_is_a_question() -> None:
     )
 
 
-def test_report_42200_withdrawn_line_marks_questions_not_asked_aloud() -> None:
+def test_report_42200_stood_over_list_has_the_title_state_and_no_participants() -> None:
     labelled_report = _label_report(
         _REPORT_42200_TITLE,
         _REPORT_42200_ROWS,
     )
 
-    assert _summarise_participants(labelled_report.participants) == [
-        (
-            ParticipantRole.ASKER,
-            ParticipantRoleSource.ASKER_RULES,
-            2,
-            "Mr Ngeow Pack Hua",
-            237,
-        ),
-        (
-            ParticipantRole.ASKER,
-            ParticipantRoleSource.ASKER_RULES,
-            3,
-            "Mr Rohan bin Kamis",
-            248,
-        ),
-        (
-            ParticipantRole.ASKER,
-            ParticipantRoleSource.ASKER_RULES,
-            4,
-            "Mr Ho See Beng",
-            219,
-        ),
-        (
-            ParticipantRole.ASKER,
-            ParticipantRoleSource.ASKER_RULES,
-            5,
-            "Haji Sha'ari bin Tadin",
-            252,
-        ),
-        (
-            ParticipantRole.ASKER,
-            ParticipantRoleSource.ASKER_RULES,
-            7,
-            "Mr Eugene Yap Giau Cheng",
-            267,
-        ),
-        (
-            ParticipantRole.ASKER,
-            ParticipantRoleSource.ASKER_RULES,
-            8,
-            "Haji Rahmat bin Kenap",
-            246,
-        ),
-        (
-            ParticipantRole.ASKER,
-            ParticipantRoleSource.ASKER_RULES,
-            9,
-            "Dr Lau Teik Soon",
-            226,
-        ),
-        (
-            ParticipantRole.ASKER,
-            ParticipantRoleSource.ASKER_RULES,
-            11,
-            "Mr Ho Kah Leong",
-            218,
-        ),
-        (
-            ParticipantRole.ASKER,
-            ParticipantRoleSource.ASKER_RULES,
-            12,
-            "Dr Koh Lip Lin",
-            224,
-        ),
-        (
-            ParticipantRole.ASKER,
-            ParticipantRoleSource.ASKER_RULES,
-            14,
-            "Encik Sidek bin Saniff",
-            255,
-        ),
-    ]
+    assert labelled_report.participants == []
     assert _summarise_states(labelled_report.states) == [
         (QuestionState.NOT_ASKED_ALOUD, _REPORT_42200_TITLE, None)
     ]
