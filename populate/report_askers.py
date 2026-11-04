@@ -33,6 +33,7 @@ class ReportAskerCounts:
     reports_with_resolved_asker: int = 0
     source_to_row_count: Counter[ReportAskerSource] = field(default_factory=Counter)
     rows_without_speaker_id: int = 0
+    rows_with_reader: int = 0
     stood_rows_with_reader: int = 0
     stood_rows_without_reader: int = 0
 
@@ -80,6 +81,7 @@ def _add_report(
     for report_asker in report_askers:
         counts.source_to_row_count[report_asker.source] += 1
         counts.rows_without_speaker_id += report_asker.speaker_id is None
+        counts.rows_with_reader += report_asker.reader_printed_name is not None
         if report_asker.source != ReportAskerSource.STOOD_IN_NAME_LINE:
             continue
         if report_asker.reader_printed_name is None:
@@ -185,9 +187,9 @@ def _validate_can_commit_report_askers(session: Session, plan: ReportAskerPlan) 
             raise HansardWriteCheckError(
                 f"{group}: {stored_counts.rows_without_speaker_id} report askers hold no speaker_id, the plan has {counts.rows_without_speaker_id}"
             )
-        if stored_counts.stood_rows_with_reader != counts.stood_rows_with_reader:
+        if stored_counts.rows_with_reader != counts.rows_with_reader:
             raise HansardWriteCheckError(
-                f"{group}: {stored_counts.stood_rows_with_reader} stood report askers hold a reader, the plan has {counts.stood_rows_with_reader}"
+                f"{group}: {stored_counts.rows_with_reader} report askers hold a reader, the plan has {counts.rows_with_reader}"
             )
 
 
