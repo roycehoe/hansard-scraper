@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable, Optional, Sequence
 
-from sqlalchemy import ColumnElement, text
+import sqlalchemy
+from sqlalchemy import SQLColumnExpression, text
 from sqlmodel import Session, col, delete, exists, func, select
 
 from database.report import Report
@@ -89,12 +90,12 @@ class ReportTitleRow:
     subtitle: Optional[str]
 
 
-def _get_frame_order_columns() -> list[ColumnElement]:
+def _get_frame_order_columns() -> list[SQLColumnExpression]:
     return [
-        Report.parliament_number,
+        col(Report.parliament_number),
         col(Report.report_version).collate("C"),
         col(Report.report_type).collate("C"),
-        Report.sitting_date,
+        col(Report.sitting_date),
         col(Report.report_id).collate("C"),
     ]
 
@@ -405,31 +406,32 @@ class CRUDReport:
         ).execute(statement)
         self.session.commit()
 
+    # NOTE: SQLModel's select types at most four columns, and session.exec takes no other select, so the frame reads below use SQLAlchemy's select with session.execute
     def get_frame_rows_by_participant_role(
         self, role: ParticipantRole
     ) -> list[ReportFrameRow]:
         statement = (
-            select(
-                ReportParticipant.id,
-                Report.id,
-                Report.parliament_number,
-                Report.report_version,
-                Report.report_type,
-                Report.sitting_date,
-                Report.report_id,
-                ReportParticipant.first_ordinal,
-                ReportParticipant.speaker_id,
-                ReportParticipant.printed_name,
+            sqlalchemy.select(
+                col(ReportParticipant.id),
+                col(Report.id),
+                col(Report.parliament_number),
+                col(Report.report_version),
+                col(Report.report_type),
+                col(Report.sitting_date),
+                col(Report.report_id),
+                col(ReportParticipant.first_ordinal),
+                col(ReportParticipant.speaker_id),
+                col(ReportParticipant.printed_name),
             )
-            .join(ReportParticipant, ReportParticipant.report_id == Report.id)
-            .where(ReportParticipant.role == role)
+            .join(ReportParticipant, col(ReportParticipant.report_id) == Report.id)
+            .where(col(ReportParticipant.role) == role)
             .order_by(
                 *_get_frame_order_columns(),
-                ReportParticipant.first_ordinal,
-                ReportParticipant.id,
+                col(ReportParticipant.first_ordinal),
+                col(ReportParticipant.id),
             )
         )
-        return [ReportFrameRow(*row) for row in self.session.exec(statement).all()]
+        return [ReportFrameRow(*row) for row in self.session.execute(statement).all()]
 
     def get_frame_rows_by_participant_role_and_first_ordinal_above_report_minimum(
         self, role: ParticipantRole
@@ -444,82 +446,118 @@ class CRUDReport:
             .subquery()
         )
         statement = (
-            select(
-                ReportParticipant.id,
-                Report.id,
-                Report.parliament_number,
-                Report.report_version,
-                Report.report_type,
-                Report.sitting_date,
-                Report.report_id,
-                ReportParticipant.first_ordinal,
-                ReportParticipant.speaker_id,
-                ReportParticipant.printed_name,
+            sqlalchemy.select(
+                col(ReportParticipant.id),
+                col(Report.id),
+                col(Report.parliament_number),
+                col(Report.report_version),
+                col(Report.report_type),
+                col(Report.sitting_date),
+                col(Report.report_id),
+                col(ReportParticipant.first_ordinal),
+                col(ReportParticipant.speaker_id),
+                col(ReportParticipant.printed_name),
             )
-            .join(ReportParticipant, ReportParticipant.report_id == Report.id)
+            .join(ReportParticipant, col(ReportParticipant.report_id) == Report.id)
             .join(
                 report_minimum,
                 report_minimum.c.report_id == ReportParticipant.report_id,
             )
-            .where(ReportParticipant.role == role)
+            .where(col(ReportParticipant.role) == role)
             .where(ReportParticipant.first_ordinal > report_minimum.c.minimum_ordinal)
             .order_by(
                 *_get_frame_order_columns(),
-                ReportParticipant.first_ordinal,
-                ReportParticipant.id,
+                col(ReportParticipant.first_ordinal),
+                col(ReportParticipant.id),
             )
         )
-        return [ReportFrameRow(*row) for row in self.session.exec(statement).all()]
+        return [ReportFrameRow(*row) for row in self.session.execute(statement).all()]
 
     def get_frame_rows_by_question_state(
         self, state: QuestionState
     ) -> list[ReportFrameRow]:
         statement = (
-            select(
-                Report.id,
-                Report.parliament_number,
-                Report.report_version,
-                Report.report_type,
-                Report.sitting_date,
-                Report.report_id,
+            sqlalchemy.select(
+                col(Report.id),
+                col(Report.parliament_number),
+                col(Report.report_version),
+                col(Report.report_type),
+                col(Report.sitting_date),
+                col(Report.report_id),
             )
-            .join(ReportQuestionState, ReportQuestionState.report_id == Report.id)
-            .where(ReportQuestionState.state == state)
-            .order_by(*_get_frame_order_columns(), Report.id)
+            .join(ReportQuestionState, col(ReportQuestionState.report_id) == Report.id)
+            .where(col(ReportQuestionState.state) == state)
+            .order_by(*_get_frame_order_columns(), col(Report.id))
         )
         return [
-            ReportFrameRow(row[0], row[0], *row[1:], None, None, None)
-            for row in self.session.exec(statement).all()
+            ReportFrameRow(
+                report_id,
+                report_id,
+                parliament_number,
+                report_version,
+                report_type,
+                sitting_date,
+                sprs_report_id,
+                None,
+                None,
+                None,
+            )
+            for (
+                report_id,
+                parliament_number,
+                report_version,
+                report_type,
+                sitting_date,
+                sprs_report_id,
+            ) in self.session.execute(statement).all()
         ]
 
     def get_frame_rows_by_participant_roles_present_and_participant_role_absent_and_question_state_absent(
         self, present_roles: list[ParticipantRole], absent_role: ParticipantRole
     ) -> list[ReportFrameRow]:
         statement = (
-            select(
-                Report.id,
-                Report.parliament_number,
-                Report.report_version,
-                Report.report_type,
-                Report.sitting_date,
-                Report.report_id,
+            sqlalchemy.select(
+                col(Report.id),
+                col(Report.parliament_number),
+                col(Report.report_version),
+                col(Report.report_type),
+                col(Report.sitting_date),
+                col(Report.report_id),
             )
             .where(
                 exists().where(
-                    ReportParticipant.report_id == Report.id,
+                    col(ReportParticipant.report_id) == Report.id,
                     col(ReportParticipant.role).in_(present_roles),
                 )
             )
             .where(
                 ~exists().where(
-                    ReportParticipant.report_id == Report.id,
-                    ReportParticipant.role == absent_role,
+                    col(ReportParticipant.report_id) == Report.id,
+                    col(ReportParticipant.role) == absent_role,
                 )
             )
-            .where(~exists().where(ReportQuestionState.report_id == Report.id))
-            .order_by(*_get_frame_order_columns(), Report.id)
+            .where(~exists().where(col(ReportQuestionState.report_id) == Report.id))
+            .order_by(*_get_frame_order_columns(), col(Report.id))
         )
         return [
-            ReportFrameRow(row[0], row[0], *row[1:], None, None, None)
-            for row in self.session.exec(statement).all()
+            ReportFrameRow(
+                report_id,
+                report_id,
+                parliament_number,
+                report_version,
+                report_type,
+                sitting_date,
+                sprs_report_id,
+                None,
+                None,
+                None,
+            )
+            for (
+                report_id,
+                parliament_number,
+                report_version,
+                report_type,
+                sitting_date,
+                sprs_report_id,
+            ) in self.session.execute(statement).all()
         ]
