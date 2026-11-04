@@ -3858,3 +3858,108 @@ def test_report_9432_later_holder_who_asks_a_member_is_supplementary_not_answere
             1228,
         ),
     ]
+
+
+_REPORT_22632_TITLE = (
+    "AFFORDABILITY OF PUBLIC HOUSING AND DESIGN, BUILD AND SELL SCHEME"
+)
+_REPORT_22632_ROWS = """
+1 | UNCLASSIFIED |  |  | The following questions stood on the Order Paper -
+2 | SPEECH | 865 | Dr Muhammad Faishal Ibrahim | To ask the Minister for National Development with the rising prices of new and resale HDB flats, what plans does the Government have to ensure that home ownership continu
+3 | SPEECH | 872 | Dr Ong Seh Hong | To ask the Minister for National Development whether he can provide the rationale for the shift from providing affordable housing to the Design, Build and Sell Scheme fla
+4 | SPEECH | 816 | Ms Eunice Elizabeth Olsen | To ask the Minister for National Development whether his Ministry will consider raising the income ceiling of $8,000 for the purchase of HDB flats under the Design, Build
+5 | SPEECH | 850 | Mr Liang Eng Hwa (Holland-Bukit Timah) | Question No. 8, Sir.
+6 | SPEECH | 862 | The Minister for National Development (Mr Mah Bow Tan) | Mr Speaker, Sir, may I have your permission to take Question Nos. 8, 9 and 10 together?
+7 | SPEECH | 805 | Mr Speaker | Yes, please.
+8 | SPEECH | 862 | Mr Mah Bow Tan | Thank you very much. Sir, let me begin by stating very clearly, in answer to Dr Ong's question, that there is no shift in HDB's mission of providing affordable public hou
+24 | SPEECH | 816 | Ms Eunice Elizabeth Olsen | I would like to thank the Minister, and I have two supplementary questions for him.
+"""
+
+_REPORT_24068_TITLE = "PROPOSAL TO DEVELOP INTEGRATED RESORTS"
+_REPORT_24068_ROWS = """
+1 | SPEECH | 731 | Mdm Ho Geok Choo | asked the Minister for Trade and Industry if he will update the House on the progress of the Government's review and deliberation of the various proposals received for th
+2 | SPEECH | 775 | Assoc. Prof. Ong Soh Khim | asked the Minister for Trade and Industry (a) whether Government tax revenue is the only economic factor in the assessment of the 19 Integrated Resort (IR) proposals that
+3 | SPEECH | 775 | Assoc. Prof. Ong Soh Khim | asked the Minister for Trade and Industry, as much of the scenario planning on the development of an integrated resort and casino are theoretical, (a) will the Government
+4 | SPEECH | 739 | Dr Amy Khor Lean Suan (Hong Kah) | Question No. 1, Sir.
+5 | SPEECH | 752 | The Minister for Trade and Industry (Mr Lim Hng Kiang) | Mr Speaker, Sir, can I have your permission to take Question Nos. 1 to 3 together as they relate to the same topic?
+6 | SPEECH | 702 | Mr Speaker | Yes, you may.
+7 | SPEECH | 752 | Mr Lim Hng Kiang | Sir, the Prime Minister will be making a Statement later on on the proposal to develop Integrated Resorts. I would like to urge Members to wait for the Statement. I think
+8 | SPEECH | 775 | Assoc. Prof. Ong Soh Khim | asked the Minister for Home Affairs with the development of the Integrated Resort and casino (a) whether there will be an increase in vice, illegal money-lending, money-l
+9 | SPEECH | 732 | The Senior Minister of State for Home Affairs (Assoc. Prof. Ho Peng Kee) (for the Minister for Home Affairs) | Sir, I think the Member must have heard the Minister for Trade and Industry. Similarly, the Minister for Home Affairs will be addressing these issues when Members debate
+"""
+
+_REPORT_30117_TITLE = "ENVIRONMENT ENFORCEMENT OFFICERS"
+_REPORT_30117_ROWS = """
+1 | DOCUMENT_TEXT |  |  | 5. To ask the Minister for the Environment whether he is aware that enforcement officers of his Ministry, in the course of their duty, have acted in a very rude and abras
+2 | SPEECH | 432 | Mr Chandra Das | Question No. 5, Sir.
+3 | SPEECH | 429 | The Minister for the Environment (Dr Ahmad Mattar) | Mr Speaker, Sir, I would like to assure the Member for Potong Pasir, through his proxy, and indeed this House that we will always try to do our best in whatever we do, es
+4 | SPEECH | 429 | The Minister for the Environment (Dr Ahmad Mattar) | Sir, public health inspectors are performing a very demanding yet unpleasant job. Being enforcement officers, they can easily become targets of complaints by those whom t
+7 | SPEECH | 429 | The Minister for the Environment (Dr Ahmad Mattar) | The following Question stood in the name of Mrs Yu-Foo Yee Shoon -
+"""
+
+
+def _get_role_rows(
+    labelled_report: _LabelledReport, role: ParticipantRole
+) -> list[tuple[ParticipantRole, ParticipantRoleSource, int, str, Optional[int]]]:
+    return [
+        participant
+        for participant in _summarise_participants(labelled_report.participants)
+        if participant[0] == role
+    ]
+
+
+def test_report_22632_member_who_calls_a_question_number_of_a_report_with_no_reader_is_a_reader() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_22632_TITLE, _REPORT_22632_ROWS)
+
+    assert _get_role_rows(labelled_report, ParticipantRole.READER) == [
+        (
+            ParticipantRole.READER,
+            ParticipantRoleSource.QUESTION_NUMBER_CALL,
+            5,
+            "Mr Liang Eng Hwa (Holland-Bukit Timah)",
+            850,
+        )
+    ]
+    assert _get_person_rows(labelled_report, 850) == [
+        (
+            ParticipantRole.READER,
+            ParticipantRoleSource.QUESTION_NUMBER_CALL,
+            5,
+            "Mr Liang Eng Hwa (Holland-Bukit Timah)",
+            850,
+        )
+    ]
+
+
+def test_report_24068_member_who_calls_a_question_number_of_a_report_with_no_reader_is_a_reader() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_24068_TITLE, _REPORT_24068_ROWS)
+
+    assert _get_role_rows(labelled_report, ParticipantRole.READER) == [
+        (
+            ParticipantRole.READER,
+            ParticipantRoleSource.QUESTION_NUMBER_CALL,
+            4,
+            "Dr Amy Khor Lean Suan (Hong Kah)",
+            739,
+        )
+    ]
+
+
+def test_report_30117_member_who_calls_a_number_the_minister_answers_through_his_proxy_is_a_reader() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_30117_TITLE, _REPORT_30117_ROWS)
+
+    assert _get_person_rows(labelled_report, 432) == [
+        (
+            ParticipantRole.READER,
+            ParticipantRoleSource.QUESTION_NUMBER_CALL,
+            2,
+            "Mr Chandra Das",
+            432,
+        )
+    ]

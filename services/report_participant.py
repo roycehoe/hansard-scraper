@@ -110,6 +110,7 @@ _NOT_ASKED_ALOUD_PATTERN = re.compile(
     r"|appears\s+to\s+be\s+absent|does\s+not\s+appear\s+to\s+be\s+here)\b",
     re.IGNORECASE,
 )
+_PROXY_PATTERN = re.compile(r"\bthrough\s+(?:his|her)\s+proxy\b", re.IGNORECASE)
 _STOOD_OVER_LIST_TITLE_PATTERN = re.compile(
     r"^\s*questions for oral answer stood over\b", re.IGNORECASE
 )
@@ -426,6 +427,54 @@ def _build_second_reader_participants(
                 )
             )
     return second_reader_participants
+
+
+def _build_number_call_reader_participants(
+    participant_rows: list[_ParticipantRow],
+    called_question_ordinals: frozenset[int],
+    chair_ordinals: frozenset[int],
+    asker_participants: list[ParticipantCandidate],
+    reader_participants: list[ParticipantCandidate],
+    first_answer_ordinal: Optional[int],
+    held_person_keys: frozenset[Union[int, str]],
+) -> list[ParticipantCandidate]:
+    if reader_participants:
+        return []
+    if not asker_participants:
+        first_answer_row = next(
+            (
+                participant_row
+                for participant_row in participant_rows
+                if participant_row.ordinal == first_answer_ordinal
+            ),
+            None,
+        )
+        if first_answer_row is None or not _PROXY_PATTERN.search(
+            first_answer_row.transcript
+        ):
+            return []
+    number_call_reader_participants: list[ParticipantCandidate] = []
+    number_call_person_keys = set(held_person_keys)
+    for participant_row in participant_rows:
+        if (
+            participant_row.ordinal not in called_question_ordinals
+            or participant_row.ordinal in chair_ordinals
+            or participant_row.person_key in number_call_person_keys
+            or (
+                first_answer_ordinal is not None
+                and participant_row.ordinal >= first_answer_ordinal
+            )
+        ):
+            continue
+        number_call_person_keys.add(participant_row.person_key)
+        number_call_reader_participants.append(
+            _build_other_role_participant(
+                participant_row,
+                ParticipantRole.READER,
+                ParticipantRoleSource.QUESTION_NUMBER_CALL,
+            )
+        )
+    return number_call_reader_participants
 
 
 def _is_chair_name_call(transcript: str) -> bool:
@@ -928,11 +977,11 @@ def get_participants(
         _get_person_key(participant.speaker_id, participant.printed_name)
         for participant in asker_participants
     )
+    called_question_ordinals = _get_called_question_ordinals(
+        participant_rows, asker_person_keys
+    )
     question_ordinals = _get_question_ordinals(
-        (
-            question_row_ordinals
-            | _get_called_question_ordinals(participant_rows, asker_person_keys)
-        )
+        (question_row_ordinals | called_question_ordinals)
         - _get_government_row_ordinals(participant_rows, speaker_id_to_office),
         asker_candidates,
     )
@@ -980,10 +1029,19 @@ def get_participants(
         answerer_person_keys,
         first_question_ordinal,
     )
-    second_reader_participants = _build_second_reader_participants(
+    number_call_reader_participants = _build_second_reader_participants(
         participant_rows,
         reader_participants,
         question_ordinals,
+        first_answer_ordinal,
+        asker_person_keys | reader_person_keys | answerer_person_keys,
+    )
+    number_call_reader_participants += _build_number_call_reader_participants(
+        participant_rows,
+        called_question_ordinals,
+        frozenset(chair_ordinal_to_source),
+        asker_participants,
+        reader_participants,
         first_answer_ordinal,
         asker_person_keys | reader_person_keys | answerer_person_keys,
     )
@@ -994,7 +1052,7 @@ def get_participants(
         reader_person_keys=reader_person_keys
         | frozenset(
             _get_person_key(participant.speaker_id, participant.printed_name)
-            for participant in second_reader_participants
+            for participant in number_call_reader_participants
         ),
         answerer_person_keys=answerer_person_keys,
         dropped_person_keys=dropped_person_keys,
@@ -1010,7 +1068,7 @@ def get_participants(
             [
                 *asker_participants,
                 *reader_participants,
-                *second_reader_participants,
+                *number_call_reader_participants,
                 *chair_participants,
                 *answerer_participants,
                 *_build_other_participants(participant_rows, report_roles),
