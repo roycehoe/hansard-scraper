@@ -2018,3 +2018,37 @@ def test_title_naming_a_correction_that_is_not_an_addendum_gives_no_correction_s
     title: str,
 ) -> None:
     assert get_question_states(title, [], []) == []
+
+
+_REPORT_22647_TITLE = "INVESTMENTS BY GIC AND TEMASEK HOLDINGS IN UBS AND MERRILL LYNCH"
+_REPORT_22647_ROWS = """
+2 |  | 830 | Mr Inderjit Singh | asked the Minister for Finance (a) what is the rationale for the billion-dollar investments by GIC and
+3 |  | 830 | Mr Inderjit Singh | Temasek Holdings in distressed banks like UBS and Merrill Lynch; (b) whether it was too early to make such investments especially since the full effect of the sub-prime crisis has yet to be quantified; and (c) whether he can assure the House that Singapore will not lose the money pumped into these two banks or its standing internationally.
+4 |  | 889 | The Minister for Finance (Mr Tharman Shanmugaratnam) | Mr Speaker, Sir, Mr Inderjit Singh asked about the rationale for recent investments by GIC and Temasek in UBS and Merrill Lynch respectively, and asked whether it is premature to make such investments when the full effects of the sub-prime crisis have yet to be quantified.
+5 |  | 889 | The Minister for Finance (Mr Tharman Shanmugaratnam) | Let me first state that GIC and Temasek make their investment decisions independent of each other, and of the Government. They make these decisions for commercial reasons, based on their own calculations, free of any influence from Government.
+"""
+
+
+def test_report_22647_speech_rows_with_no_kind_still_give_the_answerer() -> None:
+    labelled_report = _label_report(
+        _REPORT_22647_TITLE,
+        _REPORT_22647_ROWS,
+        printed_name_to_speaker_id={"Mr Inderjit Singh": 830},
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            2,
+            "Mr Inderjit Singh",
+            830,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            4,
+            "The Minister for Finance (Mr Tharman Shanmugaratnam)",
+            889,
+        ),
+    ]

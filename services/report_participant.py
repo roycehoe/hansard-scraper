@@ -109,7 +109,7 @@ def _get_participant_rows(
         )
         for speech_asker_row in speech_asker_rows
         if speech_asker_row.speaker is not None
-        and speech_asker_row.kind == SpeechKind.SPEECH
+        and speech_asker_row.kind in (None, SpeechKind.SPEECH)
     ]
 
 
