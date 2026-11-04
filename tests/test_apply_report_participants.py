@@ -338,6 +338,9 @@ def _seed_reports(session: Session) -> _SeededReports:
                 "Two more will follow.",
             ),
             _build_speech(
+                annex_report, 1, None, None, SpeechKind.DOCUMENT_TEXT, "Annex A"
+            ),
+            _build_speech(
                 motion_report,
                 1,
                 "Mr Pritam Singh",

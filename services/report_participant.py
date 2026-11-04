@@ -1190,7 +1190,7 @@ def get_not_a_question_state(
     asker_candidates: list[AskerCandidate],
     question_row_ordinals: frozenset[int],
 ) -> Optional[QuestionStateCandidate]:
-    if asker_candidates:
+    if asker_candidates or not speech_asker_rows:
         return None
     if _get_correction_state(title, speech_asker_rows) is not None:
         return None

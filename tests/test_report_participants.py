@@ -1673,7 +1673,12 @@ def test_report_25173_annex_title_is_not_a_question() -> None:
 def test_title_of_an_annex_or_appendix_with_a_question_row_and_no_asker_is_not_a_question(
     title: str,
 ) -> None:
-    not_a_question_state = get_not_a_question_state(title, [], [], frozenset({1}))
+    not_a_question_state = get_not_a_question_state(
+        title,
+        _parse_rows("1 | DOCUMENT_TEXT |  |  | To ask the Minister about it."),
+        [],
+        frozenset({1}),
+    )
 
     assert not_a_question_state is not None
     assert not_a_question_state.state == QuestionState.NOT_A_QUESTION
@@ -1685,7 +1690,7 @@ def test_title_with_a_word_that_only_contains_table_or_list_is_a_question() -> N
     assert (
         get_not_a_question_state(
             "Enforcement Actions Against Table Littering at Public Dining Spaces Since Implementation",
-            [],
+            _parse_rows("1 | DOCUMENT_TEXT |  |  | To ask the Minister about it."),
             [],
             frozenset({1}),
         )
@@ -4153,5 +4158,37 @@ def test_report_39956_answer_supplied_by_an_absent_minister_is_not_asked_aloud()
             QuestionState.NOT_ASKED_ALOUD,
             "The Assistant Minister for Education (Inche Mohamed Sidik Bin Haji Abdul Hamid), who was to have answered the question, was absent when the question was called, and has supplied the following answer:-",
             6,
+        )
+    ]
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Release of Information Related to Deeds of Gifts",
+        "MISSELLING OF STRUCTURED PRODUCTS BY FINANCIAL INSTITUTIONS",
+        "SPECIAL OLYMPICS",
+    ],
+)
+def test_reports_15040_22165_24298_with_no_speech_rows_get_no_state(
+    title: str,
+) -> None:
+    labelled_report = _label_report(title, "")
+
+    assert labelled_report.participants == []
+    assert labelled_report.states == []
+
+
+def test_report_35030_heading_only_report_is_still_not_a_question() -> None:
+    labelled_report = _label_report(
+        "INDUSTRIAL DEVELOPMENT SCHOLARSHIP SCHEME",
+        "1 | DOCUMENT_TEXT |  |  | INDUSTRIAL DEVELOPMENT SCHOLARSHIP SCHEME (Cols 1309-1310)",
+    )
+
+    assert _summarise_states(labelled_report.states) == [
+        (
+            QuestionState.NOT_A_QUESTION,
+            "INDUSTRIAL DEVELOPMENT SCHOLARSHIP SCHEME",
+            None,
         )
     ]
