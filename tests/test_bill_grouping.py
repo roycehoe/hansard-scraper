@@ -1,7 +1,8 @@
 from datetime import datetime
 
 from crud.report import ReportSittingDateTitleRow
-from services.bill import BillGrouping, get_title_key, group_bills
+from services.bill import BillGrouping, group_bills
+from utils.title_key import get_title_key
 
 
 def _report_row(

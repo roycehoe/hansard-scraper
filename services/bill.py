@@ -3,13 +3,13 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from crud.report import ReportSittingDateTitleRow
+from utils.title_key import get_title_key
 
 THIRD_READING_PATTERN = r'^\W*[^"]{0,150}\ybill\y[^"]{0,120}\yread (a|the) third time'
 NOT_THIRD_READING_PATTERNS = ("be now read", r"^\W*(I|now|sir|mr)\y")
 
 _MAX_DAYS_BETWEEN_REPORTS = 366
 _BILL_WORD_PATTERN = re.compile(r"\bbill\b", re.IGNORECASE)
-_NON_KEY_PATTERN = re.compile(r"[\W_]+")
 
 
 @dataclass(frozen=True)
@@ -36,10 +36,6 @@ class _OpenBill:
     last_sitting_date: datetime
     is_passed: bool
     report_ids: list[int]
-
-
-def get_title_key(title: str) -> str:
-    return _NON_KEY_PATTERN.sub("", title.lower())
 
 
 def _should_start_new_bill(open_bill: _OpenBill, sitting_date: datetime) -> bool:

@@ -56,3 +56,7 @@ class HansardTestGuardError(HansardError):
 
 class HansardHandCheckError(HansardError):
     pass
+
+
+class HansardActHistoryError(HansardError):
+    pass
