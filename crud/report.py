@@ -2,10 +2,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable, Optional, Sequence
 
-from sqlalchemy import text
-from sqlmodel import Session, col, delete, func, select
+from sqlalchemy import ColumnElement, text
+from sqlmodel import Session, col, delete, exists, func, select
 
 from database.report import Report
+from database.report_participant import ReportParticipant
+from database.report_question_state import ReportQuestionState
+from enums import ParticipantRole, QuestionState
 from utils.column_numbers import ReportColumnRange
 from utils.text import TextChange
 
@@ -17,6 +20,20 @@ class ReportHeaderRow:
     parliament_number: int
     sitting_date: datetime
     title: str
+
+
+@dataclass(frozen=True)
+class ReportFrameRow:
+    id: int
+    report_id: int
+    parliament_number: int
+    report_version: str
+    report_type: str
+    sitting_date: datetime
+    sprs_report_id: str
+    first_ordinal: Optional[int]
+    speaker_id: Optional[int]
+    printed_name: Optional[str]
 
 
 @dataclass(frozen=True)
@@ -70,6 +87,16 @@ class ReportTitleRow:
     original_title: str
     title: str
     subtitle: Optional[str]
+
+
+def _get_frame_order_columns() -> list[ColumnElement]:
+    return [
+        Report.parliament_number,
+        col(Report.report_version).collate("C"),
+        col(Report.report_type).collate("C"),
+        Report.sitting_date,
+        col(Report.report_id).collate("C"),
+    ]
 
 
 class CRUDReport:
@@ -377,3 +404,122 @@ class CRUDReport:
             execution_options={"isolation_level": "AUTOCOMMIT"}
         ).execute(statement)
         self.session.commit()
+
+    def get_frame_rows_by_participant_role(
+        self, role: ParticipantRole
+    ) -> list[ReportFrameRow]:
+        statement = (
+            select(
+                ReportParticipant.id,
+                Report.id,
+                Report.parliament_number,
+                Report.report_version,
+                Report.report_type,
+                Report.sitting_date,
+                Report.report_id,
+                ReportParticipant.first_ordinal,
+                ReportParticipant.speaker_id,
+                ReportParticipant.printed_name,
+            )
+            .join(ReportParticipant, ReportParticipant.report_id == Report.id)
+            .where(ReportParticipant.role == role)
+            .order_by(
+                *_get_frame_order_columns(),
+                ReportParticipant.first_ordinal,
+                ReportParticipant.id,
+            )
+        )
+        return [ReportFrameRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_frame_rows_by_participant_role_and_first_ordinal_above_report_minimum(
+        self, role: ParticipantRole
+    ) -> list[ReportFrameRow]:
+        report_minimum = (
+            select(
+                ReportParticipant.report_id,
+                func.min(ReportParticipant.first_ordinal).label("minimum_ordinal"),
+            )
+            .where(ReportParticipant.role == role)
+            .group_by(col(ReportParticipant.report_id))
+            .subquery()
+        )
+        statement = (
+            select(
+                ReportParticipant.id,
+                Report.id,
+                Report.parliament_number,
+                Report.report_version,
+                Report.report_type,
+                Report.sitting_date,
+                Report.report_id,
+                ReportParticipant.first_ordinal,
+                ReportParticipant.speaker_id,
+                ReportParticipant.printed_name,
+            )
+            .join(ReportParticipant, ReportParticipant.report_id == Report.id)
+            .join(
+                report_minimum,
+                report_minimum.c.report_id == ReportParticipant.report_id,
+            )
+            .where(ReportParticipant.role == role)
+            .where(ReportParticipant.first_ordinal > report_minimum.c.minimum_ordinal)
+            .order_by(
+                *_get_frame_order_columns(),
+                ReportParticipant.first_ordinal,
+                ReportParticipant.id,
+            )
+        )
+        return [ReportFrameRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_frame_rows_by_question_state(
+        self, state: QuestionState
+    ) -> list[ReportFrameRow]:
+        statement = (
+            select(
+                Report.id,
+                Report.parliament_number,
+                Report.report_version,
+                Report.report_type,
+                Report.sitting_date,
+                Report.report_id,
+            )
+            .join(ReportQuestionState, ReportQuestionState.report_id == Report.id)
+            .where(ReportQuestionState.state == state)
+            .order_by(*_get_frame_order_columns(), Report.id)
+        )
+        return [
+            ReportFrameRow(row[0], row[0], *row[1:], None, None, None)
+            for row in self.session.exec(statement).all()
+        ]
+
+    def get_frame_rows_by_participant_roles_present_and_participant_role_absent_and_question_state_absent(
+        self, present_roles: list[ParticipantRole], absent_role: ParticipantRole
+    ) -> list[ReportFrameRow]:
+        statement = (
+            select(
+                Report.id,
+                Report.parliament_number,
+                Report.report_version,
+                Report.report_type,
+                Report.sitting_date,
+                Report.report_id,
+            )
+            .where(
+                exists().where(
+                    ReportParticipant.report_id == Report.id,
+                    col(ReportParticipant.role).in_(present_roles),
+                )
+            )
+            .where(
+                ~exists().where(
+                    ReportParticipant.report_id == Report.id,
+                    ReportParticipant.role == absent_role,
+                )
+            )
+            .where(~exists().where(ReportQuestionState.report_id == Report.id))
+            .order_by(*_get_frame_order_columns(), Report.id)
+        )
+        return [
+            ReportFrameRow(row[0], row[0], *row[1:], None, None, None)
+            for row in self.session.exec(statement).all()
+        ]
