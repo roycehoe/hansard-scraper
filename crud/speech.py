@@ -2,12 +2,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable, Optional
 
-from sqlalchemy import text
+from sqlalchemy import not_, text
 from sqlmodel import Session, col, delete, func, select
 
 from database.report import Report
 from database.speech import Speech
-from enums import ColumnNote, SpeechKind
+from enums import ColumnNote, ReportType, SpeechKind
 from utils.column_numbers import SpeechColumnNote
 from utils.speech_update import SpeechUpdate
 from utils.text import TextChange
@@ -244,6 +244,24 @@ class CRUDSpeech:
             .distinct()
             .where(col(Speech.transcript).regexp_match(pattern))
         )
+        return list(self.session.exec(statement).all())
+
+    def get_report_ids_by_report_types_and_transcript_regex_and_transcript_not_regexes(
+        self,
+        report_types: tuple[ReportType, ...],
+        pattern: str,
+        not_patterns: tuple[str, ...],
+    ) -> list[int]:
+        statement = (
+            select(Speech.report_id)
+            .distinct()
+            .where(col(Speech.report_type).in_(report_types))
+            .where(col(Speech.transcript).regexp_match(pattern, flags="i"))
+        )
+        for not_pattern in not_patterns:
+            statement = statement.where(
+                not_(col(Speech.transcript).regexp_match(not_pattern, flags="i"))
+            )
         return list(self.session.exec(statement).all())
 
     def get_report_ids_by_report_ids_and_speaker_id_null_and_speaker_regex(

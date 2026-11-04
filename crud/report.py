@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlmodel import Session, col, delete, func, select
 
 from database.report import Report
+from enums import ReportType
 from utils.column_numbers import ReportColumnRange
 from utils.text import TextChange
 
@@ -15,6 +16,13 @@ class ReportHeaderRow:
     id: int
     report_type: str
     parliament_number: int
+    sitting_date: datetime
+    title: str
+
+
+@dataclass(frozen=True)
+class ReportSittingDateTitleRow:
+    id: int
     sitting_date: datetime
     title: str
 
@@ -159,6 +167,19 @@ class CRUDReport:
             Report.title,
         )
         return [ReportHeaderRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_sitting_date_title_rows_by_report_types(
+        self, report_types: tuple[ReportType, ...]
+    ) -> list[ReportSittingDateTitleRow]:
+        statement = (
+            select(Report.id, Report.sitting_date, Report.title)
+            .where(col(Report.report_type).in_(report_types))
+            .order_by(col(Report.sitting_date), col(Report.id))
+        )
+        return [
+            ReportSittingDateTitleRow(*row)
+            for row in self.session.exec(statement).all()
+        ]
 
     def delete_by_ids(self, report_ids: list[int]) -> int:
         statement = delete(Report).where(col(Report.id).in_(report_ids))
