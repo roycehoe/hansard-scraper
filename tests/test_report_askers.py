@@ -83,6 +83,7 @@ def test_stood_line_credits_the_filer_and_swallows_the_filers_to_ask_row() -> No
             speaker_id=None,
             reader_printed_name="Mr Christopher de Souza (Holland-Bukit Timah)",
             reader_speaker_id=1144,
+            reader_row_ordinal=3,
         )
     ]
 
@@ -131,6 +132,7 @@ def test_stood_line_over_unclassified_rows_takes_the_member_who_reads_the_number
             speaker_id=None,
             reader_printed_name="Ms Denise Phua Lay Peng (Jalan Besar)",
             reader_speaker_id=1148,
+            reader_row_ordinal=3,
         )
     ]
 
@@ -172,6 +174,7 @@ def test_stood_line_before_a_document_text_question_takes_the_reader_of_its_numb
             speaker_id=None,
             reader_printed_name="Mdm Halimah Yacob (Jurong)",
             reader_speaker_id=824,
+            reader_row_ordinal=3,
         )
     ]
 
@@ -211,6 +214,7 @@ def test_read_out_on_behalf_of_the_filer_is_the_reader() -> None:
             speaker_id=None,
             reader_printed_name="Mr Azmoon Ahmad (Nominated Member)",
             reader_speaker_id=1022,
+            reader_row_ordinal=3,
         )
     ]
 
@@ -250,6 +254,7 @@ def test_read_out_that_opens_with_mr_speaker_is_the_reader() -> None:
             speaker_id=None,
             reader_printed_name="Mr Zaqy Mohamad (Chua Chu Kang)",
             reader_speaker_id=1017,
+            reader_row_ordinal=3,
         )
     ]
 
@@ -289,6 +294,7 @@ def test_read_out_with_a_different_number_is_no_reader() -> None:
             speaker_id=None,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         )
     ]
 
@@ -344,6 +350,7 @@ def test_stood_candidate_comes_before_another_members_asked_row_and_keeps_the_re
             speaker_id=None,
             reader_printed_name="Dr Tan Wu Meng (Jurong)",
             reader_speaker_id=1224,
+            reader_row_ordinal=4,
         ),
         AskerCandidate(
             row_ordinal=3,
@@ -352,6 +359,7 @@ def test_stood_candidate_comes_before_another_members_asked_row_and_keeps_the_re
             speaker_id=1146,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         ),
     ]
 
@@ -386,6 +394,7 @@ def test_stood_line_with_no_question_row_takes_the_first_read_out_when_no_number
             speaker_id=None,
             reader_printed_name="Mr Sam Tan Chin Siong (Tanjong Pagar)",
             reader_speaker_id=884,
+            reader_row_ordinal=2,
         )
     ]
 
@@ -425,6 +434,7 @@ def test_stood_line_takes_no_reader_from_beyond_the_next_stood_line() -> None:
             speaker_id=None,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         ),
         AskerCandidate(
             row_ordinal=2,
@@ -433,6 +443,7 @@ def test_stood_line_takes_no_reader_from_beyond_the_next_stood_line() -> None:
             speaker_id=None,
             reader_printed_name="Mr Yeo Guat Kwang (Aljunied)",
             reader_speaker_id=800,
+            reader_row_ordinal=3,
         ),
     ]
 
@@ -531,6 +542,7 @@ def test_report_35981_member_asked_by_the_member_for_mountbatten_is_the_reader()
             speaker_id=None,
             reader_printed_name="Mr Hwang Soo Jin",
             reader_speaker_id=87,
+            reader_row_ordinal=5,
         )
     ]
 
@@ -570,6 +582,7 @@ def test_report_37878_member_asking_in_the_absence_of_the_filer_is_the_reader() 
             speaker_id=None,
             reader_printed_name="Mr Ng Yeow Chong (Mountbatten)",
             reader_speaker_id=42,
+            reader_row_ordinal=3,
         )
     ]
 
@@ -632,6 +645,7 @@ def test_report_38031_member_who_puts_the_question_because_the_filer_is_absent_i
             speaker_id=None,
             reader_printed_name="Inche Mohd. Ariff Bin Suradi",
             reader_speaker_id=40,
+            reader_row_ordinal=6,
         )
     ]
 
@@ -673,6 +687,7 @@ def test_minister_saying_he_was_asked_by_my_minister_to_reply_is_not_the_reader(
             speaker_id=None,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         )
     ]
 
@@ -719,6 +734,7 @@ def test_numbered_read_out_is_preferred_over_an_earlier_absent_filer_read_out() 
             speaker_id=None,
             reader_printed_name="Inche Mohd. Ariff Bin Suradi",
             reader_speaker_id=40,
+            reader_row_ordinal=4,
         )
     ]
 
@@ -814,6 +830,7 @@ def test_stood_line_naming_three_filers_credits_each_and_a_filer_reading_out_is_
             speaker_id=None,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         )
         for printed_name in (
             "Ms Indranee Rajah",
@@ -858,6 +875,7 @@ def test_stood_over_question_credits_the_filer_with_no_reader() -> None:
             speaker_id=None,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         )
     ]
 
@@ -904,6 +922,7 @@ def test_stood_line_that_prints_no_name_leaves_the_next_to_ask_row_to_its_own_me
             speaker_id=77,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         )
     ]
 
@@ -966,6 +985,7 @@ def test_footnote_form_of_a_stood_line_credits_no_one_and_the_asked_row_is_kept(
             speaker_id=1383,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         )
     ]
 
@@ -991,6 +1011,7 @@ def test_stood_line_name_ends_before_text_that_runs_on() -> None:
             speaker_id=None,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         )
     ]
 
@@ -1030,6 +1051,7 @@ def test_stood_name_keeps_its_trailing_dot() -> None:
             speaker_id=None,
             reader_printed_name="Dr Ho Tat Kin (Boon Teck)",
             reader_speaker_id=370,
+            reader_row_ordinal=3,
         )
     ]
 
@@ -1076,6 +1098,7 @@ def test_asked_row_right_after_a_stood_line_is_kept_and_the_reader_follows_it() 
             speaker_id=None,
             reader_printed_name="Er Dr Lee Bee Wah",
             reader_speaker_id=954,
+            reader_row_ordinal=4,
         ),
         AskerCandidate(
             row_ordinal=2,
@@ -1084,6 +1107,7 @@ def test_asked_row_right_after_a_stood_line_is_kept_and_the_reader_follows_it() 
             speaker_id=920,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         ),
         AskerCandidate(
             row_ordinal=3,
@@ -1092,6 +1116,7 @@ def test_asked_row_right_after_a_stood_line_is_kept_and_the_reader_follows_it() 
             speaker_id=916,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         ),
     ]
 
@@ -1124,6 +1149,7 @@ def test_name_in_a_row_without_a_speaker_credits_the_named_member() -> None:
             speaker_id=None,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         )
     ]
 
@@ -1181,6 +1207,7 @@ def test_asked_line_run_together_as_askedthe_credits_the_member() -> None:
             speaker_id=994,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         )
     ]
 
@@ -1206,6 +1233,7 @@ def test_asked_line_after_a_private_notice_marker_credits_the_member() -> None:
             speaker_id=1377,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         )
     ]
 
@@ -1231,6 +1259,7 @@ def test_ask_the_minister_line_credits_the_member() -> None:
             speaker_id=882,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         )
     ]
 
@@ -1264,6 +1293,7 @@ def test_asked_line_with_no_kind_credits_the_member() -> None:
             speaker_id=830,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         )
     ]
 
@@ -1312,6 +1342,7 @@ def test_to_ask_row_labelled_mr_speaker_after_a_stood_line_credits_only_the_file
             speaker_id=None,
             reader_printed_name="Dr Aline K. Wong",
             reader_speaker_id=415,
+            reader_row_ordinal=4,
         )
     ]
 
@@ -1358,6 +1389,7 @@ def test_to_ask_row_labelled_mr_speaker_with_no_stood_line_credits_no_one() -> N
             speaker_id=1349,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         )
     ]
 
@@ -1404,6 +1436,7 @@ def test_second_to_ask_row_of_a_stood_block_is_its_own_candidate() -> None:
             speaker_id=None,
             reader_printed_name="Mr Patrick Tay Teck Guan (Nee Soon)",
             reader_speaker_id=984,
+            reader_row_ordinal=4,
         ),
         AskerCandidate(
             row_ordinal=3,
@@ -1412,6 +1445,7 @@ def test_second_to_ask_row_of_a_stood_block_is_its_own_candidate() -> None:
             speaker_id=987,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         ),
     ]
 
@@ -1456,6 +1490,7 @@ def test_to_ask_rows_that_stood_over_after_an_asked_row_credit_no_one() -> None:
             speaker_id=205,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         ),
     ]
 
@@ -1630,6 +1665,7 @@ def test_build_report_askers_keeps_an_unresolved_name_once_and_apart_from_other_
             speaker_id=None,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         ),
         AskerCandidate(
             row_ordinal=2,
@@ -1638,6 +1674,7 @@ def test_build_report_askers_keeps_an_unresolved_name_once_and_apart_from_other_
             speaker_id=None,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         ),
         AskerCandidate(
             row_ordinal=3,
@@ -1646,6 +1683,7 @@ def test_build_report_askers_keeps_an_unresolved_name_once_and_apart_from_other_
             speaker_id=None,
             reader_printed_name=None,
             reader_speaker_id=None,
+            reader_row_ordinal=None,
         ),
     ]
 

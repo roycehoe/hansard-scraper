@@ -68,6 +68,7 @@ class AskerCandidate:
     speaker_id: Optional[int]
     reader_printed_name: Optional[str]
     reader_speaker_id: Optional[int]
+    reader_row_ordinal: Optional[int]
 
 
 @dataclass(frozen=True)
@@ -199,6 +200,7 @@ def _get_stood_candidates(
                 None,
                 None,
                 None,
+                None,
             )
             for printed_name in stood_line.printed_names
         ]
@@ -210,6 +212,7 @@ def _get_stood_candidates(
             None,
             reader_row.speaker,
             reader_row.speaker_id,
+            reader_row.ordinal,
         )
         for printed_name in stood_line.printed_names
     ]
@@ -234,6 +237,7 @@ def _get_speaker_row_candidate(
             speech_asker_row.speaker_id,
             None,
             None,
+            None,
         )
     if not is_to_ask_line_counted:
         return None
@@ -243,6 +247,7 @@ def _get_speaker_row_candidate(
             ReportAskerSource.TO_ASK_LINE,
             speech_asker_row.speaker,
             speech_asker_row.speaker_id,
+            None,
             None,
             None,
         )
@@ -270,6 +275,7 @@ def _get_name_in_text_candidate(
         speech_asker_row.ordinal,
         ReportAskerSource.NAME_IN_TEXT,
         printed_name,
+        None,
         None,
         None,
         None,
