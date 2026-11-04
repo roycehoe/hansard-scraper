@@ -1,9 +1,18 @@
+import json
 from typing import Optional
 
 import pytest
 
+from crud.sitting import SittingAttendanceTextRow
+from database.speaker import Speaker
 from enums import OfficeClass
-from services.attendance import get_entry_office, split_entry_line
+from services.attendance import (
+    EntryOffice,
+    build_speaker_lookups,
+    get_entry_office,
+    get_sitting_entry_offices,
+    split_entry_line,
+)
 from utils.office import (
     HeaderEntry,
     get_answering_for_printed,
@@ -769,3 +778,87 @@ def test_government_office_names_a_minister_secretary_or_law_officer(
     office_printed: str, expected_is_government: bool
 ) -> None:
     assert is_government_office(office_printed) is expected_is_government
+
+
+def _build_sitting_attendance_text_row(
+    markdown_content: Optional[str], attendance_list: Optional[str]
+) -> SittingAttendanceTextRow:
+    return SittingAttendanceTextRow(
+        id=1,
+        sitting_date="2-4-2025",
+        parlement_no=14,
+        volume_no=None,
+        markdown_content=markdown_content,
+        attendance_list=attendance_list,
+    )
+
+
+_ENTRY_OFFICE_LOOKUPS = build_speaker_lookups(
+    [
+        Speaker(
+            name="Chee Hong Tat",
+            party="PAP",
+            is_legislative_assembly=False,
+            parliament_number=14,
+        )
+    ]
+)
+
+
+def test_markdown_sitting_gives_the_office_of_each_present_and_absent_entry_that_has_one() -> (
+    None
+):
+    markdown_content = (
+        "PRESENT:\n"
+        "Mr Chee Hong Tat (Bishan-Toa Payoh), Senior Minister of State for Finance.\n"
+        "Mr Pritam Singh (Aljunied).\n"
+        "ABSENT:\n"
+        "Mr Nobody Known (Nowhere), Minister for Health.\n"
+    )
+
+    entry_offices = get_sitting_entry_offices(
+        _build_sitting_attendance_text_row(markdown_content, None),
+        _ENTRY_OFFICE_LOOKUPS,
+    )
+
+    assert entry_offices == [
+        EntryOffice("Chee Hong Tat", "Senior Minister of State for Finance"),
+        EntryOffice("Nobody Known", "Minister for Health"),
+    ]
+
+
+def test_list_sitting_skips_a_leave_note_a_missing_name_and_an_entry_without_an_office() -> (
+    None
+):
+    attendance_list = json.dumps(
+        [
+            {
+                "mpName": "Mr Chee Hong Tat (Bishan-Toa Payoh), Senior Minister of State for Finance. ",
+                "attendance": True,
+            },
+            {"mpName": "Mr Pritam Singh (Aljunied)", "attendance": True},
+            {
+                "mpName": "For information on permission given to Members for leave of absence, Minister for Health",
+                "attendance": False,
+            },
+            {"mpName": None, "attendance": True},
+        ]
+    )
+
+    entry_offices = get_sitting_entry_offices(
+        _build_sitting_attendance_text_row(None, attendance_list),
+        _ENTRY_OFFICE_LOOKUPS,
+    )
+
+    assert entry_offices == [
+        EntryOffice("Chee Hong Tat", "Senior Minister of State for Finance")
+    ]
+
+
+def test_sitting_with_neither_markdown_nor_a_list_gives_no_entry_offices() -> None:
+    assert (
+        get_sitting_entry_offices(
+            _build_sitting_attendance_text_row(None, None), _ENTRY_OFFICE_LOOKUPS
+        )
+        == []
+    )

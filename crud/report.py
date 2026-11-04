@@ -50,7 +50,17 @@ class ReportAskerReportRow:
     sitting_date: datetime
 
 
+@dataclass(frozen=True)
+class ReportParticipantReportRow:
+    id: int
+    parliament_number: int
+    sitting_date: datetime
+    title: str
+    mps_speaking_header: Optional[str]
+
+
 _STREAM_BATCH = 200
+_MPS_SPEAKING_HEADER_PATTERN = r"MPs Speaking:\|?([^\n]*)"
 
 
 @dataclass(frozen=True)
@@ -91,6 +101,14 @@ class CRUDReport:
 
     def get_ids(self) -> list[int]:
         statement = select(col(Report.id)).order_by(col(Report.id))
+        return list(self.session.exec(statement).all())
+
+    def get_ids_by_report_types(self, report_types: Sequence[str]) -> list[int]:
+        statement = (
+            select(col(Report.id))
+            .where(col(Report.report_type).in_(report_types))
+            .order_by(col(Report.id))
+        )
         return list(self.session.exec(statement).all())
 
     def get_ids_by_markdown_content_not_null(self) -> list[int]:
@@ -288,6 +306,26 @@ class CRUDReport:
         )
         return [
             ReportAskerReportRow(*row) for row in self.session.exec(statement).all()
+        ]
+
+    def get_participant_report_rows_by_ids_and_report_types(
+        self, report_ids: list[int], report_types: Sequence[str]
+    ) -> list[ReportParticipantReportRow]:
+        statement = (
+            select(
+                Report.id,
+                Report.parliament_number,
+                Report.sitting_date,
+                Report.title,
+                func.substring(Report.markdown_content, _MPS_SPEAKING_HEADER_PATTERN),
+            )
+            .where(col(Report.id).in_(report_ids))
+            .where(col(Report.report_type).in_(report_types))
+            .order_by(Report.id)
+        )
+        return [
+            ReportParticipantReportRow(*row)
+            for row in self.session.exec(statement).all()
         ]
 
     def set_column_ranges_bulk(

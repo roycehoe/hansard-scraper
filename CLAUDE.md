@@ -157,7 +157,7 @@ Every script that calls `validate_can_write` ends a `--commit` run with `vacuum_
 
 A write that adds, rewrites or deletes speech rows of an older-system report (Parliaments 0 to 11) also sets their column numbers again, so `speech.column_start` and its note never go stale: `apply_coverage_refill.py`, `apply_language_note_close_marks.py` and `apply_footnote_markers.py` run the column pass inside their own write, and any other such write, the speech fidelity loop's ship tools included, ends with `python -m scripts.apply_column_numbers --commit --report-id ...` for the reports it touched.
 
-A write that adds, rewrites, deletes or relinks speech rows of a parliamentary question report (oral-answer, written-answer, written-answer-na) ends with `python -m scripts.apply_report_askers --commit --report-id ...` for the reports it touched.
+A write that adds, rewrites, deletes or relinks speech rows of a parliamentary question report (oral-answer, written-answer, written-answer-na) ends with `python -m scripts.apply_report_askers --commit --report-id ...` and then `python -m scripts.apply_report_participants --commit --report-id ...` for the reports it touched.
 
 The scripts:
 
@@ -181,6 +181,7 @@ The scripts:
 - `count_column_coverage.py`: read-only count, by system and Parliament, of the reports whose raw HTML holds "Column: N" markers, and of the stored speech rows `utils/column_numbers.py` gives a start column; checks each report range against the `Start_Col` and `End_Col` of the report head; run as a module
 - `apply_column_numbers.py`: sets `report.column_start` and `column_end` and each speech row's `column_start`, `column_note` and `column_suggested` from the column markers in the raw HTML, through `populate/column_numbers.py`; `--report-id` limits it to the reports given; checks the stored counts by Parliament against its plan before it commits; a dry run unless `--commit`; run as a module
 - `apply_report_askers.py`: stores the askers of each parliamentary question report (oral-answer, written-answer, written-answer-na) in `report_asker`, through `populate/report_askers.py`: finds them from the report's speech rows with the four rules of `services/report_asker.py`, resolves the printed names of a stood line and of a name in text as stage 8 does, and deletes and rewrites the rows of each report it plans; `--report-id` limits it to the reports given; checks the stored counts by Parliament group and source against its plan before it commits; a dry run unless `--commit`; run as a module
+- `apply_report_participants.py`: stores the participants and question states of each parliamentary question report (oral-answer, written-answer, written-answer-na) in `report_participant` and `report_question_state`, through `populate/report_participants.py`: labels every person of the report from its speech rows with `services/report_participant.py`, takes each person's office from the first source that has one (the report's label, its MPs Speaking header, the sitting's attendance entry, a same-day label, the Parliament's most common label), and deletes and rewrites both tables' rows for each report it plans; `--report-id` limits it to the reports given; checks the stored counts by Parliament group, role, role source, office source and state against its plan, and the asker, absent filer and reader rows against the stored `report_asker` rows, before it commits; a dry run unless `--commit`; run as a module
 - `apply_speaker_overrides.py`: applies `data/speaker_overrides.json` and the party values of `data/colonial_la_members.json` to stored speaker rows, and straightens the apostrophe in party; a dry run unless `--commit`
 - `complete_truncated_attendance.py`: inserts the attendance rows stage 7 builds from a sitting's markdown that its stored rows lack, linked as stage 8 links them, in sittings that already hold rows (stage 7 fills a sitting with none); refuses the whole run when a short sitting holds a stored row stage 7 does not build; a dry run writes the plan file, and `--commit` builds the plan again, refuses unless it equals the reviewed file, and checks each sitting's count before it commits
 - `attendance_fresh_vs_stored.py`: read-only comparison of the attendance rows stage 7 builds now with the stored rows, one JSON line per differing or watched row with its printed source lines; `--batches` writes reader files of at most 150 rows per class; run as a module
@@ -307,6 +308,8 @@ hansard-scraper/
 │   ├── party_affiliation.py
 │   ├── refresh_run.py               # Run rows, with a row lock for the finish
 │   ├── report_asker.py              # Askers of a parliamentary question: add, read by report, delete by report
+│   ├── report_participant.py        # Participants of a parliamentary question: add, read by report, delete by report
+│   ├── report_question_state.py     # Question states of a parliamentary question: add, read by report, delete by report
 │   ├── vacuum.py                    # vacuum_count and VACUUM (ANALYZE) for a table named by the caller
 │   └── speaker.py
 │
@@ -325,6 +328,7 @@ hansard-scraper/
 │   ├── attribution_figures.py       # Reads report and speech rows into the attribution figures
 │   ├── column_numbers.py            # Plans and writes report column ranges and speech start columns and notes, checked by Parliament
 │   ├── report_askers.py             # Plans and writes the askers of parliamentary question reports, checked by Parliament group and source
+│   ├── report_participants.py       # Plans and writes the participants and states of parliamentary question reports, checked by Parliament group and against report_asker
 │   ├── refresh_runs.py              # Daily refresh: fetch, check, add rows, link, record the run, alert
 │   ├── written_tables.py            # VACUUM (ANALYZE) the tables a supervised write script wrote, and check the count rose
 │   └── speakers.py                  # Out-of-band: persist scraped Speaker records
@@ -380,6 +384,7 @@ hansard-scraper/
     ├── count_column_coverage.py
     ├── apply_column_numbers.py
     ├── apply_report_askers.py
+    ├── apply_report_participants.py
     ├── apply_speaker_overrides.py
     ├── complete_truncated_attendance.py
     ├── attendance_fresh_vs_stored.py
