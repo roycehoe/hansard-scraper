@@ -319,3 +319,104 @@ def test_an_exact_title_match_wins_over_a_loose_one() -> None:
     assert get_bill_link(
         "Statute Law Revision Act 2012", date(2012, 5, 7), None, None, bill_lookups
     ) == BillLink(1, BillLinkSource.FIRST_READING_DATE)
+
+
+def _build_bills_read_on_the_same_dates(
+    titles: list[str], first_reading_date: date, third_reading_date: date
+) -> BillLookups:
+    report_rows: list[ReportSittingDateTitleRow] = []
+    third_reading_report_ids: set[int] = set()
+    for report_id, title in enumerate(titles, start=1):
+        report_rows.append(
+            ReportSittingDateTitleRow(
+                report_id * 2 - 1,
+                datetime.combine(first_reading_date, datetime.min.time()),
+                title,
+            )
+        )
+        report_rows.append(
+            ReportSittingDateTitleRow(
+                report_id * 2,
+                datetime.combine(third_reading_date, datetime.min.time()),
+                title,
+            )
+        )
+        third_reading_report_ids.add(report_id * 2)
+    return _build_linkable_bills(report_rows, third_reading_report_ids)
+
+
+def test_a_misprinted_title_links_to_the_one_similar_bill_read_on_both_dates() -> None:
+    bill_lookups = _build_bills_read_on_the_same_dates(
+        ["ANIMALS BILL", "FEEDSTUFFS BILL"], date(1964, 11, 19), date(1965, 6, 16)
+    )
+
+    assert get_bill_link(
+        "Feeding Stuffs Ordinance, 1965",
+        date(1964, 11, 19),
+        None,
+        date(1965, 6, 16),
+        bill_lookups,
+    ) == BillLink(1, BillLinkSource.SIMILAR_TITLE_READING_DATES)
+
+
+def test_a_different_bill_read_on_the_same_dates_is_no_similar_title() -> None:
+    bill_lookups = _build_linkable_bills(
+        [
+            ReportSittingDateTitleRow(1, datetime(1964, 11, 19), "ANIMALS BILL"),
+            ReportSittingDateTitleRow(2, datetime(1965, 6, 16), "ANIMALS BILL"),
+            ReportSittingDateTitleRow(3, datetime(1964, 11, 19), "FEEDSTUFFS BILL"),
+            ReportSittingDateTitleRow(4, datetime(1965, 6, 16), "FEEDSTUFFS BILL"),
+            ReportSittingDateTitleRow(
+                5, datetime(1964, 11, 17), "WILD ANIMALS AND BIRDS BILL"
+            ),
+            ReportSittingDateTitleRow(
+                6, datetime(1965, 6, 16), "WILD ANIMALS AND BIRDS BILL"
+            ),
+        ],
+        {2, 4, 6},
+    )
+
+    assert (
+        get_bill_link(
+            "Animals and Birds Ordinance, 1965",
+            date(1964, 11, 19),
+            None,
+            date(1965, 6, 16),
+            bill_lookups,
+        )
+        is None
+    )
+
+
+def test_two_similar_bills_read_on_both_dates_link_to_nothing() -> None:
+    bill_lookups = _build_bills_read_on_the_same_dates(
+        ["FEEDSTUFFS BILL", "FEEDING STUFF BILL"], date(1964, 11, 19), date(1965, 6, 16)
+    )
+
+    assert (
+        get_bill_link(
+            "Feeding Stuffs Ordinance, 1965",
+            date(1964, 11, 19),
+            None,
+            date(1965, 6, 16),
+            bill_lookups,
+        )
+        is None
+    )
+
+
+def test_a_similar_title_with_no_third_reading_date_links_to_nothing() -> None:
+    bill_lookups = _build_bills_read_on_the_same_dates(
+        ["FEEDSTUFFS BILL"], date(1964, 11, 19), date(1965, 6, 16)
+    )
+
+    assert (
+        get_bill_link(
+            "Feeding Stuffs Ordinance, 1965",
+            date(1964, 11, 19),
+            None,
+            None,
+            bill_lookups,
+        )
+        is None
+    )
