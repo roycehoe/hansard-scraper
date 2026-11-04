@@ -470,6 +470,7 @@ def test_report_27839_plan_resolves_assoc_prof_without_a_second_dot_to_the_label
     )
     scratch_session.commit()
 
+    assert report.id is not None
     plan = get_report_asker_plan(scratch_session, [report.id])
 
     assert [

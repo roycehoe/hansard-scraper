@@ -1189,6 +1189,7 @@ def test_report_27839_assoc_prof_without_a_second_dot_is_one_asker_who_follows_u
     )
     scratch_session.commit()
 
+    assert report.id is not None
     plan = get_report_participant_plan(scratch_session, [report.id])
 
     assert [
