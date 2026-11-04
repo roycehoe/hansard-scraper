@@ -3993,3 +3993,80 @@ def test_report_43982_short_reply_to_the_chairs_call_of_the_next_question_is_no_
             920,
         )
     ]
+
+
+_REPORT_38635_TITLE = "NUMBER OF DETAINEES INTERROGATED SINCE 1-2-63"
+_REPORT_38635_ROWS = """
+1 | SPEECH | 1349 | Mr David Marshall | asked the Minister for Home Affairs how many persons detained since 1st February, 1963 have already been interrogated by the Special Branch.
+2 | SPEECH | 44 | Mr Ong Pang Boon | Mr Speaker, Sir, all the persons detained have had statements taken from them. Because of the number of detainees and the availability of a limited number of skilled inte
+3 | SPEECH | 1349 | Mr David Marshall | One-third? I am sorry, Sir. There is a little confusion. I understood the Minister to say that all of them have been interrogated. Is that inaccurate, Sir?
+4 | SPEECH | 1352 | Mr Speaker | Perhaps the Minister would like to repeat the answer.
+5 | SPEECH | 44 | Mr Ong Pang Boon | Mr Speaker, Sir, all the persons detained have had statements taken from them.
+6 | SPEECH | 1349 | Mr David Marshall | Have had?
+7 | SPEECH | 44 | Mr Ong Pang Boon | Statements only taken from them. But the actual number of persons who have been fully interrogated is only one-third.
+8 | SPEECH | 1349 | Mr David Marshall | Can I ask a supplementary question to that? Are the one-third whose interrogation is completed now allowed access to newspapers and books?
+9 | SPEECH | 44 | Mr Ong Pang Boon | Mr Speaker, Sir, I think since 28th March reading materials have been allowed to all detainees.
+10 | SPEECH | 1349 | Mr David Marshall | Newspapers?
+11 | SPEECH | 1350 | Tun Lim Yew Hock | No, the Petir.
+12 | SPEECH | 44 | Mr Ong Pang Boon | Mr Speaker, Sir, reading materials as brought by the detainees' families.
+"""
+
+_REPORT_39160_TITLE = "CENTRAL PROVIDENT FUND ORDINANCE"
+_REPORT_39160_ROWS = """
+1 | SPEECH | 1349 | Mr David Marshall | asked the Minister for Labour whether he will consider introducing legislation to amend the Central Provident Fund Ordinance to enable a contributor to withdraw the amoun
+2 | SPEECH | 1358 | The Minister for Labour (Inche Ahmad Bin Ibrahim) | Mr Speaker, Sir, the sole object of the Central Provident Fund Ordinance was to set up a fund to make provision for employees in their old age. The fund was not meant to
+3 | SPEECH | 1349 | Mr David Marshall | Mr Speaker, Sir, could we not assist these people? Because if we do not, they will not reach old age to reap it. They will die of starvation. Let a little humanity be int
+4 | SPEECH | 1358 | Inche Ahmad Bin Ibrahim | Mr Speaker, Sir, I do not think anybody is going to die of starvation, as claimed by the Member for Anson. In my opinion, the proper way to help the unemployed is not to
+5 | SPEECH | 4 | Mr Bani | You will have it.
+6 | SPEECH | 1358 | Inche Ahmad Bin Ibrahim | Since the Member for Thomson is very keen on this thing, let me inform him and other Members of the Assembly that my colleague, the Minister for Finance, has told me this
+7 | SPEECH | 1350 | Tun Lim Yew Hock (Cairnhill) | Sir, does the Minister consider that the trade union leaders referred to by him truly represent the trade union movement of Singapore?
+8 | SPEECH | 1358 | Inche Ahmad Bin Ibrahim | I think, Mr Speaker, the trade union leaders referred to by the Member for Cairnhill will themselves have to answer this. It is not for me to tell him.
+9 | SPEECH | 1349 | Mr David Marshall | I am grateful to the Minister for the information he has given, Sir. I am very happy indeed that there is such a scheme in mind. Having put it to the trade union movement
+10 | SPEECH | 1358 | Inche Ahmad Bin Ibrahim | Sir, the Government, as the Prime Minister has said, is trying to do everything possible and when the appropriate time comes, we will do it.
+11 | SPEECH | 4 | Mr Bani | The Minister has quite conveniently disclosed only the part that is useful to him for the purposes of whatever he has been doing. But I wonder if the Minister would be fa
+12 | SPEECH | 1352 | Mr Speaker | Order. Perhaps the question could be worded in such a way as to ask the Minister whether he will table a White Paper. I do not think this House can be detained as long as
+13 | SPEECH | 4 | Mr Bani | All that I want to say is that if the Government wants it, we are prepared to disclose the facts to the public.
+14 | SPEECH | 10 | Mr Chan Sun Wing (Upper Serangoon) | Mr Speaker, Sir, according to what the Minister for Labour has said, he is trying to put the blame on the trade union leaders for the non-establishment of the unemploymen
+21 | SPEECH | 1374 | Dr Sheng Nam Chin | On a point of order, Sir. Mr Speaker, Sir, we are not very fluent in Malay as yet over here - we hope we shall be in a year's time - but it so happens that one of our ear
+"""
+
+
+def test_report_38635_member_whose_only_row_after_the_answer_is_a_short_interjection_is_unlabelled() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_38635_TITLE, _REPORT_38635_ROWS)
+
+    assert _get_person_rows(labelled_report, 1350) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            11,
+            "Tun Lim Yew Hock",
+            1350,
+        )
+    ]
+
+
+def test_report_39160_member_whose_only_row_after_the_answer_is_a_point_of_order_is_unlabelled() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_39160_TITLE, _REPORT_39160_ROWS)
+
+    assert _get_person_rows(labelled_report, 1374) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            21,
+            "Dr Sheng Nam Chin",
+            1374,
+        )
+    ]
+    assert _get_person_rows(labelled_report, 4) == [
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            5,
+            "Mr Bani",
+            4,
+        )
+    ]

@@ -30,6 +30,7 @@ _MAX_CALLED_QUESTION_WORDS = 30
 _MAX_CHAIR_NAME_CALL_WORDS = 8
 _MAX_EXCLAMATION_QUIP_WORDS = 6
 _MAX_INLINE_SPEAKER_LABEL_WORDS = 8
+_MAX_INTERJECTION_WORDS = 4
 _MAX_QUESTION_QUIP_WORDS = 8
 _MAX_REPLY_TO_CHAIR_WORDS = 6
 _MIN_ANSWER_ROW_WORDS = 12
@@ -61,6 +62,7 @@ _PROCEDURAL_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _BARE_REPLY_PATTERN = re.compile(r"^(?:yes|no|correct)\.$", re.IGNORECASE)
+_POINT_OF_ORDER_PATTERN = re.compile(r"point\s+of\s+order", re.IGNORECASE)
 _WORD_PATTERN = re.compile(r"\w+")
 _NON_ANSWER_PHRASE_PATTERN = re.compile(
     r"not\s+supposed\s+to\s+answer|reply\s+on\s+my\s+behalf"
@@ -157,6 +159,7 @@ class _ReportRoles:
     answerer_person_keys: frozenset[Union[int, str]]
     dropped_person_keys: frozenset[Union[int, str]]
     supplementary_person_keys: frozenset[Union[int, str]]
+    procedural_person_keys: frozenset[Union[int, str]]
     first_answer_ordinal: Optional[int]
 
 
@@ -807,6 +810,40 @@ def _get_supplementary_person_keys(
     )
 
 
+def _is_point_of_order_or_interjection(transcript: str) -> bool:
+    text = transcript.strip()
+    if _POINT_OF_ORDER_PATTERN.search(text):
+        return True
+    return len(text.split()) <= _MAX_INTERJECTION_WORDS and not text.endswith("?")
+
+
+def _get_procedural_person_keys(
+    participant_rows: list[_ParticipantRow],
+    question_ordinals: frozenset[int],
+    chair_ordinals: frozenset[int],
+    first_answer_ordinal: Optional[int],
+) -> frozenset[Union[int, str]]:
+    if first_answer_ordinal is None:
+        return frozenset()
+    person_key_to_is_procedural: dict[Union[int, str], bool] = {}
+    for participant_row in participant_rows:
+        if (
+            participant_row.ordinal <= first_answer_ordinal
+            or participant_row.ordinal in question_ordinals
+            or participant_row.ordinal in chair_ordinals
+        ):
+            continue
+        person_key_to_is_procedural[participant_row.person_key] = (
+            person_key_to_is_procedural.get(participant_row.person_key, True)
+            and _is_point_of_order_or_interjection(participant_row.transcript)
+        )
+    return frozenset(
+        person_key
+        for person_key, is_procedural in person_key_to_is_procedural.items()
+        if is_procedural
+    )
+
+
 def _build_other_role_participant(
     participant_row: _ParticipantRow,
     role: ParticipantRole,
@@ -871,7 +908,7 @@ def _build_row_participant(
         )
     if person_key in report_roles.reader_person_keys and not is_after_answer:
         return None
-    if is_after_answer:
+    if is_after_answer and person_key not in report_roles.procedural_person_keys:
         return _build_other_role_participant(
             participant_row,
             ParticipantRole.SUPPLEMENTARY,
@@ -1067,9 +1104,11 @@ def get_participants(
         first_answer_ordinal,
         asker_person_keys | reader_person_keys | answerer_person_keys,
     )
+    report_question_ordinals = question_ordinals | _get_reply_to_call_ordinals(
+        participant_rows
+    )
     report_roles = _ReportRoles(
-        question_ordinals=question_ordinals
-        | _get_reply_to_call_ordinals(participant_rows),
+        question_ordinals=report_question_ordinals,
         chair_ordinals=frozenset(chair_ordinal_to_source),
         asker_person_keys=asker_person_keys,
         reader_person_keys=reader_person_keys
@@ -1081,6 +1120,12 @@ def get_participants(
         dropped_person_keys=dropped_person_keys,
         supplementary_person_keys=_get_supplementary_person_keys(
             eligible_rows, dropped_person_keys, first_answer_ordinal
+        ),
+        procedural_person_keys=_get_procedural_person_keys(
+            participant_rows,
+            report_question_ordinals,
+            frozenset(chair_ordinal_to_source),
+            first_answer_ordinal,
         ),
         first_answer_ordinal=first_answer_ordinal,
     )
