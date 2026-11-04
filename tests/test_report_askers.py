@@ -2451,3 +2451,123 @@ def test_report_27839_assoc_prof_with_a_dot_and_no_dot_is_read_as_a_name_in_text
         (asker_candidate.source, asker_candidate.printed_name)
         for asker_candidate in get_asker_candidates(speech_asker_rows)
     ] == [(ReportAskerSource.NAME_IN_TEXT, "Assoc. Prof Walter Woon")]
+
+
+def test_report_39076_chair_call_with_the_word_question_first_credits_the_member() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(1, SpeechKind.SPEECH, "Mr Speaker", 1352, "Question. Mr Marshall."),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr David Marshall (Anson)",
+            1349,
+            "Question No. 1+, Mr Speaker, Sir.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.EDITORIAL_NOTE,
+            None,
+            None,
+            "+ The Question reads as follows:-",
+        ),
+        _build_row(
+            4,
+            SpeechKind.EDITORIAL_NOTE,
+            None,
+            None,
+            "To ask the Prime Minister whether the statement made by him over Radio Singapore",
+        ),
+        _build_row(
+            5,
+            SpeechKind.SPEECH,
+            "The Prime Minister (Mr Lee Kuan Yew)",
+            30,
+            "not being in his seat -",
+        ),
+    ]
+
+    assert get_asker_candidates(speech_asker_rows) == [
+        AskerCandidate(
+            row_ordinal=1,
+            source=ReportAskerSource.CHAIR_CALL,
+            printed_name="Mr Marshall",
+            speaker_id=1349,
+            reader_printed_name=None,
+            reader_speaker_id=None,
+            reader_row_ordinal=None,
+        )
+    ]
+
+
+def test_report_38885_chair_call_with_the_question_number_credits_the_member() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1, SpeechKind.SPEECH, "Mr Speaker", 1352, "Mr Marshall, Question No. 22."
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr David Marshall",
+            1349,
+            "Sir, the Government Gazette of yesterday's date has answered my question*.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.EDITORIAL_NOTE,
+            None,
+            None,
+            "*The question reads as follows:",
+        ),
+        _build_row(
+            4,
+            SpeechKind.EDITORIAL_NOTE,
+            None,
+            None,
+            "To ask the Minister for Education when will the Commission be appointed.",
+        ),
+    ]
+
+    assert [
+        (
+            asker_candidate.source,
+            asker_candidate.printed_name,
+            asker_candidate.speaker_id,
+        )
+        for asker_candidate in get_asker_candidates(speech_asker_rows)
+    ] == [(ReportAskerSource.CHAIR_CALL, "Mr Marshall", 1349)]
+
+
+def test_chair_call_is_ignored_when_another_member_row_follows_it() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1, SpeechKind.SPEECH, "Mr Speaker", 1352, "Mr Marshall, Question No. 22."
+        ),
+        _build_row(
+            2, SpeechKind.SPEECH, "Mr Lim Kim San", 64, "Sir, the answer is no."
+        ),
+    ]
+
+    assert get_asker_candidates(speech_asker_rows) == []
+
+
+def test_chair_call_is_ignored_when_the_report_has_another_asker() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1, SpeechKind.SPEECH, "Mr Speaker", 1352, "Mr Marshall, Question No. 22."
+        ),
+        _build_row(2, SpeechKind.SPEECH, "Mr David Marshall", 1349, "Sir, I rise."),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Mr Ong Chang Sam",
+            1383,
+            "asked the Minister for Finance what progress has been made.",
+        ),
+    ]
+
+    assert [
+        asker_candidate.source
+        for asker_candidate in get_asker_candidates(speech_asker_rows)
+    ] == [ReportAskerSource.ASKED_LINE]

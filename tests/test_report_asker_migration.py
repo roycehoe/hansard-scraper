@@ -43,3 +43,20 @@ def test_upgrade_creates_only_report_asker() -> None:
     for line in upgrade_sql.splitlines():
         if "UPDATE" in line:
             assert "alembic_version" in line
+
+
+def test_chair_call_migration_only_adds_the_enum_value() -> None:
+    output = io.StringIO()
+    command.upgrade(
+        Config(str(_ALEMBIC_INI), output_buffer=output),
+        "b50219e27a8f:a4c8e1d27f93",
+        sql=True,
+    )
+    upgrade_sql = output.getvalue()
+
+    assert (
+        "ALTER TYPE reportaskersource ADD VALUE IF NOT EXISTS 'CHAIR_CALL'"
+        in upgrade_sql
+    )
+    assert "CREATE" not in upgrade_sql
+    assert "DROP" not in upgrade_sql

@@ -64,6 +64,22 @@ _NAME_IN_TEXT_PATTERN = re.compile(
     + r").{0,80}?)\s+asked\s*the\b",
     re.IGNORECASE,
 )
+_CALLED_NAME_REGEX = (
+    r"(?P<name>(?:Mr|Mrs|Mdm|Madam|Miss|Ms|Dr|Prof|Inche|Encik)\s+"
+    r"[^\W\d_][\w'.\- ]{0,60}?)"
+)
+_CHAIR_CALL_PATTERNS = (
+    re.compile(
+        r"^\W*"
+        + _CALLED_NAME_REGEX
+        + r"\s*,\s*Question\s+(?:No\.?\s*|number\s*)?\d+\s*\.?\s*$",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"^\W*Question\.\s*" + _CALLED_NAME_REGEX + r"\s*\.?\s*$", re.IGNORECASE
+    ),
+)
+_LABEL_BRACKET_PATTERN = re.compile(r"\s*\(.*$")
 
 
 @dataclass(frozen=True)
@@ -385,6 +401,54 @@ def _is_answerer_named_as_asker(
     )
 
 
+def _is_called_name_of(called_name: str, label: str) -> bool:
+    label_name = _LABEL_BRACKET_PATTERN.sub("", label).lower()
+    called_name = called_name.lower()
+    if label_name.startswith(called_name):
+        return True
+    called_words = called_name.split()
+    label_words = label_name.split()
+    return (
+        len(called_words) > 1
+        and label_words[:1] == called_words[:1]
+        and label_words[-1:] == called_words[-1:]
+    )
+
+
+def _get_chair_call_candidate(
+    speech_asker_rows: list[SpeechAskerRow],
+) -> Optional[AskerCandidate]:
+    for chair_row, member_row in zip(speech_asker_rows, speech_asker_rows[1:]):
+        if chair_row.speaker is None:
+            continue
+        if not CHAIR_FORM_PATTERN.search(chair_row.speaker):
+            continue
+        if member_row.kind != SpeechKind.SPEECH:
+            continue
+        if member_row.speaker is None:
+            continue
+        if member_row.speaker_id is None:
+            continue
+        if _ROLE_LABEL_PATTERN.search(member_row.speaker):
+            continue
+        for chair_call_pattern in _CHAIR_CALL_PATTERNS:
+            match = chair_call_pattern.search(chair_row.transcript)
+            if match is None:
+                continue
+            if not _is_called_name_of(match.group("name"), member_row.speaker):
+                continue
+            return AskerCandidate(
+                chair_row.ordinal,
+                ReportAskerSource.CHAIR_CALL,
+                match.group("name"),
+                member_row.speaker_id,
+                None,
+                None,
+                None,
+            )
+    return None
+
+
 def get_asker_candidates(
     speech_asker_rows: list[SpeechAskerRow], report_title: str = ""
 ) -> list[AskerCandidate]:
@@ -438,7 +502,12 @@ def get_asker_candidates(
         name_in_text_candidate = _get_name_in_text_candidate(speech_asker_row)
         if name_in_text_candidate is not None:
             asker_candidates.append(name_in_text_candidate)
-    return asker_candidates
+    if asker_candidates:
+        return asker_candidates
+    chair_call_candidate = _get_chair_call_candidate(speech_asker_rows)
+    if chair_call_candidate is None:
+        return []
+    return [chair_call_candidate]
 
 
 def _is_question_row(speech_asker_row: SpeechAskerRow) -> bool:

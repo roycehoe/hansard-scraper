@@ -53,6 +53,7 @@ class ReportAskerSource(StrEnum):
     TO_ASK_LINE = "TO_ASK_LINE"
     STOOD_IN_NAME_LINE = "STOOD_IN_NAME_LINE"
     NAME_IN_TEXT = "NAME_IN_TEXT"
+    CHAIR_CALL = "CHAIR_CALL"
 
 
 class ParticipantRole(StrEnum):
