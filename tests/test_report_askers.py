@@ -2229,3 +2229,127 @@ def test_report_27802_filer_who_reads_out_his_own_question_under_another_printed
         (asker_candidate.printed_name, asker_candidate.reader_speaker_id)
         for asker_candidate in asker_candidates
     ] == [("Mr J.B. Jeyaretnam", None)]
+
+
+def test_report_20181_answerer_name_on_every_row_credits_no_one() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr Gan Kim Yong",
+            930,
+            "asked the Minister for Health for each of the last three years the HAI rate.",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr Gan Kim Yong",
+            930,
+            "Leading health experts in the world recommend targeted surveillance.",
+        ),
+    ]
+
+    assert get_asker_candidates(speech_asker_rows) == []
+
+
+def test_report_37816_answerer_label_inside_a_row_keeps_the_asker() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr S. V. Lingam",
+            37,
+            "asked the Deputy Prime Minister whether he will consider revising the postage.",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr S. V. Lingam",
+            37,
+            "Dr Toh Chin Chye : The postage rate on inland letters was raised to 15 cents.",
+        ),
+    ]
+
+    assert get_asker_candidates(speech_asker_rows) == [
+        AskerCandidate(
+            1,
+            ReportAskerSource.ASKED_LINE,
+            "Mr S. V. Lingam",
+            37,
+            None,
+            None,
+            None,
+        )
+    ]
+
+
+def test_report_30635_answerer_role_label_inside_a_row_keeps_the_asker() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Dr Ong Chit Chung",
+            477,
+            "asked the First Deputy Prime Minister what is his assessment of Total Defence.",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Dr Ong Chit Chung",
+            477,
+            "The Second Minister for Defence (Policy)(Dr Yeo Ning Hong): Mr Speaker, Sir, the concept was introduced in 1984.",
+        ),
+    ]
+
+    assert [
+        asker_candidate.speaker_id
+        for asker_candidate in get_asker_candidates(speech_asker_rows)
+    ] == [477]
+
+
+def test_report_45123_withdrawn_question_with_a_note_row_keeps_the_asker() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr Zainal Sapari",
+            1127,
+            "asked the Minister for Manpower for each year what is the gross monthly income.",
+        ),
+        _build_row(
+            2,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "_Note: Mr Speaker has given his approval for the above question to be withdrawn._",
+        ),
+    ]
+
+    assert [
+        asker_candidate.speaker_id
+        for asker_candidate in get_asker_candidates(speech_asker_rows)
+    ] == [1127]
+
+
+def test_report_27802_asker_who_calls_his_own_question_alone_keeps_the_asker() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr J.B. Jeyaretnam",
+            638,
+            "asked the Minister for Home Affairs if he will inform the House of the provisions of the law",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr J. B. Jeyaretnam (Non-Constituency Member)",
+            638,
+            "Mr Speaker, Sir, Question 1. But before that is answered, may I say that I have no pecuniary interest",
+        ),
+    ]
+
+    assert [
+        (asker_candidate.printed_name, asker_candidate.speaker_id)
+        for asker_candidate in get_asker_candidates(speech_asker_rows)
+    ] == [("Mr J.B. Jeyaretnam", 638)]

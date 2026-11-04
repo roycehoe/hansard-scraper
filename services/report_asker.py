@@ -8,6 +8,8 @@ from enums import ReportAskerSource, SpeechKind
 from utils.asker_candidate import AskerCandidate
 from utils.names import CHAIR_FORM_PATTERN, TITLE_PREFIXES
 
+_MIN_ROWS_FOR_ANSWERER_NAMED_AS_ASKER = 2
+
 _ROLE_LABEL_PATTERN = re.compile(CHAIR_FORM_PATTERN.pattern + r"|^The\s", re.IGNORECASE)
 _ASKED_LINE_PATTERN = re.compile(
     r"^\s*(?:\(\s*by private notice[^)]*\)\s*)?"
@@ -46,6 +48,9 @@ _ABSENT_FILER_READ_OUT_PATTERN = re.compile(
     + _MEMBER_REFERENCE_REGEX
     + r")",
     re.IGNORECASE,
+)
+_PRINTED_LABEL_PATTERN = re.compile(
+    r"^\s*(?:Mr|Mrs|Mdm|Madam|Miss|Ms|Dr|Prof|Professor|Inche|Encik|The)\b[^:\n]{0,120}:"
 )
 _RESPECTIVELY_SUFFIX_PATTERN = re.compile(r"\s+respectively$", re.IGNORECASE)
 _FILER_SEPARATOR_PATTERN = re.compile(r",\s+|\s+and\s+", re.IGNORECASE)
@@ -347,6 +352,36 @@ def _get_name_in_text_candidate(
     )
 
 
+def _is_answerer_named_as_asker(
+    speech_asker_rows: list[SpeechAskerRow], asker_candidate: AskerCandidate
+) -> bool:
+    if asker_candidate.source != ReportAskerSource.ASKED_LINE:
+        return False
+    speaker_rows = [
+        speech_asker_row
+        for speech_asker_row in speech_asker_rows
+        if speech_asker_row.speaker is not None
+    ]
+    if len(speaker_rows) < _MIN_ROWS_FOR_ANSWERER_NAMED_AS_ASKER:
+        return False
+    if any(
+        speaker_row.speaker_id != asker_candidate.speaker_id
+        for speaker_row in speaker_rows
+    ):
+        return False
+    if any(
+        _READ_OUT_PATTERN.search(speaker_row.transcript)
+        for speaker_row in speaker_rows
+        if speaker_row.ordinal > asker_candidate.row_ordinal
+    ):
+        return False
+    return not any(
+        _PRINTED_LABEL_PATTERN.search(speech_asker_row.transcript)
+        for speech_asker_row in speech_asker_rows
+        if speech_asker_row.ordinal > asker_candidate.row_ordinal
+    )
+
+
 def get_asker_candidates(
     speech_asker_rows: list[SpeechAskerRow], report_title: str = ""
 ) -> list[AskerCandidate]:
@@ -392,7 +427,10 @@ def get_asker_candidates(
                 speaker_row_candidate = _with_asked_reader(
                     speech_asker_rows, row_index, speaker_row_candidate
                 )
-            asker_candidates.append(speaker_row_candidate)
+            if not _is_answerer_named_as_asker(
+                speech_asker_rows, speaker_row_candidate
+            ):
+                asker_candidates.append(speaker_row_candidate)
             continue
         name_in_text_candidate = _get_name_in_text_candidate(speech_asker_row)
         if name_in_text_candidate is not None:
