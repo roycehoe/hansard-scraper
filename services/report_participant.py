@@ -54,6 +54,9 @@ _CORRECTION_ROW_PATTERN = re.compile(
     r"\bsupplied\s+the\s+following\s+(?:additional\s+)?(?:answers?|information)\b",
     re.IGNORECASE,
 )
+_ABSENT_WHEN_CALLED_PATTERN = re.compile(
+    r"\bwas\s+absent\s+when\s+the\s+question\s+was\s+called\b", re.IGNORECASE
+)
 _STANDING_ORDER_PATTERN = re.compile(r"standing\s+orders?\b", re.IGNORECASE)
 _PROCEDURAL_PATTERN = re.compile(
     r"point\s+of\s+(?:order|clarification|information|elucidation)"
@@ -1191,6 +1194,11 @@ def get_not_a_question_state(
         return None
     if _get_correction_state(title, speech_asker_rows) is not None:
         return None
+    if (
+        _get_first_matching_row(speech_asker_rows, _ABSENT_WHEN_CALLED_PATTERN)
+        is not None
+    ):
+        return None
     is_non_question_title = _NOT_A_QUESTION_TITLE_PATTERN.search(title) is not None
     if not is_non_question_title and question_row_ordinals:
         return None
@@ -1220,6 +1228,7 @@ def _get_correction_state(
             speech_asker_row
             for speech_asker_row in speech_asker_rows
             if not _STANDING_ORDER_PATTERN.search(speech_asker_row.transcript)
+            and not _ABSENT_WHEN_CALLED_PATTERN.search(speech_asker_row.transcript)
         ],
         _CORRECTION_ROW_PATTERN,
     )
@@ -1264,6 +1273,18 @@ def get_question_states(
     if _STOOD_OVER_LIST_TITLE_PATTERN.search(title):
         question_states.append(
             QuestionStateCandidate(QuestionState.NOT_ASKED_ALOUD, title, None)
+        )
+        return question_states
+    absent_when_called_row = _get_first_matching_row(
+        speech_asker_rows, _ABSENT_WHEN_CALLED_PATTERN
+    )
+    if absent_when_called_row is not None:
+        question_states.append(
+            QuestionStateCandidate(
+                QuestionState.NOT_ASKED_ALOUD,
+                absent_when_called_row.transcript,
+                absent_when_called_row.ordinal,
+            )
         )
         return question_states
     if not _has_asker_and_no_answerer(participant_candidates):

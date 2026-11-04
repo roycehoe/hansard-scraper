@@ -4130,3 +4130,28 @@ def test_report_11981_unlinked_chair_row_gets_its_office_from_the_label() -> Non
             OfficeSource.LABEL_IN_REPORT,
         )
     ]
+
+
+_REPORT_39956_TITLE = "VISIT OF DUKE OF EDINBURGH"
+_REPORT_39956_ROWS = """
+3 | DOCUMENT_TEXT |  |  | The following question for oral answer stood on the Order Paper of 4th March, 1959:-
+5 | DOCUMENT_TEXT |  |  | "Inche AHMAD BIN IBRAHIM: To ask the Minister for Education how many (i) primary, and (ii) secondary school students were asked to line the route taken by the Duke of Edinburgh from Clifford Pier to Government House on S
+6 | DOCUMENT_TEXT |  |  | The Assistant Minister for Education (Inche Mohamed Sidik Bin Haji Abdul Hamid), who was to have answered the question, was absent when the question was called, and has supplied the following answer:-
+7 | DOCUMENT_TEXT |  |  | The answers to the first part of the question are:-
+10 | DOCUMENT_TEXT |  |  | The answer to the second part of the question is that there was no compulsion, implied or otherwise, for the children to line the route taken by the Duke of Edinburgh. The number from each school represented was necessar
+"""
+
+
+def test_report_39956_answer_supplied_by_an_absent_minister_is_not_asked_aloud() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_39956_TITLE, _REPORT_39956_ROWS)
+
+    assert labelled_report.participants == []
+    assert _summarise_states(labelled_report.states) == [
+        (
+            QuestionState.NOT_ASKED_ALOUD,
+            "The Assistant Minister for Education (Inche Mohamed Sidik Bin Haji Abdul Hamid), who was to have answered the question, was absent when the question was called, and has supplied the following answer:-",
+            6,
+        )
+    ]
