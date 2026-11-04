@@ -1713,3 +1713,43 @@ def test_report_title_that_lists_questions_stood_over_credits_no_one() -> None:
     )
 
     assert asker_candidates == []
+
+
+def test_report_20093_member_who_reads_out_the_number_of_a_to_ask_row_is_its_reader() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(1, SpeechKind.SPEECH, "Mrs Lina Chiam", 916, "–"),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mrs Lina Chiam",
+            916,
+            "11To ask the Minister for Trade and Industry (a) what is the number of unlicensed tour guides caught during the last five years",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Mr Patrick Tay Teck Guan",
+            984,
+            "asked the Minister for Trade and Industry (a) what is the annual number of unlicensed tour guides detected",
+        ),
+        _build_row(
+            4,
+            SpeechKind.SPEECH,
+            "Dr Lily Neo (Tanjong Pagar)",
+            430,
+            "Question No 11, Sir.",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert asker_candidates[0] == AskerCandidate(
+        row_ordinal=2,
+        source=ReportAskerSource.TO_ASK_LINE,
+        printed_name="Mrs Lina Chiam",
+        speaker_id=916,
+        reader_printed_name="Dr Lily Neo (Tanjong Pagar)",
+        reader_speaker_id=430,
+    )

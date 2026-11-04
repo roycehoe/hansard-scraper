@@ -1,5 +1,5 @@
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Optional, Union
 
 from crud.speech import SpeechAskerRow
@@ -190,6 +190,28 @@ def _get_reader_row(
     return None
 
 
+def _with_to_ask_reader(
+    speech_asker_rows: list[SpeechAskerRow],
+    row_index: int,
+    asker_candidate: AskerCandidate,
+) -> AskerCandidate:
+    match = _STOOD_QUESTION_NUMBER_PATTERN.search(
+        speech_asker_rows[row_index].transcript
+    )
+    if match is None:
+        return asker_candidate
+    question_number = int(match.group("number"))
+    filer_names = (asker_candidate.printed_name.lower(),)
+    for speech_asker_row in speech_asker_rows[row_index + 1 :]:
+        if _get_read_out_number(speech_asker_row, filer_names) == question_number:
+            return replace(
+                asker_candidate,
+                reader_printed_name=speech_asker_row.speaker,
+                reader_speaker_id=speech_asker_row.speaker_id,
+            )
+    return asker_candidate
+
+
 def _get_stood_candidates(
     speech_asker_rows: list[SpeechAskerRow],
     stood_lines: list[_StoodLine],
@@ -323,6 +345,10 @@ def get_asker_candidates(
             speech_asker_row, is_to_ask_line_counted
         )
         if speaker_row_candidate is not None:
+            if speaker_row_candidate.source == ReportAskerSource.TO_ASK_LINE:
+                speaker_row_candidate = _with_to_ask_reader(
+                    speech_asker_rows, row_index, speaker_row_candidate
+                )
             asker_candidates.append(speaker_row_candidate)
             continue
         name_in_text_candidate = _get_name_in_text_candidate(speech_asker_row)
