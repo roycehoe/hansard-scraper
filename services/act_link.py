@@ -7,6 +7,9 @@ from enums import BillLinkSource
 from utils.title_key import get_title_key
 
 _MAX_DAYS_FROM_READING = 1
+_LEADING_THE = re.compile(r"^The\s+")
+_THE_KEY_PREFIX = "the"
+_TRAILING_CHAPTER = re.compile(r"\s*\(Chapter\s+[A-Za-z0-9]+\)\s*$")
 _TRAILING_YEAR = re.compile(r"[,\s]*\d{4}\s*$")
 _TRAILING_LAW_WORD = re.compile(r"\s*\b(?:Act|Ordinance)\s*$", re.IGNORECASE)
 _AMENDMENT_OR_NUMBER_KEY_PART = re.compile(r"amendment(?!s)(?:no\d+)?|no\d+")
@@ -37,7 +40,9 @@ class _CloseBill:
 
 
 def get_bill_title_key(printed_title: str) -> str:
-    without_year = _TRAILING_YEAR.sub("", printed_title)
+    without_the = _LEADING_THE.sub("", printed_title)
+    without_chapter = _TRAILING_CHAPTER.sub("", without_the)
+    without_year = _TRAILING_YEAR.sub("", without_chapter)
     if _TRAILING_LAW_WORD.search(without_year) is None:
         return get_title_key(f"{without_year} Bill")
     return get_title_key(_TRAILING_LAW_WORD.sub(" Bill", without_year))
@@ -111,14 +116,13 @@ def _get_nearest_bill_index(
     return min(close_bills).bill_index
 
 
-def get_bill_link(
-    printed_title: str,
+def _get_bill_link_by_title_key(
+    title_key: str,
     first_reading_date: Optional[date],
     second_reading_date: Optional[date],
     third_reading_date: Optional[date],
     bill_lookups: BillLookups,
 ) -> Optional[BillLink]:
-    title_key = get_bill_title_key(printed_title)
     linkable_bills = bill_lookups.title_key_to_linkable_bills.get(title_key)
     if linkable_bills is not None:
         for source, reading_date in (
@@ -140,3 +144,37 @@ def get_bill_link(
     if loose_bill_index is None:
         return None
     return BillLink(loose_bill_index, BillLinkSource.LOOSE_TITLE_READING_DATES)
+
+
+def get_bill_link(
+    printed_title: str,
+    first_reading_date: Optional[date],
+    second_reading_date: Optional[date],
+    third_reading_date: Optional[date],
+    bill_lookups: BillLookups,
+) -> Optional[BillLink]:
+    title_key = get_bill_title_key(printed_title)
+    if _LEADING_THE.match(printed_title) is None:
+        return _get_bill_link_by_title_key(
+            title_key,
+            first_reading_date,
+            second_reading_date,
+            third_reading_date,
+            bill_lookups,
+        )
+    bill_link = _get_bill_link_by_title_key(
+        f"{_THE_KEY_PREFIX}{title_key}",
+        first_reading_date,
+        second_reading_date,
+        third_reading_date,
+        bill_lookups,
+    )
+    if bill_link is not None:
+        return bill_link
+    return _get_bill_link_by_title_key(
+        title_key,
+        first_reading_date,
+        second_reading_date,
+        third_reading_date,
+        bill_lookups,
+    )

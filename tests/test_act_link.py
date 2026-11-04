@@ -66,6 +66,23 @@ def test_entry_title_becomes_the_key_of_the_bill_title() -> None:
     ) == get_title_key("SINGAPORE LEGISLATIVE COUNCIL ELECTIONS (AMENDMENT NO. 2) BILL")
 
 
+def test_a_leading_the_is_not_part_of_the_bill_title_key() -> None:
+    assert get_bill_title_key(
+        "The Health Sciences Authority Act 2001"
+    ) == get_title_key("HEALTH SCIENCES AUTHORITY BILL")
+    assert get_bill_title_key("Theatres Act 1958") == get_title_key("THEATRES BILL")
+
+
+def test_a_trailing_chapter_is_not_part_of_the_bill_title_key() -> None:
+    assert get_bill_title_key(
+        "Building Maintenance and Strata Management Act (Chapter 30C)"
+    ) == get_title_key("BUILDING MAINTENANCE AND STRATA MANAGEMENT BILL")
+    assert get_bill_title_key("Companies Act 1967 (Chapter 50)") == get_title_key(
+        "Companies Bill"
+    )
+    assert get_bill_title_key("Chapter Act 1950") == get_title_key("CHAPTER BILL")
+
+
 def test_two_same_title_bills_link_to_the_bill_read_on_the_entry_dates() -> None:
     first_link = get_bill_link(
         "Moneylenders (Amendment) Act 2005",
@@ -171,6 +188,54 @@ def _build_single_bill_lookups(
         ],
         {2},
     )
+
+
+def test_a_title_with_a_leading_the_links_to_the_bill_read_on_the_entry_dates() -> None:
+    bill_lookups = _build_single_bill_lookups(
+        "HEALTH SCIENCES AUTHORITY BILL", date(2001, 1, 12), date(2001, 2, 22)
+    )
+
+    assert get_bill_link(
+        "The Health Sciences Authority Act 2001",
+        date(2001, 1, 12),
+        date(2001, 2, 22),
+        date(2001, 2, 22),
+        bill_lookups,
+    ) == BillLink(0, BillLinkSource.FIRST_READING_DATE)
+
+
+def test_a_title_with_a_leading_the_still_links_to_a_bill_that_keeps_the() -> None:
+    bill_lookups = _build_single_bill_lookups(
+        "The Society of Saint Maur Incorporation (Amendment) Bill",
+        date(2017, 1, 9),
+        date(2017, 3, 6),
+    )
+
+    assert get_bill_link(
+        "The Society of Saint Maur Incorporation (Amendment) Act 2017",
+        date(2017, 1, 9),
+        None,
+        date(2017, 3, 6),
+        bill_lookups,
+    ) == BillLink(0, BillLinkSource.FIRST_READING_DATE)
+
+
+def test_a_title_with_a_trailing_chapter_links_to_the_bill_read_on_the_entry_dates() -> (
+    None
+):
+    bill_lookups = _build_single_bill_lookups(
+        "BUILDING MAINTENANCE AND STRATA MANAGEMENT BILL",
+        date(2004, 9, 1),
+        date(2004, 10, 19),
+    )
+
+    assert get_bill_link(
+        "Building Maintenance and Strata Management Act (Chapter 30C)",
+        date(2004, 9, 1),
+        None,
+        date(2004, 10, 19),
+        bill_lookups,
+    ) == BillLink(0, BillLinkSource.FIRST_READING_DATE)
 
 
 def test_an_act_title_links_to_the_amendment_bill_read_on_the_same_dates() -> None:
