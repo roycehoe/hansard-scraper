@@ -89,7 +89,7 @@ def _label_report(
     )
     question_row_ordinals = get_question_row_ordinals(speech_asker_rows)
     not_a_question_state = get_not_a_question_state(
-        title, asker_candidates, question_row_ordinals
+        title, speech_asker_rows, asker_candidates, question_row_ordinals
     )
     if not_a_question_state is not None:
         return _LabelledReport(
@@ -1658,13 +1658,12 @@ def test_report_25173_annex_title_is_not_a_question() -> None:
     [
         "ANNEX A - ELDERSHIELD SCHEME",
         "APPENDIX - ELECTRICITY TARIFFS",
-        "ADDENDUM - PERUMAL AND SIVAN TEMPLES",
     ],
 )
-def test_title_of_an_annex_appendix_or_addendum_with_a_question_row_and_no_asker_is_not_a_question(
+def test_title_of_an_annex_or_appendix_with_a_question_row_and_no_asker_is_not_a_question(
     title: str,
 ) -> None:
-    not_a_question_state = get_not_a_question_state(title, [], frozenset({1}))
+    not_a_question_state = get_not_a_question_state(title, [], [], frozenset({1}))
 
     assert not_a_question_state is not None
     assert not_a_question_state.state == QuestionState.NOT_A_QUESTION
@@ -1676,6 +1675,7 @@ def test_title_with_a_word_that_only_contains_table_or_list_is_a_question() -> N
     assert (
         get_not_a_question_state(
             "Enforcement Actions Against Table Littering at Public Dining Spaces Since Implementation",
+            [],
             [],
             frozenset({1}),
         )
@@ -1696,7 +1696,7 @@ def test_title_of_an_annex_with_an_asker_is_a_question() -> None:
 
     assert (
         get_not_a_question_state(
-            "ANNEX A - ELDERSHIELD SCHEME", [asker_candidate], frozenset({1})
+            "ANNEX A - ELDERSHIELD SCHEME", [], [asker_candidate], frozenset({1})
         )
         is None
     )
@@ -2530,3 +2530,60 @@ def test_answer_printed_under_the_askers_label_with_the_name_inline_gives_the_an
         for participant in labelled_report.participants
         if participant.role == ParticipantRole.ANSWERER
     ] == [(ParticipantRole.ANSWERER, role_source, inline_label)]
+
+
+_REPORT_38206_TITLE = "ADDENDUM - PERUMAL AND SIVAN TEMPLES"
+_REPORT_38206_ROWS = """
+1 | DOCUMENT_TEXT |  |  | ADDENDUM PERUMAL AND SIVAN TEMPLES
+2 | DOCUMENT_TEXT |  |  | Inche Othman bin Wok, with reference to his replies to the following two supplementary questions on 10th June, 1964 (Official Report, 10th June, 1964, Vol. 23, No. 1, Columns 9 and 10):
+3 | DOCUMENT_TEXT |  |  | supplied the following additional answers on 2nd October, 1964:
+"""
+_REPORT_39437_TITLE = (
+    "VACANT POSTS IN GOVERNMENT SERVICE HELD BY OFFICERS IN ACTING CAPACITY"
+)
+_REPORT_39437_ROWS = """
+1 | DOCUMENT_TEXT |  |  | ADDENDA VACANT POSTS IN GOVERNMENT SERVICE HELD BY OFFICERS IN ACTING CAPACITY
+2 | DOCUMENT_TEXT |  |  | Dr Goh Keng Swee, pursuant to his reply to the following question for oral answer asked on 21st September, 1960 (Official Report, 21st September, 1960, Volume 13, No. 9, column 624):
+3 | DOCUMENT_TEXT |  |  | supplied the following answer on 8th November, 1960:
+"""
+_REPORT_40924_TITLE = "DAILY DIGEST OF NON-ENGLISH PRESS"
+_REPORT_40924_ROWS = """
+1 | SPEECH | 1404 | Mr W. A. C. Goode, | pursuant to his reply to the following question for oral answer asked on 13th February, 1957 (Official Report, 13th February, 1957, Volume 2, No. 19, Column 1393):
+2 | SPEECH | 1404 | Mr W. A. C. Goode, | Mr David Marshall asked the Chief Secretary whether he will make available to the English-reading public of Singapore by public subscription the Information Services' Daily Digest of Non-English Press,
+3 | SPEECH | 1404 | Mr W. A. C. Goode, | supplied the following answer on 5th March, 1957:-
+"""
+_REPORT_32219_TITLE = "25 YEARS OF NATION BUILDING"
+_REPORT_32219_ROWS = """
+1 | DOCUMENT_TEXT |  |  | 25 YEARS OF NATION BUILDING (Cost of celebrations)
+2 | DOCUMENT_TEXT |  |  | Consequent on the Question raised by Mr J.B. Jeyaretnam on
+3 | DOCUMENT_TEXT |  |  | 14 May 1985, the Second Deputy Prime Minister supplied the following information on 22 July 1985 on the final cost of celebrations to the tax payer:
+"""
+
+
+@pytest.mark.parametrize(
+    ("title", "rows_text", "printed_ordinal"),
+    [
+        pytest.param(_REPORT_38206_TITLE, _REPORT_38206_ROWS, None, id="38206"),
+        pytest.param(_REPORT_39437_TITLE, _REPORT_39437_ROWS, 3, id="39437"),
+        pytest.param(_REPORT_40924_TITLE, _REPORT_40924_ROWS, 3, id="40924"),
+        pytest.param(_REPORT_32219_TITLE, _REPORT_32219_ROWS, 3, id="32219"),
+    ],
+)
+def test_addendum_or_later_supplied_answer_is_a_correction_not_a_non_question(
+    title: str, rows_text: str, printed_ordinal: Optional[int]
+) -> None:
+    printed_text = (
+        title
+        if printed_ordinal is None
+        else next(
+            speech_asker_row.transcript
+            for speech_asker_row in _parse_rows(rows_text)
+            if speech_asker_row.ordinal == printed_ordinal
+        )
+    )
+
+    labelled_report = _label_report(title, rows_text)
+
+    assert _summarise_states(labelled_report.states) == [
+        (QuestionState.CORRECTION, printed_text, printed_ordinal)
+    ]

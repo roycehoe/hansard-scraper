@@ -290,7 +290,7 @@ def _build_planned_rows(
 ) -> _PlannedRows:
     question_row_ordinals = get_question_row_ordinals(speech_asker_rows)
     not_a_question_state = get_not_a_question_state(
-        report_row.title, asker_candidates, question_row_ordinals
+        report_row.title, speech_asker_rows, asker_candidates, question_row_ordinals
     )
     if not_a_question_state is not None:
         return _PlannedRows(

@@ -47,6 +47,10 @@ _NOT_A_QUESTION_TITLE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _CORRECTION_TITLE_PATTERN = re.compile(r"^\W*addend(?:um|a)\b", re.IGNORECASE)
+_CORRECTION_ROW_PATTERN = re.compile(
+    r"\bsupplied\s+the\s+following\s+(?:additional\s+)?(?:answers?|information)\b",
+    re.IGNORECASE,
+)
 _PROCEDURAL_PATTERN = re.compile(
     r"point\s+of\s+(?:order|clarification|information|elucidation)"
     r"|out\s+of\s+order|standing\s+orders?|general\s+assent|may\s+i\s+reply"
@@ -816,10 +820,13 @@ def build_report_participants(
 
 def get_not_a_question_state(
     title: str,
+    speech_asker_rows: list[SpeechAskerRow],
     asker_candidates: list[AskerCandidate],
     question_row_ordinals: frozenset[int],
 ) -> Optional[QuestionStateCandidate]:
     if asker_candidates:
+        return None
+    if _get_correction_state(title, speech_asker_rows) is not None:
         return None
     is_non_question_title = _NOT_A_QUESTION_TITLE_PATTERN.search(title) is not None
     if not is_non_question_title and question_row_ordinals:
@@ -840,6 +847,19 @@ def _get_first_matching_row(
     )
 
 
+def _get_correction_state(
+    title: str, speech_asker_rows: list[SpeechAskerRow]
+) -> Optional[QuestionStateCandidate]:
+    if _CORRECTION_TITLE_PATTERN.search(title):
+        return QuestionStateCandidate(QuestionState.CORRECTION, title, None)
+    correction_row = _get_first_matching_row(speech_asker_rows, _CORRECTION_ROW_PATTERN)
+    if correction_row is None:
+        return None
+    return QuestionStateCandidate(
+        QuestionState.CORRECTION, correction_row.transcript, correction_row.ordinal
+    )
+
+
 def _has_asker_and_no_answerer(
     participant_candidates: list[ParticipantCandidate],
 ) -> bool:
@@ -857,10 +877,9 @@ def get_question_states(
     participant_candidates: list[ParticipantCandidate],
 ) -> list[QuestionStateCandidate]:
     question_states: list[QuestionStateCandidate] = []
-    if _CORRECTION_TITLE_PATTERN.search(title):
-        question_states.append(
-            QuestionStateCandidate(QuestionState.CORRECTION, title, None)
-        )
+    correction_state = _get_correction_state(title, speech_asker_rows)
+    if correction_state is not None:
+        question_states.append(correction_state)
     private_notice_row = _get_first_matching_row(
         speech_asker_rows, _PRIVATE_NOTICE_PATTERN
     )
