@@ -162,20 +162,39 @@ def read_inline_speakers(
     get_speaker_id: Callable[[str], Optional[int]],
 ) -> list[SpeechAskerRow]:
     inline_speaker_rows: list[SpeechAskerRow] = []
+    printed_speaker: Optional[str] = None
+    inline_speaker: Optional[tuple[str, int]] = None
     for speech_asker_row in speech_asker_rows:
+        if speech_asker_row.speaker is None or speech_asker_row.kind not in (
+            None,
+            SpeechKind.SPEECH,
+        ):
+            inline_speaker_rows.append(speech_asker_row)
+            continue
         label = (
-            _get_inline_speaker_label(speech_asker_row.transcript)
-            if speech_asker_row.speaker is not None
-            and speech_asker_row.kind in (None, SpeechKind.SPEECH)
-            and not CHAIR_FORM_PATTERN.search(speech_asker_row.speaker)
-            else None
+            None
+            if CHAIR_FORM_PATTERN.search(speech_asker_row.speaker)
+            else _get_inline_speaker_label(speech_asker_row.transcript)
         )
         speaker_id = None if label is None else get_speaker_id(label)
-        if speaker_id is None or speaker_id == speech_asker_row.speaker_id:
+        if (
+            label is not None
+            and speaker_id is not None
+            and speaker_id != speech_asker_row.speaker_id
+        ):
+            printed_speaker = speech_asker_row.speaker
+            inline_speaker = (label, speaker_id)
+        elif speech_asker_row.speaker != printed_speaker:
+            inline_speaker = None
+        if inline_speaker is None:
             inline_speaker_rows.append(speech_asker_row)
             continue
         inline_speaker_rows.append(
-            replace(speech_asker_row, speaker=label, speaker_id=speaker_id)
+            replace(
+                speech_asker_row,
+                speaker=inline_speaker[0],
+                speaker_id=inline_speaker[1],
+            )
         )
     return inline_speaker_rows
 

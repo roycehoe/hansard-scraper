@@ -33,6 +33,7 @@ _DESMOND_LEE_SPEAKER_ID = 1039
 _HENG_CHEE_HOW_SPEAKER_ID = 826
 _SIM_ANN_SPEAKER_ID = 990
 _VASOO_SPEAKER_ID = 411
+_CHARLES_CHONG_SPEAKER_ID = 619
 
 
 @dataclass(frozen=True)
@@ -2565,3 +2566,22 @@ def test_report_37970_answer_supplied_under_a_standing_order_is_no_correction() 
         question_state[0]
         for question_state in _summarise_states(labelled_report.states)
     ]
+
+
+def test_report_26319_paragraph_after_an_inline_answer_belongs_to_the_inline_speaker() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_26319_TITLE,
+        _REPORT_26319_ROWS,
+        speaker_id_to_office={
+            637: Office("Minister for Law", OfficeSource.ATTENDANCE_LIST)
+        },
+        inline_label_to_speaker_id={"Prof. S. Jayakumar": 637},
+    )
+
+    assert [
+        participant.role
+        for participant in labelled_report.participants
+        if participant.speaker_id == _CHARLES_CHONG_SPEAKER_ID
+    ] == [ParticipantRole.ASKER]
