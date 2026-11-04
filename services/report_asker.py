@@ -16,6 +16,12 @@ _ASKED_LINE_PATTERN = re.compile(
     r"(?:asked(?:\s*the)?\b|ask\s+the\s+(?:\w+\s+){0,3}minister\b)",
     re.IGNORECASE,
 )
+_MY_QUESTION_LINE_PATTERN = re.compile(
+    r"^\W*my question is\s+(?:simply\s+)?to ask\b", re.IGNORECASE
+)
+_LEAVE_WITHOUT_NOTICE_PATTERN = re.compile(
+    r"\bquestion without notice\b", re.IGNORECASE
+)
 _TO_ASK_LINE_PATTERN = re.compile(r"^\W*(?:\d+\s*\.?\s*)?to ask\b", re.IGNORECASE)
 _STOOD_IN_NAME_PATTERN = re.compile(
     r"^[\s*>+_]*(?:The following Questions?"
@@ -308,7 +314,9 @@ def _get_stood_candidates(
 
 
 def _get_speaker_row_candidate(
-    speech_asker_row: SpeechAskerRow, is_to_ask_line_counted: bool
+    speech_asker_row: SpeechAskerRow,
+    is_to_ask_line_counted: bool,
+    is_leave_given_without_notice: bool,
 ) -> Optional[AskerCandidate]:
     if speech_asker_row.speaker is None:
         return None
@@ -318,7 +326,10 @@ def _get_speaker_row_candidate(
         return None
     if _ROLE_LABEL_PATTERN.search(speech_asker_row.speaker):
         return None
-    if _ASKED_LINE_PATTERN.search(speech_asker_row.transcript):
+    if _ASKED_LINE_PATTERN.search(speech_asker_row.transcript) or (
+        is_leave_given_without_notice
+        and _MY_QUESTION_LINE_PATTERN.search(speech_asker_row.transcript)
+    ):
         return AskerCandidate(
             speech_asker_row.ordinal,
             ReportAskerSource.ASKED_LINE,
@@ -469,7 +480,15 @@ def get_asker_candidates(
         if stood_line.printed_names
     }
     asker_candidates: list[AskerCandidate] = []
+    is_leave_given_without_notice = False
     for row_index, speech_asker_row in enumerate(speech_asker_rows):
+        if speech_asker_row.speaker is not None and CHAIR_FORM_PATTERN.search(
+            speech_asker_row.speaker
+        ):
+            is_leave_given_without_notice = (
+                _LEAVE_WITHOUT_NOTICE_PATTERN.search(speech_asker_row.transcript)
+                is not None
+            )
         stood_line = row_index_to_stood_line.get(row_index)
         if stood_line is not None:
             asker_candidates.extend(
@@ -483,7 +502,7 @@ def get_asker_candidates(
             for asker_candidate in asker_candidates
         )
         speaker_row_candidate = _get_speaker_row_candidate(
-            speech_asker_row, is_to_ask_line_counted
+            speech_asker_row, is_to_ask_line_counted, is_leave_given_without_notice
         )
         if speaker_row_candidate is not None:
             if speaker_row_candidate.source == ReportAskerSource.TO_ASK_LINE:

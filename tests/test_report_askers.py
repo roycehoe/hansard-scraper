@@ -2571,3 +2571,70 @@ def test_chair_call_is_ignored_when_the_report_has_another_asker() -> None:
         asker_candidate.source
         for asker_candidate in get_asker_candidates(speech_asker_rows)
     ] == [ReportAskerSource.ASKED_LINE]
+
+
+def test_report_35665_my_question_is_after_leave_for_a_question_without_notice() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr Speaker",
+            192,
+            "The hon. Member for Serangoon Gardens wishes to ask a question without notice, as provided for under Standing Order No. 19. I have therefore given him permission to ask the question.",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr L. P. Rodrigo (Serangoon Gardens)",
+            174,
+            "Mr Speaker, Sir, today we all know of the tragic fire which broke out at the Robinson departmental store.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Mr L. P. Rodrigo (Serangoon Gardens)",
+            174,
+            "My question is simply to ask the Minister for Social Affairs if he would inform this House of the tragic outcome of the fire.",
+        ),
+        _build_row(
+            4,
+            SpeechKind.SPEECH,
+            "The Minister for Social Affairs (Encik Othman Bin Wok)",
+            169,
+            "Mr Speaker, Sir, at 1006 hours yesterday, the Fire Brigade Control Room received a telephone call.",
+        ),
+    ]
+
+    assert [
+        (
+            asker_candidate.source,
+            asker_candidate.row_ordinal,
+            asker_candidate.speaker_id,
+        )
+        for asker_candidate in get_asker_candidates(speech_asker_rows)
+    ] == [(ReportAskerSource.ASKED_LINE, 3, 174)]
+
+
+def test_my_question_is_without_leave_for_a_question_without_notice_credits_no_one() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr Speaker",
+            192,
+            "Order. The Member may proceed.",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr L. P. Rodrigo (Serangoon Gardens)",
+            174,
+            "My question is simply to ask the Minister for Social Affairs if he would inform this House.",
+        ),
+    ]
+
+    assert get_asker_candidates(speech_asker_rows) == []
