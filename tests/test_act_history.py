@@ -70,6 +70,15 @@ def _read_fixture(name: str) -> str:
             [],
         ),
         (
+            "british_military_administration_proclamation",
+            ActHistoryEntryKind.OTHER,
+            "British Military Administration G.N. No. 12/1945",
+            "Food Control Proclamation (Proclamation No. 10)",
+            None,
+            (None, None, None, date(1945, 11, 2)),
+            [],
+        ),
+        (
             "capital_letter_block_after_entry",
             ActHistoryEntryKind.ORDINANCE,
             "Ordinance 39 of 1952",
@@ -146,6 +155,33 @@ def _read_fixture(name: str) -> str:
             "Marine Insurance Act, 1906",
             None,
             (None, None, None, date(1907, 1, 1)),
+            [],
+        ),
+        (
+            "english_act_two_regnal_years_elizabeth",
+            ActHistoryEntryKind.OTHER,
+            "8 & 9 Eliz. II, c. 46",
+            "Corporate Bodies’ Contracts Act, 1960",
+            None,
+            (None, None, None, date(1960, 7, 29)),
+            [],
+        ),
+        (
+            "english_act_two_regnal_years_george",
+            ActHistoryEntryKind.OTHER,
+            "22 & 23 Geo. 5, c. 39",
+            "Extradition Act, 1932",
+            None,
+            (None, None, None, date(1932, 7, 12)),
+            [],
+        ),
+        (
+            "english_act_two_regnal_years_victoria",
+            ActHistoryEntryKind.OTHER,
+            "33 & 34 Vict., c. 52",
+            "The Extradition Act, 1870",
+            None,
+            (None, None, None, date(1870, 8, 9)),
             [],
         ),
         (
@@ -340,6 +376,15 @@ def _read_fixture(name: str) -> str:
             [],
         ),
         (
+            "qualifier_not_closed",
+            ActHistoryEntryKind.ACT,
+            "Act 21 of 1973",
+            "Statutes of the Republic of Singapore (Miscellaneous Amendments) Act, 1973",
+            "16/1973",
+            (date(1973, 3, 7), date(1973, 3, 20), date(1973, 3, 20), date(1973, 4, 6)),
+            [ActHistoryDefect.PAGE_BREAK_NOISE],
+        ),
+        (
             "qualifier_with_nested_parentheses",
             ActHistoryEntryKind.ACT,
             "Act 6 of 1994",
@@ -404,6 +449,53 @@ def test_a_united_kingdom_act_is_an_entry_of_kind_other() -> None:
     assert (
         entries[2].printed_title
         == "Colonial Civil Aviation (Application of Act) Order, 1952"
+    )
+
+
+def test_a_legal_notice_with_no_gazette_bracket_or_no_closing_parenthesis_is_read() -> (
+    None
+):
+    blocks = split_history_entries(
+        "CODE",
+        _read_fixture("legal_notice_without_gazette_bracket_or_closing_parenthesis"),
+    )
+
+    entries = [parse_history_entry("CODE", block) for block in blocks]
+
+    assert [
+        (entry.kind, entry.printed_law_number, entry.printed_title) for entry in entries
+    ] == [
+        (
+            ActHistoryEntryKind.SUBSIDIARY_LEGISLATION,
+            "L.N. 70/1964",
+            "Modification of Laws (National Service) (Extension) Order, 1964",
+        ),
+        (
+            ActHistoryEntryKind.SUBSIDIARY_LEGISLATION,
+            "L.N. 455/1964 (G.N. Sp. No. S 2/1965",
+            "Modification of Laws (Debtors) (Borneo States and Singapore) Order, 1964",
+        ),
+        (
+            ActHistoryEntryKind.SUBSIDIARY_LEGISLATION,
+            "L.N. 133/1965 (G.N. Sp. No. S 67/1965",
+            "Modification of Laws (Insurance) (Extension) Order, 1964",
+        ),
+        (
+            ActHistoryEntryKind.SUBSIDIARY_LEGISLATION,
+            "L.N. 296/1964 (G.N. Sp. No. S 205/1964)",
+            "Air Navigation Ordinance, 1952 (Extension) Order, 1964",
+        ),
+    ]
+
+
+def test_a_qualifier_that_is_not_closed_stays_in_the_printed_text() -> None:
+    (block,) = split_history_entries("CODE", _read_fixture("qualifier_not_closed"))
+
+    printed_text = parse_history_entry("CODE", block).printed_text
+
+    assert (
+        "(Amendments made by section 2 read with the Schedule to the above Act"
+        in printed_text
     )
 
 
