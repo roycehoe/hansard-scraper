@@ -32,6 +32,11 @@ Convert raw HTML records into clean, readable markdown that downstream consumers
 ### 6. Parsing quality
 Track parsing success rates per report type across the full corpus so regressions surface before they accumulate and improvement work is measurable.
 
+### 7. Bills linked to their debates
+Group every `bill` and `bill-intro` report by the bill it debates, so a reader can follow one bill from first reading through any select committee and the committee stage to third reading. Hansard prints no bill number, so the key is the bill's normalised title and the sitting date, with each bill closed at its third-reading line. Bills that no title rule can place go to a review queue. Royce adopted this on 4 November 2026 after the feasibility study ([bill-debate-linking-2026-11-04.md](report/bill-debate-linking-2026-11-04.md)), whose title and date rule reproduced the hand-built links for 72 of 72 sampled bills. It has no done test yet.
+
+Linking Acts to their debates waits on a trial of live SSO inside the 03:00 to 07:00 SGT window its terms allow. Current law is linked out to SSO and the eGazette, not hosted. Bills before 1961 and Acts as passed before 1985 have no free original text online, and the project will link their debates without one.
+
 ---
 
 ## Strategies
