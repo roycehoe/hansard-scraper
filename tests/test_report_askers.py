@@ -2007,7 +2007,7 @@ def test_report_22632_several_unnumbered_to_ask_rows_before_one_read_out_have_no
     ]
 
 
-def test_report_42459_two_unnumbered_to_ask_rows_before_one_read_out_have_no_reader() -> (
+def test_report_42459_chair_call_of_a_to_ask_filer_gives_the_read_out_its_filer() -> (
     None
 ):
     speech_asker_rows = [
@@ -2036,7 +2036,7 @@ def test_report_42459_two_unnumbered_to_ask_rows_before_one_read_out_have_no_rea
     assert [
         (asker_candidate.printed_name, asker_candidate.reader_speaker_id)
         for asker_candidate in asker_candidates
-    ] == [("Dr Aline K. Wong", None), ("Dr Ho Tat Kin", None)]
+    ] == [("Dr Aline K. Wong", 358), ("Dr Ho Tat Kin", None)]
 
 
 def test_report_27568_member_who_reads_out_the_number_right_after_an_asked_row_is_its_reader() -> (
@@ -2638,3 +2638,33 @@ def test_my_question_is_without_leave_for_a_question_without_notice_credits_no_o
     ]
 
     assert get_asker_candidates(speech_asker_rows) == []
+
+
+def test_to_ask_block_read_out_has_no_filer_when_the_chair_calls_no_one_of_the_block() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Dr Aline K. Wong",
+            415,
+            "To ask the Acting Minister for Health (a) what is the type of Hepatitis B vaccine.",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Dr Ho Tat Kin",
+            370,
+            "To ask the Acting Minister for Health, in view of the worldwide concern over Aids.",
+        ),
+        _build_row(3, SpeechKind.SPEECH, "Mr Deputy Speaker", 403, "Dr Tan."),
+        _build_row(
+            4, SpeechKind.SPEECH, "Mr Chew Heng Ching", 358, "Question No. 20, Sir."
+        ),
+    ]
+
+    assert [
+        asker_candidate.reader_printed_name
+        for asker_candidate in get_asker_candidates(speech_asker_rows)
+    ] == [None, None]

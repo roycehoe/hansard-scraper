@@ -85,6 +85,9 @@ _CHAIR_CALL_PATTERNS = (
         r"^\W*Question\.\s*" + _CALLED_NAME_REGEX + r"\s*\.?\s*$", re.IGNORECASE
     ),
 )
+_CHAIR_CALLED_NAME_PATTERN = re.compile(
+    r"^\W*" + _CALLED_NAME_REGEX + r"\s*\.?\s*$", re.IGNORECASE
+)
 _LABEL_BRACKET_PATTERN = re.compile(r"\s*\(.*$")
 
 
@@ -229,6 +232,69 @@ def _with_reader(
     )
 
 
+def _is_called_name_of(called_name: str, label: str) -> bool:
+    label_name = _LABEL_BRACKET_PATTERN.sub("", label).lower()
+    called_name = called_name.lower()
+    if label_name.startswith(called_name):
+        return True
+    called_words = called_name.split()
+    label_words = label_name.split()
+    return (
+        len(called_words) > 1
+        and label_words[:1] == called_words[:1]
+        and label_words[-1:] == called_words[-1:]
+    )
+
+
+def _with_block_reader(
+    speech_asker_rows: list[SpeechAskerRow],
+    row_index: int,
+    asker_candidate: AskerCandidate,
+) -> AskerCandidate:
+    block_start = row_index
+    while block_start > 0 and _is_unnumbered_to_ask_line(
+        speech_asker_rows[block_start - 1]
+    ):
+        block_start -= 1
+    block_end = row_index
+    while block_end + 1 < len(speech_asker_rows) and _is_unnumbered_to_ask_line(
+        speech_asker_rows[block_end + 1]
+    ):
+        block_end += 1
+    block_labels = [
+        speech_asker_row.speaker
+        for speech_asker_row in speech_asker_rows[block_start : block_end + 1]
+        if speech_asker_row.speaker is not None
+    ]
+    filer_names = tuple(block_label.lower() for block_label in block_labels)
+    for chair_row, read_out_row in zip(
+        speech_asker_rows[block_end:], speech_asker_rows[block_end + 1 :]
+    ):
+        if _is_asked_or_to_ask_line(read_out_row):
+            break
+        if _get_read_out_number(read_out_row, filer_names) is None:
+            continue
+        if chair_row.speaker is None:
+            break
+        if not CHAIR_FORM_PATTERN.search(chair_row.speaker):
+            break
+        match = _CHAIR_CALLED_NAME_PATTERN.search(chair_row.transcript)
+        if match is None:
+            break
+        if (
+            sum(
+                _is_called_name_of(match.group("name"), block_label)
+                for block_label in block_labels
+            )
+            != 1
+        ):
+            break
+        if not _is_called_name_of(match.group("name"), asker_candidate.printed_name):
+            break
+        return _with_reader(asker_candidate, read_out_row)
+    return asker_candidate
+
+
 def _with_to_ask_reader(
     speech_asker_rows: list[SpeechAskerRow],
     row_index: int,
@@ -244,8 +310,13 @@ def _with_to_ask_reader(
             if _get_read_out_number(speech_asker_row, filer_names) == question_number:
                 return _with_reader(asker_candidate, speech_asker_row)
         return asker_candidate
-    if row_index > 0 and _is_unnumbered_to_ask_line(speech_asker_rows[row_index - 1]):
-        return asker_candidate
+    if (
+        row_index > 0 and _is_unnumbered_to_ask_line(speech_asker_rows[row_index - 1])
+    ) or (
+        row_index + 1 < len(speech_asker_rows)
+        and _is_unnumbered_to_ask_line(speech_asker_rows[row_index + 1])
+    ):
+        return _with_block_reader(speech_asker_rows, row_index, asker_candidate)
     for speech_asker_row in speech_asker_rows[row_index + 1 :]:
         if _is_asked_or_to_ask_line(speech_asker_row):
             break
@@ -409,20 +480,6 @@ def _is_answerer_named_as_asker(
         _PRINTED_LABEL_PATTERN.search(speech_asker_row.transcript)
         for speech_asker_row in speech_asker_rows
         if speech_asker_row.ordinal > asker_candidate.row_ordinal
-    )
-
-
-def _is_called_name_of(called_name: str, label: str) -> bool:
-    label_name = _LABEL_BRACKET_PATTERN.sub("", label).lower()
-    called_name = called_name.lower()
-    if label_name.startswith(called_name):
-        return True
-    called_words = called_name.split()
-    label_words = label_name.split()
-    return (
-        len(called_words) > 1
-        and label_words[:1] == called_words[:1]
-        and label_words[-1:] == called_words[-1:]
     )
 
 
