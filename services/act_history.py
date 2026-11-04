@@ -15,7 +15,7 @@ _PAGE_BREAK_NOISE = (
 )
 _ENTRY_HEAD = re.compile(r"^\s?(\d{1,3})\. (.+)$")
 _ENTRY_HEAD_START = re.compile(
-    r"(Malay|Act|Ordinance|G\.\s?N|\d{4} |First|Second|\d{1,2} [A-Z][a-z]+\.|M\. |L\.N\.)"
+    r"(Malay|Act|Ordinance|G\.\s?N|\d{4} |First|Second|\d{1,2} [A-Z][a-z]+\.|M\. |L\.N\.|U\.K\. )"
 )
 _MAX_HEAD_INDENT = 1
 _CAPITALS_ONLY_LINE = re.compile(r"^\s*[A-Z0-9 ,.()'’&/-]*[A-Z][A-Z0-9 ,.()'’&/-]*$")
@@ -28,6 +28,7 @@ _ENTRY_KIND = re.compile(
     r"^(?P<law_number>L\.N\. \S+ \(G\.N\.[^)]*\)"
     r"|(?:M\. |Malaysian? )?(?:Act|Ordinance) [IVXL\d]+ of \d{4}"
     r"|\d{1,2} (?:Edw|Geo|Will|Vict)\.[^—]*?c\. \d+"
+    r"|U\.K\. \d{4}, c\. \d+"
     r"|G\.\s?N\.(?: Sp\.)? No\. \S.*?"
     r"|\d{4} Revised Edition"
     r"|(?:First |Second )?(?:\d{4} )?Reprint(?: \(\d{4}\))?)"

@@ -386,6 +386,27 @@ def test_entry_shape_is_read_as_printed(
     assert entry.defects == defects
 
 
+def test_a_united_kingdom_act_is_an_entry_of_kind_other() -> None:
+    blocks = split_history_entries(
+        "CODE", _read_fixture("united_kingdom_act_between_ordinance_and_order")
+    )
+
+    entries = [parse_history_entry("CODE", block) for block in blocks]
+
+    assert [(entry.ordinal, entry.kind) for entry in entries] == [
+        (1, ActHistoryEntryKind.REVISED_EDITION),
+        (2, ActHistoryEntryKind.OTHER),
+        (3, ActHistoryEntryKind.SUBSIDIARY_LEGISLATION),
+    ]
+    assert entries[1].printed_law_number == "U.K. 1949, c. 67"
+    assert entries[1].printed_title == "Civil Aviation Act, 1949"
+    assert entries[1].commencement_date == date(1949, 11, 24)
+    assert (
+        entries[2].printed_title
+        == "Colonial Civil Aviation (Application of Act) Order, 1952"
+    )
+
+
 def test_printed_text_keeps_the_entry_lines_and_drops_page_break_noise() -> None:
     (block,) = split_history_entries("CODE", _read_fixture("page_break_inside_entry"))
 
