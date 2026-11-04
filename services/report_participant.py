@@ -824,6 +824,23 @@ def _build_other_participants(
     return other_participants
 
 
+def _drop_unlabelled_of_role_holders(
+    participants: list[ParticipantCandidate],
+) -> list[ParticipantCandidate]:
+    role_holder_person_keys = {
+        _get_person_key(participant.speaker_id, participant.printed_name)
+        for participant in participants
+        if participant.role != ParticipantRole.UNLABELLED
+    }
+    return [
+        participant
+        for participant in participants
+        if participant.role != ParticipantRole.UNLABELLED
+        or _get_person_key(participant.speaker_id, participant.printed_name)
+        not in role_holder_person_keys
+    ]
+
+
 def _get_speaker_id_to_label_office(
     participant_rows: list[_ParticipantRow],
 ) -> dict[int, str]:
@@ -985,14 +1002,16 @@ def get_participants(
     speaker_id_to_label_office = _get_speaker_id_to_label_office(participant_rows)
     return [
         _add_office_mark(participant, speaker_id_to_label_office, speaker_id_to_office)
-        for participant in [
-            *asker_participants,
-            *reader_participants,
-            *second_reader_participants,
-            *chair_participants,
-            *answerer_participants,
-            *_build_other_participants(participant_rows, report_roles),
-        ]
+        for participant in _drop_unlabelled_of_role_holders(
+            [
+                *asker_participants,
+                *reader_participants,
+                *second_reader_participants,
+                *chair_participants,
+                *answerer_participants,
+                *_build_other_participants(participant_rows, report_roles),
+            ]
+        )
     ]
 
 

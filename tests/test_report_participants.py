@@ -3588,3 +3588,194 @@ def test_report_30999_second_member_who_reads_out_the_same_question_is_also_a_re
     assert ParticipantRole.UNLABELLED not in {
         participant.role for participant in labelled_report.participants
     }
+
+
+_REPORT_37380_TITLE = "RISE IN COST OF LIVING"
+_REPORT_37380_ROWS = """
+1 | UNCLASSIFIED |  |  | The following Question stood in the name of Inche Mohd. Ariff Bin Suradi -
+2 | DOCUMENT_TEXT |  |  | 6. To ask the Minister for Finance whether he is aware that the cost of living in the Republic has gone up rapidly and if he is taking any steps in the matter.
+3 | SPEECH | 55 | Mr Tang See Chim | Inche Mohd. Ariff Bin Suradi.
+4 | SPEECH | 47 | Inche Rahamat Bin Kenap (Geylang Serai) | Question No. 6.
+5 | SPEECH | 20 | Dr Goh Keng Swee | Sir, for some months there has been public concern over increases in the prices of certain commodities, especially foodstuffs and household articles. The reasons for these price increases are often confused in the public mind. As a result, there have
+6 | SPEECH | 20 | Dr Goh Keng Swee | What can Government do about the price of rice? First, we must find out why the price has gone up. Is it due to profiteering by our rice merchants, or is it because the world price of rice has increased? If price increases are the result of profiteer
+7 | SPEECH | 20 | Dr Goh Keng Swee | So long as people want to eat rice, they must pay for the extra cost. But they can economise by eating less rice and more wheat products, such as bread and noodles, as our Deputy Prime Minister has been advocating. Wheat flour, of course, is half the
+8 | SPEECH | 20 | Dr Goh Keng Swee | There has also been a substantial increase in the price of canned meat imported from China. Chinese exporters have increased their prices, and there is statistical evidence that this has happened. Here again the reasons lie outside our country and be
+9 | SPEECH | 20 | Dr Goh Keng Swee | As regards day-to-day food supplies, certain items have gone up in price, such as cabbages and potatoes, while others have gone down in price, such as red chillies, onions, spinach, chai sim and 1ong beans. These are normal fluctuations in the market
+10 | SPEECH | 20 | Dr Goh Keng Swee | Some months ago there was an attempt made to speculate in matches and sugar. When these commodities were produced in Singapore, import duties were imposed on foreign products so that the local manufacturer could capture the domestic market. Some peop
+11 | SPEECH | 20 | Dr Goh Keng Swee | This brings me to the subject of Government's policy on industrialisation and its effect on the prices of goods. We must assure the local manufacturer a substantial portion of the domestic market for the products he is manufacturing. To do this, impo
+12 | SPEECH | 20 | Dr Goh Keng Swee | In two or three instances there are grounds for suspecting local manufacturers of either having inefficient high cost management or making excessive profits. The cure here, in the first instance, is to improve management efficiency. In the second cas
+13 | SPEECH | 22 | Mr P. Govindaswamy (Anson) | As the Hon. Minister for Finance has accepted the fact that people earning below $200 will incur an additional expenditure of $14, will the Minister consider increasing the salaries of people drawing low pay?
+14 | SPEECH | 20 | Dr Goh Keng Swee | The answer is "No".
+15 | SPEECH | 58 | Mr Teong Eng Siong (Sembawang) | Will the Minister consider requesting all shops selling foodstuffs to exhibit price tags on their goods (especially rice) for public information?
+16 | SPEECH | 16 | Mr Speaker | Mr Teong, the subject matter of your supplementary is actually a substantive question. It is down today for written answer. So your supplementary, in fact, anticipates a matter that is before the House.
+17 | SPEECH | 58 | Mr Teong Eng Siong | I would like to ask the Minister whether he would consider instructing all rice sellers to exhibit price tags to help the buyers. Some of the shops have already done so.
+18 | SPEECH | 20 | Dr Goh Keng Swee | I do not believe that exhibiting price tags could reduce the price of rice. But if the hon. Member believes that it will, and has confidence in its efficacy, then we can give it a try.
+19 | SPEECH | 58 | Mr Teong Eng Siong | Sir, what I mean is that if there are price tags, the purchasers will know the actual condition of the market, because now and then, whenever there is any incident, the seller -
+20 | SPEECH | 16 | Mr Speaker | Mr Teong, supplementaries are not explanations.
+21 | SPEECH | 55 | Mr Tang See Chim (Choa Chu Kang) | Mr Speaker, Sir, would the Minister for Finance consider setting up a committee whose sanction is necessary if any local manufacturer wishes to increase the price of his products?
+22 | SPEECH | 20 | Dr Goh Keng Swee | There are committees in existence to consider applications from manufacturers who wish to increase the prices of their goods.
+23 | SPEECH | 55 | Mr Tang See Chim | Does it mean that the present position is that no local manufacturers can increase the prices of their products unless the increase is sanctioned by the committee that is in existence?
+24 | SPEECH | 20 | Dr Goh Keng Swee | They are under no legal compulsion to keep their prices at any given level. But there is a gentleman's agreement between the Ministry and the manufacturers that price increases should be discussed with and agreed to between themselves. For this purpo
+25 | SPEECH | 55 | Mr Tang See Chim | What sanction would there be then should a local manufacturer breach this gentleman's agreement?
+26 | SPEECH | 20 | Dr Goh Keng Swee | The sanction I have mentioned, Mr Speaker, Sir, is the abolition of tariff protection.
+"""
+_REPORT_26045_TITLE = "'BABY BONUS' SCHEME"
+_REPORT_26045_ROWS = """
+1 | SPEECH | 605 | Mr Ang Mong Seng | asked the Prime Minister whether he will consider granting the 'Baby Bonus' to include the first child, and whether the effective date for this scheme will be the date of announcement instead of 1st April 2001.
+2 | SPEECH | 650 | The Minister without Portfolio (Mr Lim Boon Heng) (for the Prime Minister) | The Total Fertility Rate or TFR was 1.48 in 1999. In other words, on average, each Singaporean woman was having at least one child. Therefore, it is not necessary to provide incentives for the birth of the first child. The "baby bonus" and other pro-
+3 | SPEECH | 650 | The Minister without Portfolio (Mr Lim Boon Heng) (for the Prime Minister) | The effective date has been decided after taking into consideration the time for families to respond to the call for bigger families. There is no one date, which will satisfy all parties. Even if it were effective from the date of announcement, there
+4 | SPEECH | 661 | Dr Lily Neo (Kreta Ayer-Tanglin) | Will the Minister clarify whether the "baby bonus" would be given to those who conceived after the announcement but deliver before 1st April 2001 due to unforeseen premature births?
+5 | SPEECH | 650 | Mr Lim Boon Heng | Mr Speaker, Sir, I think it is very difficult to be precise as to the date of conception. Some allowance has already been provided in the announcement that it will be effective from 1st April 2001.
+6 | SPEECH | 661 | Dr Lily Neo | May I ask the Minister whether it is unfair to these couples who have responded to the call for having more children after the Prime Minister's announcement and yet be deprived of the "baby bonus" because of nature and not through the fault of their
+7 | SPEECH | 650 | Mr Lim Boon Heng | Sir, it is not a matter of fairness. We have to look at this "baby bonus" in its proper perspective. It is an encouragement to families to have more children. We cannot count every dollar and cent as to who would benefit and who would not. As in draw
+8 | SPEECH | 687 | Dr S. Vasoo (Tanjong Pagar) | Can I ask the Minister why are they so clinical? Why can we not be more generous, since people are responding to the call?
+9 | SPEECH | 650 | Mr Lim Boon Heng | We are not trying to be clinical. We are trying to set a date for implementation. As I said in my earlier answer, even if we set the effective date at the point of time when the Prime Minister made the announcement, some people will still miss it.
+10 | SPEECH | 658 | Mr Low Thia Khiang | Does the Minister not think that parents who do not need encouragement but already have more children in contributing to the population growth should also be given some rewards?
+11 | SPEECH | 650 | Mr Lim Boon Heng | Mr Speaker, Sir, we should look at this in its proper perspective. We have a falling fertility rate. What Government can do is to offer incentives as a signal to the people that we encourage families to have children. As I said, it is not a question
+12 | SPEECH | 605 | Mr Ang Mong Seng (Bukit Gombak) | Sir, the "baby bonus" is geared towards encouraging the families to have more babies, but it should not be confined to monetary measures only. Concessions in childcare centres and priority in housing should be given as incentives for them to produce
+13 | SPEECH | 650 | Mr Lim Boon Heng | Some of the measures to encourage couples to have children have been announced. I know that there are many other suggestions that people would have on how we can give further encouragement to couples to do so. The measures which Mr Ang mentioned will
+14 | SPEECH | 661 | Dr Lily Neo | May I suggest another important incentive, ie, to encourage young married couples to start having children earlier in order to address the present trend of later marriages and postponement of having children?
+15 | SPEECH | 650 | Mr Lim Boon Heng | If the Member has effective suggestions as to how to encourage people to marry younger and have children younger, please forward the suggestions.
+16 | SPEECH | 687 | Dr Vasoo | Sir, even if our parliamentary colleagues are going to give suggestions on the issue of "baby bonus", the support from Government is just lukewarm.
+17 | SPEECH | 679 | Mr Speaker | Dr Vasoo, are you asking a supplementary question or you are asking the next question?
+18 | SPEECH | 687 | Dr Vasoo | Sir, I am trying to ask the Minister whether he would relook at the whole issue by encouraging younger people to have family formation and see whether we could be more generous by looking at other incentives which would be necessary to support popula
+19 | SPEECH | 650 | Mr Lim Boon Heng | Mr Speaker, Sir, the cost of raising children varies from family to family but I hear that many people think it is not expensive. Whatever bonus or incentive that the Government gives to couples for raising their children cannot fully cover the total
+20 | SPEECH | 650 | Mr Lim Boon Heng | The more difficult area to consider would be the social changes that have taken place in society, not only in ours but I think worldwide, and whether those changes can be reversed. It has to do with the values that people hold and when we talk about
+21 | SPEECH | 679 | Mr Speaker | I think we have enough baby talk for one day. Can you ask the next question, Dr Vasoo?
+22 | SPEECH | 687 | Dr Vasoo | Question No. 8.
+"""
+_REPORT_31695_TITLE = "PARKING OF MOTORCYCLES IN HDB VOID DECKS"
+_REPORT_31695_ROWS = """
+1 | SPEECH | 367 | Mr Goh Choon Kang | asked the Minister for National Development (a) how widespread is the problem of indiscriminate parking by motorcyclists at Housing and Development Board apartments' void decks; and (b) whether the HDB has any plan to deal with the problem.
+2 | SPEECH | 359 | Mr Chiam See Tong (Potong Pasir) | Mr Speaker, Sir, I think there is a point of order. This question refers to indiscriminate parking of motorcycles in Housing and Development Board apartments' void decks. May I say that I have got no complaints in respect of the constituency of Poton
+3 | SPEECH | 424 | Mr Speaker | It is a very unusual statement, Mr Chiam. You can ask a supplementary question if you want.
+4 | SPEECH | 359 | Mr Chiam See Tong | Before the Minister gives his answer?
+5 | SPEECH | 424 | Mr Speaker | You are pre-empting the Minister.
+6 | SPEECH | 408 | The Minister for National Development (Mr Teh Cheang Wan) | Mr Speaker, Sir, in a recent sample survey of 189 apartment blocks in Serangoon Central, Tampines West and Hougang Central Estates, it was found that, on the average, two motorcycles were found parking in the void decks, per block, during the night.
+7 | SPEECH | 408 | The Minister for National Development (Mr Teh Cheang Wan) | The HDB has served warning notices on motorcycles found parked in the void decks. Although this has resulted in getting some of the owners to park their motorcycles in authorized lots in the car parks, it has not eliminated the problem. Where the par
+8 | SPEECH | 408 | The Minister for National Development (Mr Teh Cheang Wan) | To deal with the problem more effectively, the HDB is currently formulating rules to prohibit the parking of motorcycles in the void decks of apartment blocks. Offenders can then be fined under such rules.
+9 | SPEECH | 375 | Mr J.B. Jeyaretnam (Anson) | Mr Speaker, Sir, supplementary question for the Minister, and that is: will he tell us whether adequate parking places for motorcyclists are provided in every housing estate, adjacent to the blocks where the residents are living? Is he aware that a n
+10 | SPEECH | 408 | Mr Teh Cheang Wan | Mr Speaker, Sir, HDB has provided adequate motorcycle parking lots in the housing estates. Perhaps I can give the Member for Anson some figures. HDB manages a total of 103,118 motorcycle lots as at 30th June 1986, that is, up to middle of this year.
+11 | SPEECH | 375 | Mr Jeyaretnam | Is the Minister aware that there have been complaints by residents who hold season parking tickets that when they come back at night, at 1 am or 2 am, after their work, they find all the parking lots taken up, maybe not by the season parking ticket h
+12 | SPEECH | 408 | Mr Teh Cheang Wan | Those people who park their motorcycles without either season tickets or daily tickets are fined by HDB for taking up motorcycle lots which they are not supposed to. I do not think availability of parking lots is a problem. In most cases these motorc
+13 | SPEECH | 359 | Mr Chiam See Tong | What steps has the HDB taken to publicize this problem or to educate the residents of housing estates not to park their motorcycles in void decks because of oil spills and other problems?
+14 | SPEECH | 408 | Mr Teh Cheang Wan | Mr Speaker, Sir, I think periodically the HDB has publicized in the Home magazine the problem of parking motorcycles in the void decks, such as oil spills. And, as I have said earlier in answering the Member for Braddell Heights, HDB will be formulat
+15 | SPEECH | 359 | Mr Chiam See Tong | Since the HDB knew of this problem, in what housing estates have they publicized and carried out a programme of education in regard to this problem?
+16 | SPEECH | 408 | Mr Teh Cheang Wan | I said it is publicized in our HDB Home magazine, which means that since all HDB residents receive a copy of the Home magazine, so all HDB residents in every estate are told of this problem.
+"""
+_REPORT_31724_TITLE = "HUDC PHASE 3 FLATS"
+_REPORT_31724_ROWS = """
+1 | UNCLASSIFIED |  |  | The following Question stood in the name of Dr Koh Lam Son -
+2 | DOCUMENT_TEXT |  |  | 2. To ask the Minister for National Development whether the Housing and Development Board will consider lifting the income ceiling and other qualifications for the purchase of HUDC phase 3 flats in view of the recent no-buy-back decision.
+3 | SPEECH | 386 | Mr Leong Horn Kee (Thomson) | Question No. 2, Sir.
+4 | SPEECH | 359 | Mr Chiam See Tong | Sir, I think this is important. May I ask a supplementary question?
+5 | SPEECH | 424 | Mr Speaker | You can raise that after the question has been answered. Mr Teh.
+6 | SPEECH | 408 | Mr Teh Cheang Wan | Mr Speaker, Sir, the present income ceiling for HUDC applicants of $6,000/- a month is based on the survey of household incomes in Singapore. 95% of families in Singapore qualify to purchase HUDC flats under the present income ceiling. As practically
+7 | SPEECH | 408 | Mr Teh Cheang Wan | As HUDC housing provides long-term accommodation for middle-income families unable to afford private properties, it is necessary to impose other eligibility conditions such as requirements for citizenship, family nucleus and non-ownership of private
+8 | SPEECH | 408 | Mr Teh Cheang Wan | The HDB has, therefore, no intention of lifting the income ceiling or the other eligibility conditions for the purchase of HUDC flats. This is also in line with the Government's policy not to compete with the private sector in the property market.
+9 | SPEECH | 359 | Mr Chiam See Tong | Sir, a supplementary question as regards the previous Question which you have allowed me to ask.
+10 | SPEECH | 424 | Mr Speaker | I am saying your supplementary question for the second Question.
+11 | SPEECH | 359 | Mr Chiam See Tong | But we have not completed it.
+12 | SPEECH | 424 | Mr Speaker | I am sorry to say it is completed. If you ask a supplementary question on the second Question, I will allow you. Do that please.
+13 | SPEECH | 359 | Mr Chiam See Tong | I will ask a supplementary question. The Minister has conceded that HUDC policy is under the HDB rules. Is it not HDB's rule that the HDB purchases flats back from HDB house owners within five years? Is that not a rule?
+14 | SPEECH | 408 | Mr Teh Cheang Wan | Mr Speaker, Sir, as I have explained very clearly and repeatedly just now, a lot of HDB and HUDC rules are similar but they are not identical.
+15 | SPEECH | 359 | Mr Chiam See Tong | Sir, can the Minister please tell the House that the rule governing HUDC policy is, in fact, not completely governed by HDB rule. Is that what he is saying now? You are making so many exceptions.
+16 | SPEECH | 408 | Mr Teh Cheang Wan | Mr Speaker, Sir, I think the Member for Potong Pasir is confused. Both the HUDC flat and HDB flat are governed by HDB rules.
+17 | SPEECH | 359 | Mr Chiam See Tong | Correct.
+18 | SPEECH | 408 | Mr Teh Cheang Wan | It is correct. But HDB has made various rules governing, for example, the 1-room flat which has separate rules.
+19 | SPEECH | 359 | Mr Chiam See Tong | We are talking about the purchasing of flats back now.
+20 | SPEECH | 424 | Mr Speaker | The Minister is answering the question.
+21 | SPEECH | 408 | Mr Teh Cheang Wan | I am answering the question. I am just explaining that in all Housing Board flats, each flat type has its own rules. For example, the 1-room flat rules are different from the 2-room flat rules; the 2-room flat rules are different from other types of
+22 | SPEECH | 359 | Mr Chiam See Tong | Answer the question.
+23 | SPEECH | 408 | Mr Teh Cheang Wan | HDB flats, the 1-room, 2-room and 3-room flats, are offered for sale and they are also offered for rental. For the rental flats, the rules are different from the rules for sale of the flats, and I just ---
+24 | SPEECH | 359 | Mr Chiam See Tong | Mr Speaker, Sir, this is wasting the House time. Please answer whether you have a rule to purchase back within five years.
+25 | SPEECH | 424 | Mr Speaker | Mr Chiam, will you please sit down!
+26 | SPEECH | 408 | Mr Teh Cheang Wan | Sir, there is no such rule to purchase HUDC flats back in five years.
+27 | SPEECH | 359 | Mr Chiam See Tong | HDB.
+28 | SPEECH | 408 | Mr Teh Cheang Wan | Yes, HDB. I have explained.
+29 | SPEECH | 359 | Mr Chiam See Tong | All right. Now he concedes that there is an HDB rule which the HDB purchases HDB flats back in five years. Now we go back to your previous policy.
+30 | SPEECH | 424 | Mr Speaker | Let us have your supplementary question, Mr Chiam.
+31 | SPEECH | 359 | Mr Chiam See Tong | Is there not a clause in your lease, which you so much would like to refer to, the legality of it? Is there not a clause in your lease which says that if there is a requirement for the house owner, the HUDC owner, to resell it back, they have to rese
+32 | SPEECH | 408 | Mr Teh Cheang Wan | Mr Speaker, Sir, I think this has already been answered and I do not wish to repeat.
+33 | SPEECH | 359 | Mr Chiam See Tong | Therefore, if the HDB has got this ruling, that ruling should cover HUDC flats. We are talking of legality now. Why is the HDB not ---
+34 | SPEECH | 424 | Mr Speaker | Are you asking a supplementary question or not?
+35 | SPEECH | 359 | Mr Chiam See Tong | Yes, all right. Why is the HDB not buying back HUDC flats within five years under your rules and under the agreement of lease? Clause 12 for your information.
+36 | SPEECH | 408 | Mr Teh Cheang Wan | There is no such agreement in the HUDC clause that says HDB has to buy back HUDC flats.
+37 | SPEECH | 424 | Mr Speaker | Let us call this End of Question Time since the Member for Potong Pasir seems to be a bit confused.
+"""
+
+
+def test_report_37380_member_who_also_supplements_has_no_unlabelled_row() -> None:
+    labelled_report = _label_report(
+        _REPORT_37380_TITLE,
+        _REPORT_37380_ROWS,
+        speaker_id_to_office={
+            20: Office("Minister for Finance", OfficeSource.HEADER_IN_REPORT)
+        },
+    )
+
+    assert _get_person_rows(labelled_report, 55) == [
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            21,
+            "Mr Tang See Chim (Choa Chu Kang)",
+            55,
+        )
+    ]
+
+
+def test_report_26045_member_who_calls_the_next_question_keeps_only_his_supplementary() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_26045_TITLE, _REPORT_26045_ROWS)
+
+    assert _get_person_rows(labelled_report, 687) == [
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            8,
+            "Dr S. Vasoo (Tanjong Pagar)",
+            687,
+        )
+    ]
+
+
+def test_report_31695_member_whose_point_of_order_comes_first_keeps_only_his_supplementary() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_31695_TITLE, _REPORT_31695_ROWS)
+
+    assert _get_person_rows(labelled_report, 359) == [
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            13,
+            "Mr Chiam See Tong",
+            359,
+        )
+    ]
+
+
+def test_report_31724_member_who_asks_before_the_answer_keeps_only_his_supplementary() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_31724_TITLE,
+        _REPORT_31724_ROWS,
+        speaker_id_to_office={
+            408: Office(
+                "Minister for National Development", OfficeSource.HEADER_IN_REPORT
+            )
+        },
+    )
+
+    assert _get_person_rows(labelled_report, 359) == [
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            9,
+            "Mr Chiam See Tong",
+            359,
+        )
+    ]
