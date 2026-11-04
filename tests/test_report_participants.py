@@ -2455,7 +2455,11 @@ def test_question_the_record_says_was_not_asked_aloud_gets_the_state(
         if speech_asker_row.ordinal == line_ordinal
     )
 
-    labelled_report = _label_report("A question", rows_text)
+    labelled_report = _label_report(
+        "A question",
+        rows_text,
+        printed_name_to_speaker_id={"Mr David Marshall": 1349},
+    )
 
     assert _summarise_states(labelled_report.states) == [
         (QuestionState.NOT_ASKED_ALOUD, printed_line.transcript, line_ordinal)
@@ -2587,3 +2591,30 @@ def test_addendum_or_later_supplied_answer_is_a_correction_not_a_non_question(
     assert _summarise_states(labelled_report.states) == [
         (QuestionState.CORRECTION, printed_text, printed_ordinal)
     ]
+
+
+_REPORT_11641_TITLE = "Support for Singaporean workers"
+_REPORT_11641_ROWS = """
+1 | SPEECH | 1037 | Mr Dennis Tan Lip Fong | asked the Minister for Manpower what support is available for retrenched workers.
+2 | SPEECH | 408 | Mr Teh Cheang Wan | Mr Speaker, Sir, support is available through several schemes.
+3 | SPEECH | 1038 | Mr Dennis Tan Lip Fong (Non-Constituency Member) | Mr Speaker, Sir, I am not sure I have heard the Senior Minister of State answering Question No 5. Could I ask him to answer Question No 5 again?
+4 | SPEECH | 411 | Mr S. Vasoo (Bo Wen) | I think there might be a Question No 10 before my question, Mdm Speaker.
+"""
+
+
+def test_report_11641_member_who_only_mentions_a_question_number_stays_supplementary() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_11641_TITLE,
+        _REPORT_11641_ROWS,
+        speaker_id_to_office={
+            408: Office("Minister for Manpower", OfficeSource.HEADER_IN_REPORT)
+        },
+    )
+
+    assert [
+        participant[0]
+        for participant in _summarise_participants(labelled_report.participants)
+        if participant[4] in (1038, _VASOO_SPEAKER_ID)
+    ] == [ParticipantRole.SUPPLEMENTARY, ParticipantRole.SUPPLEMENTARY]

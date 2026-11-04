@@ -75,7 +75,9 @@ _INLINE_SPEAKER_PATTERN = re.compile(
 )
 _BRACKET_PATTERN = re.compile(r"\([^)]*\)?")
 _CALLED_QUESTION_PATTERN = re.compile(
-    r"\bquestions?\s+(?:nos?\.?\s*|number\s*)?\d+", re.IGNORECASE
+    r"(?:^|[.?!]\s+)\W*questions?\s+(?:nos?\.?\s*|number\s*)?\d+"
+    r"(?:,?\s*(?:sir|please|madam|mdm\s+speaker|mr\s+speaker))*\W*$",
+    re.IGNORECASE,
 )
 _COLLECTIVE_LABEL_PATTERN = re.compile(
     r"^\W*(?:(?:some|an?)\s+)?hon\.?\s+members?\W*$", re.IGNORECASE
