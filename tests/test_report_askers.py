@@ -1781,3 +1781,48 @@ def test_report_30113_numbered_question_printed_with_no_name_credits_no_one() ->
     ]
 
     assert get_asker_candidates(speech_asker_rows) == []
+
+
+def test_report_22632_unnumbered_to_ask_rows_take_a_reader_only_from_the_row_after_them() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "The following questions stood on the Order Paper -",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Dr Muhammad Faishal Ibrahim",
+            310,
+            "To ask the Minister for National Development with the rising prices of new and resale HDB flats",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Ms Eunice Elizabeth Olsen",
+            311,
+            "To ask the Minister for National Development whether his Ministry will consider raising the income ceiling",
+        ),
+        _build_row(
+            4,
+            SpeechKind.SPEECH,
+            "Mr Liang Eng Hwa (Holland-Bukit Timah)",
+            312,
+            "Question No. 8, Sir.",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert [
+        (asker_candidate.printed_name, asker_candidate.reader_speaker_id)
+        for asker_candidate in asker_candidates
+    ] == [
+        ("Dr Muhammad Faishal Ibrahim", None),
+        ("Ms Eunice Elizabeth Olsen", 312),
+    ]
