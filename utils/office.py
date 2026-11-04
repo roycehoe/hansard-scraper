@@ -18,6 +18,9 @@ _APOSTROPHE_VARIANT = "’"
 
 _TITLE_DOT_PREFIX_PATTERN = re.compile(r"^(Mr|Mrs|Dr|Ms)\.\s+")
 _WHITESPACE_RUN_PATTERN = re.compile(r"\s+")
+_LOST_SPACE_PATTERN = re.compile(
+    r"(?<=[a-z])(?=(?:Minister|Ministry|Senior|Parliamentary|Secretary|State)\b)"
+)
 _ANSWERING_FOR_PATTERN = re.compile(
     r"^(?:for(?![a-z])|forthe\b|on\s+behalf\b)", re.IGNORECASE
 )
@@ -206,7 +209,8 @@ def get_header_entries(header: str) -> list[HeaderEntry]:
 
 
 def _normalize_office_text(office_printed: str) -> str:
-    text = office_printed.lower().replace(_APOSTROPHE_VARIANT, "'")
+    text = _LOST_SPACE_PATTERN.sub(" ", office_printed).lower()
+    text = text.replace(_APOSTROPHE_VARIANT, "'")
     text = _SERVED_MINISTER_PATTERN.sub(r"\1", text)
     return _NON_OFFICE_PHRASE_PATTERN.sub("", text)
 

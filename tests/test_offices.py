@@ -780,6 +780,20 @@ def test_government_office_names_a_minister_secretary_or_law_officer(
     assert is_government_office(office_printed) is expected_is_government
 
 
+_REPORT_23607_SQUASHED_OFFICE = "SeniorMinister of State, Ministry of Information, Communications and the Arts andMinistry of Health"
+
+
+def test_office_class_of_report_23607_office_with_lost_spaces() -> None:
+    assert (
+        get_office_class(_REPORT_23607_SQUASHED_OFFICE)
+        == OfficeClass.SENIOR_MINISTER_OF_STATE
+    )
+
+
+def test_government_office_of_report_23607_office_with_lost_spaces() -> None:
+    assert is_government_office(_REPORT_23607_SQUASHED_OFFICE) is True
+
+
 def _build_sitting_attendance_text_row(
     markdown_content: Optional[str], attendance_list: Optional[str]
 ) -> SittingAttendanceTextRow:
