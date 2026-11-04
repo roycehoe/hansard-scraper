@@ -66,6 +66,11 @@ _NON_ANSWER_PHRASE_PATTERN = re.compile(
     r"|leave\s+that\s+(?:entirely\s+)?to\s+you|allowing\s+me\s+to\s+join",
     re.IGNORECASE,
 )
+_EARLIER_QUESTION_PATTERN = re.compile(
+    r"clarif\w+\s+(?:on|of)\s+my\s+previous\s+repl(?:y|ies)\b"
+    r"|respond\s+to\s+the\s+earlier\s+clarification\b",
+    re.IGNORECASE,
+)
 _ASKING_PATTERN = re.compile(
     r"\b(?:ask|have)\s+(?:a\s+)?supplementary"
     r"|(?:^|[,.]\s*)(?:a\s+)?supplementary\s+question\b"
@@ -549,6 +554,8 @@ def _is_answering_run(
     ordinal_to_first_answerer_transcript: dict[int, str],
 ) -> bool:
     if any(_NON_ANSWER_PHRASE_PATTERN.search(run_row.transcript) for run_row in run):
+        return False
+    if _EARLIER_QUESTION_PATTERN.search(run[0].transcript):
         return False
     if not all(
         _does_row_answer(run_row, ordinal_to_label.get(run_row.ordinal - 1))

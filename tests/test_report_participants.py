@@ -3233,3 +3233,105 @@ def test_report_33323_point_of_order_that_ends_in_a_question_stays_unlabelled() 
             293,
         )
     ]
+
+
+_REPORT_20882_TITLE = "Holistic Approach to Education"
+_REPORT_20882_ROWS = """
+1 | SPEECH | 918 | Mr Christopher de Souza | asked the Minister for Education (a) whether the Ministry aims to have schoolgoing children enjoy their education and derive happiness from their pursuit of kno
+2 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | Mr Speaker, Sir, Mr de Souza and the Ministry of Education share a common goal – to nurture each child holistically and to be the best that he can be. We want t
+3 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | We, too, want our children to be happy, but this happiness must be derived from something deeper, the satisfaction of having worked hard, to master the skills a
+4 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | How do we achieve it? I had outlined the key factors in my speech at the MOE Workplan Seminar in September. I signalled a clear emphasis on students’ centricity
+5 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | Now, more than at any time in our history, we face unprecedented change. The more the world around us shifts and tilts, the more we need to be firmly anchored t
+6 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | We have increased curriculum time for PE by between half an hour to an hour across all levels. We have put in place new programmes such as the Programmes for Ac
+7 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | Second, we need to create the right condition for primary school to be a good school so that every child gets a positive school experience. It is worthwhile for
+8 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | Anyone who has been watching the education scene will know that schools are seeking to do just that and introducing different types of programmes that meet dive
+9 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | MOE has also created new pathways and options for students. Primary school students no longer get streamed but have a choice of Standard or Foundational subject
+10 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | School attendance is universal, dropout rates are low, the quality of students experience in schools is rising and nine in 10 get into post-secondary educationa
+11 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | Third, schools cannot do their important work alone. We need parents and the wider community to agree with us on the importance of developing each child holisti
+12 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | We also need our parents to help their children discover their strengths, develop these and feel confident about what they are to become. At the same time, we h
+13 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | Almost as soon as they landed in MOE, my colleagues, SPS Hawazi Daipi and SPS Sim Ann who are the Chair and Deputy Chair of the Community and Parents in Support
+14 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | In my first few months in MOE, my team and I had spent much time meeting students, educators, school leaders and parents. The Government Parliamentary Committee
+15 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | In the meantime, as one follow-up on my workplan seminar speech, MOE is working with schools to enhance our current guidelines on homework policy. When done wel
+16 | SPEECH | 937 | The Minister for Education (Mr Heng Swee Keat) | Singaporeans invest a lot of hope and aspirations for a better society through our collective investment in our young. This is a precious asset. The support of
+17 | SPEECH | 918 | Mr Christopher de Souza | First, I would like to thank the Minister and all his teachers for their vision to create a nurturing life-giving and confidence-giving environment in our schoo
+18 | SPEECH | 937 | Mr Heng Swee Keat | Mr Speaker, Sir, I am glad that Mr de Souza was such a keen sportsman and had all the opportunities to play sports. Indeed, I agree with him. First, let me say
+19 | SPEECH | 920 | Ms Denise Phua Lay Peng (Moulmein-Kallang) | Sir, I want to thank the Minister for his very comprehensive reply and also to compliment him for the wisdom to lead in the right direction, for example, in inc
+20 | SPEECH | 937 | Mr Heng Swee Keat | I thank Ms Denise Phua for the question. In the subject of high-stake examinations and stress, I fully empathise with the parents and students. I know that many
+21 | SPEECH | 937 | Mr Heng Swee Keat | First, the reason why we put the focus on student-centric holistic education is to recognise that each student is different, has different strengths and therefo
+22 | SPEECH | 937 | Mr Heng Swee Keat | There will be more places at the universities, more pathways which the Minister of State Lawrence Wong is currently reviewing. To reduce some of these high-stak
+23 | SPEECH | 937 | Mr Heng Swee Keat | Let me also say that the parents whom I have met and the feedback that had been given is that nobody has suggested abolishing examinations. Examinations well do
+24 | SPEECH | 937 | Mr Heng Swee Keat | When I was in Japan a few months back, I looked at what Japan was doing. They had, because of the stress in the system, also reduced the curriculum content a fe
+25 | SPEECH | 937 | Mr Heng Swee Keat | I also had many interactions with my counterparts from the advanced countries, seeking to learn from them but they were seeking to learn from us. They asked me
+26 | SPEECH | 937 | Mr Heng Swee Keat | Let me end by saying that education is a long-term endeavour and whatever changes we make, let us recognise that we have a high quality, strong system. Whatever
+27 | SPEECH | 983 | Mr Speaker | Mr Yee Jenn Jong, last question.
+28 | SPEECH | 1012 | Mr Yee Jenn Jong (Non-Constituency Member) | Thank you to the Minister for clarifying. I would like to ask the Minister what he thinks of allowing students to take more than two CCAs if they so wish and if
+29 | SPEECH | 937 | Mr Heng Swee Keat | Sir, I thank Mr Yee for that question. First, the Member’s question on whether a school should allow it if a student wants to take two CCAs –
+30 | SPEECH | 1012 | Mr Yee Jenn Jong | More than two CCAs.
+31 | SPEECH | 937 | Mr Heng Swee Keat | Well, I think in my comments on holistic and student-centric education, my key point is that everyone is different and, therefore, we should not be overly presc
+32 | SPEECH | 937 | Mr Heng Swee Keat | Now, on the Member’s question about whether students should take more or fewer subjects: it is exactly the same philosophy. There are students who have done ver
+33 | SPEECH | 983 | Mr Speaker | Dr Ng Eng Hen, do you have a clarification?
+34 | SPEECH | 979 | Dr Ng Eng Hen | Mr Speaker, thank you for allowing me to make some clarifications on my previous reply. I think Dr Lim Wee Kiak had asked for Dr Patrick Tan’s service during his operationally-ready national service, in other words, after national service, full-time national service. I was looking for the paragraph, and I have found it. Dr Patrick Tan served as a Laboratory Officer in one of the SAF’s combat support hospitals. This is a standard designation in the combat support hospital. The role of the Laboratory Officer is to assist with blood and plasma storage and supply and to conduct clinical analysis of blood samples. I presume he was deployed there because of his qualifications.
+35 | SPEECH | 979 | Dr Ng Eng Hen | My last clarification was in terms of what Mr Yaw brought up in terms of the "white horse" issue. I said that Mr Cedric Foo had answered the question previously and to refer to the reply. If Members checked the record of the reply, I think he made it clear the "white horse" policy was initiated to ensure that there was no preferential treatment given to anyone in regard to NS.
+"""
+_REPORT_12949_TITLE = (
+    "Findings from Trial of Using Speed-tracking Devices for Heavy Vehicles"
+)
+_REPORT_12949_ROWS = """
+1 | SPEECH | 1093 | Mr Louis Ng Kok Kwang | asked the Minister for Home Affairs (a) what are the findings from the trial of using speed-tracking devices for heavy vehicles in 2018; and (b) whether there a
+2 | SPEECH | 1019 | The Senior Parliamentary Secretary to the Minister for Home Affairs (Mr Amrin Amin) (for the Minister for Home Affairs) | Today, the Traffic Police (TP) already require the use of speed limiters for heavy vehicles. One limitation, however, is that the speed limiters can be tampered
+3 | SPEECH | 1019 | The Senior Parliamentary Secretary to the Minister for Home Affairs (Mr Amrin Amin) (for the Minister for Home Affairs) | Between December 2017 and August 2018, TP conducted a trial on speed-tracking devices, to assess if they might be more effective than speed limiters in discoura
+4 | SPEECH | 1019 | The Senior Parliamentary Secretary to the Minister for Home Affairs (Mr Amrin Amin) (for the Minister for Home Affairs) | In addition, the cost to install the speed tracking devices is not low. TP has decided not to make the speed tracking devices mandatory. TP will continue to req
+5 | SPEECH | 1019 | The Senior Parliamentary Secretary to the Minister for Home Affairs (Mr Amrin Amin) (for the Minister for Home Affairs) | TP will continue to monitor the development of other technologies that can help to discourage speeding. TP will also continue to adopt a multi-pronged strategy
+6 | SPEECH | 1111 | Mr Speaker | Mr Louis Ng.
+7 | SPEECH | 1093 | Mr Louis Ng Kok Kwang (Nee Soon) | I thank the Senior Parliamentary Secretary for the reply. My main concern really is that when there is an accident involving a heavy vehicle, the chance of fata
+8 | SPEECH | 1093 | Mr Louis Ng Kok Kwang (Nee Soon) | My second question is whether MHA will consider installing the speed counters that we have in our military vehicles. We seldom see the military vehicles speedin
+9 | SPEECH | 1019 | Mr Amrin Amin | I thank the Member for the suggestion. We will study whether we need to increase the penalties for tampering. But currently, the penalties are quite significant
+10 | SPEECH | 1019 | Mr Amrin Amin | That said, we are not just stopping there. We are also looking to enhance the punishment, in particular. MHA recently announced increases in composition sums fo
+11 | SPEECH | 1019 | Mr Amrin Amin | Also, TP engages heavy vehicle drivers regularly through education, safety dialogues and various other sessions.
+12 | SPEECH | 1019 | Mr Amrin Amin | On the use of the speed tracking devices, that is part of the trial. In fact, what we have tested in the trial were enhanced features where the business owners
+13 | SPEECH | 1019 | Mr Amrin Amin | On a good note, the accidents involving heavy vehicles have, in fact, decreased. Let me share with Member the figures that we have. Between 2014 and 2018, the n
+14 | SPEECH | 1111 | Mr Speaker | Senior Parliamentary Secretary Low Yen Ling.
+15 | SPEECH | 1082 | The Senior Parliamentary Secretary to the Minister for Education (Ms Low Yen Ling) | Thank you, Mr Speaker, Sir. Please allow me to respond to the earlier clarification by Dr Intan Mokhtar. The child psychology clinic that she cited was reported by The New Paper in a 2010 article, and this child psychology clinic was just one of the initiatives that Temasek Polytechnic was considering. This initiative was never implemented and Mr Brochez was not involved in this initiative.
+16 | SPEECH | 1111 | Mr Speaker | Order. End of Question Time. Introduction of Government Bills.
+"""
+
+
+def test_report_20882_later_holders_clarification_of_a_previous_reply_is_not_an_answer() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_20882_TITLE,
+        _REPORT_20882_ROWS,
+        speaker_id_to_office={
+            979: Office(
+                "Minister for Defence and Leader of the House",
+                OfficeSource.ATTENDANCE_LIST,
+            )
+        },
+    )
+
+    assert _get_person_rows(labelled_report, 979) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            34,
+            "Dr Ng Eng Hen",
+            979,
+        )
+    ]
+
+
+def test_report_12949_later_holders_response_to_an_earlier_clarification_is_not_an_answer() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_12949_TITLE, _REPORT_12949_ROWS)
+
+    assert _get_person_rows(labelled_report, 1082) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            15,
+            "The Senior Parliamentary Secretary to the Minister for Education (Ms Low Yen Ling)",
+            1082,
+        )
+    ]
