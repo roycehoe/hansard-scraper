@@ -5,6 +5,7 @@ from pydantic import BaseModel, ValidationError
 
 from exceptions import HansardDataFileError
 from schemas.attendance_cleanup import AttendanceCleanup
+from schemas.bill_title_correction import BillTitleCorrection, BillTitleCorrections
 from schemas.constituency_names import ConstituencyNames
 from schemas.excluded_report_id import ExcludedReportId, ExcludedReportIds
 from schemas.hand_check_office_holder import (
@@ -26,6 +27,7 @@ from schemas.unattributed_speech import (
 
 _DATA_DIRECTORY = Path(__file__).parent.parent / "data"
 EXCLUDED_REPORT_IDS_FILE = _DATA_DIRECTORY / "excluded_report_ids.json"
+_BILL_TITLE_CORRECTIONS_FILE = _DATA_DIRECTORY / "bill_title_corrections.json"
 _CONSTITUENCY_NAMES_FILE = _DATA_DIRECTORY / "constituency_names.json"
 _COLONIAL_MEMBERS_FILE = _DATA_DIRECTORY / "colonial_la_members.json"
 _UNSCRAPED_MEMBERS_FILE = _DATA_DIRECTORY / "unscraped_members.json"
@@ -91,3 +93,7 @@ def get_person_decisions() -> list[PersonDecision]:
 
 def get_hand_check_office_holders() -> list[HandCheckOfficeHolder]:
     return _get_data_file(_HAND_CHECK_OFFICE_HOLDERS_FILE, HandCheckOfficeHolders).root
+
+
+def get_bill_title_corrections() -> list[BillTitleCorrection]:
+    return _get_data_file(_BILL_TITLE_CORRECTIONS_FILE, BillTitleCorrections).root

@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from crud.report import ReportSittingDateTitleRow
+from exceptions import HansardHandKeptEntryError
+from schemas.bill_title_correction import BillTitleCorrection
 from utils.title_key import get_title_key
 
 FIRST_READING_PATTERN = r"\yread (a|the|for the) first time"
@@ -66,15 +68,47 @@ def _build_bill_group(open_bill: _OpenBill) -> BillGroup:
     )
 
 
+def _build_corrected_report_rows(
+    report_rows: list[ReportSittingDateTitleRow],
+    title_corrections: list[BillTitleCorrection],
+) -> list[ReportSittingDateTitleRow]:
+    report_id_to_title = {report_row.id: report_row.title for report_row in report_rows}
+    report_id_to_corrected_title: dict[int, str] = {}
+    for title_correction in title_corrections:
+        printed_title = report_id_to_title.get(title_correction.report_id)
+        if printed_title is None:
+            raise HansardHandKeptEntryError(
+                f"bill_title_corrections.json: report {title_correction.report_id} "
+                "is not a bill report"
+            )
+        if printed_title != title_correction.printed_title:
+            raise HansardHandKeptEntryError(
+                f"bill_title_corrections.json: report {title_correction.report_id} "
+                f"prints {printed_title!r}, not {title_correction.printed_title!r}"
+            )
+        report_id_to_corrected_title[title_correction.report_id] = (
+            title_correction.corrected_title
+        )
+    return [
+        ReportSittingDateTitleRow(
+            report_row.id,
+            report_row.sitting_date,
+            report_id_to_corrected_title.get(report_row.id, report_row.title),
+        )
+        for report_row in report_rows
+    ]
+
+
 def group_bills(
     report_rows: list[ReportSittingDateTitleRow],
     first_reading_report_ids: frozenset[int],
     third_reading_report_ids: frozenset[int],
+    title_corrections: list[BillTitleCorrection],
 ) -> BillGrouping:
     title_key_to_open_bill: dict[str, _OpenBill] = {}
     bill_groups: list[BillGroup] = []
     skipped_report_rows: list[ReportSittingDateTitleRow] = []
-    for report_row in report_rows:
+    for report_row in _build_corrected_report_rows(report_rows, title_corrections):
         if _BILL_WORD_PATTERN.search(report_row.title) is None:
             skipped_report_rows.append(report_row)
             continue

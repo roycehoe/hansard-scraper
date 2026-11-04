@@ -1,6 +1,10 @@
 from datetime import datetime
 
+import pytest
+
 from crud.report import ReportSittingDateTitleRow
+from exceptions import HansardHandKeptEntryError
+from schemas.bill_title_correction import BillTitleCorrection
 from services.bill import BillGrouping, group_bills
 from utils.title_key import get_title_key
 
@@ -15,9 +19,13 @@ def _group(
     report_rows: list[ReportSittingDateTitleRow],
     third_reading_report_ids: set[int],
     first_reading_report_ids: frozenset[int] = frozenset(),
+    title_corrections: list[BillTitleCorrection] = [],
 ) -> BillGrouping:
     return group_bills(
-        report_rows, first_reading_report_ids, frozenset(third_reading_report_ids)
+        report_rows,
+        first_reading_report_ids,
+        frozenset(third_reading_report_ids),
+        title_corrections,
     )
 
 
@@ -250,3 +258,60 @@ def test_a_report_with_no_first_reading_joins_the_open_bill() -> None:
     )
 
     assert [bill_group.report_ids for bill_group in grouping.bill_groups] == [[1, 2]]
+
+
+def _correction(
+    report_id: int, printed_title: str, corrected_title: str
+) -> BillTitleCorrection:
+    return BillTitleCorrection(
+        report_id=report_id,
+        printed_title=printed_title,
+        corrected_title=corrected_title,
+        reason="A reason.",
+    )
+
+
+def test_a_corrected_first_reading_title_joins_its_siblings_and_gives_the_title() -> (
+    None
+):
+    grouping = _group(
+        [
+            _report_row(
+                1, datetime(2019, 10, 7), "Good and Services Tax (Amendment) Bill"
+            ),
+            _report_row(
+                2, datetime(2019, 11, 4), "Goods and Services Tax (Amendment) Bill"
+            ),
+        ],
+        {2},
+        title_corrections=[
+            _correction(
+                1,
+                "Good and Services Tax (Amendment) Bill",
+                "Goods and Services Tax (Amendment) Bill",
+            )
+        ],
+    )
+
+    (bill_group,) = grouping.bill_groups
+    assert bill_group.report_ids == [1, 2]
+    assert bill_group.title == "Goods and Services Tax (Amendment) Bill"
+    assert bill_group.first_sitting_date == datetime(2019, 10, 7)
+
+
+def test_a_correction_whose_printed_title_differs_from_the_report_raises() -> None:
+    with pytest.raises(HansardHandKeptEntryError, match="report 1 prints"):
+        _group(
+            [_report_row(1, datetime(2019, 10, 7), "Tax Bill")],
+            set(),
+            title_corrections=[_correction(1, "Taxes Bill", "Tax Bill")],
+        )
+
+
+def test_a_correction_for_a_report_that_is_not_a_bill_report_raises() -> None:
+    with pytest.raises(HansardHandKeptEntryError, match="report 9 is not"):
+        _group(
+            [_report_row(1, datetime(2019, 10, 7), "Tax Bill")],
+            set(),
+            title_corrections=[_correction(9, "Tax Bill", "Taxes Bill")],
+        )

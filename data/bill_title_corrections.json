@@ -1,0 +1,32 @@
+[
+  {
+    "report_id": 43155,
+    "printed_title": "STATUTES (MISCELLANEOUS AMENDMENTS) (AMENDMENT NO. 2) BILL",
+    "corrected_title": "STATUTES (MISCELLANEOUS AMENDMENTS) (NO. 2) BILL",
+    "reason": "The first reading of the 2005 omnibus bill prints AMENDMENT NO. 2 where the later readings print NO. 2."
+  },
+  {
+    "report_id": 12071,
+    "printed_title": "Good and Services Tax (Amendment) Bill",
+    "corrected_title": "Goods and Services Tax (Amendment) Bill",
+    "reason": "The second and third readings of the 2019 tax bill print Good and Services where its first reading prints Goods and Services."
+  },
+  {
+    "report_id": 40738,
+    "printed_title": "BOTANICAL GARDENS BILL",
+    "corrected_title": "BOTANIC GARDENS BILL",
+    "reason": "The first reading of the 1957 gardens bill prints Botanical where its later reading prints Botanic."
+  },
+  {
+    "report_id": 35080,
+    "printed_title": "EVIDENCE (AMENDMEND)BILL",
+    "corrected_title": "EVIDENCE (AMENDMENT) BILL",
+    "reason": "The first reading of the 1975 evidence bill prints AMENDMEND where its later readings print AMENDMENT."
+  },
+  {
+    "report_id": 37275,
+    "printed_title": "MINOR OFFENCES (AMENDMENI) BILL",
+    "corrected_title": "MINOR OFFENCES (AMENDMENT) BILL",
+    "reason": "The first reading of the 1967 minor offences bill prints AMENDMENI where its later readings print AMENDMENT."
+  }
+]

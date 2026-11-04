@@ -23,6 +23,7 @@ from schemas.act_link_plan import (
     SkippedReport,
     UnparsedEntry,
 )
+from schemas.bill_title_correction import BillTitleCorrection
 from schemas.harvested_act import HarvestedAct, HarvestedActs
 from services.act_history import (
     ParsedHistoryEntry,
@@ -112,7 +113,11 @@ def _build_planned_act(
     )
 
 
-def get_act_link_plan(session: Session, harvest_directory: Path) -> ActLinkPlan:
+def get_act_link_plan(
+    session: Session,
+    harvest_directory: Path,
+    bill_title_corrections: list[BillTitleCorrection],
+) -> ActLinkPlan:
     report_rows = CRUDReport(session).get_sitting_date_title_rows_by_report_types(
         _BILL_REPORT_TYPES
     )
@@ -130,6 +135,7 @@ def get_act_link_plan(session: Session, harvest_directory: Path) -> ActLinkPlan:
         report_rows,
         frozenset(first_reading_report_ids),
         frozenset(third_reading_report_ids),
+        bill_title_corrections,
     )
     report_id_to_sitting_date: dict[int, date] = {
         report_row.id: report_row.sitting_date.date() for report_row in report_rows

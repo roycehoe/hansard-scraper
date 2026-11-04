@@ -25,6 +25,7 @@ from populate.written_tables import vacuum_analyze_written_tables
 from schemas.act_link_plan import ActLinkPlan
 from services.act_link_write import ActLinkWrite, get_first_difference
 from settings import settings
+from utils.data_files import get_bill_title_corrections
 from utils.write_target import validate_can_write
 
 _YEARS_PER_DECADE = 10
@@ -130,7 +131,9 @@ def _validate_can_commit_act_links(session: Session, plan: ActLinkPlan) -> None:
 def apply_act_links(harvest_directory: Path, plan_path: Path, is_commit: bool) -> None:
     if not is_commit:
         with Session(engine) as session:
-            plan = get_act_link_plan(session, harvest_directory)
+            plan = get_act_link_plan(
+                session, harvest_directory, get_bill_title_corrections()
+            )
             _log_plan(plan)
             _log_write(get_act_link_write(session, plan))
         plan_path.write_text(plan.model_dump_json(indent=1))
@@ -140,7 +143,9 @@ def apply_act_links(harvest_directory: Path, plan_path: Path, is_commit: bool) -
     validate_can_write(settings.database_url)
     reviewed_plan = ActLinkPlan.model_validate_json(plan_path.read_text())
     with Session(engine) as session:
-        plan = get_act_link_plan(session, harvest_directory)
+        plan = get_act_link_plan(
+            session, harvest_directory, get_bill_title_corrections()
+        )
         _log_plan(plan)
         if plan != reviewed_plan:
             raise HansardWriteCheckError("The plan differs from the reviewed plan")

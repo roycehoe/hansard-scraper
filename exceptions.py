@@ -60,3 +60,7 @@ class HansardHandCheckError(HansardError):
 
 class HansardActHistoryError(HansardError):
     pass
+
+
+class HansardHandKeptEntryError(HansardError):
+    pass

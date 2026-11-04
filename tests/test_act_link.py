@@ -22,7 +22,7 @@ def _build_linkable_bills(
     }
     title_key_to_linkable_bills: dict[str, list[LinkableBill]] = {}
     grouping = group_bills(
-        report_rows, frozenset(), frozenset(third_reading_report_ids)
+        report_rows, frozenset(), frozenset(third_reading_report_ids), []
     )
     for bill_index, bill_group in enumerate(grouping.bill_groups):
         title_key_to_linkable_bills.setdefault(bill_group.title_key, []).append(

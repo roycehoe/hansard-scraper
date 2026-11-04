@@ -22,6 +22,11 @@ _PROTECTED_DATABASE_URL = "postgresql://u:p@localhost:5432/x"
 _PASSING_LINE = "Bill read a Third time and passed."
 
 
+@pytest.fixture(autouse=True)
+def _no_bill_title_corrections(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(apply_act_links_script, "get_bill_title_corrections", list)
+
+
 class _LogRecorder:
     def __init__(self) -> None:
         self.messages: list[str] = []

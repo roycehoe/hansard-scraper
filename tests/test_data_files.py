@@ -11,6 +11,7 @@ import utils.data_files as data_files_module
 from enums import HandCheckFormOfAddress
 from exceptions import HansardDataFileError
 from schemas.attendance_cleanup import AttendanceCleanup
+from schemas.bill_title_correction import BillTitleCorrections
 from schemas.constituency_names import ConstituencyNames
 from schemas.excluded_report_id import ExcludedReportIds
 from schemas.hand_check_office_holder import (
@@ -25,6 +26,7 @@ from schemas.speaker_override import SpeakerOverrides
 from schemas.unattributed_speech import UnattributedSpeechRanges
 from utils.data_files import (
     get_attendance_cleanup,
+    get_bill_title_corrections,
     get_colonial_members,
     get_constituency_names,
     get_excluded_report_ids,
@@ -40,6 +42,7 @@ from utils.data_files import (
 _DATA_DIRECTORY = Path(__file__).parent.parent / "data"
 _DATA_FILE_SCHEMAS = (
     ("attendance_cleanup.json", AttendanceCleanup),
+    ("bill_title_corrections.json", BillTitleCorrections),
     ("colonial_la_members.json", HandKeptMembers),
     ("constituency_names.json", ConstituencyNames),
     ("excluded_report_ids.json", ExcludedReportIds),
@@ -53,6 +56,7 @@ _DATA_FILE_SCHEMAS = (
 )
 _DATA_FILE_GETTERS = (
     get_attendance_cleanup,
+    get_bill_title_corrections,
     get_colonial_members,
     get_constituency_names,
     get_excluded_report_ids,
