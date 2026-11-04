@@ -16,7 +16,7 @@ from database.speaker import Speaker
 from database.speech import Speech
 from enums import ReportAskerSource, ReportType, ReportVersion, SpeechKind
 from exceptions import HansardWriteCheckError, HansardWriteTargetError
-from populate.report_askers import populate_report_askers
+from populate.report_askers import get_report_asker_plan, populate_report_askers
 from scripts.apply_report_askers import apply_report_askers
 
 _PARLIAMENT_NUMBER = 14
@@ -430,3 +430,49 @@ def test_commit_refuses_stored_rows_that_differ_from_the_plan(
         apply_report_askers([], is_commit=True)
 
     assert _get_stored_rows(scratch_session) == []
+
+
+def test_report_27839_plan_resolves_assoc_prof_without_a_second_dot_to_the_label_speaker(
+    scratch_session: Session,
+) -> None:
+    woon = _build_speaker("Walter Woon")
+    maidin = _build_speaker("Mohamad Maidin B P M")
+    report = _build_report("27839", ReportType.ORAL_ANSWER)
+    scratch_session.add_all([woon, maidin, report])
+    scratch_session.flush()
+    scratch_session.add_all(
+        [
+            _build_speech(
+                report,
+                1,
+                None,
+                None,
+                SpeechKind.UNCLASSIFIED,
+                "1. Assoc. Prof Walter Woon asked the Minister for Information and the Arts what is the rationale",
+            ),
+            _build_speech(
+                report,
+                2,
+                "The Parliamentary Secretary to the Minister for Information and the Arts (Encik Mohamad Maidin B P M)",
+                maidin.id,
+                SpeechKind.SPEECH,
+                "Mr Speaker, Sir, the Singapore Broadcasting Authority (SBA) Internet Content Guidelines help",
+            ),
+            _build_speech(
+                report,
+                3,
+                "Assoc. Prof. Walter Woon (Nominated Member)",
+                woon.id,
+                SpeechKind.SPEECH,
+                "Sir, will the hon. Parliamentary Secretary say who will make the decision?",
+            ),
+        ]
+    )
+    scratch_session.commit()
+
+    plan = get_report_asker_plan(scratch_session, [report.id])
+
+    assert [
+        (report_asker.printed_name, report_asker.source, report_asker.speaker_id)
+        for report_asker in plan.report_askers
+    ] == [("Assoc. Prof Walter Woon", ReportAskerSource.NAME_IN_TEXT, woon.id)]

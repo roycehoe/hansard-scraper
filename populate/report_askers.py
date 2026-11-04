@@ -14,7 +14,11 @@ from exceptions import HansardWriteCheckError
 from logs import logger
 from services.attendance import build_speaker_lookups
 from services.attribution import get_group
-from services.report_asker import build_report_askers, get_asker_candidates
+from services.report_asker import (
+    build_report_askers,
+    get_asker_candidates,
+    get_name_to_resolve,
+)
 from services.speaker_link import resolve_speech_speaker_id
 from utils.asker_candidate import AskerCandidate
 from utils.speaker_resolution import SpeakerLookups
@@ -61,7 +65,7 @@ def _resolve_candidate(
     return replace(
         asker_candidate,
         speaker_id=resolve_speech_speaker_id(
-            asker_candidate.printed_name,
+            get_name_to_resolve(asker_candidate.printed_name),
             report_row.parliament_number,
             report_row.sitting_date,
             lookups,

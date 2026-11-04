@@ -1127,3 +1127,79 @@ def test_parliament_guess_skips_a_member_the_attendance_lists_and_keeps_one_it_d
             OfficeSource.PARLIAMENT_GUESS,
         ),
     ]
+
+
+def test_report_27839_assoc_prof_without_a_second_dot_is_one_asker_who_follows_up(
+    scratch_session: Session,
+) -> None:
+    woon = _build_speaker("Walter Woon")
+    maidin = _build_speaker("Mohamad Maidin B P M")
+    report = _build_report(
+        "27839",
+        ReportType.ORAL_ANSWER,
+        _FIRST_SITTING_DATE,
+        "Singapore Broadcasting Authority Internet Content Guidelines",
+        None,
+    )
+    scratch_session.add_all([woon, maidin, report])
+    scratch_session.flush()
+    scratch_session.add_all(
+        [
+            _build_speech(
+                report,
+                1,
+                None,
+                None,
+                SpeechKind.UNCLASSIFIED,
+                "1. Assoc. Prof Walter Woon asked the Minister for Information and the Arts what is the rationale",
+            ),
+            _build_speech(
+                report,
+                2,
+                "The Parliamentary Secretary to the Minister for Information and the Arts (Encik Mohamad Maidin B P M) (for the Minister for Information and the Arts)",
+                maidin.id,
+                SpeechKind.SPEECH,
+                "Mr Speaker, Sir, the Singapore Broadcasting Authority (SBA) Internet Content Guidelines help",
+            ),
+            _build_speech(
+                report,
+                3,
+                "Assoc. Prof. Walter Woon (Nominated Member)",
+                woon.id,
+                SpeechKind.SPEECH,
+                "Sir, will the hon. Parliamentary Secretary say who will make the decision as to whether an item is objectionable?",
+            ),
+            _build_speech(
+                report,
+                4,
+                "Encik Mohamad Maidin B P M",
+                maidin.id,
+                SpeechKind.SPEECH,
+                "Sir, normally the Singapore Broadcasting Authority will be the authority in charge.",
+            ),
+            _build_speech(
+                report,
+                5,
+                "Assoc. Prof. Walter Woon",
+                woon.id,
+                SpeechKind.SPEECH,
+                "Will there be any appeal procedure if, for example, it is determined that a particular website is objectionable?",
+            ),
+        ]
+    )
+    scratch_session.commit()
+
+    plan = get_report_participant_plan(scratch_session, [report.id])
+
+    assert [
+        (
+            report_participant.role,
+            report_participant.speaker_id,
+            report_participant.first_ordinal,
+        )
+        for report_participant in plan.report_participants
+    ] == [
+        (ParticipantRole.ASKER, woon.id, 1),
+        (ParticipantRole.ANSWERER, maidin.id, 2),
+        (ParticipantRole.ASKER_FOLLOW_UP, woon.id, 3),
+    ]

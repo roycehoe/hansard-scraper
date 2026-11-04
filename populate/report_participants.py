@@ -29,7 +29,11 @@ from exceptions import HansardWriteCheckError
 from logs import logger
 from services.attendance import build_speaker_lookups, get_sitting_entry_offices
 from services.attribution import get_group
-from services.report_asker import get_asker_candidates, get_question_row_ordinals
+from services.report_asker import (
+    get_asker_candidates,
+    get_name_to_resolve,
+    get_question_row_ordinals,
+)
 from services.report_participant import (
     build_report_participants,
     build_report_question_states,
@@ -116,7 +120,7 @@ def _resolve_candidate(
     return replace(
         asker_candidate,
         speaker_id=resolve_speech_speaker_id(
-            asker_candidate.printed_name,
+            get_name_to_resolve(asker_candidate.printed_name),
             report_row.parliament_number,
             report_row.sitting_date,
             lookups,

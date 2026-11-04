@@ -64,6 +64,7 @@ _RESPECTIVELY_SUFFIX_PATTERN = re.compile(r"\s+respectively$", re.IGNORECASE)
 _FILER_SEPARATOR_PATTERN = re.compile(r",\s+|\s+and\s+", re.IGNORECASE)
 _LETTER_PATTERN = re.compile(r"[^\W\d_]")
 _NAME_IN_TEXT_PREFIXES = (*TITLE_PREFIXES, "Assoc. Prof ")
+_ASSOC_PROF_WITHOUT_SECOND_DOT_PATTERN = re.compile(r"^Assoc\. Prof ")
 _NAME_IN_TEXT_PATTERN = re.compile(
     r"^\W*(?:\d+\s*\.?\s*)?(?P<name>(?:"
     + "|".join(re.escape(prefix) for prefix in _NAME_IN_TEXT_PREFIXES)
@@ -618,6 +619,10 @@ def get_question_row_ordinals(
         if question_row_index < len(speech_asker_rows):
             question_row_ordinals.add(speech_asker_rows[question_row_index].ordinal)
     return frozenset(question_row_ordinals)
+
+
+def get_name_to_resolve(printed_name: str) -> str:
+    return _ASSOC_PROF_WITHOUT_SECOND_DOT_PATTERN.sub("Assoc. Prof. ", printed_name)
 
 
 def build_report_askers(
