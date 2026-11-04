@@ -73,7 +73,11 @@ _ASKING_PATTERN = re.compile(
     r"|(?:is|are)\s+the\s+minister\s+(?:not\s+)?aware|would\s+the\s+minister"
     r"|seek\s+(?:a\s+)?clarification|i\s+would\s+like\s+to\s+ask"
     r"|i\s+am\s+just\s+wondering"
-    r"|\b(?:will|would|can|could|does|is|are|has|did)\s+the\s+(?:\w+\s+){0,5}"
+    r"|\bcould\s+the\s+(?:hon\.?\s+)?member\b"
+    r"|\bask\s+(?:a\s+)?clarification\s+(?:of|from)\b"
+    r"|\bthe\s+leader\s+of\s+the\s+opposition\b[^.?!]*\?"
+    r"|point\s+of\s+clarification\b[\s\S]*\?\s*$"
+    r"|\b(?:will|would|can|could|does|is|are|has|did)\s+the\s+(?:\w+\.?\s+){0,5}"
     r"(?:minister|secretary)\b[^?]*\?\s*$",
     re.IGNORECASE,
 )

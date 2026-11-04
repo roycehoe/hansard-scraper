@@ -3027,3 +3027,209 @@ def test_report_38737_later_holders_interjection_the_first_answerer_only_partly_
             30,
         )
     ]
+
+
+_REPORT_33240_TITLE = "MR PHEY YEW KOK"
+_REPORT_33240_ROWS = """
+1 | UNCLASSIFIED |  |  | olumn: 376
+2 | SPEECH | 301 | Mr J.B. Jeyaretnam | asked the Minister for Home Affairs whether he will outline all steps that have been taken to obtain or secure the return to this country of Mr Phey Yew Kok former President of the National Trades Union Congress to stand trial upon the charges instit
+3 | SPEECH | 288 | The Minister for Home Affairs (Mr Chua Sian Chin) | Mr Speaker, Sir, Phey Yew Kok was charged in court on 10th December, 1979 on four counts of criminal breach of trust (CBT) and two counts under the Trade Unions Act. He was allowed bail. When the case was brought up for mention on 7th January, 1980,
+4 | SPEECH | 288 | The Minister for Home Affairs (Mr Chua Sian Chin) | Phey Yew Kok was required to call at the Corrupt Practices Investigation Bureau (CPIB) on 2nd January, 1980. When he failed to do so, CPIB officers visited his house and spoke to his wife. She claimed that she did not know where he was. At the same t
+5 | SPEECH | 288 | The Minister for Home Affairs (Mr Chua Sian Chin) | Subsequent investigations carried out by CPIB revealed that Phey Yew Kok had left Singapore for Kuala Lumpur by train on 31st December, 1979. From there he went to Bangkok where he disappeared. CPIB had contacted the Thai Police authorities for assis
+6 | SPEECH | 288 | The Minister for Home Affairs (Mr Chua Sian Chin) | Immediately after he jumped bail, a warrant for his arrest was issued. CPIB also made an immediate appeal in the local newspapers for information on Phey Yew Kok's whereabouts.
+7 | SPEECH | 288 | The Minister for Home Affairs (Mr Chua Sian Chin) | Interpol Headquarters was alerted and it notified all Interpol countries to arrest Phey Yew Kok. Should he be arrested in a country which has an extradition treaty with Singapore, his extradition will be sought.
+8 | SPEECH | 288 | The Minister for Home Affairs (Mr Chua Sian Chin) | The Immigration Department also cancelled both his International Passport and his Restricted Passport for travel to West Malaysia. All Immigration checkpoints have been told to seize his passport and refer him to CPIB if he were to pass through any c
+9 | SPEECH | 288 | The Minister for Home Affairs (Mr Chua Sian Chin) | His present whereabouts are unknown.
+10 | SPEECH | 288 | The Minister for Home Affairs (Mr Chua Sian Chin) | When Phey Yew Kok eventually returns to Singapore, as he must if he wants to be with his wife and family again, he will have to face the charges against him. Each day he remains a fugitive, is a day of punishment, without it being considered part of
+11 | SPEECH | 301 | Mr Jeyaretnam | Mr Speaker, Sir, the Minister has said that it was an error of judgment in not taking away Mr Phey Yew Kok's passport. Would the Minister say whose error of judgment it was and whether he had asked for any explanation from this man who made the error
+12 | SPEECH | 288 | Mr Chua Sian Chin | Mr Speaker, Sir, as a lawyer, the Member for Anson should know that it is not as of right that you can ask for the retention of a passport of a person who has been granted bail. It is a matter for the discretion of the Court whether to allow retentio
+13 | SPEECH | 288 | Mr Chua Sian Chin | As to the specific question whether the police officer concerned has made an error of judgment, yes, he has made an error of judgment. Of course, in his opinion it was unlikely that a person of Mr Phey's position would jump bail. It is not something
+14 | SPEECH | 329 | Mr Sia Khoon Seong (Moulmein) | Mr Speaker, Sir, I do not know whether my supplementary question should be directed to the Minister or to the Member for Anson, but is it not right to say that there had been others who jumped bail even when their passports had been seized? In other
+15 | SPEECH | 288 | Mr Chua Sian Chin | Mr Speaker, Sir, the answer is yes, there are also other means by which a person can jump bail even without a passport.
+16 | SPEECH | 329 | Mr Sia Khoon Seong | Mr Speaker, Sir, with the benefit of hindsight, it can now be said that there has been an error of judgment. But could I ask the Minister, or perhaps the Member for Anson, that without the benefit of hindsight, was it not quite natural for the office
+17 | SPEECH | 322 | The Second Deputy Prime Minister (Foreign Affairs) (Mr S. Rajaratnam) | I can think of one!
+18 | SPEECH | 288 | Mr Chua Sian Chin | Mr Speaker, Sir, we do not go around punishing police officers for making an error of judgment. We only punish them if there is negligence on their part. I can assure the Member that there was no negligence on his part, civil or criminal negligence.
+19 | SPEECH | 301 | Mr Jeyaretnam | Sir, is the Minister not aware that the first thing that the CPIB officers do is to impound passports of persons into whose crimes they are inquiring? I know this, Mr Speaker, from the cases that I have handled, that the first thing the CPIB do is to
+20 | SPEECH | 288 | Mr Chua Sian Chin | Mr Speaker, Sir, before I answer that question I want a clarification from the Member for Anson. What does he mean by saying that before the officer decided not to impound the pass- port of Phey Yew Kok, did he ask for directions from the DPP? As a l
+21 | SPEECH | 301 | Mr Jeyaretnam | May I answer that question, Sir?
+22 | SPEECH | 347 | Mr Speaker | Yes, Mr Jeyaretnam.
+23 | SPEECH | 301 | Mr Jeyaretnam | The Minister talks about impounding of passports after completion of investigations. Mr Phey Yew Kok was produced in court. I should have thought that all investigations were completed by the time he was produced in court. Why was there not an applic
+24 | SPEECH | 322 | Mr Rajaratnam | A point of clarification, Sir. I am not speaking from any experience. In view of the sneaky proposal that the Member put earlier to the Prime Minister that the charges against Phey Yew Kok should be dropped, is he really serious in pursuing this particular question?
+25 | SPEECH | 288 | Mr Chua Sian Chin | Now the Member's question is clear, and that is whether the officer did ask for directions to impound or not to impound the passport of Phey Yew Kok after he was charged in court. The answer is: yes, he did. The point is this. As I have said just now
+26 | SPEECH | 301 | Mr Jeyaretnam | Mr Speaker, Sir, the Minister has said that the officer did ask for directions. May we know who he asked for directions from?
+27 | SPEECH | 288 | Mr Chua Sian Chin | He asked directions from the DPP.
+"""
+_REPORT_32427_TITLE = "SOCIAL DEVELOPMENT UNIT"
+_REPORT_32427_ROWS = """
+1 | SPEECH | 375 | Mr J.B. Jeyaretnam | asked the Minister for Finance, Minister for Education and Minister for Health if he will state how much of the tax-payers' monies has been spent by the Social
+2 | SPEECH | 402 | The Minister for Finance, Minister for Education and Minister for Health (Dr Tony Tan Keng Yam) | Mr Speaker, Sir, the total amount that has been spent by the Social Development Unit on its activities as at 15th February, 1985, was $294,411.72.
+3 | SPEECH | 402 | The Minister for Finance, Minister for Education and Minister for Health (Dr Tony Tan Keng Yam) | The Unit's objectives are long-term:
+4 | SPEECH | 402 | The Minister for Finance, Minister for Education and Minister for Health (Dr Tony Tan Keng Yam) | (i) To create an awareness of the problem of the high incidence of singlehood among our graduate women; and
+5 | SPEECH | 402 | The Minister for Finance, Minister for Education and Minister for Health (Dr Tony Tan Keng Yam) | (ii) To bring about a change of attitude towards marriage in our younger single officers.
+6 | SPEECH | 402 | The Minister for Finance, Minister for Education and Minister for Health (Dr Tony Tan Keng Yam) | Some progress has been made towards these objectives. More single officers are participating in the activities organized by the Unit. These officers are prepare
+7 | SPEECH | 402 | The Minister for Finance, Minister for Education and Minister for Health (Dr Tony Tan Keng Yam) | The single officers are also more open in discussing marriage and their choice of partners. Through attending the activities organized by the Social Development
+8 | SPEECH | 375 | Mr J.B. Jeyaretnam (Anson) | Mr Speaker, Sir, my first supplementary question for the Minister is: was parliamentary approval obtained for this expenditure of $294,411.72? I have tried to l
+9 | SPEECH | 402 | Dr Tony Tan Keng Yam | Mr Speaker, Sir, I see no necessity to obtain specific parliamentary approval for this expenditure.
+10 | SPEECH | 375 | Mr Jeyaretnam | Does the Minister not accept that every expenditure should be laid before Parliament?
+11 | SPEECH | 402 | Dr Tony Tan Keng Yam | Mr Speaker, Sir, the expenditure of the Government is spelt out in the Government's Budget which I shall be presenting on Friday. On that occasion, the Member f
+12 | SPEECH | 375 | Mr Jeyaretnam | My question to the Hon. Minister was: does he not accept that every expenditure of the Government must be laid before Parliament? My question, I repeat, is: doe
+13 | SPEECH | 402 | Dr Tony Tan Keng Yam | Mr Speaker, Sir, I have already explained that the Government does not indulge in expenditure which is not within its authorized limits and which has not been a
+14 | SPEECH | 375 | Mr Jeyaretnam | Mr Speaker, Sir, another supplementary question. I see that the Minister is not going to answer my earlier question. Notwithstanding that, I have another questi
+15 | SPEECH | 402 | Dr Tony Tan Keng Yam | Mr Speaker, Sir, the activities which have been organized for the participants of the Social Development Unit are of many types. They include, for example, pers
+16 | SPEECH | 375 | Mr Jeyaretnam | I understood the Minister to say that the costs borne by these participants vary from 15% to 100%. Is he now saying that all those who go on cruises or on holid
+17 | SPEECH | 402 | Dr Tony Tan Keng Yam | All those who go on cruises bear the full cost. All those who go on courses organized by the Social Development Unit bear a substantial part of the cost, but wh
+18 | SPEECH | 375 | Mr Jeyaretnam | I asked for results. Would the Hon. Minister say how many graduates have married from the time the Social Development Unit began its functions?
+19 | SPEECH | 402 | Dr Tony Tan Keng Yam | Sir, the Unit has only been in operation since the beginning of last year. I know that in Singapore we are an impatient society but love must take time to bloom
+20 | SPEECH | 375 | Mr Jeyaretnam | I see that the Hon. Minister is reporting a nil result although the Unit has been functioning, as I understand, from January 1984.
+21 | SPEECH | 375 | Mr Jeyaretnam | May I ask the Hon. Minister whether the then First Deputy Prime Minister was speaking for the Government when he said at a car park on Nomination Day that if th
+22 | SPEECH | 366 | The First Deputy Prime Minister and Minister for Defence (Mr Goh Chok Tong) | On a point of clarification, Mr Speaker, Sir. Could the Member please let me know the exact quotation and where was the statement made?
+23 | SPEECH | 375 | Mr Jeyaretnam | Mr Speaker, Sir, this was certainly reported in the Straits Times on the day after Nomination Day, and it was headlined "Dr Goh Keng Swee's press conference in
+24 | SPEECH | 402 | Dr Tony Tan Keng Yam | Mr Speaker, Sir, there seems to be a confusion between the two Gohs in Parliament - one past and one present. Notwithstanding that, you cannot force people to m
+25 | SPEECH | 402 | Dr Tony Tan Keng Yam | The reason why the SDU's activities have been, for the time being, limited to graduates is because that is where the problem is. Non-graduates seem to get along
+26 | SPEECH | 399 | Dr Augustine H.H. Tan (Whampoa) | A supplementary question, Mr Speaker, Sir. Since our graduate men seem to be much in demand both by graduate ladies and non-graduates, should not the Government
+27 | SPEECH | 402 | Dr Tony Tan Keng Yam | Mr Speaker, Sir, I shall convey that excellent suggestion from the Member for Whampoa to the Social Development Unit's Director.
+28 | SPEECH | 374 | Mr Jek Yeun Thong (Queenstown) | A supplementary question, Sir. I know it is a misfortune for the Minister to have to answer this question. But since he is paid to answer it, and I am paid to a
+29 | SPEECH | 402 | Dr Tony Tan Keng Yam | Mr Speaker, Sir, I would first inform the Member for Queenstown that it is not a hardship but a pleasure to answer his question. By all means, feel free to ask
+30 | SPEECH | 402 | Dr Tony Tan Keng Yam | He has quoted a Chinese proverb. The equivalent of that is the English proverb, "You can bring a horse to the water but you cannot make him drink", if he does n
+31 | SPEECH | 402 | Dr Tony Tan Keng Yam | From time to time I see on television various attempts in China and in America to try and get pandas to mate. They put a male panda and a female panda together,
+32 | SPEECH | 399 | Dr Augustine Tan | Supplementary question, Mr Speaker, Sir. I know that the Government has got honourable intentions in this matter but what precautions have been taken by the Soc
+33 | SPEECH | 402 | Dr Tony Tan Keng Yam | Sir, I strongly resent the allegation from the Member for Whampoa. The Director of the SDU is a most upright Christian, with extremely high moral values. Such a
+34 | SPEECH | 403 | Mr Tan Soo Khoon (Alexandra) | Supplementary question, Sir. After listening to the Minister, I wish I had waited a bit longer! Now that the Government has entered the marriage broking busines
+35 | SPEECH | 402 | Dr Tony Tan Keng Yam | Mr Speaker, Sir, Members of Parliament should be very careful before they say anything. I think the Member would have a difficult time when he goes home tonight
+36 | CHAMBER_EVENT |  |  | [Laughter]
+37 | SPEECH | 402 | Dr Tony Tan Keng Yam | But to be more serious, if private companies would take on some of the activities of the SDU, if they would do so, then I can see that nothing but good can come
+38 | SPEECH | 375 | Mr Jeyaretnam | Would the Minister please answer my question? I have been very patient with the Minister. My question was, if I may repeat it: was the then First Deputy Prime M
+39 | SPEECH | 402 | Dr Tony Tan Keng Yam | Mr Speaker, Sir, the answer is very simple: I do not propose to take any further measures.
+"""
+_REPORT_32411_TITLE = "RESETTLEMENT OF STREET HAWKERS"
+_REPORT_32411_ROWS = """
+1 | SPEECH | 389 | Mr Ng Kah Ting | asked the Minister for the Environment how many street hawkers have been resettled into the hawker centres since the introduction Qf the policy to ensure better
+2 | SPEECH | 381 | Dr Lee Boon Yang (for the Minister for the Environment) | Sir, in May 1971, the Government decided to build markets and food centres to accommodate all the street hawkers. There were then about 17,800 hawkers on the st
+3 | SPEECH | 381 | Dr Lee Boon Yang (for the Minister for the Environment) | Today, some 17,300 of these hawkers have been relocated into markets and food centres. There are now only 546 street hawkers. They will be housed by the end of
+4 | SPEECH | 381 | Dr Lee Boon Yang (for the Minister for the Environment) | There are a total of 25,448 food and market produce stalls housed mainly in centres managed by HDB, MOE, and other statutory boards. 1,525 of the market produce
+5 | SPEECH | 381 | Dr Lee Boon Yang (for the Minister for the Environment) | Sir, the Ministry of the Environment has no plans to build any more food centres, as the relocation programme is nearing completion. We have barely over 500 mor
+6 | SPEECH | 381 | Dr Lee Boon Yang (for the Minister for the Environment) | Sir, Singaporeans have a wide variety of food outlets to suit their taste and budget. There are 192 food centres with some 9,069 foodstalls, 1,508 eating houses
+7 | SPEECH | 381 | Dr Lee Boon Yang (for the Minister for the Environment) | Apart from those provided by HDB as part of its amenities for housing estates, the private sectors can also set up food centres and eating establishments to cat
+8 | SPEECH | 389 | Mr Ng Kah Ting | Mr Speaker, Sir, does the Parliamentary Secretary to the Minister for Communications and Information and the Minister for the Environment not realize that the a
+9 | SPEECH | 381 | Dr Lee Boon Yang | Mr Speaker, Sir, the Government, in particular my Ministry, is aware that more and more people are eating outside their home. This has to be so, as we encourage
+10 | SPEECH | 389 | Mr Ng Kah Ting | Mr Speaker, Sir, just one final supplementary question. Does not the Parliamentary Secretary agree with me that all this means additional expenditure, resulting
+11 | SPEECH | 381 | Dr Lee Boon Yang | Mr Speaker, Sir, there may be some increase in costs but the quality of service is increased to justify this increase in cost. The more important thing is that
+12 | SPEECH | 375 | Mr Jeyaretnam | Mr Speaker, Sir, may I ask a supplementary question, although not on food and hawker centres? Did I understand the Parliamentary Secretary to say that his Minis
+13 | SPEECH | 381 | Dr Lee Boon Yang | Mr Speaker, Sir, the Member for Anson has been in this House longer than 1. He was in this House on 14 March 1984 when my predecessor, the hon. Member for Chang
+14 | SPEECH | 381 | Dr Lee Boon Yang | 'In 1981, a study team chaired by the former Senior Parliamentary Secretary of my Ministry and comprising Members of Parliament and officials from the Ministry
+15 | SPEECH | 375 | Mr Jeyaretnam | I am afraid the Parliamentary Secretary has not answered my question, The question is, "Was a survey taken from the residents?" I know you read out the recommen
+16 | SPEECH | 373 | The Minister for Home Affairs and Second Minister for Law (Prof S. Jayakumar) | On a point of order, Mr Speaker, Sir. Ought not the Member for Anson ask this question at the time the previous statement was made?
+17 | SPEECH | 375 | Mr Jeyaretnam | May I not ask the question now? May I know?
+18 | SPEECH | 396 | The Minister for Foreign Affairs and Minister for Community Development (Mr S. Dhanabalan) | Mr Speaker, Sir, on a point of order. It is not relevant to the original question that was asked in the Order Paper.
+19 | SPEECH | 424 | Mr Speaker | He said this question is not relevant to the question on the Order Paper.
+20 | SPEECH | 375 | Mr Jeyaretnam | But we are talking about the policy of the Ministry of the Environment.
+21 | SPEECH | 424 | Mr Speaker | I allow you to carry on. Now you can carry on.
+22 | SPEECH | 375 | Mr Jeyaretnam | Thank you, Sir. Would the Parliamentary Secretary answer this question?
+23 | SPEECH | 381 | Dr Lee Boon Yang | Mr Speaker, Sir, the Committee in 1981 made a thorough assessment of all forms of retail - food retail, cooked food retail, market produce retail, and after exh
+24 | SPEECH | 381 | Dr Lee Boon Yang | The other point that I want to remind the Member for Anson is that a wet market entails a high cost in terms of manpower. A very large number of people is requi
+25 | SPEECH | 381 | Dr Lee Boon Yang | The other point, Mr Speaker, Sir, which I would like to remind the Member for Anson is that we have in the past built many wet markets, and at the present momen
+26 | SPEECH | 375 | Mr Jeyaretnam | You still have not answered my question.
+27 | SPEECH | 424 | Mr Speaker | The Leader of the House wishes to move a business motion.
+"""
+_REPORT_33323_TITLE = "ADMISSION TO SCHOOLS"
+_REPORT_33323_ROWS = """
+1 | SPEECH | 332 | Dr Tan Cheng Bock | asked the First Deputy Prime Minister and Minister of Education why priority is given to the 3rd child, who has an elder brother or sister studying in the schoo
+2 | SPEECH | 336 | The Minister of State of Education (Dr Tay Eng Soon) (for the First Deputy Prime Minister and Minister of Education) | Mr Deputy Speaker, Sir, Phase 1 registration is for a second or third child who has an elder brother or sister studying in the same school. The reasons for this
+3 | SPEECH | 336 | The Minister of State of Education (Dr Tay Eng Soon) (for the First Deputy Prime Minister and Minister of Education) | Phase 2 registration is more extensive. It includes, among others, children of parents who have direct connections with the school; parents, brothers or sisters
+4 | SPEECH | 336 | The Minister of State of Education (Dr Tay Eng Soon) (for the First Deputy Prime Minister and Minister of Education) | I do not know how the hon. Member has been led to believe that sterilized parents have been promised priority by the Ministry over third child siblings whose pa
+5 | SPEECH | 336 | The Minister of State of Education (Dr Tay Eng Soon) (for the First Deputy Prime Minister and Minister of Education) | The matter raised by the hon. Member is academic. Since 1977, the number of children of parents sterilized after the birth of the first or second child varied b
+6 | SPEECH | 332 | Dr Tan Cheng Bock (Ayer Rajah) | Mr Deputy Speaker, Sir, before I ask my supplementary question, I would just like to enlighten the House on the family planning programme of our nation.
+7 | SPEECH | 298 | Mr Deputy Speaker | Dr Tan, will you please keep it brief because we have quite a few questions today?
+8 | SPEECH | 332 | Dr Tan Cheng Bock | Yes. Mr Deputy Speaker, Sir, I would like to draw the attention of this House to the Family Planning and Population Board which was established by an Act of Par
+9 | SPEECH | 298 | Mr Deputy Speaker | Dr Tan, what is your supplementary question?
+10 | SPEECH | 332 | Dr Tan Cheng Bock | Sir, I think I need to explain before I come to the supplementary question. I think you must allow me to continue, Sir.
+11 | SPEECH | 298 | Mr Deputy Speaker | Yes.
+12 | SPEECH | 332 | Dr Tan Cheng Bock | Thank you very much. These policies were further intensified in 1972. These include, among others, higher priority for choice primary schools for children, one
+13 | SPEECH | 332 | Dr Tan Cheng Bock | In line with our national policy in 1975, a total of 9,495 women were sterilized. 16% of those who ligated did so after one or two children, Why did I choose 19
+14 | SPEECH | 293 | The First Deputy Prime Minister and Minister of Education (Dr Goh Keng Swee) | Point of order, Sir. Is the hon. Member delivering a speech or asking a supplementary question?
+15 | SPEECH | 298 | Mr Deputy Speaker | I have asked the Member for his supplementary question. Dr Tan, please let us have your supplementary question. If you cannot make up your mind, I will have to
+16 | SPEECH | 332 | Dr Tan Cheng Bock | Sir, if you stop me at this stage, it is not very fair. I think I must continue further.
+17 | SPEECH | 298 | Mr Deputy Speaker | Then get on with your point, please.
+18 | SPEECH | 332 | Dr Tan Cheng Bock | What I want to point out is that we must not give Singaporeans the impression that we -
+19 | SPEECH | 293 | Dr Goh Keng Swee | Mr Deputy Speaker, Sir, I must insist that the hon. Member complies with Standing Orders. This is Question Time. I want to know what his supplementary question
+20 | SPEECH | 298 | Mr Deputy Speaker | Dr Tan, let us have your supplementary question. If not, I have to call on Mr Ho for Question 2.
+21 | SPEECH | 332 | Dr Tan Cheng Bock | My question is whether the Ministry of Education has taken into account the family planning policy of our nation. The Minister of State has said that the Minist
+22 | SPEECH | 336 | Dr Tay Eng Soon | Mr Deputy Speaker, Sir, I have already said that those parents who were sterilized after one or two children have the highest priority under Phase 2 at any scho
+23 | SPEECH | 336 | Dr Tay Eng Soon | This was the same understanding which the Ministry announced in 1974. I refer the hon. Member to the Straits Times of 22nd July 1974 in which we said that if on
+"""
+
+
+def test_report_33240_point_of_clarification_that_ends_in_a_question_is_supplementary() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_33240_TITLE, _REPORT_33240_ROWS)
+
+    assert _get_person_rows(labelled_report, 322) == [
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            17,
+            "The Second Deputy Prime Minister (Foreign Affairs) (Mr S. Rajaratnam)",
+            322,
+        )
+    ]
+
+
+def test_report_32427_question_put_to_the_member_is_supplementary() -> None:
+    labelled_report = _label_report(_REPORT_32427_TITLE, _REPORT_32427_ROWS)
+
+    assert _get_person_rows(labelled_report, 366) == [
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            22,
+            "The First Deputy Prime Minister and Minister for Defence (Mr Goh Chok Tong)",
+            366,
+        )
+    ]
+
+
+def test_report_32411_points_of_order_that_end_in_a_question_stay_unlabelled() -> None:
+    labelled_report = _label_report(
+        _REPORT_32411_TITLE,
+        _REPORT_32411_ROWS,
+        speaker_id_to_office={
+            381: Office(
+                "Parliamentary Secretary to the Minister for Communications and Information and Parliamentary Secretary to the Minister for the Environment",
+                OfficeSource.HEADER_IN_REPORT,
+            )
+        },
+    )
+
+    assert _get_person_rows(labelled_report, 373) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            16,
+            "The Minister for Home Affairs and Second Minister for Law (Prof S. Jayakumar)",
+            373,
+        )
+    ]
+    assert _get_person_rows(labelled_report, 396) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            18,
+            "The Minister for Foreign Affairs and Minister for Community Development (Mr S. Dhanabalan)",
+            396,
+        )
+    ]
+
+
+def test_report_33323_point_of_order_that_ends_in_a_question_stays_unlabelled() -> None:
+    labelled_report = _label_report(_REPORT_33323_TITLE, _REPORT_33323_ROWS)
+
+    assert _get_person_rows(labelled_report, 293) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            14,
+            "The First Deputy Prime Minister and Minister of Education (Dr Goh Keng Swee)",
+            293,
+        )
+    ]
