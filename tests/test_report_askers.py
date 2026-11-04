@@ -1687,3 +1687,29 @@ def test_report_30105_stood_line_that_ends_the_report_credits_no_one() -> None:
     assert [asker_candidate.printed_name for asker_candidate in asker_candidates] == [
         "Dr Lee Siew-Choh"
     ]
+
+
+def test_report_title_that_lists_questions_stood_over_credits_no_one() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr Speaker",
+            16,
+            "Order. The following Questions for oral answer stood over.",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr Low Thia Khiang",
+            70,
+            "asked the Minister for Health whether the waiting time at polyclinics has changed",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(
+        speech_asker_rows,
+        "QUESTIONS FOR ORAL ANSWER STOOD OVER TO NEXT AVAILABLE SITTING OF PARLIAMENT",
+    )
+
+    assert asker_candidates == []

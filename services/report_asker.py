@@ -28,6 +28,9 @@ _STOOD_IN_NAME_PATTERN = re.compile(
     r"(?:\s*:|\s+[-–—]|[-–—](?=\s|$)|\s*$)",
     re.IGNORECASE,
 )
+_STOOD_OVER_LIST_TITLE_PATTERN = re.compile(
+    r"^\s*questions for oral answer stood over\b", re.IGNORECASE
+)
 _TO_ASK_WORDS_PATTERN = re.compile(r"\bto ask\b", re.IGNORECASE)
 _STOOD_QUESTION_NUMBER_PATTERN = re.compile(
     r"^\W*(?P<number>\d+)\s*\.?\s*to ask\b", re.IGNORECASE
@@ -284,8 +287,10 @@ def _get_name_in_text_candidate(
 
 
 def get_asker_candidates(
-    speech_asker_rows: list[SpeechAskerRow],
+    speech_asker_rows: list[SpeechAskerRow], report_title: str = ""
 ) -> list[AskerCandidate]:
+    if _STOOD_OVER_LIST_TITLE_PATTERN.search(report_title) is not None:
+        return []
     stood_lines = _get_stood_lines(speech_asker_rows)
     filer_names = tuple(
         printed_name.lower()
