@@ -3779,3 +3779,82 @@ def test_report_31724_member_who_asks_before_the_answer_keeps_only_his_supplemen
             359,
         )
     ]
+
+
+_REPORT_9432_TITLE = "Take-up Rate by Malay/Muslims of Existing National Financial and Estate Planning Programmes"
+_REPORT_9432_ROWS = """
+1 | SPEECH | 1215 | Dr Shahira Abdullah | asked the Minister for Social and Family Development and Minister-in-charge of Muslim Affairs (a) what is the current take-up rate by Malay/Muslims of the natio
+2 | SPEECH | 1189 | The Minister for Social and Family Development and Minister-in-charge of Muslim Affairs (Mr Masagos Zulkifli B M M) | Mr Speaker, MoneySENSE is our national financial education programme that seeks to raise Singaporeans' financial literacy. Under MoneySense, there are various i
+78 | SPEECH | 1207 | Mr Pritam Singh | If I have not answered any of the Minister's questions, please ask me again. I will be happy to answer them. Ours is a philosophical point. We take the position
+81 | SPEECH | 1168 | The Second Minister for National Development (Ms Indranee Rajah) | Thank you, Mr Speaker. I just wanted to ask a clarification of the Leader of the Opposition because I was listening to his response.
+82 | SPEECH | 1168 | The Second Minister for National Development (Ms Indranee Rajah) | I think he had started out by saying that the EIP should be revisited. Then, he said, reviewed. He then mentioned that in the manifesto, they took a philosophical position. But I am sorry because I still do not know what WP's position is.
+83 | SPEECH | 1168 | The Second Minister for National Development (Ms Indranee Rajah) | So, could the Leader of the Opposition clarify? Is he saying today that the EIP should be abolished? Is the answer to that, yes or no? That is all I want to know. Or is he saying that it need not be abolished, we can just look to see how we improve it? That is all I wanted to understand.
+84 | SPEECH | 1207 | Mr Pritam Singh | Well, it is a very nice way to close off our discussion on this topic. But I will be happy to clarify the doubts of the Leader of the House. The philosophical p
+85 | SPEECH | 1207 | Mr Pritam Singh | The Government is the government of the day, it wants to retain the EIP for reasons which I would say are not totally illegitimate. I think it is important that
+86 | SPEECH | 1207 | Mr Pritam Singh | I think that is our duty as an opposition also. Half the reason why I am asking for all that data on a neighbourhood-by-neighbourhood basis, over time – annuall
+87 | SPEECH | 1223 | Mr Speaker | Ms Indranee Rajah.
+88 | SPEECH | 1168 | Ms Indranee Rajah | Mr Speaker, I thank the Leader of the Opposition for his erudite answer, which did not answer my question. So, I think we both agree. Both, indeed, the Workers' Party and we, agree we do want a race-neutral society. We want to raise a society where everybody can live happily together. It is a question of how do we get there. And one of the things that the People's Action Party Government has put in place is the EIP.
+89 | SPEECH | 1168 | Ms Indranee Rajah | The Workers' Party, in its manifesto, has said, abolish it. Mr Pritam Singh comes to Parliament today and says revisit, review underlying philosophy and a few other things. I just want to know, today, is the Workers' Party saying we should remove the EIP? If you are saying that we should do that, say so. On the other hand, if you are saying, keep the EIP but let us improve it and ameliorate the impact on minorities, say so. Then, I think we know where we both stand and where we are in agreement.
+90 | SPEECH | 1223 | Mr Speaker | Mr Pritam Singh.
+91 | SPEECH | 1207 | Mr Pritam Singh | We still aim to remove it but, until we get there, we have to, as Minister said, even out the rough edges as much as possible and, at some point, I hope my gene
+156 | SPEECH | 1207 | Mr Pritam Singh | I think I can agree with the eventual outcome that even the Minister shares, which is to reach that race-neutral, race-blind end. To that extent, yes. I think y
+157 | SPEECH | 1228 | The Senior Minister and Coordinating Minister for National Security (Mr Teo Chee Hean) | Mr Speaker, Sir, I had not intended to speak or ask any questions on this very important subject, but I thought that since I have slightly more white hair than most people here who have been speaking, I thought I would share a perspective.
+158 | SPEECH | 1228 | The Senior Minister and Coordinating Minister for National Security (Mr Teo Chee Hean) | I would like to ask the Leader of the Opposition whether he thinks we should allow ethnic enclaves to form and just to see what happens, by abolishing the EIP today; and then, reach a situation where we were 50 years ago, 60 years ago, at the point of Independence; and then, try and correct it when all the problems arise?
+159 | SPEECH | 1228 | The Senior Minister and Coordinating Minister for National Security (Mr Teo Chee Hean) | Or whether we should take what he calls a pre-emptive but the measures that we are taking today, to avoid such a situation arising?
+160 | SPEECH | 1228 | The Senior Minister and Coordinating Minister for National Security (Mr Teo Chee Hean) | So, are we more likely to arrive at a situation where Singaporeans learn to live with each other on a daily basis by making sure that we live in an integrated way on a daily basis in our estates? Or are we more likely to do so if we allow Singaporeans to live in segregated estates?
+161 | SPEECH | 1228 | The Senior Minister and Coordinating Minister for National Security (Mr Teo Chee Hean) | And also, are we more likely to level everyone up if we are able to identify the issues that each of the communities in Singapore may face and therefore have more targeted programmes for them?
+162 | SPEECH | 1228 | The Senior Minister and Coordinating Minister for National Security (Mr Teo Chee Hean) | Or to ignore the differences? The Leader of the Opposition says we should be race-blind or race-neutral and just treat everybody as though they are exactly the same.
+163 | SPEECH | 1228 | The Senior Minister and Coordinating Minister for National Security (Mr Teo Chee Hean) | And then, are we likely to arrive at a good solution, where we reach this eventual outcome? Or are we less likely to do so?
+164 | SPEECH | 1228 | The Senior Minister and Coordinating Minister for National Security (Mr Teo Chee Hean) | And Mr Speaker, Sir, I would like to ask the Leader of the Opposition whether he agrees with me, because he mentioned more Members of Opposition in the House would lead to better outcomes. I would like to ask the Leader of the Opposition whether he agrees with me that these are matters of great sensitivity and have to be handled with great sensitivity, rather than be exploited for political purposes?
+165 | SPEECH | 1207 | Mr Pritam Singh | Mr Speaker, I will deal with the last comment first. Is the Senior Minister suggesting that the WP is using these episodes for political purposes? The answer, I
+166 | SPEECH | 1207 | Mr Pritam Singh | In terms of the series of hypotheticals that the Senior Minister put out, I think moving from one extreme to another extreme is probably not the policy approach
+167 | SPEECH | 1207 | Mr Pritam Singh | But I hope it does not undermine or take away the point that philosophically, where does the WP want Singapore to go? And I do not think the PAP is very far awa
+168 | SPEECH | 1207 | Mr Pritam Singh | But I think, by and large, we accept that we have to move forward in a way where Singapore, as a country, as a society, is strengthened. That should make things
+169 | SPEECH | 1228 | Mr Teo Chee Hean | Speaker, Sir, I think there is a lesson to be learnt here between philosophy and methods. The philosophy, we can agree on. We all want a multiracial Singapore. We want Singaporeans to live together in multi-racial communities, not in segregated communities. I think even the WP agrees on that; the Leader of the Opposition says so too.
+170 | SPEECH | 1228 | Mr Teo Chee Hean | But how do we get there? Those are methods. Methods can be adapted and changed. But we have the same philosophy that we want a multi-racial society Singapore, integrated housing, well-integrated communities and schools. We are more likely to get there with the HDB policies that we have today, with EIP, rather than what the WP is proposing. In fact, their manifesto says abolish it now; although the Leader of the Opposition seems to have shifted away from that because he realises that that is untenable.
+171 | SPEECH | 1228 | Mr Teo Chee Hean | Are we more likely to achieve an integrated Singapore by having integrated housing or to abolish the EIP as the WP would propose today and have segregated housing. And then, how do we learn how to live together again? That is the question I have, Sir.
+172 | SPEECH | 1228 | Mr Teo Chee Hean | I am glad to hear the Leader of the Opposition say that we should all not exploit the issues of race and religion for political purposes. I applaud that.
+173 | SPEECH | 1223 | Mr Speaker | Order. End of Question Time. Ministerial Statement. Minister for Finance.
+"""
+
+
+def test_report_9432_later_holder_who_asks_a_member_is_supplementary_not_answerer() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_9432_TITLE, _REPORT_9432_ROWS)
+
+    assert [
+        participant
+        for participant in _summarise_participants(labelled_report.participants)
+        if participant[0] == ParticipantRole.ANSWERER
+        or participant[0] == ParticipantRole.SUPPLEMENTARY
+    ] == [
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            2,
+            "The Minister for Social and Family Development and Minister-in-charge of Muslim Affairs (Mr Masagos Zulkifli B M M)",
+            1189,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            78,
+            "Mr Pritam Singh",
+            1207,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            81,
+            "The Second Minister for National Development (Ms Indranee Rajah)",
+            1168,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            157,
+            "The Senior Minister and Coordinating Minister for National Security (Mr Teo Chee Hean)",
+            1228,
+        ),
+    ]

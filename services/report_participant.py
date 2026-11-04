@@ -666,10 +666,14 @@ def _has_answering_run(
             runs[-1].append(person_row)
         else:
             runs.append([person_row])
-    return any(
-        _is_answering_run(run, ordinal_to_label, ordinal_to_first_answerer_transcript)
-        for run in runs
-    )
+    for run in runs:
+        if any(_is_asking(run_row.transcript) for run_row in run):
+            return False
+        if _is_answering_run(
+            run, ordinal_to_label, ordinal_to_first_answerer_transcript
+        ):
+            return True
+    return False
 
 
 def _get_ordinal_to_first_answerer_transcript(
