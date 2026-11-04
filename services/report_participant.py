@@ -116,6 +116,11 @@ _COLLECTIVE_LABEL_PATTERN = re.compile(
     r"^\W*(?:(?:some|an?)\s+)?hon\.?\s+members?\W*$", re.IGNORECASE
 )
 _PRIVATE_NOTICE_PATTERN = re.compile(r"\(\s*by private notice", re.IGNORECASE)
+_URGENT_LEAVE_PATTERN = re.compile(
+    r"(?=.*\bquestion\s+without\s+notice\b)"
+    r"(?=.*(?:\bstanding\s+orders?\s+(?:no\.?\s*)?19\b|\burgent\b))",
+    re.IGNORECASE | re.DOTALL,
+)
 _NOT_ASKED_ALOUD_PATTERN = re.compile(
     r"\b(?:stood\s+over|withdraw(?:n|al)?|postponed|deferred|not\s+reached|no\s+response"
     r"|is\s+not\s+here|stood\s+on\s+the\s+order\s+paper"
@@ -1311,15 +1316,13 @@ def get_question_states(
     correction_state = _get_correction_state(title, speech_asker_rows)
     if correction_state is not None:
         question_states.append(correction_state)
-    private_notice_row = _get_first_matching_row(
+    urgent_row = _get_first_matching_row(
         speech_asker_rows, _PRIVATE_NOTICE_PATTERN
-    )
-    if private_notice_row is not None:
+    ) or _get_first_matching_row(speech_asker_rows, _URGENT_LEAVE_PATTERN)
+    if urgent_row is not None:
         question_states.append(
             QuestionStateCandidate(
-                QuestionState.URGENT,
-                private_notice_row.transcript,
-                private_notice_row.ordinal,
+                QuestionState.URGENT, urgent_row.transcript, urgent_row.ordinal
             )
         )
     if _STOOD_OVER_LIST_TITLE_PATTERN.search(title):

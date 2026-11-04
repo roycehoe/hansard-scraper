@@ -4273,3 +4273,26 @@ def test_report_26810_label_run_into_the_asked_paragraph_adds_no_second_answerer
         for participant in _summarise_participants(labelled_report.participants)
         if participant[0] == ParticipantRole.ANSWERER
     ] == [637]
+
+
+_REPORT_35665_TITLE = "FIRE AT ROBINSON DEPARTMENTAL STORE"
+_REPORT_35665_ROWS = """
+1 | SPEECH | 192 | Mr Speaker | The hon. Member for Serangoon Gardens wishes to ask a question without notice, as provided for under Standing Order No. 19. I have considered it and am of the opinion that it is of an urgent character. I have therefore given him permission to ask the question.
+2 | SPEECH | 174 | Mr L. P. Rodrigo (Serangoon Gardens) | Mr Speaker, Sir, today we all know of the tragic fire which broke out at the Robinson departmental store at Raffles Place. In view of the magnitude of the fire and the number of lives it has claimed, I regard this as a matter of public importance and sufficiently urgent to merit a voice in this House, for which I am grateful to you, Sir.
+3 | SPEECH | 174 | Mr L. P. Rodrigo (Serangoon Gardens) | My question is simply to ask the Minister for Social Affairs if he would inform this House of (i) the tragic outcome of the fire which broke out yesterday in the Robinson departmental store, and (ii) any other details which he may now have in his possession.
+4 | SPEECH | 169 | The Minister for Social Affairs (Encik Othman Bin Wok) | Mr Speaker, Sir, at 1006 hours yesterday, the Fire Brigade Control Room received a telephone call that an electrical short circuit had occurred in the Robinson departmental store at Raffles Place. This was followed by a series of calls from members of the public. The Fire Brigade immediately responded to the fire call. The officer, on arrival at 1013 hours, immediately radioed the Fire Control Roo
+"""
+
+
+def test_report_35665_question_without_notice_after_the_speakers_leave_is_urgent() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_35665_TITLE, _REPORT_35665_ROWS)
+
+    assert _summarise_states(labelled_report.states) == [
+        (
+            QuestionState.URGENT,
+            "The hon. Member for Serangoon Gardens wishes to ask a question without notice, as provided for under Standing Order No. 19. I have considered it and am of the opinion that it is of an urgent character. I have therefore given him permission to ask the question.",
+            1,
+        )
+    ]
