@@ -28,6 +28,9 @@ from utils.office import Office
 
 _REPORT_ID = 1
 _ROW_COLUMN_SEPARATOR = " | "
+_DESMOND_LEE_SPEAKER_ID = 1039
+_HENG_CHEE_HOW_SPEAKER_ID = 826
+_SIM_ANN_SPEAKER_ID = 990
 
 
 @dataclass(frozen=True)
@@ -1882,8 +1885,8 @@ def test_report_39111_some_hon_members_is_unlabelled() -> None:
             1377,
         ),
         (
-            ParticipantRole.ANSWERER,
-            ParticipantRoleSource.OFFICE_LABEL,
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
             12,
             "The Prime Minister (Mr Lee Kuan Yew)",
             30,
@@ -2051,4 +2054,233 @@ def test_report_22647_speech_rows_with_no_kind_still_give_the_answerer() -> None
             "The Minister for Finance (Mr Tharman Shanmugaratnam)",
             889,
         ),
+    ]
+
+
+_REPORT_37303_TITLE = "UNIFORM STANDARD OF DRESS FOR SCHOOL TEACHERS"
+_REPORT_37303_ROWS = """
+1 |  | 9 | Madam Chan Choy Siong | asked the Minister for Education whether he will take action to get all school teachers, both men and women, to observe a modest and uniform standard of dress as befits their profession as it has been seen that some school teachers are dressed indecorously in certain forms of ultra-modern attire when discharging their official duties.
+2 |  | 1 | Inche Rahim Ishak (for the Minister for Education) | Mr Speaker, Sir, it is desirable that teachers should dress neatly and soberly when they are on duty -
+3 |  | 64 | The Minister for Health (Mr Yong Nyuk Lin) | Look at me!
+4 |  | 1 | Inche Rahim Ishak | -as the manner and mode of their dress will certainly have an influence on children under their charge.
+5 |  | 1 | Inche Rahim Ishak | The hon. Member's point is well taken and teachers will be encouraged to dress decorously rather than decoratively when on duty.
+6 |  | 1 | Inche Rahim Ishak | As for the Member's suggestion that teachers should wear a uniform standard of dress, the Ministry will seek the views of the various teachers' unions on the subject.
+"""
+
+_REPORT_15769_TITLE = "Re-employment of Women beyond Age 62"
+_REPORT_15769_ROWS = """
+1 |  | 1118 | Ms K Thanaletchimi | asked the Minister for Manpower (a) what is the current percentage of re-employment of female workers who have reached the age of (i) 62 years and (ii) 65 years; and (b) whether the Ministry will consider strategies to improve the employment of female workers beyond 62 in light of females having a longer lifespan.
+2 |  | 1113 | The Minister of State for Manpower (Mr Sam Tan Chin Siong) (for the Minister for Manpower) | Mdm Speaker, the Ministry of Manpower (MOM) collects re-employment data regardless of their gender. In 2015, over 98% of local employees who wished to continue working were actually offered re-employment upon reaching the ages of 62 and 65. It shows that the re-employment rates for male and female workers, older workers, were both very high.
+3 |  | 1113 | The Minister of State for Manpower (Mr Sam Tan Chin Siong) (for the Minister for Manpower) | The Government will continue to help older workers work for as long as they are willing and able to. And how do we do this? First, we will raise the re-employment age from 65 to 67 by 1 July 2017. We will also support employers with Special Employment Credit of up to 11% of wage offset when they employ workers aged 65 and above.
+5 |  | 1052 | Mdm Speaker | Ms Thanaletchimi.
+6 |  | 1118 | Ms K Thanaletchimi (Nominated Member) | I thank the Minister of State. Madam, just a supplementary question. Are there further strategies that we can embrace to ensure that older workers, especially the female cohort, could work longer in the workplace because it is important that they have sufficient savings, especially those low-wage workers and those who are middle income? They need to continue with their employment.
+7 |  | 1118 | Ms K Thanaletchimi (Nominated Member) | The second supplementary question is: while the retirement and re-employment age has been raised to 67 by next year, in the meantime, what are the measures that we can take to ensure that these older workers will continue remaining in their employment, before this legislation is enacted?
+8 |  | 1113 | Mr Sam Tan Chin Siong | Mdm Speaker, I thank the hon Member for raising two very important questions. Older workers have always been an important consideration in our work in MOM. This is why we have paid a lot of attention and also rolled out a lot of programmes to help older workers to get re-employed if they are willing and able to.
+18 |  | 1052 | Mdm Speaker | Mr Murali Pillai.
+19 |  | 1090 | Mr Murali Pillai (Bukit Batok) | Madam, given the time, I wonder whether this question can be held over. There is only one more minute.
+20 |  | 1052 | Mdm Speaker | We have one minute, so the Minister of State can make his reply. If you can reply in one minute, Minister of State.
+21 |  | 1039 | The Senior Minister of State for National Development (Mr Desmond Lee) | I can, Mdm Speaker.
+22 |  | 1052 | Mdm Speaker | Yes, please, reply in one minute.
+"""
+
+_REPORT_21632_TITLE = "SCHEMES TO BOOST PRODUCTIVITY"
+_REPORT_21632_ROWS = """
+1 |  | 827 | Mdm Ho Geok Choo | asked the Minister for Manpower (a) how will schemes to boost productivity be implemented and who will implement them; (b) how will the indicators of success for these schemes be measured; and (c) how will the Ministry ensure that older workers are not replaced for the sake of boosting productivity.
+2 |  | 881 | Assoc. Prof. Paulin Tay Straughan | asked the Minister of Manpower (a) if he will elaborate on the implications of the Economic Strategies Committee Report on older workers, especially with regard to the automation and mechanisation drive; and (b) what are the incentives for employers to invest in training and skills enhancement of older workers.
+3 |  | 820 | The Minister for Manpower (Mr Gan Kim Yong) | Mr Speaker, Sir, the Economic Strategies Committee has recommended a major shift of our economy towards productivity-driven growth, rather than through the expansion of our workforce, so as to bring about higher incomes and a better standard of living for our people. To do so, we will need to restructure our economy to provide more room to grow and to grow more efficiently by having more productive enterprises, leveraging on innovation, optimising the use of resources and upgrading the quality and skills of our workforce. Contrary to the perception that improving productivity will result in job losses, productivity improvements can in fact help our economy and our enterprises remain competitive and save jobs for our workers – young and old, men and women, rank and file workers as well as Professionals, Managers, Executives and Technicians (PMETs). Raising productivity will also strengthen Singapore's position as an attractive investment location for growth industries. This will in turn create more quality jobs for Singaporeans. Specifically for older workers, despite the severe downturn in 2009, they have maintained their employment rate at 57% for those aged 55-64. The Government will continue to work closely with the Tripartite partners in preparing employers and employees for the re-employment legislation which will come into effect in 2012.
+6 |  | 827 | Mdm Ho Geok Choo (West Coast) | Thank you, Minister for the very comprehensive response. Sir, the whole notion of productivity is about more output and better rewards. How do we reconcile this with the perception that older workers are less energetic and slower, and hence, to be pro-business, we need to reduce their compensation and rewards in two areas? Upon reaching 50 years of age, older workers face a reduction in CPF contribution and upon retirement, if they are found to be fit for re-employment, they are often re-employed at a reduced package. How we reconcile productivity with incentives in this instance? I would like to have Minister's comment on this.
+7 |  | 820 | Mr Gan Kim Yong | Sir, the tripartite partners and the Ministry of Manpower have been working over the last few years to encourage our employers to adopt flexible wage systems that reflect the performance of our workers. We have also been working with the unions to encourage our workers to accept these arrangements and therefore, if our workers are able to be compensated according to the performance, then the seniority wage system will become less of an obstacle to older workers staying employed.
+9 |  | 826 | The Minister of State, Prime Minister's Office (Mr Heng Chee How) | Mr Speaker, Sir, supplementary question. I would like to ask if the Minister would agree that there are also many employers out there who do appreciate the value of their older workers and what they bring to the job and the company. In last year's economy, for example, the employment rate for the older workers actually went up. The results for the unionised sector, for example, have also been very good.
+10 |  | 820 | Mr Gan Kim Yong | Yes, I agree, Sir. In fact, in my reply earlier, I did mention that the employment rate for older workers in 2009, despite the recession, maintained at 57%. This is encouraging but it still requires us to continue to put in more effort to help prepare our workers for the re-employment which will come into effect by 2012.
+"""
+
+_REPORT_37237_TITLE = "PRIMARY SCHOOL LEAVING EXAMINATION IN 1967"
+_REPORT_37237_ROWS = """
+1 |  | 41 | Mr Ng Kah Ting | asked the Minister for Education whether all students who pass the Primary School Leaving Examination this year will be given places in secondary schools; whether he is aware of the many cases in previous years where students were posted to secondary schools far away from their homes; and what steps he will take to prevent a similar situation this year.
+2 |  | 44 | Mr Ong Pang Boon | Mr Speaker. Sir, it is expected that, subject to adequate provision in the 1968 Budget for education, every Primary VI pupil in Singapore who is successful in the Primary School Leaving Examination this year will be given a place in a secondary academic, technical or vocational school. However, it is obviously not possible to meet the wishes of every parent in regard to the choice of a particular school. No system of allocation can please everyone.
+3 |  | 44 | Mr Ong Pang Boon | The present system of allocation for the Chinese and English streams, which has been in operation since 1965, is processed by computers. It is based on the choice exercised by the parents and the results of the Primary School Leaving Examination. Under this system the vast majority of successful candidates are posted to schools of their own choice. For example, in 1966, out of a total of 32,602 successful candidates, 21,074 were posted to schools according to their first choice, and 6,036 were posted according to their second choice. Only 5,492 or 16.8 per cent were posted to schools other than their choice, because all vacancies in the schools of their choice were taken up by other candidates with better results in the Primary School Leaving Examination. Among the 5,492 pupils who failed to secure a place under their first as well as second choice, about 5,200 applied for transfers. Of these, 4,600 were approved and only 600 could not be approved, because all vacancies in schools near their homes had already been taken up by other pupils with better examination results.
+4 |  | 41 | Mr Ng Kah Ting (Punggol) | Mr Speaker, Sir, just now the Minister has said that, subject to adequate provision in the 1968 Budget, it appears that all students who passed the Primary School Leaving Examination would be given places. Could the Minister be more explicit in explaining the phrase "subject to adequate provision in the 1968 Budget"?
+5 |  | 44 | Mr Ong Pang Boon | Mr Speaker, Sir, I think the Member for Punggol knows exactly what I mean. There is no need to explain in further detail.
+6 |  | 41 | Mr Ng Kah Ting | Can the Minister say whether it is correct that, should there be inadequate provision in the 1968 Budget, all students may not be given places in the secondary schools?
+7 |  | 20 | The Minister for Finance (Dr Goh Keng Swee) | Correct.
+8 |  | 44 | Mr Ong Pang Boon | The Minister for Finance has already answered for me.
+"""
+
+_REPORT_18267_TITLE = (
+    "Students under Direct School Admission (DSA) Scheme who Drop Out of CCAs"
+)
+_REPORT_18267_ROWS = """
+1 |  | 1012 | Mr Yee Jenn Jong | asked the Minister for Education, for Secondary schools that admit students under the Direct School Admission (DSA) scheme based on the students' achievements in Co-Curricular Activities (CCA) or sports (a) whether there are clear policies on how schools will handle students who drop out of their designated CCA or sports after admission; and (b) over the past three years, how many students admitted under the DSA scheme do not enrol in or have dropped out of their designated DSA activities within two years of admission.
+2 |  | 935 | The Senior Parliamentary Secretary to the Minister for Education (Mr Hawazi Daipi) (for the Minister for Education) | Madam, the Direct School Admission (DSA) scheme was introduced in 2004 to give selected schools the flexibility and autonomy to recognise a more diverse range of student achievements and talents beyond performance at the national examinations. The intent is to promote holistic education by encouraging a broader definition of merit.
+3 |  | 935 | The Senior Parliamentary Secretary to the Minister for Education (Mr Hawazi Daipi) (for the Minister for Education) | Generally, MOE expects that students admitted through DSA understand the commitment on their part to participate in the CCAs and activities related to the talent for which they were admitted. The intent is also for the DSA school to nurture these students further in their strengths. However, we also recognise that there might be a few cases where the DSA students may need to transfer out of their CCAs due to unforeseen reasons, for example, due to sports injury. In such cases, schools will work with the student on a change in CCA for the educational interests of the student.
+4 |  | 935 | The Senior Parliamentary Secretary to the Minister for Education (Mr Hawazi Daipi) (for the Minister for Education) | Over the past three years and on average, of the students admitted through DSA, about 95% are still in a CCA related to their DSA talent two years after their admission.
+5 |  | 1012 | Mr Yee Jenn Jong (Non-Constituency Member) | Thank you, Mdm Speaker. I would just like to seek an additional clarification. Earlier, in one of the replies to my question prior to this, the Ministry had said that the policy for what to do with students will depend on a school-to-school basis. I would like to know if the Ministry has a general consistent policy across the board because we are going to have more and more schools going into the DSA system and more and more students coming through DSA. So, would it be better to have a clearer communication across all schools?
+6 |  | 1012 | Mr Yee Jenn Jong (Non-Constituency Member) | I also understand the explanation that, for example, if there is sports injury, then there would be a good reason for them to move to another activity. But what if the students have no good reasons and they just wish to drop the CCA? What would the Ministry advise schools to do in such circumstances?
+7 |  | 935 | Mr Hawazi Daipi | I thank the Member for the questions. The principle of honouring one's commitment applies to both school transfers as well as CCA transfers. What we want to do is to have students commit themselves to the school that they have applied for under DSA. Where students have lost interest, the schools will counsel them. But, essentially, schools will take it case by case. As I have said earlier, 95% of the students remain in the CCA and in the school, undertaking CCAs for which they had been admitted to the schools, after two years. This means the system works. We want the students to honour their commitment to the school, having been admitted based on the specific DSA talent.
+8 |  | 990 | The Minister of State for Education (Ms Sim Ann) | Mdm Speaker, Mr Yee earlier referred to a previous reply given by MOE to one of his questions. I do not know whether he is referring to the previous parliamentary sitting. If he is, perhaps he could give a nod because I do recall he asked a supplementary question, to a main question which I answered, which was with regards to DSA about students who may have been admitted through sports and about whether their PSLE scores have had a certain gap between the cut-off point of that particular school.
+9 |  | 990 | The Minister of State for Education (Ms Sim Ann) | Mr Yee raised this issue about CCAs as a supplementary question and I recall the answer that I gave was not that it differs from school to school but that it would be looked at on a case-by-case basis. And I believe that the answer that my colleague the Senior Parliamentary Secretary Mr Hawazi Daipi has just given corroborates this.
+"""
+
+
+def test_report_37303_office_holders_quip_is_not_an_answer() -> None:
+    labelled_report = _label_report(
+        _REPORT_37303_TITLE,
+        _REPORT_37303_ROWS,
+        speaker_id_to_office={
+            1: Office(
+                "Parliamentary Secretary to the Minister for Education",
+                OfficeSource.ATTENDANCE_LIST,
+            ),
+            64: Office("Minister for Health", OfficeSource.ATTENDANCE_LIST),
+        },
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Madam Chan Choy Siong",
+            9,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            2,
+            "Inche Rahim Ishak (for the Minister for Education)",
+            1,
+        ),
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            3,
+            "The Minister for Health (Mr Yong Nyuk Lin)",
+            64,
+        ),
+    ]
+
+
+def test_report_15769_office_holders_short_reply_to_the_chair_is_not_an_answer() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_15769_TITLE,
+        _REPORT_15769_ROWS,
+        speaker_id_to_office={
+            1113: Office(
+                "Minister of State for Manpower", OfficeSource.ATTENDANCE_LIST
+            ),
+            1039: Office(
+                "Senior Minister of State for National Development",
+                OfficeSource.ATTENDANCE_LIST,
+            ),
+        },
+    )
+
+    assert [
+        participant
+        for participant in _summarise_participants(labelled_report.participants)
+        if participant[4] == _DESMOND_LEE_SPEAKER_ID
+    ] == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            21,
+            "The Senior Minister of State for National Development (Mr Desmond Lee)",
+            1039,
+        )
+    ]
+
+
+def test_report_21632_office_holder_who_asks_a_supplementary_is_a_supplementary() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_21632_TITLE,
+        _REPORT_21632_ROWS,
+        speaker_id_to_office={
+            826: Office(
+                "Minister of State, Prime Minister's Office",
+                OfficeSource.ATTENDANCE_LIST,
+            ),
+            820: Office("Minister for Manpower", OfficeSource.ATTENDANCE_LIST),
+        },
+    )
+
+    assert [
+        participant
+        for participant in _summarise_participants(labelled_report.participants)
+        if participant[4] == _HENG_CHEE_HOW_SPEAKER_ID
+    ] == [
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            9,
+            "The Minister of State, Prime Minister's Office (Mr Heng Chee How)",
+            826,
+        )
+    ]
+
+
+def test_report_37237_office_holders_one_word_reply_is_an_answer() -> None:
+    labelled_report = _label_report(
+        _REPORT_37237_TITLE,
+        _REPORT_37237_ROWS,
+        speaker_id_to_office={
+            44: Office("Minister for Education", OfficeSource.ATTENDANCE_LIST),
+            20: Office("Minister for Finance", OfficeSource.ATTENDANCE_LIST),
+        },
+    )
+
+    assert [
+        participant
+        for participant in _summarise_participants(labelled_report.participants)
+        if participant[0] == ParticipantRole.ANSWERER
+    ] == [
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            2,
+            "Mr Ong Pang Boon",
+            44,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            7,
+            "The Minister for Finance (Dr Goh Keng Swee)",
+            20,
+        ),
+    ]
+
+
+def test_report_18267_office_holder_who_mentions_a_supplementary_question_is_an_answerer() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_18267_TITLE,
+        _REPORT_18267_ROWS,
+        speaker_id_to_office={
+            935: Office(
+                "Senior Parliamentary Secretary to the Minister for Education",
+                OfficeSource.ATTENDANCE_LIST,
+            ),
+            990: Office(
+                "Minister of State for Education", OfficeSource.ATTENDANCE_LIST
+            ),
+        },
+    )
+
+    assert [
+        participant
+        for participant in _summarise_participants(labelled_report.participants)
+        if participant[4] == _SIM_ANN_SPEAKER_ID
+    ] == [
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            8,
+            "The Minister of State for Education (Ms Sim Ann)",
+            990,
+        )
     ]

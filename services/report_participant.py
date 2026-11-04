@@ -25,6 +25,9 @@ from utils.office import (
 )
 
 _MAX_CHAIR_NAME_CALL_WORDS = 8
+_MAX_EXCLAMATION_QUIP_WORDS = 6
+_MAX_QUESTION_QUIP_WORDS = 8
+_MAX_REPLY_TO_CHAIR_WORDS = 6
 _MINISTER_CALL_TITLE = "Minister "
 _ROLE_ORDER = tuple(ParticipantRole)
 
@@ -40,6 +43,23 @@ _NOT_A_QUESTION_TITLE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _CORRECTION_TITLE_PATTERN = re.compile(r"^\W*addend(?:um|a)\b", re.IGNORECASE)
+_PROCEDURAL_PATTERN = re.compile(
+    r"point\s+of\s+(?:order|clarification|information|elucidation)"
+    r"|out\s+of\s+order|standing\s+orders?|general\s+assent|may\s+i\s+reply"
+    r"|what\s+is\s+your\s+question|should\s+not\s+make\s+any\s+comment",
+    re.IGNORECASE,
+)
+_ASKING_PATTERN = re.compile(
+    r"\b(?:ask|have)\s+(?:a\s+)?supplementary"
+    r"|(?:^|[,.]\s*)(?:a\s+)?supplementary\s+question\b"
+    r"|\bmay\s+i\s+ask\b|\bmay\s+i\s+have\s+the\s+opportunity\s+to\s+ask\b"
+    r"|(?:is|are)\s+the\s+minister\s+(?:not\s+)?aware|would\s+the\s+minister"
+    r"|seek\s+(?:a\s+)?clarification|i\s+would\s+like\s+to\s+ask"
+    r"|i\s+am\s+just\s+wondering"
+    r"|\b(?:will|would|can|could|does|is|are|has|did)\s+the\s+(?:\w+\s+){0,5}"
+    r"(?:minister|secretary)\b[^?]*\?\s*$",
+    re.IGNORECASE,
+)
 _COLLECTIVE_LABEL_PATTERN = re.compile(
     r"^\W*(?:(?:some|an?)\s+)?hon\.?\s+members?\W*$", re.IGNORECASE
 )
@@ -87,6 +107,8 @@ class _ReportRoles:
     asker_person_keys: frozenset[Union[int, str]]
     reader_person_keys: frozenset[Union[int, str]]
     answerer_person_keys: frozenset[Union[int, str]]
+    dropped_person_keys: frozenset[Union[int, str]]
+    supplementary_person_keys: frozenset[Union[int, str]]
     first_answer_ordinal: Optional[int]
 
 
@@ -347,6 +369,86 @@ def _build_answerer_participants(
     ]
 
 
+def _is_asking(transcript: str) -> bool:
+    text = transcript.strip()
+    if _ASKING_PATTERN.search(text):
+        return True
+    return text.endswith("?") and len(text.split()) <= _MAX_QUESTION_QUIP_WORDS
+
+
+def _does_row_answer(
+    participant_row: _ParticipantRow, previous_label: Optional[str]
+) -> bool:
+    text = participant_row.transcript.strip()
+    word_count = len(text.split())
+    if _PROCEDURAL_PATTERN.search(text) or _is_asking(text):
+        return False
+    if text.endswith("!") and word_count <= _MAX_EXCLAMATION_QUIP_WORDS:
+        return False
+    return not (
+        word_count <= _MAX_REPLY_TO_CHAIR_WORDS
+        and previous_label is not None
+        and CHAIR_FORM_PATTERN.search(previous_label)
+    )
+
+
+def _has_answering_run(
+    person_rows: list[_ParticipantRow], ordinal_to_label: dict[int, str]
+) -> bool:
+    runs: list[list[_ParticipantRow]] = []
+    for person_row in person_rows:
+        if runs and runs[-1][-1].ordinal + 1 == person_row.ordinal:
+            runs[-1].append(person_row)
+        else:
+            runs.append([person_row])
+    return any(
+        all(
+            _does_row_answer(run_row, ordinal_to_label.get(run_row.ordinal - 1))
+            for run_row in run
+        )
+        for run in runs
+    )
+
+
+def _split_non_answering_holders(
+    answerer_participants: list[ParticipantCandidate],
+    eligible_rows: list[_ParticipantRow],
+    ordinal_to_label: dict[int, str],
+) -> tuple[list[ParticipantCandidate], frozenset[Union[int, str]]]:
+    kept_participants = answerer_participants[:1]
+    dropped_person_keys: set[Union[int, str]] = set()
+    for answerer_participant in answerer_participants[1:]:
+        person_key = _get_person_key(
+            answerer_participant.speaker_id, answerer_participant.printed_name
+        )
+        person_rows = [
+            eligible_row
+            for eligible_row in eligible_rows
+            if eligible_row.person_key == person_key
+        ]
+        if _has_answering_run(person_rows, ordinal_to_label):
+            kept_participants.append(answerer_participant)
+        else:
+            dropped_person_keys.add(person_key)
+    return kept_participants, frozenset(dropped_person_keys)
+
+
+def _get_supplementary_person_keys(
+    eligible_rows: list[_ParticipantRow],
+    dropped_person_keys: frozenset[Union[int, str]],
+    first_answer_ordinal: Optional[int],
+) -> frozenset[Union[int, str]]:
+    if first_answer_ordinal is None:
+        return frozenset()
+    return frozenset(
+        eligible_row.person_key
+        for eligible_row in eligible_rows
+        if eligible_row.person_key in dropped_person_keys
+        and eligible_row.ordinal > first_answer_ordinal
+        and _is_asking(eligible_row.transcript)
+    )
+
+
 def _build_other_role_participant(
     participant_row: _ParticipantRow,
     role: ParticipantRole,
@@ -385,6 +487,20 @@ def _build_row_participant(
         report_roles.first_answer_ordinal is not None
         and participant_row.ordinal > report_roles.first_answer_ordinal
     )
+    if person_key in report_roles.dropped_person_keys:
+        if person_key not in report_roles.supplementary_person_keys:
+            return _build_other_role_participant(
+                participant_row,
+                ParticipantRole.UNLABELLED,
+                ParticipantRoleSource.NO_RULE,
+            )
+        if not is_after_answer:
+            return None
+        return _build_other_role_participant(
+            participant_row,
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+        )
     if person_key in report_roles.asker_person_keys:
         if not is_after_answer:
             return None
@@ -524,16 +640,29 @@ def get_participants(
         and participant_row.person_key not in asker_person_keys
         and not _COLLECTIVE_LABEL_PATTERN.search(participant_row.label)
     ]
-    answerer_participants = _build_answerer_participants(
+    answerer_participants, dropped_person_keys = _split_non_answering_holders(
+        _build_answerer_participants(
+            eligible_rows,
+            _get_person_key_to_labels(participant_rows),
+            reader_person_keys,
+            speaker_id_to_office,
+            first_question_ordinal,
+        ),
         eligible_rows,
-        _get_person_key_to_labels(participant_rows),
-        reader_person_keys,
-        speaker_id_to_office,
-        first_question_ordinal,
+        {
+            participant_row.ordinal: participant_row.label
+            for participant_row in participant_rows
+        },
     )
     answerer_person_keys = frozenset(
         _get_person_key(participant.speaker_id, participant.printed_name)
         for participant in answerer_participants
+    )
+    first_answer_ordinal = _get_first_answer_ordinal(
+        eligible_rows,
+        answerer_participants,
+        answerer_person_keys,
+        first_question_ordinal,
     )
     report_roles = _ReportRoles(
         question_ordinals=question_ordinals,
@@ -541,12 +670,11 @@ def get_participants(
         asker_person_keys=asker_person_keys,
         reader_person_keys=reader_person_keys,
         answerer_person_keys=answerer_person_keys,
-        first_answer_ordinal=_get_first_answer_ordinal(
-            eligible_rows,
-            answerer_participants,
-            answerer_person_keys,
-            first_question_ordinal,
+        dropped_person_keys=dropped_person_keys,
+        supplementary_person_keys=_get_supplementary_person_keys(
+            eligible_rows, dropped_person_keys, first_answer_ordinal
         ),
+        first_answer_ordinal=first_answer_ordinal,
     )
     speaker_id_to_label_office = _get_speaker_id_to_label_office(participant_rows)
     return [
