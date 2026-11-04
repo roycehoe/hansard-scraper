@@ -3579,7 +3579,7 @@ def test_report_30999_second_member_who_reads_out_the_same_question_is_also_a_re
         ),
         (
             ParticipantRole.READER,
-            ParticipantRoleSource.ASKER_RULES,
+            ParticipantRoleSource.QUESTION_NUMBER_CALL,
             5,
             "Mr Tan Soo Khoon (Alexandra)",
             403,

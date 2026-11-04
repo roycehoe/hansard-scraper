@@ -76,6 +76,7 @@ class ParticipantRoleSource(StrEnum):
     POSITION = "POSITION"
     AFTER_ANSWER = "AFTER_ANSWER"
     NO_RULE = "NO_RULE"
+    QUESTION_NUMBER_CALL = "QUESTION_NUMBER_CALL"
 
 
 class OfficeClass(StrEnum):

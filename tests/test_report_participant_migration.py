@@ -67,3 +67,20 @@ def test_upgrade_creates_only_the_report_participant_tables() -> None:
     for line in upgrade_sql.splitlines():
         if "UPDATE" in line:
             assert "alembic_version" in line
+
+
+def test_question_number_call_migration_only_adds_the_enum_value() -> None:
+    output = io.StringIO()
+    command.upgrade(
+        Config(str(_ALEMBIC_INI), output_buffer=output),
+        "a4c8e1d27f93:287f3a4e2fdd",
+        sql=True,
+    )
+    upgrade_sql = output.getvalue()
+
+    assert (
+        "ALTER TYPE participantrolesource ADD VALUE IF NOT EXISTS 'QUESTION_NUMBER_CALL'"
+        in upgrade_sql
+    )
+    assert "CREATE" not in upgrade_sql
+    assert "DROP" not in upgrade_sql

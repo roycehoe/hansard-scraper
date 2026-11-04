@@ -422,7 +422,7 @@ def _build_second_reader_participants(
                 _build_other_role_participant(
                     participant_row,
                     ParticipantRole.READER,
-                    ParticipantRoleSource.ASKER_RULES,
+                    ParticipantRoleSource.QUESTION_NUMBER_CALL,
                 )
             )
     return second_reader_participants

@@ -78,6 +78,13 @@ class _SeededReports:
     motion_report: Report
 
 
+@dataclass(frozen=True)
+class _SecondReaderReport:
+    vasoo: Speaker
+    tan: Speaker
+    report: Report
+
+
 class _LogRecorder:
     def __init__(self) -> None:
         self.messages: list[str] = []
@@ -883,6 +890,125 @@ def test_commit_refuses_a_report_asker_reader_that_differs_from_the_reader_parti
     with pytest.raises(
         HansardWriteCheckError,
         match=f"Report {seeded_reports.oral_report.id}: report participants hold readers",
+    ):
+        apply_report_participants([], is_commit=True)
+
+    assert _get_stored_rows(scratch_session) == []
+
+
+def _seed_second_reader_report(session: Session) -> _SecondReaderReport:
+    chiam = _build_speaker("Chiam See Tong")
+    vasoo = _build_speaker("S. Vasoo")
+    tan = _build_speaker("Tan Soo Khoon")
+    tay = _build_speaker("Tay Eng Soon")
+    report = _build_report(
+        "second-reader",
+        ReportType.ORAL_ANSWER,
+        _FIRST_SITTING_DATE,
+        "Primary And Secondary Schools",
+        None,
+    )
+    session.add_all([chiam, vasoo, tan, tay, report])
+    session.flush()
+    session.add_all(
+        [
+            _build_speech(
+                report,
+                1,
+                None,
+                None,
+                SpeechKind.UNCLASSIFIED,
+                "The following Question stood in the name of Mr Chiam See Tong -",
+            ),
+            _build_speech(
+                report,
+                2,
+                None,
+                None,
+                SpeechKind.DOCUMENT_TEXT,
+                "4. To ask the Minister for Education what progress has been made in reducing class sizes.",
+            ),
+            _build_speech(
+                report, 3, "Mr Speaker", None, SpeechKind.SPEECH, "Mr Chiam."
+            ),
+            _build_speech(
+                report,
+                4,
+                "Dr S. Vasoo (Bo Wen)",
+                vasoo.id,
+                SpeechKind.SPEECH,
+                "Question 4, Sir.",
+            ),
+            _build_speech(
+                report,
+                5,
+                "Mr Tan Soo Khoon (Alexandra)",
+                tan.id,
+                SpeechKind.SPEECH,
+                "Mr Chiam is not here, Sir. Question 4.",
+            ),
+            _build_speech(
+                report,
+                6,
+                "The Minister of State for Education (Dr Tay Eng Soon)",
+                tay.id,
+                SpeechKind.SPEECH,
+                "The reduction of class size is a gradual process that depends on teachers and school buildings.",
+            ),
+        ]
+    )
+    session.commit()
+    assert report.id is not None
+    populate_report_askers(session, [report.id])
+    session.commit()
+    return _SecondReaderReport(vasoo, tan, report)
+
+
+def _get_stored_readers(session: Session) -> list[tuple]:
+    return [
+        (stored_row[2], stored_row[3], stored_row[4], stored_row[5], stored_row[9])
+        for stored_row in _get_stored_rows(session)
+        if stored_row[2] == ParticipantRole.READER
+    ]
+
+
+def test_commit_keeps_a_second_reader_that_report_asker_does_not_hold(
+    scratch_session: Session, log_recorder: _LogRecorder
+) -> None:
+    second_reader_report = _seed_second_reader_report(scratch_session)
+
+    apply_report_participants([], is_commit=True)
+
+    assert log_recorder.messages[-1] == "Committed"
+    assert _get_stored_readers(scratch_session) == [
+        (
+            ParticipantRole.READER,
+            ParticipantRoleSource.ASKER_RULES,
+            4,
+            "Dr S. Vasoo (Bo Wen)",
+            second_reader_report.vasoo.id,
+        ),
+        (
+            ParticipantRole.READER,
+            ParticipantRoleSource.QUESTION_NUMBER_CALL,
+            5,
+            "Mr Tan Soo Khoon (Alexandra)",
+            second_reader_report.tan.id,
+        ),
+    ]
+
+
+def test_commit_with_a_second_reader_still_refuses_a_report_asker_reader_that_differs(
+    scratch_session: Session, log_recorder: _LogRecorder
+) -> None:
+    second_reader_report = _seed_second_reader_report(scratch_session)
+    doctored_report_asker = scratch_session.exec(select(ReportAsker)).one()
+    doctored_report_asker.reader_printed_name = _HAND_EDITED_NAME
+    scratch_session.commit()
+
+    with pytest.raises(
+        HansardWriteCheckError,
+        match=f"Report {second_reader_report.report.id}: report participants hold readers",
     ):
         apply_report_participants([], is_commit=True)
 

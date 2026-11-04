@@ -566,6 +566,8 @@ def _validate_can_commit_asker_agreement(
                 (report_participant_row.printed_name, report_participant_row.speaker_id)
                 for report_participant_row in report_id_to_participant_rows[report_id]
                 if report_participant_row.role == ParticipantRole.READER
+                and report_participant_row.role_source
+                != ParticipantRoleSource.QUESTION_NUMBER_CALL
             }
             report_readers = {
                 (
