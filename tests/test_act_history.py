@@ -438,6 +438,20 @@ def _read_fixture(name: str) -> str:
             (date(2006, 1, 16), date(2006, 2, 14), date(2006, 2, 14), date(2008, 4, 2)),
             [],
         ),
+        (
+            "ordinance_with_three_digit_year",
+            ActHistoryEntryKind.ORDINANCE,
+            "Ordinance 63 of 193",
+            "Statute Law Revision Ordinance, 1935",
+            None,
+            (
+                date(1935, 11, 20),
+                date(1935, 12, 9),
+                date(1935, 12, 9),
+                date(1935, 12, 31),
+            ),
+            [],
+        ),
     ],
 )
 def test_entry_shape_is_read_as_printed(
@@ -486,6 +500,76 @@ def test_a_united_kingdom_act_is_an_entry_of_kind_other() -> None:
         entries[2].printed_title
         == "Colonial Civil Aviation (Application of Act) Order, 1952"
     )
+
+
+def test_an_indian_act_is_an_entry_of_kind_other() -> None:
+    blocks = split_history_entries(
+        "CODE", _read_fixture("indian_act_and_revised_edition_ordinance")
+    )
+
+    entries = [parse_history_entry("CODE", block) for block in blocks]
+
+    assert [
+        (
+            entry.kind,
+            entry.printed_law_number,
+            entry.printed_title,
+            entry.commencement_date,
+        )
+        for entry in entries
+    ] == [
+        (
+            ActHistoryEntryKind.OTHER,
+            "Indian Act XXI of 1865",
+            "The Parsi Intestate Succession Act",
+            date(1865, 4, 10),
+        ),
+        (
+            ActHistoryEntryKind.REVISED_EDITION,
+            "1920 Revised Edition",
+            "Ordinance No. 10 (Parsee Intestate Succession)",
+            date(1921, 11, 28),
+        ),
+    ]
+
+
+def test_a_federated_malay_states_enactment_and_chapter_are_entries_of_kind_other() -> (
+    None
+):
+    blocks = split_history_entries(
+        "CODE", _read_fixture("federated_malay_states_enactment_and_chapter")
+    )
+
+    entries = [parse_history_entry("CODE", block) for block in blocks]
+
+    assert [
+        (
+            entry.kind,
+            entry.printed_law_number,
+            entry.printed_title,
+            entry.commencement_date,
+        )
+        for entry in entries
+    ] == [
+        (
+            ActHistoryEntryKind.OTHER,
+            "M. Enactment 5 of 1905",
+            "The Military Manœuvres Enactment, 1905",
+            date(1905, 4, 28),
+        ),
+        (
+            ActHistoryEntryKind.OTHER,
+            "F.M.S. Chapter 43",
+            "Military Manœuvres Enactment",
+            date(1935, 2, 28),
+        ),
+        (
+            ActHistoryEntryKind.SUBSIDIARY_LEGISLATION,
+            "L.N. 233/1963 (G.N. Sp. No. S 5/1963)",
+            "Modification of Laws (Armed Forces) (Singapore) Order, 1963",
+            date(1963, 9, 16),
+        ),
+    ]
 
 
 def test_a_legal_notice_with_no_gazette_bracket_or_no_closing_parenthesis_is_read() -> (

@@ -15,7 +15,7 @@ _PAGE_BREAK_NOISE = (
 )
 _ENTRY_HEAD = re.compile(r"^\s?(\d{1,3})\. (.+)$")
 _ENTRY_HEAD_START = re.compile(
-    r"(Malay|Act|Ordinance|G\.\s?N|\d{4} |First|Second|\d{1,2}(?: & \d{1,2})? [A-Z][a-z]+\.|M\. |L\.N\.|U\.K\. |British Military Administration )"
+    r"(Malay|Act|Ordinance|G\.\s?N|\d{4} |First|Second|\d{1,2}(?: & \d{1,2})? [A-Z][a-z]+\.|M\. |F\.M\.S\. |Indian |L\.N\.|U\.K\. |British Military Administration )"
 )
 _MAX_HEAD_INDENT = 1
 _CAPITALS_ONLY_LINE = re.compile(r"^\s*[A-Z0-9 ,.()'’&/-]*[A-Z][A-Z0-9 ,.()'’&/-]*$")
@@ -28,7 +28,9 @@ _QUALIFIER_START = re.compile(
 )
 _ENTRY_KIND = re.compile(
     r"^(?P<law_number>L\.N\. \S+(?: \(G\.N\.[^)—]*\)?)?"
-    r"|(?:M\. |Malaysian? )?(?:Act|Ordinance) [IVXL\d]+ of \d{4}"
+    r"|(?:M\. |Malaysian? |Indian )?(?:Act|Ordinance) [IVXL\d]+ of \d{3,4}"
+    r"|M\. Enactment [IVXL\d]+ of \d{4}"
+    r"|F\.M\.S\. Chapter \d+"
     r"|\d{1,2}(?: & \d{1,2})? (?:Edw|Geo|Will|Vict|Eliz)\.[^—]*?c\. \d+"
     r"|British Military Administration G\.N\. No\. \S+"
     r"|U\.K\. \d{4}, c\. \d+"
