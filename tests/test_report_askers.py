@@ -1655,3 +1655,35 @@ def test_build_report_askers_keeps_an_unresolved_name_once_and_apart_from_other_
         (report_asker.ordinal, report_asker.printed_name)
         for report_asker in report_askers
     ] == [(1, "Mr S. V. Lingam"), (2, "Mr G. A. P. Sutherland")]
+
+
+def test_report_30105_stood_line_that_ends_the_report_credits_no_one() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Dr Lee Siew-Choh",
+            50,
+            "asked the Minister for National Development if he will make a statement concerning the arrears and penalty for non-payment of rent",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Dr Lee Boon Yang (for the Minister for National Development)",
+            60,
+            "Mr Speaker, Sir, the eating house, Chye Heng Cafeteria, in Block 401 Hougang Avenue 10, was recovered by HDB",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Dr Lee Boon Yang",
+            60,
+            "The following Question stood in the name of Mr Chiam See Tong -",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert [asker_candidate.printed_name for asker_candidate in asker_candidates] == [
+        "Dr Lee Siew-Choh"
+    ]

@@ -28,6 +28,7 @@ _STOOD_IN_NAME_PATTERN = re.compile(
     r"(?:\s*:|\s+[-–—]|[-–—](?=\s|$)|\s*$)",
     re.IGNORECASE,
 )
+_TO_ASK_WORDS_PATTERN = re.compile(r"\bto ask\b", re.IGNORECASE)
 _STOOD_QUESTION_NUMBER_PATTERN = re.compile(
     r"^\W*(?P<number>\d+)\s*\.?\s*to ask\b", re.IGNORECASE
 )
@@ -93,6 +94,12 @@ def _get_stood_lines(speech_asker_rows: list[SpeechAskerRow]) -> list[_StoodLine
     for row_index, speech_asker_row in enumerate(speech_asker_rows):
         printed_names = _get_stood_printed_names(speech_asker_row.transcript)
         if printed_names is None:
+            continue
+        is_last_row = row_index == len(speech_asker_rows) - 1
+        if (
+            is_last_row
+            and _TO_ASK_WORDS_PATTERN.search(speech_asker_row.transcript) is None
+        ):
             continue
         stood_lines.append(_StoodLine(row_index, printed_names))
     return stood_lines
