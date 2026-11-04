@@ -5,6 +5,8 @@ from difflib import SequenceMatcher
 from typing import Optional
 
 from enums import BillLinkSource
+from exceptions import HansardHandKeptEntryError
+from schemas.hand_kept_act_link import HandKeptActLink
 from utils.title_key import get_title_key
 
 _MAX_DAYS_FROM_READING = 1
@@ -253,3 +255,47 @@ def get_bill_link(
     if similar_bill_index is None:
         return None
     return BillLink(similar_bill_index, BillLinkSource.SIMILAR_TITLE_READING_DATES)
+
+
+def get_hand_kept_bill_link(
+    sso_code: str,
+    ordinal: int,
+    printed_title: str,
+    hand_kept_act_links: list[HandKeptActLink],
+    bill_report_ids: list[list[int]],
+) -> Optional[BillLink]:
+    for hand_kept_act_link in hand_kept_act_links:
+        if (
+            hand_kept_act_link.sso_code != sso_code
+            or hand_kept_act_link.ordinal != ordinal
+        ):
+            continue
+        if hand_kept_act_link.printed_title != printed_title:
+            raise HansardHandKeptEntryError(
+                f"hand_kept_act_links.json: {sso_code} {ordinal} prints "
+                f"{printed_title!r}, not {hand_kept_act_link.printed_title!r}"
+            )
+        for bill_index, report_ids in enumerate(bill_report_ids):
+            if set(report_ids) == set(hand_kept_act_link.report_ids):
+                return BillLink(bill_index, BillLinkSource.HAND_KEPT)
+        raise HansardHandKeptEntryError(
+            f"hand_kept_act_links.json: {sso_code} {ordinal} names reports "
+            f"{hand_kept_act_link.report_ids}, which no bill holds exactly"
+        )
+    return None
+
+
+def validate_can_find_hand_kept_act_links(
+    hand_kept_act_links: list[HandKeptActLink],
+    linked_sso_codes_and_ordinals: set[tuple[str, int]],
+) -> None:
+    for hand_kept_act_link in hand_kept_act_links:
+        if (
+            hand_kept_act_link.sso_code,
+            hand_kept_act_link.ordinal,
+        ) not in linked_sso_codes_and_ordinals:
+            raise HansardHandKeptEntryError(
+                f"hand_kept_act_links.json: {hand_kept_act_link.sso_code} "
+                f"{hand_kept_act_link.ordinal} is not an Act or Ordinance entry "
+                "of the harvest"
+            )

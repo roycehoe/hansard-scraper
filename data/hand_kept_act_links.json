@@ -1,0 +1,31 @@
+[
+  {
+    "sso_code": "ABA1965",
+    "ordinal": 10,
+    "printed_title": "Animals and Birds Ordinance, 1965",
+    "report_ids": [
+      38120,
+      38082
+    ],
+    "reason": "The bill was read as ANIMALS BILL and its committee amendment altered the title, so the rule finds no bill under the printed title."
+  },
+  {
+    "sso_code": "NHBA1993",
+    "ordinal": 1,
+    "printed_title": "National Archives and Records Centre Act, 1967",
+    "report_ids": [
+      37427,
+      37308
+    ],
+    "reason": "The bill was read as NATIONAL RECORDS CENTRE BILL and its committee amendment renamed it, so the rule finds no bill under the printed title."
+  },
+  {
+    "sso_code": "CLTPA1955",
+    "ordinal": 7,
+    "printed_title": "Criminal Law (Temporary Provisions) (Amendment No. 2) Ordinance, 1960",
+    "report_ids": [
+      39429
+    ],
+    "reason": "All three readings of the bill sit in the motion report 39429."
+  }
+]

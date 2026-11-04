@@ -12,6 +12,7 @@ from schemas.hand_check_office_holder import (
     HandCheckOfficeHolder,
     HandCheckOfficeHolders,
 )
+from schemas.hand_kept_act_link import HandKeptActLink, HandKeptActLinks
 from schemas.hand_kept_bill import HandKeptBill, HandKeptBills
 from schemas.hand_kept_member import HandKeptMember, HandKeptMembers
 from schemas.head_of_state import HeadOfStateResult, HeadsOfState
@@ -33,6 +34,7 @@ _CONSTITUENCY_NAMES_FILE = _DATA_DIRECTORY / "constituency_names.json"
 _COLONIAL_MEMBERS_FILE = _DATA_DIRECTORY / "colonial_la_members.json"
 _UNSCRAPED_MEMBERS_FILE = _DATA_DIRECTORY / "unscraped_members.json"
 _SPEAKER_OVERRIDES_FILE = _DATA_DIRECTORY / "speaker_overrides.json"
+_HAND_KEPT_ACT_LINKS_FILE = _DATA_DIRECTORY / "hand_kept_act_links.json"
 _HAND_KEPT_BILLS_FILE = _DATA_DIRECTORY / "hand_kept_bills.json"
 _HEADS_OF_STATE_FILE = _DATA_DIRECTORY / "heads_of_state.json"
 _UNATTRIBUTED_SPEECH_FILE = _DATA_DIRECTORY / "unattributed_speech.json"
@@ -103,3 +105,7 @@ def get_bill_title_corrections() -> list[BillTitleCorrection]:
 
 def get_hand_kept_bills() -> list[HandKeptBill]:
     return _get_data_file(_HAND_KEPT_BILLS_FILE, HandKeptBills).root
+
+
+def get_hand_kept_act_links() -> list[HandKeptActLink]:
+    return _get_data_file(_HAND_KEPT_ACT_LINKS_FILE, HandKeptActLinks).root

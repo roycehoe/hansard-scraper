@@ -25,7 +25,11 @@ from populate.written_tables import vacuum_analyze_written_tables
 from schemas.act_link_plan import ActLinkPlan
 from services.act_link_write import ActLinkWrite, get_first_difference
 from settings import settings
-from utils.data_files import get_bill_title_corrections, get_hand_kept_bills
+from utils.data_files import (
+    get_bill_title_corrections,
+    get_hand_kept_act_links,
+    get_hand_kept_bills,
+)
 from utils.write_target import validate_can_write
 
 _YEARS_PER_DECADE = 10
@@ -136,6 +140,7 @@ def apply_act_links(harvest_directory: Path, plan_path: Path, is_commit: bool) -
                 harvest_directory,
                 get_bill_title_corrections(),
                 get_hand_kept_bills(),
+                get_hand_kept_act_links(),
             )
             _log_plan(plan)
             _log_write(get_act_link_write(session, plan))
@@ -151,6 +156,7 @@ def apply_act_links(harvest_directory: Path, plan_path: Path, is_commit: bool) -
             harvest_directory,
             get_bill_title_corrections(),
             get_hand_kept_bills(),
+            get_hand_kept_act_links(),
         )
         _log_plan(plan)
         if plan != reviewed_plan:

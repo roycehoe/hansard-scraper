@@ -1,11 +1,14 @@
 from datetime import date, datetime
 from pathlib import Path
 
+import pytest
 from sqlmodel import Session
 
 from enums import ActHistoryEntryKind, BillLinkSource, ReportType
+from exceptions import HansardHandKeptEntryError
 from populate.act_links import get_act_link_plan
 from schemas.act_link_plan import SkippedReport
+from schemas.hand_kept_act_link import HandKeptActLink
 from tests.bill_seed import seed_bill_report, write_harvest
 
 _PASSING_LINE = "Question put, and agreed to.\n\nBill read a Third time and passed."
@@ -68,7 +71,7 @@ def test_plan_groups_bill_reports_and_reads_third_reading_lines(
 
     write_harvest(tmp_path)
 
-    plan = get_act_link_plan(scratch_session, tmp_path, [], [])
+    plan = get_act_link_plan(scratch_session, tmp_path, [], [], [])
 
     assert [
         (planned_bill.title_key, planned_bill.report_ids, planned_bill.is_passed)
@@ -170,7 +173,7 @@ def test_plan_splits_at_a_first_reading_line_but_not_at_a_new_clause_or_a_mentio
     )
     write_harvest(tmp_path)
 
-    plan = get_act_link_plan(scratch_session, tmp_path, [], [])
+    plan = get_act_link_plan(scratch_session, tmp_path, [], [], [])
 
     assert [
         (planned_bill.report_ids, planned_bill.is_passed) for planned_bill in plan.bills
@@ -179,3 +182,82 @@ def test_plan_splits_at_a_first_reading_line_but_not_at_a_new_clause_or_a_mentio
         ([reintroduction_id, committee_id, third_reading_id], True),
         ([motion_to_read_id], False),
     ]
+
+
+def _hand_kept_act_link(
+    ordinal: int, printed_title: str, report_ids: list[int]
+) -> HandKeptActLink:
+    return HandKeptActLink(
+        sso_code="EDA2025",
+        ordinal=ordinal,
+        printed_title=printed_title,
+        report_ids=report_ids,
+        reason="A reason.",
+    )
+
+
+def _seed_renamed_bill(session: Session) -> int:
+    return seed_bill_report(
+        session,
+        "renamed",
+        ReportType.BILL,
+        datetime(1990, 3, 1),
+        "Water Bill",
+        ["Bill read a First time."],
+    )
+
+
+def test_plan_links_a_hand_kept_entry_to_the_bill_holding_exactly_its_reports(
+    scratch_session: Session, tmp_path: Path
+) -> None:
+    report_id = _seed_renamed_bill(scratch_session)
+    write_harvest(tmp_path)
+
+    plan = get_act_link_plan(
+        scratch_session,
+        tmp_path,
+        [],
+        [],
+        [_hand_kept_act_link(1, "Estate Duty Act 2025", [report_id])],
+    )
+
+    act_entry, revised_edition_entry = plan.acts[0].entries
+    assert act_entry.bill_index == 0
+    assert act_entry.bill_link_source == BillLinkSource.HAND_KEPT
+    assert revised_edition_entry.bill_index is None
+
+
+@pytest.mark.parametrize(
+    ("hand_kept_act_link", "message"),
+    [
+        (_hand_kept_act_link(1, "Other Act 2025", [0]), "prints"),
+        (_hand_kept_act_link(1, "Estate Duty Act 2025", [0, -1]), "no bill holds"),
+        (
+            _hand_kept_act_link(9, "Estate Duty Act 2025", [0]),
+            "not an Act or Ordinance",
+        ),
+        (
+            _hand_kept_act_link(2, "Estate Duty Act 2025", [0]),
+            "not an Act or Ordinance",
+        ),
+    ],
+)
+def test_plan_raises_for_a_hand_kept_entry_that_no_longer_matches(
+    hand_kept_act_link: HandKeptActLink,
+    message: str,
+    scratch_session: Session,
+    tmp_path: Path,
+) -> None:
+    report_id = _seed_renamed_bill(scratch_session)
+    write_harvest(tmp_path)
+    hand_kept_act_link = hand_kept_act_link.model_copy(
+        update={
+            "report_ids": [
+                report_id if report_id_in_file == 0 else report_id_in_file
+                for report_id_in_file in hand_kept_act_link.report_ids
+            ]
+        }
+    )
+
+    with pytest.raises(HansardHandKeptEntryError, match=message):
+        get_act_link_plan(scratch_session, tmp_path, [], [], [hand_kept_act_link])

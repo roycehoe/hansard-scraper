@@ -13,7 +13,7 @@ from crud.report import CRUDReport
 from crud.speech import CRUDSpeech
 from database.act import Act, ActHistoryEntry
 from database.bill import Bill, BillReport
-from enums import ActHistoryEntryKind, ReportType
+from enums import ActHistoryEntryKind, BillLinkSource, ReportType
 from exceptions import HansardActHistoryError
 from schemas.act_link_plan import (
     ActLinkPlan,
@@ -24,6 +24,7 @@ from schemas.act_link_plan import (
     UnparsedEntry,
 )
 from schemas.bill_title_correction import BillTitleCorrection
+from schemas.hand_kept_act_link import HandKeptActLink
 from schemas.hand_kept_bill import HandKeptBill
 from schemas.harvested_act import HarvestedAct, HarvestedActs
 from services.act_history import (
@@ -36,6 +37,8 @@ from services.act_link import (
     LinkableBill,
     build_bill_lookups,
     get_bill_link,
+    get_hand_kept_bill_link,
+    validate_can_find_hand_kept_act_links,
 )
 from services.act_link_write import ActLinkWrite, build_act_link_write
 from services.bill import (
@@ -52,21 +55,32 @@ _HARVEST_LISTING_FILE = "acts.json"
 
 
 def _build_planned_entry(
+    sso_code: str,
     parsed_entry: ParsedHistoryEntry,
     bill_lookups: BillLookups,
+    hand_kept_act_links: list[HandKeptActLink],
+    bill_report_ids: list[list[int]],
 ) -> PlannedActHistoryEntry:
     bill_link = None
     if (
         parsed_entry.kind == ActHistoryEntryKind.ACT
         or parsed_entry.kind == ActHistoryEntryKind.ORDINANCE
     ):
-        bill_link = get_bill_link(
+        bill_link = get_hand_kept_bill_link(
+            sso_code,
+            parsed_entry.ordinal,
             parsed_entry.printed_title,
-            parsed_entry.first_reading_date,
-            parsed_entry.second_reading_date,
-            parsed_entry.third_reading_date,
-            bill_lookups,
+            hand_kept_act_links,
+            bill_report_ids,
         )
+        if bill_link is None:
+            bill_link = get_bill_link(
+                parsed_entry.printed_title,
+                parsed_entry.first_reading_date,
+                parsed_entry.second_reading_date,
+                parsed_entry.third_reading_date,
+                bill_lookups,
+            )
     return PlannedActHistoryEntry(
         ordinal=parsed_entry.ordinal,
         printed_text=parsed_entry.printed_text,
@@ -88,6 +102,8 @@ def _build_planned_act(
     harvested_act: HarvestedAct,
     text: str,
     bill_lookups: BillLookups,
+    hand_kept_act_links: list[HandKeptActLink],
+    bill_report_ids: list[list[int]],
     unparsed_entries: list[UnparsedEntry],
 ) -> PlannedAct:
     entries: list[PlannedActHistoryEntry] = []
@@ -108,7 +124,15 @@ def _build_planned_act(
                 UnparsedEntry(sso_code=harvested_act.sso_code, message=str(error))
             )
             continue
-        entries.append(_build_planned_entry(parsed_entry, bill_lookups))
+        entries.append(
+            _build_planned_entry(
+                harvested_act.sso_code,
+                parsed_entry,
+                bill_lookups,
+                hand_kept_act_links,
+                bill_report_ids,
+            )
+        )
     return PlannedAct(
         sso_code=harvested_act.sso_code, title=harvested_act.title, entries=entries
     )
@@ -119,6 +143,7 @@ def get_act_link_plan(
     harvest_directory: Path,
     bill_title_corrections: list[BillTitleCorrection],
     hand_kept_bills: list[HandKeptBill],
+    hand_kept_act_links: list[HandKeptActLink],
 ) -> ActLinkPlan:
     report_rows = CRUDReport(session).get_sitting_date_title_rows_by_report_types(
         _BILL_REPORT_TYPES
@@ -186,8 +211,24 @@ def get_act_link_plan(
             unfetched_sso_codes.append(harvested_act.sso_code)
             continue
         acts.append(
-            _build_planned_act(harvested_act, text, bill_lookups, unparsed_entries)
+            _build_planned_act(
+                harvested_act,
+                text,
+                bill_lookups,
+                hand_kept_act_links,
+                [bill_group.report_ids for bill_group in bill_grouping.bill_groups],
+                unparsed_entries,
+            )
         )
+    validate_can_find_hand_kept_act_links(
+        hand_kept_act_links,
+        {
+            (planned_act.sso_code, planned_entry.ordinal)
+            for planned_act in acts
+            for planned_entry in planned_act.entries
+            if planned_entry.bill_link_source == BillLinkSource.HAND_KEPT
+        },
+    )
     return ActLinkPlan(
         bills=[
             PlannedBill(
