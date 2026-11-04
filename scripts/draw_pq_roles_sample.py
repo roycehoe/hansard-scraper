@@ -46,15 +46,15 @@ _FRAME_NAMES = (
     LATER_ANSWERER_FRAME,
     NO_ANSWER_FRAME,
 )
-_FIRST_SEED = 20_261_141
-_PLANT_SEED = 20_261_161
+_FIRST_SEED = 20_261_171
+_PLANT_SEED = 20_261_191
 _BASE_SAMPLE_SIZE = 200
 _LATER_ANSWERER_MINIMUM_RANK = 2
 _MAX_WEIGHT_SPREAD = Fraction(3, 100)
 _ALLOWED_DATABASE_LABEL = "localhost:5435/hansard_asked_by"
 _DRAW_ISOLATION_LEVEL = "REPEATABLE READ"
 _OUTPUT_DIRECTORY = Path(
-    "/Users/meinhardt/ghq/github.com/roycehoe/hansard/plans/pq-roles-evidence/round2/draw"
+    "/Users/meinhardt/ghq/github.com/roycehoe/hansard/plans/pq-roles-evidence/round3/draw"
 )
 _ROUND_ONE_SAMPLE_PATH = Path(
     "/Users/meinhardt/ghq/github.com/roycehoe/hansard/plans/pq-roles-sample/sample.jsonl"
@@ -443,6 +443,6 @@ def draw_pq_roles_sample() -> None:
 
 if __name__ == "__main__":
     argparse.ArgumentParser(
-        description="Draw the PQ roles round 2 hand check sample, read only, from hansard_asked_by"
+        description="Draw the PQ roles round 3 hand check sample, read only, from hansard_asked_by"
     ).parse_args()
     draw_pq_roles_sample()
