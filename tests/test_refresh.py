@@ -25,10 +25,11 @@ from database.person import Person
 from database.refresh_run import RefreshRun
 from database.report import Report
 from database.report_asker import ReportAsker
+from database.report_participant import ReportParticipant
 from database.sitting import Sitting
 from database.speaker import Speaker
 from database.speech import Speech
-from enums import RefreshRunStatus
+from enums import ParticipantRole, RefreshRunStatus
 from exceptions import (
     HansardGatewayError,
     HansardRefreshFailureError,
@@ -430,6 +431,25 @@ def test_clean_run_adds_rows_and_links_them(
             "written-answer-na-17735#",
             "Jamus Jerome Lim",
         ) in report_id_asker_names
+        report_id_asker_participant_names = [
+            (report_id, participant_name)
+            for report_id, participant_name in session.exec(
+                select(Report.report_id, Speaker.name)
+                .join(
+                    ReportParticipant,
+                    col(ReportParticipant.report_id) == col(Report.id),
+                )
+                .join(Speaker, col(ReportParticipant.speaker_id) == col(Speaker.id))
+                .where(
+                    col(ReportParticipant.role).in_(
+                        [ParticipantRole.ASKER, ParticipantRole.ABSENT_FILER]
+                    )
+                )
+            ).all()
+        ]
+        assert sorted(report_id_asker_participant_names) == sorted(
+            report_id_asker_names
+        )
 
 
 def test_run_that_adds_nothing_sends_no_message(
