@@ -338,6 +338,7 @@ hansard-scraper/
 │   ├── markdown_header.py           # Reads a number such as Sitting No from a stored header table
 │   ├── markdown_parser.py           # HTML → clean markdown; merges split bold lines
 │   ├── names.py                     # Pure name helpers shared by services/attendance.py and services/person.py
+│   ├── office.py                    # A member's office as the record prints it: label office and "for" bracket, header entries, office class
 │   ├── parliament_numbers.py        # VOLUME_TO_PARLIAMENT and infer_parliament: the Parliament number of a volume
 │   ├── sitting_dates.py             # Sitting-date parsing, the sitting-date key, the month windows and the old/new format cutoff test
 │   ├── speaker_resolution.py        # Name resolution: build SpeakerLookups, resolve_canonical_name and the OCR and name tables behind it

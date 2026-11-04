@@ -76,6 +76,9 @@ _NAME_TRAILING_CHARACTERS = ", "
 _LINE_TRAILING_CHARACTERS = ". "
 _BULLET_MARKER = "* "
 _TRAILING_BRACKET_RE = re.compile(r"\((.+)\)\s*$")
+_CHAIR_ENTRY_RE = re.compile(r"\bspeaker\b", re.IGNORECASE)
+_ENTRY_OFFICE_SEPARATOR = ","
+_ENTRY_OFFICE_STRIP_CHARACTERS = ",. "
 _SECTION_LABEL_PREFIX_RE = re.compile(r"^(?:Absent|Present):\s*", re.IGNORECASE)
 _LEADING_NUMBER_RE = re.compile(r"^\d+(?=[A-Z])")
 _NUMBERED_ITEM_RE = re.compile(r"^\d+\\\.?\s")
@@ -313,6 +316,23 @@ def _parse_name_and_location(text: str) -> ParsedAttendee:
         _strip_name_decorations(text[:first_open].rstrip(_NAME_TRAILING_CHARACTERS)),
         constituency,
     )
+
+
+def get_entry_office(entry_line: str) -> Optional[str]:
+    text = entry_line.strip().removeprefix(_BULLET_MARKER)
+    first_open = text.find(OPENING_PARENTHESIS)
+    if first_open == -1:
+        office = text.partition(_ENTRY_OFFICE_SEPARATOR)[2]
+        return office.strip(_ENTRY_OFFICE_STRIP_CHARACTERS) or None
+    chair_form = text[:first_open].strip()
+    if _CHAIR_ENTRY_RE.search(chair_form):
+        return chair_form
+    close_index = _get_closing_parenthesis_index(text, first_open)
+    if close_index is None:
+        return None
+    # NOTE: a heading glued to the last entry is not part of its office.
+    office = text[close_index + 1 :].partition(BOLD_MARKER)[0]
+    return office.strip(_ENTRY_OFFICE_STRIP_CHARACTERS) or None
 
 
 def parse_speaker_line(line: str) -> ParsedAttendee:
