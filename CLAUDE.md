@@ -196,7 +196,7 @@ The scripts:
 - `apply_speech_sitting_date.py`: runs migration `c93f77e499cc`, which copies `speech` with each report's sitting date and swaps the copy in, and `alembic check` in one transaction, run as a module; rolled back unless `--commit`
 - `apply_speech_report_type.py`: runs migration `82478ba59541`, which copies `speech` with each report's type and swaps the copy in, and `alembic check` in one transaction, run as a module; rolled back unless `--commit`
 - `load_party_affiliations.py`: idempotent load of `data/party_affiliations.json` into the `PartyAffiliation` table, run as a module; skips rows already stored and refuses when a stored row for the same speaker differs from the file; a dry run unless `--commit`
-- `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech and asker rows, after checking each against its kept copy; a dry run unless `--commit`
+- `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech, asker, participant and question state rows, after checking each against its kept copy; a dry run unless `--commit`
 - `find_presiding_officers.py`: tallies the most common Speaker and Deputy Speaker per parliament from the PRESENT sections
 - `trace_speaker_links.py`: read-only regression guard for stage 8 speech links: re-runs the resolver per key and compares with stored `speaker_id`
 - `expand_sample.py`: expands the stratified speech sample in `docs/speech-speaker/sample.json`
