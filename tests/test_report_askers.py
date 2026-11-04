@@ -1925,3 +1925,27 @@ def test_report_45123_withdrawn_question_with_a_note_row_keeps_the_asker() -> No
         asker_candidate.speaker_id
         for asker_candidate in get_asker_candidates(speech_asker_rows)
     ] == [1127]
+
+
+def test_report_27802_asker_who_calls_his_own_question_alone_keeps_the_asker() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr J.B. Jeyaretnam",
+            638,
+            "asked the Minister for Home Affairs if he will inform the House of the provisions of the law",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr J. B. Jeyaretnam (Non-Constituency Member)",
+            638,
+            "Mr Speaker, Sir, Question 1. But before that is answered, may I say that I have no pecuniary interest",
+        ),
+    ]
+
+    assert [
+        (asker_candidate.printed_name, asker_candidate.speaker_id)
+        for asker_candidate in get_asker_candidates(speech_asker_rows)
+    ] == [("Mr J.B. Jeyaretnam", 638)]

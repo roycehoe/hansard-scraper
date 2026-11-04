@@ -348,6 +348,12 @@ def _is_answerer_named_as_asker(
         for speaker_row in speaker_rows
     ):
         return False
+    if any(
+        _READ_OUT_PATTERN.search(speaker_row.transcript)
+        for speaker_row in speaker_rows
+        if speaker_row.ordinal > asker_candidate.row_ordinal
+    ):
+        return False
     return not any(
         _PRINTED_LABEL_PATTERN.search(speech_asker_row.transcript)
         for speech_asker_row in speech_asker_rows
