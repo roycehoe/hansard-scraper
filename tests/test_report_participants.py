@@ -2937,3 +2937,93 @@ def test_report_39076_later_holder_who_is_not_supposed_to_answer_is_not_answerin
             59,
         )
     ]
+
+
+_REPORT_38510_TITLE = "SEMBAWANG BY-ELECTION"
+_REPORT_38510_ROWS = """
+1 | SPEECH | 1349 | Mr David Marshall | asked the Prime Minister whether he has any further statement to make as to when it is proposed to hold a by-election for the Electoral Division of Sembawang.
+2 | SPEECH | 30 | The Prime Minister | Mr Speaker, Sir, the Statistics Department is working at full capacity to complete the election registers by the end of this month, or the beginning of next. As I said at the last sitting, the Sembawang by-election will be held soon thereafter.
+3 | SPEECH | 1349 | Mr David Marshall | Mr Speaker, Sir, if I remember right, we were assured at the last sitting that the by-election would take place within two months. May I ask the Prime Minister whether we can expect that by-election next month?
+4 | SPEECH | 30 | The Prime Minister | First, I challenge the statement that the Member for Anson has attributed to me. You will notice that even when my Secretary writes to Amnesty International, he writes in very circumspect language.
+5 | SPEECH | 1349 | Mr David Marshall | Dictated by you.
+6 | SPEECH | 30 | The Prime Minister | I hope he has in his association with me learned how to deal with difficult gentlemen who ask difficult questions. I would assure the Member for Anson that however insidious he can be, he would never find me committed in writing in this Assembly or outside to
+7 | SPEECH | 20 | The Minister for Finance (Dr Goh Keng Swee) | High-speed sorting machines.
+8 | SPEECH | 30 | The Prime Minister | We have loaned from the City Council two high-speed sorting machines to the Statistics Department to discharge these functions more efficaciously. And my answer stands.
+"""
+_REPORT_38893_TITLE = "REPRESENTATIONS FROM GOVERNMENT EMPLOYEES"
+_REPORT_38893_ROWS = """
+1 | SPEECH | 1349 | Mr David Marshall | asked the Minister for Finance (a) whether he has received any representations from the Singapore Federation of Unions of Government Employees requesting a secret ballot among all Government employees other than teachers, senior officers and daily-rated person
+2 | SPEECH | 20 | Dr Goh Keng Swee | Mr Speaker, Sir, a secret ballot of employees is usually taken where an employer refuses to accept an invitation to negotiate on grounds that he does not recognise the union. Where there are two or more unions claiming representation for the same group of empl
+3 | SPEECH | 1349 | Mr David Marshall | Sir, would the Minister agree that rivalry between these two unions for membership of Government employees is unhealthy? For the unification of the trade union movement in the civil service, does he not consider it appropriate to accede to the request of the F
+4 | SPEECH | 20 | Dr Goh Keng Swee | Mr Speaker, Sir, there is rivalry not only between unions affiliated to the Federation, hut also between member unions of the Federation themselves. For instance, a stenographer employed in the Broadcasting Division of the Ministry of Culture is eligible for m
+5 | SPEECH | 1349 | Mr David Marshall | If it please you, Mr Speaker, could I have a reply to my question? It is this: Does the Minister not consider that it would be helpful to the unification of the trade union movement in the civil service if he were to accede to the request of the Federation for
+6 | SPEECH | 20 | Dr Goh Keng Swee | I do not think a secret ballot will solve anything. One of the requests of the Federation is that if they should win the secret ballot, then they ask the Government to require the A.U.P.E. to amend its rules so that they would not be able to recruit Government
+7 | SPEECH | 30 | The Prime Minister | The problem only rises when we refuse recognition.
+8 | SPEECH | 20 | Dr Goh Keng Swee | The problem arises only, when as I have mentioned before, we refuse recognition to a particular union.
+"""
+_REPORT_38737_TITLE = "APPLICATION OF LABOUR ORDINANCE TO DOMESTIC SERVANTS"
+_REPORT_38737_ROWS = """
+1 | SPEECH | 1349 | Mr David Marshall | asked the Minister for Labour whether Government will consider applying the Labour Ordinance to domestic servants.
+2 | SPEECH | 60 | The Parliamentary Secretary to the Minister for Labour (Mr Wee Toon Boon) (for the Minister for Labour) | Mr Speaker, Sir, I am asked to reply. This matter has been receiving attention for a considerable time in view of the need to be sure that no unrealistic or impracticable measures are introduced whose immediate effect would be to deprive thousands of these wor
+3 | SPEECH | 1349 | Mr David Marshall | Mr Speaker, Sir, as I understand the circumlocution, there is no intention of applying the Ordinance to domestic servants. But would the Par liamentary Secretary consider at least issuing regulations for guidance of good employer relations in respect of domest
+4 | SPEECH | 30 | The Prime Minister | Come, come, Mr Marshall.
+5 | SPEECH | 60 | Mr Wee Toon Boon | Mr Speaker, Sir, in that respect, the Member for Anson can rest assured that though employers arc not obliged to give certain benefits to the employees under this Ordinance, but nevertheless when domestic employees are aggrieved because they are not given suff
+6 | SPEECH | 30 | The Prime Minister | Or otherwise maltreated.
+7 | SPEECH | 60 | Mr Wee Toon Boon | - maltreated they always consult and seek the assistance of the Labour Ministry. We have always assisted them in getting sufficient compensation or adequate notice of termination of their service.
+8 | SPEECH | 1349 | Mr David Marshall | I had in mind rather the question of whether the Government would assist employers to recognise the limitation of hours and conditions of work, and if it does not wish to apply the provisions whether it would issue some regulations for guidance.
+9 | SPEECH | 60 | Mr Wee Toon Boon | Mr Speaker, Sir, domestic servants are different from factory workers. Therefore, it has to be left to the conscience of the employers to impose fair working conditions on their domestic servants. I hope that the Member for Anson will set the example.
+"""
+
+
+def test_report_38510_later_holders_short_reply_the_first_answerer_takes_up_is_an_answer() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_38510_TITLE, _REPORT_38510_ROWS)
+
+    assert _get_person_rows(labelled_report, 20) == [
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            7,
+            "The Minister for Finance (Dr Goh Keng Swee)",
+            20,
+        )
+    ]
+
+
+def test_report_38893_later_holders_short_reply_the_first_answerer_restates_is_an_answer() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_38893_TITLE,
+        _REPORT_38893_ROWS,
+        speaker_id_to_office={
+            20: Office("Minister for Finance", OfficeSource.HEADER_IN_REPORT)
+        },
+    )
+
+    assert _get_person_rows(labelled_report, 30) == [
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            7,
+            "The Prime Minister",
+            30,
+        )
+    ]
+
+
+def test_report_38737_later_holders_interjection_the_first_answerer_only_partly_repeats_is_not_an_answer() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_38737_TITLE, _REPORT_38737_ROWS)
+
+    assert _get_person_rows(labelled_report, 30) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            4,
+            "The Prime Minister",
+            30,
+        )
+    ]

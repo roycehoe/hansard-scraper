@@ -60,6 +60,7 @@ _PROCEDURAL_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _BARE_REPLY_PATTERN = re.compile(r"^(?:yes|no|correct)\.$", re.IGNORECASE)
+_WORD_PATTERN = re.compile(r"\w+")
 _NON_ANSWER_PHRASE_PATTERN = re.compile(
     r"not\s+supposed\s+to\s+answer|reply\s+on\s+my\s+behalf"
     r"|leave\s+that\s+(?:entirely\s+)?to\s+you|allowing\s+me\s+to\s+join",
@@ -529,8 +530,19 @@ def _is_substantive_row(
     )
 
 
+def _is_taken_up(run: list[_ParticipantRow], first_answerer_transcript: str) -> bool:
+    first_answerer_text = first_answerer_transcript.lower()
+    return all(
+        word in first_answerer_text
+        for run_row in run
+        for word in _WORD_PATTERN.findall(run_row.transcript.lower())
+    )
+
+
 def _is_answering_run(
-    run: list[_ParticipantRow], ordinal_to_label: dict[int, str]
+    run: list[_ParticipantRow],
+    ordinal_to_label: dict[int, str],
+    ordinal_to_first_answerer_transcript: dict[int, str],
 ) -> bool:
     if any(_NON_ANSWER_PHRASE_PATTERN.search(run_row.transcript) for run_row in run):
         return False
@@ -539,14 +551,23 @@ def _is_answering_run(
         for run_row in run
     ):
         return False
-    return any(
+    if any(
         _is_substantive_row(run_row, ordinal_to_label.get(run_row.ordinal - 1))
         for run_row in run
+    ):
+        return True
+    next_first_answerer_transcript = ordinal_to_first_answerer_transcript.get(
+        run[-1].ordinal + 1
+    )
+    return next_first_answerer_transcript is not None and _is_taken_up(
+        run, next_first_answerer_transcript
     )
 
 
 def _has_answering_run(
-    person_rows: list[_ParticipantRow], ordinal_to_label: dict[int, str]
+    person_rows: list[_ParticipantRow],
+    ordinal_to_label: dict[int, str],
+    ordinal_to_first_answerer_transcript: dict[int, str],
 ) -> bool:
     runs: list[list[_ParticipantRow]] = []
     for person_row in person_rows:
@@ -554,7 +575,26 @@ def _has_answering_run(
             runs[-1].append(person_row)
         else:
             runs.append([person_row])
-    return any(_is_answering_run(run, ordinal_to_label) for run in runs)
+    return any(
+        _is_answering_run(run, ordinal_to_label, ordinal_to_first_answerer_transcript)
+        for run in runs
+    )
+
+
+def _get_ordinal_to_first_answerer_transcript(
+    answerer_participants: list[ParticipantCandidate],
+    eligible_rows: list[_ParticipantRow],
+) -> dict[int, str]:
+    if not answerer_participants:
+        return {}
+    first_person_key = _get_person_key(
+        answerer_participants[0].speaker_id, answerer_participants[0].printed_name
+    )
+    return {
+        eligible_row.ordinal: eligible_row.transcript
+        for eligible_row in eligible_rows
+        if eligible_row.person_key == first_person_key
+    }
 
 
 def _split_non_answering_holders(
@@ -564,6 +604,9 @@ def _split_non_answering_holders(
 ) -> tuple[list[ParticipantCandidate], frozenset[Union[int, str]]]:
     kept_participants = answerer_participants[:1]
     dropped_person_keys: set[Union[int, str]] = set()
+    ordinal_to_first_answerer_transcript = _get_ordinal_to_first_answerer_transcript(
+        answerer_participants, eligible_rows
+    )
     for answerer_participant in answerer_participants[1:]:
         person_key = _get_person_key(
             answerer_participant.speaker_id, answerer_participant.printed_name
@@ -573,7 +616,9 @@ def _split_non_answering_holders(
             for eligible_row in eligible_rows
             if eligible_row.person_key == person_key
         ]
-        if _has_answering_run(person_rows, ordinal_to_label):
+        if _has_answering_run(
+            person_rows, ordinal_to_label, ordinal_to_first_answerer_transcript
+        ):
             kept_participants.append(answerer_participant)
         else:
             dropped_person_keys.add(person_key)
