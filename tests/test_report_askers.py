@@ -2021,3 +2021,211 @@ def test_report_42459_two_unnumbered_to_ask_rows_before_one_read_out_have_no_rea
         (asker_candidate.printed_name, asker_candidate.reader_speaker_id)
         for asker_candidate in asker_candidates
     ] == [("Dr Aline K. Wong", None), ("Dr Ho Tat Kin", None)]
+
+
+def test_report_27568_member_who_reads_out_the_number_right_after_an_asked_row_is_its_reader() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr Tay Beng Chuan",
+            681,
+            "asked the Minister for Trade and Industry if he will give an assessment of the impact of the regional currency and financial crisis",
+        ),
+        _build_row(
+            2, SpeechKind.SPEECH, "Mr Choo Wee Khiang", 620, "Question No. 11, Sir."
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Mr Lee Yock Suan",
+            646,
+            "Mr Speaker, Sir, may I answer Question Nos. 11 and 12 together as they are related?",
+        ),
+    ]
+
+    assert get_asker_candidates(speech_asker_rows) == [
+        AskerCandidate(
+            row_ordinal=1,
+            source=ReportAskerSource.ASKED_LINE,
+            printed_name="Mr Tay Beng Chuan",
+            speaker_id=681,
+            reader_printed_name="Mr Choo Wee Khiang",
+            reader_speaker_id=620,
+            reader_row_ordinal=2,
+        )
+    ]
+
+
+def test_report_35260_read_out_labelled_in_the_absence_of_the_filer_is_the_reader() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr Lee Kuan Yew",
+            30,
+            "asked the Chief Secretary (i) what is the object of the newly-formed Malayan Student Unit in England",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr M. P. D. Nair (in the absence of Mr Lee Kuan Yew)",
+            1390,
+            "Question No. 1.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Mr J. D. Higham",
+            1412,
+            "The answer to the first part of the question is that the Unit is not a new organisation.",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert [
+        (asker_candidate.printed_name, asker_candidate.reader_speaker_id)
+        for asker_candidate in asker_candidates
+    ] == [("Mr Lee Kuan Yew", 1390)]
+
+
+def test_report_32508_read_out_after_the_chairs_call_that_opens_with_mr_deputy_speaker_is_the_reader() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr Sia Kah Hui",
+            328,
+            "To ask the Minister for National Development if he will justify the increase by the Housing and Development Board",
+        ),
+        _build_row(2, SpeechKind.SPEECH, "Mr Deputy Speaker", 298, "Question No. 2."),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Mr Ng Kah Ting (Punggol)",
+            316,
+            "Mr Deputy Speaker, Sir, Question No. 2.",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert [
+        (asker_candidate.printed_name, asker_candidate.reader_speaker_id)
+        for asker_candidate in asker_candidates
+    ] == [("Mr Sia Kah Hui", 316)]
+
+
+def test_report_24068_several_asked_rows_before_one_read_out_have_no_reader() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mdm Ho Geok Choo",
+            731,
+            "asked the Minister for Trade and Industry if he will update the House on the progress of the Government's review",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Assoc. Prof. Ong Soh Khim",
+            775,
+            "asked the Minister for Trade and Industry (a) whether Government tax revenue is the only economic factor",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Assoc. Prof. Ong Soh Khim",
+            775,
+            "asked the Minister for Trade and Industry, as much of the scenario planning is theoretical",
+        ),
+        _build_row(
+            4,
+            SpeechKind.SPEECH,
+            "Dr Amy Khor Lean Suan (Hong Kah)",
+            739,
+            "Question No. 1, Sir.",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert [
+        (asker_candidate.printed_name, asker_candidate.reader_speaker_id)
+        for asker_candidate in asker_candidates
+    ] == [
+        ("Mdm Ho Geok Choo", None),
+        ("Assoc. Prof. Ong Soh Khim", None),
+        ("Assoc. Prof. Ong Soh Khim", None),
+    ]
+
+
+def test_asked_row_answered_before_a_call_of_the_next_question_has_no_reader() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr Pritam Singh",
+            1102,
+            "asked the Minister for Health what the plans are for polyclinics.",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "The Minister for Health (Mr Gan Kim Yong)",
+            700,
+            "Mr Speaker, Sir, there are no plans for new polyclinics this year.",
+        ),
+        _build_row(
+            3, SpeechKind.SPEECH, "Ms Sylvia Lim (Aljunied)", 1110, "Question No 13."
+        ),
+        _build_row(
+            4,
+            SpeechKind.SPEECH,
+            "Ms Sylvia Lim (Aljunied)",
+            1110,
+            "asked the Minister for Law whether the courts have enough judges.",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert [
+        (asker_candidate.printed_name, asker_candidate.reader_speaker_id)
+        for asker_candidate in asker_candidates
+    ] == [("Mr Pritam Singh", None), ("Ms Sylvia Lim (Aljunied)", None)]
+
+
+def test_report_27802_filer_who_reads_out_his_own_question_under_another_printed_name_is_no_reader() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr J.B. Jeyaretnam",
+            638,
+            "asked the Minister for Home Affairs if he will inform the House of the provisions of the law",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr J. B. Jeyaretnam (Non-Constituency Member)",
+            638,
+            "Mr Speaker, Sir, Question 1. But before that is answered, may I say that I have no pecuniary interest",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert [
+        (asker_candidate.printed_name, asker_candidate.reader_speaker_id)
+        for asker_candidate in asker_candidates
+    ] == [("Mr J.B. Jeyaretnam", None)]

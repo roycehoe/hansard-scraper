@@ -31,7 +31,7 @@ _STOOD_QUESTION_NUMBER_PATTERN = re.compile(
 )
 _READ_OUT_PATTERN = re.compile(
     r"^\W*(?:on behalf of [^,.]{1,60}[,.]\s*)?"
-    r"(?:(?:mr|madam|mdm) speaker,?\s*)?"
+    r"(?:(?:mr|madam|mdm) (?:deputy )?speaker,?\s*)?"
     r"(?:(?:sir|madam)[,.]?\s*)?"
     r"question\s+(?:no\.?\s*|number\s*)?(?P<number>\d+)",
     re.IGNORECASE,
@@ -224,6 +224,28 @@ def _with_to_ask_reader(
     return asker_candidate
 
 
+def _with_asked_reader(
+    speech_asker_rows: list[SpeechAskerRow],
+    row_index: int,
+    asker_candidate: AskerCandidate,
+) -> AskerCandidate:
+    if row_index > 0 and _is_asked_or_to_ask_line(speech_asker_rows[row_index - 1]):
+        return asker_candidate
+    filer_names = (asker_candidate.printed_name.lower(),)
+    for speech_asker_row in speech_asker_rows[row_index + 1 :]:
+        if speech_asker_row.speaker is not None and CHAIR_FORM_PATTERN.search(
+            speech_asker_row.speaker
+        ):
+            continue
+        if (
+            speech_asker_row.speaker_id != asker_candidate.speaker_id
+            and _get_read_out_number(speech_asker_row, filer_names) is not None
+        ):
+            return _with_reader(asker_candidate, speech_asker_row)
+        break
+    return asker_candidate
+
+
 def _get_stood_candidates(
     speech_asker_rows: list[SpeechAskerRow],
     stood_lines: list[_StoodLine],
@@ -364,6 +386,10 @@ def get_asker_candidates(
         if speaker_row_candidate is not None:
             if speaker_row_candidate.source == ReportAskerSource.TO_ASK_LINE:
                 speaker_row_candidate = _with_to_ask_reader(
+                    speech_asker_rows, row_index, speaker_row_candidate
+                )
+            elif speaker_row_candidate.source == ReportAskerSource.ASKED_LINE:
+                speaker_row_candidate = _with_asked_reader(
                     speech_asker_rows, row_index, speaker_row_candidate
                 )
             asker_candidates.append(speaker_row_candidate)
