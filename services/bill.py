@@ -5,6 +5,11 @@ from datetime import datetime, timedelta
 from crud.report import ReportSittingDateTitleRow
 from utils.title_key import get_title_key
 
+FIRST_READING_PATTERN = r"\yread (a|the|for the) first time"
+NOT_FIRST_READING_PATTERNS = (
+    "brought up",
+    r"\y(was|were|been|is)\y[^.;]{0,40}\yread (a|the|for the) first time",
+)
 THIRD_READING_PATTERN = r'^\W*[^"]{0,150}\ybill\y[^"]{0,120}\yread (a|the) third time'
 NOT_THIRD_READING_PATTERNS = ("be now read", r"^\W*(I|now|sir|mr)\y")
 
@@ -38,8 +43,12 @@ class _OpenBill:
     report_ids: list[int]
 
 
-def _should_start_new_bill(open_bill: _OpenBill, sitting_date: datetime) -> bool:
-    if open_bill.is_passed and sitting_date > open_bill.last_sitting_date:
+def _should_start_new_bill(
+    open_bill: _OpenBill, sitting_date: datetime, is_first_reading: bool
+) -> bool:
+    if (
+        open_bill.is_passed or is_first_reading
+    ) and sitting_date > open_bill.last_sitting_date:
         return True
     return sitting_date - open_bill.last_sitting_date > timedelta(
         days=_MAX_DAYS_BETWEEN_REPORTS
@@ -59,6 +68,7 @@ def _build_bill_group(open_bill: _OpenBill) -> BillGroup:
 
 def group_bills(
     report_rows: list[ReportSittingDateTitleRow],
+    first_reading_report_ids: frozenset[int],
     third_reading_report_ids: frozenset[int],
 ) -> BillGrouping:
     title_key_to_open_bill: dict[str, _OpenBill] = {}
@@ -71,7 +81,9 @@ def group_bills(
         title_key = get_title_key(report_row.title)
         previous_bill = title_key_to_open_bill.get(title_key)
         if previous_bill is not None and _should_start_new_bill(
-            previous_bill, report_row.sitting_date
+            previous_bill,
+            report_row.sitting_date,
+            report_row.id in first_reading_report_ids,
         ):
             bill_groups.append(_build_bill_group(previous_bill))
             del title_key_to_open_bill[title_key]

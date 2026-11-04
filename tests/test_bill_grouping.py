@@ -12,9 +12,13 @@ def _report_row(
 
 
 def _group(
-    report_rows: list[ReportSittingDateTitleRow], third_reading_report_ids: set[int]
+    report_rows: list[ReportSittingDateTitleRow],
+    third_reading_report_ids: set[int],
+    first_reading_report_ids: frozenset[int] = frozenset(),
 ) -> BillGrouping:
-    return group_bills(report_rows, frozenset(third_reading_report_ids))
+    return group_bills(
+        report_rows, first_reading_report_ids, frozenset(third_reading_report_ids)
+    )
 
 
 def test_title_key_keeps_lower_case_letters_and_digits_only() -> None:
@@ -184,3 +188,65 @@ def test_bills_come_back_in_order_of_first_report() -> None:
         "Alpha Bill",
         "Beta Bill",
     ]
+
+
+def test_a_bill_read_a_first_time_again_after_it_lapsed_starts_a_new_bill() -> None:
+    grouping = _group(
+        [
+            _report_row(42552, datetime(1990, 11, 9), "ARCHITECTS BILL"),
+            _report_row(30052, datetime(1990, 12, 20), "ARCHITECTS BILL"),
+            _report_row(30001, datetime(1991, 2, 26), "ARCHITECTS BILL"),
+            _report_row(29914, datetime(1991, 3, 22), "ARCHITECTS BILL"),
+            _report_row(29859, datetime(1991, 6, 28), "ARCHITECTS BILL"),
+        ],
+        {29859},
+        frozenset({42552, 30001}),
+    )
+
+    assert [
+        (bill_group.report_ids, bill_group.is_passed)
+        for bill_group in grouping.bill_groups
+    ] == [([42552, 30052], False), ([30001, 29914, 29859], True)]
+
+
+def test_a_reintroduction_inside_one_year_of_the_lapsed_bill_is_a_new_bill() -> None:
+    grouping = _group(
+        [
+            _report_row(32061, datetime(1986, 1, 10), "SECURITIES INDUSTRY BILL"),
+            _report_row(32030, datetime(1986, 2, 26), "SECURITIES INDUSTRY BILL"),
+            _report_row(31804, datetime(1986, 3, 31), "SECURITIES INDUSTRY BILL"),
+        ],
+        {31804},
+        frozenset({32061, 32030}),
+    )
+
+    assert [bill_group.report_ids for bill_group in grouping.bill_groups] == [
+        [32061],
+        [32030, 31804],
+    ]
+
+
+def test_two_first_readings_on_one_sitting_date_stay_one_bill() -> None:
+    grouping = _group(
+        [
+            _report_row(1, datetime(1991, 2, 26), "Estate Duty Bill"),
+            _report_row(2, datetime(1991, 2, 26), "Estate Duty Bill"),
+        ],
+        set(),
+        frozenset({1, 2}),
+    )
+
+    assert [bill_group.report_ids for bill_group in grouping.bill_groups] == [[1, 2]]
+
+
+def test_a_report_with_no_first_reading_joins_the_open_bill() -> None:
+    grouping = _group(
+        [
+            _report_row(1, datetime(1991, 2, 26), "Estate Duty Bill"),
+            _report_row(2, datetime(1991, 3, 22), "Estate Duty Bill"),
+        ],
+        set(),
+        frozenset({1}),
+    )
+
+    assert [bill_group.report_ids for bill_group in grouping.bill_groups] == [[1, 2]]

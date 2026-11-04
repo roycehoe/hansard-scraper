@@ -36,6 +36,8 @@ from services.act_link import (
     get_bill_link,
 )
 from services.bill import (
+    FIRST_READING_PATTERN,
+    NOT_FIRST_READING_PATTERNS,
     NOT_THIRD_READING_PATTERNS,
     THIRD_READING_PATTERN,
     group_bills,
@@ -112,12 +114,21 @@ def get_act_link_plan(session: Session, harvest_directory: Path) -> ActLinkPlan:
     report_rows = CRUDReport(session).get_sitting_date_title_rows_by_report_types(
         _BILL_REPORT_TYPES
     )
+    first_reading_report_ids = CRUDSpeech(
+        session
+    ).get_report_ids_by_report_types_and_transcript_regex_and_transcript_not_regexes(
+        _BILL_REPORT_TYPES, FIRST_READING_PATTERN, NOT_FIRST_READING_PATTERNS
+    )
     third_reading_report_ids = CRUDSpeech(
         session
     ).get_report_ids_by_report_types_and_transcript_regex_and_transcript_not_regexes(
         _BILL_REPORT_TYPES, THIRD_READING_PATTERN, NOT_THIRD_READING_PATTERNS
     )
-    bill_grouping = group_bills(report_rows, frozenset(third_reading_report_ids))
+    bill_grouping = group_bills(
+        report_rows,
+        frozenset(first_reading_report_ids),
+        frozenset(third_reading_report_ids),
+    )
     report_id_to_sitting_date: dict[int, date] = {
         report_row.id: report_row.sitting_date.date() for report_row in report_rows
     }

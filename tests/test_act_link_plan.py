@@ -102,3 +102,80 @@ def test_plan_groups_bill_reports_and_reads_third_reading_lines(
     assert act_entry.bill_link_source == BillLinkSource.FIRST_READING_DATE
     assert revised_edition_entry.kind == ActHistoryEntryKind.REVISED_EDITION
     assert revised_edition_entry.bill_index is None
+
+
+def test_plan_splits_at_a_first_reading_line_but_not_at_a_new_clause_or_a_mention(
+    scratch_session: Session, tmp_path: Path
+) -> None:
+    lapsed_first_reading_id = seed_bill_report(
+        scratch_session,
+        "lapsed-first-reading",
+        ReportType.BILL_INTRODUCTION,
+        datetime(1990, 11, 9),
+        "ARCHITECTS BILL",
+        ["Bill read the First time."],
+    )
+    lapsed_second_reading_id = seed_bill_report(
+        scratch_session,
+        "lapsed-second-reading",
+        ReportType.BILL,
+        datetime(1990, 12, 20),
+        "ARCHITECTS BILL",
+        ["Mr Lim: I beg to move, That the Bill be now read a Second time."],
+    )
+    reintroduction_id = seed_bill_report(
+        scratch_session,
+        "reintroduction",
+        ReportType.BILL_INTRODUCTION,
+        datetime(1991, 2, 26),
+        "ARCHITECTS BILL",
+        [
+            '"to establish the Board of Architects", presented by the Minister for '
+            "National Development (Mr Lim); read the first time; to be read a second "
+            "time on the next available sitting of Parliament, and to be printed."
+        ],
+    )
+    committee_id = seed_bill_report(
+        scratch_session,
+        "committee",
+        ReportType.BILL,
+        datetime(1991, 3, 22),
+        "ARCHITECTS BILL",
+        [
+            "Brought up, and read the First time.",
+            "_Brought up, and read the First time._",
+            "Mr Tan: This Bill was read a First time on 26 February.",
+            "Mr Tan: The Bill had been read the First time in this House.",
+        ],
+    )
+    third_reading_id = seed_bill_report(
+        scratch_session,
+        "third-reading",
+        ReportType.BILL,
+        datetime(1991, 6, 28),
+        "ARCHITECTS BILL",
+        [_PASSING_LINE],
+    )
+    motion_to_read_id = seed_bill_report(
+        scratch_session,
+        "motion-to-read",
+        ReportType.BILL,
+        datetime(1991, 7, 3),
+        "Stamp Bill",
+        [
+            'Sir, I present a Bill intituled "An Ordinance to amend the Stamp '
+            'Ordinance (Chapter 170 of the Revised Edition)", and move that it be '
+            "read the First time."
+        ],
+    )
+    write_harvest(tmp_path)
+
+    plan = get_act_link_plan(scratch_session, tmp_path)
+
+    assert [
+        (planned_bill.report_ids, planned_bill.is_passed) for planned_bill in plan.bills
+    ] == [
+        ([lapsed_first_reading_id, lapsed_second_reading_id], False),
+        ([reintroduction_id, committee_id, third_reading_id], True),
+        ([motion_to_read_id], False),
+    ]

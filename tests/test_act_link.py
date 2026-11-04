@@ -21,7 +21,9 @@ def _build_linkable_bills(
         report_row.id: report_row.sitting_date.date() for report_row in report_rows
     }
     title_key_to_linkable_bills: dict[str, list[LinkableBill]] = {}
-    grouping = group_bills(report_rows, frozenset(third_reading_report_ids))
+    grouping = group_bills(
+        report_rows, frozenset(), frozenset(third_reading_report_ids)
+    )
     for bill_index, bill_group in enumerate(grouping.bill_groups):
         title_key_to_linkable_bills.setdefault(bill_group.title_key, []).append(
             LinkableBill(
