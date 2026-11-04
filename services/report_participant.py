@@ -94,7 +94,7 @@ _INLINE_SPEAKER_PATTERN = re.compile(
 )
 _BRACKET_PATTERN = re.compile(r"\([^)]*\)?")
 _CALLED_QUESTION_PATTERN = re.compile(
-    r"(?:^|[.?!]\s+)\W*questions?\s+(?:nos?\.?\s*|number\s*)?\d+"
+    r"(?:^|[.?!]\s+)\W*questions?\s+(?:nos?\.?\s*|number\s*)?(?P<number>\d+)"
     r"(?:,?\s*(?:sir|please|madam|mdm\s+speaker|mr\s+speaker))*\W*$",
     re.IGNORECASE,
 )
@@ -373,6 +373,59 @@ def _build_reader_participants(
             )
         )
     return reader_participants
+
+
+def _get_called_question_number(transcript: str) -> Optional[str]:
+    match = _CALLED_QUESTION_PATTERN.search(transcript.strip())
+    if match is None:
+        return None
+    return match.group("number")
+
+
+def _build_second_reader_participants(
+    participant_rows: list[_ParticipantRow],
+    reader_participants: list[ParticipantCandidate],
+    question_ordinals: frozenset[int],
+    first_answer_ordinal: Optional[int],
+    held_person_keys: frozenset[Union[int, str]],
+) -> list[ParticipantCandidate]:
+    ordinal_to_transcript = {
+        participant_row.ordinal: participant_row.transcript
+        for participant_row in participant_rows
+    }
+    second_reader_participants: list[ParticipantCandidate] = []
+    second_reader_person_keys = set(held_person_keys)
+    for reader_participant in reader_participants:
+        reader_transcript = ordinal_to_transcript.get(reader_participant.first_ordinal)
+        called_number = (
+            None
+            if reader_transcript is None
+            else _get_called_question_number(reader_transcript)
+        )
+        if called_number is None:
+            continue
+        for participant_row in participant_rows:
+            if (
+                participant_row.ordinal <= reader_participant.first_ordinal
+                or participant_row.ordinal not in question_ordinals
+                or participant_row.person_key in second_reader_person_keys
+                or (
+                    first_answer_ordinal is not None
+                    and participant_row.ordinal >= first_answer_ordinal
+                )
+                or _get_called_question_number(participant_row.transcript)
+                != called_number
+            ):
+                continue
+            second_reader_person_keys.add(participant_row.person_key)
+            second_reader_participants.append(
+                _build_other_role_participant(
+                    participant_row,
+                    ParticipantRole.READER,
+                    ParticipantRoleSource.ASKER_RULES,
+                )
+            )
+    return second_reader_participants
 
 
 def _is_chair_name_call(transcript: str) -> bool:
@@ -906,11 +959,22 @@ def get_participants(
         answerer_person_keys,
         first_question_ordinal,
     )
+    second_reader_participants = _build_second_reader_participants(
+        participant_rows,
+        reader_participants,
+        question_ordinals,
+        first_answer_ordinal,
+        asker_person_keys | reader_person_keys | answerer_person_keys,
+    )
     report_roles = _ReportRoles(
         question_ordinals=question_ordinals,
         chair_ordinals=frozenset(chair_ordinal_to_source),
         asker_person_keys=asker_person_keys,
-        reader_person_keys=reader_person_keys,
+        reader_person_keys=reader_person_keys
+        | frozenset(
+            _get_person_key(participant.speaker_id, participant.printed_name)
+            for participant in second_reader_participants
+        ),
         answerer_person_keys=answerer_person_keys,
         dropped_person_keys=dropped_person_keys,
         supplementary_person_keys=_get_supplementary_person_keys(
@@ -924,6 +988,7 @@ def get_participants(
         for participant in [
             *asker_participants,
             *reader_participants,
+            *second_reader_participants,
             *chair_participants,
             *answerer_participants,
             *_build_other_participants(participant_rows, report_roles),

@@ -3543,3 +3543,48 @@ def test_report_31140_label_with_the_for_bracket_nested_in_the_name_stores_it_wi
             None,
         )
     ]
+
+
+_REPORT_30999_TITLE = "PRIMARY AND SECONDARY SCHOOLS"
+_REPORT_30999_ROWS = """
+1 | UNCLASSIFIED |  |  | The following Question stood in the name of Mr Chiam See Tong -
+2 | DOCUMENT_TEXT |  |  | 4. To ask the Minister for Education what progress has been made in reducing the number of students in primary and secondary school classes.
+3 | SPEECH | 424 | Mr Speaker | Mr Chiam.
+4 | SPEECH | 411 | Dr S. Vasoo (Bo Wen) | Question 4, Sir.
+5 | SPEECH | 403 | Mr Tan Soo Khoon (Alexandra) | Mr Chiam is not here, Sir. Question 4.
+6 | SPEECH | 407 | The Minister of State for Education (Dr Tay Eng Soon) (for the Minister for Education) | Mr Speaker, Sir, I thank the Backbenchers for coming out so promptly to raise the Question on behalf of the Member for the Opposition.
+7 | SPEECH | 407 | The Minister of State for Education (Dr Tay Eng Soon) (for the Minister for Education) | Sir, I am answering on behalf of my Minister. The reduction of class size in primary and secondary schools is a gradual process. It is dependent on two major factors - teachers and school buildings.
+8 | SPEECH | 407 | The Minister of State for Education (Dr Tay Eng Soon) (for the Minister for Education) | Class size can be reduced only when there is a corresponding increase in the number of teachers. Efforts have been and are being made to attract more people to join the teaching profession. These efforts are currently being stepped up.
+9 | SPEECH | 407 | The Minister of State for Education (Dr Tay Eng Soon) (for the Minister for Education) | Smaller class size means more classrooms and school buildings. With secondary schools going single session, the demand for more school buildings will become even greater. It takes time to build schools.
+10 | SPEECH | 407 | The Minister of State for Education (Dr Tay Eng Soon) (for the Minister for Education) | The reduction of class size is a desirable objective which is being pursued in our quest for excellence in education. However, it cannot be brought about overnight.
+"""
+
+
+def test_report_30999_second_member_who_reads_out_the_same_question_is_also_a_reader() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_30999_TITLE, _REPORT_30999_ROWS)
+
+    assert [
+        participant
+        for participant in _summarise_participants(labelled_report.participants)
+        if participant[0] == ParticipantRole.READER
+    ] == [
+        (
+            ParticipantRole.READER,
+            ParticipantRoleSource.ASKER_RULES,
+            4,
+            "Dr S. Vasoo (Bo Wen)",
+            _VASOO_SPEAKER_ID,
+        ),
+        (
+            ParticipantRole.READER,
+            ParticipantRoleSource.ASKER_RULES,
+            5,
+            "Mr Tan Soo Khoon (Alexandra)",
+            403,
+        ),
+    ]
+    assert ParticipantRole.UNLABELLED not in {
+        participant.role for participant in labelled_report.participants
+    }
