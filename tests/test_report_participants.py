@@ -1779,12 +1779,18 @@ def test_report_42200_withdrawn_line_marks_questions_not_asked_aloud() -> None:
         ),
     ]
     assert _summarise_states(labelled_report.states) == [
-        (
-            QuestionState.NOT_ASKED_ALOUD,
-            "The following Question has been withdrawn:",
-            15,
-        )
+        (QuestionState.NOT_ASKED_ALOUD, _REPORT_42200_TITLE, None)
     ]
+
+
+def test_report_42200_stood_over_list_title_is_not_asked_aloud_with_no_asker() -> None:
+    question_states = get_question_states(
+        _REPORT_42200_TITLE, _parse_rows(_REPORT_42200_ROWS), []
+    )
+
+    assert _summarise_states(
+        build_report_question_states(_REPORT_ID, question_states)
+    ) == [(QuestionState.NOT_ASKED_ALOUD, _REPORT_42200_TITLE, None)]
 
 
 def test_report_32864_postponed_line_marks_the_question_not_asked_aloud() -> None:
@@ -2375,4 +2381,80 @@ def test_report_32259_member_who_calls_the_next_question_mid_paragraph_is_unlabe
             "Mr S. Vasoo (Bo Wen)",
             411,
         )
+    ]
+
+
+_REPORT_2577_ROWS = """
+1 | SPEECH | 1199 | Mr Louis Ng Kok Kwang | asked the Minister for National Development whether he can provide an update on the testing undertaken by the Ministry of a prototype.
+2 | SPEECH | 1199 | Mr Louis Ng Kok Kwang (Nee Soon) | Question No 10, please.
+3 | SPEECH | 1213 | Mr Speaker | Anyone from the Ministry of National Development? There is none. Let me move on to the next Parliamentary Question then.
+"""
+_REPORT_52005_ROWS = """
+1 | SPEECH | 1321 | Ms Poh Li San | asked the Coordinating Minister for Social Policies and Minister for Health how will the Ministry further collaborate with the Coalition for Epidemic Preparedness Innovations.
+2 | SPEECH | 1327 | Mr Speaker | Order. Questions for oral answer.
+3 | SPEECH | 1321 | Ms Poh Li San (Sembawang West) | Question No 1.
+4 | SPEECH | 1327 | Mr Speaker | Who is answering for Question No 1? [_Please refer to the Official Report, 7 October 2026._]
+5 | SPEECH | 1327 | Mr Speaker | Let me move on. I believe the first two questions are for the same Ministry.
+"""
+_REPORT_46417_ROWS = """
+1 | SPEECH | 1134 | Mr Ang Wei Neng | asked the Prime Minister whether the National Wages Council has completed its review on the wage guidelines for the coming year.
+2 | SPEECH | 1134 | Mr Ang Wei Neng (West Coast) | Question No 4, Sir.
+3 | SPEECH | 1144 | Mr Deputy Speaker | Perhaps, Mr Ang, if you could give way, I will call Parliamentary Question No 5.
+4 | SPEECH | 1134 | Mr Ang Wei Neng | Yes, Sir.
+"""
+_REPORT_38002_ROWS = """
+1 | SPEECH | 2 | Mr Speaker | Inche Mohd. Ariff.
+2 | SPEECH | 40 | Inche Mohd. Ariff Bin Suradi | I am not asking Question No. 26, Sir.
+3 | SPEECH | 40 | Inche Mohd. Ariff Bin Suradi | [The following is Question No. 26:-
+4 | SPEECH | 40 | Inche Mohd. Ariff Bin Suradi | To ask the Minister for Law and National Development whether he is aware that all the unpaved drains in the Kampong Kembangan area have been neglected for more than a year.]
+"""
+_REPORT_36405_ROWS = """
+1 | SPEECH | 127 | Mr Speaker | Mr Ng Yeow Chong.
+2 | SPEECH | 102 | Mr Ng Yeow Chong (Mountbatten) | Sir, I am not asking the Question.
+3 | SPEECH | 102 | Mr Ng Yeow Chong (Mountbatten) | [The following is Question No. 1:
+4 | SPEECH | 102 | Mr Ng Yeow Chong (Mountbatten) | To ask the Minister for Law and National Development if he is aware that some dispossessed families are subject to clearance action for the second time after having been rehoused.
+"""
+_REPORT_38897_ROWS = """
+1 | UNCLASSIFIED |  |  | The following question stood in the name of Mr David Marshall -
+2 | DOCUMENT_TEXT |  |  | * To ask the Minister for Finance what are the consumption figures of petroleum for the years 1961 and 1960.
+3 | SPEECH | 1352 | Mr Speaker | Mr Marshall, Question No. 2*.
+4 | SPEECH | 1349 | Mr David Marshall | I have since ascertained the information I sought in Question No. 2*, Mr Speaker. I do not ask it.
+"""
+_REPORT_39958_ROWS = """
+1 | SPEECH | 1358 | Inche Ahmad Bin Ibrahim | asked the Minister for Education how many primary and secondary school students were asked to line the route taken by the Duke of Edinburgh.
+2 | SPEECH | 1352 | Mr Speaker | The Minister appears to be absent.
+"""
+_REPORT_39096_ROWS = """
+1 | UNCLASSIFIED |  |  | The following Question stood in the name of Mr David Marshall:-
+2 | DOCUMENT_TEXT |  |  | 1. To ask the Prime Minister what is the title of the Singapore Government to the land and installations involved in the Scudai River scheme.
+3 | SPEECH | 1352 | Mr Speaker | Order. There is one question in the name of the Member for Anson. He does not appear to be here. I take it the Minister responsible will be submitting a written reply in due course.
+"""
+
+
+@pytest.mark.parametrize(
+    ("rows_text", "line_ordinal"),
+    [
+        pytest.param(_REPORT_2577_ROWS, 3, id="2577"),
+        pytest.param(_REPORT_52005_ROWS, 4, id="52005"),
+        pytest.param(_REPORT_46417_ROWS, 3, id="46417"),
+        pytest.param(_REPORT_38002_ROWS, 2, id="38002"),
+        pytest.param(_REPORT_36405_ROWS, 2, id="36405"),
+        pytest.param(_REPORT_38897_ROWS, 4, id="38897"),
+        pytest.param(_REPORT_39958_ROWS, 2, id="39958"),
+        pytest.param(_REPORT_39096_ROWS, 3, id="39096"),
+    ],
+)
+def test_question_the_record_says_was_not_asked_aloud_gets_the_state(
+    rows_text: str, line_ordinal: int
+) -> None:
+    printed_line = next(
+        speech_asker_row
+        for speech_asker_row in _parse_rows(rows_text)
+        if speech_asker_row.ordinal == line_ordinal
+    )
+
+    labelled_report = _label_report("A question", rows_text)
+
+    assert _summarise_states(labelled_report.states) == [
+        (QuestionState.NOT_ASKED_ALOUD, printed_line.transcript, line_ordinal)
     ]

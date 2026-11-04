@@ -70,8 +70,14 @@ _COLLECTIVE_LABEL_PATTERN = re.compile(
 _PRIVATE_NOTICE_PATTERN = re.compile(r"\(\s*by private notice", re.IGNORECASE)
 _NOT_ASKED_ALOUD_PATTERN = re.compile(
     r"\b(?:stood\s+over|withdraw(?:n|al)?|postponed|deferred|not\s+reached|no\s+response"
-    r"|is\s+not\s+here|stood\s+on\s+the\s+order\s+paper)\b",
+    r"|is\s+not\s+here|stood\s+on\s+the\s+order\s+paper"
+    r"|not\s+asking\b|do\s+not\s+ask\s+it|there\s+is\s+none"
+    r"|who\s+is\s+answering|if\s+you\s+could\s+give\s+way"
+    r"|appears\s+to\s+be\s+absent|does\s+not\s+appear\s+to\s+be\s+here)\b",
     re.IGNORECASE,
+)
+_STOOD_OVER_LIST_TITLE_PATTERN = re.compile(
+    r"^\s*questions for oral answer stood over\b", re.IGNORECASE
 )
 
 
@@ -821,6 +827,11 @@ def get_question_states(
                 private_notice_row.ordinal,
             )
         )
+    if _STOOD_OVER_LIST_TITLE_PATTERN.search(title):
+        question_states.append(
+            QuestionStateCandidate(QuestionState.NOT_ASKED_ALOUD, title, None)
+        )
+        return question_states
     if not _has_asker_and_no_answerer(participant_candidates):
         return question_states
     not_asked_aloud_row = _get_first_matching_row(
