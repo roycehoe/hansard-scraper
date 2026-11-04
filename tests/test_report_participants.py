@@ -3963,3 +3963,33 @@ def test_report_30117_member_who_calls_a_number_the_minister_answers_through_his
             432,
         )
     ]
+
+
+_REPORT_43982_TITLE = "Update on Little India Riot"
+_REPORT_43982_ROWS = """
+1 | PROCEDURAL |  |  | The following question stood in the name of Mr Christopher de Souza –
+2 | SPEECH | 918 | Mr Christopher de Souza | 1 To ask the Deputy Prime Minister and Minister for Home Affairs what did the present investigations reveal as the cause of the 8 December 2013 riot and when will the Com
+13 | SPEECH | 920 | Ms Denise Phua Lay Peng | asked the Deputy Prime Minister and Minister for Home Affairs whether he will consider developing and implementing a full slew of measures beyond the proposed restriction
+23 | SPEECH | 938 | Mr Hri Kumar Nair (Bishan-Toa Payoh) | Question No 1.
+24 | SPEECH | 986 | Mr Pritam Singh (Aljunied) | Mdm Speaker, I believe you said you were going to start with Question No 37.
+25 | SPEECH | 934 | Mdm Speaker | Yes, as a matter of procedure, we have to mention the questions before that.
+26 | SPEECH | 1001 | The Deputy Prime Minister and Minister for Home Affairs (Mr Teo Chee Hean) | Mdm Speaker, I will be making a Ministerial Statement following Question Time. May I have your permission to address the issues that Members have raised in Question Nos 1
+27 | SPEECH | 934 | Mdm Speaker | Yes, please, Deputy Prime Minister. Next, Ms Denise Phua, Question No 22?
+28 | SPEECH | 920 | Ms Denise Phua Lay Peng (Moulmein-Kallang) | Yes.
+"""
+
+
+def test_report_43982_short_reply_to_the_chairs_call_of_the_next_question_is_no_follow_up() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_43982_TITLE, _REPORT_43982_ROWS)
+
+    assert _get_person_rows(labelled_report, 920) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            13,
+            "Ms Denise Phua Lay Peng",
+            920,
+        )
+    ]

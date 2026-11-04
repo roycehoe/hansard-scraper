@@ -98,6 +98,9 @@ _CALLED_QUESTION_PATTERN = re.compile(
     r"(?:,?\s*(?:sir|please|madam|mdm\s+speaker|mr\s+speaker))*\W*$",
     re.IGNORECASE,
 )
+_CHAIR_CALL_PATTERN = re.compile(
+    r"\bquestions?\s+(?:nos?\.?\s*|number\s*)\d+\W*$", re.IGNORECASE
+)
 _COLLECTIVE_LABEL_PATTERN = re.compile(
     r"^\W*(?:(?:some|an?)\s+)?hon\.?\s+members?\W*$", re.IGNORECASE
 )
@@ -475,6 +478,25 @@ def _build_number_call_reader_participants(
             )
         )
     return number_call_reader_participants
+
+
+def _get_reply_to_call_ordinals(
+    participant_rows: list[_ParticipantRow],
+) -> frozenset[int]:
+    ordinal_to_row = {
+        participant_row.ordinal: participant_row for participant_row in participant_rows
+    }
+    reply_to_call_ordinals: set[int] = set()
+    for participant_row in participant_rows:
+        previous_row = ordinal_to_row.get(participant_row.ordinal - 1)
+        if (
+            previous_row is not None
+            and CHAIR_FORM_PATTERN.search(previous_row.label)
+            and _CHAIR_CALL_PATTERN.search(previous_row.transcript.strip())
+            and len(participant_row.transcript.split()) <= _MAX_REPLY_TO_CHAIR_WORDS
+        ):
+            reply_to_call_ordinals.add(participant_row.ordinal)
+    return frozenset(reply_to_call_ordinals)
 
 
 def _is_chair_name_call(transcript: str) -> bool:
@@ -1046,7 +1068,8 @@ def get_participants(
         asker_person_keys | reader_person_keys | answerer_person_keys,
     )
     report_roles = _ReportRoles(
-        question_ordinals=question_ordinals,
+        question_ordinals=question_ordinals
+        | _get_reply_to_call_ordinals(participant_rows),
         chair_ordinals=frozenset(chair_ordinal_to_source),
         asker_person_keys=asker_person_keys,
         reader_person_keys=reader_person_keys
