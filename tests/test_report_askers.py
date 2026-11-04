@@ -1946,7 +1946,7 @@ def test_report_30113_numbered_question_printed_with_no_name_credits_no_one() ->
     assert get_asker_candidates(speech_asker_rows) == []
 
 
-def test_report_22632_unnumbered_to_ask_rows_take_a_reader_only_from_the_row_after_them() -> (
+def test_report_22632_several_unnumbered_to_ask_rows_before_one_read_out_have_no_reader() -> (
     None
 ):
     speech_asker_rows = [
@@ -1987,5 +1987,37 @@ def test_report_22632_unnumbered_to_ask_rows_take_a_reader_only_from_the_row_aft
         for asker_candidate in asker_candidates
     ] == [
         ("Dr Muhammad Faishal Ibrahim", None),
-        ("Ms Eunice Elizabeth Olsen", 312),
+        ("Ms Eunice Elizabeth Olsen", None),
     ]
+
+
+def test_report_42459_two_unnumbered_to_ask_rows_before_one_read_out_have_no_reader() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Dr Aline K. Wong",
+            415,
+            "To ask the Acting Minister for Health (a) what is the type of Hepatitis B vaccine used in government hospitals",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Dr Ho Tat Kin",
+            370,
+            "To ask the Acting Minister for Health, in view of the worldwide concern over Aids",
+        ),
+        _build_row(3, SpeechKind.SPEECH, "Mr Deputy Speaker", 403, "Dr Aline Wong."),
+        _build_row(
+            4, SpeechKind.SPEECH, "Mr Chew Heng Ching", 358, "Question No. 20, Sir."
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert [
+        (asker_candidate.printed_name, asker_candidate.reader_speaker_id)
+        for asker_candidate in asker_candidates
+    ] == [("Dr Aline K. Wong", None), ("Dr Ho Tat Kin", None)]

@@ -181,6 +181,13 @@ def _is_asked_or_to_ask_line(speech_asker_row: SpeechAskerRow) -> bool:
     )
 
 
+def _is_unnumbered_to_ask_line(speech_asker_row: SpeechAskerRow) -> bool:
+    return (
+        _TO_ASK_LINE_PATTERN.search(speech_asker_row.transcript) is not None
+        and _STOOD_QUESTION_NUMBER_PATTERN.search(speech_asker_row.transcript) is None
+    )
+
+
 def _with_reader(
     asker_candidate: AskerCandidate, reader_row: SpeechAskerRow
 ) -> AskerCandidate:
@@ -206,6 +213,8 @@ def _with_to_ask_reader(
         for speech_asker_row in speech_asker_rows[row_index + 1 :]:
             if _get_read_out_number(speech_asker_row, filer_names) == question_number:
                 return _with_reader(asker_candidate, speech_asker_row)
+        return asker_candidate
+    if row_index > 0 and _is_unnumbered_to_ask_line(speech_asker_rows[row_index - 1]):
         return asker_candidate
     for speech_asker_row in speech_asker_rows[row_index + 1 :]:
         if _is_asked_or_to_ask_line(speech_asker_row):
