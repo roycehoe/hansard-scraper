@@ -23,7 +23,9 @@ _FIELD_LINE = re.compile(r"^\s+(\S.*?)\s+:(?:\s+(\S.*))?$")
 _WRAPPED_LABEL_LINE = re.compile(
     r"^\s{1,8}(Readings|Third Readings|Committee|Committee Report|Readings\))$"
 )
-_QUALIFIER_START = re.compile(r"\((?:Consequential |Related )?[Aa]mendments? made")
+_QUALIFIER_START = re.compile(
+    r"\((?:Consequential |Related )?[Aa]mendments? (?:made|by)"
+)
 _ENTRY_KIND = re.compile(
     r"^(?P<law_number>L\.N\. \S+(?: \(G\.N\.[^)—]*\)?)?"
     r"|(?:M\. |Malaysian? )?(?:Act|Ordinance) [IVXL\d]+ of \d{4}"
@@ -37,7 +39,11 @@ _ENTRY_KIND = re.compile(
 )
 _DATE = re.compile(
     r"(\d{1,2}) (January|February|March|April|May|June|July|August|September|October|November|December)(?: (\d{4}))?"
+    r"|(?<![\d.])(?P<numeric_day>\d{1,2})\.(?P<numeric_month>\d{1,2})\.(?:(?P<numeric_year>\d{4})|(?P<numeric_short_year>\d{2}))(?!\d)"
 )
+_TWO_DIGIT_YEAR_PIVOT = 50
+_TWENTIETH_CENTURY_START = 1900
+_TWENTY_FIRST_CENTURY_START = 2000
 _PARENTHESIS = re.compile(r"\([^)]*\)")
 _NOTE = re.compile(r"\s+Note:\s")
 _DATE_LABEL_PREFIX = re.compile(r"^dates? of ")
@@ -194,6 +200,19 @@ def _get_reading_names(label: str) -> list[str]:
     return [name for name in _READING_NAMES if name in label]
 
 
+def _build_date(date_match: re.Match[str]) -> date:
+    if date_match.group("numeric_day") is None:
+        return datetime.strptime(date_match.group(0), "%d %B %Y").date()
+    day = int(date_match.group("numeric_day"))
+    month = int(date_match.group("numeric_month"))
+    if date_match.group("numeric_year") is not None:
+        return date(int(date_match.group("numeric_year")), month, day)
+    short_year = int(date_match.group("numeric_short_year"))
+    if short_year >= _TWO_DIGIT_YEAR_PIVOT:
+        return date(_TWENTIETH_CENTURY_START + short_year, month, day)
+    return date(_TWENTY_FIRST_CENTURY_START + short_year, month, day)
+
+
 def _read_dates(
     sso_code: str, ordinal: int, value: str, defects: list[ActHistoryDefect]
 ) -> list[Optional[date]]:
@@ -203,12 +222,12 @@ def _read_dates(
         return []
     dates: list[Optional[date]] = []
     for date_match in date_matches:
-        if date_match.group(3) is None:
+        if date_match.group("numeric_day") is None and date_match.group(3) is None:
             defects.append(ActHistoryDefect.MISSING_YEAR)
             dates.append(None)
             continue
         try:
-            dates.append(datetime.strptime(date_match.group(0), "%d %B %Y").date())
+            dates.append(_build_date(date_match))
         except ValueError as error:
             raise HansardActHistoryError(
                 f"Act {sso_code}: entry {ordinal} prints the date {date_match.group(0)}"

@@ -38,6 +38,15 @@ def _read_fixture(name: str) -> str:
     ),
     [
         (
+            "amendments_by_qualifier",
+            ActHistoryEntryKind.ORDINANCE,
+            "Ordinance 71 of 1959",
+            "Transfer of Powers Ordinance, 1959",
+            "30/1959",
+            (date(1959, 9, 22), date(1959, 11, 11), date(1959, 11, 11), None),
+            [],
+        ),
+        (
             "amendments_qualifier_above_ordinance",
             ActHistoryEntryKind.ORDINANCE,
             "Ordinance 37 of 1952",
@@ -285,6 +294,33 @@ def _read_fixture(name: str) -> str:
             [],
         ),
         (
+            "numeric_reading_dates_two_digit_year",
+            ActHistoryEntryKind.ACT,
+            "Act 9 of 1999",
+            "Environmental Pollution Control Act 1999",
+            "2/99",
+            (date(1999, 1, 20), date(1999, 2, 11), date(1999, 2, 11), date(1999, 4, 1)),
+            [],
+        ),
+        (
+            "numeric_reading_dates_wrapped_publication_bracket",
+            ActHistoryEntryKind.ACT,
+            "Act 4 of 2002",
+            "National Environment Agency Act 2002",
+            "13/2002",
+            (date(2002, 5, 3), date(2002, 5, 24), date(2002, 5, 24), date(2002, 7, 1)),
+            [],
+        ),
+        (
+            "numeric_reading_dates_with_date_footer",
+            ActHistoryEntryKind.ACT,
+            "Act 9 of 1999",
+            "Environmental Pollution Control Act 1999",
+            "2/99",
+            (date(1999, 1, 20), date(1999, 2, 11), date(1999, 2, 11), date(1999, 4, 1)),
+            [ActHistoryDefect.PAGE_BREAK_NOISE],
+        ),
+        (
             "page_break_inside_entry",
             ActHistoryEntryKind.ORDINANCE,
             "Ordinance 17 of 1940",
@@ -512,6 +548,50 @@ def test_printed_text_keeps_the_entry_lines_and_drops_page_break_noise() -> None
         ["Third", "Reading", ":", "22", "April", "1940"],
         ["Commencement", ":", "8", "May", "1940"],
     ]
+
+
+def test_a_date_footer_on_its_own_line_is_noise_and_not_part_of_the_entry() -> None:
+    (block,) = split_history_entries(
+        "CODE", _read_fixture("numeric_reading_dates_with_date_footer")
+    )
+
+    assert "31.12.2021" not in "\n".join(block.lines)
+    assert block.has_page_break_noise
+
+
+def test_a_two_digit_year_pivots_to_the_century_at_fifty() -> None:
+    blocks = split_history_entries(
+        "CODE",
+        "LEGISLATIVE HISTORY\n"
+        " 1. Act 1 of 1949 — A Act 1949\n"
+        "     First Reading                  :    1.2.49\n"
+        "     Second Reading                 :    1.3.50\n"
+        "     Third Reading                  :    1.4.00\n"
+        "     Commencement                   :    1.5.99\n",
+    )
+
+    entry = parse_history_entry("CODE", blocks[0])
+
+    assert (
+        entry.first_reading_date,
+        entry.second_reading_date,
+        entry.third_reading_date,
+        entry.commencement_date,
+    ) == (date(2049, 2, 1), date(1950, 3, 1), date(2000, 4, 1), date(1999, 5, 1))
+
+
+def test_a_numeric_date_that_is_not_a_calendar_date_raises_with_the_act_code() -> None:
+    (block,) = split_history_entries(
+        "ZZA1999",
+        "LEGISLATIVE HISTORY\n"
+        " 1. Act 1 of 1999 — A Act 1999\n"
+        "     First Reading                  :    31.2.99\n",
+    )
+
+    with pytest.raises(
+        HansardActHistoryError, match="Act ZZA1999: entry 1 prints the date 31.2.99"
+    ):
+        parse_history_entry("ZZA1999", block)
 
 
 def test_note_under_the_commencement_value_is_not_part_of_the_date() -> None:
