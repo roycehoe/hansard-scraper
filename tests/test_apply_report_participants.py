@@ -49,8 +49,8 @@ _MINISTER_OF_MANPOWER = "Minister for Manpower"
 _SENIOR_MINISTER_OF_STATE = "Senior Minister of State for Finance"
 _HEADER_LINE = f"MPs Speaking: Dr Tan See Leng ({_MINISTER_OF_MANPOWER}), Mr Speaker"
 _COUNTS_LOG = (
-    "4 reports; 12 rows: ABSENT_FILER 1, ANSWERER 6, ASKER 4, READER 1;"
-    " role source: ASKER_RULES 6, OFFICE_LABEL 1, OFFICE_ON_THE_DAY 5;"
+    "4 reports; 12 rows: ABSENT_FILER 1, ANSWERER 5, ASKER 4, READER 1, UNLABELLED 1;"
+    " role source: ASKER_RULES 6, NO_RULE 1, OFFICE_LABEL 1, OFFICE_ON_THE_DAY 4;"
     " office source: ATTENDANCE_LIST 2, HEADER_IN_REPORT 1, LABEL_IN_REPORT 1,"
     " LABEL_SAME_DAY 1, PARLIAMENT_GUESS 1;"
     " 1 with no speaker_id; states: NOT_A_QUESTION 1"
@@ -280,7 +280,7 @@ def _seed_reports(session: Session) -> _SeededReports:
                 "Dr Tan See Leng",
                 tan.id,
                 SpeechKind.SPEECH,
-                "Clinics employ more staff this year.",
+                "Clinics employ more staff this year, and each clinic now opens on Saturday mornings.",
             ),
             _build_speech(
                 oral_report,
@@ -288,7 +288,7 @@ def _seed_reports(session: Session) -> _SeededReports:
                 "Mr Chee Hong Tat",
                 chee.id,
                 SpeechKind.SPEECH,
-                "The new clinics opened in March.",
+                "The new clinics opened in March, and two more will open before the end of the year.",
             ),
             _build_speech(
                 written_report,
@@ -507,8 +507,8 @@ def _get_later_written_rows(seeded_reports: _SeededReports) -> list[tuple]:
         (
             seeded_reports.later_written_report.id,
             2,
-            ParticipantRole.ANSWERER,
-            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
             2,
             "Mr Ong Ye Kung",
             None,
