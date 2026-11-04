@@ -1753,3 +1753,31 @@ def test_report_20093_member_who_reads_out_the_number_of_a_to_ask_row_is_its_rea
         reader_printed_name="Dr Lily Neo (Tanjong Pagar)",
         reader_speaker_id=430,
     )
+
+
+def test_report_30113_numbered_question_printed_with_no_name_credits_no_one() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.DOCUMENT_TEXT,
+            None,
+            None,
+            "6. To ask the Minister for the Environment which areas in Singapore have the highest number of food poisoning cases",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Dr Aline K Wong (Tampines GRC)",
+            80,
+            "Question No. 6, Sir.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Dr Ahmad Mattar",
+            90,
+            "Mr Speaker, Sir, a total of 120 incidents of food poisoning were reported during the first seven months of this year",
+        ),
+    ]
+
+    assert get_asker_candidates(speech_asker_rows) == []
