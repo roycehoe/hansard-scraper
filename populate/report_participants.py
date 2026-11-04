@@ -429,7 +429,9 @@ def get_report_participant_plan(
                         lookups,
                         name_parliament_number_to_speaker_id,
                     )
-                    for asker_candidate in get_asker_candidates(speech_asker_rows)
+                    for asker_candidate in get_asker_candidates(
+                        speech_asker_rows, report_row.title
+                    )
                 ],
                 _get_speaker_id_to_office(
                     report_row,

@@ -1,5 +1,5 @@
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Optional, Union
 
 from crud.speech import SpeechAskerRow
@@ -22,6 +22,10 @@ _STOOD_IN_NAME_PATTERN = re.compile(
     r"(?:\s*:|\s+[-–—]|[-–—](?=\s|$)|\s*$)",
     re.IGNORECASE,
 )
+_STOOD_OVER_LIST_TITLE_PATTERN = re.compile(
+    r"^\s*questions for oral answer stood over\b", re.IGNORECASE
+)
+_TO_ASK_WORDS_PATTERN = re.compile(r"\bto ask\b", re.IGNORECASE)
 _STOOD_QUESTION_NUMBER_PATTERN = re.compile(
     r"^\W*(?P<number>\d+)\s*\.?\s*to ask\b", re.IGNORECASE
 )
@@ -77,6 +81,12 @@ def _get_stood_lines(speech_asker_rows: list[SpeechAskerRow]) -> list[_StoodLine
     for row_index, speech_asker_row in enumerate(speech_asker_rows):
         printed_names = _get_stood_printed_names(speech_asker_row.transcript)
         if printed_names is None:
+            continue
+        is_last_row = row_index == len(speech_asker_rows) - 1
+        if (
+            is_last_row
+            and _TO_ASK_WORDS_PATTERN.search(speech_asker_row.transcript) is None
+        ):
             continue
         stood_lines.append(_StoodLine(row_index, printed_names))
     return stood_lines
@@ -162,6 +172,47 @@ def _get_reader_row(
         if _is_absent_filer_read_out(speech_asker_row, filer_names):
             return speech_asker_row
     return None
+
+
+def _is_asked_or_to_ask_line(speech_asker_row: SpeechAskerRow) -> bool:
+    return (
+        _ASKED_LINE_PATTERN.search(speech_asker_row.transcript) is not None
+        or _TO_ASK_LINE_PATTERN.search(speech_asker_row.transcript) is not None
+    )
+
+
+def _with_reader(
+    asker_candidate: AskerCandidate, reader_row: SpeechAskerRow
+) -> AskerCandidate:
+    return replace(
+        asker_candidate,
+        reader_printed_name=reader_row.speaker,
+        reader_speaker_id=reader_row.speaker_id,
+        reader_row_ordinal=reader_row.ordinal,
+    )
+
+
+def _with_to_ask_reader(
+    speech_asker_rows: list[SpeechAskerRow],
+    row_index: int,
+    asker_candidate: AskerCandidate,
+) -> AskerCandidate:
+    match = _STOOD_QUESTION_NUMBER_PATTERN.search(
+        speech_asker_rows[row_index].transcript
+    )
+    filer_names = (asker_candidate.printed_name.lower(),)
+    if match is not None:
+        question_number = int(match.group("number"))
+        for speech_asker_row in speech_asker_rows[row_index + 1 :]:
+            if _get_read_out_number(speech_asker_row, filer_names) == question_number:
+                return _with_reader(asker_candidate, speech_asker_row)
+        return asker_candidate
+    for speech_asker_row in speech_asker_rows[row_index + 1 :]:
+        if _is_asked_or_to_ask_line(speech_asker_row):
+            break
+        if _get_read_out_number(speech_asker_row, filer_names) is not None:
+            return _with_reader(asker_candidate, speech_asker_row)
+    return asker_candidate
 
 
 def _get_stood_candidates(
@@ -266,8 +317,10 @@ def _get_name_in_text_candidate(
 
 
 def get_asker_candidates(
-    speech_asker_rows: list[SpeechAskerRow],
+    speech_asker_rows: list[SpeechAskerRow], report_title: str = ""
 ) -> list[AskerCandidate]:
+    if _STOOD_OVER_LIST_TITLE_PATTERN.search(report_title) is not None:
+        return []
     stood_lines = _get_stood_lines(speech_asker_rows)
     filer_names = tuple(
         printed_name.lower()
@@ -300,6 +353,10 @@ def get_asker_candidates(
             speech_asker_row, is_to_ask_line_counted
         )
         if speaker_row_candidate is not None:
+            if speaker_row_candidate.source == ReportAskerSource.TO_ASK_LINE:
+                speaker_row_candidate = _with_to_ask_reader(
+                    speech_asker_rows, row_index, speaker_row_candidate
+                )
             asker_candidates.append(speaker_row_candidate)
             continue
         name_in_text_candidate = _get_name_in_text_candidate(speech_asker_row)

@@ -1817,3 +1817,175 @@ def test_report_25149_question_row_ordinals_leave_out_a_labelled_row_that_says_a
     ]
 
     assert get_question_row_ordinals(speech_asker_rows) == frozenset({1})
+
+
+def test_report_30105_stood_line_that_ends_the_report_credits_no_one() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Dr Lee Siew-Choh",
+            50,
+            "asked the Minister for National Development if he will make a statement concerning the arrears and penalty for non-payment of rent",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Dr Lee Boon Yang (for the Minister for National Development)",
+            60,
+            "Mr Speaker, Sir, the eating house, Chye Heng Cafeteria, in Block 401 Hougang Avenue 10, was recovered by HDB",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Dr Lee Boon Yang",
+            60,
+            "The following Question stood in the name of Mr Chiam See Tong -",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert [asker_candidate.printed_name for asker_candidate in asker_candidates] == [
+        "Dr Lee Siew-Choh"
+    ]
+
+
+def test_report_title_that_lists_questions_stood_over_credits_no_one() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr Speaker",
+            16,
+            "Order. The following Questions for oral answer stood over.",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr Low Thia Khiang",
+            70,
+            "asked the Minister for Health whether the waiting time at polyclinics has changed",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(
+        speech_asker_rows,
+        "QUESTIONS FOR ORAL ANSWER STOOD OVER TO NEXT AVAILABLE SITTING OF PARLIAMENT",
+    )
+
+    assert asker_candidates == []
+
+
+def test_report_20093_member_who_reads_out_the_number_of_a_to_ask_row_is_its_reader() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(1, SpeechKind.SPEECH, "Mrs Lina Chiam", 916, "–"),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mrs Lina Chiam",
+            916,
+            "11To ask the Minister for Trade and Industry (a) what is the number of unlicensed tour guides caught during the last five years",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Mr Patrick Tay Teck Guan",
+            984,
+            "asked the Minister for Trade and Industry (a) what is the annual number of unlicensed tour guides detected",
+        ),
+        _build_row(
+            4,
+            SpeechKind.SPEECH,
+            "Dr Lily Neo (Tanjong Pagar)",
+            430,
+            "Question No 11, Sir.",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert asker_candidates[0] == AskerCandidate(
+        row_ordinal=2,
+        source=ReportAskerSource.TO_ASK_LINE,
+        printed_name="Mrs Lina Chiam",
+        speaker_id=916,
+        reader_printed_name="Dr Lily Neo (Tanjong Pagar)",
+        reader_speaker_id=430,
+        reader_row_ordinal=4,
+    )
+
+
+def test_report_30113_numbered_question_printed_with_no_name_credits_no_one() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.DOCUMENT_TEXT,
+            None,
+            None,
+            "6. To ask the Minister for the Environment which areas in Singapore have the highest number of food poisoning cases",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Dr Aline K Wong (Tampines GRC)",
+            80,
+            "Question No. 6, Sir.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Dr Ahmad Mattar",
+            90,
+            "Mr Speaker, Sir, a total of 120 incidents of food poisoning were reported during the first seven months of this year",
+        ),
+    ]
+
+    assert get_asker_candidates(speech_asker_rows) == []
+
+
+def test_report_22632_unnumbered_to_ask_rows_take_a_reader_only_from_the_row_after_them() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "The following questions stood on the Order Paper -",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Dr Muhammad Faishal Ibrahim",
+            310,
+            "To ask the Minister for National Development with the rising prices of new and resale HDB flats",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Ms Eunice Elizabeth Olsen",
+            311,
+            "To ask the Minister for National Development whether his Ministry will consider raising the income ceiling",
+        ),
+        _build_row(
+            4,
+            SpeechKind.SPEECH,
+            "Mr Liang Eng Hwa (Holland-Bukit Timah)",
+            312,
+            "Question No. 8, Sir.",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert [
+        (asker_candidate.printed_name, asker_candidate.reader_speaker_id)
+        for asker_candidate in asker_candidates
+    ] == [
+        ("Dr Muhammad Faishal Ibrahim", None),
+        ("Ms Eunice Elizabeth Olsen", 312),
+    ]

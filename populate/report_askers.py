@@ -123,7 +123,8 @@ def get_report_asker_plan(session: Session, report_ids: list[int]) -> ReportAske
                         name_parliament_number_to_speaker_id,
                     )
                     for asker_candidate in get_asker_candidates(
-                        report_id_to_speech_asker_rows[report_row.id]
+                        report_id_to_speech_asker_rows[report_row.id],
+                        report_row.title,
                     )
                 ],
             )

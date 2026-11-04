@@ -48,6 +48,7 @@ class ReportAskerReportRow:
     id: int
     parliament_number: int
     sitting_date: datetime
+    title: str
 
 
 @dataclass(frozen=True)
@@ -287,7 +288,9 @@ class CRUDReport:
         self, report_types: Sequence[str]
     ) -> list[ReportAskerReportRow]:
         statement = (
-            select(Report.id, Report.parliament_number, Report.sitting_date)
+            select(
+                Report.id, Report.parliament_number, Report.sitting_date, Report.title
+            )
             .where(col(Report.report_type).in_(report_types))
             .order_by(Report.id)
         )
@@ -299,7 +302,9 @@ class CRUDReport:
         self, report_ids: list[int], report_types: Sequence[str]
     ) -> list[ReportAskerReportRow]:
         statement = (
-            select(Report.id, Report.parliament_number, Report.sitting_date)
+            select(
+                Report.id, Report.parliament_number, Report.sitting_date, Report.title
+            )
             .where(col(Report.id).in_(report_ids))
             .where(col(Report.report_type).in_(report_types))
             .order_by(Report.id)
