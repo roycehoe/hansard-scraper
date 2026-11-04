@@ -4053,6 +4053,35 @@ def test_report_38635_member_whose_only_row_after_the_answer_is_a_short_interjec
     ]
 
 
+_REPORT_24530_TITLE = "PROFESSIONAL, MANAGERIAL AND EXECUTIVE STAFF"
+_REPORT_24530_ROWS = """
+1 | SPEECH | 731 | Mdm Ho Geok Choo | asked the Minister for Manpower in view of the increasing number of retrenchments of professional, managerial and executive staff aged above 40, (a) what special programmes are in place to re-train this cohort for relevant
+2 | SPEECH | 741 | The Minister for Manpower (Dr Lee Boon Yang) | Mr Speaker, Sir, Singapore's Free Trade Agreements (FTAs) with important trading partners such as New Zealand, Japan, European Free Trade Association, Australia and recently concluded negotiatio
+3 | SPEECH | 741 | The Minister for Manpower (Dr Lee Boon Yang) | Ultimately, the extent to which Singapore and Singaporeans benefit from these FTAs will depend on our companies' ability to seize the opportunities afforded under the FTAs to grow and expand int
+4 | SPEECH | 741 | The Minister for Manpower (Dr Lee Boon Yang) | Mature professionals, managers and executives, otherwise known as PMEs, who have unfortunately been retrenched or are currently still unemployed can take advantage of the various training progra
+5 | SPEECH | 702 | Mr Speaker | Mdm Halimah.
+6 | SPEECH | 728 | Mdm Halimah Yacob (Jurong) | Question 13, Sir.
+7 | SPEECH | 713 | Mr Steve Chia Kiah Hong | Supplementary question, Sir.
+8 | SPEECH | 702 | Mr Speaker | I have already asked Mdm Halimah to ask her Question.
+"""
+
+
+def test_report_24530_member_whose_only_row_after_the_answer_asks_leave_for_a_supplementary_is_supplementary() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_24530_TITLE, _REPORT_24530_ROWS)
+
+    assert _get_person_rows(labelled_report, 713) == [
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            7,
+            "Mr Steve Chia Kiah Hong",
+            713,
+        )
+    ]
+
+
 def test_report_39160_member_whose_only_row_after_the_answer_is_a_point_of_order_is_unlabelled() -> (
     None
 ):

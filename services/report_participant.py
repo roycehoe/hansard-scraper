@@ -871,7 +871,11 @@ def _is_point_of_order_or_interjection(transcript: str) -> bool:
     text = transcript.strip()
     if _POINT_OF_ORDER_PATTERN.search(text):
         return True
-    return len(text.split()) <= _MAX_INTERJECTION_WORDS and not text.endswith("?")
+    return (
+        len(text.split()) <= _MAX_INTERJECTION_WORDS
+        and not text.endswith("?")
+        and not _is_asking(text)
+    )
 
 
 def _get_procedural_person_keys(
