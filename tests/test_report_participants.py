@@ -2585,3 +2585,89 @@ def test_report_26319_paragraph_after_an_inline_answer_belongs_to_the_inline_spe
         for participant in labelled_report.participants
         if participant.speaker_id == _CHARLES_CHONG_SPEAKER_ID
     ] == [ParticipantRole.ASKER]
+
+
+_REPORT_27568_TITLE = "IMPACT OF REGIONAL CURRENCY CRISIS ON THE ECONOMY"
+_REPORT_27568_ROWS = """
+1 | SPEECH | 681 | Mr Tay Beng Chuan | asked the Minister for Trade and Industry if he will give an assessment of the impact of the regional currency and financial crisis on Singapore's economy.
+2 | SPEECH | 620 | Mr Choo Wee Khiang | Question No. 11, Sir.
+3 | SPEECH | 646 | Mr Lee Yock Suan | Mr Speaker, Sir, may I answer Question Nos. 11 and 12 together as they are related?
+4 | SPEECH | 679 | Mr Speaker | Yes.
+5 | SPEECH | 646 | Mr Lee Yock Suan | As the Singapore economy is closely linked to the region, it will inevitably be affected if the regional currency crisis continues for a prolonged period.
+"""
+
+
+def test_report_27568_filer_of_an_asked_row_whose_question_is_read_out_is_an_absent_filer() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_27568_TITLE,
+        _REPORT_27568_ROWS,
+        speaker_id_to_office={
+            646: Office("Minister for Trade and Industry", OfficeSource.ATTENDANCE_LIST)
+        },
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ABSENT_FILER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mr Tay Beng Chuan",
+            681,
+        ),
+        (
+            ParticipantRole.READER,
+            ParticipantRoleSource.ASKER_RULES,
+            2,
+            "Mr Choo Wee Khiang",
+            620,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            3,
+            "Mr Lee Yock Suan",
+            646,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            ParticipantRoleSource.CHAIR_LABEL,
+            4,
+            "Mr Speaker",
+            679,
+        ),
+    ]
+    assert _summarise_states(labelled_report.states) == []
+
+
+_REPORT_20093_TITLE = "UNLICENSED TOUR GUIDES IN SINGAPORE"
+_REPORT_20093_ROWS = """
+1 | SPEECH | 916 | Mrs Lina Chiam | –
+2 | SPEECH | 916 | Mrs Lina Chiam | 11To ask the Minister for Trade and Industry (a) what is the number of unlicensed tour guides caught during the last five years
+3 | SPEECH | 430 | Dr Lily Neo (Tanjong Pagar) | Question No 11, Sir.
+4 | SPEECH | 700 | Mr Lee Yi Shyan | Mr Speaker, Sir, the number of unlicensed tour guides caught was 61 over the last five years.
+"""
+
+
+def test_report_20093_filer_of_a_to_ask_row_whose_question_is_read_out_is_an_absent_filer() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_20093_TITLE,
+        _REPORT_20093_ROWS,
+        speaker_id_to_office={
+            700: Office(
+                "Minister of State for Trade and Industry", OfficeSource.ATTENDANCE_LIST
+            )
+        },
+    )
+
+    assert [
+        (participant.role, participant.speaker_id)
+        for participant in labelled_report.participants
+    ] == [
+        (ParticipantRole.ABSENT_FILER, 916),
+        (ParticipantRole.READER, 430),
+        (ParticipantRole.ANSWERER, 700),
+    ]

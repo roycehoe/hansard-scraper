@@ -499,8 +499,13 @@ def _get_stored_counts(
     return group_to_counts
 
 
-def _get_report_asker_role(report_asker_source: ReportAskerSource) -> ParticipantRole:
-    if report_asker_source == ReportAskerSource.STOOD_IN_NAME_LINE:
+def _get_report_asker_role(
+    report_asker_source: ReportAskerSource, reader_printed_name: Optional[str]
+) -> ParticipantRole:
+    if (
+        report_asker_source == ReportAskerSource.STOOD_IN_NAME_LINE
+        or reader_printed_name is not None
+    ):
         return ParticipantRole.ABSENT_FILER
     return ParticipantRole.ASKER
 
@@ -543,7 +548,9 @@ def _validate_can_commit_asker_agreement(
                 (
                     report_asker_row.printed_name,
                     report_asker_row.speaker_id,
-                    _get_report_asker_role(report_asker_row.source),
+                    _get_report_asker_role(
+                        report_asker_row.source, report_asker_row.reader_printed_name
+                    ),
                 )
                 for report_asker_row in report_id_to_report_asker_rows[report_id]
             ]

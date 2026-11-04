@@ -280,7 +280,10 @@ def _get_question_ordinals(
 
 
 def _get_asker_role(asker_candidate: AskerCandidate) -> ParticipantRole:
-    if asker_candidate.source == ReportAskerSource.STOOD_IN_NAME_LINE:
+    if (
+        asker_candidate.source == ReportAskerSource.STOOD_IN_NAME_LINE
+        or asker_candidate.reader_printed_name is not None
+    ):
         return ParticipantRole.ABSENT_FILER
     return ParticipantRole.ASKER
 
