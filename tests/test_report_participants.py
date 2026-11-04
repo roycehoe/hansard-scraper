@@ -37,6 +37,7 @@ _VASOO_SPEAKER_ID = 411
 _CHARLES_CHONG_SPEAKER_ID = 619
 _TEO_CHONG_TEE_SPEAKER_ID = 338
 _JOHN_CHEN_SPEAKER_ID = 612
+_LEE_BOON_YANG_SPEAKER_ID = 642
 
 
 @dataclass(frozen=True)
@@ -4192,3 +4193,83 @@ def test_report_35030_heading_only_report_is_still_not_a_question() -> None:
             None,
         )
     ]
+
+
+_REPORT_26932_TITLE = "MEDISAVE AND SPECIAL ACCOUNTS"
+_REPORT_26932_ROWS = """
+1 | SPEECH | 658 | Mr Low Thia Khiang | asked the Minister for Manpower whether the Government will consider cutting the rate of contributions or temporarily suspending contributions to the Medisave and Special Accounts of the Central Provident Fund. The Minister for Manpower (Dr Lee Boon Yang): Mr Speaker, Sir, the hon. Member has been waiting for quite sometime for
+"""
+
+
+def test_report_26932_answerer_label_run_into_the_asked_paragraph_gives_the_answerer() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_26932_TITLE,
+        _REPORT_26932_ROWS,
+        inline_label_to_speaker_id={
+            "The Minister for Manpower (Dr Lee Boon Yang)": _LEE_BOON_YANG_SPEAKER_ID
+        },
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mr Low Thia Khiang",
+            658,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            1,
+            "The Minister for Manpower (Dr Lee Boon Yang)",
+            _LEE_BOON_YANG_SPEAKER_ID,
+        ),
+    ]
+    assert _summarise_states(labelled_report.states) == []
+
+
+def test_report_26932_label_that_resolves_to_no_speaker_gives_no_answerer() -> None:
+    labelled_report = _label_report(_REPORT_26932_TITLE, _REPORT_26932_ROWS)
+
+    assert ParticipantRole.ANSWERER not in {
+        participant.role for participant in labelled_report.participants
+    }
+
+
+_REPORT_26810_TITLE = "ACQUISITION OF COLOMBO COURT"
+_REPORT_26810_ROWS = """
+1 | SPEECH | 669 | Mr Shriniwas Rai | asked the Minister for Law why the Land Office did not give prior notice to the tenants of Colombo Court of its plan to acquire the property. The Minister for Law (Prof. S. Jayakumar): Mr Speaker, Sir, the procedures to be followed in any case of acquisition of land are set out in the Land Acquisition Act (Cap 152) and Governmen
+2 | SPEECH | 669 | Mr Shriniwas Rai | It would not be proper to notify any person or group of persons of proposed acquisition before such Gazette. This is because prior knowledge of acquisitions of land required for public projects can affect the prices of the properties to be acquired as well as adjoining ones depending on the nature of the public project. In a pro
+3 | SPEECH | 669 | Mr Shriniwas Rai | Sir, many tenants of Colombo Court have requested that they be given some time. May I ask the Minister whether some time could be given to them, because 31st March is actually too short a period for them?
+4 | SPEECH | 637 | Prof. Jayakumar | I believe the Member knows that in acquisition cases, the authority deals with the owner of the property acquired. On his specific question about the deadline of 31st March, my understanding is that this is contingent and dependent on the Supreme Court's own schedule for redevelopment of Colombo Court. So I cannot commit myself
+5 | SPEECH | 615 | Mr Chiam Seng Tong | Sir, my question is on compensation. Many of the tenants there were not given ample notice of the acquisition. They went ahead and spent a lot of money on renovation of their premises. I have heard that tenants have spent up to $100,000. Will the Ministry consider giving them some kind of compensation?
+6 | SPEECH | 637 | Prof. Jayakumar | Here again, I think the Member will appreciate that I cannot go into details or commit myself, because I understand that the Collector's inquiry has commenced but has not been concluded. I understand that the Collector has received the various claims but the proceedings have not been concluded and he has yet to determine the fin
+7 | SPEECH | 615 | Mr Chiam See Tong | Sir, I believe that a precedent has been set at Potong Pasir. One resident there did not know of the acquisition of his land and he went ahead to apply for renovation. And not long after, an acquisition was announced on his property. I believe the Ministry is willing to pay back the renovation cost in that case.
+8 | SPEECH | 615 | Mr Chiam See Tong | This case is quite similar. No notice was given to the tenants that the building was going to be acquired. So they went ahead and spent money to renovate their shops in preparation for business. Will the Ministry consider compensating them with some money?
+9 | SPEECH | 637 | Prof. Jayakumar | I am not sure whether the Member, when he cites a precedent, is talking of the acquisition in Potong Pasir with respect to an owner of the premises, whereas here I take it that the reference he and Mr Shriniwas Rai have made is to individual tenants who have leases in the building where the owner is the person who has been serve
+"""
+
+
+def test_report_26810_label_run_into_the_asked_paragraph_adds_no_second_answerer() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_26810_TITLE,
+        _REPORT_26810_ROWS,
+        speaker_id_to_office={
+            637: Office("Minister for Law", OfficeSource.ATTENDANCE_LIST)
+        },
+        inline_label_to_speaker_id={
+            "The Minister for Law (Prof. S. Jayakumar)": 637,
+            "Prof. Jayakumar": 637,
+        },
+    )
+
+    assert [
+        participant[4]
+        for participant in _summarise_participants(labelled_report.participants)
+        if participant[0] == ParticipantRole.ANSWERER
+    ] == [637]

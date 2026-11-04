@@ -97,6 +97,12 @@ _INLINE_SPEAKER_PATTERN = re.compile(
     + "|".join(re.escape(title) for title in (*TITLE_PREFIXES, _THE_PREFIX))
     + r")[^:?!;]{0,150}?)\s*:"
 )
+_MID_ROW_SPEAKER_PATTERN = re.compile(
+    r"[.!?]\s+(?P<label>"
+    + re.escape(_THE_PREFIX)
+    + r"[^:?!;]{0,150}?)\s*:\s*(?P<rest>\S.*)",
+    re.DOTALL,
+)
 _BRACKET_PATTERN = re.compile(r"\([^)]*\)?")
 _CALLED_QUESTION_PATTERN = re.compile(
     r"(?:^|[.?!]\s+)\W*questions?\s+(?:nos?\.?\s*|number\s*)?(?P<number>\d+)"
@@ -144,6 +150,12 @@ class QuestionStateCandidate:
     first_ordinal: Optional[int]
 
 
+# NOTE: a row read out of the middle of another row shares that row's ordinal, so the type marks it
+@dataclass(frozen=True)
+class _InlineSplitRow(SpeechAskerRow):
+    pass
+
+
 @dataclass(frozen=True)
 class _ParticipantRow:
     ordinal: int
@@ -151,6 +163,7 @@ class _ParticipantRow:
     transcript: str
     speaker_id: Optional[int]
     person_key: Union[int, str]
+    is_inline_split: bool = False
 
 
 @dataclass(frozen=True)
@@ -172,17 +185,41 @@ def _get_person_key(speaker_id: Optional[int], printed_name: str) -> Union[int, 
     return speaker_id
 
 
+def _is_inline_speaker_label(label: str) -> bool:
+    unbracketed_label = _BRACKET_PATTERN.sub("", label)
+    if "," in unbracketed_label:
+        return False
+    return len(unbracketed_label.split()) <= _MAX_INLINE_SPEAKER_LABEL_WORDS
+
+
 def _get_inline_speaker_label(transcript: str) -> Optional[str]:
     match = _INLINE_SPEAKER_PATTERN.search(transcript)
     if match is None:
         return None
     label = match.group("label")
-    unbracketed_label = _BRACKET_PATTERN.sub("", label)
-    if "," in unbracketed_label:
-        return None
-    if len(unbracketed_label.split()) > _MAX_INLINE_SPEAKER_LABEL_WORDS:
+    if not _is_inline_speaker_label(label):
         return None
     return label
+
+
+def _get_mid_row_speaker(
+    speech_asker_row: SpeechAskerRow, get_speaker_id: Callable[[str], Optional[int]]
+) -> Optional[_InlineSplitRow]:
+    match = _MID_ROW_SPEAKER_PATTERN.search(speech_asker_row.transcript)
+    if match is None or not _is_inline_speaker_label(match.group("label")):
+        return None
+    speaker_id = get_speaker_id(match.group("label"))
+    if speaker_id is None:
+        return None
+    return _InlineSplitRow(
+        speech_asker_row.id,
+        speech_asker_row.report_id,
+        speech_asker_row.ordinal,
+        match.group("label"),
+        match.group("rest"),
+        SpeechKind.SPEECH,
+        speaker_id,
+    )
 
 
 def read_inline_speakers(
@@ -199,9 +236,10 @@ def read_inline_speakers(
         ):
             inline_speaker_rows.append(speech_asker_row)
             continue
+        is_chair_row = CHAIR_FORM_PATTERN.search(speech_asker_row.speaker) is not None
         label = (
             None
-            if CHAIR_FORM_PATTERN.search(speech_asker_row.speaker)
+            if is_chair_row
             else _get_inline_speaker_label(speech_asker_row.transcript)
         )
         speaker_id = None if label is None else get_speaker_id(label)
@@ -216,14 +254,24 @@ def read_inline_speakers(
             inline_speaker = None
         if inline_speaker is None:
             inline_speaker_rows.append(speech_asker_row)
-            continue
-        inline_speaker_rows.append(
-            replace(
-                speech_asker_row,
-                speaker=inline_speaker[0],
-                speaker_id=inline_speaker[1],
+        else:
+            inline_speaker_rows.append(
+                replace(
+                    speech_asker_row,
+                    speaker=inline_speaker[0],
+                    speaker_id=inline_speaker[1],
+                )
             )
+        mid_row_speaker = (
+            None
+            if is_chair_row
+            else _get_mid_row_speaker(speech_asker_row, get_speaker_id)
         )
+        if (
+            mid_row_speaker is not None
+            and mid_row_speaker.speaker_id != inline_speaker_rows[-1].speaker_id
+        ):
+            inline_speaker_rows.append(mid_row_speaker)
     return inline_speaker_rows
 
 
@@ -263,6 +311,7 @@ def _get_participant_rows(
             speech_asker_row.transcript,
             speech_asker_row.speaker_id,
             _get_person_key(speech_asker_row.speaker_id, speech_asker_row.speaker),
+            isinstance(speech_asker_row, _InlineSplitRow),
         )
         for speech_asker_row in speech_asker_rows
         if speech_asker_row.speaker is not None
@@ -1070,7 +1119,10 @@ def get_participants(
     eligible_rows = [
         participant_row
         for participant_row in participant_rows
-        if participant_row.ordinal not in question_ordinals
+        if (
+            participant_row.ordinal not in question_ordinals
+            or participant_row.is_inline_split
+        )
         and participant_row.ordinal not in chair_ordinal_to_source
         and participant_row.person_key not in asker_person_keys
         and not _COLLECTIVE_LABEL_PATTERN.search(participant_row.label)
