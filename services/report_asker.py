@@ -57,9 +57,10 @@ _PRINTED_LABEL_PATTERN = re.compile(
 _RESPECTIVELY_SUFFIX_PATTERN = re.compile(r"\s+respectively$", re.IGNORECASE)
 _FILER_SEPARATOR_PATTERN = re.compile(r",\s+|\s+and\s+", re.IGNORECASE)
 _LETTER_PATTERN = re.compile(r"[^\W\d_]")
+_NAME_IN_TEXT_PREFIXES = (*TITLE_PREFIXES, "Assoc. Prof ")
 _NAME_IN_TEXT_PATTERN = re.compile(
     r"^\W*(?:\d+\s*\.?\s*)?(?P<name>(?:"
-    + "|".join(re.escape(prefix) for prefix in TITLE_PREFIXES)
+    + "|".join(re.escape(prefix) for prefix in _NAME_IN_TEXT_PREFIXES)
     + r").{0,80}?)\s+asked\s*the\b",
     re.IGNORECASE,
 )

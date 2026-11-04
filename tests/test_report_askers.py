@@ -2418,3 +2418,36 @@ def test_report_38367_footnote_stood_line_credits_the_filer_who_rises() -> None:
         (ReportAskerSource.STOOD_IN_NAME_LINE, "Mr Ong Chang Sam."),
         (ReportAskerSource.ASKED_LINE, "Mr David Marshall"),
     ]
+
+
+def test_report_27839_assoc_prof_with_a_dot_and_no_dot_is_read_as_a_name_in_text() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "1. Assoc. Prof Walter Woon asked the Minister for Information and the Arts what is the rationale",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "The Parliamentary Secretary to the Minister for Information and the Arts (Encik Mohamad Maidin B P M)",
+            568,
+            "Mr Speaker, Sir, the Singapore Broadcasting Authority (SBA) Internet Content Guidelines help",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Assoc. Prof. Walter Woon (Nominated Member)",
+            588,
+            "Sir, will the hon. Parliamentary Secretary say who will make the decision?",
+        ),
+    ]
+
+    assert [
+        (asker_candidate.source, asker_candidate.printed_name)
+        for asker_candidate in get_asker_candidates(speech_asker_rows)
+    ] == [(ReportAskerSource.NAME_IN_TEXT, "Assoc. Prof Walter Woon")]
