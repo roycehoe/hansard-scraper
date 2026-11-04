@@ -4070,3 +4070,63 @@ def test_report_39160_member_whose_only_row_after_the_answer_is_a_point_of_order
             4,
         )
     ]
+
+
+_REPORT_14331_TITLE = "Annual Water Pipe Leaks in Last Decade"
+_REPORT_14331_ROWS = """
+1 | SPEECH | 1100 | Mr Leon Perera | asked the Minister for the Environment and Water Resources what is the number of water pipe leaks each year for the past 10 years.
+2 | SPEECH | 1065 | The Senior Minister of State for the Environment and Water Resources (Dr Amy Khor Lean Suan) (for the Minister for the Environment and Water Resources) | Mr Deputy Speaker, the Public Utilities Board (PUB) operates a 5,500-kilometre network of pipes to deliver water to 1.5 million customer accounts. Over the last seven yea
+9 | SPEECH |  | Mr Deputy Speaker | Does the Member still have supplementary questions after such a long reply?
+10 | SPEECH | 1100 | Mr Leon Perera (Non-Constituency Member) | Just a few, Mr Deputy Speaker.
+"""
+
+_REPORT_11981_TITLE = (
+    "Update on Enforcement and Other Measures after Ban of PMDs on Footpaths"
+)
+_REPORT_11981_ROWS = """
+1 | SPEECH | 1127 | Mr Zainal Sapari | asked the Minister for Transport given the ban on users of personal mobility devices from all footpaths, whether there are plans to distinguish the different types of pub
+4 | SPEECH | 1037 | Mr Dennis Tan Lip Fong | asked the Minister for Transport whether the Government has committed additional resources to police the ban of PMDs from footpaths from January 2020 such that the public
+5 | SPEECH | 1037 | Mr Dennis Tan Lip Fong | asked the Minister for Transport in light of some food delivery riders switching from e-scooters to electric bikes (a) whether the Government is putting in place addition
+6 | SPEECH | 1070 | The Senior Minister of State for Transport (Dr Lam Pin Min) (for the Minister for Transport) | Mr Deputy Speaker, may I have your permission to take Question Nos 5 to 9 together?
+7 | SPEECH |  | Mr Deputy Speaker | Yes, please proceed.
+20 | SPEECH |  | Mr Deputy Speaker | Mr Ang Wei Neng.
+21 | SPEECH | 1021 | Mr Ang Wei Neng (Jurong) | Deputy Speaker, Sir, I thank the Senior Minister of State for the comprehensive reply. I just want to ask a few supplementary questions. He mentioned about 3,000, if I ca
+"""
+
+
+def test_report_14331_unlinked_chair_row_gets_its_office_from_the_label() -> None:
+    labelled_report = _label_report(_REPORT_14331_TITLE, _REPORT_14331_ROWS)
+
+    assert [
+        participant
+        for participant in _summarise_office_marks(labelled_report.participants)
+        if participant[0] == ParticipantRole.CHAIR
+    ] == [
+        (
+            ParticipantRole.CHAIR,
+            None,
+            None,
+            "Mr Deputy Speaker",
+            OfficeClass.OTHER,
+            OfficeSource.LABEL_IN_REPORT,
+        )
+    ]
+
+
+def test_report_11981_unlinked_chair_row_gets_its_office_from_the_label() -> None:
+    labelled_report = _label_report(_REPORT_11981_TITLE, _REPORT_11981_ROWS)
+
+    assert [
+        participant
+        for participant in _summarise_office_marks(labelled_report.participants)
+        if participant[0] == ParticipantRole.CHAIR
+    ] == [
+        (
+            ParticipantRole.CHAIR,
+            None,
+            None,
+            "Mr Deputy Speaker",
+            OfficeClass.OTHER,
+            OfficeSource.LABEL_IN_REPORT,
+        )
+    ]
