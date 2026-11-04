@@ -2671,3 +2671,70 @@ def test_report_20093_filer_of_a_to_ask_row_whose_question_is_read_out_is_an_abs
         (ParticipantRole.READER, 430),
         (ParticipantRole.ANSWERER, 700),
     ]
+
+
+_REPORT_47504_TITLE = "Increase in Fake Bulk Order Scams Impersonating SAF Personnel and Measures to Protect Small Businesses"
+_REPORT_47504_ROWS = """
+1 | SPEECH | 1287 | Mr Jackson Lam | asked the Coordinating Minister for National Security and Minister for Home Affairs (a) how many cases of fake bulk order scams impersonating SAF personnel have been reported since May 2025
+2 | SPEECH | 1279 | The Minister of State for Home Affairs (Mr Goh Pei Ming) (the Coordinating Minister for National Security and Minister for Home Affairs) | Mr Speaker, my reply will also address Question Nos 10 and 12 for written answer in today’s Order Paper filed by Mr Alex Yeo and Mr Zhulkarnain Adbul Rahim respectively.
+3 | SPEECH | 1279 | The Minister of State for Home Affairs (Mr Goh Pei Ming) (the Coordinating Minister for National Security and Minister for Home Affairs) | From May 2025 to 15 September 2025, the Police received at least six reports of fake bulk order scams.
+4 | SPEECH | 1279 | The Minister of State for Home Affairs (Mr Goh Pei Ming) (the Coordinating Minister for National Security and Minister for Home Affairs) | Please note also that Government agencies will not ask businesses to make payment to another business on the Government’s behalf.
+5 | SPEECH | 1327 | Mr Speaker | Mr Lam.
+6 | SPEECH | 1287 | Mr Jackson Lam (Nee Soon) | I thank the Minister of State for his reply. Can I ask whether the Ministry of Home Affairs is working with other agencies to develop verification tools?
+7 | SPEECH | 1279 | Mr Goh Pei Ming | Mr Speaker, I thank the Member for the supplementary question.
+8 | SPEECH | 1327 | Mr Speaker | Mr Alex Yeo.
+9 | SPEECH | 1243 | Mr Alex Yeo (Potong Pasir) | Mr Speaker, I thank the Minister of State for his answer to the Parliamentary Question. Can I just ask a supplementary question to the Minister of State?
+10 | SPEECH | 1279 | Mr Goh Pei Ming | Mr Speaker, I thank the Member for the question.
+"""
+
+
+def test_report_47504_member_whose_own_question_the_minister_folds_into_the_reply_is_supplementary() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_47504_TITLE,
+        _REPORT_47504_ROWS,
+        printed_name_to_speaker_id={"Mr Jackson Lam": 1287},
+        speaker_id_to_office={
+            1279: Office(
+                "Minister of State for Home Affairs", OfficeSource.ATTENDANCE_LIST
+            )
+        },
+    )
+
+    assert [
+        (participant.role, participant.speaker_id)
+        for participant in labelled_report.participants
+    ] == [
+        (ParticipantRole.ASKER, 1287),
+        (ParticipantRole.ANSWERER, 1279),
+        (ParticipantRole.CHAIR, 1327),
+        (ParticipantRole.ASKER_FOLLOW_UP, 1287),
+        (ParticipantRole.SUPPLEMENTARY, 1243),
+    ]
+
+
+_REPORT_30972_TITLE = "REVISION OF PUBLIC ASSISTANCE RATES"
+_REPORT_30972_ROWS = """
+1 | UNCLASSIFIED |  |  | The following question stood in the name of Mr Teo Chong Tee -
+2 | DOCUMENT_TEXT |  |  | 9. To ask the Minister for Community Development whether the public assistance rates wll be revised upwards.
+3 | SPEECH | 409 | Mr Teo Chong Tee | Mr Speaker, Sir, for Question No. 9, the Minister has given the answer yesterday. I therefore withdraw the question.
+"""
+
+
+def test_report_30972_stood_filer_who_speaks_stays_an_absent_filer() -> None:
+    labelled_report = _label_report(
+        _REPORT_30972_TITLE,
+        _REPORT_30972_ROWS,
+        printed_name_to_speaker_id={"Mr Teo Chong Tee": 409},
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ABSENT_FILER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mr Teo Chong Tee",
+            409,
+        )
+    ]
