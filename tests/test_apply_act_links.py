@@ -1,0 +1,159 @@
+from datetime import datetime
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+from sqlalchemy.engine import Engine
+from sqlmodel import Session
+
+import scripts.apply_act_links as apply_act_links_script
+from crud.bill import CRUDBill
+from crud.bill_report import CRUDBillReport
+from enums import ReportType
+from exceptions import HansardWriteCheckError, HansardWriteTargetError
+from schemas.act_link_plan import ActLinkPlan
+from scripts.apply_act_links import apply_act_links
+from tests.bill_seed import seed_bill_report
+
+_PROTECTED_DATABASE_URL = "postgresql://u:p@localhost:5432/x"
+_PASSING_LINE = "Bill read a Third time and passed."
+
+
+class _LogRecorder:
+    def __init__(self) -> None:
+        self.messages: list[str] = []
+
+    def info(self, message: str) -> None:
+        self.messages.append(message)
+
+
+def _seed_reports(session: Session) -> None:
+    seed_bill_report(
+        session,
+        "first-reading",
+        ReportType.BILL_INTRODUCTION,
+        datetime(2024, 12, 2),
+        "Estate Duty Bill",
+        ["Bill read a First time."],
+    )
+    seed_bill_report(
+        session,
+        "third-reading",
+        ReportType.BILL,
+        datetime(2025, 1, 15),
+        "Estate Duty Bill",
+        [_PASSING_LINE],
+    )
+    seed_bill_report(
+        session,
+        "adjournment",
+        ReportType.BILL,
+        datetime(2025, 1, 15),
+        "ADJOURNMENT",
+        [_PASSING_LINE],
+    )
+
+
+def _get_stored_counts(session: Session) -> tuple[int, int]:
+    session.expire_all()
+    return CRUDBill(session).get_count(), CRUDBillReport(session).get_count()
+
+
+@pytest.fixture
+def log_recorder(
+    scratch_engine: Engine, monkeypatch: pytest.MonkeyPatch
+) -> _LogRecorder:
+    recorder = _LogRecorder()
+    monkeypatch.setattr(apply_act_links_script, "engine", scratch_engine)
+    monkeypatch.setattr(apply_act_links_script, "logger", recorder)
+    return recorder
+
+
+def test_dry_run_logs_the_counts_and_writes_the_plan_file_only(
+    scratch_session: Session, log_recorder: _LogRecorder, tmp_path: Path
+) -> None:
+    _seed_reports(scratch_session)
+    plan_path = tmp_path / "plan.json"
+
+    apply_act_links(plan_path, is_commit=False)
+
+    assert log_recorder.messages == [
+        "Bills: 1, 1 passed; 2 reports grouped",
+        "Skipped: 1 reports whose title names no bill, 1 distinct titles",
+        "Dry run: nothing written",
+    ]
+    plan = ActLinkPlan.model_validate_json(plan_path.read_text())
+    assert [planned_bill.title_key for planned_bill in plan.bills] == ["estatedutybill"]
+    assert _get_stored_counts(scratch_session) == (0, 0)
+
+
+def test_commit_writes_the_reviewed_plan(
+    scratch_session: Session, log_recorder: _LogRecorder, tmp_path: Path
+) -> None:
+    _seed_reports(scratch_session)
+    plan_path = tmp_path / "plan.json"
+    apply_act_links(plan_path, is_commit=False)
+
+    apply_act_links(plan_path, is_commit=True)
+
+    assert log_recorder.messages[-1] == "Committed"
+    assert _get_stored_counts(scratch_session) == (1, 2)
+    assert CRUDBill(scratch_session).get_count_by_is_passed(is_passed=True) == 1
+
+
+def test_commit_refuses_tables_that_already_hold_rows(
+    scratch_session: Session, log_recorder: _LogRecorder, tmp_path: Path
+) -> None:
+    _seed_reports(scratch_session)
+    plan_path = tmp_path / "plan.json"
+    apply_act_links(plan_path, is_commit=False)
+    apply_act_links(plan_path, is_commit=True)
+
+    with pytest.raises(HansardWriteCheckError, match="The bill table holds 1 rows"):
+        apply_act_links(plan_path, is_commit=True)
+
+    assert _get_stored_counts(scratch_session) == (1, 2)
+
+
+def test_commit_refuses_a_plan_that_differs_from_the_reviewed_plan(
+    scratch_session: Session, log_recorder: _LogRecorder, tmp_path: Path
+) -> None:
+    _seed_reports(scratch_session)
+    plan_path = tmp_path / "plan.json"
+    apply_act_links(plan_path, is_commit=False)
+    seed_bill_report(
+        scratch_session,
+        "another-bill",
+        ReportType.BILL,
+        datetime(2025, 3, 3),
+        "Water Bill",
+        ["Bill read a First time."],
+    )
+
+    with pytest.raises(
+        HansardWriteCheckError, match="The plan differs from the reviewed plan"
+    ):
+        apply_act_links(plan_path, is_commit=True)
+
+    assert _get_stored_counts(scratch_session) == (0, 0)
+
+
+def test_commit_refuses_the_protected_port_before_any_row_is_written(
+    scratch_session: Session,
+    log_recorder: _LogRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _seed_reports(scratch_session)
+    plan_path = tmp_path / "plan.json"
+    apply_act_links(plan_path, is_commit=False)
+    monkeypatch.setattr(
+        apply_act_links_script,
+        "settings",
+        SimpleNamespace(database_url=_PROTECTED_DATABASE_URL),
+    )
+
+    with pytest.raises(HansardWriteTargetError, match="local port 5432"):
+        apply_act_links(plan_path, is_commit=True)
+
+    assert _get_stored_counts(scratch_session) == (0, 0)

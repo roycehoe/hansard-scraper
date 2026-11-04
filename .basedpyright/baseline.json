@@ -1304,6 +1304,16 @@
                 }
             }
         ],
+        "./scripts/apply_act_links.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 21,
+                    "endColumn": 67,
+                    "lineCount": 1
+                }
+            }
+        ],
         "./scripts/apply_attendance_names.py": [
             {
                 "code": "reportArgumentType",
