@@ -24,6 +24,7 @@ from utils.office import (
     is_government_office,
 )
 
+_MAX_CALLED_QUESTION_WORDS = 30
 _MAX_CHAIR_NAME_CALL_WORDS = 8
 _MAX_EXCLAMATION_QUIP_WORDS = 6
 _MAX_QUESTION_QUIP_WORDS = 8
@@ -59,6 +60,9 @@ _ASKING_PATTERN = re.compile(
     r"|\b(?:will|would|can|could|does|is|are|has|did)\s+the\s+(?:\w+\s+){0,5}"
     r"(?:minister|secretary)\b[^?]*\?\s*$",
     re.IGNORECASE,
+)
+_CALLED_QUESTION_PATTERN = re.compile(
+    r"\bquestions?\s+(?:nos?\.?\s*|number\s*)?\d+", re.IGNORECASE
 )
 _COLLECTIVE_LABEL_PATTERN = re.compile(
     r"^\W*(?:(?:some|an?)\s+)?hon\.?\s+members?\W*$", re.IGNORECASE
@@ -167,6 +171,21 @@ def _get_government_row_ordinals(
         if office is not None and is_government_office(office.printed):
             government_row_ordinals.add(participant_row.ordinal)
     return frozenset(government_row_ordinals)
+
+
+def _get_called_question_ordinals(
+    participant_rows: list[_ParticipantRow],
+    asker_person_keys: frozenset[Union[int, str]],
+) -> frozenset[int]:
+    return frozenset(
+        participant_row.ordinal
+        for participant_row in participant_rows
+        if not CHAIR_FORM_PATTERN.search(participant_row.label)
+        and participant_row.person_key not in asker_person_keys
+        and len(participant_row.transcript.split()) <= _MAX_CALLED_QUESTION_WORDS
+        and _CALLED_QUESTION_PATTERN.search(participant_row.transcript)
+        and not _is_asking(participant_row.transcript)
+    )
 
 
 def _get_question_ordinals(
@@ -633,23 +652,26 @@ def get_participants(
     speaker_id_to_office: dict[int, Office],
 ) -> list[ParticipantCandidate]:
     participant_rows = _get_participant_rows(speech_asker_rows)
+    kept_asker_candidates = _get_kept_asker_candidates(asker_candidates)
+    asker_participants = _build_asker_participants(kept_asker_candidates)
+    asker_person_keys = frozenset(
+        _get_person_key(participant.speaker_id, participant.printed_name)
+        for participant in asker_participants
+    )
     question_ordinals = _get_question_ordinals(
-        question_row_ordinals
+        (
+            question_row_ordinals
+            | _get_called_question_ordinals(participant_rows, asker_person_keys)
+        )
         - _get_government_row_ordinals(participant_rows, speaker_id_to_office),
         asker_candidates,
     )
     if not question_ordinals:
         return []
-    kept_asker_candidates = _get_kept_asker_candidates(asker_candidates)
-    asker_participants = _build_asker_participants(kept_asker_candidates)
     reader_participants = _build_reader_participants(kept_asker_candidates)
     chair_ordinal_to_source = _get_chair_ordinal_to_source(participant_rows)
     chair_participants = _build_chair_participants(
         participant_rows, chair_ordinal_to_source
-    )
-    asker_person_keys = frozenset(
-        _get_person_key(participant.speaker_id, participant.printed_name)
-        for participant in asker_participants
     )
     reader_person_keys = frozenset(
         _get_person_key(participant.speaker_id, participant.printed_name)

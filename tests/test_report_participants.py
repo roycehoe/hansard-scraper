@@ -31,6 +31,7 @@ _ROW_COLUMN_SEPARATOR = " | "
 _DESMOND_LEE_SPEAKER_ID = 1039
 _HENG_CHEE_HOW_SPEAKER_ID = 826
 _SIM_ANN_SPEAKER_ID = 990
+_VASOO_SPEAKER_ID = 411
 
 
 @dataclass(frozen=True)
@@ -2336,4 +2337,42 @@ def test_report_6260_ministers_opening_line_is_not_a_read_out() -> None:
             "Mr Speaker",
             1223,
         ),
+    ]
+
+
+_REPORT_32259_TITLE = "HDB FLATS AT POTONG PASIR ESTATE"
+_REPORT_32259_ROWS = """
+1 | SPEECH | 359 | Mr Chiam See Tong | asked the Minister for National Development (a) what were the values of successful awards for construction of Housing and Development Board flats at Potong Pasir New Town.
+2 | SPEECH | 408 | Mr Teh Cheang Wan | Mr Deputy Speaker, Sir, the values of structural works on contracts 1 to 7 at Potong Pasir Estate are as follows:
+3 | SPEECH | 403 | Mr Deputy Speaker | Mr Vasoo.
+4 | SPEECH | 411 | Mr S. Vasoo (Bo Wen) | Mr Deputy Speaker, can I proceed with my question? Question No. 5, Sir.
+5 | SPEECH | 403 | Mr Deputy Speaker | I am sorry. We are proceeding to Question No. 5 already.
+"""
+
+
+def test_report_32259_member_who_calls_the_next_question_mid_paragraph_is_unlabelled() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_32259_TITLE,
+        _REPORT_32259_ROWS,
+        speaker_id_to_office={
+            408: Office(
+                "Minister for National Development", OfficeSource.HEADER_IN_REPORT
+            )
+        },
+    )
+
+    assert [
+        participant
+        for participant in _summarise_participants(labelled_report.participants)
+        if participant[4] == _VASOO_SPEAKER_ID
+    ] == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            4,
+            "Mr S. Vasoo (Bo Wen)",
+            411,
+        )
     ]
