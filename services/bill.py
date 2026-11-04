@@ -15,9 +15,12 @@ NOT_FIRST_READING_PATTERNS = (
 )
 THIRD_READING_PATTERN = r'^\W*[^"]{0,150}\ybill\y[^"]{0,120}\yread (a|the) third time'
 NOT_THIRD_READING_PATTERNS = ("be now read", r"^\W*(I|now|sir|mr)\y")
+SECOND_READING_PATTERN = r"\yorder for second reading read\y"
+BILL_TITLE_END_PATTERN = r"bill[^a-z]*$"
 
 _MAX_DAYS_BETWEEN_REPORTS = 366
 _BILL_WORD_PATTERN = re.compile(r"\bbill\b", re.IGNORECASE)
+_BILL_TITLE_END = re.compile(BILL_TITLE_END_PATTERN, re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -44,6 +47,17 @@ class _OpenBill:
     last_sitting_date: datetime
     is_passed: bool
     report_ids: list[int]
+
+
+def is_other_type_bill_reading(
+    title: str,
+    is_first_reading: bool,
+    is_second_reading: bool,
+    is_third_reading: bool,
+) -> bool:
+    return _BILL_TITLE_END.search(title) is not None and (
+        is_first_reading or is_second_reading or is_third_reading
+    )
 
 
 def _should_start_new_bill(

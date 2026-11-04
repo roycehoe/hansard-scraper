@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable, Optional
 
-from sqlalchemy import text
+from sqlalchemy import not_, text
 from sqlmodel import Session, col, delete, func, select
 
 from database.report import Report
@@ -174,6 +174,20 @@ class CRUDReport:
         statement = (
             select(Report.id, Report.sitting_date, Report.title)
             .where(col(Report.report_type).in_(report_types))
+            .order_by(col(Report.sitting_date), col(Report.id))
+        )
+        return [
+            ReportSittingDateTitleRow(*row)
+            for row in self.session.exec(statement).all()
+        ]
+
+    def get_sitting_date_title_rows_by_report_types_not_in_and_title_regex(
+        self, report_types: tuple[ReportType, ...], pattern: str
+    ) -> list[ReportSittingDateTitleRow]:
+        statement = (
+            select(Report.id, Report.sitting_date, Report.title)
+            .where(not_(col(Report.report_type).in_(report_types)))
+            .where(col(Report.title).regexp_match(pattern, flags="i"))
             .order_by(col(Report.sitting_date), col(Report.id))
         )
         return [

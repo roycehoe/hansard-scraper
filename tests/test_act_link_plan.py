@@ -66,7 +66,7 @@ def test_plan_groups_bill_reports_and_reads_third_reading_lines(
         ReportType.MOTION,
         datetime(2025, 1, 15),
         "Sewage Bill",
-        [_PASSING_LINE],
+        ["Mr Tan asked about the Sewage Bill."],
     )
 
     write_harvest(tmp_path)
@@ -261,3 +261,76 @@ def test_plan_raises_for_a_hand_kept_entry_that_no_longer_matches(
 
     with pytest.raises(HansardHandKeptEntryError, match=message):
         get_act_link_plan(scratch_session, tmp_path, [], [], [hand_kept_act_link])
+
+
+def test_plan_groups_a_report_of_another_type_only_when_it_holds_a_reading_line(
+    scratch_session: Session, tmp_path: Path
+) -> None:
+    bill_id = seed_bill_report(
+        scratch_session,
+        "bill-third-reading",
+        ReportType.BILL,
+        datetime(2003, 11, 20),
+        "INSURANCE (AMENDMENT) BILL",
+        [_PASSING_LINE],
+    )
+    motion_first_reading_id = seed_bill_report(
+        scratch_session,
+        "motion-first-reading",
+        ReportType.MOTION,
+        datetime(2003, 10, 16),
+        "INSURANCE (AMENDMENT) BILL",
+        ["Bill read a First time."],
+    )
+    motion_second_reading_id = seed_bill_report(
+        scratch_session,
+        "motion-second-reading",
+        ReportType.MOTION,
+        datetime(2004, 4, 19),
+        "TRADE (AMENDMENT) BILL",
+        ["Order for Second Reading read."],
+    )
+    oral_answer_id = seed_bill_report(
+        scratch_session,
+        "oral-answer",
+        ReportType.ORAL_ANSWER,
+        datetime(1986, 12, 9),
+        "COPYRIGHT BILL",
+        ["Mr Lim asked when the Copyright Bill will become law."],
+    )
+    select_committee_id = seed_bill_report(
+        scratch_session,
+        "select-committee",
+        ReportType.MOTION,
+        datetime(1994, 8, 26),
+        "SELECT COMMITTEE ON THE MAINTENANCE OF PARENTS BILL",
+        ["That Mr Tan be added to the Select Committee on the Bill."],
+    )
+    electricity_id = seed_bill_report(
+        scratch_session,
+        "electricity",
+        ReportType.WRITTEN_ANSWER_NOT_AVAILABLE,
+        datetime(2004, 10, 19),
+        "UTILITIES BILL",
+        ["Mr Lee asked how many bills the Bill read a Third time is about."],
+    )
+    write_harvest(tmp_path)
+
+    plan = get_act_link_plan(scratch_session, tmp_path, [], [], [])
+
+    assert [
+        (planned_bill.title_key, planned_bill.report_ids, planned_bill.is_passed)
+        for planned_bill in plan.bills
+    ] == [
+        (
+            "insuranceamendmentbill",
+            [motion_first_reading_id, bill_id],
+            True,
+        ),
+        ("tradeamendmentbill", [motion_second_reading_id], False),
+    ]
+    assert {oral_answer_id, select_committee_id, electricity_id}.isdisjoint(
+        report_id
+        for planned_bill in plan.bills
+        for report_id in planned_bill.report_ids
+    )

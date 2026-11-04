@@ -42,11 +42,14 @@ from services.act_link import (
 )
 from services.act_link_write import ActLinkWrite, build_act_link_write
 from services.bill import (
+    BILL_TITLE_END_PATTERN,
     FIRST_READING_PATTERN,
     NOT_FIRST_READING_PATTERNS,
     NOT_THIRD_READING_PATTERNS,
+    SECOND_READING_PATTERN,
     THIRD_READING_PATTERN,
     group_bills,
+    is_other_type_bill_reading,
 )
 from utils.act_link_update import ActHistoryEntryUpdate
 
@@ -145,8 +148,13 @@ def get_act_link_plan(
     hand_kept_bills: list[HandKeptBill],
     hand_kept_act_links: list[HandKeptActLink],
 ) -> ActLinkPlan:
-    report_rows = CRUDReport(session).get_sitting_date_title_rows_by_report_types(
-        _BILL_REPORT_TYPES
+    bill_type_report_rows = CRUDReport(
+        session
+    ).get_sitting_date_title_rows_by_report_types(_BILL_REPORT_TYPES)
+    other_type_report_rows = CRUDReport(
+        session
+    ).get_sitting_date_title_rows_by_report_types_not_in_and_title_regex(
+        _BILL_REPORT_TYPES, BILL_TITLE_END_PATTERN
     )
     hand_kept_report_ids = [
         report_id
@@ -156,26 +164,60 @@ def get_act_link_plan(
     hand_kept_report_rows = CRUDReport(session).get_sitting_date_title_rows_by_ids(
         hand_kept_report_ids
     )
-    first_reading_report_ids = CRUDSpeech(
-        session
-    ).get_report_ids_by_report_types_and_transcript_regex_and_transcript_not_regexes(
-        _BILL_REPORT_TYPES, FIRST_READING_PATTERN, NOT_FIRST_READING_PATTERNS
+    other_report_ids = [
+        report_row.id for report_row in other_type_report_rows
+    ] + hand_kept_report_ids
+    first_reading_report_ids = frozenset(
+        CRUDSpeech(
+            session
+        ).get_report_ids_by_report_types_and_transcript_regex_and_transcript_not_regexes(
+            _BILL_REPORT_TYPES, FIRST_READING_PATTERN, NOT_FIRST_READING_PATTERNS
+        )
+    ) | frozenset(
+        CRUDSpeech(
+            session
+        ).get_report_ids_by_report_ids_and_transcript_regex_and_transcript_not_regexes(
+            other_report_ids, FIRST_READING_PATTERN, NOT_FIRST_READING_PATTERNS
+        )
     )
-    third_reading_report_ids = CRUDSpeech(
-        session
-    ).get_report_ids_by_report_types_and_transcript_regex_and_transcript_not_regexes(
-        _BILL_REPORT_TYPES, THIRD_READING_PATTERN, NOT_THIRD_READING_PATTERNS
+    third_reading_report_ids = frozenset(
+        CRUDSpeech(
+            session
+        ).get_report_ids_by_report_types_and_transcript_regex_and_transcript_not_regexes(
+            _BILL_REPORT_TYPES, THIRD_READING_PATTERN, NOT_THIRD_READING_PATTERNS
+        )
+    ) | frozenset(
+        CRUDSpeech(
+            session
+        ).get_report_ids_by_report_ids_and_transcript_regex_and_transcript_not_regexes(
+            other_report_ids, THIRD_READING_PATTERN, NOT_THIRD_READING_PATTERNS
+        )
     )
-    hand_kept_third_reading_report_ids = CRUDSpeech(
-        session
-    ).get_report_ids_by_report_ids_and_transcript_regex_and_transcript_not_regexes(
-        hand_kept_report_ids, THIRD_READING_PATTERN, NOT_THIRD_READING_PATTERNS
+    second_reading_report_ids = frozenset(
+        CRUDSpeech(
+            session
+        ).get_report_ids_by_report_ids_and_transcript_regex_and_transcript_not_regexes(
+            other_report_ids, SECOND_READING_PATTERN, ()
+        )
+    )
+    report_rows = sorted(
+        bill_type_report_rows
+        + [
+            report_row
+            for report_row in other_type_report_rows
+            if is_other_type_bill_reading(
+                report_row.title,
+                report_row.id in first_reading_report_ids,
+                report_row.id in second_reading_report_ids,
+                report_row.id in third_reading_report_ids,
+            )
+        ],
+        key=lambda report_row: (report_row.sitting_date, report_row.id),
     )
     bill_grouping = group_bills(
         report_rows,
-        frozenset(first_reading_report_ids),
-        frozenset(third_reading_report_ids)
-        | frozenset(hand_kept_third_reading_report_ids),
+        first_reading_report_ids,
+        third_reading_report_ids,
         bill_title_corrections,
         hand_kept_bills,
         hand_kept_report_rows,

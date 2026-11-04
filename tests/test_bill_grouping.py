@@ -6,7 +6,7 @@ from crud.report import ReportSittingDateTitleRow
 from exceptions import HansardHandKeptEntryError
 from schemas.bill_title_correction import BillTitleCorrection
 from schemas.hand_kept_bill import HandKeptBill
-from services.bill import BillGrouping, group_bills
+from services.bill import BillGrouping, group_bills, is_other_type_bill_reading
 from utils.title_key import get_title_key
 
 
@@ -416,3 +416,36 @@ def test_a_hand_kept_bill_listing_a_report_that_is_not_stored_raises() -> None:
             set(),
             hand_kept_bills=[_hand_kept_bill("ESTATE BILL", [1, 7])],
         )
+
+
+@pytest.mark.parametrize(
+    ("title", "is_first_reading", "is_second_reading", "is_third_reading", "expected"),
+    [
+        ("INSURANCE (AMENDMENT) BILL", True, False, False, True),
+        ("TRADE (AMENDMENT) BILL, 1960", False, True, False, True),
+        ("TRADE (AMENDMENT) BILL", False, False, True, True),
+        ("COPYRIGHT BILL", False, False, False, False),
+        ("SELECT COMMITTEE ON THE TRADE BILL", False, False, False, False),
+        (
+            "Impact of Amendments to Maintenance of Parents Bill Act",
+            True,
+            True,
+            True,
+            False,
+        ),
+        ("Bills of Exchange", True, True, True, False),
+    ],
+)
+def test_another_type_joins_the_grouping_when_its_title_ends_in_bill_and_it_holds_a_reading(
+    title: str,
+    is_first_reading: bool,
+    is_second_reading: bool,
+    is_third_reading: bool,
+    expected: bool,
+) -> None:
+    assert (
+        is_other_type_bill_reading(
+            title, is_first_reading, is_second_reading, is_third_reading
+        )
+        is expected
+    )
