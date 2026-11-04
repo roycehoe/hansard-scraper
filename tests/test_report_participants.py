@@ -2618,3 +2618,20 @@ def test_report_11641_member_who_only_mentions_a_question_number_stays_supplemen
         for participant in _summarise_participants(labelled_report.participants)
         if participant[4] in (1038, _VASOO_SPEAKER_ID)
     ] == [ParticipantRole.SUPPLEMENTARY, ParticipantRole.SUPPLEMENTARY]
+
+
+_REPORT_37970_TITLE = "PENG CHEE HIGH SCHOOL"
+_REPORT_37970_ROWS = """
+1 | UNCLASSIFIED |  |  | The following Question for Oral Answer stood on the Order Paper of 20th December, 1965 :-
+2 | SPEECH | 46 | Mr Poh Ber Liak | To ask the Minister for Education whether the Government intends to give any assistance to Peng Ghee High School for development, and if he will give details."
+3 | SPEECH | 46 | Mr Poh Ber Liak | Pursuant to Standing Order No. 20 (2), the Minister for Education supplied the following answer:-
+"""
+
+
+def test_report_37970_answer_supplied_under_a_standing_order_is_no_correction() -> None:
+    labelled_report = _label_report(_REPORT_37970_TITLE, _REPORT_37970_ROWS)
+
+    assert QuestionState.CORRECTION not in [
+        question_state[0]
+        for question_state in _summarise_states(labelled_report.states)
+    ]

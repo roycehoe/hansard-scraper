@@ -51,6 +51,7 @@ _CORRECTION_ROW_PATTERN = re.compile(
     r"\bsupplied\s+the\s+following\s+(?:additional\s+)?(?:answers?|information)\b",
     re.IGNORECASE,
 )
+_STANDING_ORDER_PATTERN = re.compile(r"standing\s+orders?\b", re.IGNORECASE)
 _PROCEDURAL_PATTERN = re.compile(
     r"point\s+of\s+(?:order|clarification|information|elucidation)"
     r"|out\s+of\s+order|standing\s+orders?|general\s+assent|may\s+i\s+reply"
@@ -854,7 +855,14 @@ def _get_correction_state(
 ) -> Optional[QuestionStateCandidate]:
     if _CORRECTION_TITLE_PATTERN.search(title):
         return QuestionStateCandidate(QuestionState.CORRECTION, title, None)
-    correction_row = _get_first_matching_row(speech_asker_rows, _CORRECTION_ROW_PATTERN)
+    correction_row = _get_first_matching_row(
+        [
+            speech_asker_row
+            for speech_asker_row in speech_asker_rows
+            if not _STANDING_ORDER_PATTERN.search(speech_asker_row.transcript)
+        ],
+        _CORRECTION_ROW_PATTERN,
+    )
     if correction_row is None:
         return None
     return QuestionStateCandidate(
