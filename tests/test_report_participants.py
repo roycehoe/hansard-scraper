@@ -22,6 +22,7 @@ from services.report_participant import (
     get_not_a_question_state,
     get_participants,
     get_question_states,
+    read_inline_speakers,
 )
 from utils.asker_candidate import AskerCandidate
 from utils.office import Office
@@ -80,6 +81,7 @@ def _label_report(
     rows_text: str,
     printed_name_to_speaker_id: Optional[dict[str, int]] = None,
     speaker_id_to_office: Optional[dict[int, Office]] = None,
+    inline_label_to_speaker_id: Optional[dict[str, int]] = None,
 ) -> _LabelledReport:
     speech_asker_rows = _parse_rows(rows_text)
     asker_candidates = _resolve_asker_candidates(
@@ -94,7 +96,7 @@ def _label_report(
             [], build_report_question_states(_REPORT_ID, [not_a_question_state])
         )
     participant_candidates = get_participants(
-        speech_asker_rows,
+        read_inline_speakers(speech_asker_rows, (inline_label_to_speaker_id or {}).get),
         asker_candidates,
         question_row_ordinals,
         speaker_id_to_office or {},
@@ -2458,3 +2460,73 @@ def test_question_the_record_says_was_not_asked_aloud_gets_the_state(
     assert _summarise_states(labelled_report.states) == [
         (QuestionState.NOT_ASKED_ALOUD, printed_line.transcript, line_ordinal)
     ]
+
+
+_REPORT_26319_TITLE = "Households paying quit rent"
+_REPORT_26319_ROWS = """
+1 | SPEECH | 619 | Mr Charles Chong | asked the Minister for Law what percentage of households in Singapore are required to pay quit rent and whether his Ministry will review the need to impose quit rent.
+2 | SPEECH | 619 | Mr Charles Chong | Prof. S. Jayakumar:
+3 | SPEECH | 619 | Mr Charles Chong | Currently, 2,705 households pay quit rent.
+"""
+_REPORT_37816_TITLE = "Postage rates"
+_REPORT_37816_ROWS = """
+1 | SPEECH | 37 | Mr S. V. Lingam | asked the Deputy Prime Minister whether he will consider revising the postage for local letters to the pre-Malaysia rate. i.e. ten cents.
+2 | SPEECH | 37 | Mr S. V. Lingam | Dr Toh Chin Chye : The postage rate on inland letters in Malaysia was raised from 10 cents to 15 cents as from 16th November, 1964 by the Government of Malaysia for the following reasons:
+"""
+_REPORT_30635_TITLE = "Public perception of Total Defence"
+_REPORT_30635_ROWS = """
+1 | SPEECH | 477 | Dr Ong Chit Chung | asked the First Deputy Prime Minister and Minister for Defence what is his assessment of the public perception and support for Total Defence.
+2 | SPEECH | 477 | Dr Ong Chit Chung | The Second Minister for Defence (Policy)(Dr Yeo Ning Hong)(for the First Deputy Prime Minister and Minister for Defence): Mr Speaker, Sir, the concept of Total Defence was introduced in 1984.
+"""
+
+
+@pytest.mark.parametrize(
+    ("title", "rows_text", "inline_label", "speaker_id", "role_source"),
+    [
+        pytest.param(
+            _REPORT_26319_TITLE,
+            _REPORT_26319_ROWS,
+            "Prof. S. Jayakumar",
+            1,
+            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            id="26319",
+        ),
+        pytest.param(
+            _REPORT_37816_TITLE,
+            _REPORT_37816_ROWS,
+            "Dr Toh Chin Chye",
+            2,
+            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            id="37816",
+        ),
+        pytest.param(
+            _REPORT_30635_TITLE,
+            _REPORT_30635_ROWS,
+            "The Second Minister for Defence (Policy)(Dr Yeo Ning Hong)(for the First Deputy Prime Minister and Minister for Defence)",
+            3,
+            ParticipantRoleSource.OFFICE_LABEL,
+            id="30635",
+        ),
+    ],
+)
+def test_answer_printed_under_the_askers_label_with_the_name_inline_gives_the_answerer(
+    title: str,
+    rows_text: str,
+    inline_label: str,
+    speaker_id: int,
+    role_source: ParticipantRoleSource,
+) -> None:
+    labelled_report = _label_report(
+        title,
+        rows_text,
+        speaker_id_to_office={
+            speaker_id: Office("Minister for Law", OfficeSource.ATTENDANCE_LIST)
+        },
+        inline_label_to_speaker_id={inline_label: speaker_id},
+    )
+
+    assert [
+        (participant.role, participant.role_source, participant.printed_name)
+        for participant in labelled_report.participants
+        if participant.role == ParticipantRole.ANSWERER
+    ] == [(ParticipantRole.ANSWERER, role_source, inline_label)]

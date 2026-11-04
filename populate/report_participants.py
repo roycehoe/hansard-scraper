@@ -1,6 +1,8 @@
 from collections import Counter, defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from datetime import datetime
+from functools import partial
 from typing import Optional, Union
 
 from sqlmodel import Session
@@ -34,6 +36,7 @@ from services.report_participant import (
     get_not_a_question_state,
     get_participants,
     get_question_states,
+    read_inline_speakers,
 )
 from services.speaker_link import resolve_speech_speaker_id
 from utils.asker_candidate import AskerCandidate
@@ -283,6 +286,7 @@ def _build_planned_rows(
     speech_asker_rows: list[SpeechAskerRow],
     asker_candidates: list[AskerCandidate],
     speaker_id_to_office: dict[int, Office],
+    get_inline_speaker_id: Callable[[str], Optional[int]],
 ) -> _PlannedRows:
     question_row_ordinals = get_question_row_ordinals(speech_asker_rows)
     not_a_question_state = get_not_a_question_state(
@@ -293,7 +297,10 @@ def _build_planned_rows(
             [], build_report_question_states(report_row.id, [not_a_question_state])
         )
     participant_candidates = get_participants(
-        speech_asker_rows, asker_candidates, question_row_ordinals, speaker_id_to_office
+        read_inline_speakers(speech_asker_rows, get_inline_speaker_id),
+        asker_candidates,
+        question_row_ordinals,
+        speaker_id_to_office,
     )
     return _PlannedRows(
         build_report_participants(report_row.id, participant_candidates),
@@ -439,6 +446,13 @@ def get_report_participant_plan(
                     _get_header_offices(
                         report_row, lookups, name_parliament_number_to_speaker_id
                     ),
+                ),
+                partial(
+                    resolve_speech_speaker_id,
+                    parliament_number=report_row.parliament_number,
+                    sitting_date=report_row.sitting_date,
+                    lookups=lookups,
+                    name_parliament_number_to_speaker_id=name_parliament_number_to_speaker_id,
                 ),
             )
             group = get_group(report_row.parliament_number)

@@ -1,4 +1,5 @@
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from typing import Optional, Union
 
@@ -27,9 +28,11 @@ from utils.office import (
 _MAX_CALLED_QUESTION_WORDS = 30
 _MAX_CHAIR_NAME_CALL_WORDS = 8
 _MAX_EXCLAMATION_QUIP_WORDS = 6
+_MAX_INLINE_SPEAKER_LABEL_WORDS = 8
 _MAX_QUESTION_QUIP_WORDS = 8
 _MAX_REPLY_TO_CHAIR_WORDS = 6
 _MINISTER_CALL_TITLE = "Minister "
+_THE_PREFIX = "The "
 _ROLE_ORDER = tuple(ParticipantRole)
 
 _CHAIR_NAME_CALL_PATTERN = re.compile(
@@ -61,6 +64,12 @@ _ASKING_PATTERN = re.compile(
     r"(?:minister|secretary)\b[^?]*\?\s*$",
     re.IGNORECASE,
 )
+_INLINE_SPEAKER_PATTERN = re.compile(
+    r"^\s*(?P<label>(?:"
+    + "|".join(re.escape(title) for title in (*TITLE_PREFIXES, _THE_PREFIX))
+    + r")[^:?!;]{0,150}?)\s*:"
+)
+_BRACKET_PATTERN = re.compile(r"\([^)]*\)?")
 _CALLED_QUESTION_PATTERN = re.compile(
     r"\bquestions?\s+(?:nos?\.?\s*|number\s*)?\d+", re.IGNORECASE
 )
@@ -126,6 +135,42 @@ def _get_person_key(speaker_id: Optional[int], printed_name: str) -> Union[int, 
     if speaker_id is None:
         return printed_name
     return speaker_id
+
+
+def _get_inline_speaker_label(transcript: str) -> Optional[str]:
+    match = _INLINE_SPEAKER_PATTERN.search(transcript)
+    if match is None:
+        return None
+    label = match.group("label")
+    unbracketed_label = _BRACKET_PATTERN.sub("", label)
+    if "," in unbracketed_label:
+        return None
+    if len(unbracketed_label.split()) > _MAX_INLINE_SPEAKER_LABEL_WORDS:
+        return None
+    return label
+
+
+def read_inline_speakers(
+    speech_asker_rows: list[SpeechAskerRow],
+    get_speaker_id: Callable[[str], Optional[int]],
+) -> list[SpeechAskerRow]:
+    inline_speaker_rows: list[SpeechAskerRow] = []
+    for speech_asker_row in speech_asker_rows:
+        label = (
+            _get_inline_speaker_label(speech_asker_row.transcript)
+            if speech_asker_row.speaker is not None
+            and speech_asker_row.kind in (None, SpeechKind.SPEECH)
+            and not CHAIR_FORM_PATTERN.search(speech_asker_row.speaker)
+            else None
+        )
+        speaker_id = None if label is None else get_speaker_id(label)
+        if speaker_id is None or speaker_id == speech_asker_row.speaker_id:
+            inline_speaker_rows.append(speech_asker_row)
+            continue
+        inline_speaker_rows.append(
+            replace(speech_asker_row, speaker=label, speaker_id=speaker_id)
+        )
+    return inline_speaker_rows
 
 
 def _get_participant_rows(
