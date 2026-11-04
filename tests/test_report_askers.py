@@ -928,9 +928,7 @@ def test_stood_line_that_prints_no_name_leaves_the_next_to_ask_row_to_its_own_me
     ]
 
 
-def test_footnote_form_of_a_stood_line_credits_no_one_and_the_asked_row_is_kept() -> (
-    None
-):
+def test_report_38368_footnote_stood_lines_with_a_dash_credit_both_filers() -> None:
     speech_asker_rows = [
         _build_row(
             1,
@@ -980,6 +978,24 @@ def test_footnote_form_of_a_stood_line_credits_no_one_and_the_asked_row_is_kept(
 
     assert asker_candidates == [
         AskerCandidate(
+            row_ordinal=2,
+            source=ReportAskerSource.STOOD_IN_NAME_LINE,
+            printed_name="Mr Low Por Tuck",
+            speaker_id=None,
+            reader_printed_name=None,
+            reader_speaker_id=None,
+            reader_row_ordinal=None,
+        ),
+        AskerCandidate(
+            row_ordinal=4,
+            source=ReportAskerSource.STOOD_IN_NAME_LINE,
+            printed_name="Mr Tee Kim Leng",
+            speaker_id=None,
+            reader_printed_name=None,
+            reader_speaker_id=None,
+            reader_row_ordinal=None,
+        ),
+        AskerCandidate(
             row_ordinal=6,
             source=ReportAskerSource.ASKED_LINE,
             printed_name="Mr Ong Chang Sam",
@@ -987,7 +1003,7 @@ def test_footnote_form_of_a_stood_line_credits_no_one_and_the_asked_row_is_kept(
             reader_printed_name=None,
             reader_speaker_id=None,
             reader_row_ordinal=None,
-        )
+        ),
     ]
 
 
@@ -2353,3 +2369,52 @@ def test_report_27802_asker_who_calls_his_own_question_alone_keeps_the_asker() -
         (asker_candidate.printed_name, asker_candidate.speaker_id)
         for asker_candidate in get_asker_candidates(speech_asker_rows)
     ] == [("Mr J.B. Jeyaretnam", 638)]
+
+
+def test_report_38367_footnote_stood_line_credits_the_filer_who_rises() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "Question No. 5* stood in the name of Mr Ong Chang Sam.",
+        ),
+        _build_row(
+            2,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "* Question No. 5 reads as follows:-",
+        ),
+        _build_row(
+            3,
+            SpeechKind.DOCUMENT_TEXT,
+            None,
+            None,
+            "To ask the Minister for Finance when will the Rueff Report be presented to this Assembly.",
+        ),
+        _build_row(4, SpeechKind.SPEECH, "Mr Speaker", 1352, "Mr Ong Chang Sam."),
+        _build_row(
+            5,
+            SpeechKind.SPEECH,
+            "Mr Ong Chang Sam (Choa Chu Kang)",
+            1383,
+            "Mr Speaker, Sir, this House has only just now received a report on the Common Market.",
+        ),
+        _build_row(
+            6,
+            SpeechKind.SPEECH,
+            "Mr David Marshall",
+            1349,
+            "asked the Minister for Finance whether he would consider tabling the Rueff Report.",
+        ),
+    ]
+
+    assert [
+        (asker_candidate.source, asker_candidate.printed_name)
+        for asker_candidate in get_asker_candidates(speech_asker_rows)
+    ] == [
+        (ReportAskerSource.STOOD_IN_NAME_LINE, "Mr Ong Chang Sam."),
+        (ReportAskerSource.ASKED_LINE, "Mr David Marshall"),
+    ]
