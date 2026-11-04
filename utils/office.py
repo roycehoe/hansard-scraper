@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
-from enums import OfficeClass
+from enums import OfficeClass, OfficeSource
 from utils.names import (
     CHAIR_FORM_PATTERN,
     CLOSING_PARENTHESIS,
@@ -42,6 +42,12 @@ _GOVERNMENT_OFFICE_PATTERN = re.compile(
     r"\bministers?\b|parliamentary secretary|leader of the house|attorney"
     r"|chief secretary|financial secretary"
 )
+
+
+@dataclass(frozen=True)
+class Office:
+    printed: str
+    source: OfficeSource
 
 
 @dataclass(frozen=True)

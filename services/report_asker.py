@@ -308,6 +308,40 @@ def get_asker_candidates(
     return asker_candidates
 
 
+def _is_question_row(speech_asker_row: SpeechAskerRow) -> bool:
+    if _ASKED_LINE_PATTERN.search(speech_asker_row.transcript):
+        return True
+    if _TO_ASK_LINE_PATTERN.search(speech_asker_row.transcript):
+        return True
+    if _get_name_in_text_candidate(speech_asker_row) is not None:
+        return True
+    if speech_asker_row.speaker is None:
+        return False
+    if CHAIR_FORM_PATTERN.search(speech_asker_row.speaker):
+        return False
+    if _READ_OUT_PATTERN.search(speech_asker_row.transcript):
+        return True
+    return (
+        _ABSENT_FILER_READ_OUT_PATTERN.search(speech_asker_row.transcript) is not None
+    )
+
+
+def get_question_row_ordinals(
+    speech_asker_rows: list[SpeechAskerRow],
+) -> frozenset[int]:
+    question_row_ordinals = {
+        speech_asker_row.ordinal
+        for speech_asker_row in speech_asker_rows
+        if _is_question_row(speech_asker_row)
+    }
+    for stood_line in _get_stood_lines(speech_asker_rows):
+        question_row_ordinals.add(speech_asker_rows[stood_line.row_index].ordinal)
+        question_row_index = stood_line.row_index + 1
+        if question_row_index < len(speech_asker_rows):
+            question_row_ordinals.add(speech_asker_rows[question_row_index].ordinal)
+    return frozenset(question_row_ordinals)
+
+
 def build_report_askers(
     report_id: int, asker_candidates: list[AskerCandidate]
 ) -> list[ReportAsker]:

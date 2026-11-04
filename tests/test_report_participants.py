@@ -1,0 +1,2020 @@
+from dataclasses import dataclass, replace
+from typing import Optional
+
+import pytest
+
+from crud.speech import SpeechAskerRow
+from database.report_participant import ReportParticipant
+from database.report_question_state import ReportQuestionState
+from enums import (
+    OfficeClass,
+    OfficeSource,
+    ParticipantRole,
+    ParticipantRoleSource,
+    QuestionState,
+    ReportAskerSource,
+    SpeechKind,
+)
+from services.report_asker import get_asker_candidates, get_question_row_ordinals
+from services.report_participant import (
+    build_report_participants,
+    build_report_question_states,
+    get_not_a_question_state,
+    get_participants,
+    get_question_states,
+)
+from utils.asker_candidate import AskerCandidate
+from utils.office import Office
+
+_REPORT_ID = 1
+_ROW_COLUMN_SEPARATOR = " | "
+
+
+@dataclass(frozen=True)
+class _LabelledReport:
+    participants: list[ReportParticipant]
+    states: list[ReportQuestionState]
+
+
+def _parse_rows(rows_text: str) -> list[SpeechAskerRow]:
+    speech_asker_rows: list[SpeechAskerRow] = []
+    for line in rows_text.strip().splitlines():
+        ordinal, kind, speaker_id, speaker, transcript = line.split(
+            _ROW_COLUMN_SEPARATOR, maxsplit=4
+        )
+        speech_asker_rows.append(
+            SpeechAskerRow(
+                id=int(ordinal),
+                report_id=_REPORT_ID,
+                ordinal=int(ordinal),
+                speaker=speaker or None,
+                transcript=transcript,
+                kind=SpeechKind(kind) if kind else None,
+                speaker_id=int(speaker_id) if speaker_id else None,
+            )
+        )
+    return speech_asker_rows
+
+
+def _resolve_asker_candidates(
+    asker_candidates: list[AskerCandidate],
+    printed_name_to_speaker_id: dict[str, int],
+) -> list[AskerCandidate]:
+    return [
+        replace(
+            asker_candidate,
+            speaker_id=printed_name_to_speaker_id.get(
+                asker_candidate.printed_name, asker_candidate.speaker_id
+            ),
+        )
+        for asker_candidate in asker_candidates
+    ]
+
+
+def _label_report(
+    title: str,
+    rows_text: str,
+    printed_name_to_speaker_id: Optional[dict[str, int]] = None,
+    speaker_id_to_office: Optional[dict[int, Office]] = None,
+) -> _LabelledReport:
+    speech_asker_rows = _parse_rows(rows_text)
+    asker_candidates = _resolve_asker_candidates(
+        get_asker_candidates(speech_asker_rows), printed_name_to_speaker_id or {}
+    )
+    question_row_ordinals = get_question_row_ordinals(speech_asker_rows)
+    not_a_question_state = get_not_a_question_state(
+        title, asker_candidates, question_row_ordinals
+    )
+    if not_a_question_state is not None:
+        return _LabelledReport(
+            [], build_report_question_states(_REPORT_ID, [not_a_question_state])
+        )
+    participant_candidates = get_participants(
+        speech_asker_rows,
+        asker_candidates,
+        question_row_ordinals,
+        speaker_id_to_office or {},
+    )
+    question_state_candidates = get_question_states(
+        title, speech_asker_rows, participant_candidates
+    )
+    return _LabelledReport(
+        build_report_participants(_REPORT_ID, participant_candidates),
+        build_report_question_states(_REPORT_ID, question_state_candidates),
+    )
+
+
+def _summarise_participants(
+    report_participants: list[ReportParticipant],
+) -> list[tuple[ParticipantRole, ParticipantRoleSource, int, str, Optional[int]]]:
+    return [
+        (
+            report_participant.role,
+            report_participant.role_source,
+            report_participant.first_ordinal,
+            report_participant.printed_name,
+            report_participant.speaker_id,
+        )
+        for report_participant in report_participants
+    ]
+
+
+def _summarise_office_marks(
+    report_participants: list[ReportParticipant],
+) -> list[
+    tuple[
+        ParticipantRole,
+        Optional[int],
+        Optional[str],
+        Optional[str],
+        Optional[OfficeClass],
+        Optional[OfficeSource],
+    ]
+]:
+    return [
+        (
+            report_participant.role,
+            report_participant.speaker_id,
+            report_participant.answering_for_printed,
+            report_participant.office_printed,
+            report_participant.office_class,
+            report_participant.office_source,
+        )
+        for report_participant in report_participants
+        if report_participant.answering_for_printed is not None
+        or report_participant.office_printed is not None
+    ]
+
+
+def _summarise_states(
+    report_question_states: list[ReportQuestionState],
+) -> list[tuple[QuestionState, str, Optional[int]]]:
+    return [
+        (
+            report_question_state.state,
+            report_question_state.printed_text,
+            report_question_state.first_ordinal,
+        )
+        for report_question_state in report_question_states
+    ]
+
+
+_REPORT_11789_TITLE = "Tougher Stance on Drug Traffickers and Syndicates"
+_REPORT_11789_ROWS = """
+1 | PROCEDURAL |  |  | The following question stood in the name of Mr Christopher de Souza –
+2 | SPEECH | 1033 | Mr Christopher de Souza | 9 To ask the Minister for Home Affairs whether there is an upward trend of drug syndicates
+3 | SPEECH | 1033 | Mr Christopher de Souza | asked the Minister for Home Affairs (a) what is the Ministry’s position on the research paper
+4 | SPEECH | 1111 | Mr Speaker | Can someone ask the Question on his behalf?
+5 | SPEECH | 1043 | Mr Cedric Foo Chee Keng (Pioneer) | Question No 9.
+6 | SPEECH | 1109 | The Senior Parliamentary Secretary to the Minister for Home Affairs (Ms Sun Xueling) (for the Minister for Home Affairs) | Mr Speaker, with your permission, may I take Question Nos 9 and 10 together?
+7 | SPEECH | 1111 | Mr Speaker | Yes, please.
+8 | SPEECH | 1109 | Ms Sun Xueling | Drugs destroy lives and impose immense costs on individuals and society. Besides tangible costs,
+9 | SPEECH | 1109 | Ms Sun Xueling | The research paper attempted to quantify the costs to Singapore of drug crime, both tangible and
+10 | SPEECH | 1109 | Ms Sun Xueling | The high costs drugs impose on society is one reason why we must maintain our firm stance against
+11 | SPEECH | 1109 | Ms Sun Xueling | CNB has not yet detected any trend of drug syndicates deliberately targeting young persons, be it
+12 | SPEECH | 1109 | Ms Sun Xueling | Nevertheless, we take this risk very seriously. We have strengthened our legislative framework and
+13 | SPEECH | 1109 | Ms Sun Xueling | In 2012, the Misuse of Drugs Act (MDA) was amended to provide for an offence for any adult who
+14 | SPEECH | 1109 | Ms Sun Xueling | In 2019, MDA was further amended to provide more protection to children below 16 years of age and
+15 | SPEECH | 1111 | Mr Speaker | Mr Christopher de Souza.
+16 | SPEECH | 1033 | Mr Christopher de Souza (Holland-Bukit Timah) | I thank the Senior Parliamentary Secretary for the response. The question is, in light of the
+17 | SPEECH | 1109 | Ms Sun Xueling | I thank the Member for his questions. Indeed, the push for drug legalisation around the world is a
+18 | SPEECH | 1109 | Ms Sun Xueling | We have now undertaken this study. We hope to add to the literature so that more are aware about
+19 | SPEECH | 1109 | Ms Sun Xueling | At the same time, we are also stepping up our education outreach. We understand that preventive
+20 | SPEECH | 1109 | Ms Sun Xueling | At the end of the day, what we are going to do is going to be guided by research. At the same time,
+"""
+_REPORT_18268_TITLE = "Source Countries for Construction Workers"
+_REPORT_18268_ROWS = """
+1 | PROCEDURAL |  |  | The following questions stood in the name of Mr R Dhinakaran –
+2 | SPEECH | 987 | Mr R Dhinakaran | 3 To ask the Acting Minister for Manpower (a) whether Filipino and Sri Lankan construction workers
+3 | SPEECH | 987 | Mr R Dhinakaran | 4 To ask the Acting Minister for Manpower in light of better-skilled Filipino construction workers
+4 | SPEECH | 984 | Mr Patrick Tay Teck Guan (Nee Soon) | Question No 3, Madam.
+5 | SPEECH | 995 | The Acting Minister for Manpower (Mr Tan Chuan-Jin) | Mdm Speaker, last year, BCA appointed Singapore-based companies to set up Overseas Testing Centres
+6 | SPEECH | 995 | The Acting Minister for Manpower (Mr Tan Chuan-Jin) | We are, indeed, making a deliberate move to opt for quality over cost. We are achieving this in
+7 | SPEECH | 995 | The Acting Minister for Manpower (Mr Tan Chuan-Jin) | MOM and MND/BCA will also be consulting the industry to explore having a minimum percentage of R1
+8 | SPEECH | 934 | Mdm Speaker | Mr Dhinakaran, Question No 4.
+9 | SPEECH | 987 | Mr R Dhinakaran (Nominated Member) | Question No 4, Mdm Speaker.
+10 | SPEECH | 995 | Mr Tan Chuan-Jin | My apologies, Mdm Speaker, in my prior answer, if I could have retrospectively requested your
+11 | SPEECH | 934 | Mdm Speaker | Okay. The two questions were combined. Mr Dhinakaran.
+12 | SPEECH | 987 | Mr R Dhinakaran | Thank you, Madam. I thank the Acting Minister for the explanation. I wish to ask a supplementary
+13 | SPEECH | 987 | Mr R Dhinakaran | Another question is: in this Budget, Deputy Prime Minister mentioned the other day that the maximum
+14 | SPEECH | 995 | Mr Tan Chuan-Jin | Mdm Speaker, we are not particularly reducing the supply of workers from some of these existing
+"""
+_REPORT_45746_TITLE = "Impact of Local Qualifying Salary Requirement and Expansion of Progressive Wage Model on Costs, Productivity and Jobs"
+_REPORT_45746_ROWS = """
+1 | SPEECH | 1216 | Mr Sharael Taha | asked the Minister for Manpower (a) how does the Ministry
+2 | SPEECH | 1164 | Ms He Ting Ru | asked the Minister for Manpower (a) for each of the last
+3 | SPEECH | 1208 | Miss Rachel Ong | asked the Minister for Manpower (a) how will employers be
+4 | SPEECH | 1208 | Miss Rachel Ong | asked the Minister for Manpower (a) what are the
+5 | SPEECH | 1172 | Ms Jessica Tan Soon Neo | asked the Minister for Manpower in light of the expanding
+6 | SPEECH | 1172 | Ms Jessica Tan Soon Neo | asked the Minister for Manpower in light of the expanding
+7 | SPEECH | 1205 | Ms Hazel Poa | asked the Minister for Manpower how many Singaporean
+8 | SPEECH | 1153 | Mr Edward Chia Bing Hui | asked the Minister for Manpower how does the Ministry
+9 | SPEECH | 1142 | Miss Cheng Li Hui | asked the Minister for Manpower with the proposed increase
+10 | SPEECH | 1183 | Mr Liang Eng Hwa | asked the Minister for Manpower (a) what transitory support
+11 | SPEECH | 1153 | Mr Edward Chia Bing Hui | asked the Minister for Manpower (a) how is the Local
+12 | SPEECH | 1153 | Mr Edward Chia Bing Hui | asked the Minister for Manpower (a) how does the Ministry
+13 | SPEECH | 1150 | Mr Desmond Choo | asked the Minister for Manpower in light of the tightened
+14 | SPEECH | 1198 | Ms Ng Ling Ling | asked the Minister for Manpower in view of increases in
+15 | SPEECH | 1239 | The Senior Minister of State for Manpower (Mr Zaqy Mohamad) (for the Minister of Manpower) | Mr Speaker, with your permission, I would like to take
+16 | SPEECH | 1223 | Mr Speaker | Please do.
+17 | SPEECH | 1239 | Mr Zaqy Mohamad | I thank Members for their interest in the recent
+18 | SPEECH | 1239 | Mr Zaqy Mohamad | The Workgroup's vision is for a strengthened social compact
+19 | SPEECH | 1239 | Mr Zaqy Mohamad | Uplifting lower-wage workers has been a priority for the
+20 | SPEECH | 1239 | Mr Zaqy Mohamad | Mr Speaker, building on the foundation of Workfare, the
+21 | SPEECH | 1239 | Mr Zaqy Mohamad | Over the last decade, our policies to support lower-wage
+22 | SPEECH | 1239 | Mr Zaqy Mohamad | Low-income households would, therefore, benefit from our
+23 | SPEECH | 1239 | Mr Zaqy Mohamad | The Workgroup achieved tripartite consensus on 18
+24 | SPEECH | 1239 | Mr Zaqy Mohamad | First, we will expand Progressive Wages to new sectors like
+25 | SPEECH | 1239 | Mr Zaqy Mohamad | Second, we will introduce a new Local Qualifying Salary
+26 | SPEECH | 1239 | Mr Zaqy Mohamad | Third, we will introduce the Progressive Wage Mark, or PW
+27 | SPEECH | 1239 | Mr Zaqy Mohamad | The Workgroup has not deviated from the broad principle
+28 | SPEECH | 1239 | Mr Zaqy Mohamad | Mr Edward Chia and Mr Sharael Taha asked about the
+29 | SPEECH | 1239 | Mr Zaqy Mohamad | These will be done by sectoral Tripartite Clusters for the
+30 | SPEECH | 1239 | Mr Zaqy Mohamad | Tripartism is our strength, and some say our secret sauce,
+31 | SPEECH | 1239 | Mr Zaqy Mohamad | If wage growth of our lower-wage workers outpace
+32 | SPEECH | 1239 | Mr Zaqy Mohamad | For many years, firms hiring foreign workers have been
+33 | SPEECH | 1239 | Mr Zaqy Mohamad | To Ms He Ting Ru’s query, there are 103,000 full-time
+34 | SPEECH | 1239 | Mr Zaqy Mohamad | With the new LQS requirement, an estimated 77% of these
+35 | SPEECH | 1239 | Mr Zaqy Mohamad | To Ms Hazel Poa’s query, the remaining 23%, who are not
+36 | SPEECH | 1239 | Mr Zaqy Mohamad | While not formally covered by the LQS requirement, these
+37 | SPEECH | 1239 | Mr Zaqy Mohamad | Some Members, including Mr Yip Hon Weng, asked about how
+38 | SPEECH | 1239 | Mr Zaqy Mohamad | We recognise that the new LQS requirement in 2022 will have
+39 | SPEECH | 1239 | Mr Zaqy Mohamad | I urge Members not to look at each measure in isolation but
+40 | SPEECH | 1239 | Mr Zaqy Mohamad | Members have also asked about the implementation details. I
+41 | SPEECH | 1239 | Mr Zaqy Mohamad | To Mr Edward Chia’s query, firms that hire foreign workers
+42 | SPEECH | 1239 | Mr Zaqy Mohamad | In designing the system to support the new moves, we will
+43 | SPEECH | 1239 | Mr Zaqy Mohamad | Employers will also be able to refer to MOM’s website to
+44 | SPEECH | 1239 | Mr Zaqy Mohamad | To Mr Liang Eng Hwa’s query on how the PW Mark will be
+45 | SPEECH | 1239 | Mr Zaqy Mohamad | Mr Speaker, Sir, uplifting lower-wage workers is a
+46 | SPEECH | 1239 | Mr Zaqy Mohamad | The Government will do its part, too. With respect to
+47 | SPEECH | 1239 | Mr Zaqy Mohamad | With respect to workers, I have already touched on the
+48 | SPEECH | 1239 | Mr Zaqy Mohamad | Miss Rachel Ong asked why we are lowering the Workfare
+49 | SPEECH | 1239 | Mr Zaqy Mohamad | For workers aged 30 to 34, however, some continued to
+50 | SPEECH | 1239 | Mr Zaqy Mohamad | Miss Cheng Li Hui and other Members asked if businesses
+51 | SPEECH | 1239 | Mr Zaqy Mohamad | I, therefore, hope that Singaporeans will not accuse firms
+52 | SPEECH | 1239 | Mr Zaqy Mohamad | Because the growth of Progressive Wages is negotiated
+53 | SPEECH | 1239 | Mr Zaqy Mohamad | Mr Speaker, Sir, the effort to uplift our lower-wage
+54 | SPEECH | 1239 | Mr Zaqy Mohamad | The Government has committed to providing transitional
+55 | SPEECH | 1223 | Mr Speaker | Ms Jessica Tan.
+56 | SPEECH | 1172 | Ms Jessica Tan Soon Neo (East Coast) | Thank you, Mr Speaker. I thank the Senior Minister of State
+57 | SPEECH | 1239 | Mr Zaqy Mohamad | I thank the Member for her question. In fact, as I have
+58 | SPEECH | 1239 | Mr Zaqy Mohamad | Speaking to employers, I know some are also concerned that
+59 | SPEECH | 1239 | Mr Zaqy Mohamad | On LQS, this is a measure that most employers are already
+60 | SPEECH | 1239 | Mr Zaqy Mohamad | So, look forward to some of the upcoming PWMs – food
+61 | SPEECH | 1239 | Mr Zaqy Mohamad | So, looking at all these wage benchmarks and wage ladders
+62 | SPEECH | 1223 | Mr Speaker | Ms Hazel Poa.
+63 | SPEECH | 1205 | Ms Hazel Poa (Non-Constituency Member) | I thank the Senior Minister of State for his reply. I would
+64 | SPEECH | 1205 | Ms Hazel Poa (Non-Constituency Member) | Firstly, would employers who wish to employ foreigners no
+65 | SPEECH | 1205 | Ms Hazel Poa (Non-Constituency Member) | Last question: the Senior Minister of State mentioned that
+66 | SPEECH | 1239 | Mr Zaqy Mohamad | I thank Ms Hazel Poa for her query. In fact, in response, I
+67 | SPEECH | 1239 | Mr Zaqy Mohamad | Also, bear in mind that the remainder that is left are
+68 | SPEECH | 1239 | Mr Zaqy Mohamad | On the Member's second question on part-timers, if you look
+69 | SPEECH | 1223 | Mr Speaker | Mr Edward Chia.
+70 | SPEECH | 1153 | Mr Edward Chia Bing Hui (Holland-Bukit Timah) | Mr Speaker, I would like to ask the Senior Minister of
+71 | SPEECH | 1239 | Mr Zaqy Mohamad | I thank Mr Chia for his questions.
+72 | SPEECH | 1239 | Mr Zaqy Mohamad | Two things: one, let me just start with the LQS. I think I
+73 | SPEECH | 1239 | Mr Zaqy Mohamad | It will be a light touch up front. But I am quite sure
+74 | SPEECH | 1239 | Mr Zaqy Mohamad | On the second question on firm level productivity and
+75 | SPEECH | 1239 | Mr Zaqy Mohamad | I will give an example. Like the securities sector, for
+76 | SPEECH | 1239 | Mr Zaqy Mohamad | I think if you look at many other sectors, including
+77 | SPEECH | 1239 | Mr Zaqy Mohamad | These are ways in which they can offer more, use better
+78 | SPEECH | 1239 | Mr Zaqy Mohamad | This is one way in which when you look at productivity
+79 | SPEECH | 1172 | Mdm Deputy Speaker | Mr Gerald Giam.
+80 | SPEECH | 1160 | Mr Gerald Giam Yean Song (Aljunied) | Madam, I have one supplementary question. The LQS was not
+81 | SPEECH | 1239 | Mr Zaqy Mohamad | To answer the Member's question, maybe it is by coincidence
+82 | SPEECH | 1239 | Mr Zaqy Mohamad | The main goal of the LQS was also to ensure that
+83 | SPEECH | 1239 | Mr Zaqy Mohamad | Unlike minimum wage laws around the world, there is the
+84 | SPEECH | 1239 | Mr Zaqy Mohamad | This enables us to make a differentiation, but the overall
+85 | SPEECH | 1239 | Mr Zaqy Mohamad | On balance, maybe, perhaps, it is coincidental, but the
+86 | SPEECH | 1239 | Mr Zaqy Mohamad | We also have to manage over time and that is why we also
+87 | SPEECH | 1239 | Mr Zaqy Mohamad | These are quite complex matters which we need to give
+88 | SPEECH | 1172 | Mdm Deputy Speaker | Mr Yip Hon Weng.
+89 | SPEECH | 1238 | Mr Yip Hon Weng (Yio Chu Kang) | Thank you, Mdm Deputy Speaker. I thank the Senior Minister
+90 | SPEECH | 1239 | Mr Zaqy Mohamad | I thank the Member for the question. The short answer is
+91 | SPEECH | 1239 | Mr Zaqy Mohamad | But overall, that is why it is also important for our PWMs
+92 | SPEECH | 1172 | Mdm Deputy Speaker | Mr Leon Perera.
+"""
+_REPORT_6147_TITLE = "Review of Salary and Benefits for Educators and Staff in Mainstream Schools, Preschools and Special Education Schools"
+_REPORT_6147_ROWS = """
+1 | SPEECH | 1148 | Ms Denise Phua Lay Peng | asked the Minister for Education when and how are salary scale and benefit reviews conducted and
+2 | SPEECH | 1137 | The Minister for Education (Mr Chan Chun Sing) | Mr Deputy Speaker, Sir, MOE periodically reviews the salaries of officers in MOE schemes of service
+3 | SPEECH | 1137 | The Minister for Education (Mr Chan Chun Sing) | Salary adjustments take into consideration the size of the salary gaps compared to market
+4 | SPEECH | 1137 | The Minister for Education (Mr Chan Chun Sing) | MOE recently announced salary adjustments for all eligible Education Officers (EOs), Allied
+5 | SPEECH | 1137 | The Minister for Education (Mr Chan Chun Sing) | ECDA is separately conducting a salary review for Early Childhood educators in government-supported
+6 | SPEECH | 1137 | The Minister for Education (Mr Chan Chun Sing) | Special Education (SPED) schools are run by Social Service Agencies (SSAs). While SPED schools
+7 | SPEECH | 1137 | The Minister for Education (Mr Chan Chun Sing) | Nevertheless, MOE, in our role in overseeing the SPED sector, works closely with and supports the
+8 | SPEECH | 1137 | The Minister for Education (Mr Chan Chun Sing) | For non-teaching SPED school staff such as psychologists, the SSAs take reference from the NCSS
+9 | SPEECH | 1144 | Mr Deputy Speaker | Ms Denise Phua.
+10 | SPEECH | 1148 | Ms Denise Phua Lay Peng (Jalan Besar) | I thank the Minister for his comprehensive reply. Let me declare that I am a volunteer at several
+11 | SPEECH | 1148 | Ms Denise Phua Lay Peng (Jalan Besar) | Recently, when the announcement for MOE teachers or Education Officers was made, it created quite a
+12 | SPEECH | 1148 | Ms Denise Phua Lay Peng (Jalan Besar) | I think it is always good and would MOE consider that when it makes announcements of such nature,
+13 | SPEECH | 1148 | Ms Denise Phua Lay Peng (Jalan Besar) | Number two, I would like MOE to consider and communicate to the SSAs – either special schools or
+14 | SPEECH | 1137 | Mr Chan Chun Sing | Mr Deputy Speaker, Sir, to the first comment by Ms Denise Phua, yes, indeed, Public Service
+15 | SPEECH | 1137 | Mr Chan Chun Sing | On the second comment, we will continue to share our methodologies of how this is done in the
+16 | SPEECH | 1144 | Mr Deputy Speaker | Mr Leong Mun Wai.
+17 | SPEECH | 1182 | Mr Leong Mun Wai (Non-Constituency Member) | Thank you, Sir. It is important that in every sector in the economy, we must allocate some of our
+18 | SPEECH | 1182 | Mr Leong Mun Wai (Non-Constituency Member) | Secondly, in the long run, we must also ensure that every sector has a fair salary structure. For
+19 | SPEECH | 1144 | Mr Deputy Speaker | Sorry, Mr Leong Mun Wai, are you asking a question or are you —
+20 | SPEECH | 1182 | Mr Leong Mun Wai | Sir, I am asking the question whether there are plans in the future that will ensure that these
+21 | SPEECH | 1144 | Mr Christopher de Souza | Minister Chan Chun Sing.
+22 | SPEECH | 1137 | Mr Chan Chun Sing | Mr Deputy Speaker, Sir, to Mr Leong's first comment, yes, indeed, first of all, we try to get a
+23 | SPEECH | 1137 | Mr Chan Chun Sing | Specific to Mr Leong Mun Wai's question, Mr Leong might want to know or may already know that
+24 | SPEECH | 1137 | Mr Chan Chun Sing | On Mr Leong Mun Wai's second point about the salary structure, indeed, that is also what we have
+25 | SPEECH | 1137 | Mr Chan Chun Sing | But I would just like to raise one nuanced point. I think we should be very careful about
+26 | SPEECH | 1137 | Mr Chan Chun Sing | We look at it holistically. We look at some of the prior training that our people have, the
+"""
+_REPORT_6095_TITLE = (
+    "Cryptocurrency-related Scams Reported Annually in Past Three Years"
+)
+_REPORT_6095_ROWS = """
+1 | SPEECH | 1190 | Mr Melvin Yong Yik Chye | asked the Minister for Home Affairs (a) how many scams related to cryptocurrency have been reported
+2 | SPEECH | 1175 | Mr K Shanmugam | In 2019, the Police received 125 reports related to cryptocurrency scams. This increased to 397 in
+3 | SPEECH | 1175 | Mr K Shanmugam | The vast majority of cryptocurrency scams are perpetrated by scammers based outside Singapore. As
+4 | SPEECH | 1175 | Mr K Shanmugam | Nonetheless, we have stepped up our investigation efforts. The Police established a cryptocurrency
+5 | SPEECH | 1175 | Mr K Shanmugam | The best defence, however, is a discerning public. To that end, we have stepped up public education
+6 | SPEECH | 1175 | Mr K Shanmugam | Members of the public should practise healthy scepticism to ask, check and confirm, before making
+"""
+_REPORT_19273_TITLE = "Cost of Conducting the Recent Punggol East By-election"
+_REPORT_19273_ROWS = """
+1 | SPEECH | 996 | Asst Prof Tan Kheng Boon Eugene | asked the Prime Minister what is the cost of conducting the Punggol East by-election in January
+2 | SPEECH | 1001 | Mr Teo Chee Hean (for the Prime Minister) | The expenditure incurred by the Elections Department for the Punggol East By-Election in January
+"""
+_REPORT_11034_TITLE = "Updates on Matters Arising from High Court Judgment in Former Foreign Domestic Worker Parti Liyani's Case"
+_REPORT_11034_ROWS = """
+1 | SPEECH | 1195 | Mr Murali Pillai | asked the Minister for Home Affairs following the judgment of the High Court in _Parti Liyani v PP
+2 | SPEECH | 1224 | Dr Tan Wu Meng | asked the Minister for Home Affairs in respect of the High Court judgment in _Parti Liyani v PP
+3 | SPEECH | 1224 | Dr Tan Wu Meng | asked the Minister for Home Affairs over the last five years (a) what percentage of cases of theft
+4 | SPEECH | 1232 | Mr Vikram Nair | asked the Minister for Home Affairs whether there are any updates on its internal reviews of what
+5 | SPEECH | 1182 | Mr Leong Mun Wai | asked the Minister for Home Affairs whether he will appoint a committee of inquiry consisting of
+6 | SPEECH | 1199 | Mr Louis Ng Kok Kwang | asked the Minister for Home Affairs whether the Ministry will consider allowing foreign domestic
+7 | SPEECH | 1183 | Mr Liang Eng Hwa | asked the Minister for Home Affairs what has gone wrong in the chain of events related to the case
+8 | SPEECH | 1161 | Mr Derrick Goh | asked the Minister for Home Affairs what are the root causes that led to the procedural lapses on
+9 | SPEECH | 1232 | Mr Vikram Nair | asked the Minister for Law whether there are any updates on the Ministry's internal reviews of what
+10 | SPEECH | 1182 | Mr Leong Mun Wai | asked the Minister for Law in light of the Parti Liyani case (a) whether an expedited trial process
+11 | SPEECH | 1240 | Mr Zhulkarnain Abdul Rahim | asked the Minister for Law whether the Government will consider providing direct legal aid to
+12 | SPEECH | 1184 | Mr Lim Biow Chuan | asked the Minister for Law how many State Court judges have previously worked as prosecutors in the
+13 | SPEECH | 1161 | Mr Derrick Goh | asked the Minister for Law with regard to the case of _Parti Liyani v PP [2020] SGHC 187_ where
+14 | SPEECH | 1152 | The Minister of State for Home Affairs (Mr Desmond Tan) (on behalf of the Minister for Home Affairs and Law) | Mr Speaker, may I seek your permission to take Question Nos 4 to 11, on behalf of the Minister for
+15 | SPEECH | 1223 | Mr Speaker | Please proceed.
+16 | SPEECH | 1152 | Mr Desmond Tan | The agencies have considered the High Court judgment and are conducting reviews. These reviews are
+17 | SPEECH | 1195 | Mr Murali Pillai (Bukit Batok) | If I may, Sir, I would like to ask the hon Minister of State, in relation to the scope of the
+18 | SPEECH | 1223 | Mr Speaker | Can you keep the supplementary questions in two, as I had mentioned at the last sitting?
+19 | SPEECH | 1195 | Mr Murali Pillai | Yes, Sir. In relation to the issue about the disciplinary proceedings that has been commenced by Ms
+20 | SPEECH | 1223 | Mr Speaker | Minister Shanmugam.
+21 | SPEECH | 1175 | The Minister for Home Affairs and Minister for Law (Mr K Shanmugam) | Sir, as regard to the questions and whether we will cover them, I will hope to cover the questions
+22 | SPEECH | 1175 | The Minister for Home Affairs and Minister for Law (Mr K Shanmugam) | On the disciplinary proceedings, no decision has been made by the Court, and I prefer to wait until
+23 | SPEECH | 1182 | Mr Leong Mun Wai (Non-Constituency Member) | Mr Speaker, I would like to ask the Minister for Home Affairs that given the errors which have
+24 | SPEECH | 1175 | Mr K Shanmugam | Sir, as I have indicated, let me finish the reviews, deal with that, present an account in
+25 | SPEECH | 1182 | Mr Leong Mun Wai | Thank you, Minister.
+26 | SPEECH | 1223 | Mr Speaker | Ms Yeo Wan Ling.
+"""
+_REPORT_44970_TITLE = "Enhancing Measures to Prevent Sexual Harassment in Schools and Institutes of Higher Learning"
+_REPORT_44970_ROWS = """
+1 | SPEECH | 1121 | Ms Tin Pei Ling | asked the Minister for Education what measures are in place
+2 | SPEECH | 1045 | Ms Foo Mee Har | asked the Minister for Education what safeguards and
+3 | SPEECH | 1088 | Mr Muhamad Faisal Bin Abdul Manap | asked the Minister for Education (a) what measures were put
+4 | SPEECH | 1088 | Mr Muhamad Faisal Bin Abdul Manap | asked the Minister for Education (a) what are the forms of
+5 | SPEECH | 1056 | The Second Minister for Education (Ms Indranee Rajah) (for the Minister for Education) | Mr Speaker, with your permission, may I take Question Nos 4
+6 | SPEECH | 1111 | Mr Speaker | Yes, please.
+7 | SPEECH | 1056 | Ms Indranee Rajah | Minister Ong Ye Kung addressed questions relating to the
+8 | SPEECH | 1056 | Ms Indranee Rajah | Ms Tin Pei Ling asked about the prevention of sexual
+9 | SPEECH | 1056 | Ms Indranee Rajah | Beyond disciplinary measures, students are taught to
+10 | SPEECH | 1056 | Ms Indranee Rajah | The other areas of concern raised by Ms Foo Mee Har, Mr
+11 | SPEECH | 1056 | Ms Indranee Rajah | In terms of support, the first and most fundamental thing
+12 | SPEECH | 1056 | Ms Indranee Rajah | The recent case reported by National University of
+13 | SPEECH | 1056 | Ms Indranee Rajah | The other IHLs are similarly concerned and are in the
+14 | SPEECH | 1056 | Ms Indranee Rajah | As the IHLs do their reviews, there are three broad areas
+15 | SPEECH | 1056 | Ms Indranee Rajah | First, support for victims. All the IHLs have full-time
+16 | SPEECH | 1056 | Ms Indranee Rajah | Our IHLs will look to strengthening these provisions,
+17 | SPEECH | 1056 | Ms Indranee Rajah | A good support system must create psychological safety for
+18 | SPEECH | 1056 | Ms Indranee Rajah | We also need to recognise that individuals have different
+19 | SPEECH | 1056 | Ms Indranee Rajah | Second, campus security to deter would-be offenders.
+20 | SPEECH | 1056 | Ms Indranee Rajah | More will be done. Over this past week, NUS started
+21 | SPEECH | 1056 | Ms Indranee Rajah | NUS expects to complete these enhancements in the coming
+22 | SPEECH | 1056 | Ms Indranee Rajah | Third, ensuring a collective stand against sexual
+23 | SPEECH | 1056 | Ms Indranee Rajah | At its core, the issue is about respect for others. There
+24 | SPEECH | 1056 | Ms Indranee Rajah | We can and, therefore, must do better to educate students
+25 | SPEECH | 1056 | Ms Indranee Rajah | Technology has also amplified the potential for harm
+26 | SPEECH | 1056 | Ms Indranee Rajah | Institutions and organisations must also recognise that
+27 | SPEECH | 1056 | Ms Indranee Rajah | At the end of the day, the best deterrent and protection in
+28 | SPEECH | 1111 | Mr Speaker | Er Dr Lee Bee Wah.
+29 | SPEECH | 1072 | Er Dr Lee Bee Wah (Nee Soon) | Mr Speaker, Sir, I have two supplementary questions for the
+30 | SPEECH | 1072 | Er Dr Lee Bee Wah (Nee Soon) | The second question: I think what we need is education, or
+31 | SPEECH | 1098 | Mr Ong Ye Kung | The first question is whether there is a deep-rooted trend
+32 | SPEECH | 1098 | Mr Ong Ye Kung | I do agree with the Member that we need to send a strong
+33 | SPEECH | 1111 | Mr Speaker | Miss Cheryl Chan.
+34 | SPEECH | 1024 | Miss Cheryl Chan Wei Ling (Fengshan) | I have two questions for Minister Ong Ye Kung. The first
+35 | SPEECH | 1098 | Mr Ong Ye Kung | Sorry, I did not catch the Member's first question because
+36 | SPEECH | 1024 | Miss Cheryl Chan Wei Ling | It is true. The thing is that if this incident was not
+37 | SPEECH | 1098 | Mr Ong Ye Kung | Okay, I see. Should we not have done this earlier, in other
+38 | SPEECH | 1098 | Mr Ong Ye Kung | The second question is how we would know if the measures
+39 | SPEECH | 1111 | Mr Speaker | Mr Lim Biow Chuan.
+40 | SPEECH | 1076 | Mr Lim Biow Chuan (Mountbatten) | Mr Speaker, I just wanted to ask the Minister, I thought 37
+41 | SPEECH | 1076 | Mr Lim Biow Chuan (Mountbatten) | Can the reported cases of voyeurism be publicised in campus
+42 | SPEECH | 1076 | Mr Lim Biow Chuan (Mountbatten) | And also, whether the Minister will consider asking the AUs
+43 | SPEECH | 1098 | Mr Ong Ye Kung | The first question is again, looking back, why did we not
+44 | SPEECH | 1098 | Mr Ong Ye Kung | As to publicising the punishment, NUS has actually been
+45 | SPEECH | 1111 | Mr Speaker | Mr Leon Perera.
+46 | SPEECH | 1100 | Mr Leon Perera (Non-Constituency Member) | I have one supplementary question for Second Minister
+47 | SPEECH | 1056 | Ms Indranee Rajah | The short answer is that all the IHLs are reviewing their
+48 | SPEECH | 1111 | Mr Speaker | Ms Anthea Ong.
+49 | SPEECH | 1095 | Ms Anthea Ong (Nominated Member) | Can I ask the Minister, given that this is happening across
+50 | SPEECH | 1056 | Ms Indranee Rajah | I think the first thing to remember is that it does not
+51 | SPEECH | 1056 | Ms Indranee Rajah | The key thing is really making sure that individuals
+52 | SPEECH | 1056 | Ms Indranee Rajah | Values, education, rehabilitation.
+53 | SPEECH | 1111 | Mr Speaker | Mr Ang Wei Neng.
+54 | SPEECH | 1021 | Mr Ang Wei Neng (Jurong) | Mr Speaker, I have a follow-up question for Second Minister
+55 | SPEECH | 1056 | Ms Indranee Rajah | The students can and do visit their friends in other
+56 | SPEECH | 1098 | Mr Ong Ye Kung | I just want to add that we need to take some firm measures
+57 | SPEECH | 1111 | Mr Speaker | Ms Foo Mee Har.
+58 | SPEECH | 1045 | Ms Foo Mee Har (West Coast) | Mr Speaker, I have three supplementary questions for the
+59 | SPEECH | 1045 | Ms Foo Mee Har (West Coast) | Secondly, on the safety measures, what would be some
+60 | SPEECH | 1098 | Mr Ong Ye Kung | I think we also need to respect the fact that they are AUs
+61 | SPEECH | 1098 | Mr Ong Ye Kung | Having said that, when I first issued my public statement
+62 | SPEECH | 1111 | Mr Speaker | Assoc Prof Walter Theseira.
+63 | SPEECH | 1120 | Assoc Prof Walter Theseira (Nominated Member) | Mr Speaker, just two questions for the Minister. The first
+64 | SPEECH | 1120 | Assoc Prof Walter Theseira (Nominated Member) | The second question is: when we look at the disciplinary
+65 | SPEECH | 1098 | Mr Ong Ye Kung | The first question of inconsistencies across AUs, I would
+66 | SPEECH | 1098 | Mr Ong Ye Kung | The second question is expertise. The disciplinary boards
+"""
+_REPORT_25170_TITLE = "SENNETT ESTATE"
+_REPORT_25170_ROWS = """
+1 | UNCLASSIFIED |  |  | The following Question stood in the name of Mr Chiam See Tong -
+2 | DOCUMENT_TEXT |  |  | 2. To ask the Minister for National Development whether the recent decision to upgrade Sennett
+3 | SPEECH | 723 | Mr Andy Gan Lai Chiang (Marine Parade) | Question No. 2, Sir.
+4 | SPEECH | 792 | The Minister of State for National Development (Dr Vivian Balakrishnan) (for the Minister for National Development) | Mr Deputy Speaker, Sir, the decision to upgrade Sennett Estate is based on the eligibility of the
+5 | SPEECH | 723 | Mr Andy Gan Lai Chiang | Can the Minister of State please elaborate on the extent of upgrading that is going to be provided?
+6 | SPEECH | 792 | Dr Vivian Balakrishnan | Sir, the details of the upgrading for Sennett Estate are still being worked out. I think it would
+"""
+_REPORT_17169_TITLE = "Breakdown of Annual Expenditures of Autonomous Universities"
+_REPORT_17169_ROWS = """
+1 | SPEECH | 1012 | Mr Yee Jenn Jong | asked the Minister for Education since 2000 (a) what are the respective annual expenditures in
+2 | SPEECH | 1012 | Mr Yee Jenn Jong | (vi) capital investment, facility maintenance and leases, for our universities; and (b) for each
+3 | SPEECH | 937 | Mr Heng Swee Keat | In Financial Year (FY) 2006, expenditure on manpower was $1.1 billion and other operating
+"""
+_REPORT_23702_TITLE = "CAUSEWAY AND SECOND LINK"
+_REPORT_23702_ROWS = """
+1 | UNCLASSIFIED |  |  | The following Questions stood in the names of Ms Indranee Rajah, Mr Ong Kian Min and Mdm Ho Geok Choo respectively -
+2 | UNCLASSIFIED |  |  | 9. To ask the Deputy Prime Minister and Minister for Home
+3 | UNCLASSIFIED |  |  | 10. To ask the Deputy Prime Minister and Minister for Home
+4 | UNCLASSIFIED |  |  | 11. To ask the Deputy Prime Minister and Minister for Home
+5 | SPEECH | 773 | Mr Ong Kian Min (Tampines) | Question No. 9, Sir.
+6 | SPEECH | 732 | The Senior Minister of State for Home Affairs (Assoc. Prof. Ho Peng Kee) (for the Deputy Prime Minister and Minister for Home Affairs) | Mr Speaker, Sir, can I have your permission to take
+7 | SPEECH | 702 | Mr Speaker | Yes, you may.
+8 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | Mr Speaker, Sir, our borders are our first line of defence
+9 | HEADING |  |  | _Reasons for congestion at the land checkpoints_
+10 | HEADING |  |  | _Stepped-up security checks_
+11 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | Sir, these enhanced security checks have been effective in
+12 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | In addition, 250 cases of foreigners trying to enter
+13 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | Since the introduction of the Biometric Database for
+14 | HEADING |  |  | _Increased traffic volume_
+15 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | Sir, whilst enhanced security is one reason for congestion
+16 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | For example, comparing 2004 and 2005, in the month of
+17 | HEADING |  |  | _Changes in traffic patterns_
+18 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | Sir, the situation is exacerbated by changes in traffic
+19 | HEADING |  |  | _Motorists' inconsiderate behaviour_
+20 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | On top of these two reasons, the lack of lane discipline
+21 | HEADING |  |  | _Measures taken to ease congestion at the land checkpoints_
+22 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | Sir, having stated the reasons for congestion at our land
+23 | HEADING |  |  | _Increasing manpower_
+24 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | Thus, more ICA officers have been put to work over-time and
+25 | HEADING |  |  | _Leveraging on technology_
+26 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | Besides manpower adjustments, we will also continue to
+27 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | ICA also intends to implement the Enhanced-Immigration
+28 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | _Changi_ _Airport_ _immigration clearance procedures_
+29 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | Mdm Ho Geok Choo asked if it is possible to adopt Changi
+30 | HEADING |  |  | _Playing a part - travellers_
+31 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | Sir, travellers can also play a part in helping to ease
+32 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | Furthermore, they can make sure that they do not bring
+33 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | In summary, Sir, ICA will continue to take the necessary
+34 | SPEECH | 773 | Mr Ong Kian Min | Sir, I would like to ask the Senior Minister of State about
+35 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | Sir, no checks will be foolproof, but I think we must do
+36 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | For bus passengers, the procedure is that when the buses
+37 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | But for cars, with the 100% checks, all the cars are
+38 | SPEECH | 713 | Mr Steve Chia Kiah Hong | Sir, I agree with him that the issue is having more
+39 | SPEECH | 732 | Assoc. Prof. Ho Peng Kee | I am not sure we can expect once-and-for-all solution
+"""
+_REPORT_21480_TITLE = "PRESIDENTIAL ELECTIONS (AMENDMENT) BILL"
+_REPORT_21480_ROWS = """
+1 | PROCEDURAL |  |  | Order for Second Reading read.
+2 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | Mr Deputy Speaker, Sir, thank you for the indulgence granted.
+3 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | Sir, I beg to move, "That the Bill be now read a Second time."
+4 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | This Bill amends the Presidential Elections Act.
+5 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | The Presidential Elections are run in a similar manner as parliamentary
+6 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | There are three main amendments to the Act. First, it provides for a
+7 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | Cooling-Off day_
+8 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | Sir, the most significant amendment in the Bill is the introduction of a
+9 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | The secondary advantage of having a Cooling-Off day is that it reduces any
+10 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | The Bill increases the minimum period between Nomination Day and Polling Day by
+11 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | Presidential candidates will be allowed television broadcasts on Cooling-Off
+12 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | The Bill will also clarify that election rally permits are needed before
+13 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | _Election contingencies
+14 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | Sir, the Bill introduces a range of contingency measures to deal with crisis
+15 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | _Review of election offences
+16 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | _ Finally, although the Presidential Elections Act was enacted much later, in
+17 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | The Bill therefore proposes amendments to the maximum penalties of offences in
+18 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | We are also introducing a new offence that prohibits individuals other than
+19 | SPEECH | 836 | The Minister for Law (Mr K Shanmugam) | Sir, I beg to move.
+20 | PROCEDURAL |  |  | Question put, and agreed to.
+21 | PROCEDURAL |  |  | Bill accordingly read a Second time and committed to a Committee of the whole
+22 | PROCEDURAL |  |  | The House immediately resolved itself into a Committee on the Bill. – [Mr
+23 | PROCEDURAL |  |  | Bill considered in Committee; reported without amendment; read a Third time and
+"""
+_REPORT_25173_TITLE = "ANNEX - ECONOMIC RESTRUCTURING SHARES"
+_REPORT_25173_ROWS = """
+1 | DOCUMENT_TEXT |  |  | Annex - Singaporeans who did not qualify for ERS (Cols. 2273 - 2274)
+"""
+_REPORT_42200_TITLE = (
+    "QUESTIONS FOR ORAL ANSWER STOOD OVER TO NEXT AVAILABLE SITTING OF PARLIAMENT"
+)
+_REPORT_42200_ROWS = """
+1 | UNCLASSIFIED |  |  | Appendix I
+2 | SPEECH | 237 | Mr Ngeow Pack Hua | To ask the Minister for Trade and Industry whether he is aware that ventilation in Boon Lay Garden
+3 | SPEECH | 248 | Mr Rohan bin Kamis | To ask the Minister for Trade and Industry what are the plans to enlarge the facilities of Sentosa
+4 | SPEECH | 219 | Mr Ho See Beng | To ask the Minister for National Development whether the Raffles Centre development project will
+5 | SPEECH | 252 | Haji Sha'ari bin Tadin | To ask the Minister for National Development if he will request the Public Works Department to
+6 | SPEECH | 252 | Haji Sha'ari bin Tadin | To ask the Minister for National Development if he will consider installing traffic lights at the
+7 | SPEECH | 267 | Mr Eugene Yap Giau Cheng | To ask the Minister for National Development (a) when he proposes to bring the Sale of Commercial
+8 | SPEECH | 246 | Haji Rahmat bin Kenap | To ask the Minister for Social Affairs whether there is sufficient manpower for the ambulances as,
+9 | SPEECH | 226 | Dr Lau Teik Soon | To ask the Minister for Social Affairs when construction of the Sports Centre at Burghley Drive
+10 | SPEECH | 246 | Haji Rahmat bin Kenap | To ask the Minister for National Development whether the Housing and Development Board will
+11 | SPEECH | 218 | Mr Ho Kah Leong | To ask the Minister for National Development if the Public Works Department will erect proper signs
+12 | SPEECH | 224 | Dr Koh Lip Lin | To ask the Minister for National Development (a) if the development plan for Nee Soon New Town has
+13 | SPEECH | 226 | Dr Lau Teik Soon | To ask the Minister for National Development whether he will consider installing a traffic light
+14 | SPEECH | 255 | Encik Sidek bin Saniff | To ask the Minister for National Development if he will consider allowing the conversion of three
+15 | SPEECH | 255 | Encik Sidek bin Saniff | The following Question has been withdrawn:
+16 | SPEECH | 246 | Haji Rahmat bin Kenap | To ask the Minister for National Development whether farmers affected by redevelopment can be
+"""
+_REPORT_32864_TITLE = "HOUSING AND DEVELOPMENT BOARD ESTATES"
+_REPORT_32864_ROWS = """
+1 | UNCLASSIFIED |  |  | The following Question on the Order Paper has been postponed to Tuesday, 22nd March, 1983:
+2 | SPEECH | 314 | Mr M.K.A. Jabbar | To ask the Minister for the Environment, as cleanliness in Housing and Development Board estates
+"""
+_REPORT_39111_TITLE = "GOVERNMENT CHINESE SECONDARY IV EXAMINATION"
+_REPORT_39111_ROWS = """
+1 | SPEECH | 1377 | Mrs Seow Peck Leng | (by Private Notice under Standing Order No. 18 (1) asked the Minister for Education (i) whether he
+2 | SPEECH | 64 | Mr Yong Nyuk Lin | Mr Speaker, Sir, I wish to state that the Government is fully aware of political agitators stopping
+3 | SPEECH | 64 | Mr Yong Nyuk Lin | As regards the steps which Government should take, as I already stated yesterday, parents should
+4 | SPEECH | 64 | Mr Yong Nyuk Lin | Parents of those misinformed children who joined the picket lines would do well to assert their
+5 | SPEECH | 64 | Mr Yong Nyuk Lin | It is not the Government's intention to give the Communists the excuse to say that the police are
+6 | SPEECH | 64 | Mr Yong Nyuk Lin | I wish to add that, despite intensive picketing today with human chains, blocking up all gates of
+7 | CHAMBER_EVENT |  |  | Mrs Seow Peck Leng (Mountbatten) rose -
+8 | SPEECH | 1352 | Mr Speaker | Mrs Seow, a supplementary question?
+9 | SPEECH | 1377 | Mrs Seow Peck Leng | Supplementary, Sir. Mr Speaker, Sir, I wonder whether the Minister would consider taking this
+10 | SPEECH | 1352 | Mr Speaker | Order. Will the hon. Member come to her supplementary question?
+11 | SPEECH | 1377 | Mrs Seow Peck Leng | Would the Minister take the first immediate step to inform students through the radio, Rediffusion
+12 | SPEECH | 30 | The Prime Minister (Mr Lee Kuan Yew) | Democratic methods!
+13 | SPEECH | 64 | Mr Yong Nyuk Lin | Mr Speaker, Sir, I think it is a little difficult to insist upon the wearing of uniform as a
+14 | SPEECH | 1377 | Mrs Seow Peck Leng | On a point of information.
+15 | SPEECH | 1352 | Mr Speaker | If the Minister gives way.
+16 | SPEECH | 64 | Mr Yong Nyuk Lin | I thought the Member for Mountbatten was suggesting that students should be informed that they
+17 | SPEECH | 1377 | Mrs Seow Peck Leng | Without uniforms, because they are recognised by their uniforms.
+18 | SPEECH | 64 | Mr Yong Nyuk Lin | As I have said, we should not make it so that to take an examination, you should be wearing a
+19 | SPEECH | 64 | Mr Yong Nyuk Lin | I think, Sir, if we are to survive as a democratic State, we should be prepared to stand on our two
+20 | SPEECH |  | Some hon. Members | Hear, hear!
+21 | SPEECH | 64 | Mr Yong Nyuk Lin | - as we do to secret society gangsters. Unless we are prepared to fight for our rights, there is
+22 | SPEECH | 1349 | Mr David Marshall (Anson) | Mr Speaker, Sir, may I ask the Minister whether there have been any incidents of violence or force
+23 | SPEECH | 64 | Mr Yong Nyuk Lin | I am pleased to say, Sir, that up to this moment, there has been no report of any violence
+24 | SPEECH | 1350 | Tun Lim Yew Hock (Cairnhill) | Sir, can the Minister say whether the agitation that is now taking place is following the same
+25 | SPEECH | 1352 | Mr Speaker | That is a completely different question.
+26 | SPEECH | 1377 | Mrs Seow Peck Leng | Mr Speaker, Sir, I wonder whether the Minister would do for those who were not able to take their
+27 | SPEECH | 64 | Mr Yong Nyuk Lin | If it is true that they were prevented through sheer intimidation from taking the paper today, the
+28 | SPEECH | 1377 | Mrs Seow Peck Leng | Thank you.
+"""
+_REPORT_38102_TITLE = "ADDENDUM PIONEER INDUSTRIES"
+_REPORT_38102_ROWS = """
+1 |  |  |  | Dr Goh Keng Swee, pursuant to his written answer to the following question on 18th November, 1964
+2 |  |  |  | "Mr Ong Eng Guan asked the Minister for Finance to state the number of Pioneer Certificates which
+3 |  |  |  | [APPENDIX TO WRITTEN ANSWER(Pages 1 -
+"""
+_REPORT_30113_TITLE = "FOOD POISONING CASES"
+_REPORT_30113_ROWS = """
+1 | DOCUMENT_TEXT |  |  | 6. To ask the Minister for the Environment which areas in Singapore have the highest number of food
+2 | SPEECH | 500 | Dr Aline K Wong (Tampines GRC) | Question No. 6, Sir.
+3 | SPEECH | 429 | Dr Ahmad Mattar | Mr Speaker, Sir, a total of 120 incidents of food poisoning were reported during the first seven
+4 | SPEECH | 429 | Dr Ahmad Mattar | Most of the food poisoning incidents were traced to restaurants (39 incidents), eating houses (26
+5 | SPEECH | 429 | Dr Ahmad Mattar | Of the 39 restaurants implicated, 18 were located in the city area. In the case of eating houses,
+"""
+_REPORT_41305_TITLE = "ADDENDUM - GOVERNMENT PRIMARY SCHOOLS"
+_REPORT_41305_ROWS = """
+1 | SPEECH | 1354 | Mr Chew Swee Kee | , pursuant to his reply to the following question for oral answer asked on 4th April, 1956
+2 | SPEECH | 1396 | "Mr John Ede | asked the Minister for Education (i) how many new students were admitted to Government primary
+3 | SPEECH | 1396 | "Mr John Ede | supplied the following information:
+4 | SPEECH | 1396 | "Mr John Ede | (i) 15,553.
+5 | SPEECH | 1396 | "Mr John Ede | (ii) (a) 10,116.
+6 | SPEECH | 1396 | "Mr John Ede | (b) No Singapore children were refused admission. As far as the Ministry of Education has been able
+7 | SPEECH | 1396 | "Mr John Ede | (iii) 4,849.
+8 | SPEECH | 1396 | "Mr John Ede | It will be observed that the figures in (ii) (a) and (iii) together come to nearly 600 less than
+"""
+_REPORT_11779_TITLE = "Measures to Prevent Unauthorised Entry into Singapore as Piracies Spike in Singapore Straits"
+_REPORT_11779_ROWS = """
+1 | SPEECH | 1106 | Mr Seah Kian Peng | asked the Minister for Defence in light of the recent spike in piracies along the Singapore Strait,
+2 | SPEECH |  | Mr Deputy Speaker | Questions for Oral Answer. Question No 1. Mr Seah Kian Peng.
+3 | SPEECH | 1106 | Mr Seah Kian Peng (Marine Parade) | Mr Deputy Speaker, Sir, could I get your permission to request for withdrawal of my question
+4 | SPEECH |  | Mr Deputy Speaker | Yes, I give my consent. Mr Leon Perera.
+"""
+_REPORT_25149_TITLE = "SURVEY ON ELDERSHIELD SCHEME"
+_REPORT_25149_ROWS = """
+1 | SPEECH | 725 | Mr Gan Kim Yong | asked the Minister for Health whether the proposed survey on the ElderShield Scheme has been
+2 | SPEECH | 752 | Mr Lim Hng Kiang | Mr Speaker, Sir, the Ministry has asked the two ElderShield insurers to consider doing a survey to
+3 | SPEECH | 752 | Mr Lim Hng Kiang | On the main reason for their opting out of ElderShield, 23% indicated that they could not afford
+4 | SPEECH | 752 | Mr Lim Hng Kiang | Great Eastern is conducting a similar survey, which will be completed in March. The Ministry will
+5 | SPEECH | 725 | Mr Gan Kim Yong (Holland-Bukit Panjang) | May I ask the Minister whether there is any specific timeframe for the revision of the new scheme.
+6 | SPEECH | 752 | Mr Lim Hng Kiang | The ElderShield scheme was launched very recently. The immediate priority of the Ministry and the
+"""
+
+
+def test_report_11789_filer_whose_question_rows_are_printed_has_a_reader_and_an_answerer_for_another_minister() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_11789_TITLE,
+        _REPORT_11789_ROWS,
+        printed_name_to_speaker_id={"Mr Christopher de Souza": 1033},
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ABSENT_FILER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mr Christopher de Souza",
+            1033,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            ParticipantRoleSource.CHAIR_LABEL,
+            4,
+            "Mr Speaker",
+            1111,
+        ),
+        (
+            ParticipantRole.READER,
+            ParticipantRoleSource.ASKER_RULES,
+            5,
+            "Mr Cedric Foo Chee Keng (Pioneer)",
+            1043,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            6,
+            "The Senior Parliamentary Secretary to the Minister for Home Affairs (Ms Sun Xueling) (for the Minister for Home Affairs)",
+            1109,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            16,
+            "Mr Christopher de Souza (Holland-Bukit Timah)",
+            1033,
+        ),
+    ]
+    assert _summarise_office_marks(labelled_report.participants) == [
+        (
+            ParticipantRole.CHAIR,
+            1111,
+            None,
+            "Mr Speaker",
+            OfficeClass.OTHER,
+            OfficeSource.LABEL_IN_REPORT,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            1109,
+            "for the Minister for Home Affairs",
+            "The Senior Parliamentary Secretary to the Minister for Home Affairs",
+            OfficeClass.SENIOR_PARLIAMENTARY_SECRETARY,
+            OfficeSource.LABEL_IN_REPORT,
+        ),
+    ]
+    assert _summarise_states(labelled_report.states) == []
+
+
+def test_report_18268_absent_filer_who_arrives_asks_a_follow_up() -> None:
+    labelled_report = _label_report(
+        _REPORT_18268_TITLE,
+        _REPORT_18268_ROWS,
+        printed_name_to_speaker_id={"Mr R Dhinakaran": 987},
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ABSENT_FILER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mr R Dhinakaran",
+            987,
+        ),
+        (
+            ParticipantRole.READER,
+            ParticipantRoleSource.ASKER_RULES,
+            4,
+            "Mr Patrick Tay Teck Guan (Nee Soon)",
+            984,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            5,
+            "The Acting Minister for Manpower (Mr Tan Chuan-Jin)",
+            995,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            ParticipantRoleSource.CHAIR_LABEL,
+            8,
+            "Mdm Speaker",
+            934,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            12,
+            "Mr R Dhinakaran",
+            987,
+        ),
+    ]
+    assert _summarise_states(labelled_report.states) == []
+
+
+def test_report_45746_deputy_speaker_who_asks_and_follows_up_later_takes_the_chair() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_45746_TITLE, _REPORT_45746_ROWS)
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mr Sharael Taha",
+            1216,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            2,
+            "Ms He Ting Ru",
+            1164,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            3,
+            "Miss Rachel Ong",
+            1208,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            5,
+            "Ms Jessica Tan Soon Neo",
+            1172,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            7,
+            "Ms Hazel Poa",
+            1205,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            8,
+            "Mr Edward Chia Bing Hui",
+            1153,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            9,
+            "Miss Cheng Li Hui",
+            1142,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            10,
+            "Mr Liang Eng Hwa",
+            1183,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            13,
+            "Mr Desmond Choo",
+            1150,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            14,
+            "Ms Ng Ling Ling",
+            1198,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            15,
+            "The Senior Minister of State for Manpower (Mr Zaqy Mohamad) (for the Minister of Manpower)",
+            1239,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            ParticipantRoleSource.CHAIR_LABEL,
+            16,
+            "Mr Speaker",
+            1223,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            56,
+            "Ms Jessica Tan Soon Neo (East Coast)",
+            1172,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            63,
+            "Ms Hazel Poa (Non-Constituency Member)",
+            1205,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            70,
+            "Mr Edward Chia Bing Hui (Holland-Bukit Timah)",
+            1153,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            ParticipantRoleSource.CHAIR_LABEL,
+            79,
+            "Mdm Deputy Speaker",
+            1172,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            80,
+            "Mr Gerald Giam Yean Song (Aljunied)",
+            1160,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            89,
+            "Mr Yip Hon Weng (Yio Chu Kang)",
+            1238,
+        ),
+    ]
+    assert _summarise_office_marks(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            1172,
+            None,
+            "Mdm Deputy Speaker",
+            OfficeClass.OTHER,
+            OfficeSource.LABEL_IN_REPORT,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            1239,
+            "for the Minister of Manpower",
+            "The Senior Minister of State for Manpower",
+            OfficeClass.SENIOR_MINISTER_OF_STATE,
+            OfficeSource.LABEL_IN_REPORT,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            1223,
+            None,
+            "Mr Speaker",
+            OfficeClass.OTHER,
+            OfficeSource.LABEL_IN_REPORT,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            1172,
+            None,
+            "Mdm Deputy Speaker",
+            OfficeClass.OTHER,
+            OfficeSource.LABEL_IN_REPORT,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            1172,
+            None,
+            "Mdm Deputy Speaker",
+            OfficeClass.OTHER,
+            OfficeSource.LABEL_IN_REPORT,
+        ),
+    ]
+    assert _summarise_states(labelled_report.states) == []
+
+
+def test_report_6147_chair_holders_name_call_is_a_chair_row_and_no_supplementary() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_6147_TITLE, _REPORT_6147_ROWS)
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Ms Denise Phua Lay Peng",
+            1148,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            2,
+            "The Minister for Education (Mr Chan Chun Sing)",
+            1137,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            ParticipantRoleSource.CHAIR_LABEL,
+            9,
+            "Mr Deputy Speaker",
+            1144,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            10,
+            "Ms Denise Phua Lay Peng (Jalan Besar)",
+            1148,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            17,
+            "Mr Leong Mun Wai (Non-Constituency Member)",
+            1182,
+        ),
+    ]
+    assert _summarise_states(labelled_report.states) == []
+
+
+def test_name_call_before_the_first_chair_label_is_that_persons_chair_row() -> None:
+    rows_text = """
+1 | SPEECH | 10 | Ms Asker One | asked the Minister for Education about schools.
+2 | SPEECH | 20 | Mr Chair Holder | Minister Tan Chuan-Jin.
+3 | SPEECH | 30 | The Minister for Education (Mr Tan Chuan-Jin) | Sir, the answer is yes.
+4 | SPEECH | 20 | Mr Deputy Speaker | Order.
+5 | SPEECH | 20 | Mr Chair Holder | Minister Tan Chuan-Jin.
+"""
+
+    labelled_report = _label_report("Schools", rows_text)
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Ms Asker One",
+            10,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            ParticipantRoleSource.CHAIR_NAME_CALL,
+            2,
+            "Mr Chair Holder",
+            20,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            3,
+            "The Minister for Education (Mr Tan Chuan-Jin)",
+            30,
+        ),
+    ]
+
+
+def test_collective_label_before_the_answer_is_unlabelled() -> None:
+    rows_text = """
+1 | SPEECH | 10 | Ms Asker One | asked the Minister for Education about schools.
+2 | SPEECH |  | Some hon. Members | Hear, hear.
+3 | SPEECH | 30 | The Minister for Education (Mr Tan Chuan-Jin) | Sir, the answer is yes.
+"""
+
+    labelled_report = _label_report("Schools", rows_text)
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Ms Asker One",
+            10,
+        ),
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            2,
+            "Some hon. Members",
+            None,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            3,
+            "The Minister for Education (Mr Tan Chuan-Jin)",
+            30,
+        ),
+    ]
+
+
+def test_collective_label_is_never_the_answerer_by_position() -> None:
+    rows_text = """
+1 | SPEECH | 10 | Ms Asker One | asked the Minister for Education about schools.
+2 | SPEECH |  | An hon. Member | Is it true?
+3 | SPEECH | 30 | Mr Somebody | Sir, the answer is yes.
+"""
+
+    labelled_report = _label_report("Schools", rows_text)
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Ms Asker One",
+            10,
+        ),
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            2,
+            "An hon. Member",
+            None,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.POSITION,
+            3,
+            "Mr Somebody",
+            30,
+        ),
+    ]
+
+
+def test_answer_after_the_question_starts_the_follow_ups_when_the_minister_spoke_first() -> (
+    None
+):
+    rows_text = """
+1 | SPEECH | 30 | The Minister for Education (Mr Tan Chuan-Jin) | Mr Speaker, I will take this question first.
+2 | SPEECH | 10 | Ms Asker One | asked the Minister for Education about schools.
+3 | SPEECH | 10 | Ms Asker One | She also asks about the cost of the schemes.
+4 | SPEECH | 30 | The Minister for Education (Mr Tan Chuan-Jin) | Sir, the answer is yes.
+5 | SPEECH | 10 | Ms Asker One | Can the Minister say more?
+"""
+
+    labelled_report = _label_report("Schools", rows_text)
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            1,
+            "The Minister for Education (Mr Tan Chuan-Jin)",
+            30,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            2,
+            "Ms Asker One",
+            10,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            5,
+            "Ms Asker One",
+            10,
+        ),
+    ]
+
+
+def test_report_6095_written_answer_answerer_has_the_office_of_the_day() -> None:
+    labelled_report = _label_report(
+        _REPORT_6095_TITLE,
+        _REPORT_6095_ROWS,
+        speaker_id_to_office={
+            1175: Office(
+                "Minister for Home Affairs and Law", OfficeSource.ATTENDANCE_LIST
+            )
+        },
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mr Melvin Yong Yik Chye",
+            1190,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            2,
+            "Mr K Shanmugam",
+            1175,
+        ),
+    ]
+    assert _summarise_office_marks(labelled_report.participants) == [
+        (
+            ParticipantRole.ANSWERER,
+            1175,
+            None,
+            "Minister for Home Affairs and Law",
+            OfficeClass.MINISTER,
+            OfficeSource.ATTENDANCE_LIST,
+        )
+    ]
+    assert _summarise_states(labelled_report.states) == []
+
+
+def test_report_19273_written_answer_for_the_prime_minister_keeps_the_for_bracket() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_19273_TITLE,
+        _REPORT_19273_ROWS,
+        speaker_id_to_office={
+            1001: Office(
+                "Deputy Prime Minister and Coordinating Minister for National Security and Minister for Home Affairs",
+                OfficeSource.ATTENDANCE_LIST,
+            )
+        },
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Asst Prof Tan Kheng Boon Eugene",
+            996,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            2,
+            "Mr Teo Chee Hean (for the Prime Minister)",
+            1001,
+        ),
+    ]
+    assert _summarise_office_marks(labelled_report.participants) == [
+        (
+            ParticipantRole.ANSWERER,
+            1001,
+            "for the Prime Minister",
+            "Deputy Prime Minister and Coordinating Minister for National Security and Minister for Home Affairs",
+            OfficeClass.DEPUTY_PRIME_MINISTER,
+            OfficeSource.ATTENDANCE_LIST,
+        )
+    ]
+
+
+def test_report_11034_two_ministers_answer_and_two_askers_follow_up() -> None:
+    labelled_report = _label_report(_REPORT_11034_TITLE, _REPORT_11034_ROWS)
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mr Murali Pillai",
+            1195,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            2,
+            "Dr Tan Wu Meng",
+            1224,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            4,
+            "Mr Vikram Nair",
+            1232,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            5,
+            "Mr Leong Mun Wai",
+            1182,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            6,
+            "Mr Louis Ng Kok Kwang",
+            1199,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            7,
+            "Mr Liang Eng Hwa",
+            1183,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            8,
+            "Mr Derrick Goh",
+            1161,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            11,
+            "Mr Zhulkarnain Abdul Rahim",
+            1240,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            12,
+            "Mr Lim Biow Chuan",
+            1184,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            14,
+            "The Minister of State for Home Affairs (Mr Desmond Tan) (on behalf of the Minister for Home Affairs and Law)",
+            1152,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            ParticipantRoleSource.CHAIR_LABEL,
+            15,
+            "Mr Speaker",
+            1223,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            17,
+            "Mr Murali Pillai (Bukit Batok)",
+            1195,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            21,
+            "The Minister for Home Affairs and Minister for Law (Mr K Shanmugam)",
+            1175,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            23,
+            "Mr Leong Mun Wai (Non-Constituency Member)",
+            1182,
+        ),
+    ]
+    assert _summarise_office_marks(labelled_report.participants) == [
+        (
+            ParticipantRole.ANSWERER,
+            1152,
+            "on behalf of the Minister for Home Affairs and Law",
+            "The Minister of State for Home Affairs",
+            OfficeClass.MINISTER_OF_STATE,
+            OfficeSource.LABEL_IN_REPORT,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            1223,
+            None,
+            "Mr Speaker",
+            OfficeClass.OTHER,
+            OfficeSource.LABEL_IN_REPORT,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            1175,
+            None,
+            "The Minister for Home Affairs and Minister for Law",
+            OfficeClass.MINISTER,
+            OfficeSource.LABEL_IN_REPORT,
+        ),
+    ]
+    assert _summarise_states(labelled_report.states) == []
+
+
+def test_report_44970_second_minister_with_a_bare_label_is_an_answerer_by_office_on_the_day() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_44970_TITLE,
+        _REPORT_44970_ROWS,
+        speaker_id_to_office={
+            1098: Office("Minister for Education", OfficeSource.ATTENDANCE_LIST)
+        },
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Ms Tin Pei Ling",
+            1121,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            2,
+            "Ms Foo Mee Har",
+            1045,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            3,
+            "Mr Muhamad Faisal Bin Abdul Manap",
+            1088,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            5,
+            "The Second Minister for Education (Ms Indranee Rajah) (for the Minister for Education)",
+            1056,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            ParticipantRoleSource.CHAIR_LABEL,
+            6,
+            "Mr Speaker",
+            1111,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            29,
+            "Er Dr Lee Bee Wah (Nee Soon)",
+            1072,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            31,
+            "Mr Ong Ye Kung",
+            1098,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            34,
+            "Miss Cheryl Chan Wei Ling (Fengshan)",
+            1024,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            40,
+            "Mr Lim Biow Chuan (Mountbatten)",
+            1076,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            46,
+            "Mr Leon Perera (Non-Constituency Member)",
+            1100,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            49,
+            "Ms Anthea Ong (Nominated Member)",
+            1095,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            54,
+            "Mr Ang Wei Neng (Jurong)",
+            1021,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            58,
+            "Ms Foo Mee Har (West Coast)",
+            1045,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            63,
+            "Assoc Prof Walter Theseira (Nominated Member)",
+            1120,
+        ),
+    ]
+    assert _summarise_office_marks(labelled_report.participants) == [
+        (
+            ParticipantRole.ANSWERER,
+            1056,
+            "for the Minister for Education",
+            "The Second Minister for Education",
+            OfficeClass.MINISTER,
+            OfficeSource.LABEL_IN_REPORT,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            1111,
+            None,
+            "Mr Speaker",
+            OfficeClass.OTHER,
+            OfficeSource.LABEL_IN_REPORT,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            1098,
+            None,
+            "Minister for Education",
+            OfficeClass.MINISTER,
+            OfficeSource.ATTENDANCE_LIST,
+        ),
+    ]
+    assert _summarise_states(labelled_report.states) == []
+
+
+def test_report_25170_reader_who_asks_a_supplementary_is_a_supplementary_asker() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_25170_TITLE,
+        _REPORT_25170_ROWS,
+        printed_name_to_speaker_id={"Mr Chiam See Tong": 714},
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ABSENT_FILER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mr Chiam See Tong",
+            714,
+        ),
+        (
+            ParticipantRole.READER,
+            ParticipantRoleSource.ASKER_RULES,
+            3,
+            "Mr Andy Gan Lai Chiang (Marine Parade)",
+            723,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            4,
+            "The Minister of State for National Development (Dr Vivian Balakrishnan) (for the Minister for National Development)",
+            792,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            5,
+            "Mr Andy Gan Lai Chiang",
+            723,
+        ),
+    ]
+    assert _summarise_states(labelled_report.states) == []
+
+
+def test_report_17169_askers_continuation_paragraph_before_the_answer_is_no_follow_up() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_17169_TITLE,
+        _REPORT_17169_ROWS,
+        speaker_id_to_office={
+            937: Office("Minister for Education", OfficeSource.ATTENDANCE_LIST)
+        },
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mr Yee Jenn Jong",
+            1012,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            3,
+            "Mr Heng Swee Keat",
+            937,
+        ),
+    ]
+    assert _summarise_states(labelled_report.states) == []
+
+
+def test_report_23702_three_filers_of_one_stood_line_are_numbered_in_candidate_order() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_23702_TITLE,
+        _REPORT_23702_ROWS,
+        printed_name_to_speaker_id={
+            "Ms Indranee Rajah": 734,
+            "Mr Ong Kian Min": 773,
+            "Mdm Ho Geok Choo": 731,
+        },
+    )
+
+    assert [
+        report_participant.ordinal
+        for report_participant in labelled_report.participants
+    ] == [1, 2, 3, 4, 5, 6, 7]
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ABSENT_FILER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Ms Indranee Rajah",
+            734,
+        ),
+        (
+            ParticipantRole.ABSENT_FILER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mr Ong Kian Min",
+            773,
+        ),
+        (
+            ParticipantRole.ABSENT_FILER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mdm Ho Geok Choo",
+            731,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            6,
+            "The Senior Minister of State for Home Affairs (Assoc. Prof. Ho Peng Kee) (for the Deputy Prime Minister and Minister for Home Affairs)",
+            732,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            ParticipantRoleSource.CHAIR_LABEL,
+            7,
+            "Mr Speaker",
+            702,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            34,
+            "Mr Ong Kian Min",
+            773,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            38,
+            "Mr Steve Chia Kiah Hong",
+            713,
+        ),
+    ]
+
+
+def test_report_30113_numbered_question_with_no_asker_leaves_the_caller_unlabelled() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_30113_TITLE,
+        _REPORT_30113_ROWS,
+        speaker_id_to_office={
+            429: Office("Minister for the Environment", OfficeSource.ATTENDANCE_LIST)
+        },
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            2,
+            "Dr Aline K Wong (Tampines GRC)",
+            500,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            3,
+            "Dr Ahmad Mattar",
+            429,
+        ),
+    ]
+    assert _summarise_states(labelled_report.states) == []
+
+
+def test_report_21480_bill_reading_is_not_a_question() -> None:
+    labelled_report = _label_report(_REPORT_21480_TITLE, _REPORT_21480_ROWS)
+
+    assert _summarise_participants(labelled_report.participants) == []
+    assert _summarise_states(labelled_report.states) == [
+        (QuestionState.NOT_A_QUESTION, "PRESIDENTIAL ELECTIONS (AMENDMENT) BILL", None)
+    ]
+
+
+def test_report_25173_annex_title_is_not_a_question() -> None:
+    labelled_report = _label_report(_REPORT_25173_TITLE, _REPORT_25173_ROWS)
+
+    assert _summarise_participants(labelled_report.participants) == []
+    assert _summarise_states(labelled_report.states) == [
+        (QuestionState.NOT_A_QUESTION, "ANNEX - ECONOMIC RESTRUCTURING SHARES", None)
+    ]
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "ANNEX A - ELDERSHIELD SCHEME",
+        "APPENDIX - ELECTRICITY TARIFFS",
+        "ADDENDUM - PERUMAL AND SIVAN TEMPLES",
+    ],
+)
+def test_title_of_an_annex_appendix_or_addendum_with_a_question_row_and_no_asker_is_not_a_question(
+    title: str,
+) -> None:
+    not_a_question_state = get_not_a_question_state(title, [], frozenset({1}))
+
+    assert not_a_question_state is not None
+    assert not_a_question_state.state == QuestionState.NOT_A_QUESTION
+    assert not_a_question_state.printed_text == title
+    assert not_a_question_state.first_ordinal is None
+
+
+def test_title_with_a_word_that_only_contains_table_or_list_is_a_question() -> None:
+    assert (
+        get_not_a_question_state(
+            "Enforcement Actions Against Table Littering at Public Dining Spaces Since Implementation",
+            [],
+            frozenset({1}),
+        )
+        is None
+    )
+
+
+def test_title_of_an_annex_with_an_asker_is_a_question() -> None:
+    asker_candidate = AskerCandidate(
+        row_ordinal=1,
+        source=ReportAskerSource.ASKED_LINE,
+        printed_name="Mr Ong Eng Guan",
+        speaker_id=1361,
+        reader_printed_name=None,
+        reader_speaker_id=None,
+        reader_row_ordinal=None,
+    )
+
+    assert (
+        get_not_a_question_state(
+            "ANNEX A - ELDERSHIELD SCHEME", [asker_candidate], frozenset({1})
+        )
+        is None
+    )
+
+
+def test_report_42200_withdrawn_line_marks_questions_not_asked_aloud() -> None:
+    labelled_report = _label_report(
+        _REPORT_42200_TITLE,
+        _REPORT_42200_ROWS,
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            2,
+            "Mr Ngeow Pack Hua",
+            237,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            3,
+            "Mr Rohan bin Kamis",
+            248,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            4,
+            "Mr Ho See Beng",
+            219,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            5,
+            "Haji Sha'ari bin Tadin",
+            252,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            7,
+            "Mr Eugene Yap Giau Cheng",
+            267,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            8,
+            "Haji Rahmat bin Kenap",
+            246,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            9,
+            "Dr Lau Teik Soon",
+            226,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            11,
+            "Mr Ho Kah Leong",
+            218,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            12,
+            "Dr Koh Lip Lin",
+            224,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            14,
+            "Encik Sidek bin Saniff",
+            255,
+        ),
+    ]
+    assert _summarise_states(labelled_report.states) == [
+        (
+            QuestionState.NOT_ASKED_ALOUD,
+            "The following Question has been withdrawn:",
+            15,
+        )
+    ]
+
+
+def test_report_32864_postponed_line_marks_the_question_not_asked_aloud() -> None:
+    labelled_report = _label_report(_REPORT_32864_TITLE, _REPORT_32864_ROWS)
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            2,
+            "Mr M.K.A. Jabbar",
+            314,
+        )
+    ]
+    assert _summarise_states(labelled_report.states) == [
+        (
+            QuestionState.NOT_ASKED_ALOUD,
+            "The following Question on the Order Paper has been postponed to Tuesday, 22nd March, 1983:",
+            1,
+        )
+    ]
+
+
+def test_report_39111_private_notice_is_urgent() -> None:
+    labelled_report = _label_report(
+        _REPORT_39111_TITLE,
+        _REPORT_39111_ROWS,
+        speaker_id_to_office={
+            64: Office("Minister for Education", OfficeSource.ATTENDANCE_LIST)
+        },
+    )
+
+    assert _summarise_states(labelled_report.states) == [
+        (
+            QuestionState.URGENT,
+            "(by Private Notice under Standing Order No. 18 (1) asked the Minister for Education (i) whether he",
+            1,
+        )
+    ]
+
+
+def test_report_38102_addendum_with_an_asker_is_a_correction() -> None:
+    labelled_report = _label_report(
+        _REPORT_38102_TITLE,
+        _REPORT_38102_ROWS,
+        printed_name_to_speaker_id={"Mr Ong Eng Guan": 1361},
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            2,
+            "Mr Ong Eng Guan",
+            1361,
+        )
+    ]
+    assert _summarise_states(labelled_report.states) == [
+        (QuestionState.CORRECTION, "ADDENDUM PIONEER INDUSTRIES", None)
+    ]
+
+
+def test_report_39111_some_hon_members_is_unlabelled() -> None:
+    labelled_report = _label_report(
+        _REPORT_39111_TITLE,
+        _REPORT_39111_ROWS,
+        speaker_id_to_office={
+            64: Office("Minister for Education", OfficeSource.ATTENDANCE_LIST)
+        },
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mrs Seow Peck Leng",
+            1377,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            2,
+            "Mr Yong Nyuk Lin",
+            64,
+        ),
+        (
+            ParticipantRole.CHAIR,
+            ParticipantRoleSource.CHAIR_LABEL,
+            8,
+            "Mr Speaker",
+            1352,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            9,
+            "Mrs Seow Peck Leng",
+            1377,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            12,
+            "The Prime Minister (Mr Lee Kuan Yew)",
+            30,
+        ),
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            20,
+            "Some hon. Members",
+            None,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            22,
+            "Mr David Marshall (Anson)",
+            1349,
+        ),
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            24,
+            "Tun Lim Yew Hock (Cairnhill)",
+            1350,
+        ),
+    ]
+
+
+def test_report_41305_minister_who_speaks_before_the_question_rows_is_the_answerer() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_41305_TITLE,
+        _REPORT_41305_ROWS,
+        speaker_id_to_office={
+            1354: Office("Minister for Education", OfficeSource.ATTENDANCE_LIST)
+        },
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            1,
+            "Mr Chew Swee Kee",
+            1354,
+        ),
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            2,
+            '"Mr John Ede',
+            1396,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            3,
+            '"Mr John Ede',
+            1396,
+        ),
+    ]
+    assert _summarise_states(labelled_report.states) == [
+        (QuestionState.CORRECTION, "ADDENDUM - GOVERNMENT PRIMARY SCHOOLS", None)
+    ]
+
+
+def test_report_11779_request_to_withdraw_a_question_is_not_asked_aloud() -> None:
+    labelled_report = _label_report(_REPORT_11779_TITLE, _REPORT_11779_ROWS)
+
+    assert _summarise_states(labelled_report.states) == [
+        (
+            QuestionState.NOT_ASKED_ALOUD,
+            "Mr Deputy Speaker, Sir, could I get your permission to request for withdrawal of my question",
+            3,
+        )
+    ]
+
+
+def test_report_25149_answerers_first_row_that_says_asked_the_is_the_answerers_first_row() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_25149_TITLE,
+        _REPORT_25149_ROWS,
+        speaker_id_to_office={
+            752: Office(
+                "Minister for Health and Second Minister for Finance",
+                OfficeSource.ATTENDANCE_LIST,
+            )
+        },
+    )
+
+    assert _summarise_participants(labelled_report.participants) == [
+        (
+            ParticipantRole.ASKER,
+            ParticipantRoleSource.ASKER_RULES,
+            1,
+            "Mr Gan Kim Yong",
+            725,
+        ),
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_ON_THE_DAY,
+            2,
+            "Mr Lim Hng Kiang",
+            752,
+        ),
+        (
+            ParticipantRole.ASKER_FOLLOW_UP,
+            ParticipantRoleSource.AFTER_ANSWER,
+            5,
+            "Mr Gan Kim Yong (Holland-Bukit Panjang)",
+            725,
+        ),
+    ]
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        pytest.param(
+            "Criteria for Issuance of Correction Directions under Protection from Online Falsehoods and Manipulation Act",
+            id="report_1329",
+        ),
+        pytest.param(
+            "Correction of Information on Gov Factually Website", id="report_15397"
+        ),
+    ],
+)
+def test_title_naming_a_correction_that_is_not_an_addendum_gives_no_correction_state(
+    title: str,
+) -> None:
+    assert get_question_states(title, [], []) == []

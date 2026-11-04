@@ -5,7 +5,11 @@ import pytest
 
 from crud.speech import SpeechAskerRow
 from enums import ReportAskerSource, SpeechKind
-from services.report_asker import build_report_askers, get_asker_candidates
+from services.report_asker import (
+    build_report_askers,
+    get_asker_candidates,
+    get_question_row_ordinals,
+)
 from utils.asker_candidate import AskerCandidate
 
 _REPORT_ID = 1
@@ -1690,3 +1694,126 @@ def test_build_report_askers_keeps_an_unresolved_name_once_and_apart_from_other_
         (report_asker.ordinal, report_asker.printed_name)
         for report_asker in report_askers
     ] == [(1, "Mr S. V. Lingam"), (2, "Mr G. A. P. Sutherland")]
+
+
+def test_question_row_ordinals_hold_a_stood_line_that_prints_no_name_and_the_row_after_it() -> (
+    None
+):
+    speech_asker_rows = [
+        _REPORT_38033_STOOD_ROW,
+        _build_row(
+            2,
+            SpeechKind.DOCUMENT_TEXT,
+            None,
+            None,
+            "6. To ask the Minister for Education how many children have been registered for admission",
+        ),
+        _build_row(3, SpeechKind.SPEECH, "Mr Speaker", 2, "Mr Koo Young."),
+    ]
+
+    assert get_question_row_ordinals(speech_asker_rows) == frozenset({1, 2})
+
+
+def test_report_30113_question_row_ordinals_hold_a_to_ask_row_of_any_kind_and_a_labelled_read_out() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.DOCUMENT_TEXT,
+            None,
+            None,
+            "6. To ask the Minister for the Environment which areas in Singapore have the highest number of food poisoning cases reported.",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Dr Aline K Wong (Tampines GRC)",
+            500,
+            "Question No. 6, Sir.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Dr Ahmad Mattar",
+            429,
+            "Mr Speaker, Sir, a total of 120 incidents of food poisoning were reported during the first seven months of this year.",
+        ),
+    ]
+
+    assert get_question_row_ordinals(speech_asker_rows) == frozenset({1, 2})
+
+
+def test_report_37878_question_row_ordinals_hold_a_row_asking_in_the_absence_of_the_filer() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "The following Question stood in the name of Mr P. Govindaswamy ---",
+        ),
+        _build_row(
+            2,
+            SpeechKind.DOCUMENT_TEXT,
+            None,
+            None,
+            "1. To ask the Minister for Law and National Development whether the Government is aware that during heavy rains Cheng Cheok Street and Tapah Street are flooded.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Mr Ng Yeow Chong (Mountbatten)",
+            42,
+            "Mr Speaker, Sir, in the absence of Mr P. Govindaswamy, may I ask Question No. 1?",
+        ),
+        _build_row(
+            4,
+            SpeechKind.SPEECH,
+            "The Parliamentary Secretary to the Minister for National Development (Mr Ho Cheng Choon) (for the Minister for Law and National Development)",
+            23,
+            "Mr Speaker, Sir, the Government is aware that during heavy rains, Cheng Cheok Street and Tapah Street are flooded.",
+        ),
+    ]
+
+    assert get_question_row_ordinals(speech_asker_rows) == frozenset({1, 2, 3})
+
+
+def test_question_row_ordinals_leave_out_a_read_out_row_labelled_as_the_chair() -> None:
+    speech_asker_rows = [
+        _build_row(1, SpeechKind.SPEECH, "Mr Speaker", 2, "Question No. 6, Sir."),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Dr Ahmad Mattar",
+            429,
+            "Mr Speaker, Sir, a total of 120 incidents of food poisoning were reported.",
+        ),
+    ]
+
+    assert get_question_row_ordinals(speech_asker_rows) == frozenset()
+
+
+def test_report_25149_question_row_ordinals_leave_out_a_labelled_row_that_says_asked_the_mid_sentence() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr Gan Kim Yong",
+            725,
+            "asked the Minister for Health whether the proposed survey on the ElderShield Scheme has been",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr Lim Hng Kiang",
+            752,
+            "Mr Speaker, Sir, the Ministry has asked the two ElderShield insurers to consider doing a survey to",
+        ),
+    ]
+
+    assert get_question_row_ordinals(speech_asker_rows) == frozenset({1})
