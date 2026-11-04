@@ -4,7 +4,9 @@ from crud.report import ReportSittingDateTitleRow
 from enums import BillLinkSource
 from services.act_link import (
     BillLink,
+    BillLookups,
     LinkableBill,
+    build_bill_lookups,
     get_bill_link,
     get_bill_title_key,
 )
@@ -14,7 +16,7 @@ from utils.title_key import get_title_key
 
 def _build_linkable_bills(
     report_rows: list[ReportSittingDateTitleRow], third_reading_report_ids: set[int]
-) -> dict[str, list[LinkableBill]]:
+) -> BillLookups:
     report_id_to_sitting_date = {
         report_row.id: report_row.sitting_date.date() for report_row in report_rows
     }
@@ -30,7 +32,7 @@ def _build_linkable_bills(
                 ],
             )
         )
-    return title_key_to_linkable_bills
+    return build_bill_lookups(title_key_to_linkable_bills)
 
 
 _MONEYLENDERS_BILLS = _build_linkable_bills(
@@ -122,7 +124,7 @@ def test_the_third_reading_date_is_tried_before_the_second() -> None:
     assert second_link == BillLink(1, BillLinkSource.SECOND_READING_DATE)
 
 
-def test_a_no_2_sequel_does_not_link_to_the_first_bill() -> None:
+def test_a_no_2_sequel_read_on_other_dates_does_not_link_to_the_first_bill() -> None:
     title_key_to_linkable_bills = _build_linkable_bills(
         [
             ReportSittingDateTitleRow(
@@ -135,7 +137,7 @@ def test_a_no_2_sequel_does_not_link_to_the_first_bill() -> None:
     assert (
         get_bill_link(
             "Land Transport and Related Matters (No 2) Act 2026",
-            date(2026, 3, 10),
+            date(2026, 9, 1),
             None,
             None,
             title_key_to_linkable_bills,
@@ -151,3 +153,102 @@ def test_an_entry_with_no_dates_links_to_nothing() -> None:
         )
         is None
     )
+
+
+def _build_single_bill_lookups(
+    title: str, first_reading_date: date, third_reading_date: date
+) -> BillLookups:
+    return _build_linkable_bills(
+        [
+            ReportSittingDateTitleRow(
+                1, datetime.combine(first_reading_date, datetime.min.time()), title
+            ),
+            ReportSittingDateTitleRow(
+                2, datetime.combine(third_reading_date, datetime.min.time()), title
+            ),
+        ],
+        {2},
+    )
+
+
+def test_an_act_title_links_to_the_amendment_bill_read_on_the_same_dates() -> None:
+    bill_lookups = _build_single_bill_lookups(
+        "INCOME TAX (AMENDMENT) BILL", date(1998, 6, 29), date(1998, 7, 31)
+    )
+
+    assert get_bill_link(
+        "Income Tax Act 1998",
+        date(1998, 6, 29),
+        date(1998, 7, 31),
+        date(1998, 7, 31),
+        bill_lookups,
+    ) == BillLink(0, BillLinkSource.LOOSE_TITLE_READING_DATES)
+
+
+def test_an_amendment_title_links_to_the_numbered_amendment_bill() -> None:
+    bill_lookups = _build_single_bill_lookups(
+        "Road Traffic (Amendment No. 2) Bill", date(2010, 3, 1), date(2010, 4, 5)
+    )
+
+    assert get_bill_link(
+        "Road Traffic (Amendment) Act 2010",
+        date(2010, 3, 1),
+        None,
+        date(2010, 4, 5),
+        bill_lookups,
+    ) == BillLink(0, BillLinkSource.LOOSE_TITLE_READING_DATES)
+
+
+def test_a_title_links_to_the_bill_with_a_number_in_brackets() -> None:
+    bill_lookups = _build_single_bill_lookups(
+        "Statute Law Revision (No. 2) Bill", date(2012, 5, 7), date(2012, 6, 4)
+    )
+
+    assert get_bill_link(
+        "Statute Law Revision Act 2012",
+        date(2012, 5, 7),
+        None,
+        None,
+        bill_lookups,
+    ) == BillLink(0, BillLinkSource.LOOSE_TITLE_READING_DATES)
+
+
+def test_two_bills_with_one_loose_title_and_the_same_report_day_link_to_nothing() -> (
+    None
+):
+    bill_lookups = _build_linkable_bills(
+        [
+            ReportSittingDateTitleRow(
+                1, datetime(2012, 5, 7), "Statute Law Revision (No. 2) Bill"
+            ),
+            ReportSittingDateTitleRow(
+                2, datetime(2012, 5, 7), "Statute Law Revision (No. 3) Bill"
+            ),
+        ],
+        {1, 2},
+    )
+
+    assert (
+        get_bill_link(
+            "Statute Law Revision Act 2012", date(2012, 5, 7), None, None, bill_lookups
+        )
+        is None
+    )
+
+
+def test_an_exact_title_match_wins_over_a_loose_one() -> None:
+    bill_lookups = _build_linkable_bills(
+        [
+            ReportSittingDateTitleRow(
+                1, datetime(2012, 5, 7), "Statute Law Revision (No. 2) Bill"
+            ),
+            ReportSittingDateTitleRow(
+                2, datetime(2012, 5, 7), "Statute Law Revision Bill"
+            ),
+        ],
+        {1, 2},
+    )
+
+    assert get_bill_link(
+        "Statute Law Revision Act 2012", date(2012, 5, 7), None, None, bill_lookups
+    ) == BillLink(1, BillLinkSource.FIRST_READING_DATE)

@@ -29,7 +29,12 @@ from services.act_history import (
     parse_history_entry,
     split_history_entries,
 )
-from services.act_link import LinkableBill, get_bill_link
+from services.act_link import (
+    BillLookups,
+    LinkableBill,
+    build_bill_lookups,
+    get_bill_link,
+)
 from services.bill import (
     NOT_THIRD_READING_PATTERNS,
     THIRD_READING_PATTERN,
@@ -42,7 +47,7 @@ _HARVEST_LISTING_FILE = "acts.json"
 
 def _build_planned_entry(
     parsed_entry: ParsedHistoryEntry,
-    title_key_to_linkable_bills: dict[str, list[LinkableBill]],
+    bill_lookups: BillLookups,
 ) -> PlannedActHistoryEntry:
     bill_link = None
     if (
@@ -54,7 +59,7 @@ def _build_planned_entry(
             parsed_entry.first_reading_date,
             parsed_entry.second_reading_date,
             parsed_entry.third_reading_date,
-            title_key_to_linkable_bills,
+            bill_lookups,
         )
     return PlannedActHistoryEntry(
         ordinal=parsed_entry.ordinal,
@@ -76,7 +81,7 @@ def _build_planned_entry(
 def _build_planned_act(
     harvested_act: HarvestedAct,
     text: str,
-    title_key_to_linkable_bills: dict[str, list[LinkableBill]],
+    bill_lookups: BillLookups,
     unparsed_entries: list[UnparsedEntry],
 ) -> PlannedAct:
     entries: list[PlannedActHistoryEntry] = []
@@ -97,7 +102,7 @@ def _build_planned_act(
                 UnparsedEntry(sso_code=harvested_act.sso_code, message=str(error))
             )
             continue
-        entries.append(_build_planned_entry(parsed_entry, title_key_to_linkable_bills))
+        entries.append(_build_planned_entry(parsed_entry, bill_lookups))
     return PlannedAct(
         sso_code=harvested_act.sso_code, title=harvested_act.title, entries=entries
     )
@@ -127,6 +132,7 @@ def get_act_link_plan(session: Session, harvest_directory: Path) -> ActLinkPlan:
                 ],
             )
         )
+    bill_lookups = build_bill_lookups(title_key_to_linkable_bills)
     harvested_acts = HarvestedActs.model_validate_json(
         (harvest_directory / _HARVEST_LISTING_FILE).read_text(encoding="utf8")
     )
@@ -142,9 +148,7 @@ def get_act_link_plan(session: Session, harvest_directory: Path) -> ActLinkPlan:
             unfetched_sso_codes.append(harvested_act.sso_code)
             continue
         acts.append(
-            _build_planned_act(
-                harvested_act, text, title_key_to_linkable_bills, unparsed_entries
-            )
+            _build_planned_act(harvested_act, text, bill_lookups, unparsed_entries)
         )
     return ActLinkPlan(
         bills=[
