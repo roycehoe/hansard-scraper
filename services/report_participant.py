@@ -21,6 +21,7 @@ from utils.office import (
     Office,
     get_answering_for_printed,
     get_label_office,
+    get_nested_answering_for_name,
     get_office_class,
     is_government_office,
 )
@@ -214,6 +215,32 @@ def read_inline_speakers(
             )
         )
     return inline_speaker_rows
+
+
+def read_nested_label_speakers(
+    speech_asker_rows: list[SpeechAskerRow],
+    get_speaker_id: Callable[[str], Optional[int]],
+) -> list[SpeechAskerRow]:
+    speaker_ids_in_report = {
+        speech_asker_row.speaker_id
+        for speech_asker_row in speech_asker_rows
+        if speech_asker_row.speaker_id is not None
+    }
+    nested_speaker_rows: list[SpeechAskerRow] = []
+    for speech_asker_row in speech_asker_rows:
+        if (
+            speech_asker_row.speaker is None
+            or speech_asker_row.speaker_id is not None
+            or speech_asker_row.kind not in (None, SpeechKind.SPEECH)
+        ):
+            nested_speaker_rows.append(speech_asker_row)
+            continue
+        nested_name = get_nested_answering_for_name(speech_asker_row.speaker)
+        speaker_id = None if nested_name is None else get_speaker_id(nested_name)
+        if speaker_id in speaker_ids_in_report:
+            speech_asker_row = replace(speech_asker_row, speaker_id=speaker_id)
+        nested_speaker_rows.append(speech_asker_row)
+    return nested_speaker_rows
 
 
 def _get_participant_rows(

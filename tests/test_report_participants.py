@@ -23,6 +23,7 @@ from services.report_participant import (
     get_participants,
     get_question_states,
     read_inline_speakers,
+    read_nested_label_speakers,
 )
 from utils.asker_candidate import AskerCandidate
 from utils.office import Office
@@ -35,6 +36,7 @@ _SIM_ANN_SPEAKER_ID = 990
 _VASOO_SPEAKER_ID = 411
 _CHARLES_CHONG_SPEAKER_ID = 619
 _TEO_CHONG_TEE_SPEAKER_ID = 338
+_JOHN_CHEN_SPEAKER_ID = 612
 
 
 @dataclass(frozen=True)
@@ -99,7 +101,12 @@ def _label_report(
         )
     participant_candidates = get_participants(
         title,
-        read_inline_speakers(speech_asker_rows, (inline_label_to_speaker_id or {}).get),
+        read_inline_speakers(
+            read_nested_label_speakers(
+                speech_asker_rows, (inline_label_to_speaker_id or {}).get
+            ),
+            (inline_label_to_speaker_id or {}).get,
+        ),
         asker_candidates,
         question_row_ordinals,
         speaker_id_to_office or {},
@@ -3404,5 +3411,135 @@ def test_report_33485_office_guessed_from_the_parliament_does_not_make_an_answer
             "The Parliamentary Secretary to the Minister for Social Affairs",
             OfficeClass.PARLIAMENTARY_SECRETARY,
             OfficeSource.PARLIAMENT_GUESS,
+        )
+    ]
+
+
+_REPORT_42915_TITLE = "CONSTRUCTION INDUSTRY"
+_REPORT_42915_ROWS = """
+1 | SPEECH | 626 | Mr Goh Chong Chia | asked the Minister for National Development whether he will consider releasing more public sector work to the private sector instead of giving the work directly to Government corporatised companies as the construction industry has yet to recover from
+2 | SPEECH | 626 | Mr Goh Chong Chia (Nominated Member) | Mr Speaker, Sir, in asking Question No. 6, I wish to declare that I am an architect in private practice.
+3 | SPEECH |  | The Minister of State for National Development (Dr John Chen Seow Phun (for the Minister for National Development)) | Mr Speaker, Sir, the Public Works Department (PWD) was corporatised in 1999 as part of the Government's efforts to progressively devolve its non-policy and non-regulatory functions to the private sector. This would benefit the private sector in the l
+4 | SPEECH |  | The Minister of State for National Development (Dr John Chen Seow Phun (for the Minister for National Development)) | To effect the corporatisation, the Government granted the corporatised PWD a moratorium period of five years starting from 1st April 1999. During this period, PWDCorp Pte Ltd is to continue with architectural and engineering consultancy, project mana
+5 | SPEECH |  | The Minister of State for National Development (Dr John Chen Seow Phun (for the Minister for National Development)) | The private sector has in fact benefited as a result of the PWD corporatisation. Before its corporatisation, PWD was handling all Ministry projects. Since corporatisation, the Government has directly awarded more than $450 million worth of projects e
+6 | SPEECH | 682 | Mr Simon S C Tay (Nominated Member) | Sir, I believe the Minister of State mentioned $450 million worth of contracts. Could I know how much this is as a percentage of the works given out by the Government?
+7 | SPEECH | 612 | Dr John Chen Seow Phun | Sir, I do not have the figures with me, but let me just do a mental calculation. For $450 million, if you exclude the big projects, eg, reclamation and so on, I would say maybe in the region of 10%-20%. It is just a guess.
+8 | SPEECH | 682 | Mr Simon Tay | Sir, I appreciate the Minister of State doing his back-of-envelope work. 10%-20%, if it excludes the very large projects like reclamation, seems a little low, if I may say. Is there any inclination to push it up higher? Is the private sector up to th
+9 | SPEECH | 612 | Dr John Chen Seow Phun | Sir, may I remind the hon. Member that PWD was formerly part of the Government and all the jobs were given to PWD. This moratorium is basically to ensure a smooth transition. PWD is now in the private sector and, therefore, it has to compete with the
+10 | SPEECH | 685 | Mr Thomas Thomas (Nominated Member) | Sir, since PWD is now privatised and in the private sector, can the Minister of State tell us how much private-sector work is PWD doing?
+11 | SPEECH | 612 | Dr John Chen Seow Phun | Sir, this is a related question. If I know the exact figure, I would have been able to give the percentage to the hon. Member. However, now that he has jogged my memory, PWD is doing a lot of Government work, eg, schools, even the Terminal 3 design a
+12 | SPEECH | 626 | Mr Goh Chong Chia | Mr Speaker, Sir, in view of the prolonged recession in the construction industry, would the Government consider reviewing the moratorium?
+13 | SPEECH | 612 | Dr John Chen Seow Phun | Sir, we have forwarded the feedback to the Ministry of Finance and I believe they are currently reviewing it.
+"""
+_REPORT_25916_TITLE = "REVERSE MORTGAGES FOR HDB FLATS"
+_REPORT_25916_ROWS = """
+1 | SPEECH | 684 | Dr Teo Ho Pin | asked the Minister for National Development whether the Housing and Development Board will allow its lessees especially senior citizens to take up reverse mortgages for their flats so that they can have more disposable income.
+2 | SPEECH |  | The Minister of State for National Development (Dr John Chen Seow Phun (for the Minister for National Development)) | Mr Speaker, Sir, the Ministry of National Development and the Housing and Development Board have explored reverse mortgage as a possible way to provide elderly HDB lessees with an additional source of income for their retirement needs.
+3 | SPEECH |  | The Minister of State for National Development (Dr John Chen Seow Phun (for the Minister for National Development)) | The current reverse mortgage proposals allow a property owner to receive monthly payments over a fixed term of about 10 years. At the end of a reverse mortgage term, however, the property owner has to relinquish ownership of his house unless he is ab
+4 | SPEECH |  | The Minister of State for National Development (Dr John Chen Seow Phun (for the Minister for National Development)) | After studying the conditions and implications of current reverse mortgage proposals carefully, we feel that the benefits are outweighed by the inherent limitations. The monthly payments are relatively meagre because of high financing costs. More imp
+5 | SPEECH | 682 | Mr Simon Tay | May I ask the Minister of State whether this is a form of paternalism and it goes against the idea that citizens should take more responsibility for managing their own assets?
+6 | SPEECH | 612 | Dr John Chen Seow Phun | Sir, I think it is not prudent. There is a risk involved and if the elderly stands to lose his home, then I do not think it is prudent for Government to start this scheme because basically we want to encourage home ownership.
+7 | SPEECH | 682 | Mr Simon Tay | Sir, even if we open up the possibility, it will still be an option for the elderly. Is it not possible, therefore, that an elderly couple could be sitting on a fully paid-up flat but they have no money in their pockets, and would that not be a hards
+8 | SPEECH | 612 | Dr John Chen Seow Phun | Mr Speaker, Sir, we have other schemes to help them. In fact, we have a number of them. For instance, we have made it easier for elderly lessees of three-room flats to sublet their whole flat. Is it not better? And if they do not wish to move, and th
+9 | SPEECH | 686 | Assoc. Prof. Toh See Kiat | Sir, I would like to ask the Minister of State whether he is aware that sometimes the HDB officials will send letters to elderly lessees, who are alone, as an almost automatic reaction to tell them to give up their flat and sell it away, and this rea
+10 | SPEECH | 612 | Dr John Chen Seow Phun | Sir, I am not aware of this. If the Member has the details, please pass it to me.
+"""
+_REPORT_31140_TITLE = "BRAIN DRAIN PROBLEM"
+_REPORT_31140_ROWS = """
+1 | SPEECH | 417 | Dr Wong Kwei Cheong | asked the Minister for Home Affairs (a) how serious is the brain drain problem for Singapore in terms of the number of Singaporeans who have emigrated and renounced their Singapore citizenship over the last ten years; and (b) under what conditions th
+2 | SPEECH |  | The Minister of State for Home Affairs (Dr Lee Boon Yang (for the Minister for Home Affairs)) | Sir, I am answering on behalf of my Minster.
+3 | SPEECH |  | The Minister of State for Home Affairs (Dr Lee Boon Yang (for the Minister for Home Affairs)) | Sir, statistics from the Registry of Citizens show that from 1977 to October 1987, 8,144 persons had renounced their Singapore citizenship. In the same period, 2,772 persons had their Singapore citizenship terminated on the ground that they had taken
+4 | SPEECH |  | The Minister of State for Home Affairs (Dr Lee Boon Yang (for the Minister for Home Affairs)) | These statistics tell one part of the story. During the same 10-year period, 88,132 persons acquired Singapore citizenship. Another 67,400 persons became permanent residents. Of the permanent residents, many will acquire citizenship eventually if the
+5 | SPEECH |  | The Minister of State for Home Affairs (Dr Lee Boon Yang (for the Minister for Home Affairs)) | Sir, the Prime Minister and the First Deputy Prime Minister have recently dis- cussed in detail the implications of Singaporeans emigrating in significant numbers. Every Singaporean, especially a skilled and talented person, who decides to leave perm
+6 | SPEECH |  | The Minister of State for Home Affairs (Dr Lee Boon Yang (for the Minister for Home Affairs)) | Singaporeans are free to travel. We cannot prevent people from leaving. Therefore, we must make life in Singapore more satisfying so that fewer people will want to emigrate. While we cannot duplicate the ski-slopes and natural sceneries of Vancouver
+7 | SPEECH |  | The Minister of State for Home Affairs (Dr Lee Boon Yang (for the Minister for Home Affairs)) | We do not place any impediment in the way ex-Singaporeans who wish to work in Singapore so long as they have recognized qualifications or skills and can contribute positively to our nation. When they apply for permits to work in Singapore, the Immigr
+"""
+
+
+def test_report_42915_label_with_the_for_bracket_nested_in_the_name_is_one_answerer_with_the_person() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_42915_TITLE,
+        _REPORT_42915_ROWS,
+        inline_label_to_speaker_id={"Dr John Chen Seow Phun": _JOHN_CHEN_SPEAKER_ID},
+    )
+
+    assert _get_person_rows(labelled_report, _JOHN_CHEN_SPEAKER_ID) == [
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            3,
+            "The Minister of State for National Development (Dr John Chen Seow Phun (for the Minister for National Development))",
+            _JOHN_CHEN_SPEAKER_ID,
+        )
+    ]
+    assert _summarise_office_marks(
+        [
+            report_participant
+            for report_participant in labelled_report.participants
+            if report_participant.role == ParticipantRole.ANSWERER
+        ]
+    ) == [
+        (
+            ParticipantRole.ANSWERER,
+            _JOHN_CHEN_SPEAKER_ID,
+            "for the Minister for National Development",
+            "The Minister of State for National Development",
+            OfficeClass.MINISTER_OF_STATE,
+            OfficeSource.LABEL_IN_REPORT,
+        )
+    ]
+    assert [
+        report_participant.speaker_id
+        for report_participant in labelled_report.participants
+        if report_participant.role == ParticipantRole.ANSWERER
+    ] == [_JOHN_CHEN_SPEAKER_ID]
+
+
+def test_report_25916_label_with_the_for_bracket_nested_in_the_name_is_one_answerer_with_the_person() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_25916_TITLE,
+        _REPORT_25916_ROWS,
+        inline_label_to_speaker_id={"Dr John Chen Seow Phun": _JOHN_CHEN_SPEAKER_ID},
+    )
+
+    assert _get_person_rows(labelled_report, _JOHN_CHEN_SPEAKER_ID) == [
+        (
+            ParticipantRole.ANSWERER,
+            ParticipantRoleSource.OFFICE_LABEL,
+            2,
+            "The Minister of State for National Development (Dr John Chen Seow Phun (for the Minister for National Development))",
+            _JOHN_CHEN_SPEAKER_ID,
+        )
+    ]
+
+
+def test_report_31140_label_with_the_for_bracket_nested_in_the_name_stores_it_with_no_person_to_merge() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_31140_TITLE,
+        _REPORT_31140_ROWS,
+        inline_label_to_speaker_id={"Dr Lee Boon Yang": 381},
+    )
+
+    assert _summarise_participants(labelled_report.participants)[1] == (
+        ParticipantRole.ANSWERER,
+        ParticipantRoleSource.OFFICE_LABEL,
+        2,
+        "The Minister of State for Home Affairs (Dr Lee Boon Yang (for the Minister for Home Affairs))",
+        None,
+    )
+    assert _summarise_office_marks(labelled_report.participants) == [
+        (
+            ParticipantRole.ANSWERER,
+            None,
+            "for the Minister for Home Affairs",
+            None,
+            None,
+            None,
         )
     ]

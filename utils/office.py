@@ -71,6 +71,7 @@ class _LabelParts:
     name: Optional[str]
     office: Optional[str]
     answering_for: Optional[str]
+    nested_answering_for_name: Optional[str] = None
 
 
 def _get_brackets(text: str) -> list[_Bracket]:
@@ -137,7 +138,27 @@ def _split_label(label: str) -> _LabelParts:
     )
     if CHAIR_FORM_PATTERN.search(name_bracket.inner):
         return _LabelParts(before_name_bracket, name_bracket.inner, answering_for)
-    return _LabelParts(name_bracket.inner, before_name_bracket or None, answering_for)
+    nested_answering_for_bracket = next(
+        (
+            bracket
+            for bracket in _get_brackets(name_bracket.inner)
+            if _is_answering_for_bracket(bracket)
+        ),
+        None,
+    )
+    if nested_answering_for_bracket is None:
+        return _LabelParts(
+            name_bracket.inner, before_name_bracket or None, answering_for
+        )
+    nested_answering_for_name = _remove_brackets(
+        name_bracket.inner, [nested_answering_for_bracket]
+    )
+    return _LabelParts(
+        name_bracket.inner,
+        before_name_bracket or None,
+        answering_for or nested_answering_for_bracket.inner,
+        nested_answering_for_name,
+    )
 
 
 def get_label_office(speaker_label: str) -> Optional[str]:
@@ -146,6 +167,10 @@ def get_label_office(speaker_label: str) -> Optional[str]:
 
 def get_answering_for_printed(speaker_label: str) -> Optional[str]:
     return _split_label(speaker_label).answering_for
+
+
+def get_nested_answering_for_name(speaker_label: str) -> Optional[str]:
+    return _split_label(speaker_label).nested_answering_for_name
 
 
 def _is_header_entry_start(text: str) -> bool:

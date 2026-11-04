@@ -155,6 +155,12 @@ _LABEL_CASES = [
         id="report_29225_second_deputy_prime_minister_with_portfolio_bracket",
     ),
     pytest.param(
+        "The Minister of State for National Development (Dr John Chen Seow Phun (for the Minister for National Development))",
+        "The Minister of State for National Development",
+        "for the Minister for National Development",
+        id="report_42915_for_bracket_nested_in_the_name_bracket",
+    ),
+    pytest.param(
         "The Senior Parliamentary Secretary to the Minister for Home Affairs (Ms Sun Xueling) (for the Minister for Home Affairs)",
         "The Senior Parliamentary Secretary to the Minister for Home Affairs",
         "for the Minister for Home Affairs",

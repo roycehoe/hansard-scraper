@@ -37,6 +37,7 @@ from services.report_participant import (
     get_participants,
     get_question_states,
     read_inline_speakers,
+    read_nested_label_speakers,
 )
 from services.speaker_link import resolve_speech_speaker_id
 from utils.asker_candidate import AskerCandidate
@@ -298,7 +299,10 @@ def _build_planned_rows(
         )
     participant_candidates = get_participants(
         report_row.title,
-        read_inline_speakers(speech_asker_rows, get_inline_speaker_id),
+        read_inline_speakers(
+            read_nested_label_speakers(speech_asker_rows, get_inline_speaker_id),
+            get_inline_speaker_id,
+        ),
         asker_candidates,
         question_row_ordinals,
         speaker_id_to_office,
