@@ -1,6 +1,21 @@
-from sqlmodel import Session, col, func, select
+from dataclasses import dataclass
+from datetime import datetime
+
+from sqlalchemy import update
+from sqlmodel import Session, col, delete, func, select
 
 from database.bill import Bill
+from utils.act_link_update import BillUpdate
+
+
+@dataclass(frozen=True)
+class BillRow:
+    id: int
+    title: str
+    title_key: str
+    first_sitting_date: datetime
+    last_sitting_date: datetime
+    is_passed: bool
 
 
 class CRUDBill:
@@ -22,3 +37,40 @@ class CRUDBill:
             .where(col(Bill.is_passed).is_(is_passed))
         )
         return self.session.exec(statement).one()
+
+    def get_rows(self) -> list[BillRow]:
+        statement = select(
+            Bill.id,
+            Bill.title,
+            Bill.title_key,
+            Bill.first_sitting_date,
+            Bill.last_sitting_date,
+            Bill.is_passed,
+        ).order_by(col(Bill.id))
+        return [BillRow(*row) for row in self.session.exec(statement).all()]
+
+    def update_many(self, bill_updates: list[BillUpdate]) -> None:
+        if not bill_updates:
+            return
+
+        self.session.execute(
+            update(Bill),
+            [
+                {
+                    "id": bill_update.id,
+                    "title": bill_update.title,
+                    "title_key": bill_update.title_key,
+                    "first_sitting_date": bill_update.first_sitting_date,
+                    "last_sitting_date": bill_update.last_sitting_date,
+                    "is_passed": bill_update.is_passed,
+                }
+                for bill_update in bill_updates
+            ],
+        )
+
+    def delete_by_ids(self, bill_ids: list[int]) -> None:
+        if not bill_ids:
+            return
+
+        statement = delete(Bill).where(col(Bill.id).in_(bill_ids))
+        self.session.execute(statement)

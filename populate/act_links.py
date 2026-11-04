@@ -35,6 +35,7 @@ from services.act_link import (
     build_bill_lookups,
     get_bill_link,
 )
+from services.act_link_write import ActLinkWrite, build_act_link_write
 from services.bill import (
     FIRST_READING_PATTERN,
     NOT_FIRST_READING_PATTERNS,
@@ -42,6 +43,7 @@ from services.bill import (
     THIRD_READING_PATTERN,
     group_bills,
 )
+from utils.act_link_update import ActHistoryEntryUpdate
 
 _BILL_REPORT_TYPES = (ReportType.BILL, ReportType.BILL_INTRODUCTION)
 _HARVEST_LISTING_FILE = "acts.json"
@@ -183,56 +185,112 @@ def get_act_link_plan(session: Session, harvest_directory: Path) -> ActLinkPlan:
     )
 
 
-def _get_bill_id(bills: list[Bill], bill_index: Optional[int]) -> Optional[int]:
+def get_act_link_write(session: Session, plan: ActLinkPlan) -> ActLinkWrite:
+    return build_act_link_write(
+        CRUDBill(session).get_rows(),
+        CRUDBillReport(session).get_rows(),
+        CRUDAct(session).get_rows(),
+        CRUDActHistoryEntry(session).get_rows(),
+        plan,
+    )
+
+
+def _get_bill_id(
+    bill_index_to_id: dict[int, int], bill_index: Optional[int]
+) -> Optional[int]:
     if bill_index is None:
         return None
-    return bills[bill_index].id
+    return bill_index_to_id[bill_index]
 
 
-def write_act_link_plan(session: Session, plan: ActLinkPlan) -> None:
-    bills = [
+def write_act_link_plan(
+    session: Session, plan: ActLinkPlan, act_link_write: ActLinkWrite
+) -> None:
+    new_bills = [
         Bill(
-            title=planned_bill.title,
-            title_key=planned_bill.title_key,
-            first_sitting_date=planned_bill.first_sitting_date,
-            last_sitting_date=planned_bill.last_sitting_date,
-            is_passed=planned_bill.is_passed,
+            title=plan.bills[bill_index].title,
+            title_key=plan.bills[bill_index].title_key,
+            first_sitting_date=plan.bills[bill_index].first_sitting_date,
+            last_sitting_date=plan.bills[bill_index].last_sitting_date,
+            is_passed=plan.bills[bill_index].is_passed,
         )
-        for planned_bill in plan.bills
+        for bill_index in act_link_write.bill_indexes_to_insert
     ]
-    CRUDBill(session).add_many(bills)
+    CRUDBill(session).add_many(new_bills)
     CRUDBillReport(session).add_many(
         [
-            BillReport(bill_id=bill.id, report_id=report_id)
-            for bill, planned_bill in zip(bills, plan.bills, strict=True)
-            if bill.id is not None
-            for report_id in planned_bill.report_ids
+            BillReport(bill_id=new_bill.id, report_id=report_id)
+            for new_bill, bill_index in zip(
+                new_bills, act_link_write.bill_indexes_to_insert, strict=True
+            )
+            if new_bill.id is not None
+            for report_id in plan.bills[bill_index].report_ids
         ]
     )
-    acts = [
+    CRUDBill(session).update_many(act_link_write.bill_updates)
+    bill_index_to_id = dict(act_link_write.kept_bill_index_to_id)
+    for new_bill, bill_index in zip(
+        new_bills, act_link_write.bill_indexes_to_insert, strict=True
+    ):
+        if new_bill.id is not None:
+            bill_index_to_id[bill_index] = new_bill.id
+
+    new_acts = [
         Act(sso_code=planned_act.sso_code, title=planned_act.title)
-        for planned_act in plan.acts
+        for planned_act in act_link_write.acts_to_insert
     ]
-    CRUDAct(session).add_many(acts)
+    CRUDAct(session).add_many(new_acts)
+    CRUDAct(session).update_many(act_link_write.act_updates)
+    sso_code_to_act_id = dict(act_link_write.kept_sso_code_to_act_id)
+    for new_act in new_acts:
+        if new_act.id is not None:
+            sso_code_to_act_id[new_act.sso_code] = new_act.id
+
     CRUDActHistoryEntry(session).add_many(
         [
             ActHistoryEntry(
-                ordinal=planned_entry.ordinal,
-                printed_text=planned_entry.printed_text,
-                printed_law_number=planned_entry.printed_law_number,
-                printed_title=planned_entry.printed_title,
-                printed_bill_number=planned_entry.printed_bill_number,
-                first_reading_date=planned_entry.first_reading_date,
-                second_reading_date=planned_entry.second_reading_date,
-                third_reading_date=planned_entry.third_reading_date,
-                commencement_date=planned_entry.commencement_date,
-                kind=planned_entry.kind,
-                bill_link_source=planned_entry.bill_link_source,
-                act_id=act.id,
-                bill_id=_get_bill_id(bills, planned_entry.bill_index),
+                ordinal=entry_insert.planned_entry.ordinal,
+                printed_text=entry_insert.planned_entry.printed_text,
+                printed_law_number=entry_insert.planned_entry.printed_law_number,
+                printed_title=entry_insert.planned_entry.printed_title,
+                printed_bill_number=entry_insert.planned_entry.printed_bill_number,
+                first_reading_date=entry_insert.planned_entry.first_reading_date,
+                second_reading_date=entry_insert.planned_entry.second_reading_date,
+                third_reading_date=entry_insert.planned_entry.third_reading_date,
+                commencement_date=entry_insert.planned_entry.commencement_date,
+                kind=entry_insert.planned_entry.kind,
+                bill_link_source=entry_insert.planned_entry.bill_link_source,
+                act_id=sso_code_to_act_id[entry_insert.sso_code],
+                bill_id=_get_bill_id(
+                    bill_index_to_id, entry_insert.planned_entry.bill_index
+                ),
             )
-            for act, planned_act in zip(acts, plan.acts, strict=True)
-            if act.id is not None
-            for planned_entry in planned_act.entries
+            for entry_insert in act_link_write.entries_to_insert
         ]
     )
+    CRUDActHistoryEntry(session).update_many(
+        [
+            ActHistoryEntryUpdate(
+                id=entry_update.id,
+                printed_text=entry_update.planned_entry.printed_text,
+                printed_law_number=entry_update.planned_entry.printed_law_number,
+                printed_title=entry_update.planned_entry.printed_title,
+                printed_bill_number=entry_update.planned_entry.printed_bill_number,
+                first_reading_date=entry_update.planned_entry.first_reading_date,
+                second_reading_date=entry_update.planned_entry.second_reading_date,
+                third_reading_date=entry_update.planned_entry.third_reading_date,
+                commencement_date=entry_update.planned_entry.commencement_date,
+                kind=entry_update.planned_entry.kind,
+                bill_link_source=entry_update.planned_entry.bill_link_source,
+                bill_id=_get_bill_id(
+                    bill_index_to_id, entry_update.planned_entry.bill_index
+                ),
+            )
+            for entry_update in act_link_write.entry_updates
+        ]
+    )
+
+    CRUDActHistoryEntry(session).delete_by_ids(act_link_write.entry_ids_to_delete)
+    CRUDAct(session).delete_by_ids(act_link_write.act_ids_to_delete)
+    CRUDBillReport(session).delete_by_bill_ids(act_link_write.bill_ids_to_delete)
+    CRUDBill(session).delete_by_ids(act_link_write.bill_ids_to_delete)

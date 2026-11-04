@@ -16,9 +16,14 @@ from database.init import engine
 from enums import ActHistoryEntryKind
 from exceptions import HansardWriteCheckError
 from logs import logger
-from populate.act_links import get_act_link_plan, write_act_link_plan
+from populate.act_links import (
+    get_act_link_plan,
+    get_act_link_write,
+    write_act_link_plan,
+)
 from populate.written_tables import vacuum_analyze_written_tables
 from schemas.act_link_plan import ActLinkPlan
+from services.act_link_write import ActLinkWrite, get_first_difference
 from settings import settings
 from utils.write_target import validate_can_write
 
@@ -76,18 +81,16 @@ def _log_plan(plan: ActLinkPlan) -> None:
         logger.info(f"Unparsed: {unparsed_entry.message}")
 
 
-def _validate_can_write_act_links(session: Session) -> None:
-    table_name_to_row_count = {
-        Bill.__tablename__: CRUDBill(session).get_count(),
-        BillReport.__tablename__: CRUDBillReport(session).get_count(),
-        Act.__tablename__: CRUDAct(session).get_count(),
-        ActHistoryEntry.__tablename__: CRUDActHistoryEntry(session).get_count(),
-    }
-    for table_name, row_count in table_name_to_row_count.items():
-        if row_count != 0:
-            raise HansardWriteCheckError(
-                f"The {table_name} table holds {row_count} rows"
-            )
+def _log_write(act_link_write: ActLinkWrite) -> None:
+    logger.info(
+        f"Bills: {len(act_link_write.kept_bill_index_to_id):,} kept, {len(act_link_write.bill_updates):,} updated, {len(act_link_write.bill_indexes_to_insert):,} inserted, {len(act_link_write.bill_ids_to_delete):,} deleted"
+    )
+    logger.info(
+        f"Acts: {len(act_link_write.acts_to_insert):,} inserted, {len(act_link_write.act_updates):,} updated, {len(act_link_write.act_ids_to_delete):,} deleted"
+    )
+    logger.info(
+        f"Entries: {len(act_link_write.entries_to_insert):,} inserted, {len(act_link_write.entry_updates):,} updated, {len(act_link_write.entry_ids_to_delete):,} deleted; {sum(entry_update.is_bill_changed for entry_update in act_link_write.entry_updates):,} linked entries change bill"
+    )
 
 
 def _validate_can_commit_act_links(session: Session, plan: ActLinkPlan) -> None:
@@ -117,13 +120,19 @@ def _validate_can_commit_act_links(session: Session, plan: ActLinkPlan) -> None:
             raise HansardWriteCheckError(
                 f"{stored_count} {label} are stored, the plan has {planned_count}"
             )
+    first_difference = get_first_difference(get_act_link_write(session, plan))
+    if first_difference is not None:
+        raise HansardWriteCheckError(
+            f"The stored rows differ from the plan: {first_difference}"
+        )
 
 
 def apply_act_links(harvest_directory: Path, plan_path: Path, is_commit: bool) -> None:
     if not is_commit:
         with Session(engine) as session:
             plan = get_act_link_plan(session, harvest_directory)
-        _log_plan(plan)
+            _log_plan(plan)
+            _log_write(get_act_link_write(session, plan))
         plan_path.write_text(plan.model_dump_json(indent=1))
         logger.info("Dry run: nothing written")
         return
@@ -131,12 +140,13 @@ def apply_act_links(harvest_directory: Path, plan_path: Path, is_commit: bool) -
     validate_can_write(settings.database_url)
     reviewed_plan = ActLinkPlan.model_validate_json(plan_path.read_text())
     with Session(engine) as session:
-        _validate_can_write_act_links(session)
         plan = get_act_link_plan(session, harvest_directory)
         _log_plan(plan)
         if plan != reviewed_plan:
             raise HansardWriteCheckError("The plan differs from the reviewed plan")
-        write_act_link_plan(session, plan)
+        act_link_write = get_act_link_write(session, plan)
+        _log_write(act_link_write)
+        write_act_link_plan(session, plan, act_link_write)
         _validate_can_commit_act_links(session, plan)
         session.commit()
         logger.info("Committed")
@@ -170,7 +180,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--commit",
         action="store_true",
-        help="check the tables are empty and the plan is unchanged, then write it",
+        help="check the plan is unchanged, then apply it to the stored rows",
     )
     arguments = parser.parse_args()
     apply_act_links(arguments.harvest_directory, arguments.plan_file, arguments.commit)
