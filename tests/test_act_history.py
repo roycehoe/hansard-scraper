@@ -452,6 +452,15 @@ def _read_fixture(name: str) -> str:
             ),
             [],
         ),
+        (
+            "act_with_placeholder_number",
+            ActHistoryEntryKind.ACT,
+            "Act N of 2019",
+            "Work Injury Compensation Act 2019",
+            "21/2019",
+            (date(2019, 8, 5), date(2019, 9, 3), date(2019, 9, 3), date(2020, 9, 1)),
+            [],
+        ),
     ],
 )
 def test_entry_shape_is_read_as_printed(
@@ -604,6 +613,68 @@ def test_a_legal_notice_with_no_gazette_bracket_or_no_closing_parenthesis_is_rea
             ActHistoryEntryKind.SUBSIDIARY_LEGISLATION,
             "L.N. 296/1964 (G.N. Sp. No. S 205/1964)",
             "Air Navigation Ordinance, 1952 (Extension) Order, 1964",
+        ),
+    ]
+
+
+def test_a_straits_settlements_gazette_notification_is_an_entry_of_kind_other() -> None:
+    blocks = split_history_entries(
+        "CODE", _read_fixture("straits_settlements_gazette_notifications")
+    )
+
+    entries = [parse_history_entry("CODE", block) for block in blocks]
+
+    assert [
+        (
+            entry.kind,
+            entry.printed_law_number,
+            entry.printed_title,
+            entry.commencement_date,
+        )
+        for entry in entries
+    ] == [
+        (
+            ActHistoryEntryKind.OTHER,
+            "S.S.G.G. (E) No. 64/1908",
+            "Proclamation 1908",
+            date(1908, 11, 28),
+        ),
+        (
+            ActHistoryEntryKind.OTHER,
+            "S.S.G.G. (E) No. 6/1909",
+            "Proclamation 1909",
+            date(1909, 2, 1),
+        ),
+    ]
+
+
+def test_a_legal_notice_printed_with_a_space_between_its_initials_is_read() -> None:
+    blocks = split_history_entries(
+        "CODE", _read_fixture("legal_notice_with_spaced_initials")
+    )
+
+    entries = [parse_history_entry("CODE", block) for block in blocks]
+
+    assert [
+        (
+            entry.kind,
+            entry.printed_law_number,
+            entry.printed_title,
+            entry.commencement_date,
+        )
+        for entry in entries
+    ] == [
+        (
+            ActHistoryEntryKind.SUBSIDIARY_LEGISLATION,
+            "L. N. 231/1963 (G.N. Sp. No. S 4/1963)",
+            "Modification of Laws (Internal Security and Public Order) (Singapore) Order, 1963",
+            date(1963, 9, 16),
+        ),
+        (
+            ActHistoryEntryKind.REVISED_EDITION,
+            "1970 Revised Edition",
+            "Visiting Forces Act (Chapter 237)",
+            date(1971, 7, 31),
         ),
     ]
 

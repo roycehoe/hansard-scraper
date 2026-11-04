@@ -15,7 +15,7 @@ _PAGE_BREAK_NOISE = (
 )
 _ENTRY_HEAD = re.compile(r"^\s?(\d{1,3})\. (.+)$")
 _ENTRY_HEAD_START = re.compile(
-    r"(Malay|Act|Ordinance|G\.\s?N|\d{4} |First|Second|\d{1,2}(?: & \d{1,2})? [A-Z][a-z]+\.|M\. |F\.M\.S\. |Indian |L\.N\.|U\.K\. |British Military Administration )"
+    r"(Malay|Act|Ordinance|G\.\s?N|\d{4} |First|Second|\d{1,2}(?: & \d{1,2})? [A-Z][a-z]+\.|M\. |F\.M\.S\. |Indian |L\.\s?N\.|U\.K\. |S\.S\.G\.G\. |British Military Administration )"
 )
 _MAX_HEAD_INDENT = 1
 _CAPITALS_ONLY_LINE = re.compile(r"^\s*[A-Z0-9 ,.()'’&/-]*[A-Z][A-Z0-9 ,.()'’&/-]*$")
@@ -27,13 +27,14 @@ _QUALIFIER_START = re.compile(
     r"\((?:Consequential |Related )?[Aa]mendments? (?:made|by)"
 )
 _ENTRY_KIND = re.compile(
-    r"^(?P<law_number>L\.N\. \S+(?: \(G\.N\.[^)—]*\)?)?"
-    r"|(?:M\. |Malaysian? |Indian )?(?:Act|Ordinance) [IVXL\d]+ of \d{3,4}"
+    r"^(?P<law_number>L\.\s?N\. \S+(?: \(G\.N\.[^)—]*\)?)?"
+    r"|(?:M\. |Malaysian? |Indian )?(?:Act|Ordinance) (?:[IVXL\d]+|N) of \d{3,4}"
     r"|M\. Enactment [IVXL\d]+ of \d{4}"
     r"|F\.M\.S\. Chapter \d+"
     r"|\d{1,2}(?: & \d{1,2})? (?:Edw|Geo|Will|Vict|Eliz)\.[^—]*?c\. \d+"
     r"|British Military Administration G\.N\. No\. \S+"
     r"|U\.K\. \d{4}, c\. \d+"
+    r"|S\.S\.G\.G\.(?: \(E\))? No\. \S+"
     r"|G\.\s?N\.(?: Sp\.)? No\. \S.*?"
     r"|\d{4} Revised Edition"
     r"|(?:First |Second )?(?:\d{4} )?Reprint(?: \(\d{4}\))?)"
@@ -185,7 +186,11 @@ def _remove_qualifier(head: str) -> str:
 
 
 def _get_entry_kind(printed_law_number: str) -> ActHistoryEntryKind:
-    if printed_law_number.startswith("L.N.") or printed_law_number.startswith("G."):
+    if (
+        printed_law_number.startswith("L.N.")
+        or printed_law_number.startswith("L. N.")
+        or printed_law_number.startswith("G.")
+    ):
         return ActHistoryEntryKind.SUBSIDIARY_LEGISLATION
     if printed_law_number.endswith("Revised Edition"):
         return ActHistoryEntryKind.REVISED_EDITION
