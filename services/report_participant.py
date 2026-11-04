@@ -31,6 +31,7 @@ _MAX_EXCLAMATION_QUIP_WORDS = 6
 _MAX_INLINE_SPEAKER_LABEL_WORDS = 8
 _MAX_QUESTION_QUIP_WORDS = 8
 _MAX_REPLY_TO_CHAIR_WORDS = 6
+_MIN_ANSWER_ROW_WORDS = 12
 _MINISTER_CALL_TITLE = "Minister "
 _THE_PREFIX = "The "
 _ROLE_ORDER = tuple(ParticipantRole)
@@ -56,6 +57,12 @@ _PROCEDURAL_PATTERN = re.compile(
     r"point\s+of\s+(?:order|clarification|information|elucidation)"
     r"|out\s+of\s+order|standing\s+orders?|general\s+assent|may\s+i\s+reply"
     r"|what\s+is\s+your\s+question|should\s+not\s+make\s+any\s+comment",
+    re.IGNORECASE,
+)
+_BARE_REPLY_PATTERN = re.compile(r"^(?:yes|no|correct)\.$", re.IGNORECASE)
+_NON_ANSWER_PHRASE_PATTERN = re.compile(
+    r"not\s+supposed\s+to\s+answer|reply\s+on\s+my\s+behalf"
+    r"|leave\s+that\s+(?:entirely\s+)?to\s+you|allowing\s+me\s+to\s+join",
     re.IGNORECASE,
 )
 _ASKING_PATTERN = re.compile(
@@ -509,6 +516,35 @@ def _does_row_answer(
     )
 
 
+def _is_substantive_row(
+    participant_row: _ParticipantRow, previous_label: Optional[str]
+) -> bool:
+    text = participant_row.transcript.strip()
+    if len(text.split()) >= _MIN_ANSWER_ROW_WORDS:
+        return True
+    return (
+        _BARE_REPLY_PATTERN.search(text) is not None
+        and previous_label is not None
+        and not CHAIR_FORM_PATTERN.search(previous_label)
+    )
+
+
+def _is_answering_run(
+    run: list[_ParticipantRow], ordinal_to_label: dict[int, str]
+) -> bool:
+    if any(_NON_ANSWER_PHRASE_PATTERN.search(run_row.transcript) for run_row in run):
+        return False
+    if not all(
+        _does_row_answer(run_row, ordinal_to_label.get(run_row.ordinal - 1))
+        for run_row in run
+    ):
+        return False
+    return any(
+        _is_substantive_row(run_row, ordinal_to_label.get(run_row.ordinal - 1))
+        for run_row in run
+    )
+
+
 def _has_answering_run(
     person_rows: list[_ParticipantRow], ordinal_to_label: dict[int, str]
 ) -> bool:
@@ -518,13 +554,7 @@ def _has_answering_run(
             runs[-1].append(person_row)
         else:
             runs.append([person_row])
-    return any(
-        all(
-            _does_row_answer(run_row, ordinal_to_label.get(run_row.ordinal - 1))
-            for run_row in run
-        )
-        for run in runs
-    )
+    return any(_is_answering_run(run, ordinal_to_label) for run in runs)
 
 
 def _split_non_answering_holders(

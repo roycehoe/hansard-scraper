@@ -2738,3 +2738,202 @@ def test_report_30972_stood_filer_who_speaks_stays_an_absent_filer() -> None:
             409,
         )
     ]
+
+
+_REPORT_40823_TITLE = "REDUCED RENTS FOR NEW S.I.T. FLATS"
+_REPORT_40823_ROWS = """
+1 | SPEECH | 1397 | Mr Lim Choon Mong | asked the Minister for Local Government, Lands, and Housing whether he will consider taking steps to have the proposed rents of $30/$35 per month for the new Singapore Improvement Trust flats in the Albert Street, Prinsep Street and Short Street area reduced at least to
+2 | SPEECH | 1372 | Inche Abdul Hamid | Mr Speaker, Sir, the reply is no. The White Paper on housing subsidy policy gives the method of subsidising public housing which the Government is following. In the case of flats now being built under S.I.T. Programme No. 8 for rentals of $30/$35 per month,
+3 | SPEECH | 1397 | Mr Lim Choon Mong | Mr Speaker, Sir, is the Minister aware that some private builders are offering houses which are three times the size of the present flats at about $100 per month?
+4 | SPEECH | 1354 | Mr Chew Swee Kee | Quote facts.
+"""
+_REPORT_37381_TITLE = "PEOPLE'S DEFENCE FORCE (WOMEN) AND POLICE FORCE (WOMEN)"
+_REPORT_37381_ROWS = """
+1 | SPEECH | 9 | Madam Chan Choy Siong | asked the Minister of Defence whether he is satisfied with the overall performances of the People's Defence Force (Women) and the Police Force (Women) at the National Day March Past, and whether he intends to increase and expand both Units.
+2 | SPEECH | 60 | Mr Wee Toon Boon (for the Minister of Defence) | Mr Speaker. Sir, the Minister was very satisfied with the People's Defence Force (Women) on their outstanding performance at the National Day March Past. There are no immediate plans to expand this unit.
+3 | SPEECH | 60 | Mr Wee Toon Boon (for the Minister of Defence) | The Police Force (Women) did not participate in the National Day March Past. This was due to their numerous rehearsals in connection with the Police Military Display, which was another highlight of National Day Celebrations. There are no plans to increase this component of the
+4 | SPEECH | 9 | Madam Chan Choy Siong (Delta) | I would like the Minister of State to clarify whether those women soldiers who took part in the National Day March Past were holding real rifles or fake ones, because many people, especially the male population, tend to say that women soldiers are not capable
+5 | SPEECH | 60 | Mr Wee Toon Boon | Mr Speaker, Sir, the weapons carried by the women P.D.F, on the National Day Parade were, of course, real ones and serviceable. In fact, many of the women P.D.F, have used them. However, as the Member for Delta has raised this point, I would like
+6 | CHAMBER_EVENT |  |  | Madam Chan Choy Siong rose -
+7 | SPEECH | 16 | Mr Speaker | Please make sure, Madam Chan, that it arises out of your original question and answer and not the Minister of State's second answer.
+8 | SPEECH | 9 | Madam Chan Choy Siong | Does the Minister agree that the People's Defence Force (Women) has been admired and appreciated by the Ministers, because it is said that the male members of the Force were sleepy on that day when they were marching along the road?
+9 | SPEECH | 60 | Mr Wee Toon Boon | That was the first time that the women P.D.F, participated in the National Day Parade and no doubt they put up a very smart march past. But to be fair to everyone, I would not dare to say that they were the best among the
+10 | SPEECH | 45 | The Minister for Culture and Social Affairs (Inche Othman Bin Wok) | I think the men did the best on that day, Sir!
+11 | SPEECH | 16 | Mr Speaker | Order. We must not allow domestic squabbles to come into the House.
+"""
+_REPORT_38170_TITLE = "ELECTRICITY SUPPLY IN PUNGGOL"
+_REPORT_38170_ROWS = """
+1 | SPEECH | 41 | Mr Ng Kah Ting | asked the Minister for National Development whether and when electricity will be supplied from 9 milestone Punggol Road to Punggol Point.
+2 | SPEECH | 23 | The Parliamentary Secretary to the Minister for National Development (Mr Ho Cheng Choon) | Mr Speaker, Sir, I answer on behalf of my Minister.
+3 | SPEECH | 2 | Mr Speaker | Will the hon. Member please resume his seat?
+4 | CHAMBER_EVENT |  |  | Mr Ho Cheng Choon resumed his seat.
+5 | SPEECH | 35 | Mr Lim Kim San | Mr Speaker, Sir, if it is in order, my Parliamentary Secretary will reply on my behalf.
+6 | SPEECH | 2 | Mr Speaker | Mr Ho Cheng Choon, please proceed.
+7 | SPEECH | 23 | Mr Ho Cheng Choon | The Urban and Rural Services Consultative Committee has drawn up a scheme for the supply of electricity by the Public Utilities Board to the whole of Punggol area. The scheme covers the following areas:
+8 | SPEECH | 23 | Mr Ho Cheng Choon | Lorong Buang Kok
+9 | SPEECH | 23 | Mr Ho Cheng Choon | Kampong Sungei Tengah
+10 | SPEECH | 23 | Mr Ho Cheng Choon | Jalan Kampong Tengah
+11 | SPEECH | 23 | Mr Ho Cheng Choon | Kampong Serangoon Kechil, and
+12 | SPEECH | 23 | Mr Ho Cheng Choon | Punggol Road, 9¾ m.s. to seafront.
+13 | SPEECH | 23 | Mr Ho Cheng Choon | Some of these areas have already been supplied with electricity. The stretch of Punggol Road from 9¾ m.s. to the sea-front will be supplied with electricity as soon as the sub-station in constructed. Action has already been taken by the Public Utilities Board to acquire
+14 | SPEECH | 41 | Mr Ng Kah Ting | What is the total cost of this electrification scheme and is there any subsidy granted by the Government?
+15 | SPEECH | 23 | Mr Ho Cheng Choon | The total cost of this scheme will be $272,190. The revenue over a period of seven years from the areas benefitting is estimated to be about $255,484 and a subsidy of $16,000, or $42 per house, has been paid by the Government to enable the
+"""
+_REPORT_16254_TITLE = "Effectiveness of Support Schemes in Helping PMETs Find New Jobs"
+_REPORT_16254_ROWS = """
+1 | SPEECH | 1045 | Ms Foo Mee Har | asked the Minister for Manpower in light of job layoffs hitting a seven-year high (a) how successful have current support schemes been in helping Singaporeans, particularly PMEs, secure new jobs; and (b) what additional measures will the Government implement should the unemployment situation deteriorate further.
+2 | SPEECH | 1079 | The Minister for Manpower (Mr Lim Swee Say) | Mdm Speaker, redundancies have risen due to weaker global economic conditions and ongoing economic restructuring. In anticipation of this, I announced in April this year the "Adapt and Grow" initiative.
+3 | SPEECH | 1079 | The Minister for Manpower (Mr Lim Swee Say) | Under "Adapt and Grow", we have enhanced and expanded the package of employment assistance for both the affected professionals, managers, executives and technicians (PMETs) and rank-and-file workers. It includes the Professional Conversion Programme, Career Support Programme, P-Max and Reskilling for Jobs Programme. The Workforce Development
+4 | SPEECH | 1079 | The Minister for Manpower (Mr Lim Swee Say) | Ms Foo Mee Har asked how effective our current support schemes are. Mdm Speaker, in the first half of this year, WDA and e2i have assisted about 15,000 jobseekers through its Career Centres and the Adapt and Grow support programmes. With WDA and e2i assistance,
+5 | SPEECH | 1079 | The Minister for Manpower (Mr Lim Swee Say) | Ms Foo also asked what additional measures we will implement moving forward. Mdm Speaker, the Government will continue to monitor the economic and labour market situation closely and expand employment support to our workers proactively as we go through this period of not just cyclical
+6 | SPEECH | 1079 | The Minister for Manpower (Mr Lim Swee Say) | Moving forward, with the restructuring of WDA into the Workforce Singapore (WSG), we will go beyond helping the unemployed find jobs. WSG will do more and help more Singaporeans manage their career transitions throughout life. This is to maximise matching between the aspiration of workers
+7 | SPEECH | 1052 | Mdm Speaker | Ms Foo Mee Har. Keep your question short. Yes, Mr Low Thia Khiang.
+8 | SPEECH | 1081 | Mr Low Thia Khiang (Aljunied) | Mdm Speaker, earlier on, I had a supplementary question to ask from Minister Shanmugam's answer.
+9 | SPEECH | 1052 | Mdm Speaker | Mr Low, we have already past that question.
+10 | SPEECH | 1081 | Mr Low Thia Khiang | Mdm Speaker, I regret that. I should have been allowed to ask more supplementary questions.
+11 | SPEECH | 1052 | Mdm Speaker | You should have put your hand up very quickly, Mr Low. Unfortunately, I have already called the next question. Ms Foo, make it very short and snappy.
+12 | SPEECH | 1063 | The Minister for Home Affairs (Mr K Shanmugam) | Mdm Speaker, if there is any process for allowing Mr Low to ask a question, I am happy to take the question. But I leave that entirely to you.
+13 | SPEECH | 1052 | Mdm Speaker | Minister, we have already past the Parliamentary Question (PQ) and we have already moved on to the next PQ. So, Ms Foo, please make it fast.
+14 | SPEECH | 1045 | Ms Foo Mee Har (West Coast) | Yes, Madam. I would like to ask the Minister with respect to the double weak companies – those with weak Singaporean Core and a weak commitment to nurture a Singaporean Core – would the Minister please give an update on how these companies have strengthened
+15 | SPEECH | 1079 | Mr Lim Swee Say | Mdm Speaker, indeed, we have taken action against not just the double weak but triple weak companies as well. These are companies that are weak in Singaporean Core today, weak in their commitment to strengthen the Singaporean Core in the future, as well as weak
+16 | SPEECH | 1052 | Mdm Speaker | Order. End of Question Time.
+17 | EDITORIAL_NOTE |  |  | [_Pursuant to Standing Order No 22(3), provided that Members had not asked for questions standing in their names to be postponed to a later Sitting day or withdrawn, written answers to questions not reached by the end of Question Time are reproduced in the Appendix._]
+"""
+_REPORT_39076_TITLE = "ORAL ANSWER TO QUESTION"
+_REPORT_39076_ROWS = """
+1 | SPEECH | 1352 | Mr Speaker | Question. Mr Marshall.
+2 | SPEECH | 1349 | Mr David Marshall (Anson) | Question No. 1+, Mr Speaker, Sir.
+3 | EDITORIAL_NOTE |  |  | + The Question reads as follows:-
+4 | EDITORIAL_NOTE |  |  | To ask the Prime Minister whether the statement made by him over Radio Singapore on the 10th October, 1961, to the effect that if an expatriate lawyer, when pursuing his professional responsibilities, says or does something which is considered foolish and is considered to injure
+5 | SPEECH | 30 | The Prime Minister (Mr Lee Kuan Yew) | not being in his seat -
+6 | SPEECH | 1352 | Mr Speaker | The Prime Minister is not here.
+7 | CHAMBER_EVENT |  |  | The Deputy Prime Minister (Dr Toh Chin Chye) rose -
+8 | SPEECH | 1352 | Mr Speaker | Dr Toh.
+9 | SPEECH | 59 | Dr Toh Chin Chye | Just in elucidation of this, Sir. I am not supposed to answer this question. The question has been directed at the Prime Minister. I just wish to apologise on his behalf to the House that he is not here at the moment to answer it.
+10 | SPEECH | 1352 | Mr Speaker | The relevant Standing Order is Standing Order 20, paragraph (3), which reads:
+11 | SPEECH | 1352 | Mr Speaker | 'If a Minister, Parliamentary Secretary or other Member, who is to answer a question, is absent, the question shall, if he then be present, be taken after all other questions appearing on the Order Paper has been disposed of. If the Minister, Parliamentary Secretary or
+12 | SPEECH | 1352 | Mr Speaker | Therefore, the Prime Minister's answer will have to be circulated in the ordinary way.
+13 | SPEECH | 1349 | Mr David Marshall | On a point of elucidation, Sir. Would it be permissible if the Prime Minister were to make a statement instead of circulating the reply, so that we could ask supplementaries?
+14 | SPEECH | 1352 | Mr Speaker | Certainly. If the Prime Minister thinks fit, at the appropriate time tomorrow, he could make a ministerial statement.
+15 | SPEECH | 59 | Dr Toh Chin Chye | I am quite sure he will be quite prepared.
+"""
+
+
+def _get_person_rows(
+    labelled_report: _LabelledReport, speaker_id: int
+) -> list[tuple[ParticipantRole, ParticipantRoleSource, int, str, Optional[int]]]:
+    return [
+        participant
+        for participant in _summarise_participants(labelled_report.participants)
+        if participant[4] == speaker_id
+    ]
+
+
+def test_report_40823_later_holders_two_word_remark_is_not_an_answer() -> None:
+    labelled_report = _label_report(
+        _REPORT_40823_TITLE,
+        _REPORT_40823_ROWS,
+        speaker_id_to_office={
+            1372: Office(
+                "Parliamentary Secretary to the Minister for Local Government, Lands and Housing",
+                OfficeSource.ATTENDANCE_LIST,
+            ),
+            1354: Office("Minister for Education", OfficeSource.ATTENDANCE_LIST),
+        },
+    )
+
+    assert _get_person_rows(labelled_report, 1354) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            4,
+            "Mr Chew Swee Kee",
+            1354,
+        )
+    ]
+
+
+def test_report_37381_later_holders_ten_word_quip_is_not_an_answer() -> None:
+    labelled_report = _label_report(
+        _REPORT_37381_TITLE,
+        _REPORT_37381_ROWS,
+        speaker_id_to_office={
+            60: Office("Minister of State of Defence", OfficeSource.HEADER_IN_REPORT)
+        },
+    )
+
+    assert _get_person_rows(labelled_report, 45) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            10,
+            "The Minister for Culture and Social Affairs (Inche Othman Bin Wok)",
+            45,
+        )
+    ]
+
+
+def test_report_38170_later_holder_who_says_the_secretary_will_reply_on_my_behalf_is_not_answering() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_38170_TITLE,
+        _REPORT_38170_ROWS,
+        speaker_id_to_office={
+            35: Office(
+                "Minister for National Development", OfficeSource.HEADER_IN_REPORT
+            )
+        },
+    )
+
+    assert _get_person_rows(labelled_report, 35) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            5,
+            "Mr Lim Kim San",
+            35,
+        )
+    ]
+
+
+def test_report_16254_later_holder_who_leaves_it_entirely_to_the_chair_is_not_answering() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_16254_TITLE, _REPORT_16254_ROWS)
+
+    assert _get_person_rows(labelled_report, 1063) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            12,
+            "The Minister for Home Affairs (Mr K Shanmugam)",
+            1063,
+        )
+    ]
+
+
+def test_report_39076_later_holder_who_is_not_supposed_to_answer_is_not_answering() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_39076_TITLE,
+        _REPORT_39076_ROWS,
+        printed_name_to_speaker_id={"Mr Marshall": 1349},
+        speaker_id_to_office={
+            59: Office(
+                "Deputy Prime Minister and Leader of the House",
+                OfficeSource.HEADER_IN_REPORT,
+            )
+        },
+    )
+
+    assert _get_person_rows(labelled_report, 59) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            9,
+            "Dr Toh Chin Chye",
+            59,
+        )
+    ]
