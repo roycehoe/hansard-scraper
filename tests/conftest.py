@@ -31,7 +31,9 @@ os.environ["no_proxy"] = "*"
 os.environ["DATABASE_URL"] = _SCRATCH_DATABASE_URL
 
 # NOTE: settings is imported below the assignment so it reads the scratch URL and never a .env URL
+import database.act  # noqa: F401 registers the table for create_all
 import database.attendance  # noqa: F401 registers the table for create_all
+import database.bill  # noqa: F401 registers the table for create_all
 import database.hansard_sitting_date_response  # noqa: F401 registers the table for create_all
 import database.hansard_website_response  # noqa: F401 registers the table for create_all
 import database.party_affiliation  # noqa: F401 registers the table for create_all
