@@ -184,7 +184,9 @@ def test_commit_applies_a_changed_plan_to_tables_that_hold_rows(
     assert "Acts: 1 inserted, 1 updated, 1 deleted" in log_recorder.messages
     scratch_session.expire_all()
     assert _get_stored_counts(scratch_session) == (1, 2, 2, 2, 1)
-    assert [row.id for row in CRUDActHistoryEntry(scratch_session).get_rows()] == entry_ids
+    assert [
+        row.id for row in CRUDActHistoryEntry(scratch_session).get_rows()
+    ] == entry_ids
     assert sorted(row.title for row in CRUDAct(scratch_session).get_rows()) == [
         "Estate Duty Act 2025 (renamed)",
         "New Act 2026",

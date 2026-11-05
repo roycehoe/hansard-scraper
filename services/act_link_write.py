@@ -104,11 +104,17 @@ def build_act_link_write(
             )
     kept_bill_ids = set(kept_bill_index_to_id.values())
     bill_ids_to_delete = [
-        stored_bill.id for stored_bill in stored_bills if stored_bill.id not in kept_bill_ids
+        stored_bill.id
+        for stored_bill in stored_bills
+        if stored_bill.id not in kept_bill_ids
     ]
 
-    sso_code_to_stored_act = {stored_act.sso_code: stored_act for stored_act in stored_acts}
-    act_id_to_sso_code = {stored_act.id: stored_act.sso_code for stored_act in stored_acts}
+    sso_code_to_stored_act = {
+        stored_act.sso_code: stored_act for stored_act in stored_acts
+    }
+    act_id_to_sso_code = {
+        stored_act.id: stored_act.sso_code for stored_act in stored_acts
+    }
     planned_sso_codes = {planned_act.sso_code for planned_act in plan.acts}
     kept_sso_code_to_act_id: dict[str, int] = {}
     acts_to_insert: list[PlannedAct] = []
@@ -140,7 +146,9 @@ def build_act_link_write(
             planned_entry_keys.add(entry_key)
             stored_entry = sso_code_and_ordinal_to_stored_entry.get(entry_key)
             if stored_entry is None:
-                entries_to_insert.append(EntryInsert(planned_act.sso_code, planned_entry))
+                entries_to_insert.append(
+                    EntryInsert(planned_act.sso_code, planned_entry)
+                )
                 continue
             planned_bill_id = (
                 None
@@ -204,5 +212,7 @@ def get_first_difference(act_link_write: ActLinkWrite) -> Optional[str]:
         entry_update = act_link_write.entry_updates[0]
         return f"Stored entry {entry_update.planned_entry.ordinal} of Act {entry_update.sso_code} differs from the plan"
     if act_link_write.entry_ids_to_delete:
-        return f"Stored entry {act_link_write.entry_ids_to_delete[0]} is not in the plan"
+        return (
+            f"Stored entry {act_link_write.entry_ids_to_delete[0]} is not in the plan"
+        )
     return None

@@ -104,18 +104,30 @@ def test_two_bills_merging_move_their_entries_to_the_merged_bill(
     first, second, third = _seed_report_ids(scratch_session, 3)
     first_plan = _plan(
         [_bill("a", [first]), _bill("b", [second]), _bill("c", [third])],
-        [PlannedAct(sso_code="X", title="X", entries=[_entry(1, 0), _entry(2, 1), _entry(3, 2)])],
+        [
+            PlannedAct(
+                sso_code="X",
+                title="X",
+                entries=[_entry(1, 0), _entry(2, 1), _entry(3, 2)],
+            )
+        ],
     )
     _write(scratch_session, first_plan)
     third_bill_id = next(
-        bill_row.id for bill_row in CRUDBill(scratch_session).get_rows() if bill_row.title_key == "c"
+        bill_row.id
+        for bill_row in CRUDBill(scratch_session).get_rows()
+        if bill_row.title_key == "c"
     )
-    entry_ids = [
-        row.id for row in CRUDActHistoryEntry(scratch_session).get_rows()
-    ]
+    entry_ids = [row.id for row in CRUDActHistoryEntry(scratch_session).get_rows()]
     second_plan = _plan(
         [_bill("ab", [first, second]), _bill("c", [third])],
-        [PlannedAct(sso_code="X", title="X", entries=[_entry(1, 0), _entry(2, 0), _entry(3, 1)])],
+        [
+            PlannedAct(
+                sso_code="X",
+                title="X",
+                entries=[_entry(1, 0), _entry(2, 0), _entry(3, 1)],
+            )
+        ],
     )
 
     _write(scratch_session, second_plan)
@@ -123,12 +135,16 @@ def test_two_bills_merging_move_their_entries_to_the_merged_bill(
     bill_rows = CRUDBill(scratch_session).get_rows()
     assert [bill_row.title_key for bill_row in bill_rows] == ["c", "ab"]
     assert bill_rows[0].id == third_bill_id
-    assert CRUDBillReport(scratch_session).get_rows()[0] == BillReportRow(third_bill_id, third)
+    assert CRUDBillReport(scratch_session).get_rows()[0] == BillReportRow(
+        third_bill_id, third
+    )
     entry_rows = CRUDActHistoryEntry(scratch_session).get_rows()
     assert [row.id for row in entry_rows] == entry_ids
     assert entry_rows[0].bill_id == entry_rows[1].bill_id == bill_rows[1].id
     assert entry_rows[2].bill_id == third_bill_id
-    assert get_first_difference(get_act_link_write(scratch_session, second_plan)) is None
+    assert (
+        get_first_difference(get_act_link_write(scratch_session, second_plan)) is None
+    )
 
 
 def test_an_entry_relinked_to_another_bill_keeps_its_id(
@@ -136,12 +152,23 @@ def test_an_entry_relinked_to_another_bill_keeps_its_id(
 ) -> None:
     first, second = _seed_report_ids(scratch_session, 2)
     bills = [_bill("a", [first]), _bill("b", [second])]
-    _write(scratch_session, _plan(bills, [PlannedAct(sso_code="X", title="X", entries=[_entry(1, 0), _entry(2, 0)])]))
+    _write(
+        scratch_session,
+        _plan(
+            bills,
+            [PlannedAct(sso_code="X", title="X", entries=[_entry(1, 0), _entry(2, 0)])],
+        ),
+    )
     before = CRUDActHistoryEntry(scratch_session).get_rows()
-    relinked_plan = _plan(bills, [PlannedAct(sso_code="X", title="X", entries=[_entry(1, 0), _entry(2, 1)])])
+    relinked_plan = _plan(
+        bills,
+        [PlannedAct(sso_code="X", title="X", entries=[_entry(1, 0), _entry(2, 1)])],
+    )
     act_link_write = get_act_link_write(scratch_session, relinked_plan)
 
-    assert [entry_update.is_bill_changed for entry_update in act_link_write.entry_updates] == [True]
+    assert [
+        entry_update.is_bill_changed for entry_update in act_link_write.entry_updates
+    ] == [True]
     _write(scratch_session, relinked_plan)
 
     after = CRUDActHistoryEntry(scratch_session).get_rows()
@@ -179,11 +206,15 @@ def test_an_act_added_and_an_act_removed(scratch_session: Session) -> None:
     _write(scratch_session, changed_plan)
 
     entry_rows = CRUDActHistoryEntry(scratch_session).get_rows()
-    assert [entry_row.act_id for entry_row in entry_rows] == sorted({entry_row.act_id for entry_row in entry_rows})
+    assert [entry_row.act_id for entry_row in entry_rows] == sorted(
+        {entry_row.act_id for entry_row in entry_rows}
+    )
     assert len(entry_rows) > 1
     assert entry_rows[0].id in stored_before.values()
     assert entry_rows[1].bill_id is None
-    assert get_first_difference(get_act_link_write(scratch_session, changed_plan)) is None
+    assert (
+        get_first_difference(get_act_link_write(scratch_session, changed_plan)) is None
+    )
 
 
 def test_writing_the_same_plan_twice_changes_nothing(scratch_session: Session) -> None:
@@ -259,17 +290,25 @@ def test_diff_keeps_updates_inserts_and_deletes_apart() -> None:
     assert [bill_update.title for bill_update in act_link_write.bill_updates] == ["a2"]
     assert act_link_write.bill_indexes_to_insert == [1]
     assert act_link_write.bill_ids_to_delete == [11]
-    assert [planned_act.sso_code for planned_act in act_link_write.acts_to_insert] == ["N"]
+    assert [planned_act.sso_code for planned_act in act_link_write.acts_to_insert] == [
+        "N"
+    ]
     assert [act_update.id for act_update in act_link_write.act_updates] == [5]
     assert act_link_write.act_ids_to_delete == [6]
-    assert [(insert.sso_code, insert.planned_entry.ordinal) for insert in act_link_write.entries_to_insert] == [("X", 3)]
+    assert [
+        (insert.sso_code, insert.planned_entry.ordinal)
+        for insert in act_link_write.entries_to_insert
+    ] == [("X", 3)]
     assert act_link_write.entry_updates == []
     assert act_link_write.entry_ids_to_delete == [101, 102]
     assert get_first_difference(act_link_write) == "Planned bill 1 is not stored"
 
 
 def test_diff_updates_an_entry_whose_bill_is_new() -> None:
-    plan = _plan([_bill("a", [1]), _bill("b", [2])], [PlannedAct(sso_code="X", title="X", entries=[_entry(1, 1)])])
+    plan = _plan(
+        [_bill("a", [1]), _bill("b", [2])],
+        [PlannedAct(sso_code="X", title="X", entries=[_entry(1, 1)])],
+    )
 
     act_link_write = build_act_link_write(
         [_stored_bill(10)],
@@ -279,4 +318,6 @@ def test_diff_updates_an_entry_whose_bill_is_new() -> None:
         plan,
     )
 
-    assert [(update.id, update.is_bill_changed) for update in act_link_write.entry_updates] == [(100, True)]
+    assert [
+        (update.id, update.is_bill_changed) for update in act_link_write.entry_updates
+    ] == [(100, True)]
