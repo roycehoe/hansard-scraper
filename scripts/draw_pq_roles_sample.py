@@ -46,15 +46,15 @@ _FRAME_NAMES = (
     LATER_ANSWERER_FRAME,
     NO_ANSWER_FRAME,
 )
-_FIRST_SEED = 20_261_171
-_PLANT_SEED = 20_261_191
+_FIRST_SEED = 20_261_201
+_PLANT_SEED = 20_261_221
 _BASE_SAMPLE_SIZE = 200
 _LATER_ANSWERER_MINIMUM_RANK = 2
 _MAX_WEIGHT_SPREAD = Fraction(3, 100)
 _ALLOWED_DATABASE_LABEL = "localhost:5435/hansard_asked_by"
 _DRAW_ISOLATION_LEVEL = "REPEATABLE READ"
 _OUTPUT_DIRECTORY = Path(
-    "/Users/meinhardt/ghq/github.com/roycehoe/hansard/plans/pq-roles-evidence/round3/draw"
+    "/Users/meinhardt/ghq/github.com/roycehoe/hansard/plans/pq-roles-evidence/round4/draw"
 )
 _ROUND_ONE_SAMPLE_PATH = Path(
     "/Users/meinhardt/ghq/github.com/roycehoe/hansard/plans/pq-roles-sample/sample.jsonl"
