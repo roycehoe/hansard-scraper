@@ -230,6 +230,12 @@ _LABEL_CASES = [
         "The Prime Minister", "The Prime Minister", None, id="report_22779_bare_office"
     ),
     pytest.param(
+        "Prime Minister",
+        "Prime Minister",
+        None,
+        id="report_42528_bare_prime_minister_without_the",
+    ),
+    pytest.param(
         "The Leader of the House (Ms Indranee Rajah)",
         "The Leader of the House",
         None,

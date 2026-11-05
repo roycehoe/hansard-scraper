@@ -12,6 +12,7 @@ from utils.names import (
 )
 
 _THE_PREFIX = "The "
+_BARE_PRIME_MINISTER_LABEL = "Prime Minister"
 _HEADER_NAME_SEPARATOR = ", "
 _HEADER_NAME_TRAILING_CHARACTERS = " ,"
 _APOSTROPHE_VARIANT = "’"
@@ -108,7 +109,7 @@ def _is_answering_for_bracket(bracket: _Bracket) -> bool:
 
 
 def _is_office_text(text: str) -> bool:
-    if CHAIR_FORM_PATTERN.search(text):
+    if CHAIR_FORM_PATTERN.search(text) or text == _BARE_PRIME_MINISTER_LABEL:
         return True
     return text.startswith(_THE_PREFIX) and strip_title(text) == text
 

@@ -4085,6 +4085,48 @@ def test_unlinked_row_of_any_role_reads_the_office_its_label_prints() -> None:
     ]
 
 
+_REPORT_42528_TITLE = "AVERAGE HOSPITAL BILL SIZE PER PATIENT DAY"
+_REPORT_42528_ROWS = """
+1 | SPEECH | 500 | Dr Aline K. Wong | asked the Acting Minister for Health what is the average bill size per patient day for representative categories of treatment at restructured, Government and private hospitals.
+2 | SPEECH | 505 | Mr Yeo Cheow Tong | Sir, the hospital bill size depends on a number of factors. These include whether it is a medical or surgical case, the acuity level of the patients, the type and extent of treatment and investigation
+32 | SPEECH | 431 | Dr Arthur Beng Kian Lam | Mr Speaker, Sir, I first declare my pecuniary interest as a GP. May I ask the Minister why is it that when a patient is referred by a GP to the Specialist unit, he must be considered as a 'B2' or 'B1'
+33 | SPEECH | 505 | Mr Yeo Cheow Tong | Sir, the policy of the Government is based on affordability, that is, those who can afford to pay for care in the private sector should then not be asking for subsidies. Those who can afford to see th
+34 | SPEECH |  | Prime Minister | Carefully.
+35 | SPEECH | 431 | Dr Arthur Beng Kian Lam | Mr Speaker, Sir, how does a patient make a request?
+"""
+
+
+def test_report_42528_unlinked_row_labelled_prime_minister_without_the_reads_its_office() -> (
+    None
+):
+    labelled_report = _label_report(
+        _REPORT_42528_TITLE,
+        _REPORT_42528_ROWS,
+        speaker_id_to_office={
+            505: Office("Acting Minister for Health", OfficeSource.HEADER_IN_REPORT)
+        },
+    )
+
+    assert _summarise_office_marks(labelled_report.participants) == [
+        (
+            ParticipantRole.ANSWERER,
+            505,
+            None,
+            "Acting Minister for Health",
+            OfficeClass.MINISTER,
+            OfficeSource.HEADER_IN_REPORT,
+        ),
+        (
+            ParticipantRole.UNLABELLED,
+            None,
+            None,
+            "Prime Minister",
+            OfficeClass.PRIME_MINISTER,
+            OfficeSource.LABEL_IN_REPORT,
+        ),
+    ]
+
+
 _FOOTNOTE_TO_ASK_TITLE = "TEAM ATTENDING THE CONFERENCE"
 _FOOTNOTE_TO_ASK_ROWS = """
 1 | SPEECH | 1352 | Mr Speaker | *2. Mr Tee Kim Leng: To ask the Prime Minister who were the members of the team that attended the conference.
