@@ -35,7 +35,15 @@ Track parsing success rates per report type across the full corpus so regression
 ### 7. Bills linked to their debates
 Group every `bill` and `bill-intro` report by the bill it debates, so a reader can follow one bill from first reading through any select committee and the committee stage to third reading. Hansard prints no bill number, so the key is the bill's normalised title and the sitting date, with each bill closed at its third-reading line. Bills that no title rule can place go to a review queue. Royce adopted this on 4 November 2026 after the feasibility study ([bill-debate-linking-2026-11-04.md](report/bill-debate-linking-2026-11-04.md)), whose title and date rule reproduced the hand-built links for 72 of 72 sampled bills. It has no done test yet.
 
-Linking Acts to their debates waits on a trial of live SSO inside the 03:00 to 07:00 SGT window its terms allow. Current law is linked out to SSO and the eGazette, not hosted. Bills before 1961 and Acts as passed before 1985 have no free original text online, and the project will link their debates without one.
+Production has held Act links since 5 November 2026, with 2,811 bills (2,682 passed), 5,827 bill reports, 523 Acts and 9,905 Legislative History entries, 5,107 of them linked to a bill. All 523 Acts come from Internet Archive copies of their SSO PDFs captured between July and December 2024, because SSO's firewall answered the live trial at 03:00 with empty 202 pages after 6 requests and the full SSO download never ran. Current law is linked out to SSO and the eGazette, not hosted. Bills before 1961 and Acts as passed before 1985 have no free original text online, and the project will link their debates without one.
+
+Open gaps, counted on production on 6 November 2026:
+
+- The site shows none of this yet. The `hansard` app reads none of the new tables, and `hansard_api` has no SELECT on them.
+- All 65 passed bills last debated after 14 October 2024 have no link, because the Act copies date from 2024. 93 Acts have a later version in 2025 or 2026 Archive captures, and 358 have no newer capture.
+- 598 earlier passed bills have no link. A sample of 24 titles read as repealed or replaced laws and supply bills, and the rest are not classified.
+- The bills have not been compared with Parliament's count of 781 for 2006 to 2026.
+- `scripts/remove_excluded_reports.py` can hit a foreign key error on a report that has a `billreport` row.
 
 ---
 
