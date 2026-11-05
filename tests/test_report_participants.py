@@ -1014,6 +1014,45 @@ def test_name_call_before_the_first_chair_label_is_that_persons_chair_row() -> N
     ]
 
 
+_BARE_NAME_ROWS = """
+1 | SPEECH | 10 | Ms Asker One | asked the Minister for Education about schools.
+2 | SPEECH | 20 | Mr Bare Name | Order.
+3 | SPEECH | 30 | The Minister for Education (Mr Tan Chuan-Jin) | Sir, the answer is yes.
+"""
+
+
+def test_bare_name_row_whose_office_is_the_speaker_is_a_chair_row() -> None:
+    labelled_report = _label_report(
+        "Schools",
+        _BARE_NAME_ROWS,
+        speaker_id_to_office={20: Office("Mr Speaker", OfficeSource.HEADER_IN_REPORT)},
+    )
+
+    assert (
+        ParticipantRole.CHAIR,
+        ParticipantRoleSource.CHAIR_LABEL,
+        2,
+        "Mr Bare Name",
+        20,
+    ) in _summarise_participants(labelled_report.participants)
+
+
+def test_bare_name_row_whose_office_is_the_deputy_speaker_is_no_chair_row() -> None:
+    labelled_report = _label_report(
+        "Schools",
+        _BARE_NAME_ROWS,
+        speaker_id_to_office={
+            20: Office("Mr Deputy Speaker", OfficeSource.HEADER_IN_REPORT)
+        },
+    )
+
+    assert [
+        participant
+        for participant in _summarise_participants(labelled_report.participants)
+        if participant[0] == ParticipantRole.CHAIR
+    ] == []
+
+
 def test_collective_label_before_the_answer_is_unlabelled() -> None:
     rows_text = """
 1 | SPEECH | 10 | Ms Asker One | asked the Minister for Education about schools.

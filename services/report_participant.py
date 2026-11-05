@@ -38,6 +38,9 @@ _MINISTER_CALL_TITLE = "Minister "
 _THE_PREFIX = "The "
 _ROLE_ORDER = tuple(ParticipantRole)
 
+_SPEAKER_OFFICE_PATTERN = re.compile(
+    r"^\s*(?:(?:Mr|Mdm|Madam)\s+|The\s+)?Speaker\s*$", re.IGNORECASE
+)
 _CHAIR_NAME_CALL_PATTERN = re.compile(
     r"^(?:"
     + "|".join(re.escape(title) for title in (*TITLE_PREFIXES, _MINISTER_CALL_TITLE))
@@ -568,8 +571,26 @@ def _is_chair_name_call(transcript: str) -> bool:
     return _CHAIR_NAME_CALL_PATTERN.search(transcript.strip()) is not None
 
 
+def _get_speaker_office_ids(
+    participant_rows: list[_ParticipantRow],
+    speaker_id_to_label_office: dict[int, str],
+    speaker_id_to_office: dict[int, Office],
+) -> frozenset[int]:
+    speaker_ids: set[int] = set()
+    for participant_row in participant_rows:
+        if participant_row.speaker_id is None:
+            continue
+        office = _get_office(
+            participant_row.speaker_id, speaker_id_to_label_office, speaker_id_to_office
+        )
+        if office is not None and _SPEAKER_OFFICE_PATTERN.search(office.printed):
+            speaker_ids.add(participant_row.speaker_id)
+    return frozenset(speaker_ids)
+
+
 def _get_chair_ordinal_to_source(
     participant_rows: list[_ParticipantRow],
+    speaker_office_ids: frozenset[int],
 ) -> dict[int, ParticipantRoleSource]:
     chair_speaker_ids = {
         participant_row.speaker_id
@@ -580,6 +601,11 @@ def _get_chair_ordinal_to_source(
     chair_ordinal_to_source: dict[int, ParticipantRoleSource] = {}
     for participant_row in participant_rows:
         if CHAIR_FORM_PATTERN.search(participant_row.label):
+            chair_ordinal_to_source[participant_row.ordinal] = (
+                ParticipantRoleSource.CHAIR_LABEL
+            )
+            continue
+        if participant_row.speaker_id in speaker_office_ids:
             chair_ordinal_to_source[participant_row.ordinal] = (
                 ParticipantRoleSource.CHAIR_LABEL
             )
@@ -1112,7 +1138,13 @@ def get_participants(
     if not question_ordinals:
         return []
     reader_participants = _build_reader_participants(kept_asker_candidates)
-    chair_ordinal_to_source = _get_chair_ordinal_to_source(participant_rows)
+    speaker_id_to_label_office = _get_speaker_id_to_label_office(participant_rows)
+    chair_ordinal_to_source = _get_chair_ordinal_to_source(
+        participant_rows,
+        _get_speaker_office_ids(
+            participant_rows, speaker_id_to_label_office, speaker_id_to_office
+        ),
+    )
     chair_participants = _build_chair_participants(
         participant_rows, chair_ordinal_to_source
     )
@@ -1198,7 +1230,6 @@ def get_participants(
         ),
         first_answer_ordinal=first_answer_ordinal,
     )
-    speaker_id_to_label_office = _get_speaker_id_to_label_office(participant_rows)
     return [
         _add_office_mark(participant, speaker_id_to_label_office, speaker_id_to_office)
         for participant in _drop_unlabelled_of_role_holders(
