@@ -928,7 +928,9 @@ def test_stood_line_that_prints_no_name_leaves_the_next_to_ask_row_to_its_own_me
     ]
 
 
-def test_report_38368_footnote_stood_lines_with_a_dash_credit_both_filers() -> None:
+def test_report_38368_leading_mark_stood_lines_of_postponed_questions_credit_no_one() -> (
+    None
+):
     speech_asker_rows = [
         _build_row(
             1,
@@ -977,24 +979,6 @@ def test_report_38368_footnote_stood_lines_with_a_dash_credit_both_filers() -> N
     asker_candidates = get_asker_candidates(speech_asker_rows)
 
     assert asker_candidates == [
-        AskerCandidate(
-            row_ordinal=2,
-            source=ReportAskerSource.STOOD_IN_NAME_LINE,
-            printed_name="Mr Low Por Tuck",
-            speaker_id=None,
-            reader_printed_name=None,
-            reader_speaker_id=None,
-            reader_row_ordinal=None,
-        ),
-        AskerCandidate(
-            row_ordinal=4,
-            source=ReportAskerSource.STOOD_IN_NAME_LINE,
-            printed_name="Mr Tee Kim Leng",
-            speaker_id=None,
-            reader_printed_name=None,
-            reader_speaker_id=None,
-            reader_row_ordinal=None,
-        ),
         AskerCandidate(
             row_ordinal=6,
             source=ReportAskerSource.ASKED_LINE,
