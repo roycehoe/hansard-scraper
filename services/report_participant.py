@@ -1047,15 +1047,13 @@ def _add_office_mark(
         office = _get_office(
             participant.speaker_id, speaker_id_to_label_office, speaker_id_to_office
         )
-    elif participant.role == ParticipantRole.CHAIR:
+    else:
         label_office = get_label_office(participant.printed_name)
         office = (
             None
             if label_office is None
             else Office(label_office, OfficeSource.LABEL_IN_REPORT)
         )
-    else:
-        office = None
     if office is None:
         return participant
     return replace(

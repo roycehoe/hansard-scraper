@@ -3454,9 +3454,9 @@ def test_report_31140_label_with_the_for_bracket_nested_in_the_name_stores_it_wi
             ParticipantRole.ANSWERER,
             None,
             "for the Minister for Home Affairs",
-            None,
-            None,
-            None,
+            "The Minister of State for Home Affairs",
+            OfficeClass.MINISTER_OF_STATE,
+            OfficeSource.LABEL_IN_REPORT,
         )
     ]
 
@@ -4024,6 +4024,30 @@ def test_member_who_only_asks_to_extend_question_time_or_postpone_his_question_i
             3,
             "Mr Low Por Tuck",
             1350,
+        )
+    ]
+
+
+_UNLINKED_OFFICE_TITLE = "NUMBER OF DETAINEES"
+_UNLINKED_OFFICE_ROWS = """
+1 | SPEECH | 1349 | Mr David Marshall | asked the Minister for Home Affairs how many persons detained since 1st February, 1963 have already been interrogated by the Special Branch.
+2 | SPEECH | 44 | Mr Ong Pang Boon | Mr Speaker, Sir, all the persons detained have had statements taken from them. Because of the number of detainees and the availability of a limited number of skilled interrogators, only one-third have been fully interrogated.
+3 | SPEECH | 1349 | Mr David Marshall | Is that inaccurate, Sir?
+4 | SPEECH |  | The Prime Minister | Carefully.
+"""
+
+
+def test_unlinked_row_of_any_role_reads_the_office_its_label_prints() -> None:
+    labelled_report = _label_report(_UNLINKED_OFFICE_TITLE, _UNLINKED_OFFICE_ROWS)
+
+    assert _summarise_office_marks(labelled_report.participants) == [
+        (
+            ParticipantRole.ANSWERER,
+            None,
+            None,
+            "The Prime Minister",
+            OfficeClass.PRIME_MINISTER,
+            OfficeSource.LABEL_IN_REPORT,
         )
     ]
 
