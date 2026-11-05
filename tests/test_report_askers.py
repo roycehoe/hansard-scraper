@@ -2652,3 +2652,48 @@ def test_to_ask_block_read_out_has_no_filer_when_the_chair_calls_no_one_of_the_b
         asker_candidate.reader_printed_name
         for asker_candidate in get_asker_candidates(speech_asker_rows)
     ] == [None, None]
+
+
+def test_report_38412_footnote_numbered_to_ask_lines_inside_speaker_rows_credit_each_member() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.SPEECH,
+            "Mr Speaker",
+            1352,
+            "*2. Mr Tee Kim Leng: To ask the Prime Minister who were the members of the team.",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mr Speaker",
+            1352,
+            "+3. Mr Lin You Eng: To ask the Prime Minister what is the progress.",
+        ),
+        _build_row(
+            3,
+            SpeechKind.SPEECH,
+            "Mr Speaker",
+            1352,
+            "++5. Mr Tan Cheng Tong: To ask the Prime Minister whether he will make a statement.",
+        ),
+        _build_row(
+            4,
+            SpeechKind.SPEECH,
+            "Mr Speaker",
+            1352,
+            "Mr Tee Kim Leng: Yes.",
+        ),
+    ]
+
+    assert [
+        (asker_candidate.row_ordinal, asker_candidate.printed_name)
+        for asker_candidate in get_asker_candidates(speech_asker_rows)
+    ] == [
+        (1, "Mr Tee Kim Leng"),
+        (2, "Mr Lin You Eng"),
+        (3, "Mr Tan Cheng Tong"),
+    ]
+    assert get_question_row_ordinals(speech_asker_rows) == frozenset({1, 2, 3})

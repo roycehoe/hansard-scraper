@@ -70,6 +70,12 @@ _NAME_IN_TEXT_PATTERN = re.compile(
     + r").{0,80}?)\s+asked\s*the\b",
     re.IGNORECASE,
 )
+_FOOTNOTE_TO_ASK_PATTERN = re.compile(
+    r"^\s*[*+]+\s*\d+\s*\.\s*(?P<name>(?:"
+    + "|".join(re.escape(prefix) for prefix in _NAME_IN_TEXT_PREFIXES)
+    + r")[^:\n]{1,80}?)\s*:\s*to ask\b",
+    re.IGNORECASE,
+)
 _CALLED_NAME_REGEX = (
     r"(?P<name>(?:Mr|Mrs|Mdm|Madam|Miss|Ms|Dr|Prof|Inche|Encik)\s+"
     r"[^\W\d_][\w'.\- ]{0,60}?)"
@@ -428,7 +434,10 @@ def _get_speaker_row_candidate(
 def _get_name_in_text_candidate(
     speech_asker_row: SpeechAskerRow,
 ) -> Optional[AskerCandidate]:
-    if speech_asker_row.speaker is not None:
+    is_chair_row = speech_asker_row.speaker is not None and bool(
+        CHAIR_FORM_PATTERN.search(speech_asker_row.speaker)
+    )
+    if speech_asker_row.speaker is not None and not is_chair_row:
         return None
     if (
         speech_asker_row.kind is not None
@@ -436,7 +445,11 @@ def _get_name_in_text_candidate(
         and speech_asker_row.kind != SpeechKind.UNCLASSIFIED
     ):
         return None
-    match = _NAME_IN_TEXT_PATTERN.search(speech_asker_row.transcript)
+    match = (
+        _FOOTNOTE_TO_ASK_PATTERN.search(speech_asker_row.transcript)
+        if is_chair_row
+        else _NAME_IN_TEXT_PATTERN.search(speech_asker_row.transcript)
+    )
     if match is None:
         return None
     printed_name = match.group("name")

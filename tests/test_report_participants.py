@@ -4052,6 +4052,33 @@ def test_unlinked_row_of_any_role_reads_the_office_its_label_prints() -> None:
     ]
 
 
+_FOOTNOTE_TO_ASK_TITLE = "TEAM ATTENDING THE CONFERENCE"
+_FOOTNOTE_TO_ASK_ROWS = """
+1 | SPEECH | 1352 | Mr Speaker | *2. Mr Tee Kim Leng: To ask the Prime Minister who were the members of the team that attended the conference.
+2 | SPEECH | 1352 | Mr Speaker | +3. Mr Lin You Eng: To ask the Prime Minister what is the progress in the negotiations on compensation.
+3 | SPEECH | 5 | The Prime Minister (Mr Lee Kuan Yew) | Mr Speaker, Sir, I will answer both Questions tomorrow, when the team has reported to the Cabinet on its work.
+"""
+
+
+def test_footnote_numbered_to_ask_lines_inside_speaker_rows_give_each_member_the_asker_role() -> (
+    None
+):
+    labelled_report = _label_report(
+        _FOOTNOTE_TO_ASK_TITLE,
+        _FOOTNOTE_TO_ASK_ROWS,
+        printed_name_to_speaker_id={"Mr Tee Kim Leng": 1378, "Mr Lin You Eng": 1380},
+    )
+
+    assert [
+        (participant[0], participant[2], participant[3])
+        for participant in _summarise_participants(labelled_report.participants)
+        if participant[0] == ParticipantRole.ASKER
+    ] == [
+        (ParticipantRole.ASKER, 1, "Mr Tee Kim Leng"),
+        (ParticipantRole.ASKER, 2, "Mr Lin You Eng"),
+    ]
+
+
 _REPORT_24530_TITLE = "PROFESSIONAL, MANAGERIAL AND EXECUTIVE STAFF"
 _REPORT_24530_ROWS = """
 1 | SPEECH | 731 | Mdm Ho Geok Choo | asked the Minister for Manpower in view of the increasing number of retrenchments of professional, managerial and executive staff aged above 40, (a) what special programmes are in place to re-train this cohort for relevant
