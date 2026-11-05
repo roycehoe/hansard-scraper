@@ -3963,6 +3963,46 @@ def test_report_38635_member_whose_only_row_after_the_answer_is_a_short_interjec
     ]
 
 
+_SHORT_REPLY_TITLE = "NUMBER OF DETAINEES"
+_SHORT_REPLY_ROWS = """
+1 | SPEECH | 1349 | Mr David Marshall | asked the Minister for Home Affairs how many persons detained since 1st February, 1963 have already been interrogated by the Special Branch.
+2 | SPEECH | 44 | Mr Ong Pang Boon | Mr Speaker, Sir, all the persons detained have had statements taken from them. Because of the number of detainees and the availability of a limited number of skilled interrogators, only one-third have been fully interrogated.
+3 | SPEECH | 1352 | Mr Speaker | Er Dr Lee Bee Wah.
+4 | SPEECH | 920 | Dr Lee Bee Wah | Or years.
+5 | SPEECH | 44 | Mr Ong Pang Boon | Mr Speaker, Sir, it is a matter of months rather than years, and the Special Branch is working through the remaining cases as quickly as it can.
+6 | SPEECH | 44 | Mr Ong Pang Boon | Is the Member asking about a city area or a rural area?
+7 | SPEECH | 1360 | Mr Chua | A rural area.
+8 | SPEECH | 44 | Mr Ong Pang Boon | Mr Speaker, Sir, in a rural area the interrogations are carried out at the district police station by the same officers.
+9 | SPEECH | 1350 | Tun Lim Yew Hock | No, the Petir.
+"""
+
+
+def test_short_line_after_the_chair_calls_the_member_or_an_answerer_asks_is_supplementary() -> (
+    None
+):
+    labelled_report = _label_report(_SHORT_REPLY_TITLE, _SHORT_REPLY_ROWS)
+
+    assert _get_person_rows(labelled_report, 920) == [
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            4,
+            "Dr Lee Bee Wah",
+            920,
+        )
+    ]
+    assert _get_person_rows(labelled_report, 1360) == [
+        (
+            ParticipantRole.SUPPLEMENTARY,
+            ParticipantRoleSource.AFTER_ANSWER,
+            7,
+            "Mr Chua",
+            1360,
+        )
+    ]
+    assert _get_person_rows(labelled_report, 1350)[0][0] == ParticipantRole.UNLABELLED
+
+
 _REPORT_24530_TITLE = "PROFESSIONAL, MANAGERIAL AND EXECUTIVE STAFF"
 _REPORT_24530_ROWS = """
 1 | SPEECH | 731 | Mdm Ho Geok Choo | asked the Minister for Manpower in view of the increasing number of retrenchments of professional, managerial and executive staff aged above 40, (a) what special programmes are in place to re-train this cohort for relevant

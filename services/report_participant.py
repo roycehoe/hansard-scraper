@@ -823,12 +823,39 @@ def _get_supplementary_person_keys(
     )
 
 
-def _is_point_of_order_or_interjection(transcript: str) -> bool:
+def _is_called_by_name(participant_row: _ParticipantRow, chair_transcript: str) -> bool:
+    name = _BRACKET_PATTERN.sub("", participant_row.label)
+    for title in TITLE_PREFIXES:
+        if name.startswith(title):
+            name = name[len(title) :]
+            break
+    return name.strip().lower() in chair_transcript.lower()
+
+
+def _is_reply_to_previous_row(
+    participant_row: _ParticipantRow,
+    previous_row: Optional[_ParticipantRow],
+    answerer_person_keys: frozenset[Union[int, str]],
+) -> bool:
+    if previous_row is None:
+        return False
+    if CHAIR_FORM_PATTERN.search(previous_row.label):
+        return _is_called_by_name(participant_row, previous_row.transcript)
+    return (
+        previous_row.person_key in answerer_person_keys
+        and previous_row.transcript.strip().endswith("?")
+    )
+
+
+def _is_point_of_order_or_interjection(
+    transcript: str, is_reply_to_previous_row: bool
+) -> bool:
     text = transcript.strip()
     if _POINT_OF_ORDER_PATTERN.search(text):
         return True
     return (
-        len(text.split()) <= _MAX_INTERJECTION_WORDS
+        not is_reply_to_previous_row
+        and len(text.split()) <= _MAX_INTERJECTION_WORDS
         and not text.endswith("?")
         and not _is_asking(text)
     )
@@ -838,10 +865,14 @@ def _get_procedural_person_keys(
     participant_rows: list[_ParticipantRow],
     question_ordinals: frozenset[int],
     chair_ordinals: frozenset[int],
+    answerer_person_keys: frozenset[Union[int, str]],
     first_answer_ordinal: Optional[int],
 ) -> frozenset[Union[int, str]]:
     if first_answer_ordinal is None:
         return frozenset()
+    ordinal_to_row = {
+        participant_row.ordinal: participant_row for participant_row in participant_rows
+    }
     person_key_to_is_procedural: dict[Union[int, str], bool] = {}
     for participant_row in participant_rows:
         if (
@@ -852,7 +883,14 @@ def _get_procedural_person_keys(
             continue
         person_key_to_is_procedural[participant_row.person_key] = (
             person_key_to_is_procedural.get(participant_row.person_key, True)
-            and _is_point_of_order_or_interjection(participant_row.transcript)
+            and _is_point_of_order_or_interjection(
+                participant_row.transcript,
+                _is_reply_to_previous_row(
+                    participant_row,
+                    ordinal_to_row.get(participant_row.ordinal - 1),
+                    answerer_person_keys,
+                ),
+            )
         )
     return frozenset(
         person_key
@@ -1153,6 +1191,7 @@ def get_participants(
             participant_rows,
             report_question_ordinals,
             frozenset(chair_ordinal_to_source),
+            answerer_person_keys,
             first_answer_ordinal,
         ),
         first_answer_ordinal=first_answer_ordinal,
