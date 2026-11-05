@@ -72,7 +72,7 @@ MP_NAME_SEPARATOR = ";"
 INVERTED_NAME_SEPARATOR = ", "
 
 CHAIR_FORM_PATTERN = re.compile(
-    r"^(?:Mr|Mdm|Madam)\s+(?:Deputy\s+)?Speaker\b"
+    r"^(?:Mr|Mdm|Madam)\s+(?:Deputy\s+)?(?:Speaker|Sppeaker|Speake)\b"
     r"|^(?:The\s+)?(?:Deputy\s+)?(?:Speaker|Chairman)\b",
     re.IGNORECASE,
 )
