@@ -24,11 +24,14 @@ _LEAVE_WITHOUT_NOTICE_PATTERN = re.compile(
 )
 _TO_ASK_LINE_PATTERN = re.compile(r"^\W*(?:\d+\s*\.?\s*)?to ask\b", re.IGNORECASE)
 _STOOD_IN_NAME_PATTERN = re.compile(
-    r"^[\s*>+_]*(?:The following Questions?"
+    r"^[\s*>+_]*(?:(?:The following Questions?"
     r"(?:\s+(?:Nos?\.?\s*[\d,\sand]+|for oral answer))?"
     r"|Questions?\s+Nos?\.?\s*\d+\s*[*+])"
-    r"\s+stood in the names? of\s+(?P<name>.+?)"
-    r"(?:\s*:|\s+[-–—]|[-–—](?=\s|$)|\s*$)",
+    r"\s+stood in the names? of"
+    r"|The questions?,\s+standing in the names? of)"
+    r"\s+(?P<name>.+?)"
+    r"(?:\s*,\s*reads?\s+as\s+follows\s*:?"
+    r"|\s*:|\s+[-–—]|[-–—](?=\s|$)|\s*$)",
     re.IGNORECASE,
 )
 _STOOD_OVER_LIST_TITLE_PATTERN = re.compile(

@@ -89,6 +89,49 @@ def test_stood_line_credits_the_filer_and_swallows_the_filers_to_ask_row() -> No
     ]
 
 
+def test_stood_line_printed_as_the_question_standing_in_the_name_of_credits_the_filer() -> (
+    None
+):
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "*The question, standing in the name of Mrs Seow Peck Leng, reads as follows:",
+        ),
+        _build_row(
+            2,
+            SpeechKind.SPEECH,
+            "Mrs Seow Peck Leng",
+            55,
+            "To ask the Minister for Education how many schools offer the programme",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert [
+        (candidate.source, candidate.printed_name) for candidate in asker_candidates
+    ] == [(ReportAskerSource.STOOD_IN_NAME_LINE, "Mrs Seow Peck Leng")]
+
+
+def test_sentence_with_standing_in_it_is_not_a_stood_line() -> None:
+    speech_asker_rows = [
+        _build_row(
+            1,
+            SpeechKind.UNCLASSIFIED,
+            None,
+            None,
+            "The question, standing on its own merits, reads as follows:",
+        ),
+    ]
+
+    asker_candidates = get_asker_candidates(speech_asker_rows)
+
+    assert asker_candidates == []
+
+
 def test_stood_line_over_unclassified_rows_takes_the_member_who_reads_the_number() -> (
     None
 ):
