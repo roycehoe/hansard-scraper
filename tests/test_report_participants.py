@@ -4003,6 +4003,31 @@ def test_short_line_after_the_chair_calls_the_member_or_an_answerer_asks_is_supp
     assert _get_person_rows(labelled_report, 1350)[0][0] == ParticipantRole.UNLABELLED
 
 
+_PROCEDURAL_REQUEST_TITLE = "NUMBER OF DETAINEES"
+_PROCEDURAL_REQUEST_ROWS = """
+1 | SPEECH | 1349 | Mr David Marshall | asked the Minister for Home Affairs how many persons detained since 1st February, 1963 have already been interrogated by the Special Branch.
+2 | SPEECH | 44 | Mr Ong Pang Boon | Mr Speaker, Sir, all the persons detained have had statements taken from them. Because of the number of detainees and the availability of a limited number of skilled interrogators, only one-third have been fully interrogated.
+3 | SPEECH | 1350 | Mr Low Por Tuck | Sir, in view of the number of questions still on the Order Paper, may I ask that you extend the Question Time by ten minutes?
+4 | SPEECH | 1350 | Mr Low Por Tuck | Sir, if you will not extend it, may I then ask leave to postpone my question until the next sitting of the House?
+"""
+
+
+def test_member_who_only_asks_to_extend_question_time_or_postpone_his_question_is_unlabelled() -> (
+    None
+):
+    labelled_report = _label_report(_PROCEDURAL_REQUEST_TITLE, _PROCEDURAL_REQUEST_ROWS)
+
+    assert _get_person_rows(labelled_report, 1350) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            3,
+            "Mr Low Por Tuck",
+            1350,
+        )
+    ]
+
+
 _REPORT_24530_TITLE = "PROFESSIONAL, MANAGERIAL AND EXECUTIVE STAFF"
 _REPORT_24530_ROWS = """
 1 | SPEECH | 731 | Mdm Ho Geok Choo | asked the Minister for Manpower in view of the increasing number of retrenchments of professional, managerial and executive staff aged above 40, (a) what special programmes are in place to re-train this cohort for relevant

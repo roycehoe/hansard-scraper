@@ -65,7 +65,10 @@ _PROCEDURAL_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _BARE_REPLY_PATTERN = re.compile(r"^(?:yes|no|correct)\.$", re.IGNORECASE)
-_POINT_OF_ORDER_PATTERN = re.compile(r"point\s+of\s+order", re.IGNORECASE)
+_POINT_OF_ORDER_PATTERN = re.compile(
+    r"point\s+of\s+order|extend\s+the\s+question\s+time|postpone\s+my\s+questions?",
+    re.IGNORECASE,
+)
 _NON_ANSWER_PHRASE_PATTERN = re.compile(
     r"not\s+supposed\s+to\s+answer|reply\s+on\s+my\s+behalf"
     r"|leave\s+that\s+(?:entirely\s+)?to\s+you|allowing\s+me\s+to\s+join",
