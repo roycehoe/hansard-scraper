@@ -4028,6 +4028,39 @@ def test_member_who_only_asks_to_extend_question_time_or_postpone_his_question_i
     ]
 
 
+_REPORT_29596_TITLE = "HOUSING AND DEVELOPMENT BOARD ESTATES"
+_REPORT_29596_ROWS = """
+1 | SPEECH | 522 | Mr Chiam See Tong | asked the Minister for National Development whether he will consider introducing legislation to amend the Town Councils Act to give Town Councils a completely free hand to manage, control and improve
+2 | SPEECH | 562 | The Minister of State for National Development (Mr Lim Hng Kiang) (for the Minister for National Development) | I am answering on behalf of the Minister for National Development.
+33 | SPEECH | 562 | Mr Lim Hng Kiang | I have already said this several times. Obviously, I am not communicating with him. The site, originally designated for the child care centre, has been taken over by the SAMH facility. HDB, therefore,
+34 | SPEECH | 522 | Mr Chiam See Tong | What does SAMH stand for, please?
+35 | SPEECH | 580 | Mr Speaker | I do not think that is a question you need to answer.
+36 | SPEECH | 566 | Mr Low Thia Khiang | Mr Speaker, Sir, there is less than half a minute left and ---
+37 | SPEECH | 580 | Mr Speaker | You want to ask Question No. 16?
+38 | SPEECH | 566 | Mr Low Thia Khiang | I would like to ask if this House is prepared to extend the Question Time.
+39 | SPEECH | 580 | Mr Speaker | Are you asking your question?
+40 | SPEECH | 566 | Mr Low Thia Khiang | If not, I would like to postpone my questions to the next available sitting of Parliament.
+41 | SPEECH | 580 | Mr Speaker | You are not asking your question.
+42 | SPEECH | 566 | Mr Low Thia Khiang | No.
+"""
+
+
+def test_report_29596_member_who_remarks_on_the_minutes_left_and_asks_to_extend_or_postpone_is_unlabelled() -> (
+    None
+):
+    labelled_report = _label_report(_REPORT_29596_TITLE, _REPORT_29596_ROWS)
+
+    assert _get_person_rows(labelled_report, 566) == [
+        (
+            ParticipantRole.UNLABELLED,
+            ParticipantRoleSource.NO_RULE,
+            36,
+            "Mr Low Thia Khiang",
+            566,
+        )
+    ]
+
+
 _UNLINKED_OFFICE_TITLE = "NUMBER OF DETAINEES"
 _UNLINKED_OFFICE_ROWS = """
 1 | SPEECH | 1349 | Mr David Marshall | asked the Minister for Home Affairs how many persons detained since 1st February, 1963 have already been interrogated by the Special Branch.
