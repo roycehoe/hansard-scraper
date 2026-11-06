@@ -91,6 +91,13 @@ class PersonDecisionKind(StrEnum):
     NAME = "name"
 
 
+class PersonNameSpellingKind(StrEnum):
+    CANONICAL = "CANONICAL"
+    OTHER_SPELLING = "OTHER_SPELLING"
+    TRANSLITERATION = "TRANSLITERATION"
+    OTHER_NAME = "OTHER_NAME"
+
+
 class HandCheckFormOfAddress(StrEnum):
     MR = "MR"
     MDM = "MDM"
