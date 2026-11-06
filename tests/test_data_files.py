@@ -24,6 +24,7 @@ from schemas.hand_kept_member import HandKeptMember, HandKeptMembers
 from schemas.head_of_state import HeadOfStateResult, HeadsOfState
 from schemas.party_affiliation import PartyAffiliationMemberships
 from schemas.person_decision import PersonDecision, PersonDecisions
+from schemas.person_name_spelling import PersonNameSpellingEntries
 from schemas.speaker_override import SpeakerOverrides
 from schemas.unattributed_speech import UnattributedSpeechRanges
 from utils.data_files import (
@@ -38,6 +39,7 @@ from utils.data_files import (
     get_heads_of_state,
     get_party_affiliations,
     get_person_decisions,
+    get_person_name_spellings,
     get_speaker_overrides,
     get_unattributed_speech_ranges,
     get_unscraped_members,
@@ -56,6 +58,7 @@ _DATA_FILE_SCHEMAS = (
     ("heads_of_state.json", HeadsOfState),
     ("party_affiliations.json", PartyAffiliationMemberships),
     ("person_decisions.json", PersonDecisions),
+    ("person_name_spellings.json", PersonNameSpellingEntries),
     ("speaker_overrides.json", SpeakerOverrides),
     ("unattributed_speech.json", UnattributedSpeechRanges),
     ("unscraped_members.json", HandKeptMembers),
@@ -72,6 +75,7 @@ _DATA_FILE_GETTERS = (
     get_heads_of_state,
     get_party_affiliations,
     get_person_decisions,
+    get_person_name_spellings,
     get_speaker_overrides,
     get_unattributed_speech_ranges,
     get_unscraped_members,

@@ -1,22 +1,40 @@
+from collections import Counter
 from types import SimpleNamespace
 from typing import Optional
 
 import pytest
+from pydantic import ValidationError
+from sqlmodel import Session
 
 import database.speech  # noqa: F401 registers Speech so the Report relationship resolves
 from crud.person import CRUDPerson
+from crud.person_name_spelling import CRUDPersonNameSpelling
 from crud.speaker import CRUDSpeaker
 from database.person import Person
 from database.speaker import Speaker
-from enums import PersonDecisionKind
+from enums import PersonDecisionKind, PersonNameSpellingKind
 from exceptions import HansardDataFileError
 from populate import persons as populate_persons_module
 from populate.persons import populate_persons
 from schemas.person_decision import PersonDecision, PersonDecisionMember
-from services.person import cluster_speakers
-from utils.data_files import get_person_decisions
+from schemas.person_name_spelling import PersonNameSpellingEntry
+from services.person import build_person_name_spellings, cluster_speakers
+from utils.data_files import get_person_decisions, get_person_name_spellings
 
 _NAME_DECISION_COUNT = 13
+_SPELLING_NOTE_PERSON_COUNT = 14
+_RENAMED_PERSON_NAMES = frozenset(
+    {
+        "Koo Young",
+        "Lai Tha Chai",
+        "Zulkifli Bin Mohammed",
+        "Ahmad Khalis bin Abdul Ghani",
+        "Abdul Nasser Bin Kamaruddin",
+        "Baharudin Bin Mohamed Ariff",
+        "Chew Chin Han",
+    }
+)
+_SOURCE_LINK = "[a source](https://example.org/source)"
 
 
 def _get_speaker(
@@ -43,6 +61,20 @@ def _get_decision(
         members=[PersonDecisionMember(name=name, parliament_number=parliament_number)],
         decision=kind,
         source="test",
+    )
+
+
+def _get_spelling_entry(
+    name: str,
+    spelling: str,
+    kind: PersonNameSpellingKind,
+    note: str = _SOURCE_LINK,
+) -> PersonNameSpellingEntry:
+    return PersonNameSpellingEntry(
+        member=PersonDecisionMember(name=name, parliament_number=5),
+        spelling=spelling,
+        kind=kind,
+        note=note,
     )
 
 
@@ -186,6 +218,191 @@ def test_data_file_gives_each_name_decision_one_member_and_a_name() -> None:
     )
 
 
+def test_data_file_renames_seven_persons_and_leaves_lim_to_the_rule() -> None:
+    person_names = {decision.person_name for decision in get_person_decisions()}
+
+    assert _RENAMED_PERSON_NAMES <= person_names
+    assert "Lim Chin Siong" not in person_names
+
+
+def test_data_file_gives_each_noted_person_one_canonical_row_first() -> None:
+    entries = get_person_name_spellings()
+    member_to_entries: dict[PersonDecisionMember, list[PersonNameSpellingEntry]] = {}
+    for entry in entries:
+        member_to_entries.setdefault(entry.member, []).append(entry)
+
+    assert len(member_to_entries) == _SPELLING_NOTE_PERSON_COUNT
+    for member_entries in member_to_entries.values():
+        assert member_entries[0].kind == PersonNameSpellingKind.CANONICAL
+        kind_to_count = Counter(entry.kind for entry in member_entries)
+        assert kind_to_count[PersonNameSpellingKind.CANONICAL] == 1
+        assert len(member_entries) > 1
+
+
+def test_data_file_uses_each_spelling_once() -> None:
+    entries = get_person_name_spellings()
+
+    assert len({(entry.member, entry.spelling) for entry in entries}) == len(entries)
+
+
+def test_data_file_holds_the_name_of_every_renamed_person() -> None:
+    canonical_spellings = {
+        entry.spelling
+        for entry in get_person_name_spellings()
+        if entry.kind == PersonNameSpellingKind.CANONICAL
+    }
+
+    assert _RENAMED_PERSON_NAMES | {"Lim Ching Siong"} <= canonical_spellings
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "A sentence with no link.",
+        "[a source](http://example.org/source)",
+        f"{_SOURCE_LINK} and [a script](javascript:alert)",
+    ],
+)
+def test_spelling_note_needs_a_safe_link_for_every_source(note: str) -> None:
+    with pytest.raises(ValidationError):
+        _get_spelling_entry(
+            "Koo Yong", "Koo Yong", PersonNameSpellingKind.OTHER_SPELLING, note
+        )
+
+
+def test_spelling_note_may_link_a_report_page() -> None:
+    entry = _get_spelling_entry(
+        "Koo Yong",
+        "Koo Yong",
+        PersonNameSpellingKind.OTHER_SPELLING,
+        "Printed by [Hansard](/reports/00069147-ZZ.00052491-ZZ_1#id030_19660817-bill).",
+    )
+
+    assert entry.spelling == "Koo Yong"
+
+
+def test_build_person_name_spellings_numbers_each_person_in_file_order() -> None:
+    entries = [
+        _get_spelling_entry("Koo Yong", "Koo Young", PersonNameSpellingKind.CANONICAL),
+        _get_spelling_entry("Lai Tai", "Lai Tha", PersonNameSpellingKind.CANONICAL),
+        _get_spelling_entry(
+            "Koo Yong", "Koo Yong", PersonNameSpellingKind.OTHER_SPELLING
+        ),
+    ]
+
+    person_name_spellings = build_person_name_spellings(
+        entries,
+        {("Koo Yong", 5): 1, ("Lai Tai", 5): 2},
+        {1: "Koo Young", 2: "Lai Tha"},
+    )
+
+    assert [
+        (row.person_id, row.ordinal, row.spelling) for row in person_name_spellings
+    ] == [(1, 1, "Koo Young"), (2, 1, "Lai Tha"), (1, 2, "Koo Yong")]
+
+
+def test_spelling_entry_naming_no_speaker_row_raises_data_file_error() -> None:
+    entries = [
+        _get_spelling_entry("No Such", "No Such", PersonNameSpellingKind.CANONICAL)
+    ]
+
+    with pytest.raises(
+        HansardDataFileError,
+        match="data/person_name_spellings.json names no speaker row",
+    ):
+        build_person_name_spellings(entries, {}, {})
+
+
+@pytest.mark.parametrize(
+    ("spelling", "kind"),
+    [
+        ("Koo Yong", PersonNameSpellingKind.CANONICAL),
+        ("Koo Young", PersonNameSpellingKind.OTHER_SPELLING),
+    ],
+)
+def test_canonical_entry_must_be_the_name_the_person_has(
+    spelling: str, kind: PersonNameSpellingKind
+) -> None:
+    entries = [_get_spelling_entry("Koo Yong", spelling, kind)]
+
+    with pytest.raises(HansardDataFileError, match="for person 1, named 'Koo Young'"):
+        build_person_name_spellings(entries, {("Koo Yong", 5): 1}, {1: "Koo Young"})
+
+
+def test_populate_persons_stores_spellings_and_a_second_run_changes_nothing(
+    scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scratch_session.add(_get_speaker(1, "Koo Yong", 5))
+    scratch_session.commit()
+    monkeypatch.setattr(
+        populate_persons_module,
+        "get_person_decisions",
+        lambda: [_get_decision("Koo Yong", 5, PersonDecisionKind.NAME, "Koo Young")],
+    )
+    monkeypatch.setattr(
+        populate_persons_module,
+        "get_person_name_spellings",
+        lambda: [
+            _get_spelling_entry(
+                "Koo Yong", "Koo Young", PersonNameSpellingKind.CANONICAL
+            ),
+            _get_spelling_entry(
+                "Koo Yong", "Koo Yong", PersonNameSpellingKind.OTHER_SPELLING
+            ),
+        ],
+    )
+
+    populate_persons(scratch_session)
+    first_run = [
+        (row.id, row.ordinal, row.spelling, row.kind)
+        for row in CRUDPersonNameSpelling(scratch_session).get_all()
+    ]
+    populate_persons(scratch_session)
+    second_run = [
+        (row.id, row.ordinal, row.spelling, row.kind)
+        for row in CRUDPersonNameSpelling(scratch_session).get_all()
+    ]
+
+    assert second_run == first_run
+    assert [row[1:3] for row in first_run] == [(1, "Koo Young"), (2, "Koo Yong")]
+
+
+def test_populate_persons_replaces_spellings_when_the_file_changes(
+    scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scratch_session.add(_get_speaker(1, "Koo Yong", 5))
+    scratch_session.commit()
+    monkeypatch.setattr(populate_persons_module, "get_person_decisions", lambda: [])
+    monkeypatch.setattr(
+        populate_persons_module,
+        "get_person_name_spellings",
+        lambda: [
+            _get_spelling_entry(
+                "Koo Yong", "Koo Yong", PersonNameSpellingKind.CANONICAL
+            )
+        ],
+    )
+    populate_persons(scratch_session)
+    monkeypatch.setattr(
+        populate_persons_module,
+        "get_person_name_spellings",
+        lambda: [
+            _get_spelling_entry(
+                "Koo Yong",
+                "Koo Yong",
+                PersonNameSpellingKind.CANONICAL,
+                "[another source](https://example.org/other)",
+            )
+        ],
+    )
+
+    populate_persons(scratch_session)
+
+    assert [row.note for row in CRUDPersonNameSpelling(scratch_session).get_all()] == [
+        "[another source](https://example.org/other)"
+    ]
+
+
 def test_populate_persons_renames_a_reused_person_and_leaves_an_unchanged_one(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -202,6 +419,10 @@ def test_populate_persons_renames_a_reused_person_and_leaves_an_unchanged_one(
     created: list[str] = []
     linked: list[dict[int, int]] = []
     monkeypatch.setattr(populate_persons_module, "get_person_decisions", lambda: [])
+    monkeypatch.setattr(
+        populate_persons_module, "get_person_name_spellings", lambda: []
+    )
+    monkeypatch.setattr(CRUDPersonNameSpelling, "get_all", lambda self: [])
     monkeypatch.setattr(CRUDSpeaker, "get_all", lambda self: speakers)
     monkeypatch.setattr(
         CRUDSpeaker, "set_person_ids_bulk", lambda self, updates: linked.append(updates)
@@ -239,6 +460,10 @@ def test_populate_persons_recomputes_the_basis_of_a_reused_person(
     created: list[str] = []
     linked: list[dict[int, int]] = []
     monkeypatch.setattr(populate_persons_module, "get_person_decisions", lambda: [])
+    monkeypatch.setattr(
+        populate_persons_module, "get_person_name_spellings", lambda: []
+    )
+    monkeypatch.setattr(CRUDPersonNameSpelling, "get_all", lambda self: [])
     monkeypatch.setattr(CRUDSpeaker, "get_all", lambda self: speakers)
     monkeypatch.setattr(
         CRUDSpeaker, "set_person_ids_bulk", lambda self, updates: linked.append(updates)

@@ -21,6 +21,10 @@ from schemas.party_affiliation import (
     PartyAffiliationMemberships,
 )
 from schemas.person_decision import PersonDecision, PersonDecisions
+from schemas.person_name_spelling import (
+    PersonNameSpellingEntries,
+    PersonNameSpellingEntry,
+)
 from schemas.speaker_override import SpeakerOverrides
 from schemas.unattributed_speech import (
     UnattributedSpeechRange,
@@ -41,6 +45,7 @@ _UNATTRIBUTED_SPEECH_FILE = _DATA_DIRECTORY / "unattributed_speech.json"
 _PARTY_AFFILIATIONS_FILE = _DATA_DIRECTORY / "party_affiliations.json"
 _ATTENDANCE_CLEANUP_FILE = _DATA_DIRECTORY / "attendance_cleanup.json"
 _PERSON_DECISIONS_FILE = _DATA_DIRECTORY / "person_decisions.json"
+_PERSON_NAME_SPELLINGS_FILE = _DATA_DIRECTORY / "person_name_spellings.json"
 _HAND_CHECK_OFFICE_HOLDERS_FILE = _DATA_DIRECTORY / "hand_check_office_holders.json"
 
 _SchemaT = TypeVar("_SchemaT", bound=BaseModel)
@@ -93,6 +98,10 @@ def get_attendance_cleanup() -> AttendanceCleanup:
 
 def get_person_decisions() -> list[PersonDecision]:
     return _get_data_file(_PERSON_DECISIONS_FILE, PersonDecisions).root
+
+
+def get_person_name_spellings() -> list[PersonNameSpellingEntry]:
+    return _get_data_file(_PERSON_NAME_SPELLINGS_FILE, PersonNameSpellingEntries).root
 
 
 def get_hand_check_office_holders() -> list[HandCheckOfficeHolder]:
