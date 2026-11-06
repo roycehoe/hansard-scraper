@@ -82,5 +82,13 @@
     ],
     "decision": "name",
     "source": "The rule would give \"Mohamed Maidin\", the scraped spelling. The Official Report prints \"Encik Mohamad Maidin\" in 644 speech labels and \"Mohamed\" in none; royce ruled on 17 Oct 2026 to take the Official Report form."
+  },
+  {
+    "person_name": "Lim Chin Siong",
+    "members": [
+      {"name": "Lim Ching Siong", "parliament_number": 0}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"Lim Ching Siong\", the form of 91 speech labels, 105 attendance rows and the Elections Department's 1955 list (https://www.eld.gov.sg/elections_past_parliamentary1955.html). NLB Infopedia (https://eresources.nlb.gov.sg/infopedia/articles/SIP_1462_2009-02-18.html) and the National Archives (https://www.nas.gov.sg/archivesonline/photographs/record-details/33dacd9f-1162-11e3-83d5-0050568939ad) print \"Lim Chin Siong\", and so do 37 speech rows before 1975. royce ruled on 6 Nov 2026 that the record keeps what it prints and the person takes the correct name (ADR 0016)."
   }
 ]
