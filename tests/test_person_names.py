@@ -16,7 +16,7 @@ from schemas.person_decision import PersonDecision, PersonDecisionMember
 from services.person import cluster_speakers
 from utils.data_files import get_person_decisions
 
-_NAME_DECISION_COUNT = 7
+_NAME_DECISION_COUNT = 13
 
 
 def _get_speaker(
