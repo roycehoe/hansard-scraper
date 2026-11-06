@@ -1,6 +1,6 @@
 # 0016. A person's name is the correct name
 
-Status: accepted, 6 November 2026. Royce set the rule while reviewing person 513, stored as "Lim Ching Siong". It replaces the ruling of 17 October 2026 to take the Official Report's form for a person's name.
+Status: superseded by [ADR 0017](0017-elected-members-take-the-elections-departments-spelling.md), 6 November 2026. Royce set this rule while reviewing person 513, stored as "Lim Ching Siong". It replaces the ruling of 17 October 2026 to take the Official Report's form for a person's name.
 
 Context. `person.canonical_name` is the name the site shows and the name readers search for. It came from the printed or scraped spelling, so a misprint in the record became the person's name. The record prints "Lim Ching Siong" in all 91 speech labels and 105 attendance rows, and NLB Infopedia and the National Archives print "Lim Chin Siong".
 

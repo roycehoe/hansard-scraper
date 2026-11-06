@@ -169,6 +169,18 @@ One row per individual, grouping the per-parliament `Speaker` rows. Derived and 
 | `basis` | str | Which rule formed the group: `auto:exact`, `auto:normalised`, `review:merge` or `single`. Stage 9 recomputes it on every run. |
 | `notes` | str | Free text; unused so far. |
 
+### PersonNameSpelling
+
+One row per person and spelling in a spelling note. Stage 9 loads it from `data/person_name_spellings.json`, and the table holds what the file holds. See [ADR 0017](adr/0017-elected-members-take-the-elections-departments-spelling.md).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `ordinal` | int | Order within the person. Unique with `person_id`. |
+| `spelling` | str | The spelling as its source prints it. Unique with `person_id`. |
+| `kind` | PersonNameSpellingKind | `CANONICAL` for the row that equals `person.canonical_name`, `OTHER_SPELLING`, `TRANSLITERATION`, or `OTHER_NAME` for a printed name that is not a spelling of it. |
+| `note` | str | The sentence the person page shows. Each source is a `[name](link)` link to an https address or a `/reports/` page. |
+| `person_id` | int | FK → `Person.id`. |
+
 ---
 
 ## Report types

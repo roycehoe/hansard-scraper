@@ -14,6 +14,7 @@ erDiagram
     speaker |o--o{ speech : "speaker_id"
     speaker ||--o{ partyaffiliation : "speaker_id"
     person |o--o{ speaker : "person_id"
+    person ||--o{ personnamespelling : "person_id"
 
     hansardwebsiteresponse {
         int id PK
@@ -110,6 +111,15 @@ erDiagram
         varchar canonical_name
         varchar basis
         varchar notes
+    }
+
+    personnamespelling {
+        int id PK
+        int person_id FK
+        int ordinal
+        text spelling
+        personnamespellingkind kind "CANONICAL, OTHER_SPELLING, TRANSLITERATION or OTHER_NAME"
+        text note "sources as links"
     }
 
     partyaffiliation {
