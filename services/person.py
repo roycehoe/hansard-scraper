@@ -3,10 +3,12 @@ from collections import Counter
 from dataclasses import dataclass, field
 from typing import Optional
 
+from database.person_name_spelling import PersonNameSpelling
 from database.speaker import Speaker
-from enums import PersonDecisionKind
+from enums import PersonDecisionKind, PersonNameSpellingKind
 from exceptions import HansardDataFileError
 from schemas.person_decision import PersonDecision, PersonDecisionMember
+from schemas.person_name_spelling import PersonNameSpellingEntry
 from utils.names import (
     invert_to_natural,
     period_normalize,
@@ -189,3 +191,38 @@ def cluster_speakers(
             )
         )
     return cluster_result
+
+
+def build_person_name_spellings(
+    entries: list[PersonNameSpellingEntry],
+    key_to_person_id: dict[Key, int],
+    person_id_to_canonical_name: dict[int, str],
+) -> list[PersonNameSpelling]:
+    person_id_to_ordinal: Counter[int] = Counter()
+    person_name_spellings: list[PersonNameSpelling] = []
+    for entry in entries:
+        key = (entry.member.name, entry.member.parliament_number)
+        try:
+            person_id = key_to_person_id[key]
+        except KeyError as error:
+            raise HansardDataFileError(
+                f"data/person_name_spellings.json names no speaker row: {key}"
+            ) from error
+        canonical_name = person_id_to_canonical_name[person_id]
+        if (entry.spelling == canonical_name) != (
+            entry.kind == PersonNameSpellingKind.CANONICAL
+        ):
+            raise HansardDataFileError(
+                f"data/person_name_spellings.json marks {entry.spelling!r} {entry.kind} for person {person_id}, named {canonical_name!r}"
+            )
+        person_id_to_ordinal[person_id] += 1
+        person_name_spellings.append(
+            PersonNameSpelling(
+                ordinal=person_id_to_ordinal[person_id],
+                spelling=entry.spelling,
+                kind=entry.kind,
+                note=entry.note,
+                person_id=person_id,
+            )
+        )
+    return person_name_spellings

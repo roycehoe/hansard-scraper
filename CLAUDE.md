@@ -131,6 +131,7 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 - `Attendance` — one row per name per sitting, parsed from `Sitting.markdown_content` in stage 7; has a `speaker_id` FK to `Speaker` (set in stage 8)
 - `Speaker` — everyone who appears in the Hansard record, scraped from parliament.gov.sg; keyed by name, party, parliament number, and whether they are a Legislative Assembly member (not all are MPs)
 - `PartyAffiliation` — one row per party a Membership sat for, with the date it began (`started_on`, and `started_on_precision`, a `DatePrecision` of DAY or MONTH, Postgres type `dateprecision`; a MONTH date is stored as the first of the month), `is_started_on_upper_bound` (true when `started_on` is the earliest day a source shows the new party, not the day of the change), one plain sentence for the footnote (`event`), exactly one source (`source_url` for a page outside the corpus, or `source_report_id`, an FK to `Report`, for a Hansard report in it; a check constraint holds this), and a `speaker_id` FK to `Speaker`; the `Speaker` row keeps the ballot party and this table adds the history
+- `PersonNameSpelling`: one row per person and spelling in a spelling note, loaded by stage 9 from `data/person_name_spellings.json`, and the site reads it: `ordinal` (the order within the person, unique with `person_id`), `spelling` (unique with `person_id`), `kind` (`PersonNameSpellingKind`, Postgres type `personnamespellingkind`: CANONICAL for the row that equals `person.canonical_name`, OTHER_SPELLING, TRANSLITERATION, or OTHER_NAME for a printed name that is not a spelling of it), `note` (a sentence whose sources are `[name](link)` links to an https address or a `/reports/` page) and a `person_id` FK to `Person`; see `docs/adr/0017-elected-members-take-the-elections-departments-spelling.md`
 - `Bill` — one row per bill, grouped from the `bill` and `bill-intro` reports and the reports of another type whose title ends in Bill and which hold a reading line, by `services/bill.py`: `title` as the group's last report prints it, `title_key` (lower case letters and digits of the title), `first_sitting_date` and `last_sitting_date`, and `is_passed` (the group closes on a third-reading line)
 - `BillReport` — one row per report of a bill, unique on `bill_id` and `report_id`; a report belongs to one bill, because the grouping reads one title key per report
 - `Act` — one row per current Act of the SSO harvest: `sso_code` (unique) and `title` as the SSO browse page prints it. The Act's text is not stored (`docs/data-loss-register.md`)
@@ -225,7 +226,7 @@ hansard-scraper/
 ├── script.py                        # Pipeline orchestrator — runs populate stages 5 to 9 in order
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
-├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, ReportAskerSource, ParticipantRole, ParticipantRoleSource, OfficeClass, OfficeSource, QuestionState, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus, HandCheckSpeakerVerdict, HandCheckDifferenceClass, HandCheckDifferenceKind, HandCheckErrorTier, HandCheckFlagReason, ActHistoryEntryKind, ActHistoryDefect, BillLinkSource
+├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, PersonNameSpellingKind, ReportAskerSource, ParticipantRole, ParticipantRoleSource, OfficeClass, OfficeSource, QuestionState, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus, HandCheckSpeakerVerdict, HandCheckDifferenceClass, HandCheckDifferenceKind, HandCheckErrorTier, HandCheckFlagReason, ActHistoryEntryKind, ActHistoryDefect, BillLinkSource
 ├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshFailureError / HansardRefreshRunError / HansardTestGuardError / HansardHandCheckError / HansardHandKeptEntryError / HansardActHistoryError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the refresh job (run as `sh refresh.sh`); the build imports `refresh`, so an import error fails it
@@ -242,6 +243,7 @@ hansard-scraper/
 │   ├── party_affiliation.py        # MembershipPartyAffiliations / PartyAffiliationSpan / PartyAffiliationMemberships: data/party_affiliations.json entries
 │   ├── hand_kept_member.py         # HandKeptMember / HandKeptMembers: data/colonial_la_members.json and data/unscraped_members.json entries
 │   ├── person_decision.py          # PersonDecision / PersonDecisionMember / PersonDecisions: data/person_decisions.json entries
+│   ├── person_name_spelling.py     # PersonNameSpellingEntry / PersonNameSpellingEntries: data/person_name_spellings.json entries
 │   ├── head_of_state.py            # HeadOfStateResult / HeadsOfState: data/heads_of_state.json entries
 │   ├── hand_check_office_holder.py # HandCheckOfficeHolder / HandCheckOfficeHolders: data/hand_check_office_holders.json entries, the hand check's office holders by date, each cited from an outside source and never copied from the stage 8 terms
 │   ├── unattributed_speech.py      # UnattributedSpeechRange / UnattributedSpeechRanges: data/unattributed_speech.json entries
@@ -280,7 +282,7 @@ hansard-scraper/
 │   ├── sitting.py                   # HansardSittingDateResponse → Sitting
 │   ├── attendance.py                # Sitting markdown → Attendance; build_speaker_lookups(list[Speaker]) → SpeakerLookups
 │   ├── attendance_cleanup.py        # Plan for scripts/clean_attendance.py: checks the listed rows, then links or deletes each
-│   ├── person.py                    # Speaker rows → person clusters (name normalisation + review decisions)
+│   ├── person.py                    # Speaker rows → person clusters (name normalisation + review decisions); spelling entries → PersonNameSpelling rows
 │   ├── speaker_link.py              # Stage 8 resolver: Chairman, Deputy Speaker and carried-role names, speech and attendance rows → speaker ids
 │   ├── party_affiliation.py         # Party affiliation file + Speaker rows → PartyAffiliation rows; picks the rows not yet stored
 │   ├── bill.py                      # Bill report rows → bills: groups by title key, closes on a third-reading line, starts a new bill after 366 days; hand-kept bills replace the rule-built ones
@@ -304,6 +306,7 @@ hansard-scraper/
 │   ├── sitting.py                   # Entity: extends HansardSittingDateResponse + markdown + JSON columns
 │   ├── attendance.py                # One row per name per sitting + speaker_id FK
 │   ├── person.py                    # Person: one row per clustered identity
+│   ├── person_name_spelling.py      # PersonNameSpelling: one row per person and spelling in a spelling note + person_id FK
 │   ├── party_affiliation.py         # PartyAffiliation: dated party history within a Membership + speaker_id FK
 │   ├── bill.py                      # Bill and BillReport: bills grouped from reports, and their reports
 │   ├── act.py                       # Act and ActHistoryEntry: an Act's code and title, and its Legislative History entries with the bill each links to
@@ -321,6 +324,7 @@ hansard-scraper/
 │   ├── sitting.py
 │   ├── attendance.py
 │   ├── person.py
+│   ├── person_name_spelling.py
 │   ├── party_affiliation.py
 │   ├── bill.py
 │   ├── bill_report.py
@@ -344,7 +348,7 @@ hansard-scraper/
 │   ├── sittings.py                  # Stage 6: HansardSittingDateResponse → Sitting
 │   ├── attendances.py               # Stage 7: Sitting → Attendance
 │   ├── speaker_links.py             # Stage 8: resolve names → set speaker_id on Speech + Attendance
-│   ├── persons.py                   # Stage 9: cluster Speaker rows into Person rows
+│   ├── persons.py                   # Stage 9: cluster Speaker rows into Person rows and load the spelling notes
 │   ├── attribution_figures.py       # Reads report and speech rows into the attribution figures
 │   ├── column_numbers.py            # Plans and writes report column ranges and speech start columns and notes, checked by Parliament
 │   ├── act_links.py                 # Plans and writes bills, Acts, Legislative History entries and bill links from the reports and a harvest directory

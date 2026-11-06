@@ -82,5 +82,61 @@
     ],
     "decision": "name",
     "source": "The rule would give \"Mohamed Maidin\", the scraped spelling. The Official Report prints \"Encik Mohamad Maidin\" in 644 speech labels and \"Mohamed\" in none; royce ruled on 17 Oct 2026 to take the Official Report form."
+  },
+  {
+    "person_name": "Koo Young",
+    "members": [
+      {"name": "Koo Yong", "parliament_number": 1}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"Koo Yong\", the spelling of Parliament's member list. The Elections Department's candidate table (https://data.gov.sg/datasets/d_581a30bee57fa7d8383d6bc94739ad00/view) prints \"Koo Young\" for Thomson in 1963. royce ruled on 6 Nov 2026 that elected members take the department's spelling, spelling only (ADR 0017)."
+  },
+  {
+    "person_name": "Lai Tha Chai",
+    "members": [
+      {"name": "Lai Tai Chai", "parliament_number": 3}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"Lai Tai Chai\", the spelling of Parliament's member list. The Elections Department's candidate table (https://data.gov.sg/datasets/d_581a30bee57fa7d8383d6bc94739ad00/view) prints \"Lai Tha Chai\" for Henderson in 1972, 1976, 1980 and 1984. royce ruled on 6 Nov 2026 that elected members take the department's spelling, spelling only (ADR 0017)."
+  },
+  {
+    "person_name": "Zulkifli Bin Mohammed",
+    "members": [
+      {"name": "Zulkifli Bin Mohamed", "parliament_number": 6}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"Zulkifli Bin Mohamed\", the spelling of Parliament's member list. The Elections Department's candidate table (https://data.gov.sg/datasets/d_581a30bee57fa7d8383d6bc94739ad00/view) prints \"Zulkifli Mohammed\" in 1984, 1988 and 1991. Bin stays as the site has it. royce ruled on 6 Nov 2026 that elected members take the department's spelling, spelling only (ADR 0017)."
+  },
+  {
+    "person_name": "Ahmad Khalis bin Abdul Ghani",
+    "members": [
+      {"name": "Ahmad Khalis bin Abdul Gahni", "parliament_number": 10}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"Ahmad Khalis bin Abdul Gahni\", the spelling of Parliament's member list. The Elections Department's candidate table (https://data.gov.sg/datasets/d_581a30bee57fa7d8383d6bc94739ad00/view) prints \"Ahmad Khalis Abdul Ghani\" for Hong Kah in 2001. Bin stays as the site has it. royce ruled on 6 Nov 2026 that elected members take the department's spelling, spelling only (ADR 0017)."
+  },
+  {
+    "person_name": "Abdul Nasser Bin Kamaruddin",
+    "members": [
+      {"name": "Abdul Nasser Bin Kamarudin", "parliament_number": 7}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"Abdul Nasser Bin Kamarudin\", the spelling of Parliament's member list. The Elections Department's candidate table (https://data.gov.sg/datasets/d_581a30bee57fa7d8383d6bc94739ad00/view) prints \"A Nasser Kamaruddin\" for Hong Kah in 1988. Bin stays as the site has it. royce ruled on 6 Nov 2026 that elected members take the department's spelling, spelling only (ADR 0017)."
+  },
+  {
+    "person_name": "Baharudin Bin Mohamed Ariff",
+    "members": [
+      {"name": "Baharuddin Bin Mohamed Ariff", "parliament_number": 0}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"Baharuddin Bin Mohamed Ariff\", the spelling of data/colonial_la_members.json and of Hansard's speech labels. The Elections Department's candidate table (https://data.gov.sg/datasets/d_581a30bee57fa7d8383d6bc94739ad00/view) prints \"Baharudin bin Mohamed Ariff\" for Anson in 1959. royce ruled on 6 Nov 2026 that elected members take the department's spelling, spelling only (ADR 0017)."
+  },
+  {
+    "person_name": "Chew Chin Han",
+    "members": [
+      {"name": "Chew Chin Harn", "parliament_number": 1}
+    ],
+    "decision": "name",
+    "source": "The rule would give \"Chew Chin Harn\", the spelling of Parliament's member list. The candidate table has no row for this member, since it holds general elections only, and the Elections Department's 1967 by-election page prints \"Chew Chin Han\" for Tampines (https://www.eld.gov.sg/elections_past_by1967.html). royce ruled on 6 Nov 2026 that elected members take the department's spelling, spelling only (ADR 0017)."
   }
 ]

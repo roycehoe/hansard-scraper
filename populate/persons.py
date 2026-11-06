@@ -1,11 +1,34 @@
 from sqlmodel import Session
 
 from crud.person import CRUDPerson
+from crud.person_name_spelling import CRUDPersonNameSpelling
 from crud.speaker import CRUDSpeaker
 from database.person import Person
+from database.person_name_spelling import PersonNameSpelling
 from logs import logger
-from services.person import cluster_speakers
-from utils.data_files import get_person_decisions
+from services.person import Key, build_person_name_spellings, cluster_speakers
+from utils.data_files import get_person_decisions, get_person_name_spellings
+
+
+def _replace_person_name_spellings(
+    session: Session, person_name_spellings: list[PersonNameSpelling]
+) -> int:
+    stored_rows = [
+        stored.model_dump(exclude={"id"})
+        for stored in CRUDPersonNameSpelling(session).get_all()
+    ]
+    planned_rows = [
+        planned.model_dump(exclude={"id"})
+        for planned in sorted(
+            person_name_spellings,
+            key=lambda spelling: (spelling.person_id, spelling.ordinal),
+        )
+    ]
+    if planned_rows == stored_rows:
+        return 0
+    CRUDPersonNameSpelling(session).delete_all()
+    CRUDPersonNameSpelling(session).create_many(person_name_spellings)
+    return len(person_name_spellings)
 
 
 def populate_persons(session: Session) -> None:
@@ -21,6 +44,8 @@ def populate_persons(session: Session) -> None:
     renamed = 0
     basis_changed = 0
     speaker_id_to_person_id: dict[int, int] = {}
+    key_to_person_id: dict[Key, int] = {}
+    person_id_to_canonical_name: dict[int, str] = {}
     for person_cluster in cluster_result.clusters:
         existing_person_ids = sorted(
             {
@@ -68,9 +93,22 @@ def populate_persons(session: Session) -> None:
                 if speaker.person_id != person_id
             }
         )
+        key_to_person_id.update(
+            {
+                (speaker.name, speaker.parliament_number): person_id
+                for speaker in person_cluster.memberships
+            }
+        )
+        person_id_to_canonical_name[person_id] = person_cluster.canonical_name
     CRUDSpeaker(session).set_person_ids_bulk(speaker_id_to_person_id)
+    name_spellings_written = _replace_person_name_spellings(
+        session,
+        build_person_name_spellings(
+            get_person_name_spellings(), key_to_person_id, person_id_to_canonical_name
+        ),
+    )
     session.commit()
     logger.info(
         f"Person: {len(cluster_result.clusters)} persons for {len(speakers)} speaker rows; "
-        f"{created} created, {renamed} renamed, {basis_changed} with a new basis, {len(speaker_id_to_person_id)} speaker rows updated, {len(cluster_result.conflicts)} refused unions"
+        f"{created} created, {renamed} renamed, {basis_changed} with a new basis, {len(speaker_id_to_person_id)} speaker rows updated, {name_spellings_written} name spellings written, {len(cluster_result.conflicts)} refused unions"
     )
