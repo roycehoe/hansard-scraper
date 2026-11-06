@@ -71,6 +71,12 @@ LABEL_COLON = ":"
 MP_NAME_SEPARATOR = ";"
 INVERTED_NAME_SEPARATOR = ", "
 
+CHAIR_FORM_PATTERN = re.compile(
+    r"^(?:Mr|Mdm|Madam)\s+(?:Deputy\s+)?(?:Speaker|Sppeaker|Speake)\b"
+    r"|^(?:The\s+)?(?:Deputy\s+)?(?:Speaker|Chairman)\b",
+    re.IGNORECASE,
+)
+
 _INVERTED_TITLE_SUFFIXES = frozenset(
     {"Dr", "Mdm", "Mr", "Mrs", "Ms", "Prof", "Assoc Prof", "RAdm", "BG"}
 )

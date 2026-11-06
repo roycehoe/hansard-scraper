@@ -6,6 +6,7 @@ from enum import StrEnum
 from typing import Optional
 
 from crud.attendance import AttendanceLocationRow
+from crud.sitting import SittingAttendanceTextRow
 from database.attendance import Attendance
 from database.sitting import Sitting
 from database.speaker import Speaker
@@ -76,6 +77,9 @@ _NAME_TRAILING_CHARACTERS = ", "
 _LINE_TRAILING_CHARACTERS = ". "
 _BULLET_MARKER = "* "
 _TRAILING_BRACKET_RE = re.compile(r"\((.+)\)\s*$")
+_CHAIR_ENTRY_RE = re.compile(r"\bspeaker\b", re.IGNORECASE)
+_ENTRY_OFFICE_SEPARATOR = ","
+_ENTRY_OFFICE_STRIP_CHARACTERS = ",. "
 _SECTION_LABEL_PREFIX_RE = re.compile(r"^(?:Absent|Present):\s*", re.IGNORECASE)
 _LEADING_NUMBER_RE = re.compile(r"^\d+(?=[A-Z])")
 _NUMBERED_ITEM_RE = re.compile(r"^\d+\\\.?\s")
@@ -313,6 +317,23 @@ def _parse_name_and_location(text: str) -> ParsedAttendee:
         _strip_name_decorations(text[:first_open].rstrip(_NAME_TRAILING_CHARACTERS)),
         constituency,
     )
+
+
+def get_entry_office(entry_line: str) -> Optional[str]:
+    text = entry_line.strip().removeprefix(_BULLET_MARKER)
+    first_open = text.find(OPENING_PARENTHESIS)
+    if first_open == -1:
+        office = text.partition(_ENTRY_OFFICE_SEPARATOR)[2]
+        return office.strip(_ENTRY_OFFICE_STRIP_CHARACTERS) or None
+    chair_form = text[:first_open].strip()
+    if _CHAIR_ENTRY_RE.search(chair_form):
+        return chair_form
+    close_index = _get_closing_parenthesis_index(text, first_open)
+    if close_index is None:
+        return None
+    # NOTE: a heading glued to the last entry is not part of its office.
+    office = text[close_index + 1 :].partition(BOLD_MARKER)[0]
+    return office.strip(_ENTRY_OFFICE_STRIP_CHARACTERS) or None
 
 
 def parse_speaker_line(line: str) -> ParsedAttendee:
@@ -678,6 +699,69 @@ def build_sitting_attendances(
             sitting, lookups, constituency_lookups
         )
     return build_sitting_attendances_from_list(sitting, lookups, constituency_lookups)
+
+
+@dataclass(frozen=True)
+class EntryOffice:
+    speaker_name: str
+    office_printed: str
+
+
+def _get_markdown_entry_lines(markdown_content: str) -> list[str]:
+    return [
+        entry_line
+        for section in (AttendanceSection.PRESENT, AttendanceSection.ABSENT)
+        for line in extract_section_lines(markdown_content, section)
+        for entry_line in split_entry_line(line)
+    ]
+
+
+def _get_list_entry_lines(attendance_list: str) -> list[str]:
+    entry_lines = []
+    for raw_entry in json.loads(attendance_list):
+        entry = HansardReportAttendanceEntry.model_validate(raw_entry)
+        if entry.mp_name is None:
+            continue
+        if entry.mp_name.startswith(_LEAVE_NOTE_PREFIX):
+            continue
+        entry_lines.append(entry.mp_name)
+    return entry_lines
+
+
+def _get_entry_lines(
+    sitting_attendance_text_row: SittingAttendanceTextRow,
+) -> list[str]:
+    if sitting_attendance_text_row.markdown_content is not None:
+        return _get_markdown_entry_lines(sitting_attendance_text_row.markdown_content)
+    if sitting_attendance_text_row.attendance_list is None:
+        return []
+    return _get_list_entry_lines(sitting_attendance_text_row.attendance_list)
+
+
+def get_sitting_entry_offices(
+    sitting_attendance_text_row: SittingAttendanceTextRow, lookups: SpeakerLookups
+) -> list[EntryOffice]:
+    parliament_number = infer_parliament(
+        sitting_attendance_text_row.parlement_no, sitting_attendance_text_row.volume_no
+    )
+    entry_offices = []
+    for entry_line in _get_entry_lines(sitting_attendance_text_row):
+        office_printed = get_entry_office(entry_line)
+        if office_printed is None:
+            continue
+        parsed = parse_entry_line(entry_line, sitting_attendance_text_row.sitting_date)
+        if parsed is None:
+            continue
+        if not parsed.name:
+            continue
+        name = normalize_name(parsed.name)
+        canonical_name = (
+            None
+            if parliament_number is None
+            else resolve_canonical_name(name, parliament_number, lookups)
+        )
+        entry_offices.append(EntryOffice(canonical_name or name, office_printed))
+    return entry_offices
 
 
 def _drop_equal_attendances(

@@ -50,6 +50,16 @@ class SittingDateSectionsRow:
     sections: str
 
 
+@dataclass(frozen=True)
+class SittingAttendanceTextRow:
+    id: int
+    sitting_date: str
+    parlement_no: Optional[int]
+    volume_no: Optional[int]
+    markdown_content: Optional[str]
+    attendance_list: Optional[str]
+
+
 _STREAM_BATCH = 50
 
 
@@ -111,6 +121,21 @@ class CRUDSitting:
         )
         return [
             SittingDateSectionsRow(*row) for row in self.session.exec(statement).all()
+        ]
+
+    def get_attendance_text_rows_by_sitting_dates(
+        self, sitting_dates: list[str]
+    ) -> list[SittingAttendanceTextRow]:
+        statement = select(
+            Sitting.id,
+            Sitting.sitting_date,
+            Sitting.parlement_no,
+            Sitting.volume_no,
+            Sitting.markdown_content,
+            Sitting.attendance_list,
+        ).where(col(Sitting.sitting_date).in_(sitting_dates))
+        return [
+            SittingAttendanceTextRow(*row) for row in self.session.exec(statement).all()
         ]
 
     def get_date_rows(self) -> list[SittingDateRow]:

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Sequence
 
 from sqlalchemy import not_, text
 from sqlmodel import Session, col, delete, func, select
@@ -92,6 +92,34 @@ class SpeechColumnRow:
     column_start: Optional[int]
     column_note: Optional[ColumnNote]
     column_suggested: Optional[int]
+
+
+@dataclass(frozen=True)
+class SpeechAskerRow:
+    id: int
+    report_id: int
+    ordinal: int
+    speaker: Optional[str]
+    transcript: str
+    kind: Optional[SpeechKind]
+    speaker_id: Optional[int]
+
+
+@dataclass(frozen=True)
+class SpeechSittingDateLabelRow:
+    sitting_date: datetime
+    report_id: int
+    ordinal: int
+    speaker_id: int
+    speaker: str
+
+
+@dataclass(frozen=True)
+class SpeechParliamentLabelRow:
+    parliament_number: int
+    speaker_id: int
+    speaker: str
+    report_count: int
 
 
 @dataclass(frozen=True)
@@ -370,6 +398,74 @@ class CRUDSpeech:
             .order_by(Speech.report_id, Speech.ordinal)
         )
         return [SpeechColumnRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_asker_rows_by_report_ids(
+        self, report_ids: list[int]
+    ) -> list[SpeechAskerRow]:
+        statement = (
+            select(
+                Speech.id,
+                Speech.report_id,
+                Speech.ordinal,
+                Speech.speaker,
+                Speech.transcript,
+                Speech.kind,
+                Speech.speaker_id,
+            )
+            .where(col(Speech.report_id).in_(report_ids))
+            .order_by(Speech.report_id, Speech.ordinal)
+        )
+        return [SpeechAskerRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_label_rows_by_sitting_dates_and_speaker_id_not_null_and_speaker_not_null(
+        self, sitting_dates: list[datetime]
+    ) -> list[SpeechSittingDateLabelRow]:
+        statement = (
+            select(
+                Report.sitting_date,
+                Speech.report_id,
+                Speech.ordinal,
+                Speech.speaker_id,
+                Speech.speaker,
+            )
+            .join(Report)
+            .where(col(Report.sitting_date).in_(sitting_dates))
+            .where(col(Speech.speaker_id).is_not(None))
+            .where(col(Speech.speaker).is_not(None))
+            .distinct(Report.sitting_date, Speech.speaker_id, Speech.speaker)
+            .order_by(
+                Report.sitting_date,
+                Speech.speaker_id,
+                Speech.speaker,
+                Speech.report_id,
+                Speech.ordinal,
+            )
+        )
+        return [
+            SpeechSittingDateLabelRow(*row)
+            for row in self.session.exec(statement).all()
+        ]
+
+    def get_label_rows_by_parliament_numbers_and_report_types_and_speaker_id_not_null_and_speaker_not_null(
+        self, parliament_numbers: list[int], report_types: Sequence[str]
+    ) -> list[SpeechParliamentLabelRow]:
+        statement = (
+            select(
+                Report.parliament_number,
+                Speech.speaker_id,
+                Speech.speaker,
+                func.count(col(Speech.report_id).distinct()),
+            )
+            .join(Report)
+            .where(col(Report.parliament_number).in_(parliament_numbers))
+            .where(col(Report.report_type).in_(report_types))
+            .where(col(Speech.speaker_id).is_not(None))
+            .where(col(Speech.speaker).is_not(None))
+            .group_by(Report.parliament_number, Speech.speaker_id, Speech.speaker)
+        )
+        return [
+            SpeechParliamentLabelRow(*row) for row in self.session.exec(statement).all()
+        ]
 
     def get_text_rows(self) -> Iterable[SpeechTextRow]:
         statement = (

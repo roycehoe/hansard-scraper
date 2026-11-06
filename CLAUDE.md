@@ -104,7 +104,7 @@ Every request to SPRS or parliament.gov.sg goes through `paced_request()` or `pa
 
 ### Daily refresh
 
-`refresh.py` runs `populate/refresh_runs.py` once a day. It only adds rows: new raw report and sitting rows, their reports, speech rows, sittings and attendance, with stage 8 run on the new rows only. It never re-parses or rewrites a stored row. It commits one month at a time and halts on a new Parliament number, on a field the mapping loses, or when more than 5% of a month's new named speech rows have no registry link; a halt keeps the months before it. A run also ends `FAILED` when every topic answer it fetched has no text (new non-atbp hits plus rechecks); earlier months stay committed. After the last month it runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance` before it marks the run `SUCCEEDED`, and a VACUUM that fails or is skipped fails the run. Each run is one `refresh_run` row with its counts and status. A scheduled run cannot commit a `docs/figures/` file, so every run stores the figures in `refresh_run.figures` instead, including a run that adds nothing, so the figures catch up with a supervised write by the next morning; supervised writes still commit theirs. See `docs/refresh.md`.
+`refresh.py` runs `populate/refresh_runs.py` once a day. It only adds rows: new raw report and sitting rows, their reports, speech rows, sittings and attendance, with stage 8 run on the new rows only and, after it, the askers of the new parliamentary question reports stored in `report_asker` and their participants and states stored in `report_participant` and `report_question_state`. It never re-parses or rewrites a stored row. It commits one month at a time and halts on a new Parliament number, on a field the mapping loses, or when more than 5% of a month's new named speech rows have no registry link; a halt keeps the months before it. A run also ends `FAILED` when every topic answer it fetched has no text (new non-atbp hits plus rechecks); earlier months stay committed. After the last month it runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance` before it marks the run `SUCCEEDED`, and a VACUUM that fails or is skipped fails the run. Each run is one `refresh_run` row with its counts and status. A scheduled run cannot commit a `docs/figures/` file, so every run stores the figures in `refresh_run.figures` instead, including a run that adds nothing, so the figures catch up with a supervised write by the next morning; supervised writes still commit theirs. See `docs/refresh.md`.
 
 ### Sitting date API — two formats
 
@@ -135,6 +135,9 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 - `BillReport` — one row per report of a bill, unique on `bill_id` and `report_id`; a report belongs to one bill, because the grouping reads one title key per report
 - `Act` — one row per current Act of the SSO harvest: `sso_code` (unique) and `title` as the SSO browse page prints it. The Act's text is not stored (`docs/data-loss-register.md`)
 - `ActHistoryEntry` — one row per entry of an Act's Legislative History, unique on `act_id` and `ordinal`: `printed_text` (the entry as printed, page-break noise removed), `printed_law_number`, `printed_title`, `printed_bill_number` (only an `N/YY` or `N/YYYY` form, as printed), the first, second and third reading dates and the commencement date (NULL where the source prints no usable date), `kind` (an `ActHistoryEntryKind`, Postgres type `acthistoryentrykind`), `bill_id` (an FK to `Bill`, NULL when no bill matches) and `bill_link_source` (a `BillLinkSource`, Postgres type `billlinksource`, saying which reading date, the looser or similar title rule, or a hand-kept link, matched)
+- `ReportAsker` — one row per asker of a parliamentary question in a report: `ordinal` (order of first appearance, unique with `report_id`), `printed_name` as the record prints it, `source` (a `ReportAskerSource`, Postgres type `reportaskersource`, saying which rule found the name), `reader_printed_name` (the member who read out a question that stood in an absent member's name, otherwise NULL), a `report_id` FK to `Report`, a `speaker_id` FK to `Speaker` that is NULL when the printed name resolves to no single Membership, and a `reader_speaker_id` FK to `Speaker` for the reader
+- `ReportParticipant` — one row per person and role in a parliamentary question report, so a member who holds two roles has two rows: `ordinal` (unique with `report_id`), `role` (a `ParticipantRole`, Postgres type `participantrole`), `role_source` (a `ParticipantRoleSource`, Postgres type `participantrolesource`, saying which rule found the role), `first_ordinal` (the `speech.ordinal` of the person's first row in that role), `printed_name` as the record prints it, `answering_for_printed` (the "for the" or "on behalf of the" bracket as printed, otherwise NULL), `office_printed` (the office as its source prints it), `office_class` (an `OfficeClass`, Postgres type `officeclass`), `office_source` (an `OfficeSource`, Postgres type `officesource`, saying which source gave the office), a `report_id` FK to `Report`, and a `speaker_id` FK to `Speaker` that is NULL when the printed name resolves to no single Membership
+- `ReportQuestionState` — one row per report and state that the record prints for a parliamentary question: `state` (a `QuestionState`, Postgres type `questionstate`), `printed_text` (the line or title that shows it), `first_ordinal` (the `speech.ordinal` of the row that prints it, NULL when the title does), and a `report_id` FK to `Report`; unique on `report_id` and `state`
 
 ### Key parsing logic
 
@@ -158,6 +161,8 @@ Every script that calls `validate_can_write` ends a `--commit` run with `vacuum_
 
 A write that adds, rewrites or deletes speech rows of an older-system report (Parliaments 0 to 11) also sets their column numbers again, so `speech.column_start` and its note never go stale: `apply_coverage_refill.py`, `apply_language_note_close_marks.py` and `apply_footnote_markers.py` run the column pass inside their own write, and any other such write, the speech fidelity loop's ship tools included, ends with `python -m scripts.apply_column_numbers --commit --report-id ...` for the reports it touched.
 
+A write that adds, rewrites, deletes or relinks speech rows of a parliamentary question report (oral-answer, written-answer, written-answer-na) ends with `python -m scripts.apply_report_askers --commit --report-id ...` and then `python -m scripts.apply_report_participants --commit --report-id ...` for the reports it touched.
+
 The scripts:
 
 - `diagnose.py` — inspect parsing failures across the corpus
@@ -179,6 +184,8 @@ The scripts:
 - `audit_characters.py`: read-only count of character faults (U+FFFD, mojibake, control and private-use characters, leftover HTML, unbalanced quotes and parentheses) in every stored text column, with the rows whose raw text does not hold the fault; `--output PATH` keeps the lines in `docs/figures/`
 - `count_column_coverage.py`: read-only count, by system and Parliament, of the reports whose raw HTML holds "Column: N" markers, and of the stored speech rows `utils/column_numbers.py` gives a start column; checks each report range against the `Start_Col` and `End_Col` of the report head; run as a module
 - `apply_column_numbers.py`: sets `report.column_start` and `column_end` and each speech row's `column_start`, `column_note` and `column_suggested` from the column markers in the raw HTML, through `populate/column_numbers.py`; `--report-id` limits it to the reports given; checks the stored counts by Parliament against its plan before it commits; a dry run unless `--commit`; run as a module
+- `apply_report_askers.py`: stores the askers of each parliamentary question report (oral-answer, written-answer, written-answer-na) in `report_asker`, through `populate/report_askers.py`: finds them from the report's speech rows with the four rules of `services/report_asker.py`, resolves the printed names of a stood line and of a name in text as stage 8 does, and deletes and rewrites the rows of each report it plans; `--report-id` limits it to the reports given; checks the stored counts by Parliament group and source against its plan before it commits; a dry run unless `--commit`; run as a module
+- `apply_report_participants.py`: stores the participants and question states of each parliamentary question report (oral-answer, written-answer, written-answer-na) in `report_participant` and `report_question_state`, through `populate/report_participants.py`: labels every person of the report from its speech rows with `services/report_participant.py`, takes each person's office from the first source that has one (the report's label, its MPs Speaking header, the sitting's attendance entry, a same-day label, the Parliament's most common label), and deletes and rewrites both tables' rows for each report it plans; `--report-id` limits it to the reports given; checks the stored counts by Parliament group, role, role source, office source and state against its plan, and the asker, absent filer and reader rows against the stored `report_asker` rows, leaving out the readers with role source `QUESTION_NUMBER_CALL` that only this pass records, before it commits; a dry run unless `--commit`; run as a module
 - `apply_speaker_overrides.py`: applies `data/speaker_overrides.json` and the party values of `data/colonial_la_members.json` to stored speaker rows, and straightens the apostrophe in party; a dry run unless `--commit`
 - `complete_truncated_attendance.py`: inserts the attendance rows stage 7 builds from a sitting's markdown that its stored rows lack, linked as stage 8 links them, in sittings that already hold rows (stage 7 fills a sitting with none); refuses the whole run when a short sitting holds a stored row stage 7 does not build; a dry run writes the plan file, and `--commit` builds the plan again, refuses unless it equals the reviewed file, and checks each sitting's count before it commits
 - `attendance_fresh_vs_stored.py`: read-only comparison of the attendance rows stage 7 builds now with the stored rows, one JSON line per differing or watched row with its printed source lines; `--batches` writes reader files of at most 150 rows per class; run as a module
@@ -194,7 +201,7 @@ The scripts:
 - `apply_speech_report_type.py`: runs migration `82478ba59541`, which copies `speech` with each report's type and swaps the copy in, and `alembic check` in one transaction, run as a module; rolled back unless `--commit`
 - `load_party_affiliations.py`: idempotent load of `data/party_affiliations.json` into the `PartyAffiliation` table, run as a module; skips rows already stored and refuses when a stored row for the same speaker differs from the file; a dry run unless `--commit`
 - `apply_act_links.py`: stores the bills grouped from the `bill` and `bill-intro` reports and the other-type reports whose title ends in Bill and which hold a reading line (a report whose printed title misspells its bill is grouped under the corrected title of `data/bill_title_corrections.json`, and the bills of `data/hand_kept_bills.json` are built from their listed reports, a motion's among them; the three entries of `data/hand_kept_act_links.json` link to the bill holding exactly their listed reports before any rule is tried), the Acts of a harvest directory (`--harvest-directory`: `acts.json` and one `pdftotext -layout` text file per Act, named `<sso_code>.txt`), their Legislative History entries and the link from each Act or Ordinance entry to a bill, through `populate/act_links.py`; the link takes the bill whose title key matches the entry's title and which has a report within a day of the entry's first, then third, then second reading date, failing that the one bill whose looser key (amendment and number words removed) has reports within a day of the first and third reading dates, and failing that the one bill whose title key is at least 0.85 similar to the entry's and whose first and last reports fall within a day of the first and third reading dates; the dry run logs the counts (bills, Acts, entries by kind, links by rule, unlinked entries by kind and decade, source defects, unparsed entries) and writes the plan file (`--plan-file`); the dry run also logs what the write would change against the stored rows (bills kept, updated, inserted and deleted; Acts and entries inserted, updated and deleted; linked entries that change bill); `--commit` refuses unless the plan equals the reviewed file, then applies it to the four tables (a bill is keyed by its report ids, an Act by `sso_code`, an entry by its Act's `sso_code` and `ordinal`; unchanged rows keep their ids) and checks the stored counts and rows against the plan before it commits, so a second run of the same plan writes nothing; run as a module
-- `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech rows, after checking each against its kept copy; a dry run unless `--commit`
+- `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech, asker, participant and question state rows, after checking each against its kept copy; a dry run unless `--commit`
 - `find_presiding_officers.py`: tallies the most common Speaker and Deputy Speaker per parliament from the PRESENT sections
 - `trace_speaker_links.py`: read-only regression guard for stage 8 speech links: re-runs the resolver per key and compares with stored `speaker_id`
 - `expand_sample.py`: expands the stratified speech sample in `docs/speech-speaker/sample.json`
@@ -218,7 +225,7 @@ hansard-scraper/
 ├── script.py                        # Pipeline orchestrator — runs populate stages 5 to 9 in order
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
-├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus, HandCheckSpeakerVerdict, HandCheckDifferenceClass, HandCheckDifferenceKind, HandCheckErrorTier, HandCheckFlagReason, ActHistoryEntryKind, ActHistoryDefect, BillLinkSource
+├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, ReportAskerSource, ParticipantRole, ParticipantRoleSource, OfficeClass, OfficeSource, QuestionState, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus, HandCheckSpeakerVerdict, HandCheckDifferenceClass, HandCheckDifferenceKind, HandCheckErrorTier, HandCheckFlagReason, ActHistoryEntryKind, ActHistoryDefect, BillLinkSource
 ├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshFailureError / HansardRefreshRunError / HansardTestGuardError / HansardHandCheckError / HansardHandKeptEntryError / HansardActHistoryError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the refresh job (run as `sh refresh.sh`); the build imports `refresh`, so an import error fails it
@@ -284,6 +291,8 @@ hansard-scraper/
 │   ├── attribution.py               # Speech row categories and the figures JSON for refresh_run.figures
 │   ├── character_audit.py           # Character fault signatures and pair balance for scripts/audit_characters.py
 │   ├── refresh.py                   # Refresh rules: dates, halt checks and alert text
+│   ├── report_asker.py              # Speech rows of a parliamentary question → its askers, and the reader of a question that stood in an absent member's name
+│   ├── report_participant.py        # Speech rows, askers and offices of a parliamentary question → each person's role, and the question's state
 │   └── speaker.py                   # SpeakerResult → Speaker DB entity
 │
 ├── database/                        # SQLModel table definitions
@@ -299,6 +308,9 @@ hansard-scraper/
 │   ├── bill.py                      # Bill and BillReport: bills grouped from reports, and their reports
 │   ├── act.py                       # Act and ActHistoryEntry: an Act's code and title, and its Legislative History entries with the bill each links to
 │   ├── refresh_run.py               # RefreshRun: one row per refresh run, its counts, figures and status
+│   ├── report_asker.py              # ReportAsker: one row per asker of a parliamentary question + report_id, speaker_id and reader_speaker_id FKs
+│   ├── report_participant.py        # ReportParticipant: one row per person and role in a parliamentary question + report_id and speaker_id FKs
+│   ├── report_question_state.py     # ReportQuestionState: one row per report and state the record prints for a question + report_id FK
 │   └── speaker.py                   # Speaker: name, party, parliament number, LA flag, person_id FK
 │
 ├── crud/                            # DB read/write helpers (one file per table)
@@ -315,6 +327,9 @@ hansard-scraper/
 │   ├── act.py
 │   ├── act_history_entry.py
 │   ├── refresh_run.py               # Run rows, with a row lock for the finish
+│   ├── report_asker.py              # Askers of a parliamentary question: add, read by report, delete by report
+│   ├── report_participant.py        # Participants of a parliamentary question: add, read by report, delete by report
+│   ├── report_question_state.py     # Question states of a parliamentary question: add, read by report, delete by report
 │   ├── vacuum.py                    # vacuum_count and VACUUM (ANALYZE) for a table named by the caller
 │   └── speaker.py
 │
@@ -333,12 +348,15 @@ hansard-scraper/
 │   ├── attribution_figures.py       # Reads report and speech rows into the attribution figures
 │   ├── column_numbers.py            # Plans and writes report column ranges and speech start columns and notes, checked by Parliament
 │   ├── act_links.py                 # Plans and writes bills, Acts, Legislative History entries and bill links from the reports and a harvest directory
+│   ├── report_askers.py             # Plans and writes the askers of parliamentary question reports, checked by Parliament group and source
+│   ├── report_participants.py       # Plans and writes the participants and states of parliamentary question reports, checked by Parliament group and against report_asker
 │   ├── refresh_runs.py              # Daily refresh: fetch, check, add rows, link, record the run, alert
 │   ├── written_tables.py            # VACUUM (ANALYZE) the tables a supervised write script wrote, and check the count rose
 │   └── speakers.py                  # Out-of-band: persist scraped Speaker records
 │
 ├── utils/                           # Shared pure utilities (no DB, no HTTP)
 │   ├── act_link_update.py           # BillUpdate / ActUpdate / ActHistoryEntryUpdate: one row's changed columns, for a bulk update
+│   ├── asker_candidate.py           # AskerCandidate: one asker found in a question's speech rows, before it is resolved or stored
 │   ├── column_numbers.py            # A report's column range and each speech row's start column and note, from the column markers in its raw HTML
 │   ├── data_files.py                # The only module outside its own test that opens data/: one get_ function per file, each on model_validate_json
 │   ├── database_label.py            # get_database_label: the host, port and database name of a database URL, never the user or password
@@ -347,6 +365,7 @@ hansard-scraper/
 │   ├── markdown_header.py           # Reads a number such as Sitting No from a stored header table
 │   ├── markdown_parser.py           # HTML → clean markdown; merges split bold lines
 │   ├── names.py                     # Pure name helpers shared by services/attendance.py and services/person.py
+│   ├── office.py                    # A member's office as the record prints it: label office and "for" bracket, header entries, office class
 │   ├── parliament_numbers.py        # VOLUME_TO_PARLIAMENT and infer_parliament: the Parliament number of a volume
 │   ├── sitting_dates.py             # Sitting-date parsing, the sitting-date key, the month windows and the old/new format cutoff test
 │   ├── speaker_resolution.py        # Name resolution: build SpeakerLookups, resolve_canonical_name and the OCR and name tables behind it
@@ -387,6 +406,8 @@ hansard-scraper/
     ├── audit_characters.py
     ├── count_column_coverage.py
     ├── apply_column_numbers.py
+    ├── apply_report_askers.py
+    ├── apply_report_participants.py
     ├── apply_speaker_overrides.py
     ├── complete_truncated_attendance.py
     ├── attendance_fresh_vs_stored.py

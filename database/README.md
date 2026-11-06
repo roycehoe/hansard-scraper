@@ -10,9 +10,14 @@ erDiagram
     sitting |o--o{ attendance : "sitting_id"
     report |o--o{ speech : "report_id"
     report |o--o{ partyaffiliation : "source_report_id"
+    report ||--o{ report_asker : "report_id"
+    report ||--o{ report_participant : "report_id"
+    report ||--o{ report_question_state : "report_id"
     speaker |o--o{ attendance : "speaker_id"
     speaker |o--o{ speech : "speaker_id"
     speaker ||--o{ partyaffiliation : "speaker_id"
+    speaker |o--o{ report_asker : "speaker_id"
+    speaker |o--o{ report_participant : "speaker_id"
     person |o--o{ speaker : "person_id"
 
     hansardwebsiteresponse {
@@ -122,6 +127,40 @@ erDiagram
         dateprecision started_on_precision "DAY or MONTH"
         bool is_started_on_upper_bound
         varchar event
+    }
+
+    report_asker {
+        int id PK
+        int report_id FK "unique with ordinal"
+        int speaker_id FK "null when the name resolves to no single Membership"
+        int reader_speaker_id FK "who read out a question in an absent member's name"
+        int ordinal
+        varchar printed_name "name as printed"
+        reportaskersource source
+        varchar reader_printed_name
+    }
+
+    report_participant {
+        int id PK
+        int report_id FK "unique with ordinal"
+        int speaker_id FK "null when the name resolves to no single Membership"
+        int ordinal
+        participantrole role
+        participantrolesource role_source "the rule that found the role"
+        int first_ordinal "speech.ordinal of the first row in this role"
+        varchar printed_name "name as printed"
+        varchar answering_for_printed "for/on behalf of bracket as printed"
+        varchar office_printed "office as printed"
+        officeclass office_class
+        officesource office_source "where the office came from"
+    }
+
+    report_question_state {
+        int id PK
+        int report_id FK "unique with state"
+        questionstate state
+        varchar printed_text "line or title that shows the state"
+        int first_ordinal "null when the title shows it"
     }
 
     refresh_run {

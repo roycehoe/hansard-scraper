@@ -15,6 +15,9 @@ import database.party_affiliation  # noqa: F401
 import database.person  # noqa: F401
 import database.refresh_run  # noqa: F401
 import database.report  # noqa: F401
+import database.report_asker  # noqa: F401
+import database.report_participant  # noqa: F401
+import database.report_question_state  # noqa: F401
 import database.sitting  # noqa: F401
 import database.speaker  # noqa: F401
 import database.speech  # noqa: F401

@@ -36,6 +36,8 @@ from gateway.healthchecks import send_healthchecks_failure_ping, send_healthchec
 from gateway.telegram import send_telegram_message
 from logs import logger
 from populate.attribution_figures import get_attribution_figures
+from populate.report_askers import populate_report_askers
+from populate.report_participants import populate_report_participants
 from populate.speaker_links import link_speakers_by_report_ids_and_sitting_ids
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
@@ -664,6 +666,8 @@ def _write_window_rows(
     report_ids = [report.id for report in reports if report.id is not None]
     sitting_ids = [sitting.id for sitting in sittings if sitting.id is not None]
     link_speakers_by_report_ids_and_sitting_ids(session, report_ids, sitting_ids)
+    populate_report_askers(session, report_ids)
+    populate_report_participants(session, report_ids)
 
     window_result.website_responses_added = len(hansard_website_responses)
     window_result.reports_added = len(reports)
