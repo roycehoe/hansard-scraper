@@ -9,7 +9,7 @@ A wrong credit or missing text is a data error. Report it on [openhansard.sg](ht
 ## Proposing a change
 
 1. Open an issue that says what you want to change and why. Name the report, speech or script involved.
-2. Wait for Royce Hoe to reply. He decides whether the change fits the project.
+2. Wait for me (Royce Hoe) to reply. I decide whether the change fits the project.
 3. Fork the repository, make the change, and open a pull request that links the issue.
 
 Keep each pull request to one change. Subjects follow Conventional Commits, such as `fix: join a sentence cut by a column marker`, under 72 characters.
@@ -27,6 +27,6 @@ CI runs `poetry run ruff check .`, `poetry run ruff format --check .`, `poetry r
 
 A merged pull request never changes a stored row. The daily refresh only adds rows ([docs/refresh.md](docs/refresh.md)), and the database is not published, so you cannot run a write against it. A fix to the parser reaches stored rows through a supervised write.
 
-A write script is a dry run unless it gets `--commit`. In a supervised write, Royce runs it dry, then on a rehearsal copy of the database, then on the real one with `--commit`. Every write to the speech table ends with a figures file committed to `docs/figures/`.
+A write script is a dry run unless it gets `--commit`. In a supervised write, I run it dry, then on a rehearsal copy of the database, then on the real one with `--commit`. Every write to the speech table ends with a figures file committed to `docs/figures/`.
 
-If your change needs one, say so in the issue. The script can come with the pull request. Only Royce can run it, because the database is not published.
+If your change needs one, say so in the issue. The script can come with the pull request. Only I can run it, because the database is not published.
