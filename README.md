@@ -3,102 +3,90 @@
   <img alt="Singapore Parliamentary Record" src="docs/images/banner-light.svg">
 </picture>
 
-The database is for researchers who need every speech by one member across the record. On SPRS, Parliament's search system, each report is one page of text, and a speaker is a printed name with no link to the member.
+I've built a database of Singapore's parliamentary record, from the Legislative Assembly of 1955 to the present Parliament. The pipeline fetches every report from SPRS, Parliament's search system. A report is one item of business in a sitting, such as a question, a bill or a motion. The pipeline splits each report into speeches and links each speech to the member who gave it.
 
-A database of Singapore's parliamentary record, from the Legislative Assembly of 1955 to the present Parliament. The pipeline fetches every report from SPRS. A report is one item of business in a sitting, such as a question, a bill or a motion. The pipeline splits each report into speeches and links each speech to the member who gave it.
+I wanted researchers and anyone following a member's contributions to be able to find their speeches across the record. On SPRS, each report is one page of text, and a speaker is a printed name with no link to the member.
 
 The website built on this database is [roycehoe/hansard](https://github.com/roycehoe/hansard), live at [openhansard.sg](https://openhansard.sg).
 
 ## Status
 
-A scheduled job runs `refresh.py` once a day and adds the sittings SPRS has published since the last stored one. It only adds rows and never re-parses a stored report. [docs/refresh.md](docs/refresh.md) describes a run.
+To keep up with new sittings, I've scheduled `refresh.py` to run once a day and add those SPRS has published since the last stored one. It only adds rows and never re-parses a stored report. [docs/refresh.md](docs/refresh.md) describes a run.
 
 ## Getting the data
 
-The database is not published. Parliament's terms of use require written permission to reproduce its content, and the project has not yet settled whether they allow a download. To ask about access, email royceinbox@hotmail.com.
+I haven't published the database for download because Parliament's terms of use require written permission to reproduce its content, and I haven't yet settled whether they allow a download. To ask about access, email royceinbox@hotmail.com.
 
 You can build your own copy with the steps under [Setup](#setup). A full crawl sends more than 50,000 requests, 2 seconds apart, so it takes more than a day.
 
 ## What the record holds
 
-The record runs from the Legislative Assembly before independence, through the 1st to 15th Parliaments. It holds the reports, speeches, people and sittings, and who was present and absent at every sitting. For the dates and counts, see the [coverage page](https://openhansard.sg/coverage). Its [methods page](https://openhansard.sg/coverage/methods) has the full counts, reports by year and known gaps. The site calls each speech row a paragraph. The site's API is the only source of the dates and totals, so this README does not copy them.
+The record runs from the Legislative Assembly before independence, through the 1st to 15th Parliaments. It holds the reports, speeches, people and sittings, and who was present and absent at every sitting. For the dates and counts, see the [coverage page](https://openhansard.sg/coverage). Its [methods page](https://openhansard.sg/coverage/methods) has the full counts, reports by year and known gaps. The site calls each speech row a paragraph. I keep the site's API as the only source of the dates and totals rather than copy them here, where they could fall out of date.
 
 ## How accurate the speaker links are
 
-In a check of 191 reports, 99.4% of the words here were credited to the right person, against 95.5% on sgparliament.com ([comparison](docs/report/sgparliament-comparison-2026-10-18.md)). AI models judged the sample, under rules this project wrote. They saw the two sites as "Site A" and "Site B", so they couldn't tell which was which. The [checks](docs/report/sgparliament-comparison-2026-10-18.md#method-1) say how the verdicts were tested. Most of sgparliament.com's errors are presiding officers and heads of state it leaves unlinked, which this project links to the holder of the day.
+In a check of 191 reports, 99.4% of the words here were credited to the right person, against 95.5% on sgparliament.com ([comparison](docs/report/sgparliament-comparison-2026-10-18.md)). I used AI models to judge the sample under rules I set for this project. They saw the two sites as "Site A" and "Site B", so they couldn't tell which was which. The [checks](docs/report/sgparliament-comparison-2026-10-18.md#method-1) say how the verdicts were tested. Most of sgparliament.com's errors are presiding officers and heads of state it leaves unlinked, which this project links to the holder of the day.
 
 About 98% of the text sits in a speech linked to a member ([figures](docs/figures/2026-10-19-backfill-15.txt)). Most of the rest is text no member spoke, such as "Question put, and agreed to."
 
 ## How it was built
 
-Work began in 2023.
+I started this work in 2023. These are the steps that turn a report into speeches credited to members.
 
 ```mermaid
 flowchart TD
-  store["Store every SPRS report as received"] --> extract["Extract speeches"]
-  extract --> match["Match speakers to members"]
-  match --> check["Check speeches"]
-  check -->|"fix the parser"| extract
+  store["Save the original reports"] --> extract["Split into speeches and identify speakers"]
+  extract --> check["Check against the originals"]
+  check -->|"Fix mistakes"| extract
   check --> compare["Compare with sgparliament.com"]
 ```
 
-1. To rebuild speeches without fetching again, every report is stored as received.
-2. To get speeches, the parser splits each report at bold speaker names. The Extract speeches loop fixed the reports it failed on.
-3. To know who spoke, names are matched to parliament.gov.sg's members plus hand-kept facts, like colonial Assembly members.
-4. To find what the parser got wrong, the Check speeches loop read samples against the source and fixed the parser.
-5. To compare, a check of 191 reports, judged by AI models, found 99.4% of words credited to the right person, against sgparliament.com's 95.5%.
+1. Save the original reports. I store every report as received so I can rebuild the speeches without fetching it again.
+2. Split into speeches and identify speakers. The parser splits each report at bold speaker names. I used repeated rounds of testing and fixes to handle reports it failed to split, then matched names to parliament.gov.sg's members and hand-kept facts, such as colonial Assembly members.
+3. Check against the originals. I used another loop to read samples against the source, find what the parser got wrong and fix it.
+4. Compare with sgparliament.com. A check of 191 reports, judged by AI models, found 99.4% of words credited to the right person, against sgparliament.com's 95.5%.
 
 [How the data was checked](#how-the-data-was-checked) describes both loops.
 
 ## How the data was checked
 
-Two loops built the speeches.
+I used two loops to build and check the speeches: one to get reports to split, the other to check the resulting text against the originals. Both used a stratified sample, meaning reports or speeches drawn from different groups in the record, so the checks covered more than one part of it.
 
-1. Extract speeches. Each round an AI ran a stratified sample of reports through the parser and fixed one reason some failed to split. A change stayed only if it broke nothing. The loop stopped when 99.9% of reports split into speeches ([loop log](docs/report/refine-loop.md)).
-2. Check speeches. Each round an AI read a stratified sample of about 400 speeches against the source pages. Each fix was run over every report on a copy of the database, and shipped only if nothing got worse. The loop stopped after five rounds, when the error bound fell below 1%, and a sixth round checked the 15th Parliament ([loop log](docs/report/speech-fidelity-loop.md)).
+1. Split into speeches. Each round an AI ran a stratified sample of reports through the parser and fixed one reason some failed to split. I kept a change only if it broke nothing. The loop stopped when 99.9% of reports split into speeches ([loop log](docs/report/refine-loop.md)).
+2. Check against the originals. Each round an AI read a stratified sample of about 400 speeches against the source pages. Each fix ran over every report on a copy of the database, and I shipped it only if nothing got worse. The loop stopped after five rounds, when the error bound fell below 1%, and a sixth round checked the 15th Parliament ([loop log](docs/report/speech-fidelity-loop.md)).
 
 <details>
-<summary>Extract speeches (diagram)</summary>
+<summary>Split into speeches (diagram)</summary>
 
 ```mermaid
 flowchart TD
-  pick["Pick a stratified sample of the reports in the database"]
-  run["An AI runs the sample through the program and finds out why some reports fail to split"]
-  fix["Change the program to fix one cause of failure"]
-  better{"Did the change fix some reports and break none that already split?"}
-  keep["Keep the change"]
-  undo["Undo the change"]
-  target{"Across the whole collection, do at least 95% of reports split into speeches yet?"}
-  done(["Stop"])
-  pick --> run --> fix --> better
-  better -->|"yes"| keep --> target
-  better -->|"no"| undo --> target
-  target -->|"yes"| done
-  target -->|"no, next round"| run
+  sample["Run a stratified report sample"] --> fix["Fix one cause of failure"]
+  fix --> test{"More reports split, with none broken?"}
+  test -->|"Yes: keep the fix"| target{"At least 95% of all reports split?"}
+  test -->|"No: undo the fix"| target
+  target -->|"No"| sample
+  target -->|"Yes"| done(["Stop"])
 ```
 
 </details>
 
 <details>
-<summary>Check speeches (diagram)</summary>
+<summary>Check against the originals (diagram)</summary>
 
 ```mermaid
 flowchart TD
-  pick["Pick a stratified sample of the speeches in the database"]
-  read["An AI reads each speech against the original page on Parliament's website, checking the speaker and the words"]
-  check["A second AI checks what the first one found, and the maintainer who runs the project settles unclear cases"]
-  good{"Judging from the sample, is under 1% of all the text wrong?"}
-  done(["Stop"])
-  fix["Find out why the program that splits reports into speeches got some wrong, and fix it"]
-  copy["Run the fix over every report, on a copy of the database"]
-  worse{"Did anything get worse?"}
-  apply["The maintainer approves, and the corrected speeches go into the real database"]
-  pick --> read --> check --> good
-  good -->|"yes"| done
-  good -->|"no"| fix --> copy --> worse
-  worse -->|"yes, so rework the fix"| fix
-  worse -->|"no"| apply
-  apply -->|"next round, with new random speeches"| pick
+  read["AI checks a stratified speech sample against the originals"]
+  review["Second AI checks findings; maintainer settles unclear cases"]
+  target{"Estimated text error below 1%?"}
+  fix["Fix the parser and test every report on a database copy"]
+  safe{"Nothing got worse?"}
+  apply["Maintainer approves changes to the live database"]
+  read --> review --> target
+  target -->|"Yes"| done(["Stop"])
+  target -->|"No"| fix --> safe
+  safe -->|"No: rework"| fix
+  safe -->|"Yes"| apply
+  apply -->|"New random sample"| read
 ```
 
 </details>
@@ -171,7 +159,7 @@ python script.py
 python -m scripts.load_party_affiliations --commit
 ```
 
-These steps come from reading the code, and nobody has run them end to end on an empty database. The stored database also carries one-off fixes made by scripts in `scripts/`, so a rebuild will differ from it in places.
+These steps come from reading the code, and I haven't run them end to end on an empty database, so treat them as an untested starting point. The stored database also carries one-off fixes made by scripts in `scripts/`, so a rebuild will differ from it in places.
 
 `python refresh.py` adds the sittings published since the last stored one. [docs/refresh.md](docs/refresh.md) covers its halts and alerts.
 
