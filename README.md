@@ -182,7 +182,7 @@ The fetcher sends one request at a time and waits at least 2 seconds between req
 
 ## Citation
 
-> Royce Hoe (2026). *Singapore Parliamentary Record*. GitHub. https://github.com/roycehoe/hansard-scraper
+> Royce Hoe (2026). *Singapore Parliamentary Record*. GitHub. https://github.com/roycehoe/hansard-scraper. Website: https://openhansard.sg
 
 Quote speeches from the Official Report on [SPRS](https://sprs.parl.gov.sg/search/), which is the authoritative record.
 
