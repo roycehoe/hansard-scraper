@@ -39,7 +39,7 @@ The goal is to hold every bill and link each one to its debates. On 8 November 2
 
 | Test | Measure | Target |
 |---|---|---|
-| 1. Bill completeness | From 1961, the bill numbers that have a `Bill` row, out of the highest number the Bills Supplement prints each year, so a missing number counts as a gap. 1955 to 1960 has no outside list, so Hansard is its only list and it is reported apart | 100% from 1961 |
+| 1. Bill completeness | From 1961, the bill numbers that have a `Bill` row, out of the highest number the Bills Supplement prints in each numbering series, so a missing number counts as a gap. Numbering is annual from 1966. Before that it ran in two series that crossed years: 124 to 214 from January 1961 to July 1963 (numbers 1 to 123 predate the listing and are left out) and 1 to 70 from October 1963 to December 1965. 1955 to 1960 has no outside list, so Hansard is its only list and it is reported apart | 100% from 1961 |
 | 2. Debate completeness | Numbered bills whose group holds a first-reading report and, for a passed bill, a third-reading report | 100% |
 | 3. Outcome resolved | Passed bills linked to an Act, or classed as supply or repeal bills | 95% |
 | 4. Review list | Items the review-list script writes that no ruling has settled | 0 |

@@ -44,6 +44,10 @@ from utils.title_key import get_loose_title_key
 
 _SECOND_ERA_START_YEAR = 1961
 _THIRD_ERA_START_YEAR = 2006
+_FIRST_ANNUAL_NUMBERING_YEAR = 1966
+_JANUARY_1961_SERIES_YEAR = 1961
+_OCTOBER_1963_SERIES_YEAR = 1963
+_LAST_ORDINAL_BEFORE_THE_LISTING = 123
 _FIRST_COMPLETE_SUPPLEMENT_YEAR = 1966
 _MIN_TITLE_SIMILARITY = 0.85
 _MAX_DAYS_FROM_READING = 1
@@ -84,6 +88,32 @@ def _get_bill_number_ordinal(bill_number: str) -> int:
 
 def _get_bill_number_year(bill_number: str) -> int:
     return int(bill_number.split("/")[1])
+
+
+def _get_bill_number_series_year(bill_number: str) -> int:
+    year = _get_bill_number_year(bill_number)
+    if year >= _FIRST_ANNUAL_NUMBERING_YEAR:
+        return year
+    if _get_bill_number_ordinal(bill_number) > _LAST_ORDINAL_BEFORE_THE_LISTING:
+        return _JANUARY_1961_SERIES_YEAR
+    return _OCTOBER_1963_SERIES_YEAR
+
+
+def get_supplement_bill_number_count(bill_numbers: list[str], era: BillEra) -> int:
+    series_year_to_highest_ordinal: dict[int, int] = defaultdict(int)
+    for bill_number in bill_numbers:
+        series_year = _get_bill_number_series_year(bill_number)
+        series_year_to_highest_ordinal[series_year] = max(
+            series_year_to_highest_ordinal[series_year],
+            _get_bill_number_ordinal(bill_number),
+        )
+    return sum(
+        highest_ordinal - _LAST_ORDINAL_BEFORE_THE_LISTING
+        if series_year == _JANUARY_1961_SERIES_YEAR
+        else highest_ordinal
+        for series_year, highest_ordinal in series_year_to_highest_ordinal.items()
+        if get_bill_era(series_year) == era
+    )
 
 
 def _build_review_bills(context: BillGroupingContext) -> list[_ReviewBill]:
@@ -501,12 +531,6 @@ def _build_done_tests(
         for egazette_supplement_row in inputs.context.egazette_supplement_rows
         if egazette_supplement_row.supplement_kind == EgazetteSupplementKind.BILLS
     ]
-    year_to_highest_ordinal: dict[int, int] = defaultdict(int)
-    for bill_number in numbered_bill_numbers:
-        year = _get_bill_number_year(bill_number)
-        year_to_highest_ordinal[year] = max(
-            year_to_highest_ordinal[year], _get_bill_number_ordinal(bill_number)
-        )
     done_tests: list[BillEraDoneTests] = []
     for era in BillEra:
         era_bills = [
@@ -528,10 +552,8 @@ def _build_done_tests(
             BillEraDoneTests(
                 era=era,
                 hansard_bill_count=len(era_bills),
-                supplement_bill_number_count=sum(
-                    highest_ordinal
-                    for year, highest_ordinal in year_to_highest_ordinal.items()
-                    if get_bill_era(year) == era
+                supplement_bill_number_count=get_supplement_bill_number_count(
+                    numbered_bill_numbers, era
                 ),
                 numbered_bill_count=len(numbered_bills),
                 debate_complete_bill_count=sum(

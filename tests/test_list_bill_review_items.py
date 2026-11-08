@@ -20,6 +20,7 @@ from scripts.list_bill_review_items import (
     get_bill_era,
     get_bill_review_list,
     get_summary_lines,
+    get_supplement_bill_number_count,
 )
 from tests.bill_seed import seed_bill_report
 
@@ -90,6 +91,16 @@ def test_the_eras_split_at_1961_and_2006() -> None:
     assert get_bill_era(1961) == BillEra.YEARS_1961_TO_2005
     assert get_bill_era(2005) == BillEra.YEARS_1961_TO_2005
     assert get_bill_era(2006) == BillEra.YEARS_2006_ON
+
+
+def test_the_bill_numbers_before_1966_count_by_series() -> None:
+    bill_numbers = ["124/1961", "158/1961", "214/1963", "1/1963", "70/1965", "60/1966"]
+
+    assert (
+        get_supplement_bill_number_count(bill_numbers, BillEra.YEARS_1961_TO_2005)
+        == 91 + 70 + 60
+    )
+    assert get_supplement_bill_number_count(bill_numbers, BillEra.YEARS_2006_ON) == 0
 
 
 def test_the_supplement_items_and_the_done_tests(scratch_session: Session) -> None:
