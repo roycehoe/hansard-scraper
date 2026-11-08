@@ -31,6 +31,7 @@ def _group(
         title_corrections,
         hand_kept_bills,
         hand_kept_report_rows or report_rows,
+        [],
     )
 
 

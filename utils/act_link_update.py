@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Optional
 
-from enums import ActHistoryEntryKind, BillLinkSource
+from enums import ActHistoryEntryKind, BillClass, BillLinkSource, BillNumberSource
 
 
 @dataclass(frozen=True)
@@ -13,6 +13,9 @@ class BillUpdate:
     first_sitting_date: datetime
     last_sitting_date: datetime
     is_passed: bool
+    bill_number: Optional[str]
+    bill_number_source: Optional[BillNumberSource]
+    bill_class: Optional[BillClass]
 
 
 @dataclass(frozen=True)

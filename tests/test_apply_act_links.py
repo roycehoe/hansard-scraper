@@ -97,15 +97,20 @@ def test_dry_run_logs_the_counts_and_writes_the_plan_file_only(
     assert log_recorder.messages == [
         "Bills: 1, 1 passed; 2 reports grouped",
         "Skipped: 1 reports whose title names no bill, 1 distinct titles",
+        "Bill numbers by source: none; 1 bills without a number",
+        "Bill classes: none",
+        "Split bills merged: 0; eGazette Acts linked to a bill: 0",
         "Acts: 2 read, 1 not fetched, 1 with no Legislative History; 2 entries",
         "Entries by kind: ACT 1, REVISED_EDITION 1",
         "Entries linked by rule: FIRST_READING_DATE 1",
         "Act and Ordinance entries not linked, by kind and decade of first reading: none",
+        "Act and Ordinance entries by bill number rule outcome: title rule only 1",
         "Entries by source defect: none",
         "Unparsed entries: 0",
         "Bills: 0 kept, 0 updated, 1 inserted, 0 deleted",
         "Acts: 2 inserted, 0 updated, 0 deleted",
         "Entries: 2 inserted, 0 updated, 0 deleted; 0 linked entries change bill",
+        "eGazette supplements: 0 bill links set or cleared",
         "Dry run: nothing written",
     ]
     plan = ActLinkPlan.model_validate_json(plan_path.read_text())

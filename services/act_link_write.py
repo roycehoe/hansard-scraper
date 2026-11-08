@@ -6,8 +6,11 @@ from crud.act import ActRow
 from crud.act_history_entry import ActHistoryEntryRow
 from crud.bill import BillRow
 from crud.bill_report import BillReportRow
+from crud.egazette_supplement import EgazetteSupplementRow
+from enums import BillLinkSource
 from schemas.act_link_plan import ActLinkPlan, PlannedAct, PlannedActHistoryEntry
 from utils.act_link_update import ActUpdate, BillUpdate
+from utils.egazette_supplement_update import EgazetteLinkUpdate
 
 
 @dataclass(frozen=True)
@@ -37,6 +40,7 @@ class ActLinkWrite:
     entries_to_insert: list[EntryInsert]
     entry_updates: list[EntryUpdate]
     entry_ids_to_delete: list[int]
+    egazette_link_updates: list[EgazetteLinkUpdate]
 
 
 def _is_entry_equal_to_plan(
@@ -64,6 +68,7 @@ def build_act_link_write(
     stored_bill_reports: list[BillReportRow],
     stored_acts: list[ActRow],
     stored_entries: list[ActHistoryEntryRow],
+    stored_egazette_supplements: list[EgazetteSupplementRow],
     plan: ActLinkPlan,
 ) -> ActLinkWrite:
     bill_id_to_report_ids: dict[int, list[int]] = defaultdict(list)
@@ -91,6 +96,9 @@ def build_act_link_write(
             or stored_bill.first_sitting_date != planned_bill.first_sitting_date
             or stored_bill.last_sitting_date != planned_bill.last_sitting_date
             or stored_bill.is_passed != planned_bill.is_passed
+            or stored_bill.bill_number != planned_bill.bill_number
+            or stored_bill.bill_number_source != planned_bill.bill_number_source
+            or stored_bill.bill_class != planned_bill.bill_class
         ):
             bill_updates.append(
                 BillUpdate(
@@ -100,6 +108,9 @@ def build_act_link_write(
                     first_sitting_date=planned_bill.first_sitting_date,
                     last_sitting_date=planned_bill.last_sitting_date,
                     is_passed=planned_bill.is_passed,
+                    bill_number=planned_bill.bill_number,
+                    bill_number_source=planned_bill.bill_number_source,
+                    bill_class=planned_bill.bill_class,
                 )
             )
     kept_bill_ids = set(kept_bill_index_to_id.values())
@@ -177,6 +188,37 @@ def build_act_link_write(
         if entry_key not in planned_entry_keys
     ]
 
+    url_to_planned_bill_index = {
+        egazette_link.url: egazette_link.bill_index
+        for egazette_link in plan.egazette_links
+    }
+    egazette_link_updates: list[EgazetteLinkUpdate] = []
+    for stored_egazette_supplement in stored_egazette_supplements:
+        planned_bill_index = url_to_planned_bill_index.get(
+            stored_egazette_supplement.url
+        )
+        if planned_bill_index is None:
+            if stored_egazette_supplement.bill_id is not None:
+                egazette_link_updates.append(
+                    EgazetteLinkUpdate(stored_egazette_supplement.id, None, None)
+                )
+            continue
+        planned_bill_id = kept_bill_index_to_id.get(planned_bill_index)
+        if (
+            planned_bill_id is not None
+            and stored_egazette_supplement.bill_id == planned_bill_id
+            and stored_egazette_supplement.bill_link_source
+            == BillLinkSource.BILL_NUMBER_PASSING_DATE
+        ):
+            continue
+        egazette_link_updates.append(
+            EgazetteLinkUpdate(
+                stored_egazette_supplement.id,
+                planned_bill_id,
+                BillLinkSource.BILL_NUMBER_PASSING_DATE,
+            )
+        )
+
     return ActLinkWrite(
         kept_bill_index_to_id=kept_bill_index_to_id,
         bill_indexes_to_insert=bill_indexes_to_insert,
@@ -189,6 +231,7 @@ def build_act_link_write(
         entries_to_insert=entries_to_insert,
         entry_updates=entry_updates,
         entry_ids_to_delete=entry_ids_to_delete,
+        egazette_link_updates=egazette_link_updates,
     )
 
 
@@ -215,4 +258,6 @@ def get_first_difference(act_link_write: ActLinkWrite) -> Optional[str]:
         return (
             f"Stored entry {act_link_write.entry_ids_to_delete[0]} is not in the plan"
         )
+    if act_link_write.egazette_link_updates:
+        return f"Stored eGazette supplement {act_link_write.egazette_link_updates[0].id} links to a bill the plan does not"
     return None

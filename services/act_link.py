@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass
 from datetime import date
 from difflib import SequenceMatcher
@@ -7,16 +6,16 @@ from typing import Optional
 from enums import BillLinkSource
 from exceptions import HansardHandKeptEntryError
 from schemas.hand_kept_act_link import HandKeptActLink
-from utils.title_key import get_title_key
+from utils.bill_number import normalize_bill_number
+from utils.title_key import (
+    get_bill_title_key,
+    get_loose_title_key,
+    is_leading_the_title,
+)
 
 _MAX_DAYS_FROM_READING = 1
 _MIN_TITLE_SIMILARITY = 0.85
-_LEADING_THE = re.compile(r"^The\s+")
 _THE_KEY_PREFIX = "the"
-_TRAILING_CHAPTER = re.compile(r"\s*\(Chapter\s+[A-Za-z0-9]+\)\s*$")
-_TRAILING_YEAR = re.compile(r"[,\s]*\d{4}\s*$")
-_TRAILING_LAW_WORD = re.compile(r"\s*\b(?:Act|Ordinance)\s*$", re.IGNORECASE)
-_AMENDMENT_OR_NUMBER_KEY_PART = re.compile(r"amendment(?!s)(?:no\d+)?|no\d+")
 
 
 @dataclass(frozen=True)
@@ -38,6 +37,7 @@ class BillLookups:
     title_key_to_linkable_bills: dict[str, list[LinkableBill]]
     loose_title_key_to_linkable_bills: dict[str, list[LinkableBill]]
     dated_bills: list[_DatedBill]
+    bill_number_to_linkable_bills: dict[str, list[LinkableBill]]
 
 
 @dataclass(frozen=True)
@@ -52,21 +52,9 @@ class _CloseBill:
     bill_index: int
 
 
-def get_bill_title_key(printed_title: str) -> str:
-    without_the = _LEADING_THE.sub("", printed_title)
-    without_chapter = _TRAILING_CHAPTER.sub("", without_the)
-    without_year = _TRAILING_YEAR.sub("", without_chapter)
-    if _TRAILING_LAW_WORD.search(without_year) is None:
-        return get_title_key(f"{without_year} Bill")
-    return get_title_key(_TRAILING_LAW_WORD.sub(" Bill", without_year))
-
-
-def get_loose_title_key(title_key: str) -> str:
-    return _AMENDMENT_OR_NUMBER_KEY_PART.sub("", title_key)
-
-
 def build_bill_lookups(
     title_key_to_linkable_bills: dict[str, list[LinkableBill]],
+    bill_number_to_linkable_bills: dict[str, list[LinkableBill]],
 ) -> BillLookups:
     loose_title_key_to_linkable_bills: dict[str, list[LinkableBill]] = {}
     for title_key, linkable_bills in title_key_to_linkable_bills.items():
@@ -84,7 +72,10 @@ def build_bill_lookups(
         for linkable_bill in linkable_bills
     ]
     return BillLookups(
-        title_key_to_linkable_bills, loose_title_key_to_linkable_bills, dated_bills
+        title_key_to_linkable_bills,
+        loose_title_key_to_linkable_bills,
+        dated_bills,
+        bill_number_to_linkable_bills,
     )
 
 
@@ -204,7 +195,7 @@ def _get_bill_link_by_printed_title(
     bill_lookups: BillLookups,
 ) -> Optional[BillLink]:
     title_key = get_bill_title_key(printed_title)
-    if _LEADING_THE.match(printed_title) is None:
+    if not is_leading_the_title(printed_title):
         return _get_bill_link_by_title_key(
             title_key,
             first_reading_date,
@@ -255,6 +246,31 @@ def get_bill_link(
     if similar_bill_index is None:
         return None
     return BillLink(similar_bill_index, BillLinkSource.SIMILAR_TITLE_READING_DATES)
+
+
+def get_bill_number_link_index(
+    printed_bill_number: Optional[str],
+    first_reading_date: Optional[date],
+    bill_lookups: BillLookups,
+) -> Optional[int]:
+    if printed_bill_number is None:
+        return None
+    if first_reading_date is None:
+        return None
+    bill_number = normalize_bill_number(printed_bill_number)
+    if bill_number is None:
+        return None
+    linkable_bills = bill_lookups.bill_number_to_linkable_bills.get(bill_number)
+    if linkable_bills is None:
+        return None
+    close_bill_indexes = [
+        linkable_bill.bill_index
+        for linkable_bill in linkable_bills
+        if _is_near_reading(first_reading_date, linkable_bill)
+    ]
+    if len(close_bill_indexes) != 1:
+        return None
+    return close_bill_indexes[0]
 
 
 def get_hand_kept_bill_link(

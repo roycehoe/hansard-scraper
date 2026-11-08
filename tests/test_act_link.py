@@ -8,10 +8,9 @@ from services.act_link import (
     LinkableBill,
     build_bill_lookups,
     get_bill_link,
-    get_bill_title_key,
 )
 from services.bill import group_bills
-from utils.title_key import get_title_key
+from utils.title_key import get_bill_title_key, get_title_key
 
 
 def _build_linkable_bills(
@@ -22,7 +21,7 @@ def _build_linkable_bills(
     }
     title_key_to_linkable_bills: dict[str, list[LinkableBill]] = {}
     grouping = group_bills(
-        report_rows, frozenset(), frozenset(third_reading_report_ids), [], [], []
+        report_rows, frozenset(), frozenset(third_reading_report_ids), [], [], [], []
     )
     for bill_index, bill_group in enumerate(grouping.bill_groups):
         title_key_to_linkable_bills.setdefault(bill_group.title_key, []).append(
@@ -34,7 +33,7 @@ def _build_linkable_bills(
                 ],
             )
         )
-    return build_bill_lookups(title_key_to_linkable_bills)
+    return build_bill_lookups(title_key_to_linkable_bills, {})
 
 
 _MONEYLENDERS_BILLS = _build_linkable_bills(

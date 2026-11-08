@@ -1,4 +1,5 @@
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Optional
@@ -9,17 +10,26 @@ from crud.act import CRUDAct
 from crud.act_history_entry import CRUDActHistoryEntry
 from crud.bill import CRUDBill
 from crud.bill_report import CRUDBillReport
+from crud.bills_supplement_entry import CRUDBillsSupplementEntry
+from crud.egazette_supplement import CRUDEgazetteSupplement, EgazetteSupplementRow
 from crud.report import CRUDReport
 from crud.speech import CRUDSpeech
 from database.act import Act, ActHistoryEntry
 from database.bill import Bill, BillReport
-from enums import ActHistoryEntryKind, BillLinkSource, ReportType
+from enums import (
+    ActHistoryEntryKind,
+    BillLinkSource,
+    EgazetteSupplementKind,
+    ReportType,
+)
 from exceptions import HansardActHistoryError
 from schemas.act_link_plan import (
     ActLinkPlan,
     PlannedAct,
     PlannedActHistoryEntry,
     PlannedBill,
+    PlannedEgazetteLink,
+    PlannedSplitMerge,
     SkippedReport,
     UnparsedEntry,
 )
@@ -33,10 +43,12 @@ from services.act_history import (
     split_history_entries,
 )
 from services.act_link import (
+    BillLink,
     BillLookups,
     LinkableBill,
     build_bill_lookups,
     get_bill_link,
+    get_bill_number_link_index,
     get_hand_kept_bill_link,
     validate_can_find_hand_kept_act_links,
 )
@@ -48,13 +60,73 @@ from services.bill import (
     NOT_THIRD_READING_PATTERNS,
     SECOND_READING_PATTERN,
     THIRD_READING_PATTERN,
+    BillGrouping,
+    BillNumberCandidate,
+    build_egazette_bill_number_candidate,
+    build_listing_bill_number_candidate,
     group_bills,
     is_other_type_bill_reading,
+    is_publication_date_misprinted,
 )
 from utils.act_link_update import ActHistoryEntryUpdate
+from utils.egazette_supplement_update import EgazetteLinkUpdate
 
 _BILL_REPORT_TYPES = (ReportType.BILL, ReportType.BILL_INTRODUCTION)
 _HARVEST_LISTING_FILE = "acts.json"
+
+
+@dataclass(frozen=True)
+class BillGroupingContext:
+    bill_grouping: BillGrouping
+    report_id_to_sitting_date: dict[int, date]
+    first_reading_report_ids: frozenset[int]
+    third_reading_report_ids: frozenset[int]
+    egazette_supplement_rows: list[EgazetteSupplementRow]
+
+
+def _is_linkable_kind(kind: ActHistoryEntryKind) -> bool:
+    if kind == ActHistoryEntryKind.ACT:
+        return True
+    return kind == ActHistoryEntryKind.ORDINANCE
+
+
+def _get_entry_bill_link(
+    sso_code: str,
+    parsed_entry: ParsedHistoryEntry,
+    bill_lookups: BillLookups,
+    hand_kept_act_links: list[HandKeptActLink],
+    bill_report_ids: list[list[int]],
+) -> Optional[BillLink]:
+    if not _is_linkable_kind(parsed_entry.kind):
+        return None
+    hand_kept_bill_link = get_hand_kept_bill_link(
+        sso_code,
+        parsed_entry.ordinal,
+        parsed_entry.printed_title,
+        hand_kept_act_links,
+        bill_report_ids,
+    )
+    if hand_kept_bill_link is not None:
+        return hand_kept_bill_link
+    return get_bill_link(
+        parsed_entry.printed_title,
+        parsed_entry.first_reading_date,
+        parsed_entry.second_reading_date,
+        parsed_entry.third_reading_date,
+        bill_lookups,
+    )
+
+
+def _get_entry_bill_number_bill_index(
+    parsed_entry: ParsedHistoryEntry, bill_lookups: BillLookups
+) -> Optional[int]:
+    if not _is_linkable_kind(parsed_entry.kind):
+        return None
+    return get_bill_number_link_index(
+        parsed_entry.printed_bill_number,
+        parsed_entry.first_reading_date,
+        bill_lookups,
+    )
 
 
 def _build_planned_entry(
@@ -64,26 +136,9 @@ def _build_planned_entry(
     hand_kept_act_links: list[HandKeptActLink],
     bill_report_ids: list[list[int]],
 ) -> PlannedActHistoryEntry:
-    bill_link = None
-    if (
-        parsed_entry.kind == ActHistoryEntryKind.ACT
-        or parsed_entry.kind == ActHistoryEntryKind.ORDINANCE
-    ):
-        bill_link = get_hand_kept_bill_link(
-            sso_code,
-            parsed_entry.ordinal,
-            parsed_entry.printed_title,
-            hand_kept_act_links,
-            bill_report_ids,
-        )
-        if bill_link is None:
-            bill_link = get_bill_link(
-                parsed_entry.printed_title,
-                parsed_entry.first_reading_date,
-                parsed_entry.second_reading_date,
-                parsed_entry.third_reading_date,
-                bill_lookups,
-            )
+    bill_link = _get_entry_bill_link(
+        sso_code, parsed_entry, bill_lookups, hand_kept_act_links, bill_report_ids
+    )
     return PlannedActHistoryEntry(
         ordinal=parsed_entry.ordinal,
         printed_text=parsed_entry.printed_text,
@@ -98,6 +153,9 @@ def _build_planned_entry(
         defects=parsed_entry.defects,
         bill_index=None if bill_link is None else bill_link.bill_index,
         bill_link_source=None if bill_link is None else bill_link.source,
+        bill_number_bill_index=_get_entry_bill_number_bill_index(
+            parsed_entry, bill_lookups
+        ),
     )
 
 
@@ -141,13 +199,33 @@ def _build_planned_act(
     )
 
 
-def get_act_link_plan(
+def _build_bill_number_candidates(
+    session: Session, egazette_supplement_rows: list[EgazetteSupplementRow]
+) -> list[BillNumberCandidate]:
+    return [
+        build_listing_bill_number_candidate(
+            entry_row.printed_title, entry_row.bill_number, entry_row.publication_date
+        )
+        for entry_row in CRUDBillsSupplementEntry(session).get_rows()
+        if not is_publication_date_misprinted(
+            entry_row.bill_number, entry_row.publication_date
+        )
+    ] + [
+        build_egazette_bill_number_candidate(
+            egazette_supplement_row.printed_title,
+            egazette_supplement_row.bill_number,
+            egazette_supplement_row.first_reading_date,
+        )
+        for egazette_supplement_row in egazette_supplement_rows
+        if egazette_supplement_row.supplement_kind == EgazetteSupplementKind.BILLS
+    ]
+
+
+def get_bill_grouping_context(
     session: Session,
-    harvest_directory: Path,
     bill_title_corrections: list[BillTitleCorrection],
     hand_kept_bills: list[HandKeptBill],
-    hand_kept_act_links: list[HandKeptActLink],
-) -> ActLinkPlan:
+) -> BillGroupingContext:
     bill_type_report_rows = CRUDReport(
         session
     ).get_sitting_date_title_rows_by_report_types(_BILL_REPORT_TYPES)
@@ -214,6 +292,7 @@ def get_act_link_plan(
         ],
         key=lambda report_row: (report_row.sitting_date, report_row.id),
     )
+    egazette_supplement_rows = CRUDEgazetteSupplement(session).get_rows()
     bill_grouping = group_bills(
         report_rows,
         first_reading_report_ids,
@@ -221,23 +300,98 @@ def get_act_link_plan(
         bill_title_corrections,
         hand_kept_bills,
         hand_kept_report_rows,
+        _build_bill_number_candidates(session, egazette_supplement_rows),
     )
-    report_id_to_sitting_date: dict[int, date] = {
-        report_row.id: report_row.sitting_date.date()
-        for report_row in report_rows + hand_kept_report_rows
-    }
+    return BillGroupingContext(
+        bill_grouping,
+        {
+            report_row.id: report_row.sitting_date.date()
+            for report_row in report_rows + hand_kept_report_rows
+        },
+        first_reading_report_ids,
+        third_reading_report_ids,
+        egazette_supplement_rows,
+    )
+
+
+def build_bill_lookups_from_context(context: BillGroupingContext) -> BillLookups:
     title_key_to_linkable_bills: dict[str, list[LinkableBill]] = defaultdict(list)
-    for bill_index, bill_group in enumerate(bill_grouping.bill_groups):
-        title_key_to_linkable_bills[bill_group.title_key].append(
-            LinkableBill(
-                bill_index,
-                [
-                    report_id_to_sitting_date[report_id]
-                    for report_id in bill_group.report_ids
-                ],
-            )
+    bill_number_to_linkable_bills: dict[str, list[LinkableBill]] = defaultdict(list)
+    for bill_index, bill_group in enumerate(context.bill_grouping.bill_groups):
+        linkable_bill = LinkableBill(
+            bill_index,
+            [
+                context.report_id_to_sitting_date[report_id]
+                for report_id in bill_group.report_ids
+            ],
         )
-    bill_lookups = build_bill_lookups(title_key_to_linkable_bills)
+        title_key_to_linkable_bills[bill_group.title_key].append(linkable_bill)
+        if bill_group.bill_number is not None:
+            bill_number_to_linkable_bills[bill_group.bill_number].append(linkable_bill)
+    return build_bill_lookups(
+        title_key_to_linkable_bills, bill_number_to_linkable_bills
+    )
+
+
+def _get_egazette_link_bill_index(
+    egazette_supplement_row: EgazetteSupplementRow,
+    bill_lookups: BillLookups,
+    context: BillGroupingContext,
+) -> Optional[int]:
+    if egazette_supplement_row.passing_date is None:
+        return None
+    linkable_bills = bill_lookups.bill_number_to_linkable_bills.get(
+        egazette_supplement_row.bill_number
+    )
+    if linkable_bills is None:
+        return None
+    passing_bill_indexes = [
+        linkable_bill.bill_index
+        for linkable_bill in linkable_bills
+        if any(
+            report_id in context.third_reading_report_ids
+            and context.report_id_to_sitting_date[report_id]
+            == egazette_supplement_row.passing_date
+            for report_id in context.bill_grouping.bill_groups[
+                linkable_bill.bill_index
+            ].report_ids
+        )
+    ]
+    if len(passing_bill_indexes) != 1:
+        return None
+    return passing_bill_indexes[0]
+
+
+def _build_egazette_links(
+    context: BillGroupingContext, bill_lookups: BillLookups
+) -> list[PlannedEgazetteLink]:
+    egazette_links: list[PlannedEgazetteLink] = []
+    for egazette_supplement_row in context.egazette_supplement_rows:
+        if egazette_supplement_row.supplement_kind != EgazetteSupplementKind.ACTS:
+            continue
+        bill_index = _get_egazette_link_bill_index(
+            egazette_supplement_row, bill_lookups, context
+        )
+        if bill_index is None:
+            continue
+        egazette_links.append(
+            PlannedEgazetteLink(url=egazette_supplement_row.url, bill_index=bill_index)
+        )
+    return egazette_links
+
+
+def get_act_link_plan(
+    session: Session,
+    harvest_directory: Path,
+    bill_title_corrections: list[BillTitleCorrection],
+    hand_kept_bills: list[HandKeptBill],
+    hand_kept_act_links: list[HandKeptActLink],
+) -> ActLinkPlan:
+    context = get_bill_grouping_context(
+        session, bill_title_corrections, hand_kept_bills
+    )
+    bill_grouping = context.bill_grouping
+    bill_lookups = build_bill_lookups_from_context(context)
     harvested_acts = HarvestedActs.model_validate_json(
         (harvest_directory / _HARVEST_LISTING_FILE).read_text(encoding="utf8")
     )
@@ -280,13 +434,24 @@ def get_act_link_plan(
                 last_sitting_date=bill_group.last_sitting_date,
                 is_passed=bill_group.is_passed,
                 report_ids=bill_group.report_ids,
+                bill_number=bill_group.bill_number,
+                bill_number_source=bill_group.bill_number_source,
+                bill_class=bill_group.bill_class,
             )
             for bill_group in bill_grouping.bill_groups
+        ],
+        split_merges=[
+            PlannedSplitMerge(
+                head_report_ids=split_merge.head_report_ids,
+                tail_report_ids=split_merge.tail_report_ids,
+            )
+            for split_merge in bill_grouping.split_merges
         ],
         skipped_reports=[
             SkippedReport(report_id=report_row.id, title=report_row.title)
             for report_row in bill_grouping.skipped_report_rows
         ],
+        egazette_links=_build_egazette_links(context, bill_lookups),
         acts=acts,
         unfetched_sso_codes=unfetched_sso_codes,
         unparsed_entries=unparsed_entries,
@@ -299,6 +464,7 @@ def get_act_link_write(session: Session, plan: ActLinkPlan) -> ActLinkWrite:
         CRUDBillReport(session).get_rows(),
         CRUDAct(session).get_rows(),
         CRUDActHistoryEntry(session).get_rows(),
+        CRUDEgazetteSupplement(session).get_rows(),
         plan,
     )
 
@@ -321,6 +487,9 @@ def write_act_link_plan(
             first_sitting_date=plan.bills[bill_index].first_sitting_date,
             last_sitting_date=plan.bills[bill_index].last_sitting_date,
             is_passed=plan.bills[bill_index].is_passed,
+            bill_number=plan.bills[bill_index].bill_number,
+            bill_number_source=plan.bills[bill_index].bill_number_source,
+            bill_class=plan.bills[bill_index].bill_class,
         )
         for bill_index in act_link_write.bill_indexes_to_insert
     ]
@@ -395,6 +564,29 @@ def write_act_link_plan(
                 ),
             )
             for entry_update in act_link_write.entry_updates
+        ]
+    )
+    url_to_planned_bill_index = {
+        egazette_link.url: egazette_link.bill_index
+        for egazette_link in plan.egazette_links
+    }
+    stored_egazette_id_to_url = {
+        egazette_supplement_row.id: egazette_supplement_row.url
+        for egazette_supplement_row in CRUDEgazetteSupplement(session).get_rows()
+    }
+    CRUDEgazetteSupplement(session).set_bill_links_bulk(
+        [
+            EgazetteLinkUpdate(
+                egazette_link_update.id,
+                _get_bill_id(
+                    bill_index_to_id,
+                    url_to_planned_bill_index.get(
+                        stored_egazette_id_to_url[egazette_link_update.id]
+                    ),
+                ),
+                egazette_link_update.bill_link_source,
+            )
+            for egazette_link_update in act_link_write.egazette_link_updates
         ]
     )
 

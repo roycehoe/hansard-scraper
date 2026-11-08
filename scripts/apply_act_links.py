@@ -10,8 +10,10 @@ from crud.act import CRUDAct
 from crud.act_history_entry import CRUDActHistoryEntry
 from crud.bill import CRUDBill
 from crud.bill_report import CRUDBillReport
+from crud.egazette_supplement import CRUDEgazetteSupplement
 from database.act import Act, ActHistoryEntry
 from database.bill import Bill, BillReport
+from database.egazette_supplement import EgazetteSupplement
 from database.init import engine
 from enums import ActHistoryEntryKind
 from exceptions import HansardWriteCheckError
@@ -22,7 +24,7 @@ from populate.act_links import (
     write_act_link_plan,
 )
 from populate.written_tables import vacuum_analyze_written_tables
-from schemas.act_link_plan import ActLinkPlan
+from schemas.act_link_plan import ActLinkPlan, PlannedActHistoryEntry
 from services.act_link_write import ActLinkWrite, get_first_difference
 from settings import settings
 from utils.data_files import (
@@ -48,6 +50,20 @@ def _format_counts(counts: Counter[str]) -> str:
     )
 
 
+def _get_bill_number_rule_outcome(entry: PlannedActHistoryEntry) -> str:
+    if entry.printed_bill_number is None:
+        return "no bill number printed"
+    if entry.bill_index is not None and entry.bill_number_bill_index is not None:
+        if entry.bill_index == entry.bill_number_bill_index:
+            return "number and title rules agree"
+        return "number and title rules disagree"
+    if entry.bill_index is not None:
+        return "title rule only"
+    if entry.bill_number_bill_index is not None:
+        return "number rule only"
+    return "neither rule"
+
+
 def _log_plan(plan: ActLinkPlan) -> None:
     bill_report_count = sum(len(planned_bill.report_ids) for planned_bill in plan.bills)
     passed_bill_count = sum(planned_bill.is_passed for planned_bill in plan.bills)
@@ -59,6 +75,15 @@ def _log_plan(plan: ActLinkPlan) -> None:
     )
     logger.info(
         f"Skipped: {len(plan.skipped_reports):,} reports whose title names no bill, {skipped_title_count:,} distinct titles"
+    )
+    logger.info(
+        f"Bill numbers by source: {_format_counts(Counter(planned_bill.bill_number_source.value for planned_bill in plan.bills if planned_bill.bill_number_source is not None))}; {sum(planned_bill.bill_number is None for planned_bill in plan.bills):,} bills without a number"
+    )
+    logger.info(
+        f"Bill classes: {_format_counts(Counter(planned_bill.bill_class.value for planned_bill in plan.bills if planned_bill.bill_class is not None))}"
+    )
+    logger.info(
+        f"Split bills merged: {len(plan.split_merges):,}; eGazette Acts linked to a bill: {len(plan.egazette_links):,}"
     )
     entries = [entry for planned_act in plan.acts for entry in planned_act.entries]
     unparsed_sso_codes = {unparsed.sso_code for unparsed in plan.unparsed_entries}
@@ -79,6 +104,9 @@ def _log_plan(plan: ActLinkPlan) -> None:
         f"Act and Ordinance entries not linked, by kind and decade of first reading: {_format_counts(Counter(f'{entry.kind.value} {_get_decade_label(entry.first_reading_date)}' for entry in entries if entry.bill_index is None and (entry.kind == ActHistoryEntryKind.ACT or entry.kind == ActHistoryEntryKind.ORDINANCE)))}"
     )
     logger.info(
+        f"Act and Ordinance entries by bill number rule outcome: {_format_counts(Counter(_get_bill_number_rule_outcome(entry) for entry in entries if entry.kind == ActHistoryEntryKind.ACT or entry.kind == ActHistoryEntryKind.ORDINANCE))}"
+    )
+    logger.info(
         f"Entries by source defect: {_format_counts(Counter(defect.value for entry in entries for defect in entry.defects))}"
     )
     logger.info(f"Unparsed entries: {len(plan.unparsed_entries):,}")
@@ -96,6 +124,9 @@ def _log_write(act_link_write: ActLinkWrite) -> None:
     logger.info(
         f"Entries: {len(act_link_write.entries_to_insert):,} inserted, {len(act_link_write.entry_updates):,} updated, {len(act_link_write.entry_ids_to_delete):,} deleted; {sum(entry_update.is_bill_changed for entry_update in act_link_write.entry_updates):,} linked entries change bill"
     )
+    logger.info(
+        f"eGazette supplements: {len(act_link_write.egazette_link_updates):,} bill links set or cleared"
+    )
 
 
 def _validate_can_commit_act_links(session: Session, plan: ActLinkPlan) -> None:
@@ -112,6 +143,18 @@ def _validate_can_commit_act_links(session: Session, plan: ActLinkPlan) -> None:
         "bill reports": (
             CRUDBillReport(session).get_count(),
             sum(len(planned_bill.report_ids) for planned_bill in plan.bills),
+        ),
+        "bills with a bill number": (
+            CRUDBill(session).get_count_by_bill_number_not_null(),
+            sum(planned_bill.bill_number is not None for planned_bill in plan.bills),
+        ),
+        "bills with a class": (
+            CRUDBill(session).get_count_by_bill_class_not_null(),
+            sum(planned_bill.bill_class is not None for planned_bill in plan.bills),
+        ),
+        "linked egazette supplements": (
+            CRUDEgazetteSupplement(session).get_count_by_bill_id_not_null(),
+            len(plan.egazette_links),
         ),
         "acts": (CRUDAct(session).get_count(), len(plan.acts)),
         "act history entries": (CRUDActHistoryEntry(session).get_count(), len(entries)),
@@ -174,6 +217,7 @@ def apply_act_links(harvest_directory: Path, plan_path: Path, is_commit: bool) -
                 BillReport.__tablename__,
                 Act.__tablename__,
                 ActHistoryEntry.__tablename__,
+                EgazetteSupplement.__tablename__,
             ],
         )
 

@@ -29,6 +29,9 @@ def _bill(title_key: str, report_ids: list[int], is_passed: bool = True) -> Plan
         last_sitting_date=_SITTING_DATE,
         is_passed=is_passed,
         report_ids=report_ids,
+        bill_number=None,
+        bill_number_source=None,
+        bill_class=None,
     )
 
 
@@ -49,13 +52,16 @@ def _entry(ordinal: int, bill_index: Optional[int]) -> PlannedActHistoryEntry:
         bill_link_source=None
         if bill_index is None
         else BillLinkSource.FIRST_READING_DATE,
+        bill_number_bill_index=None,
     )
 
 
 def _plan(bills: list[PlannedBill], acts: list[PlannedAct]) -> ActLinkPlan:
     return ActLinkPlan(
         bills=bills,
+        split_merges=[],
         skipped_reports=[],
+        egazette_links=[],
         acts=acts,
         unfetched_sso_codes=[],
         unparsed_entries=[],
@@ -240,7 +246,9 @@ def test_writing_the_same_plan_twice_changes_nothing(scratch_session: Session) -
 
 
 def _stored_bill(bill_id: int, title: str = "a") -> BillRow:
-    return BillRow(bill_id, title, title, _SITTING_DATE, _SITTING_DATE, True)
+    return BillRow(
+        bill_id, title, title, _SITTING_DATE, _SITTING_DATE, True, None, None, None
+    )
 
 
 def _stored_entry(
@@ -283,6 +291,7 @@ def test_diff_keeps_updates_inserts_and_deletes_apart() -> None:
             _stored_entry(101, 5, 2, 11),
             _stored_entry(102, 6, 1, None),
         ],
+        [],
         plan,
     )
 
@@ -315,6 +324,7 @@ def test_diff_updates_an_entry_whose_bill_is_new() -> None:
         [BillReportRow(10, 1)],
         [ActRow(5, "X", "X")],
         [_stored_entry(100, 5, 1, 10)],
+        [],
         plan,
     )
 
