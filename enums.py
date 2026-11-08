@@ -231,9 +231,18 @@ class BillLinkSource(StrEnum):
     HAND_KEPT = "HAND_KEPT"
 
 
+
+
 class ActHistoryDefect(StrEnum):
     MISSING_YEAR = "MISSING_YEAR"
     EMPTY_VALUE = "EMPTY_VALUE"
     NO_DATE_PRINTED = "NO_DATE_PRINTED"
     MISSING_READING = "MISSING_READING"
     PAGE_BREAK_NOISE = "PAGE_BREAK_NOISE"
+
+
+class EgazetteSupplementKind(StrEnum):
+    BILLS = "BILLS"
+    ACTS = "ACTS"
+
+
