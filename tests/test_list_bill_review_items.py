@@ -4,11 +4,13 @@ from typing import Optional
 from sqlmodel import Session
 
 from database.act import Act, ActHistoryEntry
+from database.acts_supplement import ActsSupplementCapture, ActsSupplementEntry
 from database.bill import Bill, BillReport
 from database.bills_supplement import BillsSupplementCapture, BillsSupplementEntry
 from database.egazette_supplement import EgazetteSupplement
 from enums import (
     ActHistoryEntryKind,
+    ActNumberSource,
     BillEra,
     BillLinkSource,
     BillReviewItemKind,
@@ -81,6 +83,32 @@ def _seed_listing_entries(
             capture_id=capture.id,
         )
         for printed_title, bill_number, publication_date in entries
+    )
+    session.commit()
+
+
+def _seed_acts_listing_entries(
+    session: Session, entries: list[tuple[str, str, date]]
+) -> None:
+    capture = ActsSupplementCapture(
+        original_url="https://sso.agc.gov.sg/Browse/Acts-Supp/Published/2024",
+        archive_timestamp="20250109044700",
+        capture_url="https://web.archive.org/web/20250109044700id_/https://sso.agc.gov.sg/Browse/Acts-Supp/Published/2024",
+        content="<html></html>",
+    )
+    session.add(capture)
+    session.flush()
+    assert capture.id is not None
+    session.add_all(
+        ActsSupplementEntry(
+            printed_title=printed_title,
+            printed_number=f"Act {act_number.replace('/', ' of ')}",
+            link=f"/Acts-Supp/{act_number.replace('/', '-')}/Published/{publication_date:%Y%m%d}?DocDate={publication_date:%Y%m%d}",
+            act_number=act_number,
+            publication_date=publication_date,
+            capture_id=capture.id,
+        )
+        for printed_title, act_number, publication_date in entries
     )
     session.commit()
 
@@ -196,6 +224,8 @@ def test_the_supplement_items_and_the_done_tests(scratch_session: Session) -> No
         debate_complete_bill_count=2,
         passed_bill_count=3,
         outcome_resolved_bill_count=0,
+        unclassed_passed_bill_count=3,
+        unclassed_outcome_resolved_bill_count=0,
         review_item_count=5,
     )
     assert (
@@ -277,6 +307,8 @@ def test_the_egazette_rows_count_in_the_done_tests(scratch_session: Session) -> 
         debate_complete_bill_count=1,
         passed_bill_count=1,
         outcome_resolved_bill_count=1,
+        unclassed_passed_bill_count=1,
+        unclassed_outcome_resolved_bill_count=1,
         review_item_count=0,
     )
 
@@ -370,5 +402,103 @@ def test_the_history_items_compare_the_stored_link_with_the_number_rule(
         debate_complete_bill_count=1,
         passed_bill_count=1,
         outcome_resolved_bill_count=1,
+        unclassed_passed_bill_count=1,
+        unclassed_outcome_resolved_bill_count=1,
         review_item_count=2,
+    )
+
+
+def test_the_acts_supplement_items_and_the_act_number_in_test_3(
+    scratch_session: Session,
+) -> None:
+    alpha_report_ids = _seed_bill(
+        scratch_session,
+        "alpha",
+        "Alpha Bill",
+        datetime(2024, 3, 4),
+        datetime(2024, 4, 10),
+    )
+    twin_report_ids = _seed_bill(
+        scratch_session,
+        "twin",
+        "Supplementary Supply (FY 2024) Bill",
+        datetime(2024, 11, 4),
+        datetime(2024, 12, 5),
+    )
+    _seed_acts_listing_entries(
+        scratch_session,
+        [
+            ("Alpha Act 2024", "10/2024", date(2024, 5, 3)),
+            ("Supplementary Supply (FY 2024) Act 2024", "42/2024", date(2024, 12, 31)),
+            ("Supplementary Supply (FY 2024) Act 2025", "3/2025", date(2025, 2, 14)),
+            ("Alpha (Amendment) Act 2024", "11/2024", date(2024, 9, 20)),
+            ("Omega Act 2024", "12/2024", date(2024, 9, 20)),
+        ],
+    )
+    stored_bill = Bill(
+        title="Alpha Bill",
+        title_key="alphabill",
+        first_sitting_date=datetime(2024, 3, 4),
+        last_sitting_date=datetime(2024, 4, 10),
+        is_passed=True,
+        act_number="10/2024",
+        act_number_source=ActNumberSource.ACTS_SUPPLEMENT_LISTING,
+    )
+    scratch_session.add(stored_bill)
+    scratch_session.flush()
+    assert stored_bill.id is not None
+    scratch_session.add_all(
+        BillReport(bill_id=stored_bill.id, report_id=report_id)
+        for report_id in alpha_report_ids
+    )
+    scratch_session.commit()
+
+    review_list = get_bill_review_list(scratch_session, [], [])
+
+    assert [
+        (item.kind, item.report_ids, item.detail)
+        for item in review_list.items
+        if item.kind != BillReviewItemKind.PASSED_BILL_WITHOUT_SUPPLEMENT_ENTRY
+    ] == [
+        (
+            BillReviewItemKind.ACTS_SUPPLEMENT_BILL_WITH_TWO_ACT_NUMBERS,
+            twin_report_ids,
+            "Last debated 2024-12-05; Acts Supplement entries of the title within the window: 3/2025, 42/2024",
+        ),
+        (
+            BillReviewItemKind.ACTS_SUPPLEMENT_ENTRY_UNPLACED,
+            twin_report_ids,
+            "Act 42/2024 published 2024-12-31; the nearest passed bill of this title was last debated 2024-12-05, 26 days before",
+        ),
+        (
+            BillReviewItemKind.ACTS_SUPPLEMENT_ENTRY_UNPLACED,
+            twin_report_ids,
+            "Act 3/2025 published 2025-02-14; the nearest passed bill of this title was last debated 2024-12-05, 71 days before",
+        ),
+        (
+            BillReviewItemKind.ACTS_SUPPLEMENT_ENTRY_UNPLACED,
+            [],
+            "Act 11/2024 published 2024-09-20; no passed bill of this title",
+        ),
+        (
+            BillReviewItemKind.ACTS_SUPPLEMENT_ENTRY_UNPLACED,
+            [],
+            "Act 12/2024 published 2024-09-20; no passed bill of this title",
+        ),
+    ]
+    assert review_list.done_tests[-1] == BillEraDoneTests(
+        era=BillEra.YEARS_2006_ON,
+        hansard_bill_count=2,
+        supplement_bill_number_count=0,
+        numbered_bill_count=0,
+        debate_complete_bill_count=0,
+        passed_bill_count=2,
+        outcome_resolved_bill_count=2,
+        unclassed_passed_bill_count=1,
+        unclassed_outcome_resolved_bill_count=1,
+        review_item_count=7,
+    )
+    assert (
+        "2006 on, test 3 outcome resolved: 2 of 2 (100.0%) passed bills link to an Act or an Act number or carry a class; 1 of 1 (100.0%) passed bills of no class link to an Act or an Act number"
+        in get_summary_lines(review_list)
     )

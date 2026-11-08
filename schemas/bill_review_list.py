@@ -27,6 +27,8 @@ class BillEraDoneTests(BaseModel):
     debate_complete_bill_count: int
     passed_bill_count: int
     outcome_resolved_bill_count: int
+    unclassed_passed_bill_count: int
+    unclassed_outcome_resolved_bill_count: int
     review_item_count: int
 
 

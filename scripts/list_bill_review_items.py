@@ -9,6 +9,8 @@ from typing import Optional
 from sqlmodel import Session
 
 from crud.act_history_entry import ActHistoryEntryRow, CRUDActHistoryEntry
+from crud.acts_supplement_entry import ActsSupplementEntryRow, CRUDActsSupplementEntry
+from crud.bill import BillRow, CRUDBill
 from crud.bill_report import CRUDBillReport
 from crud.bills_supplement_entry import (
     BillsSupplementEntryRow,
@@ -33,14 +35,17 @@ from schemas.bill_title_correction import BillTitleCorrection
 from schemas.hand_kept_bill import HandKeptBill
 from services.act_link import BillLookups, get_bill_number_link_index
 from services.bill import (
+    ActNumberCandidate,
     BillGroup,
     BillNumberCandidate,
+    build_acts_supplement_act_number_candidate,
     build_listing_bill_number_candidate,
+    get_act_number_candidates_in_window,
     is_publication_date_misprinted,
 )
 from settings import settings
 from utils.data_files import get_bill_title_corrections, get_hand_kept_bills
-from utils.title_key import get_loose_title_key
+from utils.title_key import get_bill_title_key, get_loose_title_key
 
 _SECOND_ERA_START_YEAR = 1961
 _THIRD_ERA_START_YEAR = 2006
@@ -69,7 +74,10 @@ class _ReviewInputs:
     context: BillGroupingContext
     bill_lookups: BillLookups
     entry_rows: list[BillsSupplementEntryRow]
+    acts_supplement_entry_rows: list[ActsSupplementEntryRow]
+    act_number_candidates: list[ActNumberCandidate]
     act_history_entry_rows: list[ActHistoryEntryRow]
+    stored_bill_rows: list[BillRow]
     stored_bill_id_to_bill_index: dict[int, int]
     hand_kept_bills: list[HandKeptBill]
 
@@ -474,6 +482,101 @@ def _build_passed_bill_items(inputs: _ReviewInputs) -> list[BillReviewItem]:
     ]
 
 
+def _build_two_act_number_items(inputs: _ReviewInputs) -> list[BillReviewItem]:
+    items: list[BillReviewItem] = []
+    for review_bill in inputs.review_bills:
+        if not review_bill.bill_group.is_passed:
+            continue
+        candidates_in_window = get_act_number_candidates_in_window(
+            review_bill.bill_group.title_key,
+            review_bill.report_dates[-1],
+            inputs.act_number_candidates,
+        )
+        act_numbers = sorted(
+            {candidate.act_number for candidate in candidates_in_window}
+        )
+        if len(act_numbers) <= 1:
+            continue
+        items.append(
+            BillReviewItem(
+                kind=BillReviewItemKind.ACTS_SUPPLEMENT_BILL_WITH_TWO_ACT_NUMBERS,
+                era=get_bill_era(review_bill.report_dates[0].year),
+                bill_number=review_bill.bill_group.bill_number,
+                printed_title=None,
+                bill_title=review_bill.bill_group.title,
+                report_ids=review_bill.bill_group.report_ids,
+                detail=f"Last debated {review_bill.report_dates[-1]}; Acts Supplement entries of the title within the window: {', '.join(act_numbers)}",
+            )
+        )
+    return items
+
+
+def _get_nearest_passed_bill(
+    title_key: str, publication_date: date, review_bills: list[_ReviewBill]
+) -> Optional[_ReviewBill]:
+    same_title_passed_bills = [
+        review_bill
+        for review_bill in review_bills
+        if review_bill.bill_group.is_passed
+        and review_bill.bill_group.title_key == title_key
+    ]
+    if not same_title_passed_bills:
+        return None
+    return min(
+        same_title_passed_bills,
+        key=lambda review_bill: abs(
+            (review_bill.report_dates[-1] - publication_date).days
+        ),
+    )
+
+
+def _build_unplaced_act_number_item(
+    entry_row: ActsSupplementEntryRow, inputs: _ReviewInputs
+) -> BillReviewItem:
+    era = get_bill_era(_get_bill_number_year(entry_row.act_number))
+    nearest_bill = _get_nearest_passed_bill(
+        get_bill_title_key(entry_row.printed_title),
+        entry_row.publication_date,
+        inputs.review_bills,
+    )
+    if nearest_bill is None:
+        return BillReviewItem(
+            kind=BillReviewItemKind.ACTS_SUPPLEMENT_ENTRY_UNPLACED,
+            era=era,
+            bill_number=None,
+            printed_title=entry_row.printed_title,
+            bill_title=None,
+            report_ids=[],
+            detail=f"Act {entry_row.act_number} published {entry_row.publication_date}; no passed bill of this title",
+        )
+    return BillReviewItem(
+        kind=BillReviewItemKind.ACTS_SUPPLEMENT_ENTRY_UNPLACED,
+        era=era,
+        bill_number=nearest_bill.bill_group.bill_number,
+        printed_title=entry_row.printed_title,
+        bill_title=nearest_bill.bill_group.title,
+        report_ids=nearest_bill.bill_group.report_ids,
+        detail=f"Act {entry_row.act_number} published {entry_row.publication_date}; the nearest passed bill of this title was last debated {nearest_bill.report_dates[-1]}, {(entry_row.publication_date - nearest_bill.report_dates[-1]).days} days before",
+    )
+
+
+def _build_unplaced_act_number_items(inputs: _ReviewInputs) -> list[BillReviewItem]:
+    placed_act_numbers = {
+        review_bill.bill_group.act_number
+        for review_bill in inputs.review_bills
+        if review_bill.bill_group.act_number is not None
+    }
+    act_number_to_first_entry_row: dict[str, ActsSupplementEntryRow] = {}
+    for entry_row in inputs.acts_supplement_entry_rows:
+        if entry_row.act_number in placed_act_numbers:
+            continue
+        act_number_to_first_entry_row.setdefault(entry_row.act_number, entry_row)
+    return [
+        _build_unplaced_act_number_item(entry_row, inputs)
+        for entry_row in act_number_to_first_entry_row.values()
+    ]
+
+
 def _build_items(inputs: _ReviewInputs) -> list[BillReviewItem]:
     numbered_bills = {
         review_bill.bill_group.bill_number: review_bill
@@ -493,6 +596,8 @@ def _build_items(inputs: _ReviewInputs) -> list[BillReviewItem]:
             for item in _build_history_entry_items(entry_row, inputs)
         ]
         + _build_passed_bill_items(inputs)
+        + _build_two_act_number_items(inputs)
+        + _build_unplaced_act_number_items(inputs)
     )
 
 
@@ -510,15 +615,23 @@ def _is_debate_complete(review_bill: _ReviewBill, context: BillGroupingContext) 
 def _build_done_tests(
     inputs: _ReviewInputs, items: list[BillReviewItem]
 ) -> list[BillEraDoneTests]:
-    linked_stored_bill_ids = [
-        entry_row.bill_id
-        for entry_row in inputs.act_history_entry_rows
-        if entry_row.bill_id is not None
-    ] + [
-        egazette_supplement_row.bill_id
-        for egazette_supplement_row in inputs.context.egazette_supplement_rows
-        if egazette_supplement_row.bill_id is not None
-    ]
+    linked_stored_bill_ids = (
+        [
+            entry_row.bill_id
+            for entry_row in inputs.act_history_entry_rows
+            if entry_row.bill_id is not None
+        ]
+        + [
+            egazette_supplement_row.bill_id
+            for egazette_supplement_row in inputs.context.egazette_supplement_rows
+            if egazette_supplement_row.bill_id is not None
+        ]
+        + [
+            stored_bill_row.id
+            for stored_bill_row in inputs.stored_bill_rows
+            if stored_bill_row.act_number is not None
+        ]
+    )
     linked_bill_indexes = {
         inputs.stored_bill_id_to_bill_index[stored_bill_id]
         for stored_bill_id in linked_stored_bill_ids
@@ -548,6 +661,11 @@ def _build_done_tests(
         passed_bills = [
             review_bill for review_bill in era_bills if review_bill.bill_group.is_passed
         ]
+        unclassed_passed_bills = [
+            review_bill
+            for review_bill in passed_bills
+            if review_bill.bill_group.bill_class is None
+        ]
         done_tests.append(
             BillEraDoneTests(
                 era=era,
@@ -565,6 +683,11 @@ def _build_done_tests(
                     review_bill.bill_index in linked_bill_indexes
                     or review_bill.bill_group.bill_class is not None
                     for review_bill in passed_bills
+                ),
+                unclassed_passed_bill_count=len(unclassed_passed_bills),
+                unclassed_outcome_resolved_bill_count=sum(
+                    review_bill.bill_index in linked_bill_indexes
+                    for review_bill in unclassed_passed_bills
                 ),
                 review_item_count=sum(item.era == era for item in items),
             )
@@ -598,12 +721,23 @@ def get_bill_review_list(
     logger.info(
         f"Stored bills: {len(stored_bill_id_to_report_ids):,}, {len(stored_bill_id_to_report_ids) - len(stored_bill_id_to_bill_index):,} not in the grouping"
     )
+    acts_supplement_entry_rows = CRUDActsSupplementEntry(session).get_rows()
     inputs = _ReviewInputs(
         review_bills,
         context,
         build_bill_lookups_from_context(context),
         CRUDBillsSupplementEntry(session).get_rows(),
+        acts_supplement_entry_rows,
+        [
+            build_acts_supplement_act_number_candidate(
+                entry_row.printed_title,
+                entry_row.act_number,
+                entry_row.publication_date,
+            )
+            for entry_row in acts_supplement_entry_rows
+        ],
         CRUDActHistoryEntry(session).get_rows(),
+        CRUDBill(session).get_rows(),
         stored_bill_id_to_bill_index,
         hand_kept_bills,
     )
@@ -653,7 +787,7 @@ def get_summary_lines(review_list: BillReviewList) -> list[str]:
             f"{era_label}, test 2 debate completeness: {_format_share(done_tests.debate_complete_bill_count, done_tests.numbered_bill_count)} numbered bills hold their first reading and, when passed, their third"
         )
         lines.append(
-            f"{era_label}, test 3 outcome resolved: {_format_share(done_tests.outcome_resolved_bill_count, done_tests.passed_bill_count)} passed bills link to an Act or carry a class"
+            f"{era_label}, test 3 outcome resolved: {_format_share(done_tests.outcome_resolved_bill_count, done_tests.passed_bill_count)} passed bills link to an Act or an Act number or carry a class; {_format_share(done_tests.unclassed_outcome_resolved_bill_count, done_tests.unclassed_passed_bill_count)} passed bills of no class link to an Act or an Act number"
         )
         lines.append(
             f"{era_label}, test 4 review items: {done_tests.review_item_count:,}"
