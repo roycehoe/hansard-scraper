@@ -137,6 +137,8 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 - `BillsSupplementEntry` — one row per listing row across the captures, unique on `bill_number` and `link`: `printed_title`, `printed_number` ("Bill N of YYYY" as printed), `link` and `pdf_link` with `pdf_size` as printed, `bill_number` (`N/YYYY`), `publication_date` (the link's DocDate) and a `capture_id` FK to `BillsSupplementCapture`
 - `ActsSupplementCapture` — one row per Internet Archive capture of an SSO Acts Supplement listing page, as received: `original_url`, `archive_timestamp`, `capture_url` (unique) and the page `content`
 - `ActsSupplementEntry` — one row per listing row across the captures, unique on `act_number` and `link`: `printed_title`, `printed_number` ("Act N of YYYY" as printed), `link` and `pdf_link` with `pdf_size` as printed, `act_number` (`N/YYYY`), `publication_date` (the first eight digits of the link's DocDate, never the `/Published/` segment, which is a revised-edition date) and a `capture_id` FK to `ActsSupplementCapture`
+- `RepealedActsCapture` — one row per Internet Archive capture of the SSO Repealed Acts listing page, as received: `original_url`, `archive_timestamp`, `capture_url` (unique) and the page `content`
+- `RepealedActEntry` — one row per Act across the captures, unique on `sso_code`: `printed_title` (with its `(Repealed)`, `(Spent)` or `(Omitted)` status as printed), `printed_chapter` ("Cap. 2" as printed, NULL where the capture prints no chapter), `link`, `sso_code` (the code in the link's path), `enactment_year` (the trailing four digits of the code, NULL where it has none), `repeal_date` (the 8 digits after `/Repealed/` in the link), `last_version_date` (the first eight digits of the link's DocDate) and a `capture_id` FK to `RepealedActsCapture`
 - `EgazetteSupplement` — one row per eGazette Bills or Acts Supplement PDF fetched by `scripts/fetch_egazette_supplements.py`; the PDF stays a file outside the repository: `url` (unique), `year`, `supplement_kind` (an `EgazetteSupplementKind`, Postgres type `egazettesupplementkind`: BILLS or ACTS), `number` (the file's number in its year), `file_path`, `size_bytes`, `sha256`, `fetched_at`, the fields read from its first pages (`printed_title`, `printed_bill_number`, `bill_number` as `N/YYYY`, `first_reading_date`, and for an Acts Supplement `passing_date` and `printed_act_number`, NULL where the PDF prints none), and for an Acts Supplement a `bill_id` FK to `Bill` with `bill_link_source` BILL_NUMBER_PASSING_DATE, set when exactly one bill carries its bill number and a third-reading report of that bill falls on the printed passing date
 - `BillReport` — one row per report of a bill, unique on `bill_id` and `report_id`; a report belongs to one bill, because the grouping reads one title key per report
 - `Act` — one row per current Act of the SSO harvest: `sso_code` (unique) and `title` as the SSO browse page prints it. The Act's text is not stored (`docs/data-loss-register.md`)
@@ -210,6 +212,7 @@ The scripts:
 - `fetch_egazette_supplements.py`: fetches the eGazette Bills and Acts Supplement PDFs of the years given (`--year`, repeatable) into `--output-directory/<year>/<bills|acts>/NN.pdf`, walking the file number up from 1 and ending a year's series after three files in a row answer 403, one request at a time and 3 s apart through `gateway/egazette.py`, and records every request in `fetches.json` (URL, status, size, SHA-256, fetched time); a rerun skips the files it holds. The eGazette terms (clause 11) require the attribution lines of `docs/report/bill-linking-build-2026-11-08.md` wherever the PDFs' content is reproduced
 - `apply_bills_supplement.py`: stores the Bills Supplement listing captures of a directory (`--captures-directory`: `captures.json` and one HTML file per capture) in `billssupplementcapture` and their rows in `billssupplemententry`, through `populate/bills_supplements.py`; a row seen in two captures is stored once; the dry run writes the plan file (`--plan-file`) and logs the capture, entry and duplicate counts, and `--commit` refuses unless the plan equals the reviewed file and checks the stored counts; run as a module
 - `apply_acts_supplement.py`: stores the Acts Supplement listing captures of a directory (`--captures-directory`: `captures.json` and one HTML file per capture) in `actssupplementcapture` and their rows in `actssupplemententry`, through `populate/acts_supplements.py`; a row seen in two captures is stored once; the dry run writes the plan file (`--plan-file`) and logs the capture, entry and duplicate counts, and `--commit` refuses unless the plan equals the reviewed file and checks the stored counts; run as a module
+- `apply_repealed_acts.py`: stores the SSO Repealed Acts listing captures of a directory (`--captures-directory`: `captures.json` and one HTML file per capture) in `repealedactscapture` and their rows in `repealedactentry`, through `populate/repealed_acts.py`; an Act seen in two captures is stored once, from the first; the dry run writes the plan file (`--plan-file`) and logs the capture, entry and duplicate counts and the entries by decade of enactment year, and `--commit` refuses unless the plan equals the reviewed file and checks the stored counts; run as a module
 - `apply_egazette_supplements.py`: stores one `egazettesupplement` row per PDF of a fetch directory (`--harvest-directory`: the `fetches.json` and PDFs of `fetch_egazette_supplements.py`) with the fields read from its text through `populate/egazette_supplements.py`, inserting new rows and updating changed ones by URL; the dry run writes the plan file (`--plan-file`) and logs the PDFs it could not read, and `--commit` refuses unless the plan equals the reviewed file and checks the stored rows; run as a module
 - `list_bill_review_items.py`: read only; writes the review list of objective 7 (`--review-file`, JSON parsed by `schemas/bill_review_list.py`) and its summary lines (`--summary-file`, kept in `docs/figures/`): Supplement entries placed only by a loose or similar title, entries with two same-title bills in their window, unplaced entries with the bill the neighbouring numbers' first readings propose, misprinted publication dates, split-bill merges (marked when they equal a hand-kept bill), Legislative History entries whose printed bill number names a bill the title rules do not link or a different one, linked entries whose bill has no report within a day of the third reading, passed bills from 1966 with no Supplement entry, passed bills with two Act numbers of their title in the Acts Supplement window, and Acts Supplement entries whose Act number no passed bill takes (with the nearest passed bill of the title); the summary gives done tests 1 to 4 of `docs/vision.md` by era (1955 to 1960, 1961 to 2005, 2006 on), and test 3 both over every passed bill and over the passed bills of no class; run as a module after `apply_act_links.py`
 - `remove_excluded_reports.py`: deletes the stored reports listed in `data/excluded_report_ids.json` and their speech, asker, participant and question state rows, after checking each against its kept copy; a dry run unless `--commit`
@@ -237,7 +240,7 @@ hansard-scraper/
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
 ├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, PersonNameSpellingKind, ReportAskerSource, ParticipantRole, ParticipantRoleSource, OfficeClass, OfficeSource, QuestionState, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus, HandCheckSpeakerVerdict, HandCheckDifferenceClass, HandCheckDifferenceKind, HandCheckErrorTier, HandCheckFlagReason, ActHistoryEntryKind, ActHistoryDefect, BillLinkSource, BillClass, BillNumberSource, ActNumberSource, EgazetteSupplementKind, BillEra, BillReviewItemKind
-├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshFailureError / HansardRefreshRunError / HansardTestGuardError / HansardHandCheckError / HansardHandKeptEntryError / HansardActHistoryError / HansardSsoListingError / HansardActsSupplementError / HansardBillsSupplementError / HansardEgazetteSupplementError
+├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshFailureError / HansardRefreshRunError / HansardTestGuardError / HansardHandCheckError / HansardHandKeptEntryError / HansardActHistoryError / HansardSsoListingError / HansardActsSupplementError / HansardBillsSupplementError / HansardEgazetteSupplementError / HansardRepealedActsListingError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the refresh job (run as `sh refresh.sh`); the build imports `refresh`, so an import error fails it
 │
@@ -275,6 +278,8 @@ hansard-scraper/
 │   ├── bills_supplement_plan.py    # BillsSupplementPlan / PlannedCapture / PlannedEntry: the plan file of scripts/apply_bills_supplement.py
 │   ├── acts_supplement_capture.py  # ActsSupplementCaptureManifestEntry / ActsSupplementCaptureManifest: the captures.json of an Acts Supplement captures directory
 │   ├── acts_supplement_plan.py     # ActsSupplementPlan / PlannedActsSupplementCapture / PlannedActsSupplementEntry: the plan file of scripts/apply_acts_supplement.py
+│   ├── repealed_acts_capture.py    # RepealedActsCaptureManifestEntry / RepealedActsCaptureManifest: the captures.json of a Repealed Acts captures directory
+│   ├── repealed_acts_plan.py       # RepealedActsPlan / PlannedRepealedActsCapture / PlannedRepealedActEntry: the plan file of scripts/apply_repealed_acts.py
 │   ├── egazette_supplement_response.py  # EgazetteSupplementResponse: one eGazette PDF fetch, status and bytes
 │   ├── egazette_fetch.py           # EgazetteFetchRecord / EgazetteFetchRecords: the fetches.json of scripts/fetch_egazette_supplements.py
 │   ├── egazette_supplement_plan.py # EgazetteSupplementPlan / PlannedEgazetteSupplement / UnparsedEgazetteSupplement: the plan file of scripts/apply_egazette_supplements.py
@@ -310,6 +315,7 @@ hansard-scraper/
 │   ├── act_link_write.py            # Stored bills, Acts and entries + the plan → what to insert, update and delete, and the first difference left
 │   ├── bills_supplement.py          # Bills Supplement listing HTML → entries: printed title and number, link, bill number N/YYYY, publication date
 │   ├── acts_supplement.py           # Acts Supplement listing rows → entries: act number N/YYYY from "Act N of YYYY", publication date from the link's DocDate
+│   ├── repealed_acts.py             # Repealed Acts listing rows → entries: SSO code, repeal date and last version date from the link, enactment year from the code
 │   ├── egazette_supplement.py       # eGazette Supplement PDF text → printed title, bill number, first reading, passing date and Act number
 │   ├── api_field_mapping.py         # Fields an API body loses on its way to a row (the refresh halt and validate_api_field_mapping.py)
 │   ├── attribution.py               # Speech row categories and the figures JSON for refresh_run.figures
@@ -334,6 +340,7 @@ hansard-scraper/
 │   ├── act.py                       # Act and ActHistoryEntry: an Act's code and title, and its Legislative History entries with the bill each links to
 │   ├── bills_supplement.py          # BillsSupplementCapture and BillsSupplementEntry: the archived listing pages as received, and their rows
 │   ├── acts_supplement.py           # ActsSupplementCapture and ActsSupplementEntry: the archived Acts Supplement listing pages as received, and their rows
+│   ├── repealed_acts.py             # RepealedActsCapture and RepealedActEntry: the archived Repealed Acts listing page as received, and its rows
 │   ├── egazette_supplement.py       # EgazetteSupplement: one row per fetched eGazette PDF, its fields and the bill an Acts Supplement links to
 │   ├── refresh_run.py               # RefreshRun: one row per refresh run, its counts, figures and status
 │   ├── report_asker.py              # ReportAsker: one row per asker of a parliamentary question + report_id, speaker_id and reader_speaker_id FKs
@@ -359,6 +366,8 @@ hansard-scraper/
 │   ├── bills_supplement_entry.py
 │   ├── acts_supplement_capture.py
 │   ├── acts_supplement_entry.py
+│   ├── repealed_acts_capture.py
+│   ├── repealed_act_entry.py
 │   ├── egazette_supplement.py       # Rows, updates by id and the bill links of the eGazette Acts rows
 │   ├── refresh_run.py               # Run rows, with a row lock for the finish
 │   ├── report_asker.py              # Askers of a parliamentary question: add, read by report, delete by report
@@ -384,6 +393,7 @@ hansard-scraper/
 │   ├── act_links.py                 # Plans and writes bills, Acts, Legislative History entries and bill links from the reports and a harvest directory; reads the Supplement entries and eGazette rows for the bill numbers and the eGazette links
 │   ├── bills_supplements.py         # Plans and writes the Bills Supplement captures and entries from a captures directory
 │   ├── acts_supplements.py          # Plans and writes the Acts Supplement captures and entries from a captures directory
+│   ├── repealed_acts.py             # Plans and writes the Repealed Acts captures and entries from a captures directory
 │   ├── egazette_supplements.py      # Plans and writes one row per eGazette PDF of a fetch directory, from the fields its text prints
 │   ├── report_askers.py             # Plans and writes the askers of parliamentary question reports, checked by Parliament group and source
 │   ├── report_participants.py       # Plans and writes the participants and states of parliamentary question reports, checked by Parliament group and against report_asker
@@ -409,7 +419,7 @@ hansard-scraper/
 │   ├── speaker_resolution_constants.py  # Reference tables for stage 8 (role terms, office holders)
 │   ├── speaker_terms.py             # SPEAKER_TERMS: who presided as Speaker on which dates (stages 7 and 8)
 │   ├── speech_update.py             # SpeechUpdate: one speech row's ordinal, label, text, kind and link, for a bulk update
-│   ├── sso_listing.py               # parse_sso_listing: the rows of an SSO Browse listing page (Bills or Acts Supplement), as the page prints them
+│   ├── sso_listing.py               # parse_sso_listing and parse_sso_act_listing: the rows of an SSO Browse listing page (Bills or Acts Supplement, or Repealed Acts), as the page prints them
 │   ├── title_key.py                 # get_title_key, get_bill_title_key and get_loose_title_key: the keys that match a bill title to an Act or Supplement title
 │   ├── bill_number.py               # normalize_bill_number: a printed N/YY or N/YYYY bill number as N/YYYY
 │   ├── egazette_supplement_update.py  # EgazetteSupplementUpdate and EgazetteLinkUpdate: one eGazette row's changed fields or bill link, for a bulk update
@@ -463,6 +473,7 @@ hansard-scraper/
     ├── fetch_egazette_supplements.py
     ├── apply_bills_supplement.py
     ├── apply_acts_supplement.py
+    ├── apply_repealed_acts.py
     ├── apply_egazette_supplements.py
     ├── list_bill_review_items.py
     ├── draw_hand_check_sample.py

@@ -18,6 +18,7 @@ import database.party_affiliation  # noqa: F401
 import database.person  # noqa: F401
 import database.person_name_spelling  # noqa: F401
 import database.refresh_run  # noqa: F401
+import database.repealed_acts  # noqa: F401
 import database.report  # noqa: F401
 import database.report_asker  # noqa: F401
 import database.report_participant  # noqa: F401

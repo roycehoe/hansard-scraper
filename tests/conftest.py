@@ -43,6 +43,7 @@ import database.party_affiliation  # noqa: F401 registers the table for create_a
 import database.person  # noqa: F401 registers the table for create_all
 import database.person_name_spelling  # noqa: F401 registers the table for create_all
 import database.refresh_run  # noqa: F401 registers the table for create_all
+import database.repealed_acts  # noqa: F401 registers the table for create_all
 import database.report  # noqa: F401 registers the table for create_all
 import database.report_asker  # noqa: F401 registers the table for create_all
 import database.report_participant  # noqa: F401 registers the table for create_all

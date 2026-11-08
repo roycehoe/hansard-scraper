@@ -1,7 +1,12 @@
 import pytest
 
 from exceptions import HansardSsoListingError
-from utils.sso_listing import ListingRow, parse_sso_listing
+from utils.sso_listing import (
+    ActListingRow,
+    ListingRow,
+    parse_sso_act_listing,
+    parse_sso_listing,
+)
 
 _ALL_YEARS_ROW = """
 <table><tbody>
@@ -75,3 +80,50 @@ def test_parse_raises_on_a_row_without_a_number() -> None:
 
     with pytest.raises(HansardSsoListingError, match="has no number"):
         parse_sso_listing(html)
+
+
+_REPEALED_ROW_WITH_CHAPTER = """
+<table><tbody>
+<tr class="" data-toggle="popover" data-trigger="hover" data-placement="bottom">
+  <td><a class="non-ajax" href="/Act/AA1987/Repealed/20040401?DocDate=20011231" rel="">Accountants Act (Repealed)</a>
+    <div class="visible-xs"><div class="row"><div class="col-xs-4 no-side-padding">Cap. 2</div></div></div></td>
+  <td class="hidden-xs col-no">Cap. 2</td>
+  <td class="hidden-xs">&nbsp;</td>
+</tr>
+</tbody></table>
+"""
+_REPEALED_ROW_WITHOUT_CHAPTER = """
+<table><tbody>
+<tr class="alternate" data-toggle="popover" data-trigger="hover" data-placement="bottom">
+  <td><a class="non-ajax" href="/Act/SA1994/Repealed/20240101?DocDate=20231231" rel="">Supply Act 1994 (Spent)</a></td>
+  <td class="hidden-xs">&nbsp;</td>
+</tr>
+</tbody></table>
+"""
+
+
+def test_parse_act_listing_reads_a_row_with_a_chapter() -> None:
+    assert parse_sso_act_listing(_REPEALED_ROW_WITH_CHAPTER) == [
+        ActListingRow(
+            printed_title="Accountants Act (Repealed)",
+            link="/Act/AA1987/Repealed/20040401?DocDate=20011231",
+            printed_chapter="Cap. 2",
+        )
+    ]
+
+
+def test_parse_act_listing_reads_a_spent_row_without_a_chapter() -> None:
+    assert parse_sso_act_listing(_REPEALED_ROW_WITHOUT_CHAPTER) == [
+        ActListingRow(
+            printed_title="Supply Act 1994 (Spent)",
+            link="/Act/SA1994/Repealed/20240101?DocDate=20231231",
+            printed_chapter=None,
+        )
+    ]
+
+
+def test_parse_act_listing_raises_on_a_row_without_a_title_link() -> None:
+    html = '<tr data-toggle="popover"><td class="col-no">Cap. 2</td></tr>'
+
+    with pytest.raises(HansardSsoListingError, match="no title link"):
+        parse_sso_act_listing(html)
