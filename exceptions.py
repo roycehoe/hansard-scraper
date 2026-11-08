@@ -68,3 +68,7 @@ class HansardHandKeptEntryError(HansardError):
 
 class HansardBillsSupplementError(HansardError):
     pass
+
+
+class HansardEgazetteSupplementError(HansardError):
+    pass

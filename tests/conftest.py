@@ -35,6 +35,7 @@ import database.act  # noqa: F401 registers the table for create_all
 import database.attendance  # noqa: F401 registers the table for create_all
 import database.bill  # noqa: F401 registers the table for create_all
 import database.bills_supplement  # noqa: F401 registers the table for create_all
+import database.egazette_supplement  # noqa: F401 registers the table for create_all
 import database.hansard_sitting_date_response  # noqa: F401 registers the table for create_all
 import database.hansard_website_response  # noqa: F401 registers the table for create_all
 import database.party_affiliation  # noqa: F401 registers the table for create_all

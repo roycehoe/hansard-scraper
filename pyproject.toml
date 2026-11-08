@@ -17,6 +17,7 @@ pydantic-settings = "^2.14.1"
 loguru = "^0.7.3"
 httpx = "^0.28.1"
 alembic = "^1.13"
+pypdf = "^7.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
