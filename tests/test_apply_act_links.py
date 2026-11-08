@@ -99,6 +99,7 @@ def test_dry_run_logs_the_counts_and_writes_the_plan_file_only(
         "Skipped: 1 reports whose title names no bill, 1 distinct titles",
         "Bill numbers by source: none; 1 bills without a number",
         "Bill classes: none",
+        "Act numbers by source: none; 1 passed bills without an Act number",
         "Split bills merged: 0; eGazette Acts linked to a bill: 0",
         "Acts: 2 read, 1 not fetched, 1 with no Legislative History; 2 entries",
         "Entries by kind: ACT 1, REVISED_EDITION 1",

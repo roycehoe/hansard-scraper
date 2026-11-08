@@ -8,6 +8,7 @@ from sqlmodel import Session
 
 from crud.act import CRUDAct
 from crud.act_history_entry import CRUDActHistoryEntry
+from crud.acts_supplement_entry import CRUDActsSupplementEntry
 from crud.bill import CRUDBill
 from crud.bill_report import CRUDBillReport
 from crud.bills_supplement_entry import CRUDBillsSupplementEntry
@@ -60,8 +61,10 @@ from services.bill import (
     NOT_THIRD_READING_PATTERNS,
     SECOND_READING_PATTERN,
     THIRD_READING_PATTERN,
+    ActNumberCandidate,
     BillGrouping,
     BillNumberCandidate,
+    build_acts_supplement_act_number_candidate,
     build_egazette_bill_number_candidate,
     build_listing_bill_number_candidate,
     group_bills,
@@ -221,6 +224,15 @@ def _build_bill_number_candidates(
     ]
 
 
+def _build_act_number_candidates(session: Session) -> list[ActNumberCandidate]:
+    return [
+        build_acts_supplement_act_number_candidate(
+            entry_row.printed_title, entry_row.act_number, entry_row.publication_date
+        )
+        for entry_row in CRUDActsSupplementEntry(session).get_rows()
+    ]
+
+
 def get_bill_grouping_context(
     session: Session,
     bill_title_corrections: list[BillTitleCorrection],
@@ -301,6 +313,7 @@ def get_bill_grouping_context(
         hand_kept_bills,
         hand_kept_report_rows,
         _build_bill_number_candidates(session, egazette_supplement_rows),
+        _build_act_number_candidates(session),
     )
     return BillGroupingContext(
         bill_grouping,
@@ -437,6 +450,8 @@ def get_act_link_plan(
                 bill_number=bill_group.bill_number,
                 bill_number_source=bill_group.bill_number_source,
                 bill_class=bill_group.bill_class,
+                act_number=bill_group.act_number,
+                act_number_source=bill_group.act_number_source,
             )
             for bill_group in bill_grouping.bill_groups
         ],
@@ -490,6 +505,8 @@ def write_act_link_plan(
             bill_number=plan.bills[bill_index].bill_number,
             bill_number_source=plan.bills[bill_index].bill_number_source,
             bill_class=plan.bills[bill_index].bill_class,
+            act_number=plan.bills[bill_index].act_number,
+            act_number_source=plan.bills[bill_index].act_number_source,
         )
         for bill_index in act_link_write.bill_indexes_to_insert
     ]

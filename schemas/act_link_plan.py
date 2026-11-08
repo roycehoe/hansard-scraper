@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict
 from enums import (
     ActHistoryDefect,
     ActHistoryEntryKind,
+    ActNumberSource,
     BillClass,
     BillLinkSource,
     BillNumberSource,
@@ -24,6 +25,8 @@ class PlannedBill(BaseModel):
     bill_number: Optional[str]
     bill_number_source: Optional[BillNumberSource]
     bill_class: Optional[BillClass]
+    act_number: Optional[str]
+    act_number_source: Optional[ActNumberSource]
 
 
 class PlannedSplitMerge(BaseModel):

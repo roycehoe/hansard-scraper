@@ -83,6 +83,9 @@ def _log_plan(plan: ActLinkPlan) -> None:
         f"Bill classes: {_format_counts(Counter(planned_bill.bill_class.value for planned_bill in plan.bills if planned_bill.bill_class is not None))}"
     )
     logger.info(
+        f"Act numbers by source: {_format_counts(Counter(planned_bill.act_number_source.value for planned_bill in plan.bills if planned_bill.act_number_source is not None))}; {sum(planned_bill.is_passed and planned_bill.act_number is None for planned_bill in plan.bills):,} passed bills without an Act number"
+    )
+    logger.info(
         f"Split bills merged: {len(plan.split_merges):,}; eGazette Acts linked to a bill: {len(plan.egazette_links):,}"
     )
     entries = [entry for planned_act in plan.acts for entry in planned_act.entries]
@@ -151,6 +154,10 @@ def _validate_can_commit_act_links(session: Session, plan: ActLinkPlan) -> None:
         "bills with a class": (
             CRUDBill(session).get_count_by_bill_class_not_null(),
             sum(planned_bill.bill_class is not None for planned_bill in plan.bills),
+        ),
+        "bills with an Act number": (
+            CRUDBill(session).get_count_by_act_number_not_null(),
+            sum(planned_bill.act_number is not None for planned_bill in plan.bills),
         ),
         "linked egazette supplements": (
             CRUDEgazetteSupplement(session).get_count_by_bill_id_not_null(),

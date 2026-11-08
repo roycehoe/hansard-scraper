@@ -3,13 +3,15 @@ from datetime import date, datetime
 import pytest
 
 from crud.report import ReportSittingDateTitleRow
-from enums import BillClass, BillNumberSource
+from enums import ActNumberSource, BillClass, BillNumberSource
 from exceptions import HansardHandKeptEntryError
 from schemas.hand_kept_bill import HandKeptBill
 from services.bill import (
+    ActNumberCandidate,
     BillGroup,
     BillGrouping,
     BillNumberCandidate,
+    build_acts_supplement_act_number_candidate,
     build_egazette_bill_number_candidate,
     build_listing_bill_number_candidate,
     get_bill_class,
@@ -30,6 +32,7 @@ def _group(
     third_reading_report_ids: set[int],
     bill_number_candidates: list[BillNumberCandidate] = [],
     hand_kept_bills: list[HandKeptBill] = [],
+    act_number_candidates: list[ActNumberCandidate] = [],
 ) -> BillGrouping:
     return group_bills(
         report_rows,
@@ -39,6 +42,7 @@ def _group(
         hand_kept_bills,
         report_rows,
         bill_number_candidates,
+        act_number_candidates,
     )
 
 
@@ -597,3 +601,150 @@ def test_a_hand_kept_bill_that_splits_a_merge_is_refused() -> None:
                 )
             ],
         )
+
+
+def _act_number_candidate(
+    printed_title: str, act_number: str, publication_date: date
+) -> ActNumberCandidate:
+    return build_acts_supplement_act_number_candidate(
+        printed_title, act_number, publication_date
+    )
+
+
+def test_a_passed_bill_takes_the_act_number_published_after_its_third_reading() -> None:
+    grouping = _group(
+        [
+            _row(1, datetime(2010, 10, 18), "MAINTENANCE OF PARENTS (AMENDMENT) BILL"),
+            _row(2, datetime(2010, 11, 23), "MAINTENANCE OF PARENTS (AMENDMENT) BILL"),
+        ],
+        {1},
+        {2},
+        act_number_candidates=[
+            _act_number_candidate(
+                "Maintenance of Parents (Amendment) Act 2010",
+                "37/2010",
+                date(2011, 1, 3),
+            )
+        ],
+    )
+
+    assert _one(grouping).act_number == "37/2010"
+    assert _one(grouping).act_number_source == ActNumberSource.ACTS_SUPPLEMENT_LISTING
+
+
+def test_the_act_number_window_runs_from_a_day_before_to_120_days_after() -> None:
+    report_rows = [_row(1, datetime(2010, 11, 23), "ALPHA BILL")]
+    candidate_a_day_before = _act_number_candidate(
+        "Alpha Act 2010", "1/2010", date(2010, 11, 22)
+    )
+    candidate_two_days_before = _act_number_candidate(
+        "Alpha Act 2010", "2/2010", date(2010, 11, 21)
+    )
+    candidate_120_days_after = _act_number_candidate(
+        "Alpha Act 2011", "3/2011", date(2011, 3, 23)
+    )
+    candidate_121_days_after = _act_number_candidate(
+        "Alpha Act 2011", "4/2011", date(2011, 3, 24)
+    )
+
+    assert (
+        _one(
+            _group(
+                report_rows, set(), {1}, act_number_candidates=[candidate_a_day_before]
+            )
+        ).act_number
+        == "1/2010"
+    )
+    assert (
+        _one(
+            _group(
+                report_rows,
+                set(),
+                {1},
+                act_number_candidates=[candidate_two_days_before],
+            )
+        ).act_number
+        is None
+    )
+    assert (
+        _one(
+            _group(
+                report_rows,
+                set(),
+                {1},
+                act_number_candidates=[candidate_120_days_after],
+            )
+        ).act_number
+        == "3/2011"
+    )
+    assert (
+        _one(
+            _group(
+                report_rows,
+                set(),
+                {1},
+                act_number_candidates=[candidate_121_days_after],
+            )
+        ).act_number
+        is None
+    )
+
+
+def test_two_act_numbers_of_the_title_in_the_window_give_no_act_number() -> None:
+    grouping = _group(
+        [_row(1, datetime(2002, 12, 5), "SUPPLEMENTARY SUPPLY (FY 2002) BILL")],
+        set(),
+        {1},
+        act_number_candidates=[
+            _act_number_candidate(
+                "Supplementary Supply (FY 2002) Act 2002", "42/2002", date(2002, 12, 31)
+            ),
+            _act_number_candidate(
+                "Supplementary Supply (FY 2002) Act 2003", "3/2003", date(2003, 2, 14)
+            ),
+        ],
+    )
+
+    assert _one(grouping).act_number is None
+    assert _one(grouping).act_number_source is None
+
+
+def test_one_act_number_listed_twice_in_the_window_is_taken() -> None:
+    grouping = _group(
+        [_row(1, datetime(2018, 11, 20), "ALPHA BILL")],
+        set(),
+        {1},
+        act_number_candidates=[
+            _act_number_candidate("Alpha Act 2018", "53/2018", date(2018, 12, 21)),
+            _act_number_candidate("Alpha Act 2018", "53/2018", date(2019, 1, 11)),
+        ],
+    )
+
+    assert _one(grouping).act_number == "53/2018"
+
+
+def test_a_bill_not_passed_and_a_bill_of_another_title_take_no_act_number() -> None:
+    candidates = [_act_number_candidate("Alpha Act 2010", "1/2010", date(2010, 12, 1))]
+
+    assert (
+        _one(
+            _group(
+                [_row(1, datetime(2010, 11, 23), "ALPHA BILL")],
+                {1},
+                set(),
+                act_number_candidates=candidates,
+            )
+        ).act_number
+        is None
+    )
+    assert (
+        _one(
+            _group(
+                [_row(1, datetime(2010, 11, 23), "BETA BILL")],
+                set(),
+                {1},
+                act_number_candidates=candidates,
+            )
+        ).act_number
+        is None
+    )

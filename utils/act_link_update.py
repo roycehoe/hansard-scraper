@@ -2,7 +2,13 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Optional
 
-from enums import ActHistoryEntryKind, BillClass, BillLinkSource, BillNumberSource
+from enums import (
+    ActHistoryEntryKind,
+    ActNumberSource,
+    BillClass,
+    BillLinkSource,
+    BillNumberSource,
+)
 
 
 @dataclass(frozen=True)
@@ -16,6 +22,8 @@ class BillUpdate:
     bill_number: Optional[str]
     bill_number_source: Optional[BillNumberSource]
     bill_class: Optional[BillClass]
+    act_number: Optional[str]
+    act_number_source: Optional[ActNumberSource]
 
 
 @dataclass(frozen=True)

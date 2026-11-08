@@ -2,11 +2,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
+import sqlalchemy
 from sqlalchemy import update
 from sqlmodel import Session, col, delete, func, select
 
 from database.bill import Bill
-from enums import BillClass, BillNumberSource
+from enums import ActNumberSource, BillClass, BillNumberSource
 from utils.act_link_update import BillUpdate
 
 
@@ -21,6 +22,8 @@ class BillRow:
     bill_number: Optional[str]
     bill_number_source: Optional[BillNumberSource]
     bill_class: Optional[BillClass]
+    act_number: Optional[str]
+    act_number_source: Optional[ActNumberSource]
 
 
 class CRUDBill:
@@ -59,19 +62,29 @@ class CRUDBill:
         )
         return self.session.exec(statement).one()
 
+    def get_count_by_act_number_not_null(self) -> int:
+        statement = (
+            select(func.count())
+            .select_from(Bill)
+            .where(col(Bill.act_number).is_not(None))
+        )
+        return self.session.exec(statement).one()
+
     def get_rows(self) -> list[BillRow]:
-        statement = select(
-            Bill.id,
-            Bill.title,
-            Bill.title_key,
-            Bill.first_sitting_date,
-            Bill.last_sitting_date,
-            Bill.is_passed,
-            Bill.bill_number,
-            Bill.bill_number_source,
-            Bill.bill_class,
+        statement = sqlalchemy.select(
+            col(Bill.id),
+            col(Bill.title),
+            col(Bill.title_key),
+            col(Bill.first_sitting_date),
+            col(Bill.last_sitting_date),
+            col(Bill.is_passed),
+            col(Bill.bill_number),
+            col(Bill.bill_number_source),
+            col(Bill.bill_class),
+            col(Bill.act_number),
+            col(Bill.act_number_source),
         ).order_by(col(Bill.id))
-        return [BillRow(*row) for row in self.session.exec(statement).all()]
+        return [BillRow(*row) for row in self.session.execute(statement).all()]
 
     def update_many(self, bill_updates: list[BillUpdate]) -> None:
         if not bill_updates:
@@ -90,6 +103,8 @@ class CRUDBill:
                     "bill_number": bill_update.bill_number,
                     "bill_number_source": bill_update.bill_number_source,
                     "bill_class": bill_update.bill_class,
+                    "act_number": bill_update.act_number,
+                    "act_number_source": bill_update.act_number_source,
                 }
                 for bill_update in bill_updates
             ],

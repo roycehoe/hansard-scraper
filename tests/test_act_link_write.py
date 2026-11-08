@@ -32,6 +32,8 @@ def _bill(title_key: str, report_ids: list[int], is_passed: bool = True) -> Plan
         bill_number=None,
         bill_number_source=None,
         bill_class=None,
+        act_number=None,
+        act_number_source=None,
     )
 
 
@@ -247,7 +249,17 @@ def test_writing_the_same_plan_twice_changes_nothing(scratch_session: Session) -
 
 def _stored_bill(bill_id: int, title: str = "a") -> BillRow:
     return BillRow(
-        bill_id, title, title, _SITTING_DATE, _SITTING_DATE, True, None, None, None
+        bill_id,
+        title,
+        title,
+        _SITTING_DATE,
+        _SITTING_DATE,
+        True,
+        None,
+        None,
+        None,
+        None,
+        None,
     )
 
 

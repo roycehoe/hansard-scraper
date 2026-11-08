@@ -6,7 +6,7 @@ from difflib import SequenceMatcher
 from typing import Optional
 
 from crud.report import ReportSittingDateTitleRow
-from enums import BillClass, BillNumberSource
+from enums import ActNumberSource, BillClass, BillNumberSource
 from exceptions import HansardHandKeptEntryError
 from schemas.bill_title_correction import BillTitleCorrection
 from schemas.hand_kept_bill import HandKeptBill
@@ -33,6 +33,8 @@ _PUBLICATION_ERA_START_YEAR_TO_MAX_DAYS_AFTER_FIRST_READING = (
 )
 _EARLIEST_ERA_MAX_DAYS_AFTER_FIRST_READING = 35
 _MAX_DAYS_FROM_EGAZETTE_FIRST_READING = 1
+_MAX_DAYS_FROM_THIRD_READING_TO_ACT_PUBLICATION = 120
+_MAX_DAYS_FROM_ACT_PUBLICATION_TO_THIRD_READING = 1
 _MAX_DAYS_BETWEEN_SPLIT_HALVES = 800
 _MIN_SPLIT_TITLE_SIMILARITY = 0.85
 _SUPPLY_TITLE_KEY_PATTERN = re.compile(
@@ -56,6 +58,15 @@ class BillNumberCandidate:
 
 
 @dataclass(frozen=True)
+class ActNumberCandidate:
+    act_number: str
+    title_key: str
+    source: ActNumberSource
+    earliest_third_reading_date: date
+    latest_third_reading_date: date
+
+
+@dataclass(frozen=True)
 class BillGroup:
     title: str
     title_key: str
@@ -66,6 +77,8 @@ class BillGroup:
     bill_number: Optional[str]
     bill_number_source: Optional[BillNumberSource]
     bill_class: Optional[BillClass]
+    act_number: Optional[str]
+    act_number_source: Optional[ActNumberSource]
 
 
 @dataclass(frozen=True)
@@ -159,6 +172,58 @@ def build_egazette_bill_number_candidate(
         BillNumberSource.EGAZETTE_BILLS_SUPPLEMENT,
         first_reading_date - timedelta(days=_MAX_DAYS_FROM_EGAZETTE_FIRST_READING),
         first_reading_date + timedelta(days=_MAX_DAYS_FROM_EGAZETTE_FIRST_READING),
+    )
+
+
+def build_acts_supplement_act_number_candidate(
+    printed_title: str, act_number: str, publication_date: date
+) -> ActNumberCandidate:
+    return ActNumberCandidate(
+        act_number,
+        get_bill_title_key(printed_title),
+        ActNumberSource.ACTS_SUPPLEMENT_LISTING,
+        publication_date
+        - timedelta(days=_MAX_DAYS_FROM_THIRD_READING_TO_ACT_PUBLICATION),
+        publication_date
+        + timedelta(days=_MAX_DAYS_FROM_ACT_PUBLICATION_TO_THIRD_READING),
+    )
+
+
+def get_act_number_candidates_in_window(
+    title_key: str,
+    third_reading_date: date,
+    act_number_candidates: list[ActNumberCandidate],
+) -> list[ActNumberCandidate]:
+    return [
+        candidate
+        for candidate in act_number_candidates
+        if candidate.title_key == title_key
+        and candidate.earliest_third_reading_date
+        <= third_reading_date
+        <= candidate.latest_third_reading_date
+    ]
+
+
+def get_single_act_number_candidate(
+    candidates_in_window: list[ActNumberCandidate],
+) -> Optional[ActNumberCandidate]:
+    act_numbers = {candidate.act_number for candidate in candidates_in_window}
+    if len(act_numbers) != 1:
+        return None
+    return candidates_in_window[0]
+
+
+def _get_act_number_candidate(
+    rule_bill: _RuleBill, act_number_candidates: list[ActNumberCandidate]
+) -> Optional[ActNumberCandidate]:
+    if not rule_bill.is_passed:
+        return None
+    return get_single_act_number_candidate(
+        get_act_number_candidates_in_window(
+            rule_bill.title_key,
+            rule_bill.last_sitting_date.date(),
+            act_number_candidates,
+        )
     )
 
 
@@ -345,7 +410,9 @@ def _should_start_new_bill(
 
 
 def _build_bill_group(
-    rule_bill: _RuleBill, bill_number_candidate: Optional[BillNumberCandidate]
+    rule_bill: _RuleBill,
+    bill_number_candidate: Optional[BillNumberCandidate],
+    act_number_candidate: Optional[ActNumberCandidate],
 ) -> BillGroup:
     return BillGroup(
         rule_bill.title,
@@ -357,6 +424,8 @@ def _build_bill_group(
         None if bill_number_candidate is None else bill_number_candidate.bill_number,
         None if bill_number_candidate is None else bill_number_candidate.source,
         get_bill_class(rule_bill.title_key),
+        None if act_number_candidate is None else act_number_candidate.act_number,
+        None if act_number_candidate is None else act_number_candidate.source,
     )
 
 
@@ -489,6 +558,7 @@ def group_bills(
     hand_kept_bills: list[HandKeptBill],
     hand_kept_report_rows: list[ReportSittingDateTitleRow],
     bill_number_candidates: list[BillNumberCandidate],
+    act_number_candidates: list[ActNumberCandidate],
 ) -> BillGrouping:
     corrected_report_rows = _build_corrected_report_rows(report_rows, title_corrections)
     skipped_report_rows = [
@@ -532,7 +602,11 @@ def group_bills(
         rule_bills, title_key_to_candidates
     )
     bill_groups = [
-        _build_bill_group(rule_bill, bill_number_candidate)
+        _build_bill_group(
+            rule_bill,
+            bill_number_candidate,
+            _get_act_number_candidate(rule_bill, act_number_candidates),
+        )
         for rule_bill, bill_number_candidate in zip(
             rule_bills, bill_number_candidates_by_bill, strict=True
         )
