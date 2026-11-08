@@ -7,7 +7,13 @@ from crud.act import ActRow
 from crud.act_history_entry import ActHistoryEntryRow, CRUDActHistoryEntry
 from crud.bill import BillRow, CRUDBill
 from crud.bill_report import BillReportRow, CRUDBillReport
-from enums import ActHistoryEntryKind, ActNumberSource, BillLinkSource, ReportType
+from enums import (
+    ActHistoryEntryKind,
+    ActNumberSource,
+    BillLinkSource,
+    RepealedActUrlSource,
+    ReportType,
+)
 from populate.act_links import get_act_link_write, write_act_link_plan
 from schemas.act_link_plan import (
     ActLinkPlan,
@@ -34,6 +40,8 @@ def _bill(title_key: str, report_ids: list[int], is_passed: bool = True) -> Plan
         bill_class=None,
         act_number=None,
         act_number_source=None,
+        repealed_act_url=None,
+        repealed_act_url_source=None,
     )
 
 
@@ -260,6 +268,8 @@ def _stored_bill(bill_id: int, title: str = "a") -> BillRow:
         None,
         None,
         None,
+        None,
+        None,
     )
 
 
@@ -366,6 +376,42 @@ def test_diff_updates_a_bill_whose_act_number_changes() -> None:
         (bill_update.id, bill_update.act_number, bill_update.act_number_source)
         for bill_update in act_link_write.bill_updates
     ] == [(10, "7/2025", ActNumberSource.ACTS_SUPPLEMENT_LISTING)]
+    assert get_first_difference(act_link_write) == (
+        "Stored bill 10 differs from the plan"
+    )
+
+
+def test_diff_updates_a_bill_whose_repealed_act_url_changes() -> None:
+    planned_bill = _bill("a", [1]).model_copy(
+        update={
+            "repealed_act_url": "https://sso.agc.gov.sg/Act/AA1987/Repealed/20200101",
+            "repealed_act_url_source": RepealedActUrlSource.REPEALED_ACTS_LISTING,
+        }
+    )
+
+    act_link_write = build_act_link_write(
+        [_stored_bill(10)],
+        [BillReportRow(10, 1)],
+        [],
+        [],
+        [],
+        _plan([planned_bill], []),
+    )
+
+    assert [
+        (
+            bill_update.id,
+            bill_update.repealed_act_url,
+            bill_update.repealed_act_url_source,
+        )
+        for bill_update in act_link_write.bill_updates
+    ] == [
+        (
+            10,
+            "https://sso.agc.gov.sg/Act/AA1987/Repealed/20200101",
+            RepealedActUrlSource.REPEALED_ACTS_LISTING,
+        )
+    ]
     assert get_first_difference(act_link_write) == (
         "Stored bill 10 differs from the plan"
     )

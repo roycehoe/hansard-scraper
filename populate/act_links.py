@@ -13,6 +13,7 @@ from crud.bill import CRUDBill
 from crud.bill_report import CRUDBillReport
 from crud.bills_supplement_entry import CRUDBillsSupplementEntry
 from crud.egazette_supplement import CRUDEgazetteSupplement, EgazetteSupplementRow
+from crud.repealed_act_entry import CRUDRepealedActEntry
 from crud.report import CRUDReport
 from crud.speech import CRUDSpeech
 from database.act import Act, ActHistoryEntry
@@ -64,9 +65,11 @@ from services.bill import (
     ActNumberCandidate,
     BillGrouping,
     BillNumberCandidate,
+    RepealedActCandidate,
     build_acts_supplement_act_number_candidate,
     build_egazette_bill_number_candidate,
     build_listing_bill_number_candidate,
+    build_repealed_acts_listing_candidate,
     group_bills,
     is_other_type_bill_reading,
     is_publication_date_misprinted,
@@ -233,6 +236,20 @@ def _build_act_number_candidates(session: Session) -> list[ActNumberCandidate]:
     ]
 
 
+def _build_repealed_act_candidates(session: Session) -> list[RepealedActCandidate]:
+    return [
+        build_repealed_acts_listing_candidate(
+            entry_row.printed_title,
+            entry_row.sso_code,
+            entry_row.enactment_year,
+            entry_row.repeal_date,
+            entry_row.link,
+        )
+        for entry_row in CRUDRepealedActEntry(session).get_rows()
+        if entry_row.enactment_year is not None
+    ]
+
+
 def get_bill_grouping_context(
     session: Session,
     bill_title_corrections: list[BillTitleCorrection],
@@ -314,6 +331,7 @@ def get_bill_grouping_context(
         hand_kept_report_rows,
         _build_bill_number_candidates(session, egazette_supplement_rows),
         _build_act_number_candidates(session),
+        _build_repealed_act_candidates(session),
     )
     return BillGroupingContext(
         bill_grouping,
@@ -452,6 +470,8 @@ def get_act_link_plan(
                 bill_class=bill_group.bill_class,
                 act_number=bill_group.act_number,
                 act_number_source=bill_group.act_number_source,
+                repealed_act_url=bill_group.repealed_act_url,
+                repealed_act_url_source=bill_group.repealed_act_url_source,
             )
             for bill_group in bill_grouping.bill_groups
         ],
@@ -507,6 +527,8 @@ def write_act_link_plan(
             bill_class=plan.bills[bill_index].bill_class,
             act_number=plan.bills[bill_index].act_number,
             act_number_source=plan.bills[bill_index].act_number_source,
+            repealed_act_url=plan.bills[bill_index].repealed_act_url,
+            repealed_act_url_source=plan.bills[bill_index].repealed_act_url_source,
         )
         for bill_index in act_link_write.bill_indexes_to_insert
     ]

@@ -33,6 +33,7 @@ def _group(
         hand_kept_report_rows or report_rows,
         [],
         [],
+        [],
     )
 
 

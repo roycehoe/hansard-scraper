@@ -5,7 +5,7 @@ from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 import database.report  # noqa: F401 registers Report so the foreign key resolves
-from enums import ActNumberSource, BillClass, BillNumberSource
+from enums import ActNumberSource, BillClass, BillNumberSource, RepealedActUrlSource
 
 
 class Bill(SQLModel, table=True):
@@ -20,6 +20,8 @@ class Bill(SQLModel, table=True):
     bill_class: Optional[BillClass] = None
     act_number: Optional[str] = None
     act_number_source: Optional[ActNumberSource] = None
+    repealed_act_url: Optional[str] = None
+    repealed_act_url_source: Optional[RepealedActUrlSource] = None
 
     is_passed: bool
 

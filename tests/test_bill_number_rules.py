@@ -3,7 +3,7 @@ from datetime import date, datetime
 import pytest
 
 from crud.report import ReportSittingDateTitleRow
-from enums import ActNumberSource, BillClass, BillNumberSource
+from enums import ActNumberSource, BillClass, BillNumberSource, RepealedActUrlSource
 from exceptions import HansardHandKeptEntryError
 from schemas.hand_kept_bill import HandKeptBill
 from services.bill import (
@@ -11,9 +11,11 @@ from services.bill import (
     BillGroup,
     BillGrouping,
     BillNumberCandidate,
+    RepealedActCandidate,
     build_acts_supplement_act_number_candidate,
     build_egazette_bill_number_candidate,
     build_listing_bill_number_candidate,
+    build_repealed_acts_listing_candidate,
     get_bill_class,
     group_bills,
     is_publication_date_misprinted,
@@ -33,6 +35,7 @@ def _group(
     bill_number_candidates: list[BillNumberCandidate] = [],
     hand_kept_bills: list[HandKeptBill] = [],
     act_number_candidates: list[ActNumberCandidate] = [],
+    repealed_act_candidates: list[RepealedActCandidate] = [],
 ) -> BillGrouping:
     return group_bills(
         report_rows,
@@ -43,6 +46,7 @@ def _group(
         report_rows,
         bill_number_candidates,
         act_number_candidates,
+        repealed_act_candidates,
     )
 
 
@@ -748,3 +752,157 @@ def test_a_bill_not_passed_and_a_bill_of_another_title_take_no_act_number() -> N
         ).act_number
         is None
     )
+
+
+def _repealed_act_candidate(
+    printed_title: str, sso_code: str, enactment_year: int, repeal_date: date
+) -> RepealedActCandidate:
+    return build_repealed_acts_listing_candidate(
+        printed_title,
+        sso_code,
+        enactment_year,
+        repeal_date,
+        f"/Act/{sso_code}/Repealed/{repeal_date:%Y%m%d}?DocDate={repeal_date:%Y%m%d}",
+    )
+
+
+def test_a_principal_bill_takes_the_act_enacted_in_its_first_or_last_report_year() -> (
+    None
+):
+    grouping = _group(
+        [
+            _row(1, datetime(1986, 3, 25), "COPYRIGHT BILL"),
+            _row(2, datetime(1987, 1, 20), "COPYRIGHT BILL"),
+        ],
+        {1},
+        {2},
+        repealed_act_candidates=[
+            _repealed_act_candidate(
+                "Copyright Act (Repealed)", "CA1914", 1914, date(1987, 4, 10)
+            ),
+            _repealed_act_candidate(
+                "Copyright Act (Repealed)", "CA1987", 1987, date(2021, 11, 21)
+            ),
+        ],
+    )
+
+    assert _one(grouping).repealed_act_url == (
+        "https://sso.agc.gov.sg/Act/CA1987/Repealed/20211121?DocDate=20211121"
+    )
+    assert (
+        _one(grouping).repealed_act_url_source
+        == RepealedActUrlSource.REPEALED_ACTS_LISTING
+    )
+
+
+def test_an_amendment_bill_takes_the_act_alive_through_its_dates() -> None:
+    grouping = _group(
+        [
+            _row(1, datetime(1980, 3, 25), "ACCOUNTANTS (AMENDMENT) BILL"),
+            _row(2, datetime(1980, 4, 20), "ACCOUNTANTS (AMENDMENT) BILL"),
+        ],
+        {1},
+        {2},
+        repealed_act_candidates=[
+            _repealed_act_candidate(
+                "Accountants Act (Repealed)", "AA1963", 1963, date(1989, 2, 11)
+            ),
+            _repealed_act_candidate(
+                "Accountants Act (Repealed)", "AA1987", 1987, date(2020, 1, 1)
+            ),
+        ],
+    )
+
+    assert _one(grouping).repealed_act_url == (
+        "https://sso.agc.gov.sg/Act/AA1963/Repealed/19890211?DocDate=19890211"
+    )
+
+
+def test_two_acts_alive_through_an_amendment_bill_give_no_repealed_act_link() -> None:
+    grouping = _group(
+        [
+            _row(1, datetime(1988, 3, 25), "ACCOUNTANTS (AMENDMENT) BILL"),
+            _row(2, datetime(1988, 4, 20), "ACCOUNTANTS (AMENDMENT) BILL"),
+        ],
+        {1},
+        {2},
+        repealed_act_candidates=[
+            _repealed_act_candidate(
+                "Accountants Act (Repealed)", "AA1963", 1963, date(2000, 1, 1)
+            ),
+            _repealed_act_candidate(
+                "Accountants Act (Repealed)", "AA1987", 1987, date(2020, 1, 1)
+            ),
+        ],
+    )
+
+    assert _one(grouping).repealed_act_url is None
+    assert _one(grouping).repealed_act_url_source is None
+
+
+def test_status_words_and_a_title_year_are_stripped_from_the_listing_title() -> None:
+    grouping = _group(
+        [_row(1, datetime(1994, 2, 10), "SUPPLY BILL")],
+        set(),
+        {1},
+        repealed_act_candidates=[
+            _repealed_act_candidate(
+                "Supply Act 1994 (Expired) (Spent)", "SA1994", 1994, date(1995, 4, 1)
+            ),
+        ],
+    )
+
+    assert _one(grouping).repealed_act_url == (
+        "https://sso.agc.gov.sg/Act/SA1994/Repealed/19950401?DocDate=19950401"
+    )
+
+
+def test_a_bill_not_passed_and_a_bill_of_another_title_take_no_repealed_act_link() -> (
+    None
+):
+    candidates = [
+        _repealed_act_candidate(
+            "Alpha Act (Repealed)", "AA1987", 1987, date(2020, 1, 1)
+        )
+    ]
+
+    assert (
+        _one(
+            _group(
+                [_row(1, datetime(1987, 3, 25), "ALPHA BILL")],
+                {1},
+                set(),
+                repealed_act_candidates=candidates,
+            )
+        ).repealed_act_url
+        is None
+    )
+    assert (
+        _one(
+            _group(
+                [_row(1, datetime(1987, 3, 25), "BETA BILL")],
+                set(),
+                {1},
+                repealed_act_candidates=candidates,
+            )
+        ).repealed_act_url
+        is None
+    )
+
+
+def test_one_sso_code_listed_twice_is_one_repealed_act_candidate() -> None:
+    grouping = _group(
+        [_row(1, datetime(1987, 3, 25), "ALPHA BILL")],
+        set(),
+        {1},
+        repealed_act_candidates=[
+            _repealed_act_candidate(
+                "Alpha Act (Repealed)", "AA1987", 1987, date(2020, 1, 1)
+            ),
+            _repealed_act_candidate(
+                "Alpha Act (Repealed)", "AA1987", 1987, date(2020, 1, 1)
+            ),
+        ],
+    )
+
+    assert _one(grouping).repealed_act_url is not None

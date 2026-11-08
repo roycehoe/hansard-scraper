@@ -8,6 +8,7 @@ from database.acts_supplement import ActsSupplementCapture, ActsSupplementEntry
 from database.bill import Bill, BillReport
 from database.bills_supplement import BillsSupplementCapture, BillsSupplementEntry
 from database.egazette_supplement import EgazetteSupplement
+from database.repealed_acts import RepealedActEntry, RepealedActsCapture
 from enums import (
     ActHistoryEntryKind,
     ActNumberSource,
@@ -15,6 +16,7 @@ from enums import (
     BillLinkSource,
     BillReviewItemKind,
     EgazetteSupplementKind,
+    RepealedActUrlSource,
     ReportType,
 )
 from schemas.bill_review_list import BillEraDoneTests
@@ -226,6 +228,8 @@ def test_the_supplement_items_and_the_done_tests(scratch_session: Session) -> No
         outcome_resolved_bill_count=0,
         unclassed_passed_bill_count=3,
         unclassed_outcome_resolved_bill_count=0,
+        repealed_act_linked_bill_count=0,
+        repealed_act_only_resolved_bill_count=0,
         review_item_count=5,
     )
     assert (
@@ -309,6 +313,8 @@ def test_the_egazette_rows_count_in_the_done_tests(scratch_session: Session) -> 
         outcome_resolved_bill_count=1,
         unclassed_passed_bill_count=1,
         unclassed_outcome_resolved_bill_count=1,
+        repealed_act_linked_bill_count=0,
+        repealed_act_only_resolved_bill_count=0,
         review_item_count=0,
     )
 
@@ -404,6 +410,8 @@ def test_the_history_items_compare_the_stored_link_with_the_number_rule(
         outcome_resolved_bill_count=1,
         unclassed_passed_bill_count=1,
         unclassed_outcome_resolved_bill_count=1,
+        repealed_act_linked_bill_count=0,
+        repealed_act_only_resolved_bill_count=0,
         review_item_count=2,
     )
 
@@ -496,9 +504,105 @@ def test_the_acts_supplement_items_and_the_act_number_in_test_3(
         outcome_resolved_bill_count=2,
         unclassed_passed_bill_count=1,
         unclassed_outcome_resolved_bill_count=1,
+        repealed_act_linked_bill_count=0,
+        repealed_act_only_resolved_bill_count=0,
         review_item_count=7,
     )
     assert (
-        "2006 on, test 3 outcome resolved: 2 of 2 (100.0%) passed bills link to an Act or an Act number or carry a class; 1 of 1 (100.0%) passed bills of no class link to an Act or an Act number"
+        "2006 on, test 3 outcome resolved: 2 of 2 (100.0%) passed bills link to an Act or an Act number or carry a class; 1 of 1 (100.0%) passed bills of no class link to an Act or an Act number; 0 passed bills link to a repealed Act's page, 0 of them resolved by that link alone"
+        in get_summary_lines(review_list)
+    )
+
+
+def _seed_repealed_act_entries(
+    session: Session, entries: list[tuple[str, str, int, date]]
+) -> None:
+    capture = RepealedActsCapture(
+        original_url="https://sso.agc.gov.sg/Browse/Acts/Repealed",
+        archive_timestamp="20250109044700",
+        capture_url="https://web.archive.org/web/20250109044700id_/https://sso.agc.gov.sg/Browse/Acts/Repealed",
+        content="<html></html>",
+    )
+    session.add(capture)
+    session.flush()
+    assert capture.id is not None
+    session.add_all(
+        RepealedActEntry(
+            printed_title=printed_title,
+            link=f"/Act/{sso_code}/Repealed/{repeal_date:%Y%m%d}?DocDate={repeal_date:%Y%m%d}",
+            sso_code=sso_code,
+            enactment_year=enactment_year,
+            repeal_date=repeal_date,
+            last_version_date=repeal_date,
+            capture_id=capture.id,
+        )
+        for printed_title, sso_code, enactment_year, repeal_date in entries
+    )
+    session.commit()
+
+
+def test_the_two_repealed_acts_item_and_the_repealed_act_counts_in_test_3(
+    scratch_session: Session,
+) -> None:
+    alpha_report_ids = _seed_bill(
+        scratch_session,
+        "alpha",
+        "Alpha Bill",
+        datetime(1987, 3, 4),
+        datetime(1987, 4, 10),
+    )
+    twin_report_ids = _seed_bill(
+        scratch_session,
+        "twin",
+        "Twin (Amendment) Bill",
+        datetime(1987, 7, 28),
+        datetime(1987, 12, 1),
+    )
+    _seed_repealed_act_entries(
+        scratch_session,
+        [
+            ("Alpha Act (Repealed)", "AA1987", 1987, date(2020, 1, 1)),
+            ("Twin Act (Repealed)", "TA1963", 1963, date(1995, 1, 1)),
+            ("Twin Act 1987 (Repealed)", "TA1987", 1987, date(2021, 1, 1)),
+        ],
+    )
+    stored_bill = Bill(
+        title="Alpha Bill",
+        title_key="alphabill",
+        first_sitting_date=datetime(1987, 3, 4),
+        last_sitting_date=datetime(1987, 4, 10),
+        is_passed=True,
+        repealed_act_url="https://sso.agc.gov.sg/Act/AA1987/Repealed/20200101?DocDate=20200101",
+        repealed_act_url_source=RepealedActUrlSource.REPEALED_ACTS_LISTING,
+    )
+    scratch_session.add(stored_bill)
+    scratch_session.flush()
+    assert stored_bill.id is not None
+    scratch_session.add_all(
+        BillReport(bill_id=stored_bill.id, report_id=report_id)
+        for report_id in alpha_report_ids
+    )
+    scratch_session.commit()
+
+    review_list = get_bill_review_list(scratch_session, [], [])
+
+    assert [
+        (item.kind, item.report_ids, item.detail)
+        for item in review_list.items
+        if item.kind == BillReviewItemKind.REPEALED_ACT_BILL_WITH_TWO_ACTS
+    ] == [
+        (
+            BillReviewItemKind.REPEALED_ACT_BILL_WITH_TWO_ACTS,
+            twin_report_ids,
+            "First debated 1987-07-28, last 1987-12-01; repealed Acts of the title that fit: TA1963, TA1987",
+        )
+    ]
+    done_tests = review_list.done_tests[1]
+    assert done_tests.era == BillEra.YEARS_1961_TO_2005
+    assert done_tests.repealed_act_linked_bill_count == 1
+    assert done_tests.repealed_act_only_resolved_bill_count == 1
+    assert done_tests.outcome_resolved_bill_count == 1
+    assert (
+        "1961 to 2005, test 3 outcome resolved: 1 of 2 (50.0%) passed bills link to an Act or an Act number or carry a class; 1 of 2 (50.0%) passed bills of no class link to an Act or an Act number; 1 passed bills link to a repealed Act's page, 1 of them resolved by that link alone"
         in get_summary_lines(review_list)
     )

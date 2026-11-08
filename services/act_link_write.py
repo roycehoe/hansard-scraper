@@ -101,6 +101,9 @@ def build_act_link_write(
             or stored_bill.bill_class != planned_bill.bill_class
             or stored_bill.act_number != planned_bill.act_number
             or stored_bill.act_number_source != planned_bill.act_number_source
+            or stored_bill.repealed_act_url != planned_bill.repealed_act_url
+            or stored_bill.repealed_act_url_source
+            != planned_bill.repealed_act_url_source
         ):
             bill_updates.append(
                 BillUpdate(
@@ -115,6 +118,8 @@ def build_act_link_write(
                     bill_class=planned_bill.bill_class,
                     act_number=planned_bill.act_number,
                     act_number_source=planned_bill.act_number_source,
+                    repealed_act_url=planned_bill.repealed_act_url,
+                    repealed_act_url_source=planned_bill.repealed_act_url_source,
                 )
             )
     kept_bill_ids = set(kept_bill_index_to_id.values())

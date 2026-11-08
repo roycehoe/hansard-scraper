@@ -6,11 +6,11 @@ from difflib import SequenceMatcher
 from typing import Optional
 
 from crud.report import ReportSittingDateTitleRow
-from enums import ActNumberSource, BillClass, BillNumberSource
+from enums import ActNumberSource, BillClass, BillNumberSource, RepealedActUrlSource
 from exceptions import HansardHandKeptEntryError
 from schemas.bill_title_correction import BillTitleCorrection
 from schemas.hand_kept_bill import HandKeptBill
-from utils.title_key import get_bill_title_key, get_title_key
+from utils.title_key import get_bill_title_key, get_loose_title_key, get_title_key
 
 FIRST_READING_PATTERN = r"\yread (a|the|for the) first time"
 NOT_FIRST_READING_PATTERNS = (
@@ -44,6 +44,13 @@ _SUPPLY_TITLE_KEY_PATTERN = re.compile(
 )
 _REPEAL_KEY_PART = "repeal"
 _AMENDMENT_KEY_PART = "amendment"
+_SSO_ORIGIN = "https://sso.agc.gov.sg"
+_REPEALED_ACT_STATUS_WORDS = frozenset(
+    {"Repealed", "Spent", "Expired", "Omitted", "Replaced", "Renamed"}
+)
+_REPEALED_ACT_STATUS_PATTERN = re.compile(
+    r"(?:\s*\((?:" + "|".join(sorted(_REPEALED_ACT_STATUS_WORDS)) + r")\))+\s*$"
+)
 _PUBLICATION_GRACE_MONTH = 1
 _PUBLICATION_GRACE_DAY = 31
 
@@ -67,6 +74,16 @@ class ActNumberCandidate:
 
 
 @dataclass(frozen=True)
+class RepealedActCandidate:
+    sso_code: str
+    title_key: str
+    enactment_year: int
+    repeal_date: date
+    url: str
+    source: RepealedActUrlSource
+
+
+@dataclass(frozen=True)
 class BillGroup:
     title: str
     title_key: str
@@ -79,6 +96,8 @@ class BillGroup:
     bill_class: Optional[BillClass]
     act_number: Optional[str]
     act_number_source: Optional[ActNumberSource]
+    repealed_act_url: Optional[str]
+    repealed_act_url_source: Optional[RepealedActUrlSource]
 
 
 @dataclass(frozen=True)
@@ -223,6 +242,76 @@ def _get_act_number_candidate(
             rule_bill.title_key,
             rule_bill.last_sitting_date.date(),
             act_number_candidates,
+        )
+    )
+
+
+def build_repealed_acts_listing_candidate(
+    printed_title: str,
+    sso_code: str,
+    enactment_year: int,
+    repeal_date: date,
+    link: str,
+) -> RepealedActCandidate:
+    return RepealedActCandidate(
+        sso_code,
+        get_loose_title_key(
+            get_bill_title_key(_REPEALED_ACT_STATUS_PATTERN.sub("", printed_title))
+        ),
+        enactment_year,
+        repeal_date,
+        _SSO_ORIGIN + link,
+        RepealedActUrlSource.REPEALED_ACTS_LISTING,
+    )
+
+
+def get_repealed_act_candidates_of_bill(
+    title_key: str,
+    first_sitting_date: datetime,
+    last_sitting_date: datetime,
+    repealed_act_candidates: list[RepealedActCandidate],
+) -> list[RepealedActCandidate]:
+    loose_title_key = get_loose_title_key(title_key)
+    title_candidates = [
+        candidate
+        for candidate in repealed_act_candidates
+        if candidate.title_key == loose_title_key
+    ]
+    if _AMENDMENT_KEY_PART in title_key:
+        return [
+            candidate
+            for candidate in title_candidates
+            if candidate.enactment_year <= first_sitting_date.year
+            and last_sitting_date.date() <= candidate.repeal_date
+        ]
+    return [
+        candidate
+        for candidate in title_candidates
+        if candidate.enactment_year == first_sitting_date.year
+        or candidate.enactment_year == last_sitting_date.year
+    ]
+
+
+def get_single_repealed_act_candidate(
+    candidates: list[RepealedActCandidate],
+) -> Optional[RepealedActCandidate]:
+    sso_codes = {candidate.sso_code for candidate in candidates}
+    if len(sso_codes) != 1:
+        return None
+    return candidates[0]
+
+
+def _get_repealed_act_candidate(
+    rule_bill: _RuleBill, repealed_act_candidates: list[RepealedActCandidate]
+) -> Optional[RepealedActCandidate]:
+    if not rule_bill.is_passed:
+        return None
+    return get_single_repealed_act_candidate(
+        get_repealed_act_candidates_of_bill(
+            rule_bill.title_key,
+            rule_bill.first_sitting_date,
+            rule_bill.last_sitting_date,
+            repealed_act_candidates,
         )
     )
 
@@ -413,6 +502,7 @@ def _build_bill_group(
     rule_bill: _RuleBill,
     bill_number_candidate: Optional[BillNumberCandidate],
     act_number_candidate: Optional[ActNumberCandidate],
+    repealed_act_candidate: Optional[RepealedActCandidate],
 ) -> BillGroup:
     return BillGroup(
         rule_bill.title,
@@ -426,6 +516,8 @@ def _build_bill_group(
         get_bill_class(rule_bill.title_key),
         None if act_number_candidate is None else act_number_candidate.act_number,
         None if act_number_candidate is None else act_number_candidate.source,
+        None if repealed_act_candidate is None else repealed_act_candidate.url,
+        None if repealed_act_candidate is None else repealed_act_candidate.source,
     )
 
 
@@ -559,6 +651,7 @@ def group_bills(
     hand_kept_report_rows: list[ReportSittingDateTitleRow],
     bill_number_candidates: list[BillNumberCandidate],
     act_number_candidates: list[ActNumberCandidate],
+    repealed_act_candidates: list[RepealedActCandidate],
 ) -> BillGrouping:
     corrected_report_rows = _build_corrected_report_rows(report_rows, title_corrections)
     skipped_report_rows = [
@@ -606,6 +699,7 @@ def group_bills(
             rule_bill,
             bill_number_candidate,
             _get_act_number_candidate(rule_bill, act_number_candidates),
+            _get_repealed_act_candidate(rule_bill, repealed_act_candidates),
         )
         for rule_bill, bill_number_candidate in zip(
             rule_bills, bill_number_candidates_by_bill, strict=True

@@ -7,7 +7,7 @@ from sqlalchemy import update
 from sqlmodel import Session, col, delete, func, select
 
 from database.bill import Bill
-from enums import ActNumberSource, BillClass, BillNumberSource
+from enums import ActNumberSource, BillClass, BillNumberSource, RepealedActUrlSource
 from utils.act_link_update import BillUpdate
 
 
@@ -24,6 +24,8 @@ class BillRow:
     bill_class: Optional[BillClass]
     act_number: Optional[str]
     act_number_source: Optional[ActNumberSource]
+    repealed_act_url: Optional[str]
+    repealed_act_url_source: Optional[RepealedActUrlSource]
 
 
 class CRUDBill:
@@ -70,6 +72,14 @@ class CRUDBill:
         )
         return self.session.exec(statement).one()
 
+    def get_count_by_repealed_act_url_not_null(self) -> int:
+        statement = (
+            select(func.count())
+            .select_from(Bill)
+            .where(col(Bill.repealed_act_url).is_not(None))
+        )
+        return self.session.exec(statement).one()
+
     def get_rows(self) -> list[BillRow]:
         statement = sqlalchemy.select(
             col(Bill.id),
@@ -83,6 +93,8 @@ class CRUDBill:
             col(Bill.bill_class),
             col(Bill.act_number),
             col(Bill.act_number_source),
+            col(Bill.repealed_act_url),
+            col(Bill.repealed_act_url_source),
         ).order_by(col(Bill.id))
         return [BillRow(*row) for row in self.session.execute(statement).all()]
 
@@ -105,6 +117,8 @@ class CRUDBill:
                     "bill_class": bill_update.bill_class,
                     "act_number": bill_update.act_number,
                     "act_number_source": bill_update.act_number_source,
+                    "repealed_act_url": bill_update.repealed_act_url,
+                    "repealed_act_url_source": bill_update.repealed_act_url_source,
                 }
                 for bill_update in bill_updates
             ],

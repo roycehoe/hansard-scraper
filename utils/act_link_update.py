@@ -8,6 +8,7 @@ from enums import (
     BillClass,
     BillLinkSource,
     BillNumberSource,
+    RepealedActUrlSource,
 )
 
 
@@ -24,6 +25,8 @@ class BillUpdate:
     bill_class: Optional[BillClass]
     act_number: Optional[str]
     act_number_source: Optional[ActNumberSource]
+    repealed_act_url: Optional[str]
+    repealed_act_url_source: Optional[RepealedActUrlSource]
 
 
 @dataclass(frozen=True)

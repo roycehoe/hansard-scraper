@@ -29,6 +29,7 @@ def _build_linkable_bills(
         [],
         [],
         [],
+        [],
     )
     for bill_index, bill_group in enumerate(grouping.bill_groups):
         title_key_to_linkable_bills.setdefault(bill_group.title_key, []).append(

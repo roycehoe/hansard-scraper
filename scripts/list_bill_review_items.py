@@ -16,6 +16,7 @@ from crud.bills_supplement_entry import (
     BillsSupplementEntryRow,
     CRUDBillsSupplementEntry,
 )
+from crud.repealed_act_entry import CRUDRepealedActEntry
 from database.init import build_read_only_engine
 from enums import (
     ActHistoryEntryKind,
@@ -38,9 +39,12 @@ from services.bill import (
     ActNumberCandidate,
     BillGroup,
     BillNumberCandidate,
+    RepealedActCandidate,
     build_acts_supplement_act_number_candidate,
     build_listing_bill_number_candidate,
+    build_repealed_acts_listing_candidate,
     get_act_number_candidates_in_window,
+    get_repealed_act_candidates_of_bill,
     is_publication_date_misprinted,
 )
 from settings import settings
@@ -76,6 +80,7 @@ class _ReviewInputs:
     entry_rows: list[BillsSupplementEntryRow]
     acts_supplement_entry_rows: list[ActsSupplementEntryRow]
     act_number_candidates: list[ActNumberCandidate]
+    repealed_act_candidates: list[RepealedActCandidate]
     act_history_entry_rows: list[ActHistoryEntryRow]
     stored_bill_rows: list[BillRow]
     stored_bill_id_to_bill_index: dict[int, int]
@@ -511,6 +516,38 @@ def _build_two_act_number_items(inputs: _ReviewInputs) -> list[BillReviewItem]:
     return items
 
 
+def _build_two_repealed_act_items(inputs: _ReviewInputs) -> list[BillReviewItem]:
+    items: list[BillReviewItem] = []
+    for review_bill in inputs.review_bills:
+        if not review_bill.bill_group.is_passed:
+            continue
+        sso_codes = sorted(
+            {
+                candidate.sso_code
+                for candidate in get_repealed_act_candidates_of_bill(
+                    review_bill.bill_group.title_key,
+                    review_bill.bill_group.first_sitting_date,
+                    review_bill.bill_group.last_sitting_date,
+                    inputs.repealed_act_candidates,
+                )
+            }
+        )
+        if len(sso_codes) <= 1:
+            continue
+        items.append(
+            BillReviewItem(
+                kind=BillReviewItemKind.REPEALED_ACT_BILL_WITH_TWO_ACTS,
+                era=get_bill_era(review_bill.report_dates[0].year),
+                bill_number=review_bill.bill_group.bill_number,
+                printed_title=None,
+                bill_title=review_bill.bill_group.title,
+                report_ids=review_bill.bill_group.report_ids,
+                detail=f"First debated {review_bill.report_dates[0]}, last {review_bill.report_dates[-1]}; repealed Acts of the title that fit: {', '.join(sso_codes)}",
+            )
+        )
+    return items
+
+
 def _get_nearest_passed_bill(
     title_key: str, publication_date: date, review_bills: list[_ReviewBill]
 ) -> Optional[_ReviewBill]:
@@ -598,6 +635,7 @@ def _build_items(inputs: _ReviewInputs) -> list[BillReviewItem]:
         + _build_passed_bill_items(inputs)
         + _build_two_act_number_items(inputs)
         + _build_unplaced_act_number_items(inputs)
+        + _build_two_repealed_act_items(inputs)
     )
 
 
@@ -637,6 +675,13 @@ def _build_done_tests(
         for stored_bill_id in linked_stored_bill_ids
         if stored_bill_id in inputs.stored_bill_id_to_bill_index
     }
+    repealed_act_bill_indexes = {
+        inputs.stored_bill_id_to_bill_index[stored_bill_row.id]
+        for stored_bill_row in inputs.stored_bill_rows
+        if stored_bill_row.repealed_act_url is not None
+        and stored_bill_row.id in inputs.stored_bill_id_to_bill_index
+    }
+    resolved_bill_indexes = linked_bill_indexes | repealed_act_bill_indexes
     numbered_bill_numbers = [
         entry_row.bill_number for entry_row in inputs.entry_rows
     ] + [
@@ -680,14 +725,24 @@ def _build_done_tests(
                 ),
                 passed_bill_count=len(passed_bills),
                 outcome_resolved_bill_count=sum(
-                    review_bill.bill_index in linked_bill_indexes
+                    review_bill.bill_index in resolved_bill_indexes
                     or review_bill.bill_group.bill_class is not None
                     for review_bill in passed_bills
                 ),
                 unclassed_passed_bill_count=len(unclassed_passed_bills),
                 unclassed_outcome_resolved_bill_count=sum(
-                    review_bill.bill_index in linked_bill_indexes
+                    review_bill.bill_index in resolved_bill_indexes
                     for review_bill in unclassed_passed_bills
+                ),
+                repealed_act_linked_bill_count=sum(
+                    review_bill.bill_index in repealed_act_bill_indexes
+                    for review_bill in passed_bills
+                ),
+                repealed_act_only_resolved_bill_count=sum(
+                    review_bill.bill_index in repealed_act_bill_indexes
+                    and review_bill.bill_index not in linked_bill_indexes
+                    and review_bill.bill_group.bill_class is None
+                    for review_bill in passed_bills
                 ),
                 review_item_count=sum(item.era == era for item in items),
             )
@@ -722,6 +777,7 @@ def get_bill_review_list(
         f"Stored bills: {len(stored_bill_id_to_report_ids):,}, {len(stored_bill_id_to_report_ids) - len(stored_bill_id_to_bill_index):,} not in the grouping"
     )
     acts_supplement_entry_rows = CRUDActsSupplementEntry(session).get_rows()
+    repealed_act_entry_rows = CRUDRepealedActEntry(session).get_rows()
     inputs = _ReviewInputs(
         review_bills,
         context,
@@ -735,6 +791,17 @@ def get_bill_review_list(
                 entry_row.publication_date,
             )
             for entry_row in acts_supplement_entry_rows
+        ],
+        [
+            build_repealed_acts_listing_candidate(
+                entry_row.printed_title,
+                entry_row.sso_code,
+                entry_row.enactment_year,
+                entry_row.repeal_date,
+                entry_row.link,
+            )
+            for entry_row in repealed_act_entry_rows
+            if entry_row.enactment_year is not None
         ],
         CRUDActHistoryEntry(session).get_rows(),
         CRUDBill(session).get_rows(),
@@ -787,7 +854,7 @@ def get_summary_lines(review_list: BillReviewList) -> list[str]:
             f"{era_label}, test 2 debate completeness: {_format_share(done_tests.debate_complete_bill_count, done_tests.numbered_bill_count)} numbered bills hold their first reading and, when passed, their third"
         )
         lines.append(
-            f"{era_label}, test 3 outcome resolved: {_format_share(done_tests.outcome_resolved_bill_count, done_tests.passed_bill_count)} passed bills link to an Act or an Act number or carry a class; {_format_share(done_tests.unclassed_outcome_resolved_bill_count, done_tests.unclassed_passed_bill_count)} passed bills of no class link to an Act or an Act number"
+            f"{era_label}, test 3 outcome resolved: {_format_share(done_tests.outcome_resolved_bill_count, done_tests.passed_bill_count)} passed bills link to an Act or an Act number or carry a class; {_format_share(done_tests.unclassed_outcome_resolved_bill_count, done_tests.unclassed_passed_bill_count)} passed bills of no class link to an Act or an Act number; {done_tests.repealed_act_linked_bill_count:,} passed bills link to a repealed Act's page, {done_tests.repealed_act_only_resolved_bill_count:,} of them resolved by that link alone"
         )
         lines.append(
             f"{era_label}, test 4 review items: {done_tests.review_item_count:,}"
