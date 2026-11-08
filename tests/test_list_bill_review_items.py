@@ -530,7 +530,7 @@ def test_the_acts_supplement_items_and_the_act_number_in_test_3(
         review_item_count=7,
     )
     assert (
-        "2006 on, test 3 outcome resolved: 2 of 2 (100.0%) passed bills link to an Act or an Act number or carry a class; 1 of 1 (100.0%) passed bills of no class link to an Act or an Act number; 0 passed bills link to a repealed Act's page, 0 of them resolved by that link alone"
+        "2006 on, test 3 outcome resolved: 2 of 2 (100.0%) passed bills link to an Act, an Act number or a repealed Act's page or carry a class; 1 of 1 (100.0%) passed bills of no class link to an Act, an Act number or a repealed Act's page; 0 passed bills link to a repealed Act's page, 0 of them resolved by that link alone"
         in get_summary_lines(review_list)
     )
 
@@ -628,7 +628,7 @@ def test_the_two_repealed_acts_item_and_the_repealed_act_counts_in_test_3(
     assert done_tests.repealed_act_only_resolved_bill_count == 1
     assert done_tests.outcome_resolved_bill_count == 1
     assert (
-        "1961 to 2005, test 3 outcome resolved: 1 of 2 (50.0%) passed bills link to an Act or an Act number or carry a class; 1 of 2 (50.0%) passed bills of no class link to an Act or an Act number; 1 passed bills link to a repealed Act's page, 1 of them resolved by that link alone"
+        "1961 to 2005, test 3 outcome resolved: 1 of 2 (50.0%) passed bills link to an Act, an Act number or a repealed Act's page or carry a class; 1 of 2 (50.0%) passed bills of no class link to an Act, an Act number or a repealed Act's page; 1 passed bills link to a repealed Act's page, 1 of them resolved by that link alone"
         in get_summary_lines(review_list)
     )
 

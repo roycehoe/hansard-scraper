@@ -949,7 +949,7 @@ def get_summary_lines(review_list: BillReviewList) -> list[str]:
             f"{era_label}, test 2 debate completeness: {_format_share(done_tests.debate_complete_bill_count, done_tests.numbered_bill_count)} numbered bills hold their first reading and, when passed, their third"
         )
         lines.append(
-            f"{era_label}, test 3 outcome resolved: {_format_share(done_tests.outcome_resolved_bill_count, done_tests.passed_bill_count)} passed bills link to an Act or an Act number or carry a class; {_format_share(done_tests.unclassed_outcome_resolved_bill_count, done_tests.unclassed_passed_bill_count)} passed bills of no class link to an Act or an Act number; {done_tests.repealed_act_linked_bill_count:,} passed bills link to a repealed Act's page, {done_tests.repealed_act_only_resolved_bill_count:,} of them resolved by that link alone"
+            f"{era_label}, test 3 outcome resolved: {_format_share(done_tests.outcome_resolved_bill_count, done_tests.passed_bill_count)} passed bills link to an Act, an Act number or a repealed Act's page or carry a class; {_format_share(done_tests.unclassed_outcome_resolved_bill_count, done_tests.unclassed_passed_bill_count)} passed bills of no class link to an Act, an Act number or a repealed Act's page; {done_tests.repealed_act_linked_bill_count:,} passed bills link to a repealed Act's page, {done_tests.repealed_act_only_resolved_bill_count:,} of them resolved by that link alone"
         )
         lines.append(
             f"{era_label}, test 4 review items: {done_tests.review_item_count:,}"
