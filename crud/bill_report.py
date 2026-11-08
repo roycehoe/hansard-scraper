@@ -3,12 +3,15 @@ from dataclasses import dataclass
 from sqlmodel import Session, col, delete, func, select
 
 from database.bill import BillReport
+from enums import BillReportRole
 
 
 @dataclass(frozen=True)
 class BillReportRow:
+    id: int
     bill_id: int
     report_id: int
+    role: BillReportRole
 
 
 class CRUDBillReport:
@@ -23,11 +26,27 @@ class CRUDBillReport:
         statement = select(func.count()).select_from(BillReport)
         return self.session.exec(statement).one()
 
-    def get_rows(self) -> list[BillReportRow]:
-        statement = select(BillReport.bill_id, BillReport.report_id).order_by(
-            col(BillReport.bill_id), col(BillReport.id)
+    def get_count_by_role(self, role: BillReportRole) -> int:
+        statement = (
+            select(func.count()).select_from(BillReport).where(BillReport.role == role)
         )
-        return [BillReportRow(*row) for row in self.session.exec(statement).all()]
+        return self.session.exec(statement).one()
+
+    def get_rows(self) -> list[BillReportRow]:
+        statement = select(
+            col(BillReport.id),
+            col(BillReport.bill_id),
+            col(BillReport.report_id),
+            col(BillReport.role),
+        ).order_by(col(BillReport.bill_id), col(BillReport.id))
+        return [BillReportRow(*row) for row in self.session.execute(statement).all()]
+
+    def delete_by_ids(self, ids: list[int]) -> None:
+        if not ids:
+            return
+
+        statement = delete(BillReport).where(col(BillReport.id).in_(ids))
+        self.session.execute(statement)
 
     def delete_by_bill_ids(self, bill_ids: list[int]) -> None:
         if not bill_ids:

@@ -31,6 +31,8 @@ class BillEraDoneTests(BaseModel):
     unclassed_outcome_resolved_bill_count: int
     repealed_act_linked_bill_count: int
     repealed_act_only_resolved_bill_count: int
+    budget_report_count: int
+    budget_report_linked_count: int
     review_item_count: int
 
 

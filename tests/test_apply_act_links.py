@@ -12,7 +12,7 @@ from crud.act import CRUDAct
 from crud.act_history_entry import CRUDActHistoryEntry
 from crud.bill import CRUDBill
 from crud.bill_report import CRUDBillReport
-from enums import ReportType
+from enums import BillReportRole, ReportType
 from exceptions import HansardWriteCheckError, HansardWriteTargetError
 from schemas.act_link_plan import ActLinkPlan
 from scripts.apply_act_links import apply_act_links
@@ -20,6 +20,7 @@ from tests.bill_seed import seed_bill_report, write_harvest
 
 _PROTECTED_DATABASE_URL = "postgresql://u:p@localhost:5432/x"
 _PASSING_LINE = "Bill read a Third time and passed."
+_SUPPLY_READING_COUNT = 2
 
 
 @pytest.fixture(autouse=True)
@@ -101,6 +102,7 @@ def test_dry_run_logs_the_counts_and_writes_the_plan_file_only(
         "Bill classes: none",
         "Act numbers by source: none; 1 passed bills without an Act number",
         "Repealed Act links by source: none; 1 passed bills without one",
+        "Budget reports linked to a supply bill: 0 of 0",
         "Split bills merged: 0; eGazette Acts linked to a bill: 0",
         "Acts: 2 read, 1 not fetched, 1 with no Legislative History; 2 entries",
         "Entries by kind: ACT 1, REVISED_EDITION 1",
@@ -112,6 +114,7 @@ def test_dry_run_logs_the_counts_and_writes_the_plan_file_only(
         "Bills: 0 kept, 0 updated, 1 inserted, 0 deleted",
         "Acts: 2 inserted, 0 updated, 0 deleted",
         "Entries: 2 inserted, 0 updated, 0 deleted; 0 linked entries change bill",
+        "Budget report links: 0 inserted, 0 deleted",
         "eGazette supplements: 0 bill links set or cleared",
         "Dry run: nothing written",
     ]
@@ -270,3 +273,64 @@ def test_commit_refuses_the_protected_port_before_any_row_is_written(
         apply_act_links(tmp_path, plan_path, is_commit=True)
 
     assert _get_stored_counts(scratch_session) == (0, 0, 0, 0, 0)
+
+
+def _seed_supply_bill_and_budget_report(session: Session) -> int:
+    seed_bill_report(
+        session,
+        "supply-first",
+        ReportType.BILL_INTRODUCTION,
+        datetime(2025, 3, 1),
+        "Supply Bill",
+        ["Bill read a First time."],
+    )
+    seed_bill_report(
+        session,
+        "supply-third",
+        ReportType.BILL,
+        datetime(2025, 3, 20),
+        "Supply Bill",
+        [_PASSING_LINE],
+    )
+    return seed_bill_report(
+        session,
+        "budget-head",
+        ReportType.BUDGET,
+        datetime(2025, 3, 10),
+        "BUDGET, Head B",
+        ["Sir, I beg to move."],
+    )
+
+
+def test_a_budget_report_is_logged_checked_and_stored_as_a_budget_debate(
+    scratch_session: Session, log_recorder: _LogRecorder, tmp_path: Path
+) -> None:
+    budget_report_id = _seed_supply_bill_and_budget_report(scratch_session)
+    write_harvest(tmp_path)
+    plan_path = tmp_path / "plan.json"
+
+    apply_act_links(tmp_path, plan_path, is_commit=False)
+
+    assert "Budget reports linked to a supply bill: 1 of 1" in log_recorder.messages
+    assert "Budget report links: 1 inserted, 0 deleted" in log_recorder.messages
+    apply_act_links(tmp_path, plan_path, is_commit=True)
+    scratch_session.expire_all()
+    assert (
+        CRUDBillReport(scratch_session).get_count_by_role(BillReportRole.READING)
+        == _SUPPLY_READING_COUNT
+    )
+    assert (
+        CRUDBillReport(scratch_session).get_count_by_role(BillReportRole.BUDGET_DEBATE)
+        == 1
+    )
+    assert [
+        bill_report_row.report_id
+        for bill_report_row in CRUDBillReport(scratch_session).get_rows()
+        if bill_report_row.role == BillReportRole.BUDGET_DEBATE
+    ] == [budget_report_id]
+    log_recorder.messages.clear()
+
+    apply_act_links(tmp_path, plan_path, is_commit=True)
+
+    assert "Budget report links: 0 inserted, 0 deleted" in log_recorder.messages
+    assert "Bills: 1 kept, 0 updated, 0 inserted, 0 deleted" in log_recorder.messages

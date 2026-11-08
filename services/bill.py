@@ -42,6 +42,14 @@ _SUPPLY_TITLE_KEY_PATTERN = re.compile(
     r"(?:supply|appropriation)(?:andbudgetadjustments)?"
     r"(?:no\d+|fy\d{2,4}|\d{4})*bill$"
 )
+_MAIN_SUPPLY_TITLE_KEY_PATTERN = re.compile(
+    r"^(?:the)?(?:supply|appropriation)(?:no\d+|fy\d{2,4}|\d{4})*bill$"
+)
+_SUPPLEMENTARY_BUDGET_TITLE_PATTERN = re.compile(
+    r"\b(?:supplementary|excess|final)\b", re.IGNORECASE
+)
+_MAX_DAYS_BEFORE_SUPPLY_BILL = 45
+_MAX_DAYS_AFTER_SUPPLY_BILL = 30
 _REPEAL_KEY_PART = "repeal"
 _AMENDMENT_KEY_PART = "amendment"
 _SSO_ORIGIN = "https://sso.agc.gov.sg"
@@ -101,6 +109,14 @@ class BillGroup:
 
 
 @dataclass(frozen=True)
+class SupplyBillWindow:
+    bill_index: int
+    is_main: bool
+    first_sitting_date: datetime
+    last_sitting_date: datetime
+
+
+@dataclass(frozen=True)
 class SplitMerge:
     head_report_ids: list[int]
     tail_report_ids: list[int]
@@ -148,6 +164,47 @@ def get_bill_class(title_key: str) -> Optional[BillClass]:
     if _REPEAL_KEY_PART in title_key and _AMENDMENT_KEY_PART not in title_key:
         return BillClass.REPEAL
     return None
+
+
+def is_main_supply_title_key(title_key: str) -> bool:
+    return _MAIN_SUPPLY_TITLE_KEY_PATTERN.match(title_key) is not None
+
+
+def is_supplementary_budget_title(title: str) -> bool:
+    return _SUPPLEMENTARY_BUDGET_TITLE_PATTERN.search(title) is not None
+
+
+def build_supply_bill_windows(bill_groups: list[BillGroup]) -> list[SupplyBillWindow]:
+    return [
+        SupplyBillWindow(
+            bill_index,
+            is_main_supply_title_key(bill_group.title_key),
+            bill_group.first_sitting_date,
+            bill_group.last_sitting_date,
+        )
+        for bill_index, bill_group in enumerate(bill_groups)
+        if bill_group.bill_class == BillClass.SUPPLY
+    ]
+
+
+def get_supply_bill_indexes_for_budget_report(
+    title: str, sitting_date: datetime, windows: list[SupplyBillWindow]
+) -> list[int]:
+    is_main = not is_supplementary_budget_title(title)
+    return [
+        window.bill_index
+        for window in windows
+        if window.is_main == is_main
+        and window.first_sitting_date - timedelta(days=_MAX_DAYS_BEFORE_SUPPLY_BILL)
+        <= sitting_date
+        <= window.last_sitting_date + timedelta(days=_MAX_DAYS_AFTER_SUPPLY_BILL)
+    ]
+
+
+def get_single_supply_bill_index(bill_indexes: list[int]) -> Optional[int]:
+    if len(bill_indexes) != 1:
+        return None
+    return bill_indexes[0]
 
 
 def _get_max_days_after_first_reading(publication_date: date) -> int:

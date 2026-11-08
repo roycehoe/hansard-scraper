@@ -15,7 +15,7 @@ from database.act import Act, ActHistoryEntry
 from database.bill import Bill, BillReport
 from database.egazette_supplement import EgazetteSupplement
 from database.init import engine
-from enums import ActHistoryEntryKind
+from enums import ActHistoryEntryKind, BillReportRole
 from exceptions import HansardWriteCheckError
 from logs import logger
 from populate.act_links import (
@@ -89,6 +89,9 @@ def _log_plan(plan: ActLinkPlan) -> None:
         f"Repealed Act links by source: {_format_counts(Counter(planned_bill.repealed_act_url_source.value for planned_bill in plan.bills if planned_bill.repealed_act_url_source is not None))}; {sum(planned_bill.is_passed and planned_bill.repealed_act_url is None for planned_bill in plan.bills):,} passed bills without one"
     )
     logger.info(
+        f"Budget reports linked to a supply bill: {len(plan.budget_report_links):,} of {plan.budget_report_count:,}"
+    )
+    logger.info(
         f"Split bills merged: {len(plan.split_merges):,}; eGazette Acts linked to a bill: {len(plan.egazette_links):,}"
     )
     entries = [entry for planned_act in plan.acts for entry in planned_act.entries]
@@ -131,6 +134,9 @@ def _log_write(act_link_write: ActLinkWrite) -> None:
         f"Entries: {len(act_link_write.entries_to_insert):,} inserted, {len(act_link_write.entry_updates):,} updated, {len(act_link_write.entry_ids_to_delete):,} deleted; {sum(entry_update.is_bill_changed for entry_update in act_link_write.entry_updates):,} linked entries change bill"
     )
     logger.info(
+        f"Budget report links: {len(act_link_write.budget_report_inserts):,} inserted, {len(act_link_write.budget_report_ids_to_delete):,} deleted"
+    )
+    logger.info(
         f"eGazette supplements: {len(act_link_write.egazette_link_updates):,} bill links set or cleared"
     )
 
@@ -147,8 +153,12 @@ def _validate_can_commit_act_links(session: Session, plan: ActLinkPlan) -> None:
             sum(planned_bill.is_passed for planned_bill in plan.bills),
         ),
         "bill reports": (
-            CRUDBillReport(session).get_count(),
+            CRUDBillReport(session).get_count_by_role(BillReportRole.READING),
             sum(len(planned_bill.report_ids) for planned_bill in plan.bills),
+        ),
+        "budget report links": (
+            CRUDBillReport(session).get_count_by_role(BillReportRole.BUDGET_DEBATE),
+            len(plan.budget_report_links),
         ),
         "bills with a bill number": (
             CRUDBill(session).get_count_by_bill_number_not_null(),

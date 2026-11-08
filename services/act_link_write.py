@@ -7,7 +7,7 @@ from crud.act_history_entry import ActHistoryEntryRow
 from crud.bill import BillRow
 from crud.bill_report import BillReportRow
 from crud.egazette_supplement import EgazetteSupplementRow
-from enums import BillLinkSource
+from enums import BillLinkSource, BillReportRole
 from schemas.act_link_plan import ActLinkPlan, PlannedAct, PlannedActHistoryEntry
 from utils.act_link_update import ActUpdate, BillUpdate
 from utils.egazette_supplement_update import EgazetteLinkUpdate
@@ -28,6 +28,12 @@ class EntryUpdate:
 
 
 @dataclass(frozen=True)
+class BudgetReportInsert:
+    bill_index: int
+    report_id: int
+
+
+@dataclass(frozen=True)
 class ActLinkWrite:
     kept_bill_index_to_id: dict[int, int]
     bill_indexes_to_insert: list[int]
@@ -41,6 +47,8 @@ class ActLinkWrite:
     entry_updates: list[EntryUpdate]
     entry_ids_to_delete: list[int]
     egazette_link_updates: list[EgazetteLinkUpdate]
+    budget_report_inserts: list[BudgetReportInsert]
+    budget_report_ids_to_delete: list[int]
 
 
 def _is_entry_equal_to_plan(
@@ -73,6 +81,8 @@ def build_act_link_write(
 ) -> ActLinkWrite:
     bill_id_to_report_ids: dict[int, list[int]] = defaultdict(list)
     for stored_bill_report in stored_bill_reports:
+        if stored_bill_report.role != BillReportRole.READING:
+            continue
         bill_id_to_report_ids[stored_bill_report.bill_id].append(
             stored_bill_report.report_id
         )
@@ -127,6 +137,34 @@ def build_act_link_write(
         stored_bill.id
         for stored_bill in stored_bills
         if stored_bill.id not in kept_bill_ids
+    ]
+
+    stored_budget_pair_to_id = {
+        (
+            stored_bill_report.bill_id,
+            stored_bill_report.report_id,
+        ): stored_bill_report.id
+        for stored_bill_report in stored_bill_reports
+        if stored_bill_report.role == BillReportRole.BUDGET_DEBATE
+    }
+    planned_budget_pairs: set[tuple[int, int]] = set()
+    budget_report_inserts: list[BudgetReportInsert] = []
+    for budget_report_link in plan.budget_report_links:
+        budget_bill_id = kept_bill_index_to_id.get(budget_report_link.bill_index)
+        if budget_bill_id is not None:
+            budget_pair = (budget_bill_id, budget_report_link.report_id)
+            planned_budget_pairs.add(budget_pair)
+            if budget_pair in stored_budget_pair_to_id:
+                continue
+        budget_report_inserts.append(
+            BudgetReportInsert(
+                budget_report_link.bill_index, budget_report_link.report_id
+            )
+        )
+    budget_report_ids_to_delete = [
+        stored_budget_report_id
+        for budget_pair, stored_budget_report_id in stored_budget_pair_to_id.items()
+        if budget_pair not in planned_budget_pairs and budget_pair[0] in kept_bill_ids
     ]
 
     sso_code_to_stored_act = {
@@ -241,6 +279,8 @@ def build_act_link_write(
         entry_updates=entry_updates,
         entry_ids_to_delete=entry_ids_to_delete,
         egazette_link_updates=egazette_link_updates,
+        budget_report_inserts=budget_report_inserts,
+        budget_report_ids_to_delete=budget_report_ids_to_delete,
     )
 
 
@@ -269,4 +309,9 @@ def get_first_difference(act_link_write: ActLinkWrite) -> Optional[str]:
         )
     if act_link_write.egazette_link_updates:
         return f"Stored eGazette supplement {act_link_write.egazette_link_updates[0].id} links to a bill the plan does not"
+    if act_link_write.budget_report_inserts:
+        budget_report_insert = act_link_write.budget_report_inserts[0]
+        return f"Planned budget report {budget_report_insert.report_id} link to bill {budget_report_insert.bill_index} is not stored"
+    if act_link_write.budget_report_ids_to_delete:
+        return f"Stored budget report link {act_link_write.budget_report_ids_to_delete[0]} is not in the plan"
     return None

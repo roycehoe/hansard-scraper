@@ -20,8 +20,10 @@ from crud.repealed_act_entry import CRUDRepealedActEntry
 from database.init import build_read_only_engine
 from enums import (
     ActHistoryEntryKind,
+    BillClass,
     BillEra,
     BillNumberSource,
+    BillReportRole,
     BillReviewItemKind,
     EgazetteSupplementKind,
 )
@@ -30,6 +32,7 @@ from populate.act_links import (
     BillGroupingContext,
     build_bill_lookups_from_context,
     get_bill_grouping_context,
+    get_budget_report_bill_indexes,
 )
 from schemas.bill_review_list import BillEraDoneTests, BillReviewItem, BillReviewList
 from schemas.bill_title_correction import BillTitleCorrection
@@ -61,6 +64,7 @@ _FIRST_COMPLETE_SUPPLEMENT_YEAR = 1966
 _MIN_TITLE_SIMILARITY = 0.85
 _MAX_DAYS_FROM_READING = 1
 _THE_KEY_PREFIX = "the"
+_MAX_DAYS_TO_NEAREST_SUPPLY_BILL = 120
 _READ_ISOLATION_LEVEL = "REPEATABLE READ"
 
 
@@ -84,6 +88,7 @@ class _ReviewInputs:
     act_history_entry_rows: list[ActHistoryEntryRow]
     stored_bill_rows: list[BillRow]
     stored_bill_id_to_bill_index: dict[int, int]
+    stored_budget_report_ids: frozenset[int]
     hand_kept_bills: list[HandKeptBill]
 
 
@@ -614,6 +619,80 @@ def _build_unplaced_act_number_items(inputs: _ReviewInputs) -> list[BillReviewIt
     ]
 
 
+@dataclass(frozen=True)
+class _NearestSupplyBill:
+    review_bill: _ReviewBill
+    day_gap: int
+
+
+def _get_nearest_supply_bill(
+    sitting_date: date, review_bills: list[_ReviewBill]
+) -> Optional[_NearestSupplyBill]:
+    near_supply_bills = [
+        _NearestSupplyBill(
+            review_bill,
+            min(
+                abs((sitting_date - report_date).days)
+                for report_date in review_bill.report_dates
+            ),
+        )
+        for review_bill in review_bills
+        if review_bill.bill_group.bill_class == BillClass.SUPPLY
+    ]
+    near_supply_bills = [
+        near_supply_bill
+        for near_supply_bill in near_supply_bills
+        if near_supply_bill.day_gap <= _MAX_DAYS_TO_NEAREST_SUPPLY_BILL
+    ]
+    if not near_supply_bills:
+        return None
+    return min(near_supply_bills, key=lambda near_supply_bill: near_supply_bill.day_gap)
+
+
+def _build_budget_report_items(inputs: _ReviewInputs) -> list[BillReviewItem]:
+    items: list[BillReviewItem] = []
+    report_id_to_bill_indexes = get_budget_report_bill_indexes(inputs.context)
+    for report_row in inputs.context.budget_report_rows:
+        bill_indexes = report_id_to_bill_indexes[report_row.id]
+        era = get_bill_era(report_row.sitting_date.year)
+        if len(bill_indexes) > 1:
+            items.append(
+                BillReviewItem(
+                    kind=BillReviewItemKind.BUDGET_REPORT_WITH_TWO_SUPPLY_BILLS,
+                    era=era,
+                    bill_number=None,
+                    printed_title=report_row.title,
+                    bill_title=None,
+                    report_ids=[report_row.id],
+                    detail=f"Debated {report_row.sitting_date.date()}; supply bills in its window: "
+                    + "; ".join(
+                        f"{inputs.review_bills[bill_index].bill_group.title} (first debated {inputs.review_bills[bill_index].bill_group.first_sitting_date.date()})"
+                        for bill_index in bill_indexes
+                    ),
+                )
+            )
+            continue
+        if bill_indexes:
+            continue
+        nearest = _get_nearest_supply_bill(
+            report_row.sitting_date.date(), inputs.review_bills
+        )
+        if nearest is None:
+            continue
+        items.append(
+            BillReviewItem(
+                kind=BillReviewItemKind.BUDGET_REPORT_WITHOUT_SUPPLY_BILL,
+                era=era,
+                bill_number=None,
+                printed_title=report_row.title,
+                bill_title=None,
+                report_ids=[report_row.id],
+                detail=f"Debated {report_row.sitting_date.date()}; the nearest supply bill is {nearest.review_bill.bill_group.title}, {nearest.day_gap} days from one of its reports",
+            )
+        )
+    return items
+
+
 def _build_items(inputs: _ReviewInputs) -> list[BillReviewItem]:
     numbered_bills = {
         review_bill.bill_group.bill_number: review_bill
@@ -636,6 +715,7 @@ def _build_items(inputs: _ReviewInputs) -> list[BillReviewItem]:
         + _build_two_act_number_items(inputs)
         + _build_unplaced_act_number_items(inputs)
         + _build_two_repealed_act_items(inputs)
+        + _build_budget_report_items(inputs)
     )
 
 
@@ -711,6 +791,11 @@ def _build_done_tests(
             for review_bill in passed_bills
             if review_bill.bill_group.bill_class is None
         ]
+        era_budget_report_rows = [
+            report_row
+            for report_row in inputs.context.budget_report_rows
+            if get_bill_era(report_row.sitting_date.year) == era
+        ]
         done_tests.append(
             BillEraDoneTests(
                 era=era,
@@ -744,6 +829,11 @@ def _build_done_tests(
                     and review_bill.bill_group.bill_class is None
                     for review_bill in passed_bills
                 ),
+                budget_report_count=len(era_budget_report_rows),
+                budget_report_linked_count=sum(
+                    report_row.id in inputs.stored_budget_report_ids
+                    for report_row in era_budget_report_rows
+                ),
                 review_item_count=sum(item.era == era for item in items),
             )
         )
@@ -764,7 +854,11 @@ def get_bill_review_list(
         for review_bill in review_bills
     }
     stored_bill_id_to_report_ids: dict[int, set[int]] = defaultdict(set)
+    stored_budget_report_ids: set[int] = set()
     for bill_report_row in CRUDBillReport(session).get_rows():
+        if bill_report_row.role == BillReportRole.BUDGET_DEBATE:
+            stored_budget_report_ids.add(bill_report_row.report_id)
+            continue
         stored_bill_id_to_report_ids[bill_report_row.bill_id].add(
             bill_report_row.report_id
         )
@@ -806,6 +900,7 @@ def get_bill_review_list(
         CRUDActHistoryEntry(session).get_rows(),
         CRUDBill(session).get_rows(),
         stored_bill_id_to_bill_index,
+        frozenset(stored_budget_report_ids),
         hand_kept_bills,
     )
     items = _build_items(inputs)
@@ -858,6 +953,9 @@ def get_summary_lines(review_list: BillReviewList) -> list[str]:
         )
         lines.append(
             f"{era_label}, test 4 review items: {done_tests.review_item_count:,}"
+        )
+        lines.append(
+            f"{era_label}, test 5 budget debates attached: {_format_share(done_tests.budget_report_linked_count, done_tests.budget_report_count)} budget reports attach to a Supply Bill"
         )
     return lines
 

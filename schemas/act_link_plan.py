@@ -87,6 +87,13 @@ class PlannedEgazetteLink(BaseModel):
     bill_index: int
 
 
+class PlannedBudgetReportLink(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    report_id: int
+    bill_index: int
+
+
 class ActLinkPlan(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -94,6 +101,8 @@ class ActLinkPlan(BaseModel):
     split_merges: list[PlannedSplitMerge]
     skipped_reports: list[SkippedReport]
     egazette_links: list[PlannedEgazetteLink]
+    budget_report_links: list[PlannedBudgetReportLink]
+    budget_report_count: int
     acts: list[PlannedAct]
     unfetched_sso_codes: list[str]
     unparsed_entries: list[UnparsedEntry]

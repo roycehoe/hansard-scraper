@@ -14,6 +14,7 @@ from enums import (
     ActNumberSource,
     BillEra,
     BillLinkSource,
+    BillReportRole,
     BillReviewItemKind,
     EgazetteSupplementKind,
     RepealedActUrlSource,
@@ -230,6 +231,8 @@ def test_the_supplement_items_and_the_done_tests(scratch_session: Session) -> No
         unclassed_outcome_resolved_bill_count=0,
         repealed_act_linked_bill_count=0,
         repealed_act_only_resolved_bill_count=0,
+        budget_report_count=0,
+        budget_report_linked_count=0,
         review_item_count=5,
     )
     assert (
@@ -260,7 +263,11 @@ def test_the_egazette_rows_count_in_the_done_tests(scratch_session: Session) -> 
     scratch_session.flush()
     assert stored_bill.id is not None
     scratch_session.add_all(
-        BillReport(bill_id=stored_bill.id, report_id=report_id)
+        BillReport(
+            bill_id=stored_bill.id,
+            report_id=report_id,
+            role=BillReportRole.READING,
+        )
         for report_id in alpha_report_ids
     )
     scratch_session.add_all(
@@ -315,6 +322,8 @@ def test_the_egazette_rows_count_in_the_done_tests(scratch_session: Session) -> 
         unclassed_outcome_resolved_bill_count=1,
         repealed_act_linked_bill_count=0,
         repealed_act_only_resolved_bill_count=0,
+        budget_report_count=0,
+        budget_report_linked_count=0,
         review_item_count=0,
     )
 
@@ -359,7 +368,11 @@ def test_the_history_items_compare_the_stored_link_with_the_number_rule(
     assert stored_bill.id is not None
     assert act.id is not None
     scratch_session.add_all(
-        BillReport(bill_id=stored_bill.id, report_id=report_id)
+        BillReport(
+            bill_id=stored_bill.id,
+            report_id=report_id,
+            role=BillReportRole.READING,
+        )
         for report_id in alpha_report_ids
     )
     scratch_session.add_all(
@@ -412,6 +425,8 @@ def test_the_history_items_compare_the_stored_link_with_the_number_rule(
         unclassed_outcome_resolved_bill_count=1,
         repealed_act_linked_bill_count=0,
         repealed_act_only_resolved_bill_count=0,
+        budget_report_count=0,
+        budget_report_linked_count=0,
         review_item_count=2,
     )
 
@@ -456,7 +471,11 @@ def test_the_acts_supplement_items_and_the_act_number_in_test_3(
     scratch_session.flush()
     assert stored_bill.id is not None
     scratch_session.add_all(
-        BillReport(bill_id=stored_bill.id, report_id=report_id)
+        BillReport(
+            bill_id=stored_bill.id,
+            report_id=report_id,
+            role=BillReportRole.READING,
+        )
         for report_id in alpha_report_ids
     )
     scratch_session.commit()
@@ -506,6 +525,8 @@ def test_the_acts_supplement_items_and_the_act_number_in_test_3(
         unclassed_outcome_resolved_bill_count=1,
         repealed_act_linked_bill_count=0,
         repealed_act_only_resolved_bill_count=0,
+        budget_report_count=0,
+        budget_report_linked_count=0,
         review_item_count=7,
     )
     assert (
@@ -579,7 +600,11 @@ def test_the_two_repealed_acts_item_and_the_repealed_act_counts_in_test_3(
     scratch_session.flush()
     assert stored_bill.id is not None
     scratch_session.add_all(
-        BillReport(bill_id=stored_bill.id, report_id=report_id)
+        BillReport(
+            bill_id=stored_bill.id,
+            report_id=report_id,
+            role=BillReportRole.READING,
+        )
         for report_id in alpha_report_ids
     )
     scratch_session.commit()
@@ -604,5 +629,126 @@ def test_the_two_repealed_acts_item_and_the_repealed_act_counts_in_test_3(
     assert done_tests.outcome_resolved_bill_count == 1
     assert (
         "1961 to 2005, test 3 outcome resolved: 1 of 2 (50.0%) passed bills link to an Act or an Act number or carry a class; 1 of 2 (50.0%) passed bills of no class link to an Act or an Act number; 1 passed bills link to a repealed Act's page, 1 of them resolved by that link alone"
+        in get_summary_lines(review_list)
+    )
+
+
+def test_a_budget_report_with_two_supply_bills_makes_one_item(
+    scratch_session: Session,
+) -> None:
+    _seed_bill(
+        scratch_session,
+        "supply",
+        "Supply Bill",
+        datetime(2025, 3, 1),
+        datetime(2025, 3, 20),
+    )
+    _seed_bill(
+        scratch_session,
+        "supply-fy",
+        "Supply FY2025 Bill",
+        datetime(2025, 3, 5),
+        datetime(2025, 3, 25),
+    )
+    budget_report_id = seed_bill_report(
+        scratch_session,
+        "budget",
+        ReportType.BUDGET,
+        datetime(2025, 3, 10),
+        "BUDGET, Head B",
+        ["Sir, I beg to move."],
+    )
+
+    review_list = get_bill_review_list(scratch_session, [], [])
+
+    (item,) = [
+        item
+        for item in review_list.items
+        if item.kind == BillReviewItemKind.BUDGET_REPORT_WITH_TWO_SUPPLY_BILLS
+    ]
+    assert item.report_ids == [budget_report_id]
+    assert item.printed_title == "BUDGET, Head B"
+    assert item.era == BillEra.YEARS_2006_ON
+    assert "Supply Bill (first debated 2025-03-01)" in item.detail
+    assert "Supply FY2025 Bill (first debated 2025-03-05)" in item.detail
+
+
+def test_the_budget_items_and_the_budget_count_in_test_5(
+    scratch_session: Session,
+) -> None:
+    reading_report_ids = _seed_bill(
+        scratch_session,
+        "supply",
+        "Supply Bill",
+        datetime(2025, 3, 1),
+        datetime(2025, 3, 20),
+    )
+    linked_report_id = seed_bill_report(
+        scratch_session,
+        "budget-linked",
+        ReportType.BUDGET,
+        datetime(2025, 3, 10),
+        "BUDGET, Head B",
+        ["Sir, I beg to move."],
+    )
+    near_report_id = seed_bill_report(
+        scratch_session,
+        "budget-near",
+        ReportType.BUDGET,
+        datetime(2025, 7, 1),
+        "Estimates of Expenditure",
+        ["Sir, I beg to move."],
+    )
+    seed_bill_report(
+        scratch_session,
+        "budget-far",
+        ReportType.BUDGET,
+        datetime(2026, 6, 1),
+        "BUDGET, Head C",
+        ["Sir, I beg to move."],
+    )
+    stored_bill = Bill(
+        title="Supply Bill",
+        title_key="supplybill",
+        first_sitting_date=datetime(2025, 3, 1),
+        last_sitting_date=datetime(2025, 3, 20),
+        is_passed=True,
+    )
+    scratch_session.add(stored_bill)
+    scratch_session.flush()
+    assert stored_bill.id is not None
+    scratch_session.add_all(
+        BillReport(
+            bill_id=stored_bill.id,
+            report_id=report_id,
+            role=BillReportRole.READING,
+        )
+        for report_id in reading_report_ids
+    )
+    scratch_session.add(
+        BillReport(
+            bill_id=stored_bill.id,
+            report_id=linked_report_id,
+            role=BillReportRole.BUDGET_DEBATE,
+        )
+    )
+    scratch_session.commit()
+
+    review_list = get_bill_review_list(scratch_session, [], [])
+
+    (item,) = [
+        item
+        for item in review_list.items
+        if item.kind == BillReviewItemKind.BUDGET_REPORT_WITHOUT_SUPPLY_BILL
+    ]
+    assert item.report_ids == [near_report_id]
+    assert "Supply Bill" in item.detail
+    assert "103 days" in item.detail
+    assert (
+        review_list.done_tests[-1].budget_report_count,
+        review_list.done_tests[-1].budget_report_linked_count,
+    ) == (3, 1)
+    assert (
+        "2006 on, test 5 budget debates attached: 1 of 3 (33.3%) budget reports attach to a Supply Bill"
         in get_summary_lines(review_list)
     )

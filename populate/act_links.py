@@ -14,13 +14,14 @@ from crud.bill_report import CRUDBillReport
 from crud.bills_supplement_entry import CRUDBillsSupplementEntry
 from crud.egazette_supplement import CRUDEgazetteSupplement, EgazetteSupplementRow
 from crud.repealed_act_entry import CRUDRepealedActEntry
-from crud.report import CRUDReport
+from crud.report import CRUDReport, ReportSittingDateTitleRow
 from crud.speech import CRUDSpeech
 from database.act import Act, ActHistoryEntry
 from database.bill import Bill, BillReport
 from enums import (
     ActHistoryEntryKind,
     BillLinkSource,
+    BillReportRole,
     EgazetteSupplementKind,
     ReportType,
 )
@@ -30,6 +31,7 @@ from schemas.act_link_plan import (
     PlannedAct,
     PlannedActHistoryEntry,
     PlannedBill,
+    PlannedBudgetReportLink,
     PlannedEgazetteLink,
     PlannedSplitMerge,
     SkippedReport,
@@ -70,6 +72,9 @@ from services.bill import (
     build_egazette_bill_number_candidate,
     build_listing_bill_number_candidate,
     build_repealed_acts_listing_candidate,
+    build_supply_bill_windows,
+    get_single_supply_bill_index,
+    get_supply_bill_indexes_for_budget_report,
     group_bills,
     is_other_type_bill_reading,
     is_publication_date_misprinted,
@@ -78,6 +83,7 @@ from utils.act_link_update import ActHistoryEntryUpdate
 from utils.egazette_supplement_update import EgazetteLinkUpdate
 
 _BILL_REPORT_TYPES = (ReportType.BILL, ReportType.BILL_INTRODUCTION)
+_BUDGET_REPORT_TYPES = (ReportType.BUDGET,)
 _HARVEST_LISTING_FILE = "acts.json"
 
 
@@ -88,6 +94,7 @@ class BillGroupingContext:
     first_reading_report_ids: frozenset[int]
     third_reading_report_ids: frozenset[int]
     egazette_supplement_rows: list[EgazetteSupplementRow]
+    budget_report_rows: list[ReportSittingDateTitleRow]
 
 
 def _is_linkable_kind(kind: ActHistoryEntryKind) -> bool:
@@ -333,6 +340,11 @@ def get_bill_grouping_context(
         _build_act_number_candidates(session),
         _build_repealed_act_candidates(session),
     )
+    grouped_report_ids = {
+        report_id
+        for bill_group in bill_grouping.bill_groups
+        for report_id in bill_group.report_ids
+    }
     return BillGroupingContext(
         bill_grouping,
         {
@@ -342,6 +354,13 @@ def get_bill_grouping_context(
         first_reading_report_ids,
         third_reading_report_ids,
         egazette_supplement_rows,
+        [
+            report_row
+            for report_row in CRUDReport(
+                session
+            ).get_sitting_date_title_rows_by_report_types(_BUDGET_REPORT_TYPES)
+            if report_row.id not in grouped_report_ids
+        ],
     )
 
 
@@ -409,6 +428,32 @@ def _build_egazette_links(
             PlannedEgazetteLink(url=egazette_supplement_row.url, bill_index=bill_index)
         )
     return egazette_links
+
+
+def get_budget_report_bill_indexes(
+    context: BillGroupingContext,
+) -> dict[int, list[int]]:
+    supply_bill_windows = build_supply_bill_windows(context.bill_grouping.bill_groups)
+    return {
+        report_row.id: get_supply_bill_indexes_for_budget_report(
+            report_row.title, report_row.sitting_date, supply_bill_windows
+        )
+        for report_row in context.budget_report_rows
+    }
+
+
+def _build_budget_report_links(
+    context: BillGroupingContext,
+) -> list[PlannedBudgetReportLink]:
+    budget_report_links: list[PlannedBudgetReportLink] = []
+    for report_id, bill_indexes in get_budget_report_bill_indexes(context).items():
+        bill_index = get_single_supply_bill_index(bill_indexes)
+        if bill_index is None:
+            continue
+        budget_report_links.append(
+            PlannedBudgetReportLink(report_id=report_id, bill_index=bill_index)
+        )
+    return budget_report_links
 
 
 def get_act_link_plan(
@@ -487,6 +532,8 @@ def get_act_link_plan(
             for report_row in bill_grouping.skipped_report_rows
         ],
         egazette_links=_build_egazette_links(context, bill_lookups),
+        budget_report_links=_build_budget_report_links(context),
+        budget_report_count=len(context.budget_report_rows),
         acts=acts,
         unfetched_sso_codes=unfetched_sso_codes,
         unparsed_entries=unparsed_entries,
@@ -535,7 +582,11 @@ def write_act_link_plan(
     CRUDBill(session).add_many(new_bills)
     CRUDBillReport(session).add_many(
         [
-            BillReport(bill_id=new_bill.id, report_id=report_id)
+            BillReport(
+                bill_id=new_bill.id,
+                report_id=report_id,
+                role=BillReportRole.READING,
+            )
             for new_bill, bill_index in zip(
                 new_bills, act_link_write.bill_indexes_to_insert, strict=True
             )
@@ -550,6 +601,17 @@ def write_act_link_plan(
     ):
         if new_bill.id is not None:
             bill_index_to_id[bill_index] = new_bill.id
+
+    CRUDBillReport(session).add_many(
+        [
+            BillReport(
+                bill_id=bill_index_to_id[budget_report_insert.bill_index],
+                report_id=budget_report_insert.report_id,
+                role=BillReportRole.BUDGET_DEBATE,
+            )
+            for budget_report_insert in act_link_write.budget_report_inserts
+        ]
+    )
 
     new_acts = [
         Act(sso_code=planned_act.sso_code, title=planned_act.title)
@@ -631,5 +693,6 @@ def write_act_link_plan(
 
     CRUDActHistoryEntry(session).delete_by_ids(act_link_write.entry_ids_to_delete)
     CRUDAct(session).delete_by_ids(act_link_write.act_ids_to_delete)
+    CRUDBillReport(session).delete_by_ids(act_link_write.budget_report_ids_to_delete)
     CRUDBillReport(session).delete_by_bill_ids(act_link_write.bill_ids_to_delete)
     CRUDBill(session).delete_by_ids(act_link_write.bill_ids_to_delete)

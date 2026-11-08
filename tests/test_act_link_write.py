@@ -11,6 +11,7 @@ from enums import (
     ActHistoryEntryKind,
     ActNumberSource,
     BillLinkSource,
+    BillReportRole,
     RepealedActUrlSource,
     ReportType,
 )
@@ -20,6 +21,7 @@ from schemas.act_link_plan import (
     PlannedAct,
     PlannedActHistoryEntry,
     PlannedBill,
+    PlannedBudgetReportLink,
 )
 from services.act_link_write import build_act_link_write, get_first_difference
 from tests.bill_seed import seed_bill_report
@@ -42,6 +44,14 @@ def _bill(title_key: str, report_ids: list[int], is_passed: bool = True) -> Plan
         act_number_source=None,
         repealed_act_url=None,
         repealed_act_url_source=None,
+    )
+
+
+def _budget_plan(
+    bills: list[PlannedBill], budget_report_links: list[PlannedBudgetReportLink]
+) -> ActLinkPlan:
+    return _plan(bills, []).model_copy(
+        update={"budget_report_links": budget_report_links}
     )
 
 
@@ -72,6 +82,8 @@ def _plan(bills: list[PlannedBill], acts: list[PlannedAct]) -> ActLinkPlan:
         split_merges=[],
         skipped_reports=[],
         egazette_links=[],
+        budget_report_links=[],
+        budget_report_count=0,
         acts=acts,
         unfetched_sso_codes=[],
         unparsed_entries=[],
@@ -151,9 +163,12 @@ def test_two_bills_merging_move_their_entries_to_the_merged_bill(
     bill_rows = CRUDBill(scratch_session).get_rows()
     assert [bill_row.title_key for bill_row in bill_rows] == ["c", "ab"]
     assert bill_rows[0].id == third_bill_id
-    assert CRUDBillReport(scratch_session).get_rows()[0] == BillReportRow(
-        third_bill_id, third
-    )
+    (stored_bill_report_row,) = [
+        bill_report_row
+        for bill_report_row in CRUDBillReport(scratch_session).get_rows()
+        if bill_report_row.bill_id == third_bill_id
+    ]
+    assert stored_bill_report_row.report_id == third
     entry_rows = CRUDActHistoryEntry(scratch_session).get_rows()
     assert [row.id for row in entry_rows] == entry_ids
     assert entry_rows[0].bill_id == entry_rows[1].bill_id == bill_rows[1].id
@@ -306,7 +321,10 @@ def test_diff_keeps_updates_inserts_and_deletes_apart() -> None:
 
     act_link_write = build_act_link_write(
         [_stored_bill(10), _stored_bill(11, "gone")],
-        [BillReportRow(10, 1), BillReportRow(11, 2)],
+        [
+            BillReportRow(1, 10, 1, BillReportRole.READING),
+            BillReportRow(2, 11, 2, BillReportRole.READING),
+        ],
         [ActRow(5, "X", "X"), ActRow(6, "Z", "Z")],
         [
             _stored_entry(100, 5, 1, 10),
@@ -343,7 +361,7 @@ def test_diff_updates_an_entry_whose_bill_is_new() -> None:
 
     act_link_write = build_act_link_write(
         [_stored_bill(10)],
-        [BillReportRow(10, 1)],
+        [BillReportRow(1, 10, 1, BillReportRole.READING)],
         [ActRow(5, "X", "X")],
         [_stored_entry(100, 5, 1, 10)],
         [],
@@ -365,7 +383,7 @@ def test_diff_updates_a_bill_whose_act_number_changes() -> None:
 
     act_link_write = build_act_link_write(
         [_stored_bill(10)],
-        [BillReportRow(10, 1)],
+        [BillReportRow(1, 10, 1, BillReportRole.READING)],
         [],
         [],
         [],
@@ -391,7 +409,7 @@ def test_diff_updates_a_bill_whose_repealed_act_url_changes() -> None:
 
     act_link_write = build_act_link_write(
         [_stored_bill(10)],
-        [BillReportRow(10, 1)],
+        [BillReportRow(1, 10, 1, BillReportRole.READING)],
         [],
         [],
         [],
@@ -415,3 +433,116 @@ def test_diff_updates_a_bill_whose_repealed_act_url_changes() -> None:
     assert get_first_difference(act_link_write) == (
         "Stored bill 10 differs from the plan"
     )
+
+
+def test_a_new_budget_link_is_inserted_with_the_budget_debate_role(
+    scratch_session: Session,
+) -> None:
+    reading, budget = _seed_report_ids(scratch_session, 2)
+    bills = [_bill("supplybill", [reading])]
+    _write(scratch_session, _budget_plan(bills, []))
+    bill_id = CRUDBill(scratch_session).get_rows()[0].id
+    plan = _budget_plan(
+        bills, [PlannedBudgetReportLink(report_id=budget, bill_index=0)]
+    )
+
+    act_link_write = get_act_link_write(scratch_session, plan)
+
+    assert [
+        (insert.bill_index, insert.report_id)
+        for insert in act_link_write.budget_report_inserts
+    ] == [(0, budget)]
+    assert get_first_difference(act_link_write) == (
+        f"Planned budget report {budget} link to bill 0 is not stored"
+    )
+    _write(scratch_session, plan)
+    assert [
+        (row.bill_id, row.report_id, row.role)
+        for row in CRUDBillReport(scratch_session).get_rows()
+    ] == [
+        (bill_id, reading, BillReportRole.READING),
+        (bill_id, budget, BillReportRole.BUDGET_DEBATE),
+    ]
+    assert get_first_difference(get_act_link_write(scratch_session, plan)) is None
+
+
+def test_a_stored_budget_link_the_plan_lacks_is_deleted(
+    scratch_session: Session,
+) -> None:
+    reading, budget = _seed_report_ids(scratch_session, 2)
+    bills = [_bill("supplybill", [reading])]
+    _write(
+        scratch_session,
+        _budget_plan(bills, [PlannedBudgetReportLink(report_id=budget, bill_index=0)]),
+    )
+    empty_plan = _budget_plan(bills, [])
+
+    act_link_write = get_act_link_write(scratch_session, empty_plan)
+
+    assert len(act_link_write.budget_report_ids_to_delete) == 1
+    assert get_first_difference(act_link_write) is not None
+    _write(scratch_session, empty_plan)
+    assert [row.role for row in CRUDBillReport(scratch_session).get_rows()] == [
+        BillReportRole.READING
+    ]
+
+
+def test_a_kept_reading_set_keeps_its_bill_id_when_a_budget_row_is_added(
+    scratch_session: Session,
+) -> None:
+    reading, budget = _seed_report_ids(scratch_session, 2)
+    bills = [_bill("supplybill", [reading])]
+    _write(scratch_session, _budget_plan(bills, []))
+    bill_id_before = CRUDBill(scratch_session).get_rows()[0].id
+    plan = _budget_plan(
+        bills, [PlannedBudgetReportLink(report_id=budget, bill_index=0)]
+    )
+    _write(scratch_session, plan)
+
+    act_link_write = get_act_link_write(scratch_session, plan)
+
+    assert act_link_write.kept_bill_index_to_id == {0: bill_id_before}
+    assert act_link_write.bill_indexes_to_insert == []
+    assert [row.id for row in CRUDBill(scratch_session).get_rows()] == [bill_id_before]
+
+
+def test_the_first_difference_names_a_missing_budget_row() -> None:
+    plan = _budget_plan(
+        [_bill("a", [1])], [PlannedBudgetReportLink(report_id=7, bill_index=0)]
+    )
+
+    act_link_write = build_act_link_write(
+        [_stored_bill(10)],
+        [BillReportRow(1, 10, 1, BillReportRole.READING)],
+        [],
+        [],
+        [],
+        plan,
+    )
+
+    assert get_first_difference(act_link_write) == (
+        "Planned budget report 7 link to bill 0 is not stored"
+    )
+
+
+def test_a_stored_budget_row_does_not_change_the_bill_identity() -> None:
+    plan = _budget_plan(
+        [_bill("a", [1])], [PlannedBudgetReportLink(report_id=7, bill_index=0)]
+    )
+
+    act_link_write = build_act_link_write(
+        [_stored_bill(10)],
+        [
+            BillReportRow(1, 10, 1, BillReportRole.READING),
+            BillReportRow(2, 10, 7, BillReportRole.BUDGET_DEBATE),
+        ],
+        [],
+        [],
+        [],
+        plan,
+    )
+
+    assert act_link_write.kept_bill_index_to_id == {0: 10}
+    assert act_link_write.budget_report_inserts == []
+    assert act_link_write.budget_report_ids_to_delete == []
+    assert get_first_difference(act_link_write) is None
