@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlmodel import SQLModel
 
 import database.act  # noqa: F401
+import database.acts_supplement  # noqa: F401
 import database.attendance  # noqa: F401
 import database.bill  # noqa: F401
 import database.bills_supplement  # noqa: F401

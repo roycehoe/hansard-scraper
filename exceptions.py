@@ -70,6 +70,10 @@ class HansardSsoListingError(HansardError):
     pass
 
 
+class HansardActsSupplementError(HansardError):
+    pass
+
+
 class HansardBillsSupplementError(HansardError):
     pass
 
