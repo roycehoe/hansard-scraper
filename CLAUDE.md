@@ -234,7 +234,7 @@ hansard-scraper/
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
 ├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, PersonNameSpellingKind, ReportAskerSource, ParticipantRole, ParticipantRoleSource, OfficeClass, OfficeSource, QuestionState, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus, HandCheckSpeakerVerdict, HandCheckDifferenceClass, HandCheckDifferenceKind, HandCheckErrorTier, HandCheckFlagReason, ActHistoryEntryKind, ActHistoryDefect, BillLinkSource, BillClass, BillNumberSource, EgazetteSupplementKind, BillEra, BillReviewItemKind
-├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshFailureError / HansardRefreshRunError / HansardTestGuardError / HansardHandCheckError / HansardHandKeptEntryError / HansardActHistoryError / HansardBillsSupplementError / HansardEgazetteSupplementError
+├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshFailureError / HansardRefreshRunError / HansardTestGuardError / HansardHandCheckError / HansardHandKeptEntryError / HansardActHistoryError / HansardSsoListingError / HansardBillsSupplementError / HansardEgazetteSupplementError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the refresh job (run as `sh refresh.sh`); the build imports `refresh`, so an import error fails it
 │
@@ -399,6 +399,7 @@ hansard-scraper/
 │   ├── speaker_resolution_constants.py  # Reference tables for stage 8 (role terms, office holders)
 │   ├── speaker_terms.py             # SPEAKER_TERMS: who presided as Speaker on which dates (stages 7 and 8)
 │   ├── speech_update.py             # SpeechUpdate: one speech row's ordinal, label, text, kind and link, for a bulk update
+│   ├── sso_listing.py               # parse_sso_listing: the rows of an SSO Browse listing page (Bills or Acts Supplement), as the page prints them
 │   ├── title_key.py                 # get_title_key, get_bill_title_key and get_loose_title_key: the keys that match a bill title to an Act or Supplement title
 │   ├── bill_number.py               # normalize_bill_number: a printed N/YY or N/YYYY bill number as N/YYYY
 │   ├── egazette_supplement_update.py  # EgazetteSupplementUpdate and EgazetteLinkUpdate: one eGazette row's changed fields or bill link, for a bulk update

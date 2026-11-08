@@ -66,6 +66,10 @@ class HansardHandKeptEntryError(HansardError):
     pass
 
 
+class HansardSsoListingError(HansardError):
+    pass
+
+
 class HansardBillsSupplementError(HansardError):
     pass
 

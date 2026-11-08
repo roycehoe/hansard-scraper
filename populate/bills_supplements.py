@@ -11,11 +11,8 @@ from schemas.bills_supplement_plan import (
     PlannedCapture,
     PlannedEntry,
 )
-from services.bills_supplement import (
-    build_planned_entry,
-    get_first_planned_entries,
-    parse_bills_supplement_listing,
-)
+from services.bills_supplement import build_planned_entry, get_first_planned_entries
+from utils.sso_listing import parse_sso_listing
 
 _MANIFEST_FILE_NAME = "captures.json"
 
@@ -27,7 +24,7 @@ def get_bills_supplement_plan(captures_directory: Path) -> BillsSupplementPlan:
     planned_captures: list[PlannedCapture] = []
     planned_entries: list[PlannedEntry] = []
     for manifest_entry in manifest.root:
-        listing_rows = parse_bills_supplement_listing(
+        listing_rows = parse_sso_listing(
             (captures_directory / manifest_entry.file_name).read_text()
         )
         planned_captures.append(
