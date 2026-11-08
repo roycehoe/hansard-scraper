@@ -9,6 +9,7 @@ from sqlmodel import SQLModel
 import database.act  # noqa: F401
 import database.attendance  # noqa: F401
 import database.bill  # noqa: F401
+import database.bills_supplement  # noqa: F401
 import database.hansard_sitting_date_response  # noqa: F401
 import database.hansard_website_response  # noqa: F401
 import database.party_affiliation  # noqa: F401
