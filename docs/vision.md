@@ -57,6 +57,8 @@ Open gaps, counted on production on 6 November 2026:
 - The bills have not been compared with Parliament's count of 781 for 2006 to 2026.
 - `scripts/remove_excluded_reports.py` can hit a foreign key error on a report that has a `billreport` row.
 
+The code for the 8 November rulings is on master and not yet run against production: bill numbers from the Bills Supplement listing (11 Archive captures, 2,394 entries) and from 177 eGazette Supplement PDFs of 2024 to 2026, the split-bill merges, the supply and repeal classes, the number check on Legislative History entries, the eGazette Acts links for the bills passed after 14 October 2024, and the review-list script that prints tests 1 to 4 by era. The commands, in order, are in [bill-linking-build-2026-11-08.md](report/bill-linking-build-2026-11-08.md); the counts above move when they run.
+
 ---
 
 ## Strategies
