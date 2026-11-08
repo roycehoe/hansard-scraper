@@ -7,7 +7,7 @@ from crud.act import ActRow
 from crud.act_history_entry import ActHistoryEntryRow, CRUDActHistoryEntry
 from crud.bill import BillRow, CRUDBill
 from crud.bill_report import BillReportRow, CRUDBillReport
-from enums import ActHistoryEntryKind, BillLinkSource, ReportType
+from enums import ActHistoryEntryKind, ActNumberSource, BillLinkSource, ReportType
 from populate.act_links import get_act_link_write, write_act_link_plan
 from schemas.act_link_plan import (
     ActLinkPlan,
@@ -343,3 +343,29 @@ def test_diff_updates_an_entry_whose_bill_is_new() -> None:
     assert [
         (update.id, update.is_bill_changed) for update in act_link_write.entry_updates
     ] == [(100, True)]
+
+
+def test_diff_updates_a_bill_whose_act_number_changes() -> None:
+    planned_bill = _bill("a", [1]).model_copy(
+        update={
+            "act_number": "7/2025",
+            "act_number_source": ActNumberSource.ACTS_SUPPLEMENT_LISTING,
+        }
+    )
+
+    act_link_write = build_act_link_write(
+        [_stored_bill(10)],
+        [BillReportRow(10, 1)],
+        [],
+        [],
+        [],
+        _plan([planned_bill], []),
+    )
+
+    assert [
+        (bill_update.id, bill_update.act_number, bill_update.act_number_source)
+        for bill_update in act_link_write.bill_updates
+    ] == [(10, "7/2025", ActNumberSource.ACTS_SUPPLEMENT_LISTING)]
+    assert get_first_difference(act_link_write) == (
+        "Stored bill 10 differs from the plan"
+    )
