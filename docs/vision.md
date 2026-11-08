@@ -33,7 +33,19 @@ Convert raw HTML records into clean, readable markdown that downstream consumers
 Track parsing success rates per report type across the full corpus so regressions surface before they accumulate and improvement work is measurable.
 
 ### 7. Bills linked to their debates
-Group every `bill` and `bill-intro` report by the bill it debates, so a reader can follow one bill from first reading through any select committee and the committee stage to third reading. Hansard prints no bill number, so the key is the bill's normalised title and the sitting date, with each bill closed at its third-reading line. Bills that no title rule can place go to a review queue. Royce adopted this on 4 November 2026 after the feasibility study ([bill-debate-linking-2026-11-04.md](report/bill-debate-linking-2026-11-04.md)), whose title and date rule reproduced the hand-built links for 72 of 72 sampled bills. It has no done test yet.
+Group every `bill` and `bill-intro` report by the bill it debates, so a reader can follow one bill from first reading through any select committee and the committee stage to third reading. Hansard prints no bill number, so the key is the bill's normalised title and the sitting date, with each bill closed at its third-reading line. Bills that no title rule can place go to a review queue. Royce adopted this on 4 November 2026 after the feasibility study ([bill-debate-linking-2026-11-04.md](report/bill-debate-linking-2026-11-04.md)), whose title and date rule reproduced the hand-built links for 72 of 72 sampled bills.
+
+The goal is to hold every bill and link each one to its debates. On 8 November 2026 Royce ruled that a bill is held when the project stores its bill number and a link to its text; storing the text itself can follow later, because the links are the hard part. He also adopted five done tests, each reported by era (1955 to 1960, 1961 to 2005, 2006 on) from [bill-linking-rules-2026-11-08.md](report/bill-linking-rules-2026-11-08.md):
+
+| Test | Measure | Target |
+|---|---|---|
+| 1. Bill completeness | From 1961, the bill numbers that have a `Bill` row, out of the highest number the Bills Supplement prints each year, so a missing number counts as a gap. 1955 to 1960 has no outside list, so Hansard is its only list and it is reported apart | 100% from 1961 |
+| 2. Debate completeness | Numbered bills whose group holds a first-reading report and, for a passed bill, a third-reading report | 100% |
+| 3. Outcome resolved | Passed bills linked to an Act, or classed as supply or repeal bills | 95% |
+| 4. Review list | Items the review-list script writes that no ruling has settled | 0 |
+| 5. Precision | A hand-check sample of bill numbers, groups and Act links, with a check run once on a known-bad input | Tier A under 1% |
+
+Tests 1 to 4 come from a script; test 5 runs before the objective is called met and again after each rule change.
 
 Production has held Act links since 5 November 2026, with 2,811 bills (2,682 passed), 5,827 bill reports, 523 Acts and 9,905 Legislative History entries, 5,107 of them linked to a bill. All 523 Acts come from Internet Archive copies of their SSO PDFs captured between July and December 2024, because SSO's firewall answered the live trial at 03:00 with empty 202 pages after 6 requests and the full SSO download never ran. Current law is linked out to SSO and the eGazette, not hosted. Bills before 1961 and Acts as passed before 1985 have no free original text online, and the project will link their debates without one.
 
