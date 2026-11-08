@@ -171,6 +171,8 @@ Expect in the review summary 1 `ACTS_SUPPLEMENT_BILL_WITH_TWO_ACT_NUMBERS`, abou
 
 ## Open questions, with recommendations
 
+Royce accepted the recommendation on questions 5 to 15 on 9 November 2026. Questions 5 and 6 remain one later change, and nothing is built yet for the rulings on questions 9, 13 and 15.
+
 1. Fetch the 12 recently repealed Acts' PDFs from the Archive (about 20 requests) to link up to about 28 bills? Recommendation: yes, as a later small job, after the review list shows how many of those bills are still unresolved.
 2. Retire the hand-kept bills and Act links that R3 and R2 reproduce? Recommendation: not yet; keep them until the production dry run prints the same report ids, then retire the 9 and keep Good Shepherd Nuns, the CLTPA (Amendment No. 2) report and CLTPA1955/7.
 3. The attribution lines above are drafted from the research notes, not the terms page. Recommendation: read clause 11 once and amend the wording before the site shows eGazette fields.
