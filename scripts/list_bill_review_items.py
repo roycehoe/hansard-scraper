@@ -955,7 +955,7 @@ def get_summary_lines(review_list: BillReviewList) -> list[str]:
             f"{era_label}, test 4 review items: {done_tests.review_item_count:,}"
         )
         lines.append(
-            f"{era_label}, test 5 budget debates attached: {_format_share(done_tests.budget_report_linked_count, done_tests.budget_report_count)} budget reports attach to a Supply Bill"
+            f"{era_label}, budget debates attached: {_format_share(done_tests.budget_report_linked_count, done_tests.budget_report_count)} budget reports attach to a Supply Bill"
         )
     return lines
 

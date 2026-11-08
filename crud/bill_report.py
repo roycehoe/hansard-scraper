@@ -22,10 +22,6 @@ class CRUDBillReport:
         self.session.add_all(bill_reports)
         self.session.flush()
 
-    def get_count(self) -> int:
-        statement = select(func.count()).select_from(BillReport)
-        return self.session.exec(statement).one()
-
     def get_count_by_role(self, role: BillReportRole) -> int:
         statement = (
             select(func.count()).select_from(BillReport).where(BillReport.role == role)

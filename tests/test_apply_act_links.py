@@ -69,7 +69,7 @@ def _get_stored_counts(session: Session) -> tuple[int, int, int, int, int]:
     session.expire_all()
     return (
         CRUDBill(session).get_count(),
-        CRUDBillReport(session).get_count(),
+        CRUDBillReport(session).get_count_by_role(BillReportRole.READING),
         CRUDAct(session).get_count(),
         CRUDActHistoryEntry(session).get_count(),
         CRUDActHistoryEntry(session).get_count_by_bill_id_not_null(),

@@ -749,6 +749,6 @@ def test_the_budget_items_and_the_budget_count_in_test_5(
         review_list.done_tests[-1].budget_report_linked_count,
     ) == (3, 1)
     assert (
-        "2006 on, test 5 budget debates attached: 1 of 3 (33.3%) budget reports attach to a Supply Bill"
+        "2006 on, budget debates attached: 1 of 3 (33.3%) budget reports attach to a Supply Bill"
         in get_summary_lines(review_list)
     )
