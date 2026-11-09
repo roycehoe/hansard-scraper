@@ -11,7 +11,6 @@ from crud.bill import BillRow, CRUDBill
 from crud.bill_key import CRUDBillKey
 from crud.bill_report import BillReportSittingDateReportTypeRow, CRUDBillReport
 from crud.report import CRUDReport, ReportPlacementRow
-from crud.speech import CRUDSpeech
 from database.init import build_read_only_engine
 from enums import (
     BillLeftOutReason,
@@ -20,6 +19,7 @@ from enums import (
     ReportType,
 )
 from logs import logger
+from populate.bill_speakers import get_matching_report_ids
 from services.bill import (
     BILL_TITLE_END_PATTERN,
     FIRST_READING_PATTERN,
@@ -63,21 +63,6 @@ class _StoredBills:
     bill_id_to_report_ids: dict[int, frozenset[int]]
 
 
-def _get_matching_report_ids(
-    session: Session,
-    report_ids: list[int],
-    pattern: str,
-    not_patterns: tuple[str, ...],
-) -> frozenset[int]:
-    return frozenset(
-        CRUDSpeech(
-            session
-        ).get_report_ids_by_report_ids_and_transcript_regex_and_transcript_not_regexes(
-            report_ids, pattern, not_patterns
-        )
-    )
-
-
 def _get_candidate_rows(session: Session) -> list[ReportPlacementRow]:
     bill_type_rows = CRUDReport(session).get_placement_rows_by_report_types(
         _BILL_REPORT_TYPES
@@ -88,13 +73,13 @@ def _get_candidate_rows(session: Session) -> list[ReportPlacementRow]:
         _BILL_REPORT_TYPES, BILL_TITLE_END_PATTERN
     )
     other_report_ids = [report_row.id for report_row in other_type_rows]
-    first_reading_report_ids = _get_matching_report_ids(
+    first_reading_report_ids = get_matching_report_ids(
         session, other_report_ids, FIRST_READING_PATTERN, NOT_FIRST_READING_PATTERNS
     )
-    second_reading_report_ids = _get_matching_report_ids(
+    second_reading_report_ids = get_matching_report_ids(
         session, other_report_ids, SECOND_READING_PATTERN, ()
     )
-    third_reading_report_ids = _get_matching_report_ids(
+    third_reading_report_ids = get_matching_report_ids(
         session, other_report_ids, THIRD_READING_PATTERN, NOT_THIRD_READING_PATTERNS
     )
     return sorted(
@@ -128,7 +113,7 @@ def _build_bill_rows_before_replay(
         ]
         if not kept_rows:
             continue
-        third_reading_report_ids = _get_matching_report_ids(
+        third_reading_report_ids = get_matching_report_ids(
             session,
             [kept_row.report_id for kept_row in kept_rows],
             THIRD_READING_PATTERN,
@@ -250,10 +235,10 @@ def get_bill_replay(session: Session, is_flip_start_new_bill: bool) -> BillRepla
     replayed_rows = _get_candidate_rows(session)[-_REPLAYED_REPORT_COUNT:]
     replayed_report_ids = [report_row.id for report_row in replayed_rows]
     replayed_report_id_set = frozenset(replayed_report_ids)
-    first_reading_report_ids = _get_matching_report_ids(
+    first_reading_report_ids = get_matching_report_ids(
         session, replayed_report_ids, FIRST_READING_PATTERN, NOT_FIRST_READING_PATTERNS
     )
-    third_reading_report_ids = _get_matching_report_ids(
+    third_reading_report_ids = get_matching_report_ids(
         session, replayed_report_ids, THIRD_READING_PATTERN, NOT_THIRD_READING_PATTERNS
     )
     stored_bill_rows = CRUDBill(session).get_rows_by_title_keys(

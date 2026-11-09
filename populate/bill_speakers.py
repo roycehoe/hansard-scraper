@@ -400,7 +400,7 @@ def write_report_bill_speaker_plan(
     _validate_can_commit_report_bill_speaker_plan(session, plan)
 
 
-def _get_matching_report_ids(
+def get_matching_report_ids(
     session: Session,
     report_ids: list[int],
     pattern: str,
@@ -421,7 +421,7 @@ def _get_bill_report_rows(
     first_reading_report_ids: frozenset[int],
     third_reading_report_ids: frozenset[int],
 ) -> list[ReportPlacementRow]:
-    second_reading_report_ids = _get_matching_report_ids(
+    second_reading_report_ids = get_matching_report_ids(
         session, report_ids, SECOND_READING_PATTERN, ()
     )
     return [
@@ -438,10 +438,10 @@ def _get_bill_report_rows(
 
 
 def _get_bill_placement(session: Session, report_ids: list[int]) -> BillPlacement:
-    first_reading_report_ids = _get_matching_report_ids(
+    first_reading_report_ids = get_matching_report_ids(
         session, report_ids, FIRST_READING_PATTERN, NOT_FIRST_READING_PATTERNS
     )
-    third_reading_report_ids = _get_matching_report_ids(
+    third_reading_report_ids = get_matching_report_ids(
         session, report_ids, THIRD_READING_PATTERN, NOT_THIRD_READING_PATTERNS
     )
     report_rows = _get_bill_report_rows(
