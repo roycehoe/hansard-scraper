@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
 from enums import DivisionCountSource, DivisionListStatus, UnreadDivisionReason
+from schemas.minutes_division_plan import PlannedDivisionVote
 
 
 class PlannedDivision(BaseModel):
@@ -23,6 +24,7 @@ class PlannedDivision(BaseModel):
     paired: Optional[int]
     list_status: DivisionListStatus
     printed_list: Optional[str]
+    votes: list[PlannedDivisionVote]
 
 
 class PlannedUnreadRow(BaseModel):

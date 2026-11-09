@@ -1,9 +1,11 @@
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, func, select
 
@@ -13,6 +15,7 @@ from database.division_vote import DivisionVote
 from database.minutes import Minutes
 from database.minutes_division import MinutesDivision
 from database.report import Report
+from database.speaker import Speaker
 from database.speech import Speech
 from enums import (
     DivisionCountSource,
@@ -24,6 +27,7 @@ from enums import (
     SpeechKind,
 )
 from exceptions import HansardWriteCheckError, HansardWriteTargetError
+from populate.divisions import get_division_plan, populate_divisions
 from schemas.division_plan import DivisionPlan
 from scripts.apply_divisions import apply_divisions
 from tests.division_seed import add_division_report, add_division_speech_rows
@@ -37,6 +41,7 @@ _FIRST_REPORT_ID = "report-one"
 _SECOND_REPORT_ID = "report-two"
 _SEEDED_DIVISION_COUNT = 3
 _DIVISION_TABLE_NAME = "division"
+_DIVISION_VOTE_TABLE_NAME = "division_vote"
 
 
 class _LogRecorder:
@@ -106,6 +111,8 @@ def test_dry_run_logs_the_plan_and_writes_the_plan_file_only(
     assert log_recorder.messages == [
         "Plan: 3 divisions in 2 reports, 0 unread rows",
         "Divisions by decade and source: 2010s PRINTED_LINE 2, 2010s SPOKEN_TOTAL 1",
+        "Divisions by decade and list status: 2010s LAYOUT_UNREADABLE 2, 2010s NOT_PRINTED 1",
+        "Hansard vote rows by choice and link: none",
         "Unread rows by reason: none",
         "Against stored: 0 kept, 0 updated, 3 added, 0 deleted",
         "Plan: 0 paired divisions at risk, 0 with the line gone",
@@ -196,7 +203,7 @@ def test_report_id_limits_the_plan_to_the_given_reports(
     }
 
 
-def test_commit_vacuums_the_division_table(
+def test_commit_vacuums_the_division_and_division_vote_tables(
     scratch_session: Session,
     log_recorder: _LogRecorder,
     monkeypatch: pytest.MonkeyPatch,
@@ -212,7 +219,9 @@ def test_commit_vacuums_the_division_table(
 
     apply_divisions([], plan_path, is_commit=True, is_detach_paired=False)
 
-    assert vacuum_recorder.table_names == [[_DIVISION_TABLE_NAME]]
+    assert vacuum_recorder.table_names == [
+        [_DIVISION_TABLE_NAME, _DIVISION_VOTE_TABLE_NAME]
+    ]
 
 
 _NOT_A_DIVISION_LINE = "The Bill was read a second time."
@@ -430,4 +439,215 @@ def test_the_dry_run_logs_the_paired_divisions_at_risk(
     assert (
         "Plan: 1 paired divisions at risk, 1 with the line gone"
         in log_recorder.messages
+    )
+
+
+_FIXTURE_DIRECTORY = Path(__file__).parent / "division_fixtures"
+_LIST_REPORT_ID = "report-list"
+_LIST_LINE = "The House divided: Ayes, 23; Noes, 20; Absent, 3; Paired, 4."
+_LIST_PARLIAMENT_NUMBER = 1
+_LIST_VOTE_ROW_COUNT = 50
+_LINKED_NAMES = ("Goh Keng Swee", "Chan Choy Siong", "Lim Yew Hock")
+_LATER_LINKED_NAME = "Toh Chin Chye"
+
+
+def _add_list_speakers(session: Session, names: tuple[str, ...]) -> None:
+    session.add_all(
+        Speaker(
+            name=name,
+            party="PAP",
+            is_legislative_assembly=False,
+            parliament_number=_LIST_PARLIAMENT_NUMBER,
+        )
+        for name in names
+    )
+    session.flush()
+
+
+def _seed_list_report(session: Session, fixture_name: str, line: str) -> Report:
+    report = add_division_report(
+        session,
+        _LIST_REPORT_ID,
+        datetime(1963, 6, 7),
+        parliament_number=_LIST_PARLIAMENT_NUMBER,
+    )
+    report.content = (_FIXTURE_DIRECTORY / fixture_name).read_text(encoding="utf-8")
+    add_division_speech_rows(session, report, [(SpeechKind.PROCEDURAL, None, line)])
+    session.commit()
+    return report
+
+
+def _get_hansard_votes(session: Session) -> list[DivisionVote]:
+    session.expire_all()
+    return list(
+        session.exec(
+            select(DivisionVote)
+            .where(DivisionVote.list_source == DivisionVoteListSource.HANSARD)
+            .order_by(DivisionVote.ordinal)
+        ).all()
+    )
+
+
+def _get_statement_effects(statement: str) -> tuple[str, str]:
+    verb = statement.split()[0].upper()
+    table_match = re.search(
+        r"\b(?:FROM|INTO|UPDATE)\s+\"?(\w+)\"?", statement, re.IGNORECASE
+    )
+    if table_match is None:
+        return verb, ""
+    return verb, table_match.group(1).lower()
+
+
+def test_the_plan_stores_hansard_vote_rows_with_list_status_stored(
+    scratch_session: Session,
+) -> None:
+    _add_list_speakers(scratch_session, _LINKED_NAMES)
+    report = _seed_list_report(scratch_session, "hansard_list_1963_06_07.html", _LIST_LINE)
+    assert report.id is not None
+
+    plan = get_division_plan(scratch_session, [report.id])
+
+    (planned_division,) = plan.divisions
+    assert planned_division.list_status == DivisionListStatus.STORED
+    assert planned_division.printed_list is not None
+    assert len(planned_division.votes) == _LIST_VOTE_ROW_COUNT
+    assert [vote.ordinal for vote in planned_division.votes] == list(
+        range(1, _LIST_VOTE_ROW_COUNT + 1)
+    )
+    assert planned_division.votes[0].printed_name == "Buang bin Omar Junid."
+    assert planned_division.votes[0].vote_choice == DivisionVoteChoice.AYE
+
+
+def test_a_linked_name_carries_its_party_and_name_rule_and_an_unlinked_name_carries_none(
+    scratch_session: Session,
+) -> None:
+    _add_list_speakers(scratch_session, _LINKED_NAMES)
+    report = _seed_list_report(scratch_session, "hansard_list_1963_06_07.html", _LIST_LINE)
+    assert report.id is not None
+
+    plan = get_division_plan(scratch_session, [report.id])
+
+    printed_name_to_vote = {vote.printed_name: vote for vote in plan.divisions[0].votes}
+    madam_vote = printed_name_to_vote["Chan Choy Siong. Madam"]
+    assert madam_vote.speaker_id is not None
+    assert madam_vote.name_rule is not None
+    assert madam_vote.party == "PAP"
+    assert madam_vote.is_party_uncertain is False
+    unlinked_vote = printed_name_to_vote["Chan Sun Wing."]
+    assert unlinked_vote.speaker_id is None
+    assert unlinked_vote.name_rule is None
+    assert unlinked_vote.party is None
+    assert unlinked_vote.is_party_uncertain is False
+    assert (
+        sum(vote.speaker_id is not None for vote in plan.divisions[0].votes)
+        == len(_LINKED_NAMES)
+    )
+
+
+def test_an_unreadable_list_stores_the_division_and_no_vote_rows(
+    scratch_session: Session, log_recorder: _LogRecorder, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(
+        apply_divisions_script, "vacuum_analyze_written_tables", _VacuumRecorder()
+    )
+    _seed_list_report(
+        scratch_session, "hansard_list_image.html", "The House divided: Ayes, 80; Noes, 0."
+    )
+    plan_path = tmp_path / "plan.json"
+    apply_divisions([], plan_path, is_commit=False, is_detach_paired=False)
+
+    apply_divisions([], plan_path, is_commit=True, is_detach_paired=False)
+
+    scratch_session.expire_all()
+    (division,) = scratch_session.exec(select(Division)).all()
+    assert division.list_status == DivisionListStatus.LAYOUT_UNREADABLE
+    assert _get_hansard_votes(scratch_session) == []
+
+
+def test_a_spoken_total_division_is_not_printed_and_reads_no_content(
+    scratch_session: Session,
+) -> None:
+    report = add_division_report(
+        scratch_session, _LIST_REPORT_ID, datetime(1963, 6, 7), parliament_number=1
+    )
+    report.content = (_FIXTURE_DIRECTORY / "hansard_list_1963_06_07.html").read_text(
+        encoding="utf-8"
+    )
+    add_division_speech_rows(
+        scratch_session, report, [(SpeechKind.SPEECH, None, _TOTAL_ONLY)]
+    )
+    scratch_session.commit()
+    assert report.id is not None
+
+    plan = get_division_plan(scratch_session, [report.id])
+
+    (planned_division,) = plan.divisions
+    assert planned_division.count_source == DivisionCountSource.SPOKEN_TOTAL
+    assert planned_division.list_status == DivisionListStatus.NOT_PRINTED
+    assert planned_division.printed_list is None
+    assert planned_division.votes == []
+
+
+def test_populate_divisions_inserts_vote_rows_and_emits_no_delete(
+    scratch_session: Session, scratch_engine: Engine
+) -> None:
+    _add_list_speakers(scratch_session, _LINKED_NAMES)
+    report = _seed_list_report(scratch_session, "hansard_list_1963_06_07.html", _LIST_LINE)
+    assert report.id is not None
+    statements: list[str] = []
+
+    def record_statement(
+        connection: object,
+        cursor: object,
+        statement: str,
+        parameters: object,
+        context: object,
+        is_many: bool,
+    ) -> None:
+        statements.append(statement)
+
+    event.listen(scratch_engine, "before_cursor_execute", record_statement)
+    try:
+        populate_divisions(scratch_session, [report.id])
+        scratch_session.commit()
+    finally:
+        event.remove(scratch_engine, "before_cursor_execute", record_statement)
+
+    effects = {_get_statement_effects(statement) for statement in statements}
+    assert ("INSERT", "division_vote") in effects
+    assert ("SELECT", "partyaffiliation") in effects
+    assert {verb for verb, _ in effects} <= {"SELECT", "INSERT"}
+    assert len(_get_hansard_votes(scratch_session)) == _LIST_VOTE_ROW_COUNT
+
+
+def test_a_rerun_keeps_the_division_id_and_replaces_the_hansard_vote_rows(
+    scratch_session: Session,
+    log_recorder: _LogRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        apply_divisions_script, "vacuum_analyze_written_tables", _VacuumRecorder()
+    )
+    _add_list_speakers(scratch_session, _LINKED_NAMES)
+    _seed_list_report(scratch_session, "hansard_list_1963_06_07.html", _LIST_LINE)
+    first_plan_path = tmp_path / "first-plan.json"
+    apply_divisions([], first_plan_path, is_commit=False, is_detach_paired=False)
+    apply_divisions([], first_plan_path, is_commit=True, is_detach_paired=False)
+    division_ids = _get_division_ids(scratch_session)
+    first_vote_ids = [vote.id for vote in _get_hansard_votes(scratch_session)]
+    _add_list_speakers(scratch_session, (_LATER_LINKED_NAME,))
+    scratch_session.commit()
+    second_plan_path = tmp_path / "second-plan.json"
+
+    apply_divisions([], second_plan_path, is_commit=False, is_detach_paired=False)
+    apply_divisions([], second_plan_path, is_commit=True, is_detach_paired=False)
+
+    assert _get_division_ids(scratch_session) == division_ids
+    second_votes = _get_hansard_votes(scratch_session)
+    assert len(second_votes) == _LIST_VOTE_ROW_COUNT
+    assert not set(first_vote_ids) & {vote.id for vote in second_votes}
+    assert (
+        sum(vote.speaker_id is not None for vote in second_votes)
+        == len(_LINKED_NAMES) + 1
     )

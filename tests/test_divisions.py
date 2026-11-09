@@ -71,9 +71,10 @@ def test_plan_reads_the_divisions_of_each_report(scratch_session: Session) -> No
         (_FIRST_REPORT_ID, 1, DivisionCountSource.PRINTED_LINE),
         (_SECOND_REPORT_ID, 1, DivisionCountSource.SPOKEN_TOTAL),
     ]
-    assert {division.list_status for division in plan.divisions} == {
-        DivisionListStatus.NOT_PRINTED
-    }
+    assert [division.list_status for division in plan.divisions] == [
+        DivisionListStatus.LAYOUT_UNREADABLE,
+        DivisionListStatus.NOT_PRINTED,
+    ]
 
 
 def test_write_stores_the_plan_and_a_second_write_changes_nothing(

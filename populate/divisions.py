@@ -8,9 +8,13 @@ from sqlmodel import Session
 from crud.division import CRUDDivision
 from crud.division_vote import CRUDDivisionVote
 from crud.minutes_division import CRUDMinutesDivision
-from crud.report import CRUDReport
+from crud.party_affiliation import CRUDPartyAffiliation
+from crud.report import CRUDReport, ReportDivisionRow
+from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech, SpeechParseRow
 from database.division import Division
+from database.division_vote import DivisionVote
+from database.party_affiliation import PartyAffiliation
 from enums import (
     DivisionCountSource,
     DivisionListStatus,
@@ -20,9 +24,16 @@ from enums import (
 from exceptions import HansardWriteCheckError
 from logs import logger
 from schemas.division_plan import DivisionPlan, PlannedDivision, PlannedUnreadRow
-from services.division import get_report_divisions
+from schemas.minutes_division_plan import PlannedDivisionVote
+from services.attendance import build_inverted_name_to_canonical, build_speaker_lookups
+from services.division import ParsedDivision, ReportDivisions, get_report_divisions
+from services.division_list import ParsedDivisionList, get_division_list
+from services.party_affiliation import get_party_on_date
+from services.speaker_link import VoteSpeakerMatch, resolve_vote_speaker
 from utils.division_detachment import DivisionDetachment
 from utils.division_update import DivisionUpdate
+from utils.division_vote_name import ParsedVoteName, get_name_to_resolve
+from utils.speaker_resolution import SpeakerLookups
 
 _REPORT_BATCH = 200
 _YEARS_PER_DECADE = 10
@@ -33,6 +44,7 @@ class DivisionMatch:
     division_updates: list[DivisionUpdate]
     divisions_to_add: list[Division]
     division_ids_to_delete: list[int]
+    division_id_to_votes: dict[int, list[PlannedDivisionVote]]
 
 
 @dataclass(frozen=True)
@@ -41,6 +53,28 @@ class PairedDivisionAtRisk:
     sprs_report_id: str
     printed_counts: str
     is_line_gone: bool
+
+
+@dataclass(frozen=True)
+class _NameLookups:
+    speaker_lookups: SpeakerLookups
+    inverted_name_to_canonical: dict[tuple[str, int], str]
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int]
+    speaker_id_to_party: dict[int, str]
+
+
+@dataclass(frozen=True)
+class _ResolvedName:
+    name: ParsedVoteName
+    vote_speaker_match: Optional[VoteSpeakerMatch]
+
+
+@dataclass(frozen=True)
+class _ReadDivision:
+    report_row: ReportDivisionRow
+    parsed_division: ParsedDivision
+    division_list: ParsedDivisionList
+    resolved_names: list[_ResolvedName]
 
 
 @dataclass(frozen=True)
@@ -68,60 +102,245 @@ def get_decade_and_source_counts(
     )
 
 
+def _build_name_lookups(session: Session) -> _NameLookups:
+    speakers = CRUDSpeaker(session).get_all()
+    return _NameLookups(
+        speaker_lookups=build_speaker_lookups(speakers),
+        inverted_name_to_canonical=build_inverted_name_to_canonical(speakers),
+        name_parliament_number_to_speaker_id={
+            (speaker.name, speaker.parliament_number): speaker.id
+            for speaker in speakers
+            if speaker.id is not None
+        },
+        speaker_id_to_party={
+            speaker.id: speaker.party for speaker in speakers if speaker.id is not None
+        },
+    )
+
+
+def _resolve_names(
+    names: list[ParsedVoteName], parliament_number: int, name_lookups: _NameLookups
+) -> list[_ResolvedName]:
+    return [
+        _ResolvedName(
+            name,
+            resolve_vote_speaker(
+                get_name_to_resolve(name.printed_name),
+                parliament_number,
+                name_lookups.speaker_lookups,
+                name_lookups.inverted_name_to_canonical,
+                name_lookups.name_parliament_number_to_speaker_id,
+            ),
+        )
+        for name in names
+    ]
+
+
+def _read_report_divisions(
+    report_row: ReportDivisionRow,
+    report_divisions: ReportDivisions,
+    content: Optional[str],
+    name_lookups: _NameLookups,
+) -> list[_ReadDivision]:
+    printed_line_numbers = [
+        parsed_division.report_division_number
+        for parsed_division in sorted(
+            report_divisions.divisions,
+            key=lambda parsed_division: parsed_division.speech_ordinal,
+        )
+        if parsed_division.count_source == DivisionCountSource.PRINTED_LINE
+    ]
+    read_divisions: list[_ReadDivision] = []
+    for parsed_division in report_divisions.divisions:
+        if parsed_division.count_source != DivisionCountSource.PRINTED_LINE:
+            read_divisions.append(
+                _ReadDivision(
+                    report_row,
+                    parsed_division,
+                    ParsedDivisionList(DivisionListStatus.NOT_PRINTED, None, []),
+                    [],
+                )
+            )
+            continue
+        division_list = get_division_list(
+            content,
+            printed_line_numbers.index(parsed_division.report_division_number),
+            len(printed_line_numbers),
+            parsed_division.ayes,
+            parsed_division.noes,
+            parsed_division.abstentions,
+            parsed_division.absent,
+            parsed_division.paired,
+        )
+        read_divisions.append(
+            _ReadDivision(
+                report_row,
+                parsed_division,
+                division_list,
+                _resolve_names(
+                    division_list.names, report_row.parliament_number, name_lookups
+                ),
+            )
+        )
+    return read_divisions
+
+
+def _get_planned_votes(
+    resolved_names: list[_ResolvedName],
+    sitting_date: date,
+    name_lookups: _NameLookups,
+    speaker_id_to_party_affiliations: dict[int, list[PartyAffiliation]],
+) -> list[PlannedDivisionVote]:
+    planned_votes: list[PlannedDivisionVote] = []
+    for resolved_name in resolved_names:
+        name = resolved_name.name
+        vote_speaker_match = resolved_name.vote_speaker_match
+        if vote_speaker_match is None:
+            planned_votes.append(
+                PlannedDivisionVote(
+                    ordinal=name.ordinal,
+                    printed_name=name.printed_name,
+                    vote_choice=name.vote_choice,
+                    speaker_id=None,
+                    name_rule=None,
+                    party=None,
+                    is_party_uncertain=False,
+                )
+            )
+            continue
+        party_on_date = get_party_on_date(
+            name_lookups.speaker_id_to_party[vote_speaker_match.speaker_id],
+            speaker_id_to_party_affiliations.get(vote_speaker_match.speaker_id, []),
+            sitting_date,
+        )
+        planned_votes.append(
+            PlannedDivisionVote(
+                ordinal=name.ordinal,
+                printed_name=name.printed_name,
+                vote_choice=name.vote_choice,
+                speaker_id=vote_speaker_match.speaker_id,
+                name_rule=vote_speaker_match.name_rule,
+                party=party_on_date.party,
+                is_party_uncertain=party_on_date.is_party_uncertain,
+            )
+        )
+    return planned_votes
+
+
+def _plan_report_batch(
+    session: Session, report_rows: list[ReportDivisionRow], name_lookups: _NameLookups
+) -> tuple[list[PlannedDivision], list[PlannedUnreadRow]]:
+    report_id_to_speech_parse_rows: defaultdict[int, list[SpeechParseRow]] = (
+        defaultdict(list)
+    )
+    for speech_parse_row in CRUDSpeech(session).get_parse_rows_by_report_ids(
+        [report_row.id for report_row in report_rows]
+    ):
+        report_id_to_speech_parse_rows[speech_parse_row.report_id].append(
+            speech_parse_row
+        )
+    report_id_to_report_divisions = {
+        report_row.id: get_report_divisions(report_id_to_speech_parse_rows[report_row.id])
+        for report_row in report_rows
+    }
+    report_id_to_content = {
+        content_row.id: content_row.content
+        for content_row in CRUDReport(session).get_content_rows_by_ids(
+            [
+                report_row.id
+                for report_row in report_rows
+                if any(
+                    parsed_division.count_source == DivisionCountSource.PRINTED_LINE
+                    for parsed_division in report_id_to_report_divisions[
+                        report_row.id
+                    ].divisions
+                )
+            ]
+        )
+    }
+    read_divisions = [
+        read_division
+        for report_row in report_rows
+        for read_division in _read_report_divisions(
+            report_row,
+            report_id_to_report_divisions[report_row.id],
+            report_id_to_content.get(report_row.id),
+            name_lookups,
+        )
+    ]
+    speaker_id_to_party_affiliations: defaultdict[int, list[PartyAffiliation]] = (
+        defaultdict(list)
+    )
+    for party_affiliation in CRUDPartyAffiliation(session).get_by_speaker_ids(
+        sorted(
+            {
+                resolved_name.vote_speaker_match.speaker_id
+                for read_division in read_divisions
+                for resolved_name in read_division.resolved_names
+                if resolved_name.vote_speaker_match is not None
+            }
+        )
+    ):
+        speaker_id_to_party_affiliations[party_affiliation.speaker_id].append(
+            party_affiliation
+        )
+    planned_divisions = [
+        PlannedDivision(
+            sprs_report_id=read_division.report_row.report_id,
+            sitting_date=read_division.report_row.sitting_date.date(),
+            parliament_number=read_division.report_row.parliament_number,
+            report_division_number=read_division.parsed_division.report_division_number,
+            speech_ordinal=read_division.parsed_division.speech_ordinal,
+            count_source=read_division.parsed_division.count_source,
+            printed_counts=read_division.parsed_division.printed_counts,
+            ayes=read_division.parsed_division.ayes,
+            noes=read_division.parsed_division.noes,
+            abstentions=read_division.parsed_division.abstentions,
+            absent=read_division.parsed_division.absent,
+            paired=read_division.parsed_division.paired,
+            list_status=read_division.division_list.list_status,
+            printed_list=read_division.division_list.printed_list,
+            votes=_get_planned_votes(
+                read_division.resolved_names,
+                read_division.report_row.sitting_date.date(),
+                name_lookups,
+                speaker_id_to_party_affiliations,
+            ),
+        )
+        for read_division in read_divisions
+    ]
+    planned_unread_rows = [
+        PlannedUnreadRow(
+            report_id=report_row.id,
+            sprs_report_id=report_row.report_id,
+            speech_ordinal=unread_row.speech_ordinal,
+            reason=unread_row.reason,
+            printed_text=unread_row.printed_text,
+        )
+        for report_row in report_rows
+        for unread_row in report_id_to_report_divisions[report_row.id].unread_rows
+    ]
+    return planned_divisions, planned_unread_rows
+
+
 def get_division_plan(session: Session, report_ids: list[int]) -> DivisionPlan:
     planned_report_ids: list[int] = []
     sprs_report_ids: list[str] = []
     planned_divisions: list[PlannedDivision] = []
     planned_unread_rows: list[PlannedUnreadRow] = []
+    name_lookups = _build_name_lookups(session)
     sorted_report_ids = sorted(report_ids)
     for start in range(0, len(sorted_report_ids), _REPORT_BATCH):
         report_rows = CRUDReport(session).get_division_report_rows_by_ids(
             sorted_report_ids[start : start + _REPORT_BATCH]
         )
-        report_id_to_speech_parse_rows: defaultdict[int, list[SpeechParseRow]] = (
-            defaultdict(list)
+        batch_divisions, batch_unread_rows = _plan_report_batch(
+            session, report_rows, name_lookups
         )
-        for speech_parse_row in CRUDSpeech(session).get_parse_rows_by_report_ids(
-            [report_row.id for report_row in report_rows]
-        ):
-            report_id_to_speech_parse_rows[speech_parse_row.report_id].append(
-                speech_parse_row
-            )
-        for report_row in report_rows:
-            report_divisions = get_report_divisions(
-                report_id_to_speech_parse_rows[report_row.id]
-            )
-            planned_report_ids.append(report_row.id)
-            sprs_report_ids.append(report_row.report_id)
-            planned_divisions.extend(
-                PlannedDivision(
-                    sprs_report_id=report_row.report_id,
-                    sitting_date=report_row.sitting_date.date(),
-                    parliament_number=report_row.parliament_number,
-                    report_division_number=parsed_division.report_division_number,
-                    speech_ordinal=parsed_division.speech_ordinal,
-                    count_source=parsed_division.count_source,
-                    printed_counts=parsed_division.printed_counts,
-                    ayes=parsed_division.ayes,
-                    noes=parsed_division.noes,
-                    abstentions=parsed_division.abstentions,
-                    absent=parsed_division.absent,
-                    paired=parsed_division.paired,
-                    list_status=DivisionListStatus.NOT_PRINTED,
-                    printed_list=None,
-                )
-                for parsed_division in report_divisions.divisions
-            )
-            planned_unread_rows.extend(
-                PlannedUnreadRow(
-                    report_id=report_row.id,
-                    sprs_report_id=report_row.report_id,
-                    speech_ordinal=unread_row.speech_ordinal,
-                    reason=unread_row.reason,
-                    printed_text=unread_row.printed_text,
-                )
-                for unread_row in report_divisions.unread_rows
-            )
+        planned_report_ids.extend(report_row.id for report_row in report_rows)
+        sprs_report_ids.extend(report_row.report_id for report_row in report_rows)
+        planned_divisions.extend(batch_divisions)
+        planned_unread_rows.extend(batch_unread_rows)
     return DivisionPlan(
         report_ids=planned_report_ids,
         sprs_report_ids=sprs_report_ids,
@@ -185,6 +404,7 @@ def get_division_match(session: Session, plan: DivisionPlan) -> DivisionMatch:
 
     division_updates: list[DivisionUpdate] = []
     divisions_to_add: list[Division] = []
+    division_id_to_votes: dict[int, list[PlannedDivisionVote]] = {}
     for planned_division in plan.divisions:
         stored_ids = sprs_report_id_and_printed_counts_to_stored_ids[
             (planned_division.sprs_report_id, planned_division.printed_counts)
@@ -194,6 +414,7 @@ def get_division_match(session: Session, plan: DivisionPlan) -> DivisionMatch:
             divisions_to_add.append(division)
             continue
         division_id = stored_ids.popleft()
+        division_id_to_votes[division_id] = planned_division.votes
         division_update = _get_division_update(division_id, division)
         if division_update != _get_division_update(
             division_id, division_id_to_stored_division[division_id]
@@ -207,7 +428,54 @@ def get_division_match(session: Session, plan: DivisionPlan) -> DivisionMatch:
             for stored_ids in sprs_report_id_and_printed_counts_to_stored_ids.values()
             for division_id in stored_ids
         ),
+        division_id_to_votes,
     )
+
+
+def _build_division_votes(
+    division_id: int, planned_votes: list[PlannedDivisionVote]
+) -> list[DivisionVote]:
+    return [
+        DivisionVote(
+            ordinal=planned_vote.ordinal,
+            printed_name=planned_vote.printed_name,
+            vote_choice=planned_vote.vote_choice,
+            list_source=DivisionVoteListSource.HANSARD,
+            name_rule=planned_vote.name_rule,
+            party=planned_vote.party,
+            is_party_uncertain=planned_vote.is_party_uncertain,
+            division_id=division_id,
+            speaker_id=planned_vote.speaker_id,
+        )
+        for planned_vote in planned_votes
+    ]
+
+
+def _get_division_id(division: Division) -> int:
+    if division.id is None:
+        raise HansardWriteCheckError("A division was added and holds no id")
+    return division.id
+
+
+def _get_added_division_votes(
+    plan: DivisionPlan, added_divisions: list[Division]
+) -> list[DivisionVote]:
+    sprs_report_id_and_number_to_votes = {
+        (planned_division.sprs_report_id, planned_division.report_division_number): (
+            planned_division.votes
+        )
+        for planned_division in plan.divisions
+    }
+    return [
+        division_vote
+        for added_division in added_divisions
+        for division_vote in _build_division_votes(
+            _get_division_id(added_division),
+            sprs_report_id_and_number_to_votes[
+                (added_division.sprs_report_id, added_division.report_division_number)
+            ],
+        )
+    ]
 
 
 def _get_division_shape(division: Union[Division, PlannedDivision]) -> _DivisionShape:
@@ -234,6 +502,38 @@ def _validate_can_commit_divisions(session: Session, plan: DivisionPlan) -> None
             raise HansardWriteCheckError(
                 f"{key}: {stored_counts[key]} stored divisions, the plan has {planned_counts[key]}"
             )
+    stored_list_status_counts = Counter(
+        stored_division.list_status for stored_division in stored_divisions
+    )
+    planned_list_status_counts = Counter(
+        planned_division.list_status for planned_division in plan.divisions
+    )
+    if stored_list_status_counts != planned_list_status_counts:
+        raise HansardWriteCheckError(
+            f"The stored divisions by list status {dict(stored_list_status_counts)} differ from the plan {dict(planned_list_status_counts)}"
+        )
+    stored_vote_counts = Counter(
+        (vote_row.vote_choice, vote_row.speaker_id is not None)
+        for vote_row in CRUDDivisionVote(
+            session
+        ).get_rows_by_division_ids_and_list_source(
+            [
+                stored_division.id
+                for stored_division in stored_divisions
+                if stored_division.id is not None
+            ],
+            DivisionVoteListSource.HANSARD,
+        )
+    )
+    planned_vote_counts = Counter(
+        (planned_vote.vote_choice, planned_vote.speaker_id is not None)
+        for planned_division in plan.divisions
+        for planned_vote in planned_division.votes
+    )
+    if stored_vote_counts != planned_vote_counts:
+        raise HansardWriteCheckError(
+            f"The stored Hansard vote rows by choice and link {dict(stored_vote_counts)} differ from the plan {dict(planned_vote_counts)}"
+        )
     sprs_report_id_to_stored_shapes: defaultdict[str, list[_DivisionShape]] = (
         defaultdict(list)
     )
@@ -369,6 +669,10 @@ def write_division_plan(
     if at_risk_divisions:
         _detach_paired_divisions(session, at_risk_divisions)
     match = get_division_match(session, plan)
+    CRUDDivisionVote(session).delete_by_division_ids_and_list_source(
+        sorted(match.division_id_to_votes) + match.division_ids_to_delete,
+        DivisionVoteListSource.HANSARD,
+    )
     if match.division_ids_to_delete:
         deleted_count = CRUDDivision(session).delete_by_ids(
             match.division_ids_to_delete
@@ -379,15 +683,25 @@ def write_division_plan(
             )
     CRUDDivision(session).update_many(match.division_updates)
     CRUDDivision(session).add_many(match.divisions_to_add)
+    CRUDDivisionVote(session).add_many(
+        [
+            division_vote
+            for division_id, planned_votes in match.division_id_to_votes.items()
+            for division_vote in _build_division_votes(division_id, planned_votes)
+        ]
+        + _get_added_division_votes(plan, match.divisions_to_add)
+    )
     _validate_can_commit_divisions(session, plan)
 
 
-# NOTE: inserts only, because the refresh role has no UPDATE or DELETE grant on division
+# NOTE: inserts only, because the refresh role has no UPDATE or DELETE grant on division or division_vote
 def populate_divisions(session: Session, report_ids: list[int]) -> list[int]:
     plan = get_division_plan(session, report_ids)
-    CRUDDivision(session).add_many(
-        [_build_division(planned_division) for planned_division in plan.divisions]
-    )
+    added_divisions = [
+        _build_division(planned_division) for planned_division in plan.divisions
+    ]
+    CRUDDivision(session).add_many(added_divisions)
+    CRUDDivisionVote(session).add_many(_get_added_division_votes(plan, added_divisions))
     _validate_can_commit_divisions(session, plan)
     logger.info(
         f"Divisions: added {len(plan.divisions)} rows for {len(plan.report_ids)} reports"
