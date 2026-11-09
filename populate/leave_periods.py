@@ -111,6 +111,73 @@ def _get_speaker_id_to_office_printed(
     return speaker_id_to_office_printed
 
 
+def _get_sitting_printings(
+    sitting_leave_text_row: SittingLeaveTextRow,
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+    speaker_name_to_speaker_id: dict[Optional[str], int],
+) -> list[PlannedLeavePrinting]:
+    sitting_date = parse_sitting_date(sitting_leave_text_row.sitting_date).date()
+    leave_entries = _get_leave_entries(sitting_leave_text_row, sitting_date)
+    if not leave_entries:
+        return []
+    entry_name_key_to_speaker_ids = _get_entry_name_key_to_speaker_ids(
+        sitting_leave_text_row, lookups, speaker_name_to_speaker_id
+    )
+    speaker_id_to_office_printed = _get_speaker_id_to_office_printed(
+        sitting_leave_text_row, lookups, speaker_name_to_speaker_id
+    )
+    parliament_number = infer_parliament(
+        sitting_leave_text_row.parlement_no, sitting_leave_text_row.volume_no
+    )
+    planned_printings = []
+    for leave_entry in leave_entries:
+        name = leave_entry.printed_name or leave_entry.carried_name
+        speaker_link = (
+            None
+            if name is None
+            else get_leave_entry_speaker_link(
+                name,
+                parliament_number,
+                lookups,
+                name_parliament_number_to_speaker_id,
+                entry_name_key_to_speaker_ids,
+            )
+        )
+        leave_dates = leave_entry.leave_dates
+        start_date = None if leave_dates is None else leave_dates.start_date
+        end_date = None if leave_dates is None else leave_dates.end_date
+        office_printed = (
+            None
+            if speaker_link is None
+            else speaker_id_to_office_printed.get(speaker_link.speaker_id)
+        )
+        planned_printings.append(
+            PlannedLeavePrinting(
+                sitting_id=sitting_leave_text_row.id,
+                sitting_date=sitting_date,
+                period_key=get_leave_period_key(
+                    name,
+                    start_date,
+                    end_date,
+                    sitting_leave_text_row.id,
+                    leave_entry.ordinal,
+                ),
+                leave_entry=leave_entry,
+                speaker_link=speaker_link,
+                is_covering_sitting=is_covering_sitting(
+                    start_date, end_date, sitting_date
+                ),
+                leave_office=(
+                    None
+                    if office_printed is None
+                    else LeaveOffice(office_printed, LeaveOfficeSource.ATTENDANCE_LIST)
+                ),
+            )
+        )
+    return planned_printings
+
+
 def get_leave_period_plan(
     session: Session, sitting_ids: list[int]
 ) -> list[PlannedLeavePrinting]:
@@ -137,70 +204,14 @@ def get_leave_period_plan(
         for sitting_leave_text_row in CRUDSitting(session).get_leave_text_rows_by_ids(
             batch_sitting_ids
         ):
-            sitting_date = parse_sitting_date(
-                sitting_leave_text_row.sitting_date
-            ).date()
-            leave_entries = _get_leave_entries(sitting_leave_text_row, sitting_date)
-            if not leave_entries:
-                continue
-            speaker_name_to_speaker_id = sitting_id_to_speaker_name_to_speaker_id[
-                sitting_leave_text_row.id
-            ]
-            entry_name_key_to_speaker_ids = _get_entry_name_key_to_speaker_ids(
-                sitting_leave_text_row, lookups, speaker_name_to_speaker_id
-            )
-            speaker_id_to_office_printed = _get_speaker_id_to_office_printed(
-                sitting_leave_text_row, lookups, speaker_name_to_speaker_id
-            )
-            parliament_number = infer_parliament(
-                sitting_leave_text_row.parlement_no, sitting_leave_text_row.volume_no
-            )
-            for leave_entry in leave_entries:
-                name = leave_entry.printed_name or leave_entry.carried_name
-                speaker_link = (
-                    None
-                    if name is None
-                    else get_leave_entry_speaker_link(
-                        name,
-                        parliament_number,
-                        lookups,
-                        name_parliament_number_to_speaker_id,
-                        entry_name_key_to_speaker_ids,
-                    )
+            planned_printings.extend(
+                _get_sitting_printings(
+                    sitting_leave_text_row,
+                    lookups,
+                    name_parliament_number_to_speaker_id,
+                    sitting_id_to_speaker_name_to_speaker_id[sitting_leave_text_row.id],
                 )
-                leave_dates = leave_entry.leave_dates
-                start_date = None if leave_dates is None else leave_dates.start_date
-                end_date = None if leave_dates is None else leave_dates.end_date
-                office_printed = (
-                    None
-                    if speaker_link is None
-                    else speaker_id_to_office_printed.get(speaker_link.speaker_id)
-                )
-                planned_printings.append(
-                    PlannedLeavePrinting(
-                        sitting_id=sitting_leave_text_row.id,
-                        sitting_date=sitting_date,
-                        period_key=get_leave_period_key(
-                            name,
-                            start_date,
-                            end_date,
-                            sitting_leave_text_row.id,
-                            leave_entry.ordinal,
-                        ),
-                        leave_entry=leave_entry,
-                        speaker_link=speaker_link,
-                        is_covering_sitting=is_covering_sitting(
-                            start_date, end_date, sitting_date
-                        ),
-                        leave_office=(
-                            None
-                            if office_printed is None
-                            else LeaveOffice(
-                                office_printed, LeaveOfficeSource.ATTENDANCE_LIST
-                            )
-                        ),
-                    )
-                )
+            )
     return sorted(
         planned_printings,
         key=lambda planned_printing: (

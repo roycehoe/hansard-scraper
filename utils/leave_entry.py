@@ -144,9 +144,7 @@ def get_leave_period_key(
     sitting_id: int,
     ordinal: int,
 ) -> str:
-    if name is None:
-        return f"{_UNMERGED_KEY_PREFIX}|{sitting_id}|{ordinal}"
-    if start_date is None:
+    if name is None or start_date is None:
         return f"{_UNMERGED_KEY_PREFIX}|{sitting_id}|{ordinal}"
     end_key = _OPEN_END_KEY if end_date is None else end_date.isoformat()
     return f"{' '.join(name.split()).casefold()}|{start_date.isoformat()}|{end_key}"

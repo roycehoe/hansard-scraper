@@ -138,5 +138,5 @@ def populate_seat_holdings(session: Session, sitting_ids: list[int]) -> None:
     CRUDSeatHolding(session).add_many(plan.seat_holdings_to_add)
     CRUDSeatHolding(session).update_many(plan.seat_holding_widenings)
     logger.info(
-        f"Seat holdings: added {len(plan.seat_holdings_to_add)} rows, widened_bounds {len(plan.seat_holding_widenings)}"
+        f"Seat holdings: added {len(plan.seat_holdings_to_add)} rows, widened {len(plan.seat_holding_widenings)}"
     )

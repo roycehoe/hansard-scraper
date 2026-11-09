@@ -18,7 +18,6 @@ from utils.leave_entry import YEAR_ORDER_BREAK_GROUP
 
 _VERDICTS_FILE_NAME = "verdicts.jsonl"
 _DEFAULT_OUTPUT_PATH = Path("plans/positions-over-time/flags/leave.json")
-_DEFAULT_SUMMARY_PATH = Path("plans/positions-over-time/flags/leave-summary.txt")
 _SUMMARY_HEADER = (
     "group\tsample\tplants\tsonnet_plants_caught\topus_plants_caught\tflagged"
 )
@@ -191,7 +190,7 @@ if __name__ == "__main__":
     parser.add_argument("--key", type=Path, required=True)
     parser.add_argument("--key-hash", type=Path, required=True)
     parser.add_argument("--output", type=Path, default=_DEFAULT_OUTPUT_PATH)
-    parser.add_argument("--summary", type=Path, default=_DEFAULT_SUMMARY_PATH)
+    parser.add_argument("--summary", type=Path, required=True)
     arguments = parser.parse_args()
     list_leave_seat_flags(
         arguments.packets,

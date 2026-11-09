@@ -331,8 +331,12 @@ def get_group_to_items(
     return group_to_items
 
 
+def _get_family(group: str) -> str:
+    return group.partition(_GROUP_SEPARATOR)[0]
+
+
 def _get_rule_text(group: str) -> str:
-    family = group.partition(_GROUP_SEPARATOR)[0]
+    family = _get_family(group)
     if family == _FORMAT_FAMILY:
         return _RULE_FORMAT
     if family == _YEAR_GAP_FAMILY:
@@ -373,7 +377,7 @@ def _get_plant(
     group_items: list[CheckItem],
     generator: random.Random,
 ) -> Optional[Plant]:
-    family = group.partition(_GROUP_SEPARATOR)[0]
+    family = _get_family(group)
     if family == _CARRIED_FAMILY:
         names = sorted(
             {
@@ -474,25 +478,28 @@ def get_packet_entries(seed: int, group_draws: list[GroupDraw]) -> list[PacketEn
         for plant in group_draw.plants
     )
     random.Random(f"{seed}:packets").shuffle(drawn_items)
-    return [
-        PacketEntry(
-            LeaveSeatCheckPacket(
-                packet_id=f"packet-{index:05d}",
-                source_text=item.source_text,
-                data_says=_get_data_says(item),
-                rule=_get_rule_text(group),
-            ),
-            LeaveSeatCheckKeyEntry(
-                packet_id=f"packet-{index:05d}",
-                group=group,
-                table_name=item.table_name,
-                row_id=item.row_id,
-                is_plant=plant_note is not None,
-                plant_note=plant_note,
-            ),
+    packet_entries = []
+    for index, (group, item, plant_note) in enumerate(drawn_items, start=1):
+        packet_id = f"packet-{index:05d}"
+        packet_entries.append(
+            PacketEntry(
+                LeaveSeatCheckPacket(
+                    packet_id=packet_id,
+                    source_text=item.source_text,
+                    data_says=_get_data_says(item),
+                    rule=_get_rule_text(group),
+                ),
+                LeaveSeatCheckKeyEntry(
+                    packet_id=packet_id,
+                    group=group,
+                    table_name=item.table_name,
+                    row_id=item.row_id,
+                    is_plant=plant_note is not None,
+                    plant_note=plant_note,
+                ),
+            )
         )
-        for index, (group, item, plant_note) in enumerate(drawn_items, start=1)
-    ]
+    return packet_entries
 
 
 def _get_draw_tsv_lines(group_draws: list[GroupDraw]) -> list[str]:
