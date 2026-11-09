@@ -4,6 +4,7 @@ from typing import Optional
 
 from sqlmodel import Session
 
+import database.speech  # noqa: F401 registers Speech so the Report relationship resolves
 from crud.act import ActRow, CRUDAct
 from crud.act_history_entry import ActHistoryEntryRow, CRUDActHistoryEntry
 from crud.bill_report import BillReportRow, CRUDBillReport
