@@ -276,6 +276,43 @@ class CRUDReport:
             for row in self.session.exec(statement).all()
         ]
 
+    def get_placement_rows_by_report_types(
+        self, report_types: tuple[ReportType, ...]
+    ) -> list[ReportPlacementRow]:
+        statement = (
+            select(
+                Report.id,
+                Report.report_id,
+                Report.sitting_date,
+                Report.title,
+                Report.report_type,
+            )
+            .where(col(Report.report_type).in_(report_types))
+            .order_by(col(Report.sitting_date), col(Report.id))
+        )
+        return [
+            ReportPlacementRow(*row) for row in self.session.exec(statement).all()
+        ]
+
+    def get_placement_rows_by_report_types_not_in_and_title_regex(
+        self, report_types: tuple[ReportType, ...], pattern: str
+    ) -> list[ReportPlacementRow]:
+        statement = (
+            select(
+                Report.id,
+                Report.report_id,
+                Report.sitting_date,
+                Report.title,
+                Report.report_type,
+            )
+            .where(not_(col(Report.report_type).in_(report_types)))
+            .where(col(Report.title).regexp_match(pattern, flags="i"))
+            .order_by(col(Report.sitting_date), col(Report.id))
+        )
+        return [
+            ReportPlacementRow(*row) for row in self.session.exec(statement).all()
+        ]
+
     def get_sitting_date_title_rows_by_ids(
         self, report_ids: list[int]
     ) -> list[ReportSittingDateTitleRow]:
