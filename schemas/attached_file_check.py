@@ -97,3 +97,18 @@ class AttachedFileAddressResult(BaseModel):
 
 class AttachedFileAddressResults(RootModel[list[AttachedFileAddressResult]]):
     model_config = ConfigDict(frozen=True)
+
+
+class AttachedFileCollectedTieFlag(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    flag: AttachedFileCheckFlag
+    round_numbers: list[int]
+    is_tie_unchanged: bool
+
+
+class AttachedFileCollectedFlags(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    ties: list[AttachedFileCollectedTieFlag]
+    addresses: list[AttachedFileAddressResult]
