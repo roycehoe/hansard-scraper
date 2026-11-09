@@ -1,6 +1,6 @@
 import json
 import shutil
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Optional
@@ -28,6 +28,7 @@ from tests.division_seed import add_division_report
 
 _FIXTURE_DIRECTORY = Path(__file__).parent / "division_fixtures" / "minutes_index"
 _PROTECTED_DATABASE_URL = "postgresql://u:p@localhost:5432/x"
+_SHA256_PLACEHOLDER = "0" * 64
 _LIVE_FILE = "live-index-3-rows.html"
 _NEW_SITE_FILE = "archive-index-new-site.html"
 _NEW_SITE_PAGE = "<html><body><div class='new-site'></div></body></html>"
@@ -313,6 +314,44 @@ def test_set_listed_refuses_a_row_whose_status_changed(
             None,
             "https://example.test/a.pdf",
             MinutesFileFormat.PDF,
+        )
+
+
+def test_set_status_refuses_a_row_whose_status_changed(
+    scratch_session: Session,
+) -> None:
+    minutes = Minutes(sitting_date=date(2021, 8, 3), status=MinutesStatus.LISTED)
+    CRUDMinutes(scratch_session).add_many([minutes])
+    assert minutes.id is not None
+
+    with pytest.raises(HansardWriteCheckError, match="is no longer NOT_YET_LISTED"):
+        CRUDMinutes(scratch_session).set_status_by_id_and_status(
+            minutes.id,
+            MinutesStatus.NOT_YET_LISTED,
+            MinutesStatus.FILE_NOT_FOUND,
+            None,
+        )
+
+
+def test_set_file_refuses_a_row_whose_status_changed(
+    scratch_session: Session,
+) -> None:
+    minutes = Minutes(sitting_date=date(2021, 8, 3), status=MinutesStatus.LISTED)
+    CRUDMinutes(scratch_session).add_many([minutes])
+    assert minutes.id is not None
+
+    with pytest.raises(HansardWriteCheckError, match="is no longer NOT_YET_LISTED"):
+        CRUDMinutes(scratch_session).set_file_by_id_and_status(
+            minutes.id,
+            MinutesStatus.NOT_YET_LISTED,
+            MinutesStatus.TEXT_STORED,
+            None,
+            MinutesFileFormat.PDF,
+            None,
+            _SHA256_PLACEHOLDER,
+            1,
+            datetime.now(timezone.utc),
+            "text",
         )
 
 

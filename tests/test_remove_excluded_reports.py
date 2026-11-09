@@ -8,6 +8,7 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session, col, select
 
 import scripts.remove_excluded_reports as remove_excluded_reports_script
+from crud.division import CRUDDivision
 from database.division import Division
 from database.report import Report
 from database.report_asker import ReportAsker
@@ -279,6 +280,27 @@ def test_commit_deletes_exactly_the_planned_report_and_speeches(
     assert _get_speech_count(scratch_session) == 1
 
 
+def test_commit_refuses_when_fewer_division_rows_are_deleted_than_planned(
+    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_division(scratch_session, _EXCLUDED_REPORT_ID)
+    delete_by_ids = CRUDDivision.delete_by_ids
+    monkeypatch.setattr(
+        CRUDDivision,
+        "delete_by_ids",
+        lambda crud_division, division_ids: delete_by_ids(crud_division, division_ids)
+        - 1,
+    )
+
+    with pytest.raises(HansardWriteCheckError, match="division rows"):
+        remove_excluded_reports_script.remove_excluded_reports(True, None)
+
+    assert _get_report_ids(scratch_session) == [_EXCLUDED_REPORT_ID, _KEPT_REPORT_ID]
+    assert _get_division_report_ids(scratch_session) == [_EXCLUDED_REPORT_ID]
+
+
 def test_commit_deletes_the_removed_reports_askers_and_keeps_the_others(
     scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -332,6 +354,7 @@ def test_commit_refuses_the_protected_local_port(
         SimpleNamespace(database_url="postgresql://u:p@localhost:5432/x"),
     )
     _seed_duplicate(scratch_session)
+    monkeypatch.setattr(remove_excluded_reports_script, "engine", None)
 
     with pytest.raises(HansardWriteTargetError):
         remove_excluded_reports_script.remove_excluded_reports(True, None)

@@ -159,6 +159,7 @@ def test_commit_refuses_the_protected_port_before_any_row_is_read(
         "settings",
         SimpleNamespace(database_url=_PROTECTED_DATABASE_URL),
     )
+    monkeypatch.setattr(apply_divisions_script, "engine", None)
 
     with pytest.raises(HansardWriteTargetError, match="local port 5432"):
         apply_divisions([], plan_path, is_commit=True)
