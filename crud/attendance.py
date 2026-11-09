@@ -125,6 +125,25 @@ class CRUDAttendance:
         )
         return self.session.exec(statement).one()
 
+    def get_distinct_speaker_ids_by_sitting_ids_and_speaker_id_not_null(
+        self, sitting_ids: list[int]
+    ) -> list[int]:
+        statement = (
+            select(Attendance.speaker_id)
+            .distinct()
+            .where(col(Attendance.sitting_id).in_(sitting_ids))
+            .where(col(Attendance.speaker_id).is_not(None))
+        )
+        return list(self.session.exec(statement).all())
+
+    def get_distinct_speaker_ids_by_speaker_id_not_null(self) -> list[int]:
+        statement = (
+            select(Attendance.speaker_id)
+            .distinct()
+            .where(col(Attendance.speaker_id).is_not(None))
+        )
+        return list(self.session.exec(statement).all())
+
     def get_distinct_sitting_ids(self) -> set[int]:
         statement = select(Attendance.sitting_id).distinct()
         return set(self.session.exec(statement).all())
