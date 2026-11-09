@@ -135,6 +135,13 @@ def _get_label_list_text(label_to_row_count: dict[str, int]) -> str:
     return label_list_text
 
 
+def _get_capped_list_text(values: list[str]) -> str:
+    capped_list_text = "; ".join(values[:_MAX_ALERT_LABELS])
+    if len(values) > _MAX_ALERT_LABELS:
+        return f"{capped_list_text} and {len(values) - _MAX_ALERT_LABELS} more"
+    return capped_list_text
+
+
 def build_unlinked_reason(
     unlinked_share: float, label_to_row_count: dict[str, int]
 ) -> str:
@@ -193,6 +200,21 @@ def build_unlinked_labels_message(label_to_row_count: dict[str, int]) -> str:
     return (
         f"Speaker labels with no registry match: {_get_label_list_text(label_to_row_count)}. "
         "Add the members to the registry, then link them with scripts/apply_speaker_links.py."
+    )
+
+
+def build_late_sittings_message(late_sitting_dates: list[str]) -> str:
+    return (
+        f"Sittings arrived after a later sitting: {_get_capped_list_text(late_sitting_dates)}. "
+        "Their office rows are stored and the ranges of their months were left alone. "
+        "Run python -m scripts.apply_attendance_offices --commit."
+    )
+
+
+def build_unplaced_office_titles_message(office_titles: list[str]) -> str:
+    return (
+        f"Printed office titles with no ministry: {_get_capped_list_text(sorted(set(office_titles)))}. "
+        "Add them to data/office_title_ministries.json, then run python -m scripts.apply_ministries --commit."
     )
 
 

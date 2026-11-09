@@ -6,8 +6,8 @@ from typing import Optional, Union
 
 import httpx
 import pytest
-from sqlalchemy import text
-from sqlalchemy.engine import Engine
+from sqlalchemy import event, text
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, col, func, select
 
@@ -18,18 +18,28 @@ from crud.refresh_run import CRUDRefreshRun
 from crud.report import CRUDReport
 from crud.speech import CRUDSpeech
 from database.attendance import Attendance
+from database.attendance_office import AttendanceOffice
 from database.hansard_sitting_date_response import HansardSittingDateResponse
 from database.hansard_website_response import HansardWebsiteResponse
+from database.ministry import Ministry
+from database.office_printed_range import OfficePrintedRange
+from database.office_title_ministry import OfficeTitleMinistry
 from database.party_affiliation import PartyAffiliation
 from database.person import Person
 from database.refresh_run import RefreshRun
 from database.report import Report
 from database.report_asker import ReportAsker
 from database.report_participant import ReportParticipant
+from database.report_put_to import ReportPutTo
 from database.sitting import Sitting
 from database.speaker import Speaker
 from database.speech import Speech
-from enums import ParticipantRole, RefreshRunStatus
+from enums import (
+    AttendanceOfficeSource,
+    OfficeClass,
+    ParticipantRole,
+    RefreshRunStatus,
+)
 from exceptions import (
     HansardGatewayError,
     HansardRefreshFailureError,
@@ -46,6 +56,7 @@ from services.hansard_website import get_topic_id
 from services.refresh import MAX_NEW_HITS_WITHOUT_TEXT, SINGAPORE_TIMEZONE
 from settings import settings
 from tests.refresh_fixtures import FakeParliament, load_speaker_rows, seed_stored
+from utils.data_files import get_ministry_names
 from utils.sitting_dates import get_sitting_date_key, parse_sitting_date
 
 _BOT_TOKEN = "test-bot-token"
@@ -75,6 +86,12 @@ _SUMMARY_RE = re.compile(
 )
 _STRONG_LABEL_RE = re.compile(r"<strong>((?:Mr|Ms|Mrs|Dr) [^<:]+)</strong>")
 _FIRST_WORD_RE = re.compile(r"\bthe\b")
+_LATE_SITTING_MEMBER = "Late Seed Member"
+_LATE_SITTING_ENTRY_LINE = "Mr Late Seed Member (Bishan-Toa Payoh), Minister for Health."
+_UNPLACED_TITLE = "Minister for Nonsense"
+_UNPLACED_ENTRY_LINE = (
+    "Mr Chee Hong Tat (Bishan-Toa Payoh), Minister for Nonsense."
+)
 _MISSING_TABLE_VACUUM = "VACUUM (ANALYZE) no_such_table"
 _DATA_TABLES = (
     HansardWebsiteResponse,
@@ -94,6 +111,12 @@ _GROWING_TABLES = (
     HansardSittingDateResponse,
     Sitting,
     Attendance,
+)
+_OFFICE_TABLES = (
+    AttendanceOffice,
+    OfficePrintedRange,
+    ReportPutTo,
+    OfficeTitleMinistry,
 )
 _ADDED_COUNT_COLUMNS = (
     "website_responses_added",
@@ -1434,3 +1457,187 @@ def test_unlinked_share_halt_in_a_later_month_records_only_committed_counts(
             ).all()
             == []
         )
+
+
+def _get_office_table_row_counts(scratch_engine: Engine) -> dict[str, int]:
+    with Session(scratch_engine) as session:
+        return {
+            table.__name__: session.exec(select(func.count()).select_from(table)).one()
+            for table in _OFFICE_TABLES
+        }
+
+
+def _seed_ministries(session: Session) -> None:
+    session.add_all([Ministry(name=name) for name in get_ministry_names()])
+    session.commit()
+
+
+def _seed_late_office_row(session: Session, sitting_date: date) -> None:
+    sitting = Sitting(
+        sitting_date=get_sitting_date_key(sitting_date),
+        parlement_no=_PREVIOUS_PARLIAMENT_NUMBER,
+    )
+    session.add(sitting)
+    session.flush()
+    assert sitting.id is not None
+    attendance = Attendance(
+        sitting_id=sitting.id, speaker_name=_LATE_SITTING_MEMBER, is_present=True
+    )
+    session.add(attendance)
+    session.flush()
+    assert attendance.id is not None
+    session.add(
+        AttendanceOffice(
+            office_printed="Minister for Health",
+            entry_line_printed=_LATE_SITTING_ENTRY_LINE,
+            office_class=OfficeClass.MINISTER,
+            source=AttendanceOfficeSource.AFTER_CONSTITUENCY_BRACKET,
+            extracted_at=datetime.now(timezone.utc),
+            attendance_id=attendance.id,
+        )
+    )
+    session.commit()
+
+
+def test_clean_run_stores_the_office_rows_of_the_new_sitting_and_reports(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+) -> None:
+    seed_stored(scratch_session)
+    _seed_ministries(scratch_session)
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    office_table_row_counts = _get_office_table_row_counts(scratch_engine)
+    assert office_table_row_counts["AttendanceOffice"] > 0
+    assert office_table_row_counts["OfficePrintedRange"] > 0
+    assert office_table_row_counts["ReportPutTo"] > 0
+    assert office_table_row_counts["OfficeTitleMinistry"] > 0
+    new_question_report_ids = {
+        search_result["reportId"]
+        for search_result in fake_parliament.new_search_results
+        if search_result["reportType"] in REPORT_ASKER_REPORT_TYPES
+    }
+    with Session(scratch_engine) as session:
+        put_to_report_ids = set(session.exec(select(ReportPutTo.sprs_report_id)).all())
+    assert put_to_report_ids
+    assert put_to_report_ids <= new_question_report_ids
+
+
+def test_database_error_in_the_range_step_leaves_no_office_rows_of_the_month(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    row_counts_before = _get_row_counts(scratch_engine)
+    monkeypatch.setattr(
+        refresh_runs, "populate_office_printed_ranges", _raise_database_error
+    )
+
+    with pytest.raises(SQLAlchemyError):
+        refresh_runs.populate_refresh_runs(
+            scratch_session, _get_now(fake_parliament), None
+        )
+
+    _assert_failed(scratch_engine, alerts, row_counts_before, "SQLAlchemyError")
+    assert set(_get_office_table_row_counts(scratch_engine).values()) == {0}
+
+
+def test_late_sitting_writes_no_range_and_sends_one_alert(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+) -> None:
+    seed_stored(scratch_session)
+    _seed_ministries(scratch_session)
+    _seed_late_office_row(
+        scratch_session, fake_parliament.new_sitting_date + timedelta(days=1)
+    )
+    attendance_office_count_before = _get_office_table_row_counts(scratch_engine)[
+        "AttendanceOffice"
+    ]
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    office_table_row_counts = _get_office_table_row_counts(scratch_engine)
+    assert office_table_row_counts["OfficePrintedRange"] == 0
+    assert office_table_row_counts["AttendanceOffice"] > attendance_office_count_before
+    late_sitting_messages = [
+        message for message in alerts.messages if "arrived after a later sitting" in message
+    ]
+    assert len(late_sitting_messages) == 1
+    assert get_sitting_date_key(fake_parliament.new_sitting_date) in late_sitting_messages[0]
+
+
+def test_new_title_with_no_placement_sends_one_alert_and_the_run_succeeds(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+) -> None:
+    seed_stored(scratch_session)
+    _seed_ministries(scratch_session)
+    fake_parliament.new_sitting["attendanceList"][0]["mpName"] = _UNPLACED_ENTRY_LINE
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    unplaced_messages = [
+        message for message in alerts.messages if "with no ministry" in message
+    ]
+    assert len(unplaced_messages) == 1
+    assert _UNPLACED_TITLE in unplaced_messages[0]
+    with Session(scratch_engine) as session:
+        placed_titles = set(session.exec(select(OfficeTitleMinistry.office_printed)).all())
+    assert _UNPLACED_TITLE not in placed_titles
+    _assert_success_pinged(alerts)
+
+
+def test_office_steps_issue_no_delete_statement(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+) -> None:
+    seed_stored(scratch_session)
+    _seed_ministries(scratch_session)
+    statements: list[str] = []
+
+    def record_statement(
+        connection: Connection,
+        cursor: object,
+        statement: str,
+        parameters: object,
+        context: object,
+        executemany: bool,
+    ) -> None:
+        statements.append(statement)
+
+    event.listen(scratch_engine, "before_cursor_execute", record_statement)
+    try:
+        status = refresh_runs.populate_refresh_runs(
+            scratch_session, _get_now(fake_parliament), None
+        )
+    finally:
+        event.remove(scratch_engine, "before_cursor_execute", record_statement)
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    assert any(
+        statement.startswith("INSERT INTO attendance_office")
+        for statement in statements
+    )
+    assert not [
+        statement for statement in statements if statement.startswith("DELETE")
+    ]

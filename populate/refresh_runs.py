@@ -35,9 +35,13 @@ from gateway.hansard_topic import get_hansard_topic_response_async
 from gateway.healthchecks import send_healthchecks_failure_ping, send_healthchecks_ping
 from gateway.telegram import send_telegram_message
 from logs import logger
+from populate.attendance_offices import populate_attendance_offices
 from populate.attribution_figures import get_attribution_figures
+from populate.office_printed_ranges import populate_office_printed_ranges
+from populate.office_title_ministries import populate_office_title_ministries
 from populate.report_askers import populate_report_askers
 from populate.report_participants import populate_report_participants
+from populate.report_put_to import populate_report_put_to
 from populate.speaker_links import link_speakers_by_report_ids_and_sitting_ids
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
@@ -74,11 +78,13 @@ from services.refresh import (
     build_field_mapping_reason,
     build_halt_message,
     build_held_report_message,
+    build_late_sittings_message,
     build_many_held_reports_message,
     build_new_parliament_reason,
     build_summary_message,
     build_unlinked_labels_message,
     build_unlinked_reason,
+    build_unplaced_office_titles_message,
     get_content_hash,
     get_dates_between,
     get_probe_start_date,
@@ -199,6 +205,8 @@ class RunResult:
     changed_reports: list[ChangedReport] = field(default_factory=list)
     held_reports_to_alert: list[HeldReport] = field(default_factory=list)
     label_to_row_count: dict[str, int] = field(default_factory=dict)
+    late_sitting_dates: list[str] = field(default_factory=list)
+    unplaced_office_titles: list[str] = field(default_factory=list)
 
 
 def _send_alert(text: str) -> None:
@@ -668,6 +676,14 @@ def _write_window_rows(
     link_speakers_by_report_ids_and_sitting_ids(session, report_ids, sitting_ids)
     populate_report_askers(session, report_ids)
     populate_report_participants(session, report_ids)
+    populate_attendance_offices(session, sitting_ids)
+    populate_report_put_to(session, report_ids)
+    window_result.unplaced_office_titles = populate_office_title_ministries(
+        session, sitting_ids, report_ids
+    )
+    window_result.late_sitting_dates = populate_office_printed_ranges(
+        session, sitting_ids
+    )
 
     window_result.website_responses_added = len(hansard_website_responses)
     window_result.reports_added = len(reports)
@@ -795,6 +811,8 @@ def _add_window_result(run_result: RunResult, window_result: RunResult) -> None:
     run_result.topics_with_error_body += window_result.topics_with_error_body
     run_result.reports_without_speech_rows += window_result.reports_without_speech_rows
     run_result.held_reports_to_alert.extend(window_result.held_reports_to_alert)
+    run_result.late_sitting_dates.extend(window_result.late_sitting_dates)
+    run_result.unplaced_office_titles.extend(window_result.unplaced_office_titles)
     for label, row_count in window_result.label_to_row_count.items():
         run_result.label_to_row_count[label] = (
             run_result.label_to_row_count.get(label, 0) + row_count
@@ -817,6 +835,12 @@ def _send_success_alerts(run_result: RunResult) -> None:
     if is_held_report_count_over_limit(run_result.reports_held_without_text):
         _send_alert(
             build_many_held_reports_message(run_result.reports_held_without_text)
+        )
+    if run_result.late_sitting_dates:
+        _send_alert(build_late_sittings_message(run_result.late_sitting_dates))
+    if run_result.unplaced_office_titles:
+        _send_alert(
+            build_unplaced_office_titles_message(run_result.unplaced_office_titles)
         )
     if run_result.website_responses_added + run_result.sitting_date_responses_added > 0:
         unlinked_share = get_unlinked_share(

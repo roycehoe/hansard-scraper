@@ -26,15 +26,19 @@ Then, for each month in order, the run:
 11. Runs stage 8, the speaker links, on the new speech and attendance rows only.
 12. Finds the askers of the new parliamentary question reports (`oral-answer`, `written-answer` and `written-answer-na`) and inserts one `report_asker` row for each asker. It reads the speaker links that step 11 set, and it never deletes: the role has no DELETE and a new report has no rows.
 13. Labels the participants of those reports and inserts one `report_participant` row for each person and role, and one `report_question_state` row for each state the record prints. It reads the askers that step 12 stored and raises if its asker, absent filer and reader rows differ from them, which rolls back the month. It never deletes, for the same reason.
-14. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
-15. Commits the month. A halt or a failure rolls back only the month in progress.
+14. Reads the printed office of each new attendance entry and inserts one `attendance_office` row for each. It never deletes.
+15. Reads the office each new parliamentary question report was put to and inserts one `report_put_to` row for each. It never deletes.
+16. Places each printed office title of the month's new sittings and reports under its ministries and inserts one `office_title_ministry` row for each placement. A title already placed is left alone. A title the rule and the hand-kept list cannot place, or one that names a ministry missing from the `ministry` table, gets no row and goes to the alert. It never writes `ministry` or `ministry_see_also`, and it never deletes.
+17. Adds the month's new sittings to the printed office ranges: it inserts a range for each new run of a title and extends a stored range by `UPDATE`. If a new sitting is dated earlier than the latest sitting that holds an office row, it writes no range for the month and sends the dates to the alert. It never deletes.
+18. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
+19. Commits the month. A halt or a failure rolls back only the month in progress.
 
 After the last month, the run:
 
-16. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
-17. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
-18. Records the counts and marks the row `SUCCEEDED`.
-19. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
+20. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
+21. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
+22. Records the counts and marks the row `SUCCEEDED`.
+23. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
 
 `refresh.py` exits 0 on success, 2 on a halt and 1 on a failure, after the failure's error propagates.
 
@@ -113,6 +117,8 @@ Every alert goes to the one Telegram chat, cut to 4,000 characters.
 | Summary | `2 sittings, 14 reports, 1,203 rows, 98.9% linked` | After a successful run, or a halted or failed run that committed rows, that stored at least one raw report row or raw sitting row. The linked share is over the new named rows, and the message leaves it off when the run added none. |
 | Changed report | `Report {report id} of {sitting date} changed on SPRS since it was stored. The stored text was kept.` | After a successful run, or a halted or failed run that committed rows, once per stored report in the 14-day window whose text changed. |
 | Unlinked labels | `Speaker labels with no registry match: {labels}. Add the members to the registry, then link them with scripts/apply_speaker_links.py.` | After a successful run, or a halted or failed run that committed rows, whose new rows hold labels with no registry link, at or under the 5% limit. Up to 20 labels, most rows first, then "and N more". |
+| Late sittings | `Sittings arrived after a later sitting: {dates}. Their office rows are stored and the ranges of their months were left alone. Run python -m scripts.apply_attendance_offices --commit.` | After a successful run, or a halted or failed run that committed rows, that stored a sitting dated earlier than the latest sitting with an office row. Up to 20 dates, in date order, then "and N more". |
+| Unplaced office titles | `Printed office titles with no ministry: {titles}. Add them to data/office_title_ministries.json, then run python -m scripts.apply_ministries --commit.` | After a successful run, or a halted or failed run that committed rows, whose new sittings or reports print a title with no ministry placement. Up to 20 titles in alphabetical order, then "and N more". A title that stays unplaced alerts on each run that prints it again, until it is on the hand-kept list. |
 | Held report | `Report {report id} of {sitting date} still has no text after 14 days and will not be fetched again.` | After a successful run, or a halted or failed run that committed rows, for a held hit whose sitting date is 13 or 14 days before the run's date. The two-day span keeps one missed run from losing the alert, so a hit can alert twice. |
 | Many held reports | `{n} new reports came back with no text, above the limit of 5. SPRS may have changed its format.` | After a successful run, or a halted or failed run that committed rows, that holds more than 5 new hits without text. It repeats each day while those hits stay held in the 14-day window. |
 | Halt | `Hansard refresh halted. {reason}` | On every halt. |
@@ -197,12 +203,18 @@ GRANT SELECT ON hansardwebsiteresponse, hansardsittingdateresponse, report, spee
 GRANT INSERT ON hansardwebsiteresponse, hansardsittingdateresponse, report, speech, sitting, attendance, refresh_run TO hansard_refresh;
 GRANT UPDATE (speaker_id) ON speech, attendance TO hansard_refresh;
 GRANT SELECT, INSERT ON report_asker, report_participant, report_question_state TO hansard_refresh;
+GRANT SELECT, INSERT ON attendance_office, report_put_to, office_title_ministry TO hansard_refresh;
+GRANT SELECT, INSERT, UPDATE ON office_printed_range TO hansard_refresh;
+GRANT SELECT ON ministry, ministry_see_also TO hansard_refresh;
 GRANT UPDATE ON refresh_run TO hansard_refresh;
 GRANT MAINTAIN ON speech, report, attendance TO hansard_refresh;
 GRANT USAGE ON SEQUENCE hansardwebsiteresponse_id_seq, hansardsittingdateresponse_id_seq, report_id_seq, speech_id_seq, sitting_id_seq, sittingattendance_id_seq, refresh_run_id_seq TO hansard_refresh;
 GRANT USAGE ON SEQUENCE report_asker_id_seq, report_participant_id_seq, report_question_state_id_seq TO hansard_refresh;
+GRANT USAGE ON SEQUENCE attendance_office_id_seq, office_printed_range_id_seq, report_put_to_id_seq, office_title_ministry_id_seq TO hansard_refresh;
 GRANT SELECT (id, website_responses_added, sitting_date_responses_added, sittings_added, reports_added, speeches_added, speeches_linked, speeches_named_unlinked, attendances_added, attendances_linked, reports_held_without_text, reports_without_speech_rows, reports_rechecked, reports_changed, latest_sitting_date_with_text, figures, started_at, finished_at, status) ON refresh_run TO <the API's read-only role>;
 ```
+
+The office migration and these grants come before any push of the daily job, because a missing grant fails the month. The role needs `UPDATE` on `office_printed_range` only to extend a stored range, and `SELECT` alone on `ministry` and `ministry_see_also`, which only a supervised run writes. The office tables are small, so `_vacuum_analyze_tables` leaves them out, and the role has no `MAINTAIN` on them.
 
 The table and sequence names are those on the scratch copy. `attendance` owns `sittingattendance_id_seq`, a name kept from an older table name. Confirm each name on the remote with `\d <table>` first.
 
