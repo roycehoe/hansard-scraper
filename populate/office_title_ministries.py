@@ -112,9 +112,10 @@ def get_ministry_plan(session: Session) -> MinistryPlan:
 
 def _validate_can_commit_ministries(session: Session, plan: MinistryPlan) -> None:
     ministries = CRUDMinistry(session).get_all()
-    if sorted(ministry.name for ministry in ministries) != sorted(plan.ministry_names):
+    stored_ministry_names = sorted(ministry.name for ministry in ministries)
+    if stored_ministry_names != sorted(plan.ministry_names):
         raise HansardWriteCheckError(
-            f"Stored ministry names {sorted(ministry.name for ministry in ministries)}, the file has {sorted(plan.ministry_names)}"
+            f"Stored ministry names {stored_ministry_names}, the file has {sorted(plan.ministry_names)}"
         )
     ministry_id_to_name = {ministry.id: ministry.name for ministry in ministries}
     stored_placements = Counter(
@@ -146,6 +147,14 @@ def _get_ministry_id(ministry_name_to_id: dict[str, int], ministry_name: str) ->
         raise HansardWriteCheckError(
             f"Ministry {ministry_name!r} is not in the ministry table"
         ) from error
+
+
+def _get_ministry_name_to_id(session: Session) -> dict[str, int]:
+    return {
+        ministry.name: ministry.id
+        for ministry in CRUDMinistry(session).get_all()
+        if ministry.id is not None
+    }
 
 
 def write_ministry_plan(session: Session, plan: MinistryPlan) -> None:
@@ -185,11 +194,7 @@ def write_ministry_plan(session: Session, plan: MinistryPlan) -> None:
         ]
     )
 
-    ministry_name_to_id = {
-        ministry.name: ministry.id
-        for ministry in CRUDMinistry(session).get_all()
-        if ministry.id is not None
-    }
+    ministry_name_to_id = _get_ministry_name_to_id(session)
     CRUDOfficeTitleMinistry(session).add_many(
         [
             OfficeTitleMinistry(
@@ -271,11 +276,7 @@ def populate_office_title_ministries(
         get_ministry_names()
     )
     title_to_ministry_names = _get_title_to_ministry_names()
-    ministry_name_to_id = {
-        ministry.name: ministry.id
-        for ministry in CRUDMinistry(session).get_all()
-        if ministry.id is not None
-    }
+    ministry_name_to_id = _get_ministry_name_to_id(session)
     office_title_ministries: list[OfficeTitleMinistry] = []
     unplaced_titles: list[str] = []
     for office_printed in new_office_printed_values:

@@ -25,11 +25,8 @@ class OfficePrintedRangePlan:
     rows_without_speaker_id: int
 
 
-def _get_sorted_sitting_dates(session: Session) -> list[datetime]:
-    return sorted(
-        parse_sitting_date(sitting_date_row.sitting_date)
-        for sitting_date_row in CRUDSitting(session).get_date_rows()
-    )
+def _get_sorted_sitting_dates(date_rows: list[SittingDateRow]) -> list[datetime]:
+    return sorted(parse_sitting_date(date_row.sitting_date) for date_row in date_rows)
 
 
 def _get_late_sitting_dates(
@@ -54,7 +51,7 @@ def get_office_printed_range_plan(session: Session) -> OfficePrintedRangePlan:
     attendance_office_sitting_rows = CRUDAttendanceOffice(session).get_sitting_rows()
     office_printed_ranges = build_office_printed_ranges(
         attendance_office_sitting_rows,
-        _get_sorted_sitting_dates(session),
+        _get_sorted_sitting_dates(CRUDSitting(session).get_date_rows()),
         datetime.now(timezone.utc),
     )
     return OfficePrintedRangePlan(
@@ -145,7 +142,7 @@ def populate_office_printed_ranges(
     office_printed_range_changes = get_office_printed_range_changes(
         attendance_office_sitting_rows,
         office_printed_range_rows,
-        _get_sorted_sitting_dates(session),
+        _get_sorted_sitting_dates(date_rows),
         datetime.now(timezone.utc),
     )
     CRUDOfficePrintedRange(session).add_many(
