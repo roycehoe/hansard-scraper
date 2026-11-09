@@ -98,6 +98,7 @@ _OCTOBER_MONTH = 10
 _LEAVE_MEMBER_NAME = "Mr Chee Hong Tat"
 _NEW_SITTING_DATE_KEY = "10-9-2024"
 _LEAVE_MEMBER_SPEAKER_NAME = "Chee Hong Tat"
+_LEAVE_MEMBER_OFFICE = "Minister for Transport and Second Minister for Finance"
 _LEAVE_MEMBER_DIVISION = "Bishan-Toa Payoh"
 _LEAVE_MEMBER_DIVISION_KEY = "bishan toa payoh"
 _EARLIER_SEAT_DATE = date(2024, 1, 1)
@@ -2160,6 +2161,9 @@ def test_run_stores_the_leave_printings_and_the_seat_rows_of_the_new_sitting(
         assert [
             (printing.printed_name, printing.carried_name) for printing in printings
         ] == [(_LEAVE_MEMBER_NAME, None), (None, _LEAVE_MEMBER_NAME)]
+        assert {printing.office_printed for printing in printings} == {
+            _LEAVE_MEMBER_OFFICE
+        }
         assert len(session.exec(select(LeavePeriod)).all()) == 1
         new_sitting_speaker_ids = {
             attendance.speaker_id
