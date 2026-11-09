@@ -67,6 +67,19 @@ class SittingFileListRow:
     vernaculars: Optional[str]
 
 
+@dataclass(frozen=True)
+class SittingLeaveTextRow:
+    id: int
+    sitting_date: str
+    parlement_no: Optional[int]
+    volume_no: Optional[int]
+    markdown_content: Optional[str]
+    attendance_list: Optional[str]
+    ptba_list: Optional[str]
+    ptba_from: Optional[str]
+    ptba_to: Optional[str]
+
+
 _STREAM_BATCH = 50
 
 
@@ -159,6 +172,22 @@ class CRUDSitting:
         return [
             SittingAttendanceTextRow(*row) for row in self.session.exec(statement).all()
         ]
+
+    def get_leave_text_rows_by_ids(
+        self, sitting_ids: list[int]
+    ) -> list[SittingLeaveTextRow]:
+        statement = select(
+            Sitting.id,
+            Sitting.sitting_date,
+            Sitting.parlement_no,
+            Sitting.volume_no,
+            Sitting.markdown_content,
+            Sitting.attendance_list,
+            Sitting.ptba_list,
+            Sitting.ptba_from,
+            Sitting.ptba_to,
+        ).where(col(Sitting.id).in_(sitting_ids))
+        return [SittingLeaveTextRow(*row) for row in self.session.exec(statement).all()]
 
     def get_date_rows(self) -> list[SittingDateRow]:
         statement = select(
