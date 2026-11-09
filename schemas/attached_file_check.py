@@ -58,3 +58,25 @@ class AttachedFileCheckVerdict(BaseModel):
     paragraph_answer: AttachedFileCheckAnswer
     file_answer: Optional[AttachedFileCheckAnswer]
     note: str
+
+
+class AttachedFileCheckFlag(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    packet_id: str
+    round_number: int
+    sprs_report_id: str
+    pointer_ordinal: int
+    speech_ordinal: int
+    attached_file_id: Optional[int]
+    link_words: str
+    source_paragraph: str
+    row_transcript: str
+    file_title: Optional[str]
+    paragraph_tie_rule: ParagraphTieRule
+    sonnet: AttachedFileCheckVerdict
+    opus: AttachedFileCheckVerdict
+
+
+class AttachedFileCheckFlags(RootModel[list[AttachedFileCheckFlag]]):
+    model_config = ConfigDict(frozen=True)
