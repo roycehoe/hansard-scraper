@@ -182,6 +182,8 @@ A write that adds, rewrites, deletes or relinks attendance rows (`clean_attendan
 
 A write that adds, rewrites or deletes speech rows of any report ends with `python -m scripts.apply_report_links --commit`.
 
+A run of `python -m scripts.apply_bill_speakers --commit` without `--report-id` follows each `apply_act_links.py --commit`, because a regroup gives new bills no key row and moves reports between bills. A run with `--report-id` (the integer `report.id`) follows any write that adds, rewrites, deletes or relinks speech rows of a report in `billreport`, and may list every report the write touched, joined to a bill or not.
+
 The scripts:
 
 - `diagnose.py` — inspect parsing failures across the corpus
