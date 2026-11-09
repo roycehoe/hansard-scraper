@@ -166,9 +166,9 @@ def _remove_reports(session: Session, removals: list[ReportRemoval]) -> None:
     deleted_bill_report_speaker_count = CRUDBillReportSpeaker(
         session
     ).delete_by_sprs_report_ids(sprs_report_ids)
-    deleted_bill_stage_line_count = CRUDBillStageLine(session).delete_by_sprs_report_ids(
-        sprs_report_ids
-    )
+    deleted_bill_stage_line_count = CRUDBillStageLine(
+        session
+    ).delete_by_sprs_report_ids(sprs_report_ids)
     deleted_speech_count = CRUDSpeech(session).delete_by_report_ids(report_ids)
     deleted_report_count = CRUDReport(session).delete_by_ids(report_ids)
     if deleted_link_count != len(planned_link_ids):

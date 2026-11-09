@@ -471,7 +471,9 @@ def test_dry_run_plan_counts_the_bill_report_speaker_and_stage_line_rows(
 ) -> None:
     _use_scratch(scratch_engine, monkeypatch)
     _seed_duplicate(scratch_session)
-    _add_bill_speaker_rows(scratch_session, _EXCLUDED_REPORT_ID, _EXCLUDED_STAGE_LINE_COUNT)
+    _add_bill_speaker_rows(
+        scratch_session, _EXCLUDED_REPORT_ID, _EXCLUDED_STAGE_LINE_COUNT
+    )
     plan_path = tmp_path / "plan.json"
 
     remove_excluded_reports_script.remove_excluded_reports(False, plan_path)

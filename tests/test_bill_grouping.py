@@ -467,7 +467,9 @@ def test_a_passed_bill_and_a_later_report_start_a_new_bill() -> None:
     )
 
 
-def test_a_first_reading_after_an_unpassed_bills_last_sitting_starts_a_new_bill() -> None:
+def test_a_first_reading_after_an_unpassed_bills_last_sitting_starts_a_new_bill() -> (
+    None
+):
     assert should_start_new_bill(
         False, datetime(2025, 1, 15), datetime(2025, 1, 16), True
     )

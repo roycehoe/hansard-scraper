@@ -171,7 +171,9 @@ def test_a_stored_hand_kept_bill_explains_a_different_grouping(
         replay_script,
         "get_hand_kept_bills",
         lambda: [
-            HandKeptBill(title=_TITLE, report_ids=[report_a_id, report_c_id], reason="test")
+            HandKeptBill(
+                title=_TITLE, report_ids=[report_a_id, report_c_id], reason="test"
+            )
         ],
     )
 

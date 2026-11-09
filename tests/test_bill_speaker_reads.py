@@ -11,9 +11,7 @@ from tests.bill_seed import seed_bill, seed_bill_report, seed_speaker, seed_spee
 
 _FIRST_DATE = datetime(2024, 11, 12)
 _SECOND_DATE = datetime(2025, 1, 8)
-_THIRD_READING_PATTERN = (
-    r'^\W*[^"]{0,150}\ybill\y[^"]{0,120}\yread (a|the) third time'
-)
+_THIRD_READING_PATTERN = r'^\W*[^"]{0,150}\ybill\y[^"]{0,120}\yread (a|the) third time'
 _THIRD_READING_LINE = "Bill read a Third time and passed."
 
 
@@ -27,7 +25,12 @@ class _SeededBill:
 
 def _seed_bill_with_budget_report(session: Session) -> _SeededBill:
     first_report_id = seed_bill_report(
-        session, "read-first", ReportType.BILL_INTRODUCTION, _FIRST_DATE, "Food Bill", []
+        session,
+        "read-first",
+        ReportType.BILL_INTRODUCTION,
+        _FIRST_DATE,
+        "Food Bill",
+        [],
     )
     second_report_id = seed_bill_report(
         session, "read-second", ReportType.BILL, _SECOND_DATE, "Food Bill", []
@@ -147,7 +150,13 @@ def test_ordinal_label_rows_keep_only_spoken_rows_with_a_speaker_id(
         scratch_session, report_id, 3, "Hon Member", None, SpeechKind.SPEECH, "Sir."
     )
     seed_speech(
-        scratch_session, report_id, 4, "Ms A", speaker_id, SpeechKind.UNCLASSIFIED, "Sir."
+        scratch_session,
+        report_id,
+        4,
+        "Ms A",
+        speaker_id,
+        SpeechKind.UNCLASSIFIED,
+        "Sir.",
     )
 
     rows = CRUDSpeech(

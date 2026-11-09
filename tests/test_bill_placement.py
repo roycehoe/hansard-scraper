@@ -122,9 +122,7 @@ def test_a_report_joins_the_one_open_stored_bill() -> None:
     stored_bill_row = _stored_bill_row(
         _STORED_BILL_ID, _TITLE, datetime(2025, 1, 15), datetime(2025, 1, 15), False
     )
-    report_row = _report_row(
-        2, "estate-2", datetime(2025, 2, 19), "ESTATE DUTY (BILL)"
-    )
+    report_row = _report_row(2, "estate-2", datetime(2025, 2, 19), "ESTATE DUTY (BILL)")
 
     placement = _place(
         [report_row],

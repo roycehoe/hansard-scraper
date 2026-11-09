@@ -228,8 +228,7 @@ def test_commit_with_report_ids_leaves_other_reports_rows_alone(
     apply_bill_speakers([], is_commit=True)
     third_report_speaker = scratch_session.exec(
         select(BillReportSpeaker).where(
-            col(BillReportSpeaker.sprs_report_id)
-            == BILL_SPEECHES_THIRD_SPRS_REPORT_ID
+            col(BillReportSpeaker.sprs_report_id) == BILL_SPEECHES_THIRD_SPRS_REPORT_ID
         )
     ).one()
     third_report_speaker.printed_speaker = _HAND_EDITED_NAME

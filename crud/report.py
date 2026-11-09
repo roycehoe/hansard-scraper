@@ -290,9 +290,7 @@ class CRUDReport:
             .where(col(Report.report_type).in_(report_types))
             .order_by(col(Report.sitting_date), col(Report.id))
         )
-        return [
-            ReportPlacementRow(*row) for row in self.session.exec(statement).all()
-        ]
+        return [ReportPlacementRow(*row) for row in self.session.exec(statement).all()]
 
     def get_placement_rows_by_report_types_not_in_and_title_regex(
         self, report_types: tuple[ReportType, ...], pattern: str
@@ -309,9 +307,7 @@ class CRUDReport:
             .where(col(Report.title).regexp_match(pattern, flags="i"))
             .order_by(col(Report.sitting_date), col(Report.id))
         )
-        return [
-            ReportPlacementRow(*row) for row in self.session.exec(statement).all()
-        ]
+        return [ReportPlacementRow(*row) for row in self.session.exec(statement).all()]
 
     def get_sitting_date_title_rows_by_ids(
         self, report_ids: list[int]
@@ -340,9 +336,7 @@ class CRUDReport:
             .where(col(Report.id).in_(report_ids))
             .order_by(col(Report.sitting_date), col(Report.id))
         )
-        return [
-            ReportPlacementRow(*row) for row in self.session.exec(statement).all()
-        ]
+        return [ReportPlacementRow(*row) for row in self.session.exec(statement).all()]
 
     def delete_by_ids(self, report_ids: list[int]) -> int:
         statement = delete(Report).where(col(Report.id).in_(report_ids))

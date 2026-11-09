@@ -832,9 +832,7 @@ def place_bill_reports(
 ) -> BillPlacement:
     title_key_to_stored_bill_rows: defaultdict[str, list[BillRow]] = defaultdict(list)
     for stored_bill_row in stored_bill_rows:
-        title_key_to_stored_bill_rows[stored_bill_row.title_key].append(
-            stored_bill_row
-        )
+        title_key_to_stored_bill_rows[stored_bill_row.title_key].append(stored_bill_row)
     title_key_to_open_bill: dict[str, _OpenBill] = {}
     open_bills: list[_OpenBill] = []
     left_out_reports: list[LeftOutReport] = []

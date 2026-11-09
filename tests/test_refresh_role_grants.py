@@ -166,7 +166,9 @@ def test_dropping_is_passed_from_the_column_grant_fails(
         column_privileges=role_grants.column_privileges - {"UPDATE bill.is_passed"},
     )
 
-    violations = get_grant_violations(recorded_statements, _TABLE_NAMES, weakened_grants)
+    violations = get_grant_violations(
+        recorded_statements, _TABLE_NAMES, weakened_grants
+    )
 
     assert "UPDATE on bill.is_passed" in violations
 
@@ -178,7 +180,9 @@ def test_dropping_a_sequence_grant_fails(recorded_statements: list[str]) -> None
         sequence_usages=role_grants.sequence_usages - {"billkey_id_seq"},
     )
 
-    violations = get_grant_violations(recorded_statements, _TABLE_NAMES, weakened_grants)
+    violations = get_grant_violations(
+        recorded_statements, _TABLE_NAMES, weakened_grants
+    )
 
     assert "USAGE on billkey_id_seq" in violations
 

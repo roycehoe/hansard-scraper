@@ -414,8 +414,7 @@ def test_the_report_write_leaves_other_reports_rows_alone_and_removes_stale_rows
     )
     third_report_speaker = scratch_session.exec(
         select(BillReportSpeaker).where(
-            col(BillReportSpeaker.sprs_report_id)
-            == BILL_SPEECHES_THIRD_SPRS_REPORT_ID
+            col(BillReportSpeaker.sprs_report_id) == BILL_SPEECHES_THIRD_SPRS_REPORT_ID
         )
     ).one()
     third_report_speaker.printed_speaker = "Hand edited"

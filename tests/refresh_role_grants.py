@@ -27,9 +27,9 @@ class RoleGrants:
 
 
 def get_write_role_blocks() -> list[str]:
-    section = _REFRESH_DOCUMENT.read_text(encoding="utf-8").split(
-        _WRITE_ROLE_HEADING
-    )[1]
+    section = _REFRESH_DOCUMENT.read_text(encoding="utf-8").split(_WRITE_ROLE_HEADING)[
+        1
+    ]
     return _SQL_FENCE_PATTERN.findall(section)
 
 

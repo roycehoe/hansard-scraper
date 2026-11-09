@@ -201,9 +201,9 @@ def get_report_bill_speaker_plan(
         )
         planned_rows = _build_planned_rows(
             session,
-            CRUDBillReport(
-                session
-            ).get_sitting_date_report_type_rows_by_report_ids(batch_report_ids),
+            CRUDBillReport(session).get_sitting_date_report_type_rows_by_report_ids(
+                batch_report_ids
+            ),
         )
         bill_report_speakers.extend(planned_rows.bill_report_speakers)
         bill_stage_lines.extend(planned_rows.bill_stage_lines)
@@ -257,9 +257,7 @@ def _validate_can_commit_bill_keys(session: Session, plan: BillSpeakerPlan) -> N
     bill_id_to_bill_report_rows: defaultdict[
         int, list[BillReportSittingDateReportTypeRow]
     ] = defaultdict(list)
-    for bill_report_row in CRUDBillReport(
-        session
-    ).get_sitting_date_report_type_rows():
+    for bill_report_row in CRUDBillReport(session).get_sitting_date_report_type_rows():
         bill_id_to_bill_report_rows[bill_report_row.bill_id].append(bill_report_row)
     stored_bill_key_rows = CRUDBillKey(session).get_rows()
     if len(stored_bill_key_rows) != len(plan.bill_keys):

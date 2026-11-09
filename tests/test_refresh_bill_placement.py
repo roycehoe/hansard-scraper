@@ -474,9 +474,7 @@ def test_populate_issues_no_delete_and_updates_only_three_columns(
 
     event.listen(scratch_engine, "before_cursor_execute", recorder.record_statement)
     try:
-        populate_bill_speakers(
-            scratch_session, [joining_report_id, starting_report_id]
-        )
+        populate_bill_speakers(scratch_session, [joining_report_id, starting_report_id])
         scratch_session.commit()
     finally:
         event.remove(scratch_engine, "before_cursor_execute", recorder.record_statement)

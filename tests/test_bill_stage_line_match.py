@@ -77,9 +77,7 @@ def test_the_second_reading_order_pattern_keeps_only_the_order_line(
 def test_the_second_reading_agreed_pattern_keeps_only_the_accordingly_line(
     scratch_session: Session,
 ) -> None:
-    accordingly_line = (
-        "Bill accordingly read a Second time and committed to a Committee of the whole House."
-    )
+    accordingly_line = "Bill accordingly read a Second time and committed to a Committee of the whole House."
     lines = [
         accordingly_line,
         "That the Bill be now read a Second time.",
@@ -112,7 +110,12 @@ def test_the_third_reading_pattern_keeps_the_passed_line_and_drops_the_motion_fo
 
 def test_a_speech_line_never_proves_a_stage(scratch_session: Session) -> None:
     report_id = seed_bill_report(
-        scratch_session, "speech-report", ReportType.BILL, _SITTING_DATE, "Food Bill", []
+        scratch_session,
+        "speech-report",
+        ReportType.BILL,
+        _SITTING_DATE,
+        "Food Bill",
+        [],
     )
     for ordinal, kind in enumerate(
         (SpeechKind.SPEECH, SpeechKind.DOCUMENT_TEXT), start=1
@@ -130,7 +133,10 @@ def test_a_speech_line_never_proves_a_stage(scratch_session: Session) -> None:
     rows = CRUDSpeech(
         scratch_session
     ).get_ordinal_transcript_rows_by_report_ids_and_kinds_and_transcript_regex_and_transcript_not_regexes(
-        [report_id], _STAGE_LINE_KINDS, THIRD_READING_PATTERN, NOT_THIRD_READING_PATTERNS
+        [report_id],
+        _STAGE_LINE_KINDS,
+        THIRD_READING_PATTERN,
+        NOT_THIRD_READING_PATTERNS,
     )
 
     assert rows == []
