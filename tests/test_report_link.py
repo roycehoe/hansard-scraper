@@ -34,8 +34,13 @@ _LOWEST_ORDINAL = 2
 _UNPLACED_ORDINAL = 4
 _NEWER_SYSTEM_PART_NUMBER = 7
 _OLDER_SYSTEM_PART_NUMBER = 21
+_CERTAIN_RULES = (
+    ReportLinkRule.PRINTED_TITLE_ON_PRINTED_DATE,
+    ReportLinkRule.SAME_TITLE_ON_PRINTED_DATE,
+    ReportLinkRule.LAST_PART_ON_PRINTED_DATE,
+)
 _EXTENDED_RULES = (
-    *SHIPPED_REPORT_LINK_RULES,
+    *_CERTAIN_RULES,
     ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE,
     ReportLinkRule.HAND_KEPT_TITLE_ON_PRINTED_DATE,
 )
@@ -471,12 +476,14 @@ def test_continuation_compares_title_not_original_title() -> None:
 def test_key_rule_links_a_title_that_differs_in_case_and_punctuation() -> None:
     target = replace(_build_target(title="Other"), original_title="TITLE, A")
 
-    shipped_plan = _build_plan([_build_source(), target], [_build_citation()])
+    certain_plan = _build_plan(
+        [_build_source(), target], [_build_citation()], shipped_rules=_CERTAIN_RULES
+    )
     extended_plan = _build_plan(
         [_build_source(), target], [_build_citation()], shipped_rules=_EXTENDED_RULES
     )
 
-    assert _get_only_reason(shipped_plan) == ReportLinkUnplacedReason.NO_REPORT_WITH_TITLE
+    assert _get_only_reason(certain_plan) == ReportLinkUnplacedReason.NO_REPORT_WITH_TITLE
     assert _get_only_link(extended_plan).rule == ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE
 
 
@@ -522,14 +529,18 @@ def test_a_title_variant_on_the_printed_date_leaves_no_certain_continuation() ->
         _build_part(3, 11, title="Debate.", report_id="PART#11"),
     ]
 
-    shipped_plan = _build_plan(report_rows, resumption_headings=[_build_heading()])
+    certain_plan = _build_plan(
+        report_rows,
+        resumption_headings=[_build_heading()],
+        shipped_rules=_CERTAIN_RULES,
+    )
     extended_plan = _build_plan(
         report_rows,
         resumption_headings=[_build_heading()],
         shipped_rules=_EXTENDED_RULES,
     )
 
-    assert _get_only_reason(shipped_plan) == ReportLinkUnplacedReason.SEVERAL_REPORTS_WITH_TITLE
+    assert _get_only_reason(certain_plan) == ReportLinkUnplacedReason.SEVERAL_REPORTS_WITH_TITLE
     planned_link = _get_only_link(extended_plan)
     assert planned_link.target_report_id == "PART#11"
     assert planned_link.rule == ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE
@@ -603,7 +614,7 @@ def test_an_unplaced_citation_carries_its_paragraph() -> None:
     assert unplaced_citation.ordinal == _UNPLACED_ORDINAL
 
 
-def test_shipped_rules_do_not_fire_the_looser_rules() -> None:
+def test_the_certain_rules_do_not_fire_the_looser_rules() -> None:
     target = replace(_build_target(title="Other"), original_title="TITLE, A")
 
     plan = _build_plan(
@@ -612,6 +623,7 @@ def test_shipped_rules_do_not_fire_the_looser_rules() -> None:
         title_corrections=[
             _build_title_correction(_SOURCE_REPORT_ID, _TITLE, "Other")
         ],
+        shipped_rules=_CERTAIN_RULES,
     )
 
     assert plan.planned_links == []

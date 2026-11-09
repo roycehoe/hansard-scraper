@@ -20,6 +20,7 @@ SHIPPED_REPORT_LINK_RULES = (
     ReportLinkRule.PRINTED_TITLE_ON_PRINTED_DATE,
     ReportLinkRule.SAME_TITLE_ON_PRINTED_DATE,
     ReportLinkRule.LAST_PART_ON_PRINTED_DATE,
+    ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE,
 )
 _NEWER_SYSTEM_PART_NUMBER_RE = re.compile(r"(\d+)#?$")
 _OLDER_SYSTEM_PART_NUMBER_RE = re.compile(r"^(\d+)")
