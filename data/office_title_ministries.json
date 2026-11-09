@@ -929,5 +929,284 @@
     "office_printed": "(Policy)",
     "ministry_names": [],
     "reason": "a stray bracket remnant of a portfolio qualifier; not an office"
+  },
+  {
+    "office_printed": "Acting Minister for Community Develop- ment",
+    "ministry_names": [
+      "Community Development"
+    ],
+    "reason": "Misprint: a line-break hyphen and a space split Development."
+  },
+  {
+    "office_printed": "Acting Minister for Community Development, Youth, Sports",
+    "ministry_names": [
+      "Community Development, Youth and Sports"
+    ],
+    "reason": "Misprint: a comma printed for and inside the name."
+  },
+  {
+    "office_printed": "Acting Minister for Labour [Minister of State for Labour] and Government Whip",
+    "ministry_names": [
+      "Labour"
+    ],
+    "reason": "Bracket: the square bracket prints a second office of the same portfolio, and Government Whip names no ministry."
+  },
+  {
+    "office_printed": "Acting minister for Social Affairs",
+    "ministry_names": [
+      "Social Affairs"
+    ],
+    "reason": "Misprint: lower case m in Minister."
+  },
+  {
+    "office_printed": "Assistant Minister for Local Government, and Housing",
+    "ministry_names": [
+      "Local Government, Lands and Housing"
+    ],
+    "reason": "Misprint: Lands lost after the comma, and this is the one closed-list name holding Local Government and Housing."
+  },
+  {
+    "office_printed": "Minister and Minister Deputy Prime of Defence",
+    "ministry_names": [
+      "Defence"
+    ],
+    "reason": "Misprint: the words of Deputy Prime Minister and Minister of Defence are printed out of order, each once, and Defence is the only ministry among them."
+  },
+  {
+    "office_printed": "Minister forCommunications",
+    "ministry_names": [
+      "Communications"
+    ],
+    "reason": "Misprint: space lost after for."
+  },
+  {
+    "office_printed": "Minister for Culture and Acting Leader of the House",
+    "ministry_names": [
+      "Culture"
+    ],
+    "reason": "The rule does not read Acting Leader of the House, which names no ministry, so Culture is the only ministry printed."
+  },
+  {
+    "office_printed": "Minister for Culture, and Acting Leader of the House",
+    "ministry_names": [
+      "Culture"
+    ],
+    "reason": "The rule does not read Acting Leader of the House, which names no ministry, so Culture is the only ministry printed."
+  },
+  {
+    "office_printed": "Minister for Information, Communications and the Arts & Minister-in-charge of Muslim Affairs",
+    "ministry_names": [
+      "Information, Communications and the Arts",
+      "Muslim Affairs"
+    ],
+    "reason": "The rule does not split at an ampersand, and the two clauses print these two closed-list names."
+  },
+  {
+    "office_printed": "Minister for labour",
+    "ministry_names": [
+      "Labour"
+    ],
+    "reason": "Misprint: lower case l in Labour."
+  },
+  {
+    "office_printed": "Minister for labour and law",
+    "ministry_names": [
+      "Labour",
+      "Law"
+    ],
+    "reason": "Misprint: lower case l in both Labour and Law."
+  },
+  {
+    "office_printed": "Minister for Law and National Development and Speaker of the House",
+    "ministry_names": [
+      "Law",
+      "National Development"
+    ],
+    "reason": "The rule does not read Speaker of the House, which names no ministry whether it stands as printed or is a misprint."
+  },
+  {
+    "office_printed": "Minister for Law and National Development Board",
+    "ministry_names": [
+      "Law",
+      "National Development"
+    ],
+    "reason": "Misprint: stray Board after National Development, a word no closed-list name holds."
+  },
+  {
+    "office_printed": "Minister for National development",
+    "ministry_names": [
+      "National Development"
+    ],
+    "reason": "Misprint: lower case d in Development."
+  },
+  {
+    "office_printed": "Minister for Trade and Industry and Minister f6r Health",
+    "ministry_names": [
+      "Trade and Industry",
+      "Health"
+    ],
+    "reason": "Misprint: f6r for for."
+  },
+  {
+    "office_printed": "Minister for Trade and industry and Minister for Education",
+    "ministry_names": [
+      "Trade and Industry",
+      "Education"
+    ],
+    "reason": "Misprint: lower case i in Industry."
+  },
+  {
+    "office_printed": "Minister for Trade and lndustry and Minister for Education",
+    "ministry_names": [
+      "Trade and Industry",
+      "Education"
+    ],
+    "reason": "Misprint: lower case l for the capital I in Industry."
+  },
+  {
+    "office_printed": "Minister for Trade Industry",
+    "ministry_names": [
+      "Trade and Industry"
+    ],
+    "reason": "Misprint: and lost between Trade and Industry."
+  },
+  {
+    "office_printed": "Minister for transport",
+    "ministry_names": [
+      "Transport"
+    ],
+    "reason": "Misprint: lower case t in Transport."
+  },
+  {
+    "office_printed": "Minister of State, Ministry of Ubour and Government Whip",
+    "ministry_names": [
+      "Labour"
+    ],
+    "reason": "Misprint: Ubour for Labour, the one closed-list name it can be, and Government Whip names no ministry."
+  },
+  {
+    "office_printed": "Minister of State, Prime Minister's Office and for National Development",
+    "ministry_names": [
+      "Prime Minister's Office",
+      "National Development"
+    ],
+    "reason": "The rule does not read a clause headed only by for, and the two clauses print these two closed-list names."
+  },
+  {
+    "office_printed": "Mr SPEAKER Mr Tan Soo Khoon",
+    "ministry_names": [],
+    "reason": "The row prints the chair and its holder's name, and the chair names no ministry (ruling D)."
+  },
+  {
+    "office_printed": "Parliamentary Secretary for the Minister for Home Affairs",
+    "ministry_names": [
+      "Home Affairs"
+    ],
+    "reason": "Misprint: for printed for to after Secretary."
+  },
+  {
+    "office_printed": "Parliamentary Secretary to Minister for National Development",
+    "ministry_names": [
+      "National Development"
+    ],
+    "reason": "The rule does not read to Minister without the, and National Development is the only ministry printed."
+  },
+  {
+    "office_printed": "Parliamentary Secretary to Minister for Social Affairs",
+    "ministry_names": [
+      "Social Affairs"
+    ],
+    "reason": "The rule does not read to Minister without the, and Social Affairs is the only ministry printed."
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Acting Ministers for Education and Ministers for Trade and Industry",
+    "ministry_names": [
+      "Education",
+      "Trade and Industry"
+    ],
+    "reason": "The rule does not split before the plural Ministers, and the two clauses print these two closed-list names."
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister for Culture, and Acting Parliamentary Secretary to the Minister for Education",
+    "ministry_names": [
+      "Culture",
+      "Education"
+    ],
+    "reason": "The rule does not split before Acting Parliamentary Secretary, and the two clauses print these two closed-list names."
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister for Social and Family Development and Acting Ministers for Education",
+    "ministry_names": [
+      "Social and Family Development",
+      "Education"
+    ],
+    "reason": "The rule does not split before the plural Ministers, and the two clauses print these two closed-list names."
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister for Social and Family Development and Ministers for Education",
+    "ministry_names": [
+      "Social and Family Development",
+      "Education"
+    ],
+    "reason": "The rule does not split before the plural Ministers, and the two clauses print these two closed-list names."
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Ministers for Trade and Industry and Acting Ministers for Education",
+    "ministry_names": [
+      "Trade and Industry",
+      "Education"
+    ],
+    "reason": "The rule does not split before the plural Ministers, and the two clauses print these two closed-list names."
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Ministers for Trade and Industry and Ministers for Education",
+    "ministry_names": [
+      "Trade and Industry",
+      "Education"
+    ],
+    "reason": "The rule does not split before the plural Ministers, and the two clauses print these two closed-list names."
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Ministers for Trade and Industry and the Acting Ministers for Education",
+    "ministry_names": [
+      "Trade and Industry",
+      "Education"
+    ],
+    "reason": "The rule does not split before the plural Ministers, and the two clauses print these two closed-list names."
+  },
+  {
+    "office_printed": "Second Deputy Prime Minister (Foreign",
+    "ministry_names": [
+      "Foreign Affairs"
+    ],
+    "reason": "Misprint: Affairs and the closing bracket lost, and Foreign Affairs is the one closed-list name starting with Foreign."
+  },
+  {
+    "office_printed": "Senior Minister of State for Sustainability and Environment and Manpower",
+    "ministry_names": [
+      "Sustainability and the Environment",
+      "Manpower"
+    ],
+    "reason": "Misprint: the lost before Environment, and this is the one closed-list name holding Sustainability."
+  },
+  {
+    "office_printed": "Senior Parliamentary Secretary to the Minister for Trade and Industry the Minister for the Environment",
+    "ministry_names": [
+      "Trade and Industry",
+      "Environment"
+    ],
+    "reason": "Misprint: and lost before the second the Minister."
+  },
+  {
+    "office_printed": "Deputy Leader",
+    "ministry_names": [],
+    "reason": "The words name a post and no ministry."
+  },
+  {
+    "office_printed": "Senior Parliamentary Secretary to Minister for National Development",
+    "ministry_names": [
+      "National Development"
+    ],
+    "reason": "The rule does not read to Minister without the, and National Development is the only ministry printed."
   }
 ]
