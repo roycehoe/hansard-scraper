@@ -31,6 +31,9 @@ def apply_seat_holdings(is_commit: bool) -> None:
     if is_commit:
         validate_can_write(settings.database_url)
     with Session(engine) as session:
+        if is_commit:
+            # NOTE: locked before the plan is read, so a row the daily job widens is in the plan or waits
+            CRUDSeatHolding(session).lock_table_in_share_row_exclusive_mode()
         speaker_ids = sorted(
             set(
                 CRUDAttendance(

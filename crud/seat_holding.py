@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import date
 
-from sqlalchemy import Integer, update
+from sqlalchemy import Integer, text, update
 from sqlmodel import Session, col, delete, func, select
 
 from database.seat_holding import SeatHolding
@@ -33,6 +33,11 @@ class SeatHoldingCheckRow:
 class CRUDSeatHolding:
     def __init__(self, session: Session):
         self.session = session
+
+    def lock_table_in_share_row_exclusive_mode(self) -> None:
+        statement = text("LOCK TABLE seat_holding IN SHARE ROW EXCLUSIVE MODE")
+
+        self.session.execute(statement)
 
     def add_many(self, seat_holdings: list[SeatHolding]) -> None:
         self.session.add_all(seat_holdings)

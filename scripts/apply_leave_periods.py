@@ -3,6 +3,8 @@ from collections import Counter
 
 from sqlmodel import Session
 
+from crud.leave_period import CRUDLeavePeriod
+from crud.leave_period_printing import CRUDLeavePeriodPrinting
 from crud.sitting import CRUDSitting
 from database.init import engine
 from database.leave_period import LeavePeriod, LeavePeriodPrinting
@@ -68,6 +70,10 @@ def apply_leave_periods(is_commit: bool) -> None:
     if is_commit:
         validate_can_write(settings.database_url)
     with Session(engine) as session:
+        if is_commit:
+            # NOTE: locked before the plan is read, so a sitting the daily job commits is in the plan or waits
+            CRUDLeavePeriod(session).lock_table_in_share_row_exclusive_mode()
+            CRUDLeavePeriodPrinting(session).lock_table_in_share_row_exclusive_mode()
         planned_printings = get_leave_period_plan(
             session,
             [
