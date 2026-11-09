@@ -1,11 +1,14 @@
 import io
+import re
 import struct
 from dataclasses import dataclass
+from datetime import date, datetime
+from typing import Optional
 
 from pypdf import PdfReader
 from pypdf.errors import FileNotDecryptedError, PdfReadError, PyPdfError
 
-from enums import MinutesFileFormat
+from enums import MinutesFileFormat, MinutesStatus
 from exceptions import HansardMinutesFileError
 
 _PDF_SIGNATURE = b"%PDF"
@@ -47,6 +50,19 @@ _PIECE_OFFSET_MASK = 0x3FFFFFFF
 _EIGHT_BIT_ENCODING = "cp1252"
 _SIXTEEN_BIT_ENCODING = "utf-16-le"
 _WORD_PARAGRAPH_MARK = "\r"
+_HEAD_CHARACTER_COUNT = 1_500
+_HEAD_DATE_PATTERN = re.compile(
+    r"\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday),?\s+(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]+),?\s+(\d{4})",
+    re.IGNORECASE,
+)
+_HEAD_DATE_FORMAT = "%d %B %Y"
+_HEAD_TITLE_PATTERN = re.compile(r"votes\s+and\s+proceedings", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class MinutesTextOutcome:
+    status: MinutesStatus
+    status_note: Optional[str]
 
 
 @dataclass(frozen=True)
@@ -296,3 +312,36 @@ def get_minutes_word_text(content: bytes) -> str:
         raise HansardMinutesFileError("The Word file cannot be read") from error
     except KeyError as error:
         raise HansardMinutesFileError("The Word file cannot be read") from error
+
+
+def get_minutes_head_dates(extracted_text: str) -> list[date]:
+    head_dates: set[date] = set()
+    for match in _HEAD_DATE_PATTERN.finditer(extracted_text[:_HEAD_CHARACTER_COUNT]):
+        try:
+            head_dates.add(
+                datetime.strptime(" ".join(match.groups()), _HEAD_DATE_FORMAT).date()
+            )
+        except ValueError:
+            continue
+    return sorted(head_dates)
+
+
+def is_minutes_head(extracted_text: str) -> bool:
+    return (
+        _HEAD_TITLE_PATTERN.search(extracted_text[:_HEAD_CHARACTER_COUNT]) is not None
+    )
+
+
+def get_minutes_text_outcome(
+    sitting_date: date, extracted_text: str
+) -> MinutesTextOutcome:
+    head_dates = get_minutes_head_dates(extracted_text)
+    if not head_dates or sitting_date in head_dates:
+        return MinutesTextOutcome(MinutesStatus.TEXT_STORED, None)
+    dates_text = ", ".join(
+        f"{head_date.day} {head_date:%B} {head_date.year}" for head_date in head_dates
+    )
+    return MinutesTextOutcome(
+        MinutesStatus.NEEDS_REVIEW,
+        f"The file's head prints {dates_text}, not the sitting date",
+    )
