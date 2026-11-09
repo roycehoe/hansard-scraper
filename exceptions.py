@@ -100,3 +100,7 @@ class HansardBillKeyError(HansardError):
 
 class HansardLawLinkCheckError(HansardError):
     pass
+
+
+class HansardAttachedFileError(HansardError):
+    pass

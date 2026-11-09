@@ -278,6 +278,23 @@ class BillReportRole(StrEnum):
     BUDGET_DEBATE = "BUDGET_DEBATE"
 
 
+class AttachedFileKind(StrEnum):
+    ANNEX = "ANNEX"
+    VERNACULAR = "VERNACULAR"
+
+
+class AttachedFilePointerShape(StrEnum):
+    DATED = "DATED"
+    PDFS = "PDFS"
+    SECTION_FILE = "SECTION_FILE"
+
+
+class ParagraphTieRule(StrEnum):
+    ONLY_OCCURRENCE = "ONLY_OCCURRENCE"
+    EVERY_OCCURRENCE_A_LINK = "EVERY_OCCURRENCE_A_LINK"
+    OCCURRENCE_BESIDE_PLAIN_TEXT = "OCCURRENCE_BESIDE_PLAIN_TEXT"
+
+
 class ActHistoryDefect(StrEnum):
     MISSING_YEAR = "MISSING_YEAR"
     EMPTY_VALUE = "EMPTY_VALUE"
