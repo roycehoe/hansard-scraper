@@ -1,4 +1,4 @@
-# 0018. Attached file pointers
+# 0020. Attached file pointers
 
 Status: accepted, 9 November 2026. Migration `81ba3804b972` adds the two tables. None of it has shipped yet.
 

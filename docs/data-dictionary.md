@@ -185,7 +185,7 @@ One row per person and spelling in a spelling note. Stage 9 loads it from `data/
 
 ### AttachedFile
 
-One row per file a sitting lists, read from `sitting.annexures` and `sitting.vernaculars`. A list entry with the same kind, title and printed path as an earlier one is stored once, keeping the lowest SPRS file id. See [ADR 0018](adr/0018-attached-file-pointers.md).
+One row per file a sitting lists, read from `sitting.annexures` and `sitting.vernaculars`. A list entry with the same kind, title and printed path as an earlier one is stored once, keeping the lowest SPRS file id. See [ADR 0020](adr/0020-attached-file-pointers.md).
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -200,7 +200,7 @@ One row per file a sitting lists, read from `sitting.annexures` and `sitting.ver
 
 ### AttachedFilePointer
 
-One row per download link in a report's raw HTML, numbered in reading order. The link text and address are stored as printed. The speech row and the listed file are optional ties, set by `scripts/apply_attached_files.py` and by the daily refresh. See [ADR 0018](adr/0018-attached-file-pointers.md).
+One row per download link in a report's raw HTML, numbered in reading order. The link text and address are stored as printed. The speech row and the listed file are optional ties, set by `scripts/apply_attached_files.py` and by the daily refresh. See [ADR 0020](adr/0020-attached-file-pointers.md).
 
 | Field | Type | Meaning |
 |---|---|---|
