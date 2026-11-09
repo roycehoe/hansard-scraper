@@ -85,6 +85,13 @@ class ReportParticipantReportRow:
     mps_speaking_header: Optional[str]
 
 
+@dataclass(frozen=True)
+class ReportPutToReportRow:
+    id: int
+    report_id: str
+    sitting_date: datetime
+
+
 _STREAM_BATCH = 200
 _MPS_SPEAKING_HEADER_PATTERN = r"MPs Speaking:\|?([^\n]*)"
 
@@ -406,6 +413,19 @@ class CRUDReport:
         return [
             ReportParticipantReportRow(*row)
             for row in self.session.exec(statement).all()
+        ]
+
+    def get_put_to_report_rows_by_ids_and_report_types(
+        self, report_ids: list[int], report_types: Sequence[str]
+    ) -> list[ReportPutToReportRow]:
+        statement = (
+            select(Report.id, Report.report_id, Report.sitting_date)
+            .where(col(Report.id).in_(report_ids))
+            .where(col(Report.report_type).in_(report_types))
+            .order_by(Report.id)
+        )
+        return [
+            ReportPutToReportRow(*row) for row in self.session.exec(statement).all()
         ]
 
     def set_column_ranges_bulk(

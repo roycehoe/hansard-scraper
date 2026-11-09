@@ -11,6 +11,7 @@ import scripts.remove_excluded_reports as remove_excluded_reports_script
 from database.report import Report
 from database.report_asker import ReportAsker
 from database.report_participant import ReportParticipant
+from database.report_put_to import ReportPutTo
 from database.report_question_state import ReportQuestionState
 from database.speech import Speech
 from enums import (
@@ -18,6 +19,7 @@ from enums import (
     ParticipantRoleSource,
     QuestionState,
     ReportAskerSource,
+    ReportPutToSource,
 )
 from exceptions import HansardWriteCheckError, HansardWriteTargetError
 from schemas.excluded_report_id import ExcludedReportId
@@ -76,6 +78,21 @@ def _add_askers(session: Session, report_id: str, asker_count: int) -> None:
             report_id=report.id,
         )
         for ordinal in range(1, asker_count + 1)
+    )
+    session.commit()
+
+
+def _add_put_tos(session: Session, report_id: str, put_to_count: int) -> None:
+    session.add_all(
+        ReportPutTo(
+            ordinal=ordinal,
+            office_printed=f"Minister {ordinal}",
+            printed_text=f"asked the Minister {ordinal}",
+            source=ReportPutToSource.ASKED_THE,
+            first_ordinal=ordinal,
+            sprs_report_id=report_id,
+        )
+        for ordinal in range(1, put_to_count + 1)
     )
     session.commit()
 
@@ -140,6 +157,11 @@ def _get_report_ids(session: Session) -> list[str]:
 def _get_speech_count(session: Session) -> int:
     session.expire_all()
     return len(session.exec(select(Speech.id)).all())
+
+
+def _get_put_to_report_ids(session: Session) -> list[str]:
+    session.expire_all()
+    return sorted(session.exec(select(ReportPutTo.sprs_report_id)).all())
 
 
 def _get_asker_report_ids(session: Session) -> list[str]:
@@ -283,3 +305,17 @@ def test_commit_refuses_the_protected_local_port(
         remove_excluded_reports_script.remove_excluded_reports(True, None)
 
     assert _get_report_ids(scratch_session) == [_EXCLUDED_REPORT_ID, _KEPT_REPORT_ID]
+
+
+def test_commit_deletes_the_removed_reports_put_tos_and_keeps_the_others(
+    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_put_tos(scratch_session, _EXCLUDED_REPORT_ID, 2)
+    _add_put_tos(scratch_session, _KEPT_REPORT_ID, 1)
+
+    remove_excluded_reports_script.remove_excluded_reports(True, None)
+
+    assert _get_report_ids(scratch_session) == [_KEPT_REPORT_ID]
+    assert _get_put_to_report_ids(scratch_session) == [_KEPT_REPORT_ID]
