@@ -23,7 +23,7 @@ from exceptions import HansardWriteCheckError, HansardWriteTargetError
 from populate.office_title_ministries import populate_office_title_ministries
 from schemas.ministry_list import MinistrySeeAlsoEntry
 from scripts.apply_ministries import apply_ministries
-from utils.data_files import get_ministry_names
+from utils.data_files import get_ministry_names, get_ministry_see_also
 
 _PARLIAMENT_NUMBER = 14
 _SITTING_DATE = datetime(2025, 4, 2)
@@ -43,7 +43,7 @@ _SEED_TITLES = (
 _PLAN_LOG = (
     f"Plan: {len(get_ministry_names())} ministries;"
     " 2 placements by source: CLOSED_LIST_RULE 1, HAND_KEPT_TITLE 1;"
-    " 1 role-only titles; 1 unplaced titles; 0 see-also entries"
+    f" 1 role-only titles; 1 unplaced titles; {len(get_ministry_see_also())} see-also entries"
 )
 _UNPLACED_LOG = "Unplaced title: Minister for Nonsense"
 _COMMIT_RUN_COUNT = 2
