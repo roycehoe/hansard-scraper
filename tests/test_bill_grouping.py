@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -6,8 +6,15 @@ from crud.report import ReportSittingDateTitleRow
 from exceptions import HansardHandKeptEntryError
 from schemas.bill_title_correction import BillTitleCorrection
 from schemas.hand_kept_bill import HandKeptBill
-from services.bill import BillGrouping, group_bills, is_other_type_bill_reading
+from services.bill import (
+    BillGrouping,
+    group_bills,
+    is_other_type_bill_reading,
+    should_start_new_bill,
+)
 from utils.title_key import get_title_key
+
+_MAX_DAYS_BETWEEN_REPORTS = 366
 
 
 def _report_row(
@@ -451,4 +458,44 @@ def test_another_type_joins_the_grouping_when_its_title_ends_in_bill_and_it_hold
             title, is_first_reading, is_second_reading, is_third_reading
         )
         is expected
+    )
+
+
+def test_a_passed_bill_and_a_later_report_start_a_new_bill() -> None:
+    assert should_start_new_bill(
+        True, datetime(2025, 1, 15), datetime(2025, 1, 16), False
+    )
+
+
+def test_a_first_reading_after_an_unpassed_bills_last_sitting_starts_a_new_bill() -> None:
+    assert should_start_new_bill(
+        False, datetime(2025, 1, 15), datetime(2025, 1, 16), True
+    )
+
+
+def test_a_later_report_of_an_unpassed_bill_joins_it() -> None:
+    assert not should_start_new_bill(
+        False, datetime(2025, 1, 15), datetime(2025, 1, 16), False
+    )
+
+
+def test_a_report_on_the_last_sitting_date_of_a_passed_bill_joins_it() -> None:
+    assert not should_start_new_bill(
+        True, datetime(2025, 1, 15), datetime(2025, 1, 15), False
+    )
+
+
+def test_the_gap_limit_is_366_days_and_the_366th_day_still_joins() -> None:
+    last_sitting_date = datetime(2024, 1, 1)
+    assert not should_start_new_bill(
+        False,
+        last_sitting_date,
+        last_sitting_date + timedelta(days=_MAX_DAYS_BETWEEN_REPORTS),
+        False,
+    )
+    assert should_start_new_bill(
+        False,
+        last_sitting_date,
+        last_sitting_date + timedelta(days=_MAX_DAYS_BETWEEN_REPORTS + 1),
+        False,
     )

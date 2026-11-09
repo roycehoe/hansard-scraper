@@ -544,16 +544,15 @@ def _merge_split_bills(
     return _MergedRuleBills(merged_rule_bills, split_merges)
 
 
-def _should_start_new_bill(
-    open_bill: _RuleBill, sitting_date: datetime, is_first_reading: bool
+def should_start_new_bill(
+    is_passed: bool,
+    last_sitting_date: datetime,
+    sitting_date: datetime,
+    is_first_reading: bool,
 ) -> bool:
-    if (
-        open_bill.is_passed or is_first_reading
-    ) and sitting_date > open_bill.last_sitting_date:
+    if (is_passed or is_first_reading) and sitting_date > last_sitting_date:
         return True
-    return sitting_date - open_bill.last_sitting_date > timedelta(
-        days=_MAX_DAYS_BETWEEN_REPORTS
-    )
+    return sitting_date - last_sitting_date > timedelta(days=_MAX_DAYS_BETWEEN_REPORTS)
 
 
 def _build_bill_group(
@@ -670,8 +669,11 @@ def _group_rule_bills(
         title_key = get_title_key(report_row.title)
         is_first_reading = report_row.id in first_reading_report_ids
         previous_bill = title_key_to_open_bill.get(title_key)
-        if previous_bill is not None and _should_start_new_bill(
-            previous_bill, report_row.sitting_date, is_first_reading
+        if previous_bill is not None and should_start_new_bill(
+            previous_bill.is_passed,
+            previous_bill.last_sitting_date,
+            report_row.sitting_date,
+            is_first_reading,
         ):
             rule_bills.append(previous_bill)
             del title_key_to_open_bill[title_key]
