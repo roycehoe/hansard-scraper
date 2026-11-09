@@ -13,7 +13,7 @@ Each packet has a heading with a packet id, then:
 - the paragraph that prints it;
 - the citing report's title, date and opening text;
 - the linked report's title, date and opening text;
-- for a continuation, every other report of that title on the linked report's date, each with its opening and closing text. The report the link points to carries the note `[this is the linked report]`.
+- for a continuation, every other report of that title on the linked report's date, each with its opening and closing text. The report the link points to carries the note `[this is the linked report]`. A title in this list may differ from the linked report's in case or punctuation and is still a part of that debate. A continuation with no such list has only the one report of that title on that date.
 
 ## What a right link is
 
@@ -33,6 +33,8 @@ A citation is misread when any of these holds:
 - a title, a date or a note was taken from the wrong place in the paragraph.
 
 A misread citation is `WRONG`, even when the two reports look related.
+
+A paragraph can print several titles that share one date and volume. The printed citation then holds the whole group, and each title has its own link. That is not a misread when the linked report is one the paragraph names.
 
 ## Verdicts
 
