@@ -11,11 +11,14 @@ from sqlmodel import Session
 import database.speaker  # noqa: F401 registers Speaker so the speech.speaker_id foreign key resolves
 from crud.report import CRUDReport
 from crud.speech import CRUDSpeech, SpeechParseRow
+from database.attached_file import AttachedFile
+from database.attached_file_pointer import AttachedFilePointer
 from database.init import engine
 from database.report import Report
 from database.speech import Speech
 from exceptions import HansardWriteCheckError
 from logs import logger
+from populate.attached_files import get_attached_file_plan, write_attached_file_plan
 from populate.column_numbers import get_column_number_plan, write_column_number_plan
 from populate.speaker_links import link_speakers_by_report_ids_and_sitting_ids
 from populate.written_tables import vacuum_analyze_written_tables
@@ -380,13 +383,22 @@ def apply_fresh_parse(plan_path: Path, held_path: Path, is_commit: bool) -> None
         link_speakers_by_report_ids_and_sitting_ids(session, report_ids, [])
         column_number_plan = get_column_number_plan(session, report_ids)
         write_column_number_plan(session, column_number_plan)
+        attached_file_plan = get_attached_file_plan(session, report_ids, [])
+        write_attached_file_plan(session, attached_file_plan, is_every_sitting=False)
         session.commit()
         logger.info(
             f"Committed: {len(report_ids):,} reports. Column pass over them: {len(column_number_plan.report_column_ranges):,} report column ranges,"
-            f" {len(column_number_plan.speech_id_to_column_start):,} speech start columns and {len(column_number_plan.speech_column_notes):,} speech column notes rewritten"
+            f" {len(column_number_plan.speech_id_to_column_start):,} speech start columns and {len(column_number_plan.speech_column_notes):,} speech column notes rewritten."
+            f" Attached file pointers: {len(attached_file_plan.attached_file_pointers):,} planned"
         )
         vacuum_analyze_written_tables(
-            session, [Speech.__tablename__, Report.__tablename__]
+            session,
+            [
+                Speech.__tablename__,
+                Report.__tablename__,
+                AttachedFile.__tablename__,
+                AttachedFilePointer.__tablename__,
+            ],
         )
 
 

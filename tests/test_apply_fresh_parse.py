@@ -7,9 +7,15 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session, select
 
 import scripts.apply_fresh_parse as apply_fresh_parse_script
+from database.attached_file_pointer import AttachedFilePointer
 from database.report import Report
 from database.speech import Speech
-from enums import ReportVersion, SpeechKind
+from enums import (
+    AttachedFilePointerShape,
+    ParagraphTieRule,
+    ReportVersion,
+    SpeechKind,
+)
 from exceptions import HansardWriteCheckError
 from utils.markdown_parser import get_cleaned_report_markdown
 
@@ -18,6 +24,10 @@ _FIXTURE_PATH = (
 )
 _SITTING_DATE = datetime(1965, 12, 8)
 _STORED_SPEAKER = "The President"
+_POINTER_WORDS = "Shariah Court"
+_POINTER_VALUE = "PDFs/Shariah Court Rules.pdf"
+_POINTER_HREF = f"/search/search/download?value={_POINTER_VALUE}"
+_STORED_SPEECH_ORDINAL = 1
 
 
 def _add_report(scratch_session: Session, fixture: dict) -> Report:
@@ -140,6 +150,71 @@ def test_commit_writes_the_parse_and_a_second_dry_run_plans_nothing(
         second_plan_path, held_path, is_commit=False
     )
     assert json.loads(second_plan_path.read_text())["report_plans"] == []
+
+
+def test_commit_re_ties_a_pointer_to_the_renumbered_row(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(apply_fresh_parse_script, "engine", scratch_engine)
+    fixture = json.loads(_FIXTURE_PATH.read_text())
+    assert fixture["html"].count(_POINTER_WORDS) == 1
+    fixture["html"] = fixture["html"].replace(
+        _POINTER_WORDS, f'<a href="{_POINTER_HREF}">{_POINTER_WORDS}</a>'
+    )
+    report = _add_report(scratch_session, fixture)
+    scratch_session.add(
+        Speech(
+            ordinal=_STORED_SPEECH_ORDINAL,
+            speaker=_STORED_SPEAKER,
+            transcript=" ".join(
+                transcript for _speaker, transcript, _kind in fixture["expected_rows"]
+            ),
+            kind=SpeechKind.SPEECH,
+            sitting_date=_SITTING_DATE,
+            report_type=report.report_type,
+            report_id=report.id,
+        )
+    )
+    scratch_session.add(
+        AttachedFilePointer(
+            ordinal=1,
+            printed_text=_POINTER_WORDS,
+            href=_POINTER_HREF,
+            shape=AttachedFilePointerShape.PDFS,
+            download_value=_POINTER_VALUE,
+            speech_ordinal=_STORED_SPEECH_ORDINAL,
+            paragraph_tie_rule=ParagraphTieRule.ONLY_OCCURRENCE,
+            sprs_report_id=report.report_id,
+        )
+    )
+    scratch_session.commit()
+    plan_path = tmp_path / "plan.json"
+    held_path = _write_held(tmp_path, [])
+    apply_fresh_parse_script.apply_fresh_parse(plan_path, held_path, is_commit=False)
+
+    apply_fresh_parse_script.apply_fresh_parse(plan_path, held_path, is_commit=True)
+
+    expected_rows = [
+        [ordinal, speaker, transcript, SpeechKind(kind)]
+        for ordinal, (speaker, transcript, kind) in enumerate(
+            fixture["expected_rows"], start=1
+        )
+    ]
+    assert _get_stored_rows(scratch_session, report) == expected_rows
+    expected_speech_ordinal = next(
+        ordinal
+        for ordinal, _speaker, transcript, _kind in expected_rows
+        if _POINTER_WORDS in transcript
+    )
+    assert expected_speech_ordinal != _STORED_SPEECH_ORDINAL
+    scratch_session.expire_all()
+    pointer = scratch_session.exec(select(AttachedFilePointer)).one()
+    assert pointer.speech_ordinal == expected_speech_ordinal
+    assert pointer.paragraph_tie_rule == ParagraphTieRule.ONLY_OCCURRENCE
+    assert pointer.download_value == _POINTER_VALUE
 
 
 def test_commit_refuses_after_a_stored_row_changes(
