@@ -764,6 +764,35 @@ def get_sitting_entry_offices(
     return entry_offices
 
 
+@dataclass(frozen=True)
+class EntryName:
+    printed_name: str
+    speaker_name: str
+
+
+def get_sitting_entry_names(
+    sitting_attendance_text_row: SittingAttendanceTextRow, lookups: SpeakerLookups
+) -> list[EntryName]:
+    parliament_number = infer_parliament(
+        sitting_attendance_text_row.parlement_no, sitting_attendance_text_row.volume_no
+    )
+    entry_names = []
+    for entry_line in _get_entry_lines(sitting_attendance_text_row):
+        parsed = parse_entry_line(entry_line, sitting_attendance_text_row.sitting_date)
+        if parsed is None:
+            continue
+        if not parsed.name:
+            continue
+        name = normalize_name(parsed.name)
+        canonical_name = (
+            None
+            if parliament_number is None
+            else resolve_canonical_name(name, parliament_number, lookups)
+        )
+        entry_names.append(EntryName(parsed.name, canonical_name or name))
+    return entry_names
+
+
 def _drop_equal_attendances(
     attendances: list[Attendance], other_attendances: list[Attendance]
 ) -> list[Attendance]:

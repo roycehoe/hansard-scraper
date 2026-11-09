@@ -1,9 +1,15 @@
 import json
 import re
+from dataclasses import dataclass
 from datetime import date
 from typing import Optional
 
-from enums import LeaveEntryFormat, LeaveNameSource, LeaveYearSource
+from enums import (
+    LeaveEntryFormat,
+    LeaveNameSource,
+    LeaveSpeakerLinkSource,
+    LeaveYearSource,
+)
 from schemas.hansard_report_response import HansardReportPermissionEntry
 from utils.leave_entry import (
     MONTH_NAME_TO_NUMBER,
@@ -11,8 +17,11 @@ from utils.leave_entry import (
     LeaveDates,
     LeaveEntry,
     get_candidate_years,
+    get_leave_name_key,
     get_nearest_year_dates,
 )
+from utils.names import normalize_name, period_normalize, strip_title
+from utils.speaker_resolution import SpeakerLookups
 
 _PRINTED_DAY_AND_MONTH_RE = re.compile(r"^(\d{1,2})\s+([A-Za-z]+)\.?$")
 
@@ -101,3 +110,37 @@ def build_leave_entries_from_list(
         if printed_name is not None:
             last_printed_name = printed_name
     return leave_entries
+
+
+@dataclass(frozen=True)
+class LeaveEntrySpeakerLink:
+    speaker_id: int
+    speaker_link_source: LeaveSpeakerLinkSource
+
+
+def get_leave_entry_speaker_link(
+    name: str,
+    parliament_number: Optional[int],
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+    entry_name_key_to_speaker_ids: dict[str, list[Optional[int]]],
+) -> Optional[LeaveEntrySpeakerLink]:
+    if parliament_number is not None:
+        canonical_name = lookups.direct.get(
+            (period_normalize(strip_title(normalize_name(name))), parliament_number)
+        )
+        if canonical_name is not None:
+            return LeaveEntrySpeakerLink(
+                name_parliament_number_to_speaker_id[
+                    (canonical_name, parliament_number)
+                ],
+                LeaveSpeakerLinkSource.ROSTER_NAME,
+            )
+    speaker_ids = entry_name_key_to_speaker_ids.get(get_leave_name_key(name), [])
+    if len(speaker_ids) != 1:
+        return None
+    if speaker_ids[0] is None:
+        return None
+    return LeaveEntrySpeakerLink(
+        speaker_ids[0], LeaveSpeakerLinkSource.SITTING_ATTENDANCE_ENTRY
+    )
