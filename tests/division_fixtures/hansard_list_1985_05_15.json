@@ -1,0 +1,10 @@
+{
+ "why": "The two blocks hold 2 Ayes, 55 Noes and 1 Abstention against a printed 2, 56 and 1, because Wan Hussin bin over Haji Zoohri is one name. The list is COUNTS_DISAGREE and stores no names (report 32241, 15 May 1985).",
+ "ayes": 2,
+ "noes": 56,
+ "abstentions": 1,
+ "absent": null,
+ "paired": null,
+ "division_index": 0,
+ "division_count": 1
+}
