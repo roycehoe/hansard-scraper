@@ -5,6 +5,8 @@ from typing import Optional, Sequence
 from enums import LeaveEntryFormat, LeaveNameSource, LeaveYearSource
 from utils.names import normalize_name, strip_title
 
+YEAR_ORDER_BREAK_GROUP = "year_order_break"
+
 _UNMERGED_KEY_PREFIX = "entry"
 _OPEN_END_KEY = "open"
 

@@ -157,14 +157,14 @@ def test_a_nearest_year_outside_the_printed_heading_is_its_own_group() -> None:
 
 
 def test_carried_linked_and_office_rows_get_their_groups() -> None:
-    row = replace(
+    check_row = replace(
         _LEAVE_ROW,
         name_source=LeaveNameSource.CARRIED_FROM_ROW_ABOVE,
         speaker_link_source=LeaveSpeakerLinkSource.ROSTER_NAME,
         office_source=LeaveOfficeSource.ATTENDANCE_LIST,
     )
 
-    groups = get_leave_printing_groups(row)
+    groups = get_leave_printing_groups(check_row)
 
     assert "carried|STRUCTURED_LIST|2020" in groups
     assert "link|ROSTER_NAME|2020" in groups
@@ -406,10 +406,17 @@ def test_the_check_rows_join_the_period_and_the_member(
     seat_check_rows = CRUDSeatHolding(scratch_session).get_check_rows()
 
     assert [
-        (row.ordinal, row.speaker_name, row.start_date, row.end_date)
-        for row in leave_check_rows
+        (
+            check_row.ordinal,
+            check_row.speaker_name,
+            check_row.start_date,
+            check_row.end_date,
+        )
+        for check_row in leave_check_rows
     ] == [
         (1, "Lee Hsien Loong", date(2020, 3, 5), date(2020, 3, 7)),
         (2, None, date(2020, 3, 5), date(2020, 3, 7)),
     ]
-    assert [row.speaker_name for row in seat_check_rows] == ["Lee Hsien Loong"]
+    assert [check_row.speaker_name for check_row in seat_check_rows] == [
+        "Lee Hsien Loong"
+    ]

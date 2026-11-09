@@ -25,7 +25,7 @@ from logs import logger
 from schemas.leave_seat_check import LeaveSeatCheckKeyEntry, LeaveSeatCheckPacket
 from settings import settings
 from utils.database_label import get_database_label
-from utils.leave_entry import get_leave_gap_days
+from utils.leave_entry import YEAR_ORDER_BREAK_GROUP, get_leave_gap_days
 
 _ALLOWED_DATABASE_LABEL = "localhost:5437/hansard_positions"
 _DRAW_ISOLATION_LEVEL = "REPEATABLE READ"
@@ -35,7 +35,6 @@ _MINIMUM_PLANTS = 1
 _YEAR_GAP_NEAR_DAYS = 30
 _YEAR_GAP_FAR_DAYS = 90
 _YEARS_IN_DECADE = 10
-_YEAR_ORDER_BREAK_GROUP = "year_order_break"
 _FEBRUARY = 2
 _LAST_DAY_OF_FEBRUARY = 28
 _LEAVE_TABLE_NAME = "leave_period_printing"
@@ -252,7 +251,7 @@ def _get_leave_source_text(check_row: LeavePeriodPrintingCheckRow) -> str:
     )
 
 
-def _show(value: object) -> str:
+def _get_shown_text(value: object) -> str:
     if value is None:
         return _NONE_TEXT
     return str(value)
@@ -268,10 +267,10 @@ def _build_leave_item(check_row: LeavePeriodPrintingCheckRow) -> CheckItem:
         office=check_row.office_printed,
         start_date=check_row.start_date,
         other_says=(
-            f"end: {_show(check_row.end_date)}; end text: {_show(check_row.end_text)};"
-            f" name source: {check_row.name_source}; year source: {_show(check_row.year_source)};"
-            f" link source: {_show(check_row.speaker_link_source)};"
-            f" office source: {_show(check_row.office_source)}"
+            f"end: {_get_shown_text(check_row.end_date)}; end text: {_get_shown_text(check_row.end_text)};"
+            f" name source: {check_row.name_source}; year source: {_get_shown_text(check_row.year_source)};"
+            f" link source: {_get_shown_text(check_row.speaker_link_source)};"
+            f" office source: {_get_shown_text(check_row.office_source)}"
         ),
     )
 
@@ -298,10 +297,10 @@ def _build_seat_item(check_row: SeatHoldingCheckRow) -> CheckItem:
 
 def _get_data_says(item: CheckItem) -> str:
     if item.table_name == _SEAT_TABLE_NAME:
-        return f"member: {_show(item.member)}; first sitting: {_show(item.start_date)}; {item.other_says}"
+        return f"member: {_get_shown_text(item.member)}; first sitting: {_get_shown_text(item.start_date)}; {item.other_says}"
     return (
-        f"name: {_show(item.name)}; member: {_show(item.member)};"
-        f" office: {_show(item.office)}; start: {_show(item.start_date)}; {item.other_says}"
+        f"name: {_get_shown_text(item.name)}; member: {_get_shown_text(item.member)};"
+        f" office: {_get_shown_text(item.office)}; start: {_get_shown_text(item.start_date)}; {item.other_says}"
     )
 
 
@@ -322,7 +321,7 @@ def get_group_to_items(
                 )
             )
         if check_row.sitting_id in order_break_sitting_ids:
-            groups.append(_YEAR_ORDER_BREAK_GROUP)
+            groups.append(YEAR_ORDER_BREAK_GROUP)
         for group in groups:
             group_to_items.setdefault(group, []).append(item)
     for seat_check_row in seat_check_rows:
@@ -350,7 +349,7 @@ def _get_rule_text(group: str) -> str:
         return _RULE_OFFICE
     if family == _SHARED_LINE_FAMILY:
         return _RULE_SHARED_LINE
-    if family == _YEAR_ORDER_BREAK_GROUP:
+    if family == YEAR_ORDER_BREAK_GROUP:
         return _RULE_YEAR_ORDER_BREAK
     if family == _SEAT_FAMILY:
         return _RULE_SEAT
@@ -378,9 +377,9 @@ def _get_plant(
     if family == _CARRIED_FAMILY:
         names = sorted(
             {
-                other.name
-                for other in group_items
-                if other.name is not None and other.name != item.name
+                other_item.name
+                for other_item in group_items
+                if other_item.name is not None and other_item.name != item.name
             }
         )
         if not names:
@@ -388,14 +387,14 @@ def _get_plant(
         name = generator.choice(names)
         return Plant(
             replace(item, name=name),
-            f"replaced the name {_show(item.name)} with {name}",
+            f"replaced the name {_get_shown_text(item.name)} with {name}",
         )
     if family == _LINK_FAMILY:
         members = sorted(
             {
-                other.member
-                for other in group_items
-                if other.member is not None and other.member != item.member
+                other_item.member
+                for other_item in group_items
+                if other_item.member is not None and other_item.member != item.member
             }
         )
         if not members:
@@ -403,14 +402,14 @@ def _get_plant(
         member = generator.choice(members)
         return Plant(
             replace(item, member=member),
-            f"replaced the linked member {_show(item.member)} with {member}",
+            f"replaced the linked member {_get_shown_text(item.member)} with {member}",
         )
     if family == _OFFICE_FAMILY:
         offices = sorted(
             {
-                other.office
-                for other in group_items
-                if other.office is not None and other.office != item.office
+                other_item.office
+                for other_item in group_items
+                if other_item.office is not None and other_item.office != item.office
             }
         )
         if not offices:
@@ -418,7 +417,7 @@ def _get_plant(
         office = generator.choice(offices)
         return Plant(
             replace(item, office=office),
-            f"replaced the office {_show(item.office)} with {office}",
+            f"replaced the office {_get_shown_text(item.office)} with {office}",
         )
     if item.start_date is None:
         return None
@@ -432,7 +431,7 @@ def _get_plant(
 def draw_group(seed: int, group: str, group_items: list[CheckItem]) -> GroupDraw:
     generator = random.Random(f"{seed}:{group}")
     sorted_items = sorted(group_items, key=lambda item: item.row_id)
-    if group == _YEAR_ORDER_BREAK_GROUP:
+    if group == YEAR_ORDER_BREAK_GROUP:
         return GroupDraw(group, len(sorted_items), sorted_items, [], 0)
     sample = (
         sorted_items
@@ -492,7 +491,7 @@ def get_packet_entries(seed: int, group_draws: list[GroupDraw]) -> list[PacketEn
                 plant_note=plant_note,
             ),
         )
-        for index, (group, item, plant_note) in enumerate(drawn_items, 1)
+        for index, (group, item, plant_note) in enumerate(drawn_items, start=1)
     ]
 
 

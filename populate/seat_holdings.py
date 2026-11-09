@@ -13,6 +13,8 @@ from utils.seat_holding_update import SeatHoldingUpdate
 
 _SPEAKER_BATCH = 500
 _YEARS_IN_DECADE = 10
+_LOCATION_NAME_SEPARATOR_PATTERN = r"[[:space:]-]+"
+_LOCATION_NAME_SUFFIX_PATTERN = r"[[:space:]](GRC|SMC)$"
 
 
 @dataclass(frozen=True)
@@ -105,7 +107,9 @@ def _validate_can_commit_seat_holdings(session: Session, plan: SeatHoldingPlan) 
         )
     mismatched_count = CRUDSeatHolding(
         session
-    ).get_count_by_division_key_not_equal_folded_location_name()
+    ).get_count_by_division_key_not_equal_folded_location_name(
+        _LOCATION_NAME_SEPARATOR_PATTERN, _LOCATION_NAME_SUFFIX_PATTERN
+    )
     if mismatched_count != 0:
         raise HansardWriteCheckError(
             f"{mismatched_count} seat holdings hold a division_key that differs from the folded location_name"
