@@ -95,7 +95,7 @@ A VACUUM that fails, or that Postgres skips, is a failure too. Postgres skips a 
 
 Two cases are known and accepted:
 
-- A run swept as stale by another run keeps committing its months. Each month only adds rows, and the swept run cannot overwrite its `FAILED` status when it ends.
+- A run swept as stale by another run keeps committing its months. Each month adds rows and widens seat history bounds, and the swept run cannot overwrite its `FAILED` status when it ends.
 - A killed supervised run leaves its row `RUNNING`, which blocks the next run for 12 hours. Mark it failed by hand:
 
   ```sql
