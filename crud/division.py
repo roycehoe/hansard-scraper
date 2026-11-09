@@ -1,3 +1,5 @@
+from datetime import date
+
 from sqlalchemy import update
 from sqlmodel import Session, col, delete, select
 
@@ -20,6 +22,25 @@ class CRUDDivision:
             .order_by(
                 col(Division.sprs_report_id), col(Division.report_division_number)
             )
+        )
+        return list(self.session.exec(statement).all())
+
+    def get_by_ids(self, division_ids: list[int]) -> list[Division]:
+        statement = (
+            select(Division)
+            .where(col(Division.id).in_(division_ids))
+            .order_by(col(Division.id))
+        )
+        return list(self.session.exec(statement).all())
+
+    def get_by_sitting_dates_and_sprs_report_id_not_null(
+        self, sitting_dates: list[date]
+    ) -> list[Division]:
+        statement = (
+            select(Division)
+            .where(col(Division.sitting_date).in_(sitting_dates))
+            .where(col(Division.sprs_report_id).is_not(None))
+            .order_by(col(Division.sitting_date), col(Division.id))
         )
         return list(self.session.exec(statement).all())
 

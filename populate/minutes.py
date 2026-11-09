@@ -17,6 +17,7 @@ from exceptions import (
 )
 from gateway.minutes import get_minutes_file_response, get_minutes_index_response
 from logs import logger
+from populate.minutes_divisions import populate_minutes_divisions
 from schemas.minutes_response import MinutesResponse
 from services.minutes_index import (
     MINUTES_INDEX_FIRST_DATE,
@@ -175,6 +176,11 @@ def _store_minutes_file(
         datetime.now(timezone.utc),
         file_fields.extracted_text,
     )
+    if file_fields.status == MinutesStatus.TEXT_STORED:
+        review_note = populate_minutes_divisions(session, minutes_id)
+        if review_note is not None:
+            session.commit()
+            return StoredMinutesFile(MinutesStatus.NEEDS_REVIEW, review_note)
     session.commit()
     return StoredMinutesFile(file_fields.status, file_fields.status_note)
 

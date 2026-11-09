@@ -23,6 +23,7 @@ from database.attendance import Attendance
 from database.hansard_sitting_date_response import HansardSittingDateResponse
 from database.hansard_website_response import HansardWebsiteResponse
 from database.minutes import Minutes
+from database.minutes_division import MinutesDivision
 from database.party_affiliation import PartyAffiliation
 from database.person import Person
 from database.refresh_run import RefreshRun
@@ -47,6 +48,7 @@ from exceptions import (
     HansardRefreshRunError,
 )
 from populate.minutes import MinutesStepResult
+from populate.minutes_divisions import UNREAD_DIVISION_STATUS_NOTE
 from populate.report_askers import REPORT_ASKER_REPORT_TYPES
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
@@ -70,6 +72,11 @@ from utils.sitting_dates import get_sitting_date_key, parse_sitting_date
 
 _MINUTES_FIXTURE_DIRECTORY = Path(__file__).parent / "division_fixtures" / "minutes"
 _MINUTES_PDF_FIXTURE = "vp-10jan18-first-pages.pdf"
+_MINUTES_DIVISION_TEXT_FIXTURE = (
+    Path(__file__).parent / "division_fixtures" / "minutes_2021_10_04.txt"
+)
+_UNREADABLE_DIVISION_TEXT = "On Question put, the House divided."
+_MINUTES_DIVISION_ROW_COUNT = 2
 _MINUTES_FILE_ID = "minutes-file-id"
 _MINUTES_FILE_NAME = "VP-11Jan2018.pdf"
 _MINUTES_FILE_NUMBER = 57
@@ -81,6 +88,14 @@ _MINUTES_STEP_ALLOWED_STATEMENTS = frozenset(
         ("SELECT", "report"),
         ("INSERT", "minutes"),
         ("INSERT", "minutes_index_capture"),
+        ("INSERT", "division"),
+        ("INSERT", "minutes_division"),
+        ("INSERT", "division_vote"),
+        ("SELECT", "division"),
+        ("SELECT", "minutes_division"),
+        ("SELECT", "division_vote"),
+        ("SELECT", "speaker"),
+        ("SELECT", "partyaffiliation"),
         ("UPDATE", "minutes"),
     }
 )
@@ -1426,8 +1441,16 @@ def test_minutes_needing_review_are_alerted(
 
 
 def test_minutes_step_emits_only_the_granted_statements(
-    scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(
+        minutes_step,
+        "get_minutes_pdf_text",
+        lambda content: _MINUTES_DIVISION_TEXT_FIXTURE.read_text(encoding="utf-8"),
+    )
     seed_stored(scratch_session)
     add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 10))
     scratch_session.add(
@@ -1464,8 +1487,12 @@ def test_minutes_step_emits_only_the_granted_statements(
     assert {
         ("INSERT", "minutes"),
         ("INSERT", "minutes_index_capture"),
+        ("INSERT", "division"),
+        ("INSERT", "minutes_division"),
+        ("INSERT", "division_vote"),
         ("UPDATE", "minutes"),
         ("SELECT", "report"),
+        ("SELECT", "speaker"),
     } <= observed_effects
     update_statements = [
         statement
@@ -1478,6 +1505,74 @@ def test_minutes_step_emits_only_the_granted_statements(
         assert set_match is not None
         assert _SET_COLUMN_PATTERN.findall(set_match.group(1))
     assert not {verb for verb, _ in observed_effects} & {"DELETE", "TRUNCATE", "GRANT"}
+
+
+def test_the_daily_minutes_step_writes_divisions_in_the_file_commit(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        minutes_step,
+        "get_minutes_pdf_text",
+        lambda content: _MINUTES_DIVISION_TEXT_FIXTURE.read_text(encoding="utf-8"),
+    )
+    seed_stored(scratch_session)
+    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 10))
+    scratch_session.add(
+        Minutes(sitting_date=date(2018, 1, 10), status=MinutesStatus.NOT_YET_LISTED)
+    )
+    scratch_session.commit()
+    _list_minutes_file(
+        fake_parliament, date(2018, 1, 10), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
+    )
+
+    minutes_step.populate_minutes(scratch_session, set())
+
+    scratch_session.expire_all()
+    stored_minutes = scratch_session.exec(
+        select(Minutes).where(col(Minutes.sitting_date) == date(2018, 1, 10))
+    ).one()
+    assert stored_minutes.status == MinutesStatus.TEXT_STORED
+    assert (
+        scratch_session.exec(select(func.count()).select_from(MinutesDivision)).one()
+        == _MINUTES_DIVISION_ROW_COUNT
+    )
+
+
+def test_an_unreadable_division_file_is_needs_review_with_no_division_rows(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        minutes_step, "get_minutes_pdf_text", lambda content: _UNREADABLE_DIVISION_TEXT
+    )
+    seed_stored(scratch_session)
+    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 11))
+    scratch_session.commit()
+    _list_minutes_file(
+        fake_parliament, date(2018, 1, 11), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
+    )
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    scratch_session.expire_all()
+    stored_minutes = scratch_session.exec(
+        select(Minutes).where(col(Minutes.sitting_date) == date(2018, 1, 11))
+    ).one()
+    assert stored_minutes.status == MinutesStatus.NEEDS_REVIEW
+    assert stored_minutes.status_note == UNREAD_DIVISION_STATUS_NOTE
+    assert scratch_session.exec(select(func.count()).select_from(MinutesDivision)).one() == 0
+    review_messages = [
+        message for message in alerts.messages if _MINUTES_ALERT_FRAGMENT in message
+    ]
+    assert len(review_messages) == 1
+    assert UNREAD_DIVISION_STATUS_NOTE in review_messages[0]
 
 
 def test_statement_check_flags_an_update_of_a_column_outside_the_grant() -> None:
