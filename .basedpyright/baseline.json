@@ -182,6 +182,14 @@
             {
                 "code": "reportArgumentType",
                 "range": {
+                    "startColumn": 16,
+                    "endColumn": 41,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
                     "startColumn": 12,
                     "endColumn": 38,
                     "lineCount": 1
@@ -236,6 +244,64 @@
                 }
             }
         ],
+        "./crud/attendance_office.py": [
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 13,
+                    "lineCount": 10
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 13,
+                    "lineCount": 10
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 13,
+                    "lineCount": 8
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 15,
+                    "endColumn": 43,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 33,
+                    "endColumn": 42,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 15,
+                    "endColumn": 43,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 33,
+                    "endColumn": 42,
+                    "lineCount": 1
+                }
+            }
+        ],
         "./crud/bills_supplement_capture.py": [
             {
                 "code": "reportArgumentType",
@@ -280,6 +346,126 @@
                 "range": {
                     "startColumn": 50,
                     "endColumn": 53,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./crud/ministry.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 46,
+                    "endColumn": 57,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 15,
+                    "endColumn": 43,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 33,
+                    "endColumn": 42,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./crud/ministry_see_also.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 53,
+                    "endColumn": 71,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 15,
+                    "endColumn": 43,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 33,
+                    "endColumn": 42,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./crud/office_printed_range.py": [
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 13,
+                    "lineCount": 8
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 15,
+                    "endColumn": 43,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 33,
+                    "endColumn": 42,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 15,
+                    "endColumn": 43,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 33,
+                    "endColumn": 42,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./crud/office_title_ministry.py": [
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 20,
+                    "endColumn": 9,
+                    "lineCount": 7
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 15,
+                    "endColumn": 43,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 33,
+                    "endColumn": 42,
                     "lineCount": 1
                 }
             }
@@ -588,6 +774,22 @@
                 }
             },
             {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 22,
+                    "endColumn": 31,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 38,
+                    "lineCount": 1
+                }
+            },
+            {
                 "code": "reportAttributeAccessIssue",
                 "range": {
                     "startColumn": 29,
@@ -629,6 +831,72 @@
                     "startColumn": 12,
                     "endColumn": 13,
                     "lineCount": 9
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 22,
+                    "endColumn": 42,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 48,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportReturnType",
+                "range": {
+                    "startColumn": 15,
+                    "endColumn": 55,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportReturnType",
+                "range": {
+                    "startColumn": 15,
+                    "endColumn": 55,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 15,
+                    "endColumn": 43,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 33,
+                    "endColumn": 42,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./crud/report_put_to.py": [
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 13,
+                    "lineCount": 7
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 13,
+                    "lineCount": 10
                 }
             },
             {
@@ -753,6 +1021,14 @@
                     "startColumn": 12,
                     "endColumn": 40,
                     "lineCount": 1
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 20,
+                    "endColumn": 9,
+                    "lineCount": 8
                 }
             },
             {
@@ -1346,6 +1622,16 @@
                 }
             }
         ],
+        "./database/attendance_office.py": [
+            {
+                "code": "reportAssignmentType",
+                "range": {
+                    "startColumn": 20,
+                    "endColumn": 39,
+                    "lineCount": 1
+                }
+            }
+        ],
         "./database/hansard_sitting_date_response.py": [
             {
                 "code": "reportAssignmentType",
@@ -1362,6 +1648,46 @@
                 "range": {
                     "startColumn": 19,
                     "endColumn": 78,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./database/ministry.py": [
+            {
+                "code": "reportAssignmentType",
+                "range": {
+                    "startColumn": 20,
+                    "endColumn": 30,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./database/ministry_see_also.py": [
+            {
+                "code": "reportAssignmentType",
+                "range": {
+                    "startColumn": 20,
+                    "endColumn": 39,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./database/office_printed_range.py": [
+            {
+                "code": "reportAssignmentType",
+                "range": {
+                    "startColumn": 20,
+                    "endColumn": 42,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./database/office_title_ministry.py": [
+            {
+                "code": "reportAssignmentType",
+                "range": {
+                    "startColumn": 20,
+                    "endColumn": 43,
                     "lineCount": 1
                 }
             }
@@ -1402,6 +1728,16 @@
                 "range": {
                     "startColumn": 20,
                     "endColumn": 40,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./database/report_put_to.py": [
+            {
+                "code": "reportAssignmentType",
+                "range": {
+                    "startColumn": 20,
+                    "endColumn": 35,
                     "lineCount": 1
                 }
             }
@@ -1722,6 +2058,16 @@
                 }
             }
         ],
+        "./scripts/apply_attendance_offices.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 78,
+                    "lineCount": 1
+                }
+            }
+        ],
         "./scripts/apply_bills_supplement.py": [
             {
                 "code": "reportArgumentType",
@@ -1930,6 +2276,16 @@
                 }
             }
         ],
+        "./scripts/apply_ministries.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 13,
+                    "lineCount": 5
+                }
+            }
+        ],
         "./scripts/apply_repealed_acts.py": [
             {
                 "code": "reportArgumentType",
@@ -1956,6 +2312,16 @@
                 "range": {
                     "startColumn": 12,
                     "endColumn": 80,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./scripts/apply_report_put_to.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 48,
+                    "endColumn": 73,
                     "lineCount": 1
                 }
             }
@@ -2208,9 +2574,9 @@
             {
                 "code": "reportArgumentType",
                 "range": {
-                    "startColumn": 48,
-                    "endColumn": 72,
-                    "lineCount": 1
+                    "startColumn": 12,
+                    "endColumn": 13,
+                    "lineCount": 5
                 }
             }
         ],
@@ -2422,7 +2788,7 @@
                 "range": {
                     "startColumn": 12,
                     "endColumn": 13,
-                    "lineCount": 7
+                    "lineCount": 8
                 }
             }
         ],
@@ -2868,6 +3234,40 @@
                 }
             }
         ],
+        "./tests/test_apply_attendance_offices.py": [
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 16,
+                    "endColumn": 26,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 16,
+                    "endColumn": 26,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 46,
+                    "endColumn": 76,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 48,
+                    "endColumn": 77,
+                    "lineCount": 1
+                }
+            }
+        ],
         "./tests/test_apply_column_numbers.py": [
             {
                 "code": "reportArgumentType",
@@ -3008,6 +3408,16 @@
                 }
             }
         ],
+        "./tests/test_apply_ministries.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 52,
+                    "endColumn": 79,
+                    "lineCount": 1
+                }
+            }
+        ],
         "./tests/test_apply_report_askers.py": [
             {
                 "code": "reportArgumentType",
@@ -3092,6 +3502,32 @@
                 }
             }
         ],
+        "./tests/test_apply_report_put_to.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 44,
+                    "endColumn": 63,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 25,
+                    "endColumn": 54,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 25,
+                    "endColumn": 56,
+                    "lineCount": 1
+                }
+            }
+        ],
         "./tests/test_apply_report_titles.py": [
             {
                 "code": "reportArgumentType",
@@ -3160,6 +3596,32 @@
                 "range": {
                     "startColumn": 8,
                     "endColumn": 18,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./tests/test_attendance_offices.py": [
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 8,
+                    "endColumn": 18,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 8,
+                    "endColumn": 18,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 55,
+                    "endColumn": 74,
                     "lineCount": 1
                 }
             }
@@ -3310,6 +3772,42 @@
                 }
             }
         ],
+        "./tests/test_office_check_scripts.py": [
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 61,
+                    "endColumn": 71,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./tests/test_office_printed_ranges.py": [
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 20,
+                    "endColumn": 30,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 16,
+                    "endColumn": 45,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 47,
+                    "endColumn": 84,
+                    "lineCount": 1
+                }
+            }
+        ],
         "./tests/test_party_affiliation.py": [
             {
                 "code": "reportAttributeAccessIssue",
@@ -3342,6 +3840,16 @@
                 "range": {
                     "startColumn": 21,
                     "endColumn": 57,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./tests/test_refresh.py": [
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 66,
+                    "endColumn": 76,
                     "lineCount": 1
                 }
             }
