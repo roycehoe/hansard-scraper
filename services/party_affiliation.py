@@ -1,7 +1,10 @@
+from dataclasses import dataclass
+from datetime import date
 from itertools import pairwise
 
 from database.party_affiliation import PartyAffiliation
 from database.speaker import Speaker
+from enums import DatePrecision
 from exceptions import HansardPartyAffiliationError, HansardWriteCheckError
 from schemas.party_affiliation import MembershipPartyAffiliations
 
@@ -100,3 +103,31 @@ def get_unstored_party_affiliations(
         )
         if content not in stored_contents
     ]
+
+
+@dataclass(frozen=True)
+class PartyOnDate:
+    party: str
+    is_party_uncertain: bool
+
+
+def get_party_on_date(
+    ballot_party: str, party_affiliations: list[PartyAffiliation], sitting_date: date
+) -> PartyOnDate:
+    spans = sorted(party_affiliations, key=lambda span: span.started_on)
+    started_spans = [span for span in spans if span.started_on <= sitting_date]
+    later_spans = [span for span in spans if span.started_on > sitting_date]
+    is_month_span_in_month = any(
+        span.started_on_precision == DatePrecision.MONTH
+        and (span.started_on.year, span.started_on.month)
+        == (sitting_date.year, sitting_date.month)
+        for span in spans
+    )
+    if len(spans) == 0:
+        return PartyOnDate(ballot_party, is_party_uncertain=False)
+    if len(started_spans) == 0:
+        return PartyOnDate(ballot_party, is_party_uncertain=True)
+    is_party_uncertain = is_month_span_in_month or (
+        len(later_spans) > 0 and later_spans[0].is_started_on_upper_bound
+    )
+    return PartyOnDate(started_spans[-1].party, is_party_uncertain)
