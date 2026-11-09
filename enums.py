@@ -490,3 +490,16 @@ class LeaveSeatCheckVerdict(StrEnum):
     RIGHT = "RIGHT"
     WRONG = "WRONG"
     UNSURE = "UNSURE"
+
+
+class DivisionCountSource(StrEnum):
+    PRINTED_LINE = "PRINTED_LINE"
+    SPOKEN_TOTAL = "SPOKEN_TOTAL"
+    MINUTES = "MINUTES"
+
+
+class DivisionListStatus(StrEnum):
+    NOT_PRINTED = "NOT_PRINTED"
+    STORED = "STORED"
+    COUNTS_DISAGREE = "COUNTS_DISAGREE"
+    LAYOUT_UNREADABLE = "LAYOUT_UNREADABLE"

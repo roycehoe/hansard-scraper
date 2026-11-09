@@ -42,6 +42,7 @@ import database.bill_key  # noqa: F401 registers the table for create_all
 import database.bill_report_speaker  # noqa: F401 registers the table for create_all
 import database.bill_stage_line  # noqa: F401 registers the table for create_all
 import database.bills_supplement  # noqa: F401 registers the table for create_all
+import database.division  # noqa: F401 registers the table for create_all
 import database.egazette_supplement  # noqa: F401 registers the table for create_all
 import database.hansard_sitting_date_response  # noqa: F401 registers the table for create_all
 import database.hansard_website_response  # noqa: F401 registers the table for create_all
