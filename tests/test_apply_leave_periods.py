@@ -10,10 +10,11 @@ from sqlmodel import Session, select
 
 import scripts.apply_leave_periods as apply_leave_periods_script
 from crud.leave_period_printing import CRUDLeavePeriodPrinting
+from database.attendance import Attendance
 from database.leave_period import LeavePeriod, LeavePeriodPrinting
 from database.sitting import Sitting
 from database.speaker import Speaker
-from enums import LeaveNameSource, LeaveSpeakerLinkSource
+from enums import LeaveNameSource, LeaveOfficeSource, LeaveSpeakerLinkSource
 from exceptions import HansardWriteCheckError, HansardWriteTargetError
 from populate.leave_periods import populate_leave_periods
 from scripts.apply_leave_periods import apply_leave_periods
@@ -24,6 +25,9 @@ _NAMED_KEY = "mr lee hsien loong|2020-03-05|2020-03-07"
 _UNMERGED_KEY = "entry|3|1"
 _PLAN_LOG = "Plan: 4 printings in 2 periods"
 _BLANK_ROW_ORDINAL = 2
+_OFFICE_PRINTED = "Prime Minister"
+_UNOFFICED_ROW_ORDINAL = 2
+_UNLINKED_ROW_ORDINAL = 3
 
 
 class _LogRecorder:
@@ -385,3 +389,108 @@ def test_commit_refuses_stored_counts_that_differ_from_the_plan(
         apply_leave_periods(is_commit=True)
 
     assert _get_stored_printings(scratch_session) == []
+
+
+def _seed_sitting_with_attendance_offices(session: Session) -> None:
+    lee = Speaker(
+        name="Lee Hsien Loong",
+        party="PAP",
+        is_legislative_assembly=False,
+        parliament_number=_PARLIAMENT_NUMBER,
+    )
+    tan = Speaker(
+        name="Tan Wu Meng",
+        party="PAP",
+        is_legislative_assembly=False,
+        parliament_number=_PARLIAMENT_NUMBER,
+    )
+    session.add_all([lee, tan])
+    session.commit()
+    sitting = _build_sitting(
+        1,
+        "6-3-2020",
+        _build_permission_list(
+            "Mr Lee Hsien Loong", "Dr Tan Wu Meng", "Mr Nobody Known"
+        ),
+    )
+    sitting.attendance_list = json.dumps(
+        [
+            {
+                "mpName": f"Mr Lee Hsien Loong (Ang Mo Kio), {_OFFICE_PRINTED}.",
+                "attendance": True,
+                "locationName": "Ang Mo Kio",
+            },
+            {
+                "mpName": "Dr Tan Wu Meng (Jurong).",
+                "attendance": True,
+                "locationName": "Jurong",
+            },
+        ]
+    )
+    session.add(sitting)
+    session.commit()
+    session.add_all(
+        [
+            Attendance(
+                sitting_id=1,
+                speaker_name="Lee Hsien Loong",
+                is_present=True,
+                speaker_id=lee.id,
+            ),
+            Attendance(
+                sitting_id=1,
+                speaker_name="Tan Wu Meng",
+                is_present=True,
+                speaker_id=tan.id,
+            ),
+        ]
+    )
+    session.commit()
+
+
+def test_a_linked_printing_takes_the_office_its_sitting_prints(
+    scratch_session: Session, log_recorder: _LogRecorder
+) -> None:
+    _seed_sitting_with_attendance_offices(scratch_session)
+
+    apply_leave_periods(is_commit=True)
+
+    printing = scratch_session.exec(
+        select(LeavePeriodPrinting).where(LeavePeriodPrinting.ordinal == 1)
+    ).one()
+    assert printing.office_printed == _OFFICE_PRINTED
+    assert printing.office_source == LeaveOfficeSource.ATTENDANCE_LIST
+
+
+def test_a_linked_printing_with_no_printed_office_stays_none(
+    scratch_session: Session, log_recorder: _LogRecorder
+) -> None:
+    _seed_sitting_with_attendance_offices(scratch_session)
+
+    apply_leave_periods(is_commit=True)
+
+    printing = scratch_session.exec(
+        select(LeavePeriodPrinting).where(
+            LeavePeriodPrinting.ordinal == _UNOFFICED_ROW_ORDINAL
+        )
+    ).one()
+    assert printing.speaker_id is not None
+    assert printing.office_printed is None
+    assert printing.office_source is None
+
+
+def test_an_unlinked_printing_has_no_office(
+    scratch_session: Session, log_recorder: _LogRecorder
+) -> None:
+    _seed_sitting_with_attendance_offices(scratch_session)
+
+    apply_leave_periods(is_commit=True)
+
+    printing = scratch_session.exec(
+        select(LeavePeriodPrinting).where(
+            LeavePeriodPrinting.ordinal == _UNLINKED_ROW_ORDINAL
+        )
+    ).one()
+    assert printing.speaker_id is None
+    assert printing.office_printed is None
+    assert printing.office_source is None

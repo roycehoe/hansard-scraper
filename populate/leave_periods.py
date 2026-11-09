@@ -11,11 +11,13 @@ from crud.leave_period_printing import CRUDLeavePeriodPrinting
 from crud.sitting import CRUDSitting, SittingAttendanceTextRow, SittingLeaveTextRow
 from crud.speaker import CRUDSpeaker
 from database.leave_period import LeavePeriod, LeavePeriodPrinting
+from enums import LeaveOfficeSource
 from exceptions import HansardWriteCheckError
 from logs import logger
 from services.attendance import (
     build_speaker_lookups,
     get_sitting_entry_names,
+    get_sitting_entry_offices,
 )
 from services.leave_period import (
     LeaveEntrySpeakerLink,
@@ -36,6 +38,12 @@ _SITTING_BATCH = 20
 
 
 @dataclass(frozen=True)
+class LeaveOffice:
+    office_printed: str
+    office_source: LeaveOfficeSource
+
+
+@dataclass(frozen=True)
 class PlannedLeavePrinting:
     sitting_id: int
     sitting_date: date
@@ -43,6 +51,7 @@ class PlannedLeavePrinting:
     leave_entry: LeaveEntry
     speaker_link: Optional[LeaveEntrySpeakerLink]
     is_covering_sitting: Optional[bool]
+    leave_office: Optional[LeaveOffice]
 
 
 def _get_attendance_text_row(
@@ -86,6 +95,22 @@ def _get_entry_name_key_to_speaker_ids(
     return entry_name_key_to_speaker_ids
 
 
+def _get_speaker_id_to_office_printed(
+    sitting_leave_text_row: SittingLeaveTextRow,
+    lookups: SpeakerLookups,
+    speaker_name_to_speaker_id: dict[Optional[str], int],
+) -> dict[int, str]:
+    speaker_id_to_office_printed: dict[int, str] = {}
+    for entry_office in get_sitting_entry_offices(
+        _get_attendance_text_row(sitting_leave_text_row), lookups
+    ):
+        speaker_id = speaker_name_to_speaker_id.get(entry_office.speaker_name)
+        if speaker_id is None:
+            continue
+        speaker_id_to_office_printed.setdefault(speaker_id, entry_office.office_printed)
+    return speaker_id_to_office_printed
+
+
 def get_leave_period_plan(
     session: Session, sitting_ids: list[int]
 ) -> list[PlannedLeavePrinting]:
@@ -118,10 +143,14 @@ def get_leave_period_plan(
             leave_entries = _get_leave_entries(sitting_leave_text_row, sitting_date)
             if not leave_entries:
                 continue
+            speaker_name_to_speaker_id = sitting_id_to_speaker_name_to_speaker_id[
+                sitting_leave_text_row.id
+            ]
             entry_name_key_to_speaker_ids = _get_entry_name_key_to_speaker_ids(
-                sitting_leave_text_row,
-                lookups,
-                sitting_id_to_speaker_name_to_speaker_id[sitting_leave_text_row.id],
+                sitting_leave_text_row, lookups, speaker_name_to_speaker_id
+            )
+            speaker_id_to_office_printed = _get_speaker_id_to_office_printed(
+                sitting_leave_text_row, lookups, speaker_name_to_speaker_id
             )
             parliament_number = infer_parliament(
                 sitting_leave_text_row.parlement_no, sitting_leave_text_row.volume_no
@@ -142,6 +171,11 @@ def get_leave_period_plan(
                 leave_dates = leave_entry.leave_dates
                 start_date = None if leave_dates is None else leave_dates.start_date
                 end_date = None if leave_dates is None else leave_dates.end_date
+                office_printed = (
+                    None
+                    if speaker_link is None
+                    else speaker_id_to_office_printed.get(speaker_link.speaker_id)
+                )
                 planned_printings.append(
                     PlannedLeavePrinting(
                         sitting_id=sitting_leave_text_row.id,
@@ -157,6 +191,13 @@ def get_leave_period_plan(
                         speaker_link=speaker_link,
                         is_covering_sitting=is_covering_sitting(
                             start_date, end_date, sitting_date
+                        ),
+                        leave_office=(
+                            None
+                            if office_printed is None
+                            else LeaveOffice(
+                                office_printed, LeaveOfficeSource.ATTENDANCE_LIST
+                            )
                         ),
                     )
                 )
@@ -216,10 +257,19 @@ def _insert_leave_period_plan(
                 printed_line=planned_printing.leave_entry.printed_line,
                 printed_heading_from=planned_printing.leave_entry.printed_heading_from,
                 printed_heading_to=planned_printing.leave_entry.printed_heading_to,
-                office_printed=planned_printing.leave_entry.office_printed,
+                office_printed=(
+                    None
+                    if planned_printing.leave_office is None
+                    else planned_printing.leave_office.office_printed
+                ),
                 entry_format=planned_printing.leave_entry.entry_format,
                 name_source=planned_printing.leave_entry.name_source,
                 year_source=planned_printing.leave_entry.year_source,
+                office_source=(
+                    None
+                    if planned_printing.leave_office is None
+                    else planned_printing.leave_office.office_source
+                ),
                 speaker_link_source=(
                     None
                     if planned_printing.speaker_link is None
