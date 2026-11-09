@@ -31,6 +31,16 @@ _GLUED_LINE_SITTING_5847 = (
 
 _ENTRY_OFFICE_CASES = [
     pytest.param(
+        "Dr Ho Tat Kin(Boon Teck); ",
+        None,
+        id="sitting_of_11_january_1988_a_lone_semicolon_is_no_office",
+    ),
+    pytest.param(
+        "Mr Eugene Yap Giau Cheng (Mountbatten), Parliamentary Secretary to the Minister for Trade and Industry and Minister for Social Affairs; ",
+        "Parliamentary Secretary to the Minister for Trade and Industry and Minister for Social Affairs",
+        id="a_trailing_semicolon_is_trimmed",
+    ),
+    pytest.param(
         "Mr Ch'ng Jit Koon (Bukit Merah), Senior Minister of State, Ministry of Community Development.   ",
         "Senior Minister of State, Ministry of Community Development",
         id="sitting_5847_1995_senior_minister_of_state_with_ministry",

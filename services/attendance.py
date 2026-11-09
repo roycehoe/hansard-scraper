@@ -85,7 +85,7 @@ _EX_OFFICIO_OFFICE_RE = re.compile(
     re.IGNORECASE,
 )
 _ENTRY_OFFICE_SEPARATOR = ","
-_ENTRY_OFFICE_STRIP_CHARACTERS = ",. "
+_ENTRY_OFFICE_STRIP_CHARACTERS = ",.; "
 _SECTION_LABEL_PREFIX_RE = re.compile(r"^(?:Absent|Present):\s*", re.IGNORECASE)
 _LEADING_NUMBER_RE = re.compile(r"^\d+(?=[A-Z])")
 _NUMBERED_ITEM_RE = re.compile(r"^\d+\\\.?\s")
