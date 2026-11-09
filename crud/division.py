@@ -4,6 +4,8 @@ from sqlalchemy import update
 from sqlmodel import Session, col, delete, select
 
 from database.division import Division
+from enums import DivisionCountSource, DivisionListStatus
+from utils.division_detachment import DivisionDetachment
 from utils.division_update import DivisionUpdate
 
 
@@ -75,3 +77,28 @@ class CRUDDivision:
                 for division_update in division_updates
             ],
         )
+
+    def detach_report_many(self, division_detachments: list[DivisionDetachment]) -> int:
+        detached_count = 0
+        for division_detachment in division_detachments:
+            statement = (
+                update(Division)
+                .where(col(Division.id) == division_detachment.division_id)
+                .values(
+                    sprs_report_id=None,
+                    report_division_number=None,
+                    speech_ordinal=None,
+                    count_source=DivisionCountSource.MINUTES,
+                    printed_counts=division_detachment.printed_counts,
+                    ayes=division_detachment.ayes,
+                    noes=division_detachment.noes,
+                    abstentions=division_detachment.abstentions,
+                    absent=None,
+                    paired=None,
+                    list_status=DivisionListStatus.NOT_PRINTED,
+                    printed_list=None,
+                )
+            )
+            detached_count += self.session.execute(statement).rowcount
+
+        return detached_count

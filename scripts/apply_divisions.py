@@ -13,6 +13,7 @@ from populate.divisions import (
     get_decade_and_source_counts,
     get_division_match,
     get_division_plan,
+    get_paired_divisions_at_risk,
     write_division_plan,
 )
 from populate.written_tables import vacuum_analyze_written_tables
@@ -42,7 +43,20 @@ def _log_plan(session: Session, plan: DivisionPlan) -> None:
     )
 
 
-def apply_divisions(report_ids: list[int], plan_path: Path, is_commit: bool) -> None:
+def _log_paired_at_risk(session: Session, plan: DivisionPlan) -> None:
+    at_risk_divisions = get_paired_divisions_at_risk(session, plan)
+    for at_risk in at_risk_divisions:
+        logger.info(
+            f"Paired division {at_risk.division_id} of report {at_risk.sprs_report_id} ({at_risk.printed_counts}): {'line gone' if at_risk.is_line_gone else 'counts would change'}"
+        )
+    logger.info(
+        f"Plan: {len(at_risk_divisions):,} paired divisions at risk, {sum(at_risk.is_line_gone for at_risk in at_risk_divisions):,} with the line gone"
+    )
+
+
+def apply_divisions(
+    report_ids: list[int], plan_path: Path, is_commit: bool, is_detach_paired: bool
+) -> None:
     if is_commit:
         validate_can_write(settings.database_url)
     with Session(engine) as session:
@@ -52,12 +66,13 @@ def apply_divisions(report_ids: list[int], plan_path: Path, is_commit: bool) -> 
             if plan != reviewed_plan:
                 raise HansardWriteCheckError("The plan differs from the reviewed plan")
         _log_plan(session, plan)
+        _log_paired_at_risk(session, plan)
         if not is_commit:
             plan_path.write_text(plan.model_dump_json(indent=1))
             logger.info("Dry run: nothing written")
             return
 
-        write_division_plan(session, plan)
+        write_division_plan(session, plan, is_detaching_paired=is_detach_paired)
         session.commit()
         logger.info("Committed")
         vacuum_analyze_written_tables(session, [Division.__tablename__])
@@ -86,5 +101,15 @@ if __name__ == "__main__":
         action="store_true",
         help="check the plan is unchanged, then write it, check the stored counts by decade and source against the plan, and commit",
     )
+    parser.add_argument(
+        "--detach-paired",
+        action="store_true",
+        help="rewrite a paired division whose line has gone to a minutes-only division; without it the write refuses",
+    )
     arguments = parser.parse_args()
-    apply_divisions(arguments.report_id, arguments.plan_file, arguments.commit)
+    apply_divisions(
+        arguments.report_id,
+        arguments.plan_file,
+        arguments.commit,
+        arguments.detach_paired,
+    )

@@ -10,6 +10,8 @@ from crud.attached_file_pointer import CRUDAttachedFilePointer
 from crud.bill_report_speaker import CRUDBillReportSpeaker
 from crud.bill_stage_line import CRUDBillStageLine
 from crud.division import CRUDDivision
+from crud.division_vote import CRUDDivisionVote
+from crud.minutes_division import CRUDMinutesDivision
 from crud.report import CRUDReport
 from crud.report_asker import CRUDReportAsker
 from crud.report_link import CRUDReportLink
@@ -21,7 +23,9 @@ from database.attached_file_pointer import AttachedFilePointer
 from database.bill_report_speaker import BillReportSpeaker
 from database.bill_stage_line import BillStageLine
 from database.division import Division
+from database.division_vote import DivisionVote
 from database.init import engine
+from database.minutes_division import MinutesDivision
 from database.report import Report
 from database.report_asker import ReportAsker
 from database.report_link import ReportLink
@@ -29,6 +33,7 @@ from database.report_participant import ReportParticipant
 from database.report_put_to import ReportPutTo
 from database.report_question_state import ReportQuestionState
 from database.speech import Speech
+from enums import DivisionVoteListSource
 from exceptions import HansardWriteCheckError
 from logs import logger
 from populate.written_tables import vacuum_analyze_written_tables
@@ -54,6 +59,9 @@ class ReportRemoval:
     bill_stage_line_count: int
     pointer_count: int
     division_count: int
+    minutes_division_count: int
+    division_vote_count: int
+    sitting_date: str
 
 
 def _get_validated_removal(
@@ -89,6 +97,13 @@ def _get_validated_removal(
         raise HansardWriteCheckError(
             f"{report.report_id}: speech rows differ from {kept_report.report_id}"
         )
+    division_ids = [
+        division.id
+        for division in CRUDDivision(session).get_by_sprs_report_ids(
+            [report.report_id]
+        )
+        if division.id is not None
+    ]
     return ReportRemoval(
         report.report_id,
         report.id,
@@ -114,7 +129,17 @@ def _get_validated_removal(
                 [report.report_id]
             )
         ),
-        len(CRUDDivision(session).get_by_sprs_report_ids([report.report_id])),
+        len(division_ids),
+        len(CRUDMinutesDivision(session).get_rows_by_division_ids(division_ids)),
+        sum(
+            len(
+                CRUDDivisionVote(session).get_rows_by_division_ids_and_list_source(
+                    division_ids, list_source
+                )
+            )
+            for list_source in DivisionVoteListSource
+        ),
+        report.sitting_date.date().isoformat(),
     )
 
 
@@ -171,6 +196,10 @@ def _remove_reports(session: Session, removals: list[ReportRemoval]) -> None:
         )
         if division.id is not None
     ]
+    deleted_vote_count = CRUDDivisionVote(session).delete_by_division_ids(division_ids)
+    deleted_minutes_division_count = CRUDMinutesDivision(
+        session
+    ).delete_by_division_ids(division_ids)
     deleted_division_count = CRUDDivision(session).delete_by_ids(division_ids)
     deleted_asker_count = CRUDReportAsker(session).delete_by_report_ids(report_ids)
     deleted_participant_count = CRUDReportParticipant(session).delete_by_report_ids(
@@ -197,6 +226,16 @@ def _remove_reports(session: Session, removals: list[ReportRemoval]) -> None:
     if deleted_link_count != len(planned_link_ids):
         raise HansardWriteCheckError(
             f"Deleted {deleted_link_count} report link rows, planned {len(planned_link_ids)}"
+        )
+    if deleted_vote_count != sum(removal.division_vote_count for removal in removals):
+        raise HansardWriteCheckError(
+            f"Deleted {deleted_vote_count} division vote rows, planned {sum(removal.division_vote_count for removal in removals)}"
+        )
+    if deleted_minutes_division_count != sum(
+        removal.minutes_division_count for removal in removals
+    ):
+        raise HansardWriteCheckError(
+            f"Deleted {deleted_minutes_division_count} minutes division rows, planned {sum(removal.minutes_division_count for removal in removals)}"
         )
     if deleted_division_count != sum(removal.division_count for removal in removals):
         raise HansardWriteCheckError(
@@ -259,10 +298,14 @@ def remove_excluded_reports(is_commit: bool, plan_path: Optional[Path]) -> None:
         removals = _get_removals(session, excluded_report_ids)
         for removal in removals:
             logger.info(
-                f"Remove report {removal.id} ({removal.report_id}), {removal.speech_count} speech rows, {removal.asker_count} asker rows, {removal.participant_count} participant rows, {removal.question_state_count} question state rows, {removal.put_to_count} put-to rows, {removal.link_count} link rows, {removal.bill_report_speaker_count} bill report speaker rows, {removal.bill_stage_line_count} bill stage line rows, {removal.pointer_count} pointer rows, {removal.division_count} division rows; keep {removal.kept_id}"
+                f"Remove report {removal.id} ({removal.report_id}), {removal.speech_count} speech rows, {removal.asker_count} asker rows, {removal.participant_count} participant rows, {removal.question_state_count} question state rows, {removal.put_to_count} put-to rows, {removal.link_count} link rows, {removal.bill_report_speaker_count} bill report speaker rows, {removal.bill_stage_line_count} bill stage line rows, {removal.pointer_count} pointer rows, {removal.division_count} division rows, {removal.minutes_division_count} minutes division rows, {removal.division_vote_count} division vote rows; keep {removal.kept_id}"
             )
+            if removal.minutes_division_count > 0:
+                logger.info(
+                    f"Rerun apply_minutes_divisions for the minutes of {removal.sitting_date}"
+                )
         logger.info(
-            f"Plan: {len(removals)} reports, {sum(removal.speech_count for removal in removals)} speech rows, {sum(removal.asker_count for removal in removals)} asker rows, {sum(removal.participant_count for removal in removals)} participant rows, {sum(removal.question_state_count for removal in removals)} question state rows, {sum(removal.put_to_count for removal in removals)} put-to rows, {sum(removal.link_count for removal in removals)} link rows, {sum(removal.bill_report_speaker_count for removal in removals)} bill report speaker rows, {sum(removal.bill_stage_line_count for removal in removals)} bill stage line rows, {sum(removal.pointer_count for removal in removals)} pointer rows, {sum(removal.division_count for removal in removals)} division rows"
+            f"Plan: {len(removals)} reports, {sum(removal.speech_count for removal in removals)} speech rows, {sum(removal.asker_count for removal in removals)} asker rows, {sum(removal.participant_count for removal in removals)} participant rows, {sum(removal.question_state_count for removal in removals)} question state rows, {sum(removal.put_to_count for removal in removals)} put-to rows, {sum(removal.link_count for removal in removals)} link rows, {sum(removal.bill_report_speaker_count for removal in removals)} bill report speaker rows, {sum(removal.bill_stage_line_count for removal in removals)} bill stage line rows, {sum(removal.pointer_count for removal in removals)} pointer rows, {sum(removal.division_count for removal in removals)} division rows, {sum(removal.minutes_division_count for removal in removals)} minutes division rows, {sum(removal.division_vote_count for removal in removals)} division vote rows"
         )
         if plan_path is not None:
             plan_path.write_text(
@@ -288,6 +331,8 @@ def remove_excluded_reports(is_commit: bool, plan_path: Optional[Path]) -> None:
                 BillStageLine.__tablename__,
                 AttachedFilePointer.__tablename__,
                 Division.__tablename__,
+                MinutesDivision.__tablename__,
+                DivisionVote.__tablename__,
                 Report.__tablename__,
             ],
         )

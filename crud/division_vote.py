@@ -59,3 +59,10 @@ class CRUDDivisionVote:
         )
 
         return self.session.exec(statement).rowcount
+
+    def delete_by_division_ids(self, division_ids: list[int]) -> int:
+        statement = delete(DivisionVote).where(
+            col(DivisionVote.division_id).in_(division_ids)
+        )
+
+        return self.session.exec(statement).rowcount

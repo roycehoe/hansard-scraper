@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 from sqlalchemy.engine import Engine
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col, func, select
 
 import scripts.remove_excluded_reports as remove_excluded_reports_script
 from crud.division import CRUDDivision
@@ -13,6 +13,9 @@ from database.attached_file_pointer import AttachedFilePointer
 from database.bill_report_speaker import BillReportSpeaker
 from database.bill_stage_line import BillStageLine
 from database.division import Division
+from database.division_vote import DivisionVote
+from database.minutes import Minutes
+from database.minutes_division import MinutesDivision
 from database.report import Report
 from database.report_asker import ReportAsker
 from database.report_link import ReportLink
@@ -26,6 +29,10 @@ from enums import (
     BillStage,
     DivisionCountSource,
     DivisionListStatus,
+    DivisionVoteChoice,
+    DivisionVoteListSource,
+    MinutesDivisionPairing,
+    MinutesStatus,
     ParticipantRole,
     ParticipantRoleSource,
     QuestionState,
@@ -50,6 +57,7 @@ _DIVISION_PARLIAMENT_NUMBER = 11
 _DIVISION_AYES = 5
 _DIVISION_NOES = 2
 _DIVISION_PRINTED_COUNTS = "The House divided: Ayes, 5; Noes, 2"
+_PAIRED_VOTE_ROW_COUNT = 2
 
 
 def _add_report(session: Session, report_id: str, content: str) -> Report:
@@ -203,9 +211,48 @@ def _add_pointers(session: Session, report_id: str, pointer_count: int) -> None:
     session.commit()
 
 
+def _add_paired_minutes_division(session: Session, report_id: str) -> None:
+    division = session.exec(
+        select(Division).where(col(Division.sprs_report_id) == report_id)
+    ).one()
+    assert division.id is not None
+    minutes = Minutes(sitting_date=_SITTING_DATE.date(), status=MinutesStatus.TEXT_STORED)
+    session.add(minutes)
+    session.flush()
+    assert minutes.id is not None
+    session.add(
+        MinutesDivision(
+            ordinal=1,
+            printed_counts=_DIVISION_PRINTED_COUNTS,
+            ayes=_DIVISION_AYES,
+            noes=_DIVISION_NOES,
+            list_status=DivisionListStatus.NOT_PRINTED,
+            pairing=MinutesDivisionPairing.PAIRED,
+            minutes_id=minutes.id,
+            division_id=division.id,
+        )
+    )
+    session.add_all(
+        DivisionVote(
+            ordinal=1,
+            printed_name="Mr A",
+            vote_choice=DivisionVoteChoice.AYE,
+            list_source=list_source,
+            division_id=division.id,
+        )
+        for list_source in DivisionVoteListSource
+    )
+    session.commit()
+
+
 def _get_pointer_report_ids(session: Session) -> list[str]:
     session.expire_all()
     return sorted(session.exec(select(AttachedFilePointer.sprs_report_id)).all())
+
+
+def _get_row_count(session: Session, table: type) -> int:
+    session.expire_all()
+    return session.exec(select(func.count()).select_from(table)).one()
 
 
 def _get_division_report_ids(session: Session) -> list[str]:
@@ -637,3 +684,43 @@ def test_commit_deletes_the_removed_reports_put_tos_and_keeps_the_others(
 
     assert _get_report_ids(scratch_session) == [_KEPT_REPORT_ID]
     assert _get_put_to_report_ids(scratch_session) == [_KEPT_REPORT_ID]
+
+
+def test_the_plan_counts_the_minutes_division_and_vote_rows(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_division(scratch_session, _EXCLUDED_REPORT_ID)
+    _add_paired_minutes_division(scratch_session, _EXCLUDED_REPORT_ID)
+    plan_path = tmp_path / "plan.json"
+
+    remove_excluded_reports_script.remove_excluded_reports(False, plan_path)
+
+    plan = json.loads(plan_path.read_text())
+    assert [removal["minutes_division_count"] for removal in plan] == [1]
+    assert [removal["division_vote_count"] for removal in plan] == [
+        _PAIRED_VOTE_ROW_COUNT
+    ]
+    assert _get_row_count(scratch_session, MinutesDivision) == 1
+
+
+def test_removing_a_report_deletes_its_minutes_division_and_vote_rows(
+    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_division(scratch_session, _EXCLUDED_REPORT_ID)
+    _add_division(scratch_session, _KEPT_REPORT_ID)
+    _add_paired_minutes_division(scratch_session, _EXCLUDED_REPORT_ID)
+
+    remove_excluded_reports_script.remove_excluded_reports(True, None)
+
+    assert _get_report_ids(scratch_session) == [_KEPT_REPORT_ID]
+    assert _get_division_report_ids(scratch_session) == [_KEPT_REPORT_ID]
+    assert _get_row_count(scratch_session, MinutesDivision) == 0
+    assert _get_row_count(scratch_session, DivisionVote) == 0
+    assert _get_row_count(scratch_session, Minutes) == 1
