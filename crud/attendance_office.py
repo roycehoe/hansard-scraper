@@ -1,12 +1,15 @@
 from dataclasses import dataclass
+from datetime import date
 from typing import Optional
 
-from sqlmodel import Session, col, delete, select
+from sqlmodel import Session, col, delete, func, select
 
 from database.attendance import Attendance
 from database.attendance_office import AttendanceOffice
 from database.sitting import Sitting
 from enums import AttendanceOfficeSource, OfficeClass
+
+_SITTING_DATE_SQL_FORMAT = "DD-MM-YYYY"
 
 
 @dataclass(frozen=True)
@@ -51,6 +54,38 @@ class CRUDAttendanceOffice:
         return [
             AttendanceOfficeSittingRow(*row) for row in self.session.exec(statement).all()
         ]
+
+    def get_sitting_rows(self) -> list[AttendanceOfficeSittingRow]:
+        statement = (
+            select(
+                AttendanceOffice.id,
+                Attendance.sitting_id,
+                Sitting.sitting_date,
+                Attendance.speaker_id,
+                AttendanceOffice.office_printed,
+                AttendanceOffice.office_class,
+                AttendanceOffice.entry_line_printed,
+                AttendanceOffice.source,
+            )
+            .join(Attendance, col(Attendance.id) == AttendanceOffice.attendance_id)
+            .join(Sitting, col(Sitting.id) == Attendance.sitting_id)
+            .order_by(AttendanceOffice.id)
+        )
+        return [
+            AttendanceOfficeSittingRow(*row)
+            for row in self.session.exec(statement).all()
+        ]
+
+    def get_max_sitting_date_by_sitting_ids_not_in(
+        self, sitting_ids: list[int]
+    ) -> Optional[date]:
+        statement = (
+            select(func.max(func.to_date(Sitting.sitting_date, _SITTING_DATE_SQL_FORMAT)))
+            .join(Attendance, col(Attendance.sitting_id) == Sitting.id)
+            .join(AttendanceOffice, col(AttendanceOffice.attendance_id) == Attendance.id)
+            .where(col(Sitting.id).not_in(sitting_ids))
+        )
+        return self.session.exec(statement).one()
 
     def get_distinct_office_printed_by_sitting_ids(
         self, sitting_ids: list[int]
