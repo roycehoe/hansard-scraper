@@ -232,6 +232,17 @@ class CRUDReport:
         statement = select(Report.report_id)
         return set(self.session.exec(statement).all())
 
+    def get_distinct_sitting_dates_by_sitting_date_from(
+        self, first_sitting_date: datetime
+    ) -> list[datetime]:
+        statement = (
+            select(Report.sitting_date)
+            .where(col(Report.sitting_date) >= first_sitting_date)
+            .distinct()
+            .order_by(col(Report.sitting_date))
+        )
+        return list(self.session.exec(statement).all())
+
     def get_max_parliament_number(self) -> Optional[int]:
         statement = select(func.max(Report.parliament_number))
         return self.session.exec(statement).one()
