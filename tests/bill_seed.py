@@ -2,11 +2,14 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from sqlmodel import Session
+from sqlmodel import Session, col, select
 
+from database.bill import Bill, BillReport
 from database.report import Report
+from database.speaker import Speaker
 from database.speech import Speech
-from enums import ReportType
+from enums import BillReportRole, ReportType
+from utils.title_key import get_title_key
 
 _PARLIAMENT_NUMBER = 12
 
@@ -50,6 +53,43 @@ def seed_bill_report(
     )
     session.commit()
     return report.id
+
+
+def seed_speaker(session: Session, name: str) -> int:
+    speaker = Speaker(
+        name=name,
+        party="PAP",
+        is_legislative_assembly=False,
+        parliament_number=_PARLIAMENT_NUMBER,
+    )
+    session.add(speaker)
+    session.commit()
+    assert speaker.id is not None
+    return speaker.id
+
+
+def seed_bill(
+    session: Session, title: str, report_id_to_role: dict[int, BillReportRole]
+) -> int:
+    sitting_dates = session.exec(
+        select(Report.sitting_date).where(col(Report.id).in_(report_id_to_role))
+    ).all()
+    bill = Bill(
+        title=title,
+        title_key=get_title_key(title),
+        first_sitting_date=min(sitting_dates),
+        last_sitting_date=max(sitting_dates),
+        is_passed=False,
+    )
+    session.add(bill)
+    session.flush()
+    assert bill.id is not None
+    session.add_all(
+        BillReport(role=role, bill_id=bill.id, report_id=report_id)
+        for report_id, role in report_id_to_role.items()
+    )
+    session.commit()
+    return bill.id
 
 
 _ESTATE_DUTY_ACT_TEXT = """\
