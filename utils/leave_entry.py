@@ -9,6 +9,7 @@ YEAR_ORDER_BREAK_GROUP = "year_order_break"
 
 _UNMERGED_KEY_PREFIX = "entry"
 _OPEN_END_KEY = "open"
+_OPEN_PERIOD_MAX_DAYS_AFTER_SITTING = 31
 
 MONTH_NAME_TO_NUMBER = {
     "jan": 1,
@@ -135,6 +136,26 @@ def get_nearest_year_dates(
     if len(nearest_leave_dates) != 1:
         return None
     return nearest_leave_dates[0]
+
+
+def _is_start_in_open_period_window(
+    printed_start: DayAndMonth, year: int, sitting_date: date
+) -> bool:
+    candidate_dates = _get_candidate_dates(printed_start, None, year)
+    if candidate_dates is None:
+        return False
+    days_after_sitting = (candidate_dates.start_date - sitting_date).days
+    return days_after_sitting <= _OPEN_PERIOD_MAX_DAYS_AFTER_SITTING
+
+
+def get_open_period_candidate_years(
+    printed_start: DayAndMonth, sitting_date: date
+) -> list[int]:
+    return [
+        year
+        for year in get_candidate_years(sitting_date)
+        if _is_start_in_open_period_window(printed_start, year, sitting_date)
+    ]
 
 
 def get_leave_period_key(
