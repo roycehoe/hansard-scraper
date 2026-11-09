@@ -104,7 +104,7 @@ Every request to SPRS or parliament.gov.sg goes through `paced_request()` or `pa
 
 ### Daily refresh
 
-`refresh.py` runs `populate/refresh_runs.py` once a day. It only adds rows: new raw report and sitting rows, their reports, speech rows, sittings and attendance, with stage 8 run on the new rows only and, after it, the askers of the new parliamentary question reports stored in `report_asker` and their participants and states stored in `report_participant` and `report_question_state`, then the printed office of each new attendance entry in `attendance_office`, the office each new question report was put to in `report_put_to`, the ministries of each new printed title in `office_title_ministry` (inserts only; it never writes `ministry` or `ministry_see_also`), and the new sittings' extension of `office_printed_range`. It never re-parses or rewrites a stored row, except that extending `office_printed_range` updates a Member's latest range. It commits one month at a time and halts on a new Parliament number, on a field the mapping loses, or when more than 5% of a month's new named speech rows have no registry link; a halt keeps the months before it. A run also ends `FAILED` when every topic answer it fetched has no text (new non-atbp hits plus rechecks); earlier months stay committed. After the last month it runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance` before it marks the run `SUCCEEDED`, and a VACUUM that fails or is skipped fails the run. Each run is one `refresh_run` row with its counts and status. A scheduled run cannot commit a `docs/figures/` file, so every run stores the figures in `refresh_run.figures` instead, including a run that adds nothing, so the figures catch up with a supervised write by the next morning; supervised writes still commit theirs. A run sends two alerts about offices: one when a new sitting is dated earlier than the latest sitting with an office row, in which case it writes no range for that month, and one for printed titles with no ministry, which repeats on each run that prints them until they are on the hand-kept list. See `docs/refresh.md`.
+`refresh.py` runs `populate/refresh_runs.py` once a day. It only adds rows: new raw report and sitting rows, their reports, speech rows, sittings and attendance, with stage 8 run on the new rows only and, after it, the askers of the new parliamentary question reports stored in `report_asker` and their participants and states stored in `report_participant` and `report_question_state`, then the printed office of each new attendance entry in `attendance_office`, the office each new question report was put to in `report_put_to`, the ministries of each new printed title in `office_title_ministry` (inserts only; it never writes `ministry` or `ministry_see_also`), and the new sittings' extension of `office_printed_range`. It never re-parses or rewrites a stored row, except that extending `office_printed_range` updates a Member's latest range. It commits one month at a time and halts on a new Parliament number, on a field the mapping loses, or when more than 5% of a month's new named speech rows have no registry link; a halt keeps the months before it. A run also ends `FAILED` when every topic answer it fetched has no text (new non-atbp hits plus rechecks); earlier months stay committed. After the last month it runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance` before it marks the run `SUCCEEDED`, and a VACUUM that fails or is skipped fails the run. After the VACUUM the run stores the report links of the full corpus that the table lacks, inserting only, and sends an alert for each stored link that differs from the plan; a failure there fails the run. Each run is one `refresh_run` row with its counts and status. A scheduled run cannot commit a `docs/figures/` file, so every run stores the figures in `refresh_run.figures` instead, including a run that adds nothing, so the figures catch up with a supervised write by the next morning; supervised writes still commit theirs. A run sends two alerts about offices: one when a new sitting is dated earlier than the latest sitting with an office row, in which case it writes no range for that month, and one for printed titles with no ministry, which repeats on each run that prints them until they are on the hand-kept list. See `docs/refresh.md`.
 
 ### Sitting date API — two formats
 
@@ -152,6 +152,7 @@ Two-tier design: every data source has a **raw response table** and an **entity 
 - `Ministry`: one row per name of `data/ministry_names.json`: `name` (unique); the API exposes `ministry.id`, so a rerun keeps the id of a kept name
 - `OfficeTitleMinistry`: one row per printed office title and ministry it names: `office_printed` (indexed), `ordinal` (the order within the title), `source` (an `OfficeTitleMinistrySource`, Postgres type `officetitleministrysource`: CLOSED_LIST_RULE or HAND_KEPT_TITLE), and a `ministry_id` FK to `Ministry`; unique on `office_printed` and `ministry_id`. A row claims no ministry of that name existed
 - `MinistrySeeAlso`: one row per sourced link between two ministries: `note`, `source_url`, a `ministry_id` FK to `Ministry` and a `see_also_ministry_id` FK to `Ministry`; unique on the pair
+- `ReportLink`: one row per printed citation of another report, stored on the report that prints it: `link_type` (`ReportLinkType`, Postgres type `reportlinktype`: CORRECTION, REPLY or CONTINUATION), `rule` (`ReportLinkRule`, Postgres type `reportlinkrule`: the rule that found the one target, `PRINTED_TITLE_ON_PRINTED_DATE`, `SAME_TITLE_ON_PRINTED_DATE`, `LAST_PART_ON_PRINTED_DATE`, `TITLE_KEY_ON_PRINTED_DATE` or `HAND_KEPT_TITLE_ON_PRINTED_DATE`), `printed_citation` as the record prints it, and `source_report_id` and `target_report_id`, both FKs to `Report.report_id`; unique on source, target and link type, with a check that source and target differ. A pair printed from both sides is two rows, and the API returns it once (see `docs/adr/NNNN-a-report-link-row-is-one-printed-citation.md`)
 
 ### Key parsing logic
 
@@ -178,6 +179,8 @@ A write that adds, rewrites or deletes speech rows of an older-system report (Pa
 A write that adds, rewrites, deletes or relinks speech rows of a parliamentary question report (oral-answer, written-answer, written-answer-na) ends with `python -m scripts.apply_report_askers --commit --report-id ...` and then `python -m scripts.apply_report_participants --commit --report-id ...` for the reports it touched.
 
 A write that adds, rewrites, deletes or relinks attendance rows (`clean_attendance.py` and `apply_speaker_links.py` among them) ends with `python -m scripts.apply_attendance_offices --commit`. A write that rewrites speech rows of a parliamentary question report also ends with `python -m scripts.apply_report_put_to --commit --report-id ...` for the reports it touched.
+
+A write that adds, rewrites or deletes speech rows of any report ends with `python -m scripts.apply_report_links --commit`.
 
 The scripts:
 
@@ -208,6 +211,9 @@ The scripts:
 - `check_office_ranges_against_ministers.py`: read only; compares the printed ranges of each minister in `data/office_check_ministers.json` with the minister's known dates and writes one JSON object per flag (`RANGE_OUTSIDE_DATES`, `NO_PRINT_INSIDE_DATES`) to `--output`, which it refuses to overwrite; changes no row; run as a module
 - `draw_office_check_sample.py`: read only; draws a seeded sample of at most 50 rows per group of one rule (`attendance-office`, `put-to` or `ministry`), with 15 planted errors, and writes `records.json`, `reader-packets.md` (no row key, source or group), a sealed `plant-key.json` with its SHA-256 and `summary.txt` to a directory that does not exist yet; run as a module
 - `list_office_check_flags.py`: needs no database; refuses unless each packet has exactly one valid verdict from the Sonnet and the Opus reader and the plant key matches its committed hash; flags a sampled row when either reader's verdict is not `RIGHT`, scores each reader against the plants and never lists a plant as a flag; refuses to overwrite its output; run as a module
+- `apply_report_links.py`: stores the links between reports that the record prints, through `populate/report_links.py`: reads every speech row that holds "please refer to" or "resumption of debate on", finds the printed citations and the dated resumption headings with `services/report_citation.py`, and places each with the rules of `services/report_link.py` and refuses an entry of `data/report_link_title_corrections.json` that the record does not print; a dry run logs the links by type and rule and the unplaced citations by reason, and `--unplaced-file` keeps them as JSON; `--commit` deletes and rewrites the table, checks the stored counts by type and rule against the plan, and runs `VACUUM (ANALYZE)` on it; run as a module
+- `build_report_link_check.py`: read only; draws the report link accuracy check from the stored links, after refusing unless the stored keys equal the plan's. Stage 1 samples up to 50 links from each of five groups (correction, reply, continuation with one title, last part in the newer system, last part in the older system) and `--rule` draws stage 2 for one looser rule, grouped by decade and report type. It plants 5 wrong links per group (or per rule), writes `records/packets.json`, `records/draw-summary.txt`, the sealed `key/plant-key.json` with its SHA-256, and shuffled `batches/sonnet` and `batches/opus` trees of `packets.md` that show a random packet id and never a report id, rule or group; the output directory must not exist yet; run as a module. The readers' rules are `docs/report/report-links-check.md`
+- `list_report_link_flags.py`: the report link check's flag list, read only and needing no database: refuses unless the key's SHA-256 equals the committed hash and each reader (`--sonnet-verdicts`, `--opus-verdicts`) has exactly one valid verdict for every packet, logs each reader's catches of the plants, and flags a sampled packet when either reader's verdict is not `RIGHT`; writes the flag list as JSON (never over an existing file); a reader can add a flag and never clear one; run as a module
 - `apply_speaker_overrides.py`: applies `data/speaker_overrides.json` and the party values of `data/colonial_la_members.json` to stored speaker rows, and straightens the apostrophe in party; a dry run unless `--commit`
 - `complete_truncated_attendance.py`: inserts the attendance rows stage 7 builds from a sitting's markdown that its stored rows lack, linked as stage 8 links them, in sittings that already hold rows (stage 7 fills a sitting with none); refuses the whole run when a short sitting holds a stored row stage 7 does not build; a dry run writes the plan file, and `--commit` builds the plan again, refuses unless it equals the reviewed file, and checks each sitting's count before it commits
 - `attendance_fresh_vs_stored.py`: read-only comparison of the attendance rows stage 7 builds now with the stored rows, one JSON line per differing or watched row with its printed source lines; `--batches` writes reader files of at most 150 rows per class; run as a module
@@ -253,7 +259,7 @@ hansard-scraper/
 ├── script.py                        # Pipeline orchestrator — runs populate stages 5 to 9 in order
 ├── refresh.py                       # Daily refresh entry point; exits 2 on a halt
 ├── settings.py                      # AppSettings (DATABASE_URL, API endpoints, date bounds)
-├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, PersonNameSpellingKind, ReportAskerSource, ParticipantRole, ParticipantRoleSource, OfficeClass, OfficeSource, QuestionState, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus, HandCheckSpeakerVerdict, HandCheckDifferenceClass, HandCheckDifferenceKind, HandCheckErrorTier, HandCheckFlagReason, ActHistoryEntryKind, ActHistoryDefect, BillLinkSource, BillClass, BillNumberSource, ActNumberSource, EgazetteSupplementKind, BillEra, BillReportRole, BillReviewItemKind, AttendanceOfficeSource, ReportPutToSource, OfficeTitleMinistrySource, OfficeCheckFlagKind, OfficeCheckRule, OfficeCheckVerdictKind
+├── enums.py                         # ReportType and ReportVersion (sprs2 older system, sprs3 newer system), RefreshRunStatus, PersonNameSpellingKind, ReportAskerSource, ParticipantRole, ParticipantRoleSource, OfficeClass, OfficeSource, QuestionState, LegislativeAssemblyFlag, PersonDecisionKind, HandCheckFormOfAddress, HandCheckPlantKind, HandCheckMatchStatus, HandCheckLiveCheckStatus, HandCheckAnswerStatus, HandCheckSpeakerVerdict, HandCheckDifferenceClass, HandCheckDifferenceKind, HandCheckErrorTier, HandCheckFlagReason, ActHistoryEntryKind, ActHistoryDefect, BillLinkSource, BillClass, BillNumberSource, ActNumberSource, EgazetteSupplementKind, BillEra, BillReportRole, BillReviewItemKind, AttendanceOfficeSource, ReportPutToSource, OfficeTitleMinistrySource, OfficeCheckFlagKind, OfficeCheckRule, OfficeCheckVerdictKind, ReportLinkType, ReportLinkRule, ReportLinkUnplacedReason, ReportLinkVerdict, ReportLinkPlantKind
 ├── exceptions.py                    # HansardError / HansardGatewayError / HansardSearchRangeError / HansardMemberListError / HansardDataFileError / HansardSittingReportError / HansardUnattributedSpeechError / HansardWriteTargetError / HansardWriteCheckError / HansardPartyAffiliationError / HansardRefreshHaltError / HansardRefreshFailureError / HansardRefreshRunError / HansardTestGuardError / HansardHandCheckError / HansardHandKeptEntryError / HansardActHistoryError / HansardSsoListingError / HansardActsSupplementError / HansardBillsSupplementError / HansardEgazetteSupplementError / HansardRepealedActsListingError / HansardOfficeCheckError / HansardReportLinkCheckError
 ├── logs.py                          # Loguru logger initialisation
 ├── Dockerfile                       # Image for the refresh job (run as `sh refresh.sh`); the build imports `refresh`, so an import error fails it
@@ -266,6 +272,7 @@ hansard-scraper/
 │   ├── bill_title_correction.py    # BillTitleCorrection / BillTitleCorrections: data/bill_title_corrections.json entries
 │   ├── hand_kept_bill.py           # HandKeptBill / HandKeptBills: data/hand_kept_bills.json entries
 │   ├── hand_kept_act_link.py       # HandKeptActLink / HandKeptActLinks: data/hand_kept_act_links.json entries
+│   ├── report_link_title_correction.py  # ReportLinkTitleCorrection / ReportLinkTitleCorrections: data/report_link_title_corrections.json entries
 │   ├── attendance_cleanup.py       # AttendanceCleanup: data/attendance_cleanup.json entries
 │   ├── party_affiliation.py        # MembershipPartyAffiliations / PartyAffiliationSpan / PartyAffiliationMemberships: data/party_affiliations.json entries
 │   ├── hand_kept_member.py         # HandKeptMember / HandKeptMembers: data/colonial_la_members.json and data/unscraped_members.json entries
@@ -286,6 +293,7 @@ hansard-scraper/
 │   ├── hand_check_packet.py        # HandCheckPackets / HandCheckPacket / HandCheckWordDifference / HandCheckGapCheck / HandCheckRoleSection: the packet records file of the human hand check
 │   ├── hand_check_verdict.py       # HandCheckVerdict: one line of a reader's verdicts.jsonl in the hand check
 │   ├── hand_check_flag.py          # HandCheckFlag / HandCheckFlags: the flag list of scripts/list_hand_check_flags.py
+│   ├── report_link_check.py        # ReportLinkCheckPacket / ReportLinkCheckPackets / ReportLinkCheckKey / ReportLinkCheckVerdict / ReportLinkCheckFlag / ReportLinkCheckFlags and their parts: the files of the report link accuracy check
 │   ├── act_link_plan.py            # ActLinkPlan / PlannedBill / SkippedReport / PlannedAct / PlannedActHistoryEntry / UnparsedEntry: the plan file of scripts/apply_act_links.py
 │   ├── harvested_act.py            # HarvestedAct / HarvestedActs: the acts.json of a harvest directory
 │   ├── bills_supplement_capture.py # BillsSupplementCaptureManifestEntry / BillsSupplementCaptureManifest: the captures.json of a Bills Supplement captures directory
@@ -343,6 +351,8 @@ hansard-scraper/
 │   ├── report_put_to.py             # Speech rows of a parliamentary question → the offices it says it was put to
 │   ├── office_printed_range.py      # Attendance offices and sitting dates → runs of one printed office per speaker; the extension of stored ranges
 │   ├── office_title_ministry.py     # A printed office title, the closed ministry list and the hand-kept titles → the ministries it names
+│   ├── report_citation.py           # Speech rows → the citations of other reports they print, and the dated resumption heading of a resumed debate
+│   ├── report_link.py               # Citations, headings and report rows → planned report links by fixed rules, and the citations no rule placed
 │   └── speaker.py                   # SpeakerResult → Speaker DB entity
 │
 ├── database/                        # SQLModel table definitions
@@ -365,6 +375,7 @@ hansard-scraper/
 │   ├── refresh_run.py               # RefreshRun: one row per refresh run, its counts, figures and status
 │   ├── report_asker.py              # ReportAsker: one row per asker of a parliamentary question + report_id, speaker_id and reader_speaker_id FKs
 │   ├── report_participant.py        # ReportParticipant: one row per person and role in a parliamentary question + report_id and speaker_id FKs
+│   ├── report_link.py               # ReportLink: one row per printed citation of another report + source_report_id and target_report_id FKs
 │   ├── report_question_state.py     # ReportQuestionState: one row per report and state the record prints for a question + report_id FK
 │   ├── attendance_office.py         # AttendanceOffice: the printed office of one attendance entry + attendance_id FK
 │   ├── office_printed_range.py      # OfficePrintedRange: a run of sittings with one printed office + speaker_id and two attendance_office FKs
@@ -398,6 +409,7 @@ hansard-scraper/
 │   ├── refresh_run.py               # Run rows, with a row lock for the finish
 │   ├── report_asker.py              # Askers of a parliamentary question: add, read by report, delete by report
 │   ├── report_participant.py        # Participants of a parliamentary question: add, read by report, delete by report
+│   ├── report_link.py               # Report links: add, read, delete by source or target report
 │   ├── report_question_state.py     # Question states of a parliamentary question: add, read by report, delete by report
 │   ├── attendance_office.py         # Printed offices of attendance entries: add, read by sitting, distinct titles, check rows, delete
 │   ├── office_printed_range.py      # Printed office ranges: add, read by speaker, extend, delete
@@ -433,6 +445,7 @@ hansard-scraper/
 │   ├── office_printed_ranges.py     # Plans and writes the printed office ranges from the stored offices; the daily extension leaves a late sitting's month alone
 │   ├── report_put_to.py             # Plans and writes the office each parliamentary question report was put to, checked by decade and source
 │   ├── office_title_ministries.py   # Plans and writes the ministry names and the ministries under each printed title; the daily step only inserts
+│   ├── report_links.py              # Plans report links from speech rows and report rows, writes the plan, and inserts the links the daily refresh lacks
 │   ├── refresh_runs.py              # Daily refresh: fetch, check, add rows, link, record the run, alert
 │   ├── written_tables.py            # VACUUM (ANALYZE) the tables a supervised write script wrote, and check the count rose
 │   └── speakers.py                  # Out-of-band: persist scraped Speaker records
@@ -452,6 +465,7 @@ hansard-scraper/
 │   ├── office_printed_range_update.py # OfficePrintedRangeUpdate: one range row's extended end, for a bulk update
 │   ├── parliament_numbers.py        # VOLUME_TO_PARLIAMENT and infer_parliament: the Parliament number of a volume
 │   ├── row_counts.py                # format_row_counts: a Counter as sorted "key count" text for a script's log line
+│   ├── printed_citation.py          # PrintedCitation and ResumptionHeading: the records report_citation hands to report_link
 │   ├── sitting_dates.py             # Sitting-date parsing, the sitting-date key, the month windows and the old/new format cutoff test
 │   ├── speaker_resolution.py        # Name resolution: build SpeakerLookups, resolve_canonical_name and the OCR and name tables behind it
 │   ├── speaker_resolution_constants.py  # Reference tables for stage 8 (role terms, office holders)
@@ -502,6 +516,10 @@ hansard-scraper/
     ├── check_office_ranges_against_ministers.py
     ├── draw_office_check_sample.py
     ├── list_office_check_flags.py
+
+    ├── apply_report_links.py
+    ├── build_report_link_check.py
+    ├── list_report_link_flags.py
     ├── apply_speaker_overrides.py
     ├── complete_truncated_attendance.py
     ├── attendance_fresh_vs_stored.py
