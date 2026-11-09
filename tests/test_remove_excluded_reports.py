@@ -8,6 +8,7 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session, col, select
 
 import scripts.remove_excluded_reports as remove_excluded_reports_script
+from database.attached_file_pointer import AttachedFilePointer
 from database.bill_report_speaker import BillReportSpeaker
 from database.bill_stage_line import BillStageLine
 from database.report import Report
@@ -19,6 +20,7 @@ from database.report_question_state import ReportQuestionState
 from database.speaker import Speaker
 from database.speech import Speech
 from enums import (
+    AttachedFilePointerShape,
     BillStage,
     ParticipantRole,
     ParticipantRoleSource,
@@ -158,6 +160,26 @@ def _get_link_pairs(session: Session) -> list[tuple[str, str]]:
             select(ReportLink.source_report_id, ReportLink.target_report_id)
         ).all()
     )
+
+
+def _add_pointers(session: Session, report_id: str, pointer_count: int) -> None:
+    session.add_all(
+        AttachedFilePointer(
+            ordinal=ordinal,
+            printed_text="Annex",
+            href=f"/search/search/download?value=PDFs/Annex {ordinal}.pdf",
+            shape=AttachedFilePointerShape.PDFS,
+            download_value=f"PDFs/Annex {ordinal}.pdf",
+            sprs_report_id=report_id,
+        )
+        for ordinal in range(1, pointer_count + 1)
+    )
+    session.commit()
+
+
+def _get_pointer_report_ids(session: Session) -> list[str]:
+    session.expire_all()
+    return sorted(session.exec(select(AttachedFilePointer.sprs_report_id)).all())
 
 
 def _seed_duplicate(session: Session, excluded_content: str = _TEXT) -> None:
@@ -488,6 +510,25 @@ def test_dry_run_plan_counts_the_bill_report_speaker_and_stage_line_rows(
         _EXCLUDED_REPORT_ID,
         _EXCLUDED_REPORT_ID,
     ]
+
+
+def test_commit_deletes_the_removed_reports_pointers_and_keeps_the_others(
+    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_pointers(scratch_session, _EXCLUDED_REPORT_ID, 2)
+    _add_pointers(scratch_session, _KEPT_REPORT_ID, 1)
+    assert _get_pointer_report_ids(scratch_session) == [
+        _EXCLUDED_REPORT_ID,
+        _EXCLUDED_REPORT_ID,
+        _KEPT_REPORT_ID,
+    ]
+
+    remove_excluded_reports_script.remove_excluded_reports(True, None)
+
+    assert _get_report_ids(scratch_session) == [_KEPT_REPORT_ID]
+    assert _get_pointer_report_ids(scratch_session) == [_KEPT_REPORT_ID]
 
 
 def test_commit_refuses_the_protected_local_port(

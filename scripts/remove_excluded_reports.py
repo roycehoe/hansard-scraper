@@ -6,6 +6,7 @@ from typing import Optional
 
 from sqlmodel import Session
 
+from crud.attached_file_pointer import CRUDAttachedFilePointer
 from crud.bill_report_speaker import CRUDBillReportSpeaker
 from crud.bill_stage_line import CRUDBillStageLine
 from crud.report import CRUDReport
@@ -15,6 +16,7 @@ from crud.report_participant import CRUDReportParticipant
 from crud.report_put_to import CRUDReportPutTo
 from crud.report_question_state import CRUDReportQuestionState
 from crud.speech import CRUDSpeech
+from database.attached_file_pointer import AttachedFilePointer
 from database.bill_report_speaker import BillReportSpeaker
 from database.bill_stage_line import BillStageLine
 from database.init import engine
@@ -48,6 +50,7 @@ class ReportRemoval:
     link_count: int
     bill_report_speaker_count: int
     bill_stage_line_count: int
+    pointer_count: int
 
 
 def _get_validated_removal(
@@ -103,6 +106,11 @@ def _get_validated_removal(
             )
         ),
         len(CRUDBillStageLine(session).get_rows_by_sprs_report_ids([report.report_id])),
+        len(
+            CRUDAttachedFilePointer(session).get_rows_by_sprs_report_ids(
+                [report.report_id]
+            )
+        ),
     )
 
 
@@ -169,6 +177,9 @@ def _remove_reports(session: Session, removals: list[ReportRemoval]) -> None:
     deleted_bill_stage_line_count = CRUDBillStageLine(
         session
     ).delete_by_sprs_report_ids(sprs_report_ids)
+    deleted_pointer_count = CRUDAttachedFilePointer(session).delete_by_sprs_report_ids(
+        [removal.report_id for removal in removals]
+    )
     deleted_speech_count = CRUDSpeech(session).delete_by_report_ids(report_ids)
     deleted_report_count = CRUDReport(session).delete_by_ids(report_ids)
     if deleted_link_count != len(planned_link_ids):
@@ -207,6 +218,10 @@ def _remove_reports(session: Session, removals: list[ReportRemoval]) -> None:
         raise HansardWriteCheckError(
             f"Deleted {deleted_bill_stage_line_count} bill stage line rows, planned {sum(removal.bill_stage_line_count for removal in removals)}"
         )
+    if deleted_pointer_count != sum(removal.pointer_count for removal in removals):
+        raise HansardWriteCheckError(
+            f"Deleted {deleted_pointer_count} pointer rows, planned {sum(removal.pointer_count for removal in removals)}"
+        )
     if deleted_speech_count != sum(removal.speech_count for removal in removals):
         raise HansardWriteCheckError(
             f"Deleted {deleted_speech_count} speech rows, planned {sum(removal.speech_count for removal in removals)}"
@@ -228,10 +243,10 @@ def remove_excluded_reports(is_commit: bool, plan_path: Optional[Path]) -> None:
         removals = _get_removals(session, excluded_report_ids)
         for removal in removals:
             logger.info(
-                f"Remove report {removal.id} ({removal.report_id}), {removal.speech_count} speech rows, {removal.asker_count} asker rows, {removal.participant_count} participant rows, {removal.question_state_count} question state rows, {removal.put_to_count} put-to rows, {removal.link_count} link rows, {removal.bill_report_speaker_count} bill report speaker rows, {removal.bill_stage_line_count} bill stage line rows; keep {removal.kept_id}"
+                f"Remove report {removal.id} ({removal.report_id}), {removal.speech_count} speech rows, {removal.asker_count} asker rows, {removal.participant_count} participant rows, {removal.question_state_count} question state rows, {removal.put_to_count} put-to rows, {removal.link_count} link rows, {removal.bill_report_speaker_count} bill report speaker rows, {removal.bill_stage_line_count} bill stage line rows, {removal.pointer_count} pointer rows; keep {removal.kept_id}"
             )
         logger.info(
-            f"Plan: {len(removals)} reports, {sum(removal.speech_count for removal in removals)} speech rows, {sum(removal.asker_count for removal in removals)} asker rows, {sum(removal.participant_count for removal in removals)} participant rows, {sum(removal.question_state_count for removal in removals)} question state rows, {sum(removal.put_to_count for removal in removals)} put-to rows, {sum(removal.link_count for removal in removals)} link rows, {sum(removal.bill_report_speaker_count for removal in removals)} bill report speaker rows, {sum(removal.bill_stage_line_count for removal in removals)} bill stage line rows"
+            f"Plan: {len(removals)} reports, {sum(removal.speech_count for removal in removals)} speech rows, {sum(removal.asker_count for removal in removals)} asker rows, {sum(removal.participant_count for removal in removals)} participant rows, {sum(removal.question_state_count for removal in removals)} question state rows, {sum(removal.put_to_count for removal in removals)} put-to rows, {sum(removal.link_count for removal in removals)} link rows, {sum(removal.bill_report_speaker_count for removal in removals)} bill report speaker rows, {sum(removal.bill_stage_line_count for removal in removals)} bill stage line rows, {sum(removal.pointer_count for removal in removals)} pointer rows"
         )
         if plan_path is not None:
             plan_path.write_text(
@@ -255,6 +270,7 @@ def remove_excluded_reports(is_commit: bool, plan_path: Optional[Path]) -> None:
                 ReportLink.__tablename__,
                 BillReportSpeaker.__tablename__,
                 BillStageLine.__tablename__,
+                AttachedFilePointer.__tablename__,
                 Report.__tablename__,
             ],
         )
