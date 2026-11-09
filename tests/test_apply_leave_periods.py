@@ -306,6 +306,59 @@ def test_commit_refuses_the_protected_port_before_any_row_is_written(
     assert _get_stored_printings(scratch_session) == []
 
 
+def _get_statements_of_apply_leave_periods(
+    scratch_engine: Engine, is_commit: bool
+) -> list[str]:
+    statements: list[str] = []
+
+    def record_statement(
+        connection: Connection,
+        cursor: object,
+        statement: str,
+        parameters: object,
+        context: object,
+        executemany: bool,
+    ) -> None:
+        statements.append(statement)
+
+    event.listen(scratch_engine, "before_cursor_execute", record_statement)
+    try:
+        apply_leave_periods(is_commit=is_commit)
+    finally:
+        event.remove(scratch_engine, "before_cursor_execute", record_statement)
+    return statements
+
+
+def test_commit_locks_both_tables_before_it_reads_the_sittings(
+    scratch_engine: Engine, scratch_session: Session, log_recorder: _LogRecorder
+) -> None:
+    _seed_sittings(scratch_session)
+
+    statements = _get_statements_of_apply_leave_periods(scratch_engine, is_commit=True)
+
+    first_read_index = next(
+        i for i, statement in enumerate(statements) if "FROM sitting" in statement
+    )
+    assert [
+        statement
+        for statement in statements[:first_read_index]
+        if statement.startswith("LOCK TABLE")
+    ] == [
+        "LOCK TABLE leave_period IN SHARE ROW EXCLUSIVE MODE",
+        "LOCK TABLE leave_period_printing IN SHARE ROW EXCLUSIVE MODE",
+    ]
+
+
+def test_a_dry_run_takes_no_lock(
+    scratch_engine: Engine, scratch_session: Session, log_recorder: _LogRecorder
+) -> None:
+    _seed_sittings(scratch_session)
+
+    statements = _get_statements_of_apply_leave_periods(scratch_engine, is_commit=False)
+
+    assert not any(statement.startswith("LOCK TABLE") for statement in statements)
+
+
 def test_populate_inserts_against_an_existing_period_and_issues_no_delete_or_update(
     scratch_engine: Engine, scratch_session: Session, log_recorder: _LogRecorder
 ) -> None:

@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlmodel import Session, col, delete, func, select
 
 from database.leave_period import LeavePeriod
@@ -6,6 +7,11 @@ from database.leave_period import LeavePeriod
 class CRUDLeavePeriod:
     def __init__(self, session: Session):
         self.session = session
+
+    def lock_table_in_share_row_exclusive_mode(self) -> None:
+        statement = text("LOCK TABLE leave_period IN SHARE ROW EXCLUSIVE MODE")
+
+        self.session.execute(statement)
 
     def add_many(self, leave_periods: list[LeavePeriod]) -> None:
         self.session.add_all(leave_periods)

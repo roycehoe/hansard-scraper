@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Optional
 
+from sqlalchemy import text
 from sqlmodel import Session, col, delete, func, select
 
 from database.leave_period import LeavePeriod, LeavePeriodPrinting
@@ -51,6 +52,11 @@ class LeavePeriodPrintingCheckRow:
 class CRUDLeavePeriodPrinting:
     def __init__(self, session: Session):
         self.session = session
+
+    def lock_table_in_share_row_exclusive_mode(self) -> None:
+        statement = text("LOCK TABLE leave_period_printing IN SHARE ROW EXCLUSIVE MODE")
+
+        self.session.execute(statement)
 
     def add_many(self, leave_period_printings: list[LeavePeriodPrinting]) -> None:
         self.session.add_all(leave_period_printings)
