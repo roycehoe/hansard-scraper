@@ -26,6 +26,7 @@ import database.refresh_run  # noqa: F401
 import database.repealed_acts  # noqa: F401
 import database.report  # noqa: F401
 import database.report_asker  # noqa: F401
+import database.report_link  # noqa: F401
 import database.report_participant  # noqa: F401
 import database.report_put_to  # noqa: F401
 import database.report_question_state  # noqa: F401
