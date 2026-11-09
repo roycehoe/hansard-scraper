@@ -19,6 +19,7 @@ from schemas.hansard_report_response import (
 )
 from schemas.hansard_search_result import HansardSearchResult
 from schemas.hansard_topic_response import HansardTopicResponse
+from schemas.minutes_response import MinutesResponse
 from services.attendance import (
     build_constituency_lookups,
     build_sitting_attendances,
@@ -28,10 +29,12 @@ from services.hansard_website import get_topic_id
 from services.report import build_report
 from services.sitting import build_sitting
 from services.speech import build_report_speeches
+from settings import settings
 from utils.data_files import get_constituency_names, get_unattributed_speech_ranges
 from utils.sitting_dates import parse_sitting_date
 
 _FIXTURE_DIRECTORY = Path(__file__).parent / "fixtures" / "refresh"
+_HTTP_OK = 200
 _SITTING_DETAIL_COLUMNS = ("sections", "annexures", "vernaculars", "a2b")
 
 
@@ -134,6 +137,33 @@ def _build_sitting_body(sitting_date_response: dict, sitting_details: dict) -> d
     }
 
 
+def build_live_index_row(
+    sitting_date: date,
+    number: int,
+    file_id: str,
+    filename: str,
+    parliament_title: str = "14th Parliament",
+) -> dict:
+    return {
+        "description": f"Votes and Proceedings No. {number}",
+        "date": f"{sitting_date.isoformat()}T12:00:00",
+        "report": {
+            "id": file_id,
+            "filename_download": filename,
+            "type": "application/pdf",
+        },
+        "parliaments": {"title": parliament_title},
+    }
+
+
+def build_live_index_page(rows: list[dict]) -> str:
+    rows_text = json.dumps(
+        {"initialMPs": {"meta": {"filter_count": len(rows)}, "data": rows}},
+        separators=(",", ":"),
+    )
+    return f"<html><body><script>self.__next_f.push([1,{json.dumps(rows_text)}])</script></body></html>"
+
+
 def _get_date(sitting_date: str) -> date:
     return parse_sitting_date(sitting_date).date()
 
@@ -169,6 +199,11 @@ class FakeParliament:
         self.sitting_calls: list[str] = []
         self.topic_calls: list[str] = []
         self.on_search: Optional[Callable[[], None]] = None
+        self.minutes_index_page = build_live_index_page([])
+        self.minutes_index_error: Optional[Exception] = None
+        self.minutes_index_status = _HTTP_OK
+        self.file_url_to_response: dict[str, MinutesResponse] = {}
+        self.minutes_file_calls: list[str] = []
 
     def get_all_hansard_search_results(
         self, from_date: date, to_date: date
@@ -209,3 +244,19 @@ class FakeParliament:
             ):
                 return HansardTopicResponse(**self.report_id_to_topic[report_id])
         raise HansardGatewayError(f"no topic {topic_id}")
+
+    def get_minutes_index_response(self) -> MinutesResponse:
+        if self.minutes_index_error is not None:
+            raise self.minutes_index_error
+        return MinutesResponse(
+            url=settings.minutes_index_url,
+            status_code=self.minutes_index_status,
+            content=self.minutes_index_page.encode("utf-8"),
+        )
+
+    def get_minutes_file_response(self, file_url: str) -> MinutesResponse:
+        self.minutes_file_calls.append(file_url)
+        try:
+            return self.file_url_to_response[file_url]
+        except KeyError as error:
+            raise HansardGatewayError(f"no minutes file {file_url}") from error
