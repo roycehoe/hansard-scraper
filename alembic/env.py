@@ -24,6 +24,7 @@ import database.hansard_website_response  # noqa: F401
 import database.leave_period  # noqa: F401
 import database.ministry  # noqa: F401
 import database.ministry_see_also  # noqa: F401
+import database.minutes  # noqa: F401
 import database.office_printed_range  # noqa: F401
 import database.office_title_ministry  # noqa: F401
 import database.party_affiliation  # noqa: F401

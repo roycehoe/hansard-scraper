@@ -49,6 +49,7 @@ import database.hansard_website_response  # noqa: F401 registers the table for c
 import database.leave_period  # noqa: F401 registers the table for create_all
 import database.ministry  # noqa: F401 registers the table for create_all
 import database.ministry_see_also  # noqa: F401 registers the table for create_all
+import database.minutes  # noqa: F401 registers the table for create_all
 import database.office_printed_range  # noqa: F401 registers the table for create_all
 import database.office_title_ministry  # noqa: F401 registers the table for create_all
 import database.party_affiliation  # noqa: F401 registers the table for create_all
