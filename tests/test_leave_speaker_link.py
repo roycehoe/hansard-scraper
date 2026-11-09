@@ -114,6 +114,11 @@ def test_a_name_with_no_match_gives_none() -> None:
 
 def test_a_surname_alone_gives_none() -> None:
     assert _get_link("Lee") is None
+    assert _get_link("Iswaran") is None
+
+
+def test_a_name_missing_its_last_word_gives_none() -> None:
+    assert _get_link("Lee Hsien") is None
 
 
 def test_a_name_with_no_known_parliament_skips_rule_a() -> None:
