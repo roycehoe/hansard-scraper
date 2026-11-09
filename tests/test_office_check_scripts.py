@@ -142,7 +142,12 @@ def test_plants_come_from_outside_the_sample_with_another_rows_value() -> None:
     )
 
 
-def _seed_report(session: Session, sprs_report_id: str, office_printed: str) -> Report:
+def _seed_report(
+    session: Session,
+    sprs_report_id: str,
+    office_printed: str,
+    source: ReportPutToSource = ReportPutToSource.ASKED_THE,
+) -> Report:
     report = Report(
         volumeNo=9,
         parlNo=9,
@@ -177,7 +182,7 @@ def _seed_report(session: Session, sprs_report_id: str, office_printed: str) -> 
                 ordinal=1,
                 office_printed=office_printed,
                 printed_text=f"asked the {office_printed}",
-                source=ReportPutToSource.ASKED_THE,
+                source=source,
                 first_ordinal=1,
                 sprs_report_id=sprs_report_id,
             ),
@@ -306,6 +311,39 @@ def test_the_script_writes_packets_a_key_and_a_hash_and_hides_the_row_keys(
     assert f"Rule: {rule}" in summary_text
     assert "Plants: 1" in summary_text
     assert "password" not in summary_text
+
+
+def test_a_misprinted_opening_is_drawn_in_a_group_of_its_own(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _seed_office_rows(scratch_session)
+    _seed_report(
+        scratch_session,
+        "misprinted-opening",
+        "Minister for Transport",
+        ReportPutToSource.MISPRINTED_OPENING,
+    )
+    scratch_session.commit()
+    monkeypatch.setattr(
+        draw_script, "build_read_only_engine", lambda database_url: scratch_engine
+    )
+    output_directory = tmp_path / "draw"
+
+    draw_office_check_sample(
+        OfficeCheckRule.PUT_TO, _ROUND_NUMBER, _SEED, output_directory
+    )
+
+    packets = OfficeCheckPackets.model_validate_json(
+        (output_directory / "records.json").read_text()
+    ).root
+    assert {
+        packet.group
+        for packet in packets
+        if packet.data_says == "Minister for Transport"
+    } == {"2000 MISPRINTED_OPENING"}
 
 
 def test_the_script_refuses_an_existing_output_directory(

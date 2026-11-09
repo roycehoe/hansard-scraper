@@ -18,7 +18,7 @@ from database.attendance_office import AttendanceOffice
 from database.init import build_read_only_engine
 from database.office_title_ministry import OfficeTitleMinistry
 from database.report_put_to import ReportPutTo
-from enums import OfficeCheckRule
+from enums import OfficeCheckRule, ReportPutToSource
 from exceptions import HansardOfficeCheckError
 from logs import logger
 from schemas.office_check import (
@@ -92,7 +92,7 @@ def _get_put_to_rule_rows(session: Session) -> OfficeCheckRuleRows:
         OfficeCheckRow(
             report_put_to_check_row.id,
             f"{ReportPutTo.__tablename__}:{report_put_to_check_row.id}",
-            f"{get_decade(report_put_to_check_row.sitting_date)} {report_put_to_check_row.report_type}",
+            f"{get_decade(report_put_to_check_row.sitting_date)} {report_put_to_check_row.source if report_put_to_check_row.source == ReportPutToSource.MISPRINTED_OPENING else report_put_to_check_row.report_type}",
             report_put_to_check_row.transcript,
             report_put_to_check_row.office_printed,
             report_put_to_check_row.source,

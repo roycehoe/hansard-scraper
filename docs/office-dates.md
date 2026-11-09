@@ -41,6 +41,7 @@ A range belongs to a `speaker_id`, and a `Speaker` row holds one Member in one P
 |---|---|
 | `ASKED_THE` | The question row reads "asked the" followed by the office. |
 | `TO_ASK_THE` | The question row reads "To ask the" followed by the office. |
+| `MISPRINTED_OPENING` | The question row misprints the opening: it has no "the" ("asked Minister for Education"), or prints "the the", "the,", "The" or "he", repeats the verb, or holds a bracket before "the". |
 
 `report_put_to` stores the office the question names. It does not infer it from the Member who answered.
 

@@ -115,6 +115,7 @@ class AttendanceOfficeSource(StrEnum):
 class ReportPutToSource(StrEnum):
     ASKED_THE = "ASKED_THE"
     TO_ASK_THE = "TO_ASK_THE"
+    MISPRINTED_OPENING = "MISPRINTED_OPENING"
 
 
 class OfficeTitleMinistrySource(StrEnum):
