@@ -30,6 +30,12 @@ class AttachedFilePointerUntiedRow:
 
 
 @dataclass(frozen=True)
+class AttachedFilePointerAddressRow:
+    shape: AttachedFilePointerShape
+    download_value: str
+
+
+@dataclass(frozen=True)
 class AttachedFilePointerCheckRow:
     id: int
     sprs_report_id: str
@@ -151,5 +157,19 @@ class CRUDAttachedFilePointer:
         )
         return [
             AttachedFilePointerCheckRow(*row)
+            for row in self.session.exec(statement).all()
+        ]
+
+    def get_address_rows_by_download_value_not_null(
+        self,
+    ) -> list[AttachedFilePointerAddressRow]:
+        statement = (
+            select(AttachedFilePointer.shape, AttachedFilePointer.download_value)
+            .where(col(AttachedFilePointer.download_value).is_not(None))
+            .distinct()
+            .order_by(AttachedFilePointer.download_value)
+        )
+        return [
+            AttachedFilePointerAddressRow(*row)
             for row in self.session.exec(statement).all()
         ]

@@ -306,6 +306,21 @@ class AttachedFileCheckAnswer(StrEnum):
     UNSURE = "UNSURE"
 
 
+class AttachedFileAddressGroup(StrEnum):
+    DATED_ANNEX = "DATED_ANNEX"
+    DATED_VERNACULAR = "DATED_VERNACULAR"
+    PDFS_HTM = "PDFS_HTM"
+    PDFS_OTHER = "PDFS_OTHER"
+    SECTION_FILE = "SECTION_FILE"
+    PLACEHOLDER = "PLACEHOLDER"
+
+
+class AttachedFileAddressFinding(StrEnum):
+    ANSWERED = "ANSWERED"
+    UNPROVEN = "UNPROVEN"
+    FAILED = "FAILED"
+
+
 class ActHistoryDefect(StrEnum):
     MISSING_YEAR = "MISSING_YEAR"
     EMPTY_VALUE = "EMPTY_VALUE"

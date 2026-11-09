@@ -3,11 +3,14 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, RootModel
 
 from enums import (
+    AttachedFileAddressFinding,
+    AttachedFileAddressGroup,
     AttachedFileCheckAnswer,
     AttachedFileCheckPlantKind,
     AttachedFileKind,
     ParagraphTieRule,
 )
+from schemas.sprs_file_response import SprsFileResponse
 
 
 class AttachedFileCheckPacket(BaseModel):
@@ -79,4 +82,18 @@ class AttachedFileCheckFlag(BaseModel):
 
 
 class AttachedFileCheckFlags(RootModel[list[AttachedFileCheckFlag]]):
+    model_config = ConfigDict(frozen=True)
+
+
+class AttachedFileAddressResult(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    value: str
+    group: AttachedFileAddressGroup
+    finding: AttachedFileAddressFinding
+    answer: SprsFileResponse
+    known_bad_answer: SprsFileResponse
+
+
+class AttachedFileAddressResults(RootModel[list[AttachedFileAddressResult]]):
     model_config = ConfigDict(frozen=True)
