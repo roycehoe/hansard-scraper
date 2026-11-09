@@ -188,3 +188,19 @@ def test_markers_no_break_spaces_and_zero_width_spaces_do_not_stop_a_match() -> 
 
     assert pointer.speech_ordinal == speech_rows[0].ordinal
     assert pointer.paragraph_tie_rule == ParagraphTieRule.ONLY_OCCURRENCE
+
+
+def test_a_pointer_nested_in_another_leaves_no_marker_in_either_printed_text() -> None:
+    content = (
+        '<a href="/search/search/download?value=PDFs/A.pdf">A'
+        '<a href="/search/search/download?value=PDFs/B.pdf">B</a>'
+    )
+
+    outer, inner = build_attached_file_pointers(_SPRS_REPORT_ID, content, [])
+
+    assert outer.printed_text == "AB"
+    assert inner.printed_text == "B"
+    assert all(
+        "\x01" not in pointer.printed_text and "\x02" not in pointer.printed_text
+        for pointer in (outer, inner)
+    )

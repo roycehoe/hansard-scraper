@@ -145,6 +145,7 @@ class _PointerLink:
     href: str
     value: str
     shape: AttachedFilePointerShape
+    printed_text: str
 
 
 def _extract_pointer_links(soup: BeautifulSoup) -> list[_PointerLink]:
@@ -157,7 +158,7 @@ def _extract_pointer_links(soup: BeautifulSoup) -> list[_PointerLink]:
         shape = _get_pointer_shape(value)
         if shape is None:
             continue
-        pointer_links.append(_PointerLink(tag, href, value, shape))
+        pointer_links.append(_PointerLink(tag, href, value, shape, tag.get_text()))
     return pointer_links
 
 
@@ -199,7 +200,7 @@ def _tie_pointer_links_to_paragraphs(
     speech_rows: list[SpeechRow],
 ) -> list[_ParagraphTie]:
     pointer_words = [
-        _normalize_text(pointer_link.tag.get_text()) for pointer_link in pointer_links
+        _normalize_text(pointer_link.printed_text) for pointer_link in pointer_links
     ]
     for pointer_index, pointer_link in enumerate(pointer_links):
         pointer_link.tag.insert_before(f"\x01{pointer_index}\x02")
@@ -255,7 +256,7 @@ def build_attached_file_pointers(
     return [
         AttachedFilePointer(
             ordinal=ordinal,
-            printed_text=pointer_link.tag.get_text(),
+            printed_text=pointer_link.printed_text,
             href=pointer_link.href,
             shape=pointer_link.shape,
             download_value=None
