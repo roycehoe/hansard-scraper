@@ -34,11 +34,16 @@ os.environ["DATABASE_URL"] = _SCRATCH_DATABASE_URL
 import database.act  # noqa: F401 registers the table for create_all
 import database.acts_supplement  # noqa: F401 registers the table for create_all
 import database.attendance  # noqa: F401 registers the table for create_all
+import database.attendance_office  # noqa: F401 registers the table for create_all
 import database.bill  # noqa: F401 registers the table for create_all
 import database.bills_supplement  # noqa: F401 registers the table for create_all
 import database.egazette_supplement  # noqa: F401 registers the table for create_all
 import database.hansard_sitting_date_response  # noqa: F401 registers the table for create_all
 import database.hansard_website_response  # noqa: F401 registers the table for create_all
+import database.ministry  # noqa: F401 registers the table for create_all
+import database.ministry_see_also  # noqa: F401 registers the table for create_all
+import database.office_printed_range  # noqa: F401 registers the table for create_all
+import database.office_title_ministry  # noqa: F401 registers the table for create_all
 import database.party_affiliation  # noqa: F401 registers the table for create_all
 import database.person  # noqa: F401 registers the table for create_all
 import database.person_name_spelling  # noqa: F401 registers the table for create_all
@@ -47,6 +52,7 @@ import database.repealed_acts  # noqa: F401 registers the table for create_all
 import database.report  # noqa: F401 registers the table for create_all
 import database.report_asker  # noqa: F401 registers the table for create_all
 import database.report_participant  # noqa: F401 registers the table for create_all
+import database.report_put_to  # noqa: F401 registers the table for create_all
 import database.report_question_state  # noqa: F401 registers the table for create_all
 import database.sitting  # noqa: F401 registers the table for create_all
 import database.speaker  # noqa: F401 registers the table for create_all

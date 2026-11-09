@@ -105,6 +105,23 @@ class QuestionState(StrEnum):
     NOT_A_QUESTION = "NOT_A_QUESTION"
 
 
+class AttendanceOfficeSource(StrEnum):
+    AFTER_CONSTITUENCY_BRACKET = "AFTER_CONSTITUENCY_BRACKET"
+    AFTER_NAME_COMMA = "AFTER_NAME_COMMA"
+    CHAIR_FORM = "CHAIR_FORM"
+    BEFORE_EX_OFFICIO_BRACKET = "BEFORE_EX_OFFICIO_BRACKET"
+
+
+class ReportPutToSource(StrEnum):
+    ASKED_THE = "ASKED_THE"
+    TO_ASK_THE = "TO_ASK_THE"
+
+
+class OfficeTitleMinistrySource(StrEnum):
+    CLOSED_LIST_RULE = "CLOSED_LIST_RULE"
+    HAND_KEPT_TITLE = "HAND_KEPT_TITLE"
+
+
 class MissingColumnReason(StrEnum):
     NO_MARKERS = "NO_MARKERS"
     TEXT_NOT_FOUND = "TEXT_NOT_FOUND"

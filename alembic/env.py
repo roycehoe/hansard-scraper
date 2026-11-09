@@ -9,11 +9,16 @@ from sqlmodel import SQLModel
 import database.act  # noqa: F401
 import database.acts_supplement  # noqa: F401
 import database.attendance  # noqa: F401
+import database.attendance_office  # noqa: F401
 import database.bill  # noqa: F401
 import database.bills_supplement  # noqa: F401
 import database.egazette_supplement  # noqa: F401
 import database.hansard_sitting_date_response  # noqa: F401
 import database.hansard_website_response  # noqa: F401
+import database.ministry  # noqa: F401
+import database.ministry_see_also  # noqa: F401
+import database.office_printed_range  # noqa: F401
+import database.office_title_ministry  # noqa: F401
 import database.party_affiliation  # noqa: F401
 import database.person  # noqa: F401
 import database.person_name_spelling  # noqa: F401
@@ -22,6 +27,7 @@ import database.repealed_acts  # noqa: F401
 import database.report  # noqa: F401
 import database.report_asker  # noqa: F401
 import database.report_participant  # noqa: F401
+import database.report_put_to  # noqa: F401
 import database.report_question_state  # noqa: F401
 import database.sitting  # noqa: F401
 import database.speaker  # noqa: F401
