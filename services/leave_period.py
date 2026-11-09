@@ -19,6 +19,7 @@ from utils.leave_entry import (
     get_candidate_years,
     get_leave_name_key,
     get_nearest_year_dates,
+    get_open_period_candidate_years,
 )
 from utils.names import normalize_name, period_normalize, strip_title
 from utils.speaker_resolution import SpeakerLookups
@@ -54,7 +55,10 @@ def _get_list_entry_dates(
         return None
     if permission_entry.end_dt_flag is True:
         return get_nearest_year_dates(
-            printed_start, None, sitting_date, get_candidate_years(sitting_date)
+            printed_start,
+            None,
+            sitting_date,
+            get_open_period_candidate_years(printed_start, sitting_date),
         )
     printed_end = _get_day_and_month(permission_entry.printed_to)
     if printed_end is None:

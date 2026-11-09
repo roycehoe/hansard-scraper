@@ -117,6 +117,35 @@ def test_till_further_notice_stores_to_and_the_text_and_reads_no_end_date() -> N
     assert leave_entries[0].end_text == "Till further notice"
 
 
+@pytest.mark.parametrize(
+    ("printed_from", "sitting_date", "expected_start_date", "is_expected_covering"),
+    [
+        ("12 Aug", date(2024, 2, 12), date(2023, 8, 12), True),
+        ("20 Nov", date(2024, 10, 20), date(2024, 11, 20), False),
+        ("20 Nov", date(2024, 10, 19), date(2023, 11, 20), True),
+    ],
+)
+def test_an_open_period_takes_no_year_more_than_31_days_after_the_sitting(
+    printed_from: str,
+    sitting_date: date,
+    expected_start_date: date,
+    is_expected_covering: bool,
+) -> None:
+    permission_list = _build_permission_list(
+        _build_entry("Mr Lee", printed_from, "16 Jan", True, "Till further notice")
+    )
+
+    leave_entries = build_leave_entries_from_list(
+        permission_list, None, None, sitting_date
+    )
+
+    assert leave_entries[0].leave_dates == LeaveDates(expected_start_date, None)
+    assert (
+        is_covering_sitting(expected_start_date, None, sitting_date)
+        is is_expected_covering
+    )
+
+
 def test_29_february_reads_in_a_leap_year() -> None:
     permission_list = _build_permission_list(_build_entry("Mr Lee", "29 Feb", "1 Mar"))
 
