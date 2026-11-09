@@ -251,6 +251,14 @@ Rows for `report_link`, which `scripts/apply_report_links.py` stores from the ci
 | The key rule ignores case and punctuation when it compares a printed title, so a title that differs only in those links to its report. Stored and displayed text keep their form. | `services/report_link.py`: `get_title_key`, through `_get_citation_match` and `_get_continuation_match` | Ships after the certain rules passed their check, and has its own check (brief decision 7). One target or no link still holds. | 44 citations and headings, 43 links (reply 22, continuation 15, correction 6), counted on `hansard_positions`, 9 November 2026. | Yes: rebuilt from `speech.transcript` on every full run. | Independent decider, 9 November 2026 (brief decision 7) |
 | A citation no rule places is stored nowhere. | `services/report_link.py`: `build_report_link_plan`, and the `--unplaced-file` output of `scripts/apply_report_links.py` | A rule links only when it finds exactly one target. | 235 citations and headings on `hansard_positions`, 9 November 2026: no report of the title on the printed date 146, several reports of the title 54, not from an answer 16, no title or date 13, printed date not before the citing report 4, no sitting on the printed date 2. | Yes: rebuilt from `speech.transcript`. | Independent decider, 9 November 2026 (brief decision 7) |
 
+### Seat history and leave periods
+
+Rows for `scripts/apply_seat_holdings.py` and `scripts/apply_leave_periods.py`, and for the daily steps that follow them.
+
+| What changes or is dropped | Where in code | Why | Cost | Reversible from the raw tables | Decided |
+|---|---|---|---|---|---|
+| Seat history leaves out the attendance rows labelled `Nominated Member`, `Nominated`, `Non-Constituency Member`, `ex-officio` or `Acting`, and the rows with no `speaker_id`. It keeps one `seat_holding` row per Member and division, where the division is the label folded (separators to one space, trimmed, a trailing GRC or SMC dropped, lower case). Its first and last dates are not an unbroken term: 90 of 1,269 Member and division pairs have sittings inside the span with no row, which `sitting_count` shows. | `services/seat_holding.py`: `get_division_key`, `build_seat_holding_records` | The five labels are seat types and not divisions. A fold keeps spelling variants of one division together. | Not measured here. 90 of 1,269 pairs have gaps inside the span. | Yes. Every row comes from `attendance`. | 9 Nov 2026, gates Q7 and Q8. |
+
 ### API-side cleaning (the web app, `roycehoe/hansard`)
 
 The API reads the tables through a read-only role and writes nothing, so every row below is lost from the response only. Each is reversible by removing the code. Paths are in the `roycehoe/hansard` repo. The merge of the two People's Action Party spellings is in the party row above.
