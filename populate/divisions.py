@@ -6,14 +6,22 @@ from typing import Optional, Sequence, Union
 from sqlmodel import Session
 
 from crud.division import CRUDDivision
+from crud.division_vote import CRUDDivisionVote
+from crud.minutes_division import CRUDMinutesDivision
 from crud.report import CRUDReport
 from crud.speech import CRUDSpeech, SpeechParseRow
 from database.division import Division
-from enums import DivisionCountSource, DivisionListStatus
+from enums import (
+    DivisionCountSource,
+    DivisionListStatus,
+    DivisionVoteListSource,
+    MinutesDivisionPairing,
+)
 from exceptions import HansardWriteCheckError
 from logs import logger
 from schemas.division_plan import DivisionPlan, PlannedDivision, PlannedUnreadRow
 from services.division import get_report_divisions
+from utils.division_detachment import DivisionDetachment
 from utils.division_update import DivisionUpdate
 
 _REPORT_BATCH = 200
@@ -25,6 +33,14 @@ class DivisionMatch:
     division_updates: list[DivisionUpdate]
     divisions_to_add: list[Division]
     division_ids_to_delete: list[int]
+
+
+@dataclass(frozen=True)
+class PairedDivisionAtRisk:
+    division_id: int
+    sprs_report_id: str
+    printed_counts: str
+    is_line_gone: bool
 
 
 @dataclass(frozen=True)
@@ -244,7 +260,114 @@ def _validate_can_commit_divisions(session: Session, plan: DivisionPlan) -> None
             )
 
 
-def write_division_plan(session: Session, plan: DivisionPlan) -> None:
+def _build_paired_division_at_risk(
+    stored_division: Division, is_line_gone: bool
+) -> PairedDivisionAtRisk:
+    if stored_division.id is None or stored_division.sprs_report_id is None:
+        raise HansardWriteCheckError("A stored division holds no id or no report")
+    return PairedDivisionAtRisk(
+        division_id=stored_division.id,
+        sprs_report_id=stored_division.sprs_report_id,
+        printed_counts=stored_division.printed_counts,
+        is_line_gone=is_line_gone,
+    )
+
+
+def get_paired_divisions_at_risk(
+    session: Session, plan: DivisionPlan
+) -> list[PairedDivisionAtRisk]:
+    division_id_to_stored_division = {
+        stored_division.id: stored_division
+        for stored_division in CRUDDivision(session).get_by_sprs_report_ids(
+            plan.sprs_report_ids
+        )
+        if stored_division.id is not None and stored_division.sprs_report_id is not None
+    }
+    paired_division_ids = {
+        minutes_division_row.division_id
+        for minutes_division_row in CRUDMinutesDivision(
+            session
+        ).get_rows_by_division_ids(list(division_id_to_stored_division))
+        if minutes_division_row.pairing == MinutesDivisionPairing.PAIRED
+    }
+    if not paired_division_ids:
+        return []
+    match = get_division_match(session, plan)
+    at_risk_divisions: list[PairedDivisionAtRisk] = []
+    for division_id in match.division_ids_to_delete:
+        if division_id in paired_division_ids:
+            at_risk_divisions.append(
+                _build_paired_division_at_risk(
+                    division_id_to_stored_division[division_id], is_line_gone=True
+                )
+            )
+    for division_update in match.division_updates:
+        if division_update.id not in paired_division_ids:
+            continue
+        stored_division = division_id_to_stored_division[division_update.id]
+        if (division_update.ayes, division_update.noes) != (
+            stored_division.ayes,
+            stored_division.noes,
+        ):
+            at_risk_divisions.append(
+                _build_paired_division_at_risk(stored_division, is_line_gone=False)
+            )
+    return sorted(at_risk_divisions, key=lambda at_risk: at_risk.division_id)
+
+
+def _detach_paired_divisions(
+    session: Session, at_risk_divisions: list[PairedDivisionAtRisk]
+) -> None:
+    division_ids = [at_risk.division_id for at_risk in at_risk_divisions]
+    division_detachments = [
+        DivisionDetachment(
+            division_id=minutes_division_row.division_id,
+            printed_counts=minutes_division_row.printed_counts,
+            ayes=minutes_division_row.ayes,
+            noes=minutes_division_row.noes,
+            abstentions=minutes_division_row.abstentions,
+        )
+        for minutes_division_row in CRUDMinutesDivision(
+            session
+        ).get_rows_by_division_ids(division_ids)
+        if minutes_division_row.pairing == MinutesDivisionPairing.PAIRED
+    ]
+    if len(division_detachments) != len(division_ids):
+        raise HansardWriteCheckError(
+            f"{len(division_ids)} paired divisions to detach, {len(division_detachments)} paired minutes rows read"
+        )
+    detached_count = CRUDDivision(session).detach_report_many(division_detachments)
+    if detached_count != len(division_ids):
+        raise HansardWriteCheckError(
+            f"Detached {detached_count} divisions, planned {len(division_ids)}"
+        )
+    CRUDDivisionVote(session).delete_by_division_ids_and_list_source(
+        division_ids, DivisionVoteListSource.HANSARD
+    )
+    repaired_count = CRUDMinutesDivision(session).set_pairing_by_division_ids(
+        division_ids, MinutesDivisionPairing.NO_MATCHING_DIVISION
+    )
+    if repaired_count != len(division_ids):
+        raise HansardWriteCheckError(
+            f"Set the pairing of {repaired_count} minutes divisions, planned {len(division_ids)}"
+        )
+
+
+def write_division_plan(
+    session: Session, plan: DivisionPlan, *, is_detaching_paired: bool = False
+) -> None:
+    at_risk_divisions = get_paired_divisions_at_risk(session, plan)
+    for at_risk in at_risk_divisions:
+        if not at_risk.is_line_gone:
+            raise HansardWriteCheckError(
+                f"Division {at_risk.division_id} of report {at_risk.sprs_report_id} ({at_risk.printed_counts}) is paired with a minutes division and the plan would change its Ayes or Noes"
+            )
+        if not is_detaching_paired:
+            raise HansardWriteCheckError(
+                f"Division {at_risk.division_id} of report {at_risk.sprs_report_id} ({at_risk.printed_counts}) is paired with a minutes division and its line has gone; rerun with --detach-paired to rewrite it to a minutes-only division"
+            )
+    if at_risk_divisions:
+        _detach_paired_divisions(session, at_risk_divisions)
     match = get_division_match(session, plan)
     if match.division_ids_to_delete:
         deleted_count = CRUDDivision(session).delete_by_ids(
