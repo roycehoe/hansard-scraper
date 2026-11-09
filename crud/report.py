@@ -98,6 +98,14 @@ class ReportLinkReportRow:
 
 
 @dataclass(frozen=True)
+class ReportDivisionRow:
+    id: int
+    report_id: str
+    parliament_number: int
+    sitting_date: datetime
+
+
+@dataclass(frozen=True)
 class ReportParticipantReportRow:
     id: int
     parliament_number: int
@@ -484,6 +492,18 @@ class CRUDReport:
         return [
             ReportAskerReportRow(*row) for row in self.session.exec(statement).all()
         ]
+
+    def get_division_report_rows_by_ids(
+        self, report_ids: list[int]
+    ) -> list[ReportDivisionRow]:
+        statement = (
+            select(
+                Report.id, Report.report_id, Report.parliament_number, Report.sitting_date
+            )
+            .where(col(Report.id).in_(report_ids))
+            .order_by(col(Report.id))
+        )
+        return [ReportDivisionRow(*row) for row in self.session.exec(statement).all()]
 
     def get_participant_report_rows_by_ids_and_report_types(
         self, report_ids: list[int], report_types: Sequence[str]
