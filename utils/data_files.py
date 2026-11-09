@@ -16,6 +16,13 @@ from schemas.hand_kept_act_link import HandKeptActLink, HandKeptActLinks
 from schemas.hand_kept_bill import HandKeptBill, HandKeptBills
 from schemas.hand_kept_member import HandKeptMember, HandKeptMembers
 from schemas.head_of_state import HeadOfStateResult, HeadsOfState
+from schemas.ministry_list import (
+    MinistryNames,
+    MinistrySeeAlsoEntries,
+    MinistrySeeAlsoEntry,
+    OfficeTitleMinistryEntries,
+    OfficeTitleMinistryEntry,
+)
 from schemas.party_affiliation import (
     MembershipPartyAffiliations,
     PartyAffiliationMemberships,
@@ -47,6 +54,9 @@ _ATTENDANCE_CLEANUP_FILE = _DATA_DIRECTORY / "attendance_cleanup.json"
 _PERSON_DECISIONS_FILE = _DATA_DIRECTORY / "person_decisions.json"
 _PERSON_NAME_SPELLINGS_FILE = _DATA_DIRECTORY / "person_name_spellings.json"
 _HAND_CHECK_OFFICE_HOLDERS_FILE = _DATA_DIRECTORY / "hand_check_office_holders.json"
+_MINISTRY_NAMES_FILE = _DATA_DIRECTORY / "ministry_names.json"
+_OFFICE_TITLE_MINISTRIES_FILE = _DATA_DIRECTORY / "office_title_ministries.json"
+_MINISTRY_SEE_ALSO_FILE = _DATA_DIRECTORY / "ministry_see_also.json"
 
 _SchemaT = TypeVar("_SchemaT", bound=BaseModel)
 
@@ -118,3 +128,15 @@ def get_hand_kept_bills() -> list[HandKeptBill]:
 
 def get_hand_kept_act_links() -> list[HandKeptActLink]:
     return _get_data_file(_HAND_KEPT_ACT_LINKS_FILE, HandKeptActLinks).root
+
+
+def get_ministry_names() -> list[str]:
+    return _get_data_file(_MINISTRY_NAMES_FILE, MinistryNames).root
+
+
+def get_office_title_ministries() -> list[OfficeTitleMinistryEntry]:
+    return _get_data_file(_OFFICE_TITLE_MINISTRIES_FILE, OfficeTitleMinistryEntries).root
+
+
+def get_ministry_see_also() -> list[MinistrySeeAlsoEntry]:
+    return _get_data_file(_MINISTRY_SEE_ALSO_FILE, MinistrySeeAlsoEntries).root

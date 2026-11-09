@@ -1,0 +1,933 @@
+[
+  {
+    "office_printed": "Prime Minister",
+    "ministry_names": [
+      "Prime Minister's Office"
+    ],
+    "reason": "Gate ruling G6b: the bare office Prime Minister maps to Prime Minister's Office"
+  },
+  {
+    "office_printed": "Minister of State. Prime Minister's Office",
+    "ministry_names": [
+      "Prime Minister's Office"
+    ],
+    "reason": "Misprint: full stop printed for the comma"
+  },
+  {
+    "office_printed": "Minister for Local Government. Lands and Housing",
+    "ministry_names": [
+      "Local Government, Lands and Housing"
+    ],
+    "reason": "Misprint: full stop printed for the comma in the name"
+  },
+  {
+    "office_printed": "Deputy Prime Minster and Leader of the House",
+    "ministry_names": [],
+    "reason": "Misprint: Minster for Minister; both offices carry no ministry"
+  },
+  {
+    "office_printed": "Deput Prime Minister and Minister for Trade and Industry",
+    "ministry_names": [
+      "Trade and Industry"
+    ],
+    "reason": "Misprint: Deput for Deputy"
+  },
+  {
+    "office_printed": "SeniorMinister of State, Ministry of Information, Communications and the Arts andMinistry of Health",
+    "ministry_names": [
+      "Information, Communications and the Arts",
+      "Health"
+    ],
+    "reason": "Misprint: words run together"
+  },
+  {
+    "office_printed": "Senior Minister of State. Ministry of National Development",
+    "ministry_names": [
+      "National Development"
+    ],
+    "reason": "Misprint: full stop printed for the comma"
+  },
+  {
+    "office_printed": "Senior Minister of State. Ministry of Foreign Affairs",
+    "ministry_names": [
+      "Foreign Affairs"
+    ],
+    "reason": "Misprint: full stop printed for the comma"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the' Minister for Home Affairs",
+    "ministry_names": [
+      "Home Affairs"
+    ],
+    "reason": "Misprint: stray apostrophe after the"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Ministerforthe Environment and the Minister for Social Affairs",
+    "ministry_names": [
+      "Environment",
+      "Social Affairs"
+    ],
+    "reason": "Misprint: words run together"
+  },
+  {
+    "office_printed": "Minister or National Development",
+    "ministry_names": [
+      "National Development"
+    ],
+    "reason": "Misprint: or printed for for (gate ruling G7)"
+  },
+  {
+    "office_printed": "Minister for National Development and Communicatons",
+    "ministry_names": [
+      "National Development",
+      "Communications"
+    ],
+    "reason": "Misprint: Communicatons for Communications"
+  },
+  {
+    "office_printed": "Minister for Com mu nications and Information, Second Minister for Defence and Second Minister for National Development",
+    "ministry_names": [
+      "Communications and Information",
+      "Defence",
+      "National Development"
+    ],
+    "reason": "Misprint: spaces inside Communications"
+  },
+  {
+    "office_printed": "Minister For Health",
+    "ministry_names": [
+      "Health"
+    ],
+    "reason": "Misprint: capital F in For"
+  },
+  {
+    "office_printed": "Assistant Minister for Local Government. Lands and Housing",
+    "ministry_names": [
+      "Local Government, Lands and Housing"
+    ],
+    "reason": "Misprint: full stop printed for the comma in the name"
+  },
+  {
+    "office_printed": "senior Minister of State, Prime Minister's Office",
+    "ministry_names": [
+      "Prime Minister's Office"
+    ],
+    "reason": "Misprint: lower case s in Senior"
+  },
+  {
+    "office_printed": "Senior Parliamentary Secretary to the Ministr for Communications and Information",
+    "ministry_names": [
+      "Communications and Information"
+    ],
+    "reason": "Misprint: Ministr for Minister"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister for Law and National Develop-went (National Development Division)",
+    "ministry_names": [
+      "Law",
+      "National Development"
+    ],
+    "reason": "Misprint: Develop-went for Development"
+  },
+  {
+    "office_printed": "Minister of State for National Develpment",
+    "ministry_names": [
+      "National Development"
+    ],
+    "reason": "Misprint: Develpment for Development"
+  },
+  {
+    "office_printed": "Minister of State for Communications and Informatiom",
+    "ministry_names": [
+      "Communications and Information"
+    ],
+    "reason": "Misprint: Informatiom for Information"
+  },
+  {
+    "office_printed": "Senior, Parliamentary Secretary to the Minister for Social Affairs",
+    "ministry_names": [
+      "Social Affairs"
+    ],
+    "reason": "Misprint: stray comma after Senior"
+  },
+  {
+    "office_printed": "Senior Parliamentary Secrete!ry to the Minister for the Environment",
+    "ministry_names": [
+      "Environment"
+    ],
+    "reason": "Misprint: stray ! inside Secretary"
+  },
+  {
+    "office_printed": "Senior Parliamentary Secretary to.the Minister of Defence",
+    "ministry_names": [
+      "Defence"
+    ],
+    "reason": "Misprint: full stop printed for a space after to"
+  },
+  {
+    "office_printed": "Senior Parliamentary Secretary to the Minister for Natio7nal Development and Government Whip",
+    "ministry_names": [
+      "National Development"
+    ],
+    "reason": "Misprint: stray 7 inside National"
+  },
+  {
+    "office_printed": "Senior Parliamentary Secretary to the Minister for Information,Communications and the Arts",
+    "ministry_names": [
+      "Information, Communications and the Arts"
+    ],
+    "reason": "Misprint: space lost after the comma in the name"
+  },
+  {
+    "office_printed": "Senior Parliamentary Secretary to the Minister for HomeAffairs",
+    "ministry_names": [
+      "Home Affairs"
+    ],
+    "reason": "Misprint: space lost inside Home Affairs"
+  },
+  {
+    "office_printed": "Senior Parliamentary Secretary to the Minister for Education and Minister forManpower",
+    "ministry_names": [
+      "Education",
+      "Manpower"
+    ],
+    "reason": "Misprint: space lost after for"
+  },
+  {
+    "office_printed": "Senior Parliamentary Secretary to the Minister for Defence andMinister for the Environment and Water Resources",
+    "ministry_names": [
+      "Defence",
+      "Environment and Water Resources"
+    ],
+    "reason": "Misprint: space lost after and"
+  },
+  {
+    "office_printed": "Senior Minister of State. Ministry of Education",
+    "ministry_names": [
+      "Education"
+    ],
+    "reason": "Misprint: full stop printed for the comma"
+  },
+  {
+    "office_printed": "Senior Minister of State, Prime Minister's office",
+    "ministry_names": [
+      "Prime Minister's Office"
+    ],
+    "reason": "Misprint: lower case o in Office"
+  },
+  {
+    "office_printed": "Senior Minister of State, Ministry of Law andMinistry of Home Affairs",
+    "ministry_names": [
+      "Law",
+      "Home Affairs"
+    ],
+    "reason": "Misprint: space lost after and"
+  },
+  {
+    "office_printed": "Senior Minister of State Ministry of Education",
+    "ministry_names": [
+      "Education"
+    ],
+    "reason": "Misprint: comma lost after State"
+  },
+  {
+    "office_printed": "Senio Parliamentary Secretary to the Ministe for Home Affairs",
+    "ministry_names": [
+      "Home Affairs"
+    ],
+    "reason": "Misprint: Senio for Senior and Ministe for Minister"
+  },
+  {
+    "office_printed": "Second Deputy Prime Minster (Foreign Affairs)",
+    "ministry_names": [
+      "Foreign Affairs"
+    ],
+    "reason": "Misprint: Minster for Minister; the bracket prints Foreign Affairs"
+  },
+  {
+    "office_printed": "Second Deputy Prime Mihister (Foreign Affairs)",
+    "ministry_names": [
+      "Foreign Affairs"
+    ],
+    "reason": "Misprint: Mihister for Minister; the bracket prints Foreign Affairs"
+  },
+  {
+    "office_printed": "Prirne Minister",
+    "ministry_names": [
+      "Prime Minister's Office"
+    ],
+    "reason": "Misprint: Prirne for Prime; reads as the hand-kept Prime Minister"
+  },
+  {
+    "office_printed": "PrimeMinister and Minister for Finance",
+    "ministry_names": [
+      "Prime Minister's Office",
+      "Finance"
+    ],
+    "reason": "Misprint: space lost inside Prime Minister"
+  },
+  {
+    "office_printed": "Prime Ministdr",
+    "ministry_names": [
+      "Prime Minister's Office"
+    ],
+    "reason": "Misprint: Ministdr for Minister; reads as the hand-kept Prime Minister"
+  },
+  {
+    "office_printed": "Parliamentary Secretary tothe Ministerforthe Environment and the Minister for Social Affairs",
+    "ministry_names": [
+      "Environment",
+      "Social Affairs"
+    ],
+    "reason": "Misprint: words run together"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to, the Minister for Foreign Affairs",
+    "ministry_names": [
+      "Foreign Affairs"
+    ],
+    "reason": "Misprint: stray comma after to"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the' Minister for Culture",
+    "ministry_names": [
+      "Culture"
+    ],
+    "reason": "Misprint: stray apostrophe after the"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the minister for Culture",
+    "ministry_names": [
+      "Culture"
+    ],
+    "reason": "Misprint: lower case m in Minister"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Prime Minister)",
+    "ministry_names": [],
+    "reason": "Misprint: stray closing bracket; the office carries no ministry"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minster for Culture",
+    "ministry_names": [
+      "Culture"
+    ],
+    "reason": "Misprint: Minster for Minister"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Ministry for Labour",
+    "ministry_names": [
+      "Labour"
+    ],
+    "reason": "Misprint: Ministry for Minister"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Ministerfor the Environment and the Minister for Social Affairs",
+    "ministry_names": [
+      "Environment",
+      "Social Affairs"
+    ],
+    "reason": "Misprint: space lost after Minister"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister ior Trade and Industry and Minister for Social Affairs",
+    "ministry_names": [
+      "Trade and Industry",
+      "Social Affairs"
+    ],
+    "reason": "Misprint: ior for for"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister forthe Environment and the Minister for Social Affairs",
+    "ministry_names": [
+      "Environment",
+      "Social Affairs"
+    ],
+    "reason": "Misprint: space lost after for"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister forFinance",
+    "ministry_names": [
+      "Finance"
+    ],
+    "reason": "Misprint: space lost after for"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister forCommunity Development, Youth and Sports and Minister for National Development",
+    "ministry_names": [
+      "Community Development, Youth and Sports",
+      "National Development"
+    ],
+    "reason": "Misprint: space lost after for"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister for foreign Affairs",
+    "ministry_names": [
+      "Foreign Affairs"
+    ],
+    "reason": "Misprint: lower case f in Foreign"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister for Trade and Industry and Minister for Sodial Affairs",
+    "ministry_names": [
+      "Trade and Industry",
+      "Social Affairs"
+    ],
+    "reason": "Misprint: Sodial for Social"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister for Trade and Industry and Minister for Sociaf Affairs",
+    "ministry_names": [
+      "Trade and Industry",
+      "Social Affairs"
+    ],
+    "reason": "Misprint: Sociaf for Social"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister for Law and National Deve lopment (Law Division)",
+    "ministry_names": [
+      "Law",
+      "National Development"
+    ],
+    "reason": "Misprint: space inside Development"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister for Health and Minister for' Culture",
+    "ministry_names": [
+      "Health",
+      "Culture"
+    ],
+    "reason": "Misprint: stray apostrophe after for"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister for Health and Acting Minist er for Community Development, Youth and Sports",
+    "ministry_names": [
+      "Health",
+      "Community Development, Youth and Sports"
+    ],
+    "reason": "Misprint: space inside Minister"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister for Educationand Government Whip",
+    "ministry_names": [
+      "Education"
+    ],
+    "reason": "Misprint: space lost after Education"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister for Communictsations and Information",
+    "ministry_names": [
+      "Communications and Information"
+    ],
+    "reason": "Misprint: Communictsations for Communications"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Minister For Health",
+    "ministry_names": [
+      "Health"
+    ],
+    "reason": "Misprint: capital F in For"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Ministe6r for Defence",
+    "ministry_names": [
+      "Defence"
+    ],
+    "reason": "Misprint: stray 6 inside Minister"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Min ister for Health",
+    "ministry_names": [
+      "Health"
+    ],
+    "reason": "Misprint: space inside Minister"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Migister for Trade and Industry and the Minister for Social Affairs",
+    "ministry_names": [
+      "Trade and Industry",
+      "Social Affairs"
+    ],
+    "reason": "Misprint: Migister for Minister"
+  },
+  {
+    "office_printed": "Parliamentary Secretary to the Mi,nister for Trade and Industry and Minister for Social Affairs",
+    "ministry_names": [
+      "Trade and Industry",
+      "Social Affairs"
+    ],
+    "reason": "Misprint: stray comma inside Minister"
+  },
+  {
+    "office_printed": "Parliamentary Secretary .to the Minister for Education",
+    "ministry_names": [
+      "Education"
+    ],
+    "reason": "Misprint: stray full stop before to"
+  },
+  {
+    "office_printed": "Parliamentary SecretaFy to the Minister for Labour",
+    "ministry_names": [
+      "Labour"
+    ],
+    "reason": "Misprint: F for r inside Secretary"
+  },
+  {
+    "office_printed": "Parliamentary Secmtery to the Minister for National Development",
+    "ministry_names": [
+      "National Development"
+    ],
+    "reason": "Misprint: Secmtery for Secretary"
+  },
+  {
+    "office_printed": "Parliament Secretary to the Minister for Finance",
+    "ministry_names": [
+      "Finance"
+    ],
+    "reason": "Misprint: Parliament for Parliamentary"
+  },
+  {
+    "office_printed": "Parliamefitary Secretary to the Minister for Social Affairs",
+    "ministry_names": [
+      "Social Affairs"
+    ],
+    "reason": "Misprint: Parliamefitary for Parliamentary"
+  },
+  {
+    "office_printed": "Parliam(intary Secretary to the Minister for Trade and Industry and the Minister for Social Affairs",
+    "ministry_names": [
+      "Trade and Industry",
+      "Social Affairs"
+    ],
+    "reason": "Misprint: Parliam(intary for Parliamentary"
+  },
+  {
+    "office_printed": "Par1iamentary Secretary to the Minister for Communications",
+    "ministry_names": [
+      "Communications"
+    ],
+    "reason": "Misprint: digit 1 for l in Parliamentary"
+  },
+  {
+    "office_printed": "Padiamentarv Secretary to the Minister for National Development",
+    "ministry_names": [
+      "National Development"
+    ],
+    "reason": "Misprint: Padiamentarv for Parliamentary"
+  },
+  {
+    "office_printed": "Mr Sppeaker",
+    "ministry_names": [],
+    "reason": "Misprint: Sppeaker for Speaker; the chair carries no ministry"
+  },
+  {
+    "office_printed": "Mr Speake",
+    "ministry_names": [],
+    "reason": "Misprint: Speake for Speaker; the chair carries no ministry"
+  },
+  {
+    "office_printed": "Minster for Law and National Development",
+    "ministry_names": [
+      "Law",
+      "National Development"
+    ],
+    "reason": "Misprint: Minster for Minister"
+  },
+  {
+    "office_printed": "Minster for Labour",
+    "ministry_names": [
+      "Labour"
+    ],
+    "reason": "Misprint: Minster for Minister"
+  },
+  {
+    "office_printed": "Minister, Prime Minister's Office, Second Minister for Financeand Second Minister for Foreign Affairs",
+    "ministry_names": [
+      "Prime Minister's Office",
+      "Finance",
+      "Foreign Affairs"
+    ],
+    "reason": "Misprint: space lost after Finance"
+  },
+  {
+    "office_printed": "Minister, Prime Minister's Office and DeputyGovernment Whip",
+    "ministry_names": [
+      "Prime Minister's Office"
+    ],
+    "reason": "Misprint: space lost inside Deputy Government Whip"
+  },
+  {
+    "office_printed": "Minister or Finance",
+    "ministry_names": [
+      "Finance"
+    ],
+    "reason": "Misprint: or printed for for (gate ruling G7)"
+  },
+  {
+    "office_printed": "Minister or Communications and Minister for Labour",
+    "ministry_names": [
+      "Communications",
+      "Labour"
+    ],
+    "reason": "Misprint: or printed for for (gate ruling G7)"
+  },
+  {
+    "office_printed": "Minister of State. Ministry of Defence",
+    "ministry_names": [
+      "Defence"
+    ],
+    "reason": "Misprint: full stop printed for the comma"
+  },
+  {
+    "office_printed": "Minister of State, Prime's Minister Office",
+    "ministry_names": [
+      "Prime Minister's Office"
+    ],
+    "reason": "Misprint: Prime Minister's Office with the apostrophe moved"
+  },
+  {
+    "office_printed": "Minister of State, Prime Minister's Office and MinistrY of Community Development and Sports",
+    "ministry_names": [
+      "Prime Minister's Office",
+      "Community Development and Sports"
+    ],
+    "reason": "Misprint: capital Y in Ministry"
+  },
+  {
+    "office_printed": "Minister of State, Ministry of Finance and Ministry ofTransport",
+    "ministry_names": [
+      "Finance",
+      "Transport"
+    ],
+    "reason": "Misprint: space lost after of"
+  },
+  {
+    "office_printed": "Minister of State, Ministry of Education andMinistry of Manpower",
+    "ministry_names": [
+      "Education",
+      "Manpower"
+    ],
+    "reason": "Misprint: space lost after and"
+  },
+  {
+    "office_printed": "Minister of State, Ministry of Cutture",
+    "ministry_names": [
+      "Culture"
+    ],
+    "reason": "Misprint: Cutture for Culture"
+  },
+  {
+    "office_printed": "Minister of State for. Labour and Government Whip",
+    "ministry_names": [
+      "Labour"
+    ],
+    "reason": "Misprint: stray full stop after for"
+  },
+  {
+    "office_printed": "Minister of State for the rime Minister's Department",
+    "ministry_names": [
+      "Prime Minister's Department"
+    ],
+    "reason": "Misprint: rime for Prime"
+  },
+  {
+    "office_printed": "Minister for the Environment and Water Resources andMinister-in-charge of Muslim Affairs",
+    "ministry_names": [
+      "Environment and Water Resources",
+      "Muslim Affairs"
+    ],
+    "reason": "Misprint: space lost after and"
+  },
+  {
+    "office_printed": "Minister for the Environment and Minister-in- charge of Muslim Affairs",
+    "ministry_names": [
+      "Environment",
+      "Muslim Affairs"
+    ],
+    "reason": "Misprint: space inside Minister-in-charge"
+  },
+  {
+    "office_printed": "Minister for Trade and Indust",
+    "ministry_names": [
+      "Trade and Industry"
+    ],
+    "reason": "Misprint: Indust for Industry"
+  },
+  {
+    "office_printed": "Minister for Nrational Development",
+    "ministry_names": [
+      "National Development"
+    ],
+    "reason": "Misprint: Nrational for National"
+  },
+  {
+    "office_printed": "Minister for NationalDevelopment",
+    "ministry_names": [
+      "National Development"
+    ],
+    "reason": "Misprint: space lost inside National Development"
+  },
+  {
+    "office_printed": "Minister for National Pevelopment",
+    "ministry_names": [
+      "National Development"
+    ],
+    "reason": "Misprint: Pevelopment for Development"
+  },
+  {
+    "office_printed": "Minister for National Development and Second Minister for Foreign Afairs",
+    "ministry_names": [
+      "National Development",
+      "Foreign Affairs"
+    ],
+    "reason": "Misprint: Afairs for Affairs"
+  },
+  {
+    "office_printed": "Minister for Local Government, Lends and Housing",
+    "ministry_names": [
+      "Local Government, Lands and Housing"
+    ],
+    "reason": "Misprint: Lends for Lands"
+  },
+  {
+    "office_printed": "Minister for Local Government, Lands, and Housing",
+    "ministry_names": [
+      "Local Government, Lands and Housing"
+    ],
+    "reason": "Misprint: extra comma after Lands"
+  },
+  {
+    "office_printed": "Minister for Law arid National Development and Leader of the House",
+    "ministry_names": [
+      "Law",
+      "National Development"
+    ],
+    "reason": "Misprint: arid for and"
+  },
+  {
+    "office_printed": "Minister for Law and National Development and leader of the House",
+    "ministry_names": [
+      "Law",
+      "National Development"
+    ],
+    "reason": "Misprint: lower case l in Leader"
+  },
+  {
+    "office_printed": "Minister for Labour. :",
+    "ministry_names": [
+      "Labour"
+    ],
+    "reason": "Misprint: stray full stop and colon after the name"
+  },
+  {
+    "office_printed": "Minister for Law and National Develop-merit",
+    "ministry_names": [
+      "Law",
+      "National Development"
+    ],
+    "reason": "Misprint: Develop-merit for Development"
+  },
+  {
+    "office_printed": "Minister for Information, Communications and the Arts and GovernmentWhip",
+    "ministry_names": [
+      "Information, Communications and the Arts"
+    ],
+    "reason": "Misprint: space lost inside Government Whip"
+  },
+  {
+    "office_printed": "Minister for Health and Second Ministe; of Defence",
+    "ministry_names": [
+      "Health",
+      "Defence"
+    ],
+    "reason": "Misprint: Ministe; for Minister"
+  },
+  {
+    "office_printed": "Minister for Foreign Affairs and Minister for Communicty Development and Leader of the House",
+    "ministry_names": [
+      "Foreign Affairs",
+      "Community Development"
+    ],
+    "reason": "Misprint: Communicty for Community"
+  },
+  {
+    "office_printed": "Minister for Foreign Affairs and Minister for Com munity Development and Leader of the House",
+    "ministry_names": [
+      "Foreign Affairs",
+      "Community Development"
+    ],
+    "reason": "Misprint: space inside Community"
+  },
+  {
+    "office_printed": "Minister for Foreign Affairs and Minister fo Culture",
+    "ministry_names": [
+      "Foreign Affairs",
+      "Culture"
+    ],
+    "reason": "Misprint: fo for for"
+  },
+  {
+    "office_printed": "Minister for Foreign Affair's",
+    "ministry_names": [
+      "Foreign Affairs"
+    ],
+    "reason": "Misprint: stray apostrophe in Affairs"
+  },
+  {
+    "office_printed": "Minister for Community Development, Youthand Sports and Second Minister for Trade and Industry",
+    "ministry_names": [
+      "Community Development, Youth and Sports",
+      "Trade and Industry"
+    ],
+    "reason": "Misprint: space lost after Youth"
+  },
+  {
+    "office_printed": "Minister for Communif,ations and Minister for Labour",
+    "ministry_names": [
+      "Communications",
+      "Labour"
+    ],
+    "reason": "Misprint: Communif,ations for Communications"
+  },
+  {
+    "office_printed": "Minister for Communicatioris and Minister for Labour",
+    "ministry_names": [
+      "Communications",
+      "Labour"
+    ],
+    "reason": "Misprint: Communicatioris for Communications"
+  },
+  {
+    "office_printed": "Minister for Communications and Information, Second Minister for Dgence and Second Minister for National Development",
+    "ministry_names": [
+      "Communications and Information",
+      "Defence",
+      "National Development"
+    ],
+    "reason": "Misprint: Dgence for Defence"
+  },
+  {
+    "office_printed": "Minister for Communications and Information, Second Minister for Defence and Second Minister for .National Development",
+    "ministry_names": [
+      "Communications and Information",
+      "Defence",
+      "National Development"
+    ],
+    "reason": "Misprint: stray full stop before National"
+  },
+  {
+    "office_printed": "Minister for Communications an Information and Second Minister for Defence (Policy)",
+    "ministry_names": [
+      "Communications and Information",
+      "Defence"
+    ],
+    "reason": "Misprint: an for and"
+  },
+  {
+    "office_printed": "Minister for Commerce and industry",
+    "ministry_names": [
+      "Commerce and Industry"
+    ],
+    "reason": "Misprint: lower case i in Industry"
+  },
+  {
+    "office_printed": "Minister fol Foreign Affairs and Minister for Culture",
+    "ministry_names": [
+      "Foreign Affairs",
+      "Culture"
+    ],
+    "reason": "Misprint: fol for for"
+  },
+  {
+    "office_printed": "Minister f or Communications",
+    "ministry_names": [
+      "Communications"
+    ],
+    "reason": "Misprint: space inside for"
+  },
+  {
+    "office_printed": "Minister State, Ministry of Defence",
+    "ministry_names": [
+      "Defence"
+    ],
+    "reason": "Misprint: State for of State"
+  },
+  {
+    "office_printed": "Miniser for National Development",
+    "ministry_names": [
+      "National Development"
+    ],
+    "reason": "Misprint: Miniser for Minister"
+  },
+  {
+    "office_printed": "DeputyPrime Minister, Minister for Home Affairs and Leader of the House",
+    "ministry_names": [
+      "Home Affairs"
+    ],
+    "reason": "Misprint: space lost inside Deputy Prime Minister"
+  },
+  {
+    "office_printed": "DeputyGovernment Whip",
+    "ministry_names": [],
+    "reason": "Misprint: space lost inside Deputy Government Whip; the office carries no ministry"
+  },
+  {
+    "office_printed": "Deputy. Prime Minister and Leader of the House",
+    "ministry_names": [],
+    "reason": "Misprint: stray full stop after Deputy; both offices carry no ministry"
+  },
+  {
+    "office_printed": "Deputy Prime Minister, Coordinating Minister for National Security andMinister for Law",
+    "ministry_names": [
+      "National Security",
+      "Law"
+    ],
+    "reason": "Misprint: space lost after and"
+  },
+  {
+    "office_printed": "Depu ty Prime Minister",
+    "ministry_names": [],
+    "reason": "Misprint: space inside Deputy; the office carries no ministry"
+  },
+  {
+    "office_printed": "Acting Minister for Trade and Inudstry",
+    "ministry_names": [
+      "Trade and Industry"
+    ],
+    "reason": "Misprint: Inudstry for Industry"
+  },
+  {
+    "office_printed": "Second Deputy Prime Minister (Foreign Affairs)",
+    "ministry_names": [
+      "Foreign Affairs"
+    ],
+    "reason": "Bracket: the office carries no ministry and the bracket prints the portfolio"
+  },
+  {
+    "office_printed": "Minister of State (Prime Minister's Department)",
+    "ministry_names": [
+      "Prime Minister's Department"
+    ],
+    "reason": "Bracket: the office carries no ministry and the bracket prints the portfolio"
+  },
+  {
+    "office_printed": "(Anson)",
+    "ministry_names": [],
+    "reason": "a constituency bracket printed where an office belongs; not an office"
+  },
+  {
+    "office_printed": "]",
+    "ministry_names": [],
+    "reason": "a stray closing bracket; not an office"
+  },
+  {
+    "office_printed": "J.P.Tanglin)",
+    "ministry_names": [],
+    "reason": "a stray fragment of a name and constituency; not an office"
+  },
+  {
+    "office_printed": "(Policy)",
+    "ministry_names": [],
+    "reason": "a stray bracket remnant of a portfolio qualifier; not an office"
+  }
+]

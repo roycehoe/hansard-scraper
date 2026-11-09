@@ -22,6 +22,7 @@ from schemas.hand_kept_act_link import HandKeptActLinks
 from schemas.hand_kept_bill import HandKeptBills
 from schemas.hand_kept_member import HandKeptMember, HandKeptMembers
 from schemas.head_of_state import HeadOfStateResult, HeadsOfState
+from schemas.ministry_list import MinistrySeeAlsoEntries, OfficeTitleMinistryEntries
 from schemas.party_affiliation import PartyAffiliationMemberships
 from schemas.person_decision import PersonDecision, PersonDecisions
 from schemas.person_name_spelling import PersonNameSpellingEntries
@@ -37,6 +38,9 @@ from utils.data_files import (
     get_hand_kept_act_links,
     get_hand_kept_bills,
     get_heads_of_state,
+    get_ministry_names,
+    get_ministry_see_also,
+    get_office_title_ministries,
     get_party_affiliations,
     get_person_decisions,
     get_person_name_spellings,
@@ -56,6 +60,8 @@ _DATA_FILE_SCHEMAS = (
     ("hand_kept_act_links.json", HandKeptActLinks),
     ("hand_kept_bills.json", HandKeptBills),
     ("heads_of_state.json", HeadsOfState),
+    ("ministry_see_also.json", MinistrySeeAlsoEntries),
+    ("office_title_ministries.json", OfficeTitleMinistryEntries),
     ("party_affiliations.json", PartyAffiliationMemberships),
     ("person_decisions.json", PersonDecisions),
     ("person_name_spellings.json", PersonNameSpellingEntries),
@@ -73,6 +79,8 @@ _DATA_FILE_GETTERS = (
     get_hand_kept_act_links,
     get_hand_kept_bills,
     get_heads_of_state,
+    get_ministry_names,
+    get_office_title_ministries,
     get_party_affiliations,
     get_person_decisions,
     get_person_name_spellings,
@@ -84,6 +92,7 @@ _TYPO_KEY = "typo_key"
 _SPEAKER_OVERRIDES_FILE_NAME = "speaker_overrides.json"
 _EXCLUDED_REPORT_IDS_FILE_NAME = "excluded_report_ids.json"
 _HAND_CHECK_OFFICE_HOLDERS_FILE_NAME = "hand_check_office_holders.json"
+_MINISTRY_NAME_COUNT = 47
 
 
 def _get_record_count(loaded: object) -> int:
@@ -335,3 +344,33 @@ def test_hand_check_office_holder_refuses_a_form_of_address_outside_the_enum(
 
     with pytest.raises(ValidationError, match="form_of_address"):
         HandCheckOfficeHolder.model_validate(office_holder)
+
+
+def test_the_ministry_names_are_distinct() -> None:
+    ministry_names = get_ministry_names()
+
+    assert len(ministry_names) == _MINISTRY_NAME_COUNT
+    assert len(set(ministry_names)) == _MINISTRY_NAME_COUNT
+
+
+def test_every_ministry_an_entry_or_a_see_also_names_is_in_the_ministry_names() -> None:
+    ministry_names = set(get_ministry_names())
+
+    for office_title_ministry in get_office_title_ministries():
+        assert set(office_title_ministry.ministry_names) <= ministry_names
+    for ministry_see_also in get_ministry_see_also():
+        assert ministry_see_also.ministry_name in ministry_names
+        assert ministry_see_also.see_also_ministry_name in ministry_names
+
+
+def test_the_office_titles_are_distinct() -> None:
+    office_printeds = [
+        office_title_ministry.office_printed
+        for office_title_ministry in get_office_title_ministries()
+    ]
+
+    assert len(set(office_printeds)) == len(office_printeds)
+
+
+def test_the_ministry_see_also_file_is_empty() -> None:
+    assert get_ministry_see_also() == []
