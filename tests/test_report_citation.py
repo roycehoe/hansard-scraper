@@ -46,9 +46,7 @@ def _build_heading(
 
 
 def test_plain_form_keeps_its_section() -> None:
-    transcript = (
-        f'[Please refer to "Title A", {_TAIL_A}, Written Answers section]'
-    )
+    transcript = f'[Please refer to "Title A", {_TAIL_A}, Written Answers section]'
 
     assert get_printed_citations(_build_row(transcript)) == [
         _build_citation(
@@ -61,7 +59,9 @@ def test_plain_form_keeps_its_section() -> None:
 
 
 def test_volume_and_issue_no_forms_both_read() -> None:
-    transcript = '[Please refer to "Title A", Official Report, 3rd March, 2020, Vol. 94, No. 12]'
+    transcript = (
+        '[Please refer to "Title A", Official Report, 3rd March, 2020, Vol. 94, No. 12]'
+    )
 
     assert get_printed_citations(_build_row(transcript)) == [
         _build_citation(
@@ -106,14 +106,10 @@ def test_curly_quotes_stay_in_the_printed_citation() -> None:
 
 
 def test_parser_marks_are_removed_and_leave_no_stray_spaces_beside_quotes() -> None:
-    transcript = (
-        f'[Please refer to "__Title_ _", {_TAIL_A}​]'
-    )
+    transcript = f'[Please refer to "__Title_ _", {_TAIL_A}​]'
 
     assert get_printed_citations(_build_row(transcript)) == [
-        _build_citation(
-            transcript, f'"Title", {_TAIL_A}', "Title", date(2020, 3, 3)
-        )
+        _build_citation(transcript, f'"Title", {_TAIL_A}', "Title", date(2020, 3, 3))
     ]
 
 
@@ -182,7 +178,9 @@ def test_a_note_with_no_official_report_gives_nothing() -> None:
 
 
 def test_a_month_only_date_gives_one_citation_with_no_title_and_no_date() -> None:
-    transcript = '[Please refer to "A", Official Report, March 2020, Volume 94, Issue No 12]'
+    transcript = (
+        '[Please refer to "A", Official Report, March 2020, Volume 94, Issue No 12]'
+    )
 
     assert get_printed_citations(_build_row(transcript)) == [
         _build_citation(
@@ -198,13 +196,13 @@ def test_a_tail_with_no_volume_gives_one_citation_with_no_title_and_no_date() ->
     transcript = '[Please refer to "A", Official Report, 3 March 2020]'
 
     assert get_printed_citations(_build_row(transcript)) == [
-        _build_citation(
-            transcript, '"A", Official Report, 3 March 2020', None, None
-        )
+        _build_citation(transcript, '"A", Official Report, 3 March 2020', None, None)
     ]
 
 
-def test_a_readable_tail_followed_by_an_unreadable_one_gives_one_citation_each() -> None:
+def test_a_readable_tail_followed_by_an_unreadable_one_gives_one_citation_each() -> (
+    None
+):
     transcript = (
         f'[Please refer to "A", {_TAIL_A}; and "B", Official Report, March 2020]'
     )
@@ -265,9 +263,7 @@ def test_heading_with_parenthesised_date() -> None:
 
 
 def test_heading_with_two_dates_reads_the_first() -> None:
-    transcript = (
-        "Resumption of Debate on Amendments [28th March, 1979] to Question [27th March, 1979]"
-    )
+    transcript = "Resumption of Debate on Amendments [28th March, 1979] to Question [27th March, 1979]"
 
     assert get_resumption_heading(_build_row(transcript)) == _build_heading(
         transcript,
@@ -285,9 +281,7 @@ def test_heading_on_the_prime_ministers_statement() -> None:
 
 
 def test_a_resumption_line_with_no_date_gives_none() -> None:
-    assert (
-        get_resumption_heading(_build_row("Resumption of debate, what day?")) is None
-    )
+    assert get_resumption_heading(_build_row("Resumption of debate, what day?")) is None
 
 
 def test_a_date_beyond_the_longest_gap_gives_none() -> None:

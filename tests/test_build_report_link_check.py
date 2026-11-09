@@ -423,16 +423,14 @@ def test_a_plant_copying_a_sampled_link_lands_in_another_batch_for_each_reader(
         citation_to_packet_ids.setdefault(
             (packet.source_report_id, packet.printed_citation), []
         ).append(packet.packet_id)
-    assert any(
-        len(packet_ids) > 1 for packet_ids in citation_to_packet_ids.values()
-    )
+    assert any(len(packet_ids) > 1 for packet_ids in citation_to_packet_ids.values())
     for reader_name in _READER_NAMES:
         packet_id_to_batch_name = _get_batch_names(output_directory, reader_name)
         assert set(packet_id_to_batch_name) == {packet.packet_id for packet in packets}
         for packet_ids in citation_to_packet_ids.values():
-            assert len({packet_id_to_batch_name[packet_id] for packet_id in packet_ids}) == (
-                len(packet_ids)
-            )
+            assert len(
+                {packet_id_to_batch_name[packet_id] for packet_id in packet_ids}
+            ) == (len(packet_ids))
 
 
 def test_packets_markdown_holds_no_report_id_rule_or_group_name(
@@ -593,7 +591,8 @@ def test_stored_rows_that_differ_from_the_plan_raise(
     output_directory = tmp_path / "check"
 
     with pytest.raises(
-        HansardReportLinkCheckError, match="differ from the plan: 0 stored only, 1 planned only"
+        HansardReportLinkCheckError,
+        match="differ from the plan: 0 stored only, 1 planned only",
     ):
         _run_check(monkeypatch, scratch_engine, plan, output_directory)
 

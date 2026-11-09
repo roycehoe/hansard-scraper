@@ -219,9 +219,7 @@ def test_a_citation_without_title_or_date_is_unplaced(
 def test_a_citation_naming_its_own_report_is_not_linked_to_it() -> None:
     source = _build_source()
 
-    plan = _build_plan(
-        [source], [_build_citation(source.original_title, _SOURCE_DAY)]
-    )
+    plan = _build_plan([source], [_build_citation(source.original_title, _SOURCE_DAY)])
 
     assert _get_only_reason(plan) == ReportLinkUnplacedReason.NO_REPORT_WITH_TITLE
 
@@ -401,7 +399,9 @@ def test_mixed_newer_system_types_give_no_link() -> None:
         resumption_headings=[_build_heading()],
     )
 
-    assert _get_only_reason(plan) == ReportLinkUnplacedReason.MIXED_REPORT_TYPES_IN_PARTS
+    assert (
+        _get_only_reason(plan) == ReportLinkUnplacedReason.MIXED_REPORT_TYPES_IN_PARTS
+    )
 
 
 def test_a_missing_part_number_gives_no_link() -> None:
@@ -448,16 +448,19 @@ def test_a_printed_date_on_or_after_the_source_is_not_a_continuation() -> None:
         resumption_headings=[_build_heading(_SOURCE_DAY)],
     )
 
-    assert _get_only_reason(plan) == ReportLinkUnplacedReason.PRINTED_DATE_NOT_BEFORE_SOURCE
+    assert (
+        _get_only_reason(plan)
+        == ReportLinkUnplacedReason.PRINTED_DATE_NOT_BEFORE_SOURCE
+    )
 
 
 def test_an_unplaced_heading_carries_the_source_title_and_its_paragraph() -> None:
-    plan = _build_plan(
-        [_build_debate_source()], resumption_headings=[_build_heading()]
-    )
+    plan = _build_plan([_build_debate_source()], resumption_headings=[_build_heading()])
 
     unplaced_citation = plan.unplaced_citations[0]
-    assert unplaced_citation.reason == ReportLinkUnplacedReason.NO_SITTING_ON_PRINTED_DATE
+    assert (
+        unplaced_citation.reason == ReportLinkUnplacedReason.NO_SITTING_ON_PRINTED_DATE
+    )
     assert unplaced_citation.printed_title == "Debate"
     assert unplaced_citation.paragraph == "heading 1"
     assert unplaced_citation.source_report_id == _SOURCE_REPORT_ID
@@ -483,8 +486,12 @@ def test_key_rule_links_a_title_that_differs_in_case_and_punctuation() -> None:
         [_build_source(), target], [_build_citation()], shipped_rules=_EXTENDED_RULES
     )
 
-    assert _get_only_reason(certain_plan) == ReportLinkUnplacedReason.NO_REPORT_WITH_TITLE
-    assert _get_only_link(extended_plan).rule == ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE
+    assert (
+        _get_only_reason(certain_plan) == ReportLinkUnplacedReason.NO_REPORT_WITH_TITLE
+    )
+    assert (
+        _get_only_link(extended_plan).rule == ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE
+    )
 
 
 def test_key_rule_is_skipped_when_exact_candidates_are_several() -> None:
@@ -540,7 +547,10 @@ def test_a_title_variant_on_the_printed_date_leaves_no_certain_continuation() ->
         shipped_rules=_EXTENDED_RULES,
     )
 
-    assert _get_only_reason(certain_plan) == ReportLinkUnplacedReason.SEVERAL_REPORTS_WITH_TITLE
+    assert (
+        _get_only_reason(certain_plan)
+        == ReportLinkUnplacedReason.SEVERAL_REPORTS_WITH_TITLE
+    )
     planned_link = _get_only_link(extended_plan)
     assert planned_link.target_report_id == "PART#11"
     assert planned_link.rule == ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE
@@ -620,9 +630,7 @@ def test_the_certain_rules_do_not_fire_the_looser_rules() -> None:
     plan = _build_plan(
         [_build_source(), target],
         [_build_citation()],
-        title_corrections=[
-            _build_title_correction(_SOURCE_REPORT_ID, _TITLE, "Other")
-        ],
+        title_corrections=[_build_title_correction(_SOURCE_REPORT_ID, _TITLE, "Other")],
         shipped_rules=_CERTAIN_RULES,
     )
 

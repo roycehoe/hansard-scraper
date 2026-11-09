@@ -210,5 +210,8 @@ def test_unplaced_file_holds_each_citation_with_its_report_text_and_reason(
     assert len(unplaced_records) == 1
     assert unplaced_records[0]["source_report_id"] == _SOURCE_REPORT_ID
     assert unplaced_records[0]["paragraph"] == _UNPLACED_TRANSCRIPT
-    assert unplaced_records[0]["reason"] == ReportLinkUnplacedReason.NO_SITTING_ON_PRINTED_DATE
+    assert (
+        unplaced_records[0]["reason"]
+        == ReportLinkUnplacedReason.NO_SITTING_ON_PRINTED_DATE
+    )
     assert _get_stored_keys(scratch_session) == []

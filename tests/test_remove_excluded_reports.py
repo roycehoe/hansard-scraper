@@ -345,7 +345,9 @@ def test_commit_counts_a_link_between_two_removed_reports_once(
 ) -> None:
     _use_scratch(scratch_engine, monkeypatch)
     _seed_duplicate(scratch_session)
-    _add_speech(scratch_session, _add_report(scratch_session, _SECOND_EXCLUDED_REPORT_ID, _TEXT))
+    _add_speech(
+        scratch_session, _add_report(scratch_session, _SECOND_EXCLUDED_REPORT_ID, _TEXT)
+    )
     excluded_report_ids = [
         ExcludedReportId(
             report_id=report_id,

@@ -147,7 +147,10 @@ def list_report_link_flags(
         raise HansardReportLinkCheckError(
             f"The plant key names {len(unknown_plant_packet_ids)} packets that do not exist, first {unknown_plant_packet_ids[:_LISTED_PACKET_ID_COUNT]}"
         )
-    for reader_name, packet_id_to_verdict in reader_name_to_packet_id_to_verdict.items():
+    for (
+        reader_name,
+        packet_id_to_verdict,
+    ) in reader_name_to_packet_id_to_verdict.items():
         _log_recall(key, reader_name, packet_id_to_verdict)
         logger.info(
             f"{reader_name} verdicts: {dict(Counter(verdict.verdict for verdict in packet_id_to_verdict.values()))}"

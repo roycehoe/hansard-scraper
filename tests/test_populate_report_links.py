@@ -200,7 +200,9 @@ def test_populate_inserts_the_planned_rows_and_issues_no_delete(
     finally:
         event.remove(scratch_engine, "before_cursor_execute", record_statement)
 
-    assert any(statement.startswith("INSERT INTO report_link") for statement in statements)
+    assert any(
+        statement.startswith("INSERT INTO report_link") for statement in statements
+    )
     assert not [
         statement
         for statement in statements

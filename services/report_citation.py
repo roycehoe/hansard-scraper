@@ -5,7 +5,7 @@ from typing import Optional
 from crud.speech import SpeechCitationRow
 from utils.printed_citation import PrintedCitation, ResumptionHeading
 
-_QUOTE_MARKS = "\"“”"
+_QUOTE_MARKS = '"“”'
 _ZERO_WIDTH_SPACE = "​"
 _EMPHASIS_MARK = "_"
 _EMPHASIS_PAIR_TOUCHING_QUOTE_RE = re.compile(
@@ -91,9 +91,7 @@ def _build_note_citations(
     position = 0
     for tail_match in _TAIL_RE.finditer(note_text):
         section_match = _SECTION_RE.match(note_text, tail_match.end())
-        tail_end = (
-            tail_match.end() if section_match is None else section_match.end()
-        )
+        tail_end = tail_match.end() if section_match is None else section_match.end()
         printed_citation = _LEADING_JOINER_RE.sub(
             "", note_text[position:tail_end]
         ).strip()
@@ -145,7 +143,9 @@ def get_printed_citations(
 def get_resumption_heading(
     speech_citation_row: SpeechCitationRow,
 ) -> Optional[ResumptionHeading]:
-    heading_match = _HEADING_RE.match(_remove_parser_marks(speech_citation_row.transcript))
+    heading_match = _HEADING_RE.match(
+        _remove_parser_marks(speech_citation_row.transcript)
+    )
     if heading_match is None:
         return None
     return ResumptionHeading(

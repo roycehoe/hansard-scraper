@@ -84,9 +84,7 @@ def get_part_number(report_row: ReportLinkReportRow) -> Optional[int]:
     if report_row.report_version == ReportVersion.SPRS3:
         part_match = _NEWER_SYSTEM_PART_NUMBER_RE.search(report_row.report_id)
     else:
-        part_match = _OLDER_SYSTEM_PART_NUMBER_RE.match(
-            report_row.html_file_name or ""
-        )
+        part_match = _OLDER_SYSTEM_PART_NUMBER_RE.match(report_row.html_file_name or "")
     return None if part_match is None else int(part_match.group(1))
 
 
@@ -153,7 +151,9 @@ def _get_citation_match(
         and ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE in shipped_rules
     ):
         return _RuleMatch(key_candidates[0], ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE)
-    corrected_title = report_title_to_corrected_title.get((source.report_id, printed_title))
+    corrected_title = report_title_to_corrected_title.get(
+        (source.report_id, printed_title)
+    )
     if (
         corrected_title is not None
         and ReportLinkRule.HAND_KEPT_TITLE_ON_PRINTED_DATE in shipped_rules
@@ -215,7 +215,9 @@ def _get_continuation_match(
         return _get_part_match(same_title, ReportLinkRule.LAST_PART_ON_PRINTED_DATE)
     if is_title_varied and ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE in shipped_rules:
         return _get_part_match(key_titled, ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE)
-    corrected_title = report_title_to_corrected_title.get((source.report_id, source.title))
+    corrected_title = report_title_to_corrected_title.get(
+        (source.report_id, source.title)
+    )
     if (
         corrected_title is not None
         and ReportLinkRule.HAND_KEPT_TITLE_ON_PRINTED_DATE in shipped_rules
@@ -259,7 +261,10 @@ def _get_validated_report_title_to_corrected_title(
     id_to_report_row: dict[int, ReportLinkReportRow],
 ) -> dict[tuple[str, str], str]:
     printed_titles = {
-        (id_to_report_row[printed_citation.report_id].report_id, printed_citation.printed_title)
+        (
+            id_to_report_row[printed_citation.report_id].report_id,
+            printed_citation.printed_title,
+        )
         for printed_citation in printed_citations
         if printed_citation.printed_title is not None
     }
@@ -319,9 +324,7 @@ def build_report_link_plan(
     report_title_to_corrected_title = _get_validated_report_title_to_corrected_title(
         title_corrections, printed_citations, resumption_headings, id_to_report_row
     )
-    key_to_planned_link: dict[
-        tuple[str, str, ReportLinkType], PlannedReportLink
-    ] = {}
+    key_to_planned_link: dict[tuple[str, str, ReportLinkType], PlannedReportLink] = {}
     unplaced_citations: list[UnplacedCitation] = []
     for printed_citation in printed_citations:
         source = id_to_report_row[printed_citation.report_id]
@@ -382,7 +385,11 @@ def build_report_link_plan(
             )
             continue
         key_to_planned_link.setdefault(
-            (source.report_id, heading_match.target.report_id, ReportLinkType.CONTINUATION),
+            (
+                source.report_id,
+                heading_match.target.report_id,
+                ReportLinkType.CONTINUATION,
+            ),
             PlannedReportLink(
                 ReportLinkType.CONTINUATION,
                 heading_match.rule,

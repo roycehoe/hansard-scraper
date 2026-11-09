@@ -66,7 +66,11 @@ def _write_verdicts(
     (batch_directory / "verdicts.jsonl").write_text(
         "".join(
             json.dumps(
-                {"packet_id": packet_id, "verdict": verdict, "note": f"note {packet_id}"}
+                {
+                    "packet_id": packet_id,
+                    "verdict": verdict,
+                    "note": f"note {packet_id}",
+                }
             )
             + "\n"
             for packet_id, verdict in packet_id_to_verdict.items()
@@ -178,7 +182,9 @@ def test_a_verdict_that_is_not_right_on_a_real_packet_flags_it(
 
     flags = inputs.read_flags().root
     assert [flag.packet_id for flag in flags] == ["real-2"]
-    assert flags[0].what_the_data_says == "The link points to Target real-2, 2020-03-03."
+    assert (
+        flags[0].what_the_data_says == "The link points to Target real-2, 2020-03-03."
+    )
     assert flags[0].reader_notes == ["opus: UNSURE: note real-2"]
     assert flags[0].group == "reply"
     assert flags[0].printed_citation == "citation real-2"
@@ -188,7 +194,8 @@ def test_a_plant_is_left_out_of_the_flags(
     inputs: _Inputs, log_recorder: _LogRecorder
 ) -> None:
     _write_verdicts(
-        inputs.sonnet_directory, {**_get_all_right(), "plant-1": ReportLinkVerdict.WRONG}
+        inputs.sonnet_directory,
+        {**_get_all_right(), "plant-1": ReportLinkVerdict.WRONG},
     )
     _write_verdicts(
         inputs.opus_directory, {**_get_all_right(), "plant-1": ReportLinkVerdict.WRONG}
@@ -259,7 +266,8 @@ def test_a_repeated_verdict_raises(inputs: _Inputs, log_recorder: _LogRecorder) 
 
 def test_an_unknown_verdict_raises(inputs: _Inputs, log_recorder: _LogRecorder) -> None:
     _write_verdicts(
-        inputs.sonnet_directory, {**_get_all_right(), "stranger": ReportLinkVerdict.RIGHT}
+        inputs.sonnet_directory,
+        {**_get_all_right(), "stranger": ReportLinkVerdict.RIGHT},
     )
     _write_verdicts(inputs.opus_directory, _get_all_right())
 

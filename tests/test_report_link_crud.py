@@ -40,7 +40,9 @@ def _add_report(
     return report
 
 
-def _add_speech(session: Session, report: Report, ordinal: int, transcript: str) -> None:
+def _add_speech(
+    session: Session, report: Report, ordinal: int, transcript: str
+) -> None:
     assert report.id is not None
     session.add(
         Speech(
@@ -65,7 +67,9 @@ def test_citation_rows_match_each_pattern_in_any_case_in_report_and_ordinal_orde
     _add_speech(scratch_session, first_report, 1, "Nothing to see.")
     _add_speech(scratch_session, first_report, 3, "[Please refer to the record]")
 
-    citation_rows = CRUDSpeech(scratch_session).get_citation_rows_by_transcript_ilike_patterns(
+    citation_rows = CRUDSpeech(
+        scratch_session
+    ).get_citation_rows_by_transcript_ilike_patterns(
         [_REFER_PATTERN, _RESUMPTION_PATTERN]
     )
 

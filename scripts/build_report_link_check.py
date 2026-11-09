@@ -259,7 +259,9 @@ def _get_wrong_target_candidates(
     day_rows = lookups.day_to_rows[true_target_day]
     if plant_kind == ReportLinkPlantKind.OTHER_REPORT_SAME_DATE:
         return [
-            report_row for report_row in day_rows if report_row.title != true_target.title
+            report_row
+            for report_row in day_rows
+            if report_row.title != true_target.title
         ]
     if plant_kind == ReportLinkPlantKind.SAME_TITLE_OTHER_DATE:
         return [
@@ -480,9 +482,7 @@ def _build_packet_draws(
                 lookups.report_id_to_row[planned_link.source_report_id],
                 report_id_to_text,
             ),
-            target_report=_build_report_text(
-                drawn_link.target_row, report_id_to_text
-            ),
+            target_report=_build_report_text(drawn_link.target_row, report_id_to_text),
             same_title_reports=[
                 ReportLinkCheckSameTitleReport(
                     title=same_title_row.title,
@@ -521,7 +521,11 @@ def _get_packet_markdown(packet: ReportLinkCheckPacket) -> str:
     if packet.same_title_reports:
         lines.extend(["", "Reports with this title on that date:"])
         for same_title_report in packet.same_title_reports:
-            marker = " [this is the linked report]" if same_title_report.is_link_target else ""
+            marker = (
+                " [this is the linked report]"
+                if same_title_report.is_link_target
+                else ""
+            )
             lines.extend(
                 [
                     "",
@@ -598,7 +602,9 @@ def _write_check_files(
     output_directory.mkdir(parents=True)
     records_directory = output_directory / "records"
     records_directory.mkdir()
-    with (records_directory / "packets.json").open("x", encoding="utf-8") as packets_file:
+    with (records_directory / "packets.json").open(
+        "x", encoding="utf-8"
+    ) as packets_file:
         packets_file.write(ReportLinkCheckPackets(packets).model_dump_json(indent=2))
     with (records_directory / "draw-summary.txt").open(
         "x", encoding="utf-8"
@@ -619,7 +625,9 @@ def _write_check_files(
                 output_directory / "batches" / reader_name / f"batch-{batch_number:02d}"
             )
             batch_directory.mkdir(parents=True)
-            with (batch_directory / "packets.md").open("x", encoding="utf-8") as batch_file:
+            with (batch_directory / "packets.md").open(
+                "x", encoding="utf-8"
+            ) as batch_file:
                 batch_file.write("\n\n".join(batch.markdowns) + "\n")
 
 
