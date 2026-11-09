@@ -20,6 +20,14 @@ erDiagram
     speaker |o--o{ report_participant : "speaker_id"
     person |o--o{ speaker : "person_id"
     person ||--o{ personnamespelling : "person_id"
+    attendance ||--o| attendance_office : "attendance_id"
+    speaker ||--o{ office_printed_range : "speaker_id"
+    attendance_office ||--o{ office_printed_range : "first_attendance_office_id"
+    attendance_office ||--o{ office_printed_range : "last_attendance_office_id"
+    report ||--o{ report_put_to : "sprs_report_id to report_id"
+    ministry ||--o{ office_title_ministry : "ministry_id"
+    ministry ||--o{ ministry_see_also : "ministry_id"
+    ministry ||--o{ ministry_see_also : "see_also_ministry_id"
 
     hansardwebsiteresponse {
         int id PK
@@ -102,6 +110,48 @@ erDiagram
         int id PK
         int report_id FK "unique with state"
         questionstate state
+    }
+
+    attendance_office {
+        int id PK
+        int attendance_id FK "unique"
+        varchar office_printed "office as printed"
+        attendanceofficesource source
+    }
+
+    office_printed_range {
+        int id PK
+        int speaker_id FK
+        int first_attendance_office_id FK "unique"
+        int last_attendance_office_id FK
+        varchar office_printed
+        timestamp first_sitting_date
+        timestamp last_sitting_date
+    }
+
+    report_put_to {
+        int id PK
+        varchar sprs_report_id FK "report.report_id, unique with ordinal"
+        varchar office_printed "office the question names"
+        reportputtosource source
+    }
+
+    ministry {
+        int id PK
+        varchar name UK
+    }
+
+    office_title_ministry {
+        int id PK
+        int ministry_id FK "unique with office_printed"
+        varchar office_printed "title as printed"
+        officetitleministrysource source
+    }
+
+    ministry_see_also {
+        int id PK
+        int ministry_id FK
+        int see_also_ministry_id FK "unique with ministry_id"
     }
 
     refresh_run {
