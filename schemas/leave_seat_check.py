@@ -2,6 +2,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
+from enums import LeaveSeatCheckVerdict
+
 
 class LeaveSeatCheckPacket(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -21,3 +23,27 @@ class LeaveSeatCheckKeyEntry(BaseModel):
     row_id: int
     is_plant: bool
     plant_note: Optional[str]
+
+
+class LeaveSeatCheckVerdictLine(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    packet_id: str
+    verdict: LeaveSeatCheckVerdict
+    note: str
+
+
+class LeaveSeatCheckFlag(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    packet_id: str
+    group: str
+    table_name: str
+    row_id: int
+    source_text: str
+    data_says: str
+    rule: str
+    sonnet_verdict: LeaveSeatCheckVerdict
+    sonnet_note: str
+    opus_verdict: LeaveSeatCheckVerdict
+    opus_note: str

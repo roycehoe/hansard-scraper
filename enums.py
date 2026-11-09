@@ -327,3 +327,9 @@ class LeaveSpeakerLinkSource(StrEnum):
 class LeaveOfficeSource(StrEnum):
     PRINTED_ON_ENTRY = "PRINTED_ON_ENTRY"
     ATTENDANCE_LIST = "ATTENDANCE_LIST"
+
+
+class LeaveSeatCheckVerdict(StrEnum):
+    RIGHT = "RIGHT"
+    WRONG = "WRONG"
+    UNSURE = "UNSURE"
