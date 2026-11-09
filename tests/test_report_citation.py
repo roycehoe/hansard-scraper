@@ -73,6 +73,15 @@ def test_volume_and_issue_no_forms_both_read() -> None:
     ]
 
 
+def test_plain_vol_and_issue_forms_read() -> None:
+    tail = "Official Report, 3 February 2026, Vol 96, Issue 27"
+    transcript = f'[Please refer to "Title A", {tail}]'
+
+    assert get_printed_citations(_build_row(transcript)) == [
+        _build_citation(transcript, f'"Title A", {tail}', "Title A", date(2026, 2, 3))
+    ]
+
+
 def test_no_section_stops_at_the_tail() -> None:
     transcript = f'[Please refer to "Title A", {_TAIL_A}.]'
 
@@ -132,6 +141,15 @@ def test_two_titles_sharing_one_tail_each_hold_the_whole_group() -> None:
     assert get_printed_citations(_build_row(transcript)) == [
         _build_citation(transcript, f'"A"; and "B", {_TAIL_A}', "A", date(2020, 3, 3)),
         _build_citation(transcript, f'"A"; and "B", {_TAIL_A}', "B", date(2020, 3, 3)),
+    ]
+
+
+def test_two_titles_joined_by_and_share_one_tail() -> None:
+    transcript = f'[Please refer to "A" and "B", {_TAIL_A}]'
+
+    assert get_printed_citations(_build_row(transcript)) == [
+        _build_citation(transcript, f'"A" and "B", {_TAIL_A}', "A", date(2020, 3, 3)),
+        _build_citation(transcript, f'"A" and "B", {_TAIL_A}', "B", date(2020, 3, 3)),
     ]
 
 
