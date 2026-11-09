@@ -78,6 +78,11 @@ _LINE_TRAILING_CHARACTERS = ". "
 _BULLET_MARKER = "* "
 _TRAILING_BRACKET_RE = re.compile(r"\((.+)\)\s*$")
 _CHAIR_ENTRY_RE = re.compile(r"\bspeaker\b", re.IGNORECASE)
+_RANK_BRACKET_RE = re.compile(r"\((?:Res|NS)\)")
+_EX_OFFICIO_OFFICE_RE = re.compile(
+    r"((?:Acting\s+)?(?:Attorney[- ]General|Chief Secretary|Financial Secretary)(?:\s*\(Acting\))?)\s*\(ex-?officio\)",
+    re.IGNORECASE,
+)
 _ENTRY_OFFICE_SEPARATOR = ","
 _ENTRY_OFFICE_STRIP_CHARACTERS = ",. "
 _SECTION_LABEL_PREFIX_RE = re.compile(r"^(?:Absent|Present):\s*", re.IGNORECASE)
@@ -319,9 +324,22 @@ def _parse_name_and_location(text: str) -> ParsedAttendee:
     )
 
 
+def _get_constituency_open_index(text: str) -> int:
+    first_open = text.find(OPENING_PARENTHESIS)
+    if first_open == -1:
+        return first_open
+    rank_match = _RANK_BRACKET_RE.match(text, first_open)
+    if rank_match is None:
+        return first_open
+    return text.find(OPENING_PARENTHESIS, rank_match.end())
+
+
 def get_entry_office(entry_line: str) -> Optional[str]:
     text = entry_line.strip().removeprefix(_BULLET_MARKER)
-    first_open = text.find(OPENING_PARENTHESIS)
+    ex_officio_match = _EX_OFFICIO_OFFICE_RE.search(text)
+    if ex_officio_match is not None:
+        return ex_officio_match.group(1)
+    first_open = _get_constituency_open_index(text)
     if first_open == -1:
         office = text.partition(_ENTRY_OFFICE_SEPARATOR)[2]
         return office.strip(_ENTRY_OFFICE_STRIP_CHARACTERS) or None
@@ -333,7 +351,11 @@ def get_entry_office(entry_line: str) -> Optional[str]:
         return None
     # NOTE: a heading glued to the last entry is not part of its office.
     office = text[close_index + 1 :].partition(BOLD_MARKER)[0]
-    return office.strip(_ENTRY_OFFICE_STRIP_CHARACTERS) or None
+    office = office.strip(_ENTRY_OFFICE_STRIP_CHARACTERS)
+    # NOTE: a line that repeats its constituency bracket prints no office.
+    if office == text[first_open : close_index + 1]:
+        return None
+    return office or None
 
 
 def parse_speaker_line(line: str) -> ParsedAttendee:

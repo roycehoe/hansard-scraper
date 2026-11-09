@@ -54,6 +54,46 @@ _ENTRY_OFFICE_CASES = [
         id="sitting_5861_2012_bulleted_deputy_speaker",
     ),
     pytest.param(
+        "Cdre (Res) Teo Chee Hean (Marine Parade GRC), Minister of State, Ministry of Finance and Ministry of Communications.   ",
+        "Minister of State, Ministry of Finance and Ministry of Communications",
+        id="constructed_rank_bracket_res_before_constituency",
+    ),
+    pytest.param(
+        "RAdm (NS) Lui Tuck Yew (Tanjong Pagar), Minister of State, Ministry of Education.",
+        "Minister of State, Ministry of Education",
+        id="constructed_rank_bracket_ns_before_constituency",
+    ),
+    pytest.param(
+        "The Honourable Mr E. J. Davies, Q.C., Attorney-General (ex-officio).   ",
+        "Attorney-General",
+        id="constructed_ex_officio_attorney_general",
+    ),
+    pytest.param(
+        "The Honourable Mr T. M. Hart, C.M.G. Financial Secretary (ex-officio).   ",
+        "Financial Secretary",
+        id="constructed_ex_officio_financial_secretary_without_comma",
+    ),
+    pytest.param(
+        "The Honourable Mr T. M. Hart, C.M.G., Financial Secretary (exofficio).",
+        "Financial Secretary",
+        id="constructed_ex_officio_spelled_without_hyphen",
+    ),
+    pytest.param(
+        "The Honourable Mr J. D. Higham, Acting Chief Secretary (ex-officio).   ",
+        "Acting Chief Secretary",
+        id="constructed_ex_officio_acting_chief_secretary",
+    ),
+    pytest.param(
+        "The Honourable Mr S. T. Stewart, Chief Secretary (Acting)(ex-officio).   ",
+        "Chief Secretary (Acting)",
+        id="constructed_ex_officio_chief_secretary_acting_bracket",
+    ),
+    pytest.param(
+        "Mr P. Govindaswamy (Anson). (Anson).   ",
+        None,
+        id="constructed_line_that_repeats_its_constituency_bracket",
+    ),
+    pytest.param(
         "Mr SPEAKER (Mr Abdullah Tarmugi (East Coast)).  ",
         "Mr SPEAKER",
         id="sitting_5771_2006_speaker_entry",
