@@ -138,6 +138,21 @@ class CRUDSitting:
             SittingAttendanceTextRow(*row) for row in self.session.exec(statement).all()
         ]
 
+    def get_attendance_text_rows_by_ids(
+        self, sitting_ids: list[int]
+    ) -> list[SittingAttendanceTextRow]:
+        statement = select(
+            Sitting.id,
+            Sitting.sitting_date,
+            Sitting.parlement_no,
+            Sitting.volume_no,
+            Sitting.markdown_content,
+            Sitting.attendance_list,
+        ).where(col(Sitting.id).in_(sitting_ids))
+        return [
+            SittingAttendanceTextRow(*row) for row in self.session.exec(statement).all()
+        ]
+
     def get_date_rows(self) -> list[SittingDateRow]:
         statement = select(
             Sitting.id, Sitting.sitting_date, Sitting.parlement_no, Sitting.volume_no

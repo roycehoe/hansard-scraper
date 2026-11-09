@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 from settings import settings
 
 _SITTING_DATE_FORMAT = "%d-%m-%Y"
+_YEARS_PER_DECADE = 10
 
 
 @dataclass(frozen=True)
@@ -42,3 +43,7 @@ def get_zero_padded_sitting_date(sitting_date: str) -> str:
 
 def is_new_sitting_date_format(sitting_date: str) -> bool:
     return parse_sitting_date(sitting_date) >= settings.sitting_date_format_change
+
+
+def get_decade(sitting_date: datetime) -> int:
+    return sitting_date.year // _YEARS_PER_DECADE * _YEARS_PER_DECADE

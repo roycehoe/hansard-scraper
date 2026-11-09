@@ -41,6 +41,13 @@ class AttendanceLocationRow:
 
 
 @dataclass(frozen=True)
+class AttendanceIdNameRow:
+    id: int
+    sitting_id: int
+    speaker_name: Optional[str]
+
+
+@dataclass(frozen=True)
 class AttendanceSittingCount:
     sitting_id: int
     row_count: int
@@ -134,6 +141,16 @@ class CRUDAttendance:
             .where(col(Attendance.speaker_id).is_not(None))
         )
         return [AttendanceNameRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_id_name_rows_by_sitting_ids(
+        self, sitting_ids: list[int]
+    ) -> list[AttendanceIdNameRow]:
+        statement = select(
+            Attendance.id, Attendance.sitting_id, Attendance.speaker_name
+        ).where(col(Attendance.sitting_id).in_(sitting_ids))
+        return [
+            AttendanceIdNameRow(*row) for row in self.session.exec(statement).all()
+        ]
 
     def get_sitting_counts(self) -> list[AttendanceSittingCount]:
         statement = select(Attendance.sitting_id, func.count()).group_by(
