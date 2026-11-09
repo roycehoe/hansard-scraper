@@ -7,7 +7,7 @@ from alembic.script import ScriptDirectory
 from enums import BillStage
 
 _ALEMBIC_INI = Path(__file__).parent.parent / "alembic.ini"
-_DOWN_REVISION = "d9e4f2a7b3c1"
+_DOWN_REVISION = "e7b2c4d9f1a6"
 _REVISION = "e1a5c7b9d3f2"
 _CREATE_TABLE = "CREATE TABLE"
 _TABLE_COUNT = 3
