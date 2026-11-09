@@ -11,6 +11,9 @@ import database.acts_supplement  # noqa: F401
 import database.attendance  # noqa: F401
 import database.attendance_office  # noqa: F401
 import database.bill  # noqa: F401
+import database.bill_key  # noqa: F401
+import database.bill_report_speaker  # noqa: F401
+import database.bill_stage_line  # noqa: F401
 import database.bills_supplement  # noqa: F401
 import database.egazette_supplement  # noqa: F401
 import database.hansard_sitting_date_response  # noqa: F401
