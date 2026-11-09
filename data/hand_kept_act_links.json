@@ -27,5 +27,85 @@
       39429
     ],
     "reason": "All three readings of the bill sit in the motion report 39429."
+  },
+  {
+    "sso_code": "FSA1965",
+    "ordinal": 1,
+    "printed_title": "Feeding Stuffs Ordinance, 1965",
+    "report_ids": [
+      38090,
+      38118
+    ],
+    "reason": "The bill was read as FEEDSTUFFS BILL, one word where the Ordinance prints Feeding Stuffs, so the rule finds no bill under the printed title."
+  },
+  {
+    "sso_code": "IRASA1992",
+    "ordinal": 5,
+    "printed_title": "Auctioneers’ Licenses (Amendment) Act 2000",
+    "report_ids": [
+      26121,
+      26179
+    ],
+    "reason": "The bill was read as AUCTIONEERS' LICENCES (AMENDMENT) BILL, which prints Licences where the Act prints Licenses, so the rule finds no bill under the printed title."
+  },
+  {
+    "sso_code": "PTA2005",
+    "ordinal": 19,
+    "printed_title": "National Parks Board (Amendments) Act 2019",
+    "report_ids": [
+      12987,
+      12988,
+      13110
+    ],
+    "reason": "The bill was read as National Parks Board (Amendment) Bill, which prints Amendment where the Act prints Amendments, so the rule finds no bill under the printed title."
+  },
+  {
+    "sso_code": "SAFA1972",
+    "ordinal": 15,
+    "printed_title": "Pensions Fund Act 1995",
+    "report_ids": [
+      28584,
+      42685
+    ],
+    "reason": "The bill was read as PENSION FUND BILL, which prints Pension where the Act prints Pensions, so the rule finds no bill under the printed title."
+  },
+  {
+    "sso_code": "SFA2001",
+    "ordinal": 3,
+    "printed_title": "Payments and Settlement Systems (Finality and Netting) Act 2002",
+    "report_ids": [
+      25242,
+      42954
+    ],
+    "reason": "The bill was read as PAYMENT AND SETTLEMENT SYSTEMS (FINALITY AND NETTING) BILL, which prints Payment where the Act prints Payments, so the rule finds no bill under the printed title."
+  },
+  {
+    "sso_code": "SFA2001",
+    "ordinal": 11,
+    "printed_title": "Statutes (Miscellaneous Amendment No. 2) Act 2005",
+    "report_ids": [
+      23740,
+      43155
+    ],
+    "reason": "The bill was read as STATUTES (MISCELLANEOUS AMENDMENTS) (NO. 2) BILL, which prints Amendments and a separate bracket for the number where the Act prints Amendment No. 2 in one bracket, so the rule finds no bill under the printed title."
+  },
+  {
+    "sso_code": "SWA1995",
+    "ordinal": 2,
+    "printed_title": "Local Government Integration (Amendment) Ordinance, 1964",
+    "report_ids": [
+      38207
+    ],
+    "reason": "The bill was read as LOCAL GOVERNMENT INTEGRATION (AMANDMENT) BILL, which misspells Amendment, so the rule finds no bill under the printed title."
+  },
+  {
+    "sso_code": "TMA1998",
+    "ordinal": 4,
+    "printed_title": "Intellectual Property of Singapore Act 2001",
+    "report_ids": [
+      25912,
+      25950
+    ],
+    "reason": "The bill was read as INTELLECTUAL PROPERTY OFFICE OF SINGAPORE BILL, which holds the word Office that the Act's title leaves out, so the rule finds no bill under the printed title."
   }
 ]

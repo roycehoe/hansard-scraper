@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import date
-from difflib import SequenceMatcher
 from typing import Optional
 
 from enums import BillLinkSource
@@ -14,7 +13,6 @@ from utils.title_key import (
 )
 
 _MAX_DAYS_FROM_READING = 1
-_MIN_TITLE_SIMILARITY = 0.85
 _THE_KEY_PREFIX = "the"
 
 
@@ -25,18 +23,9 @@ class LinkableBill:
 
 
 @dataclass(frozen=True)
-class _DatedBill:
-    bill_index: int
-    title_key: str
-    first_report_date: date
-    last_report_date: date
-
-
-@dataclass(frozen=True)
 class BillLookups:
     title_key_to_linkable_bills: dict[str, list[LinkableBill]]
     loose_title_key_to_linkable_bills: dict[str, list[LinkableBill]]
-    dated_bills: list[_DatedBill]
     bill_number_to_linkable_bills: dict[str, list[LinkableBill]]
 
 
@@ -61,20 +50,9 @@ def build_bill_lookups(
         loose_title_key_to_linkable_bills.setdefault(
             get_loose_title_key(title_key), []
         ).extend(linkable_bills)
-    dated_bills = [
-        _DatedBill(
-            linkable_bill.bill_index,
-            title_key,
-            min(linkable_bill.report_dates),
-            max(linkable_bill.report_dates),
-        )
-        for title_key, linkable_bills in title_key_to_linkable_bills.items()
-        for linkable_bill in linkable_bills
-    ]
     return BillLookups(
         title_key_to_linkable_bills,
         loose_title_key_to_linkable_bills,
-        dated_bills,
         bill_number_to_linkable_bills,
     )
 
@@ -132,31 +110,6 @@ def _get_nearest_bill_index(
     return min(close_bills).bill_index
 
 
-def _get_similar_bill_index(
-    title_key: str,
-    first_reading_date: Optional[date],
-    third_reading_date: Optional[date],
-    dated_bills: list[_DatedBill],
-) -> Optional[int]:
-    if first_reading_date is None:
-        return None
-    if third_reading_date is None:
-        return None
-    similar_bill_indexes = [
-        dated_bill.bill_index
-        for dated_bill in dated_bills
-        if abs((dated_bill.first_report_date - first_reading_date).days)
-        <= _MAX_DAYS_FROM_READING
-        and abs((dated_bill.last_report_date - third_reading_date).days)
-        <= _MAX_DAYS_FROM_READING
-        and SequenceMatcher(None, title_key, dated_bill.title_key).ratio()
-        >= _MIN_TITLE_SIMILARITY
-    ]
-    if len(similar_bill_indexes) != 1:
-        return None
-    return similar_bill_indexes[0]
-
-
 def _get_bill_link_by_title_key(
     title_key: str,
     first_reading_date: Optional[date],
@@ -187,7 +140,7 @@ def _get_bill_link_by_title_key(
     return BillLink(loose_bill_index, BillLinkSource.LOOSE_TITLE_READING_DATES)
 
 
-def _get_bill_link_by_printed_title(
+def get_bill_link(
     printed_title: str,
     first_reading_date: Optional[date],
     second_reading_date: Optional[date],
@@ -219,33 +172,6 @@ def _get_bill_link_by_printed_title(
         third_reading_date,
         bill_lookups,
     )
-
-
-def get_bill_link(
-    printed_title: str,
-    first_reading_date: Optional[date],
-    second_reading_date: Optional[date],
-    third_reading_date: Optional[date],
-    bill_lookups: BillLookups,
-) -> Optional[BillLink]:
-    bill_link = _get_bill_link_by_printed_title(
-        printed_title,
-        first_reading_date,
-        second_reading_date,
-        third_reading_date,
-        bill_lookups,
-    )
-    if bill_link is not None:
-        return bill_link
-    similar_bill_index = _get_similar_bill_index(
-        get_bill_title_key(printed_title),
-        first_reading_date,
-        third_reading_date,
-        bill_lookups.dated_bills,
-    )
-    if similar_bill_index is None:
-        return None
-    return BillLink(similar_bill_index, BillLinkSource.SIMILAR_TITLE_READING_DATES)
 
 
 def get_bill_number_link_index(

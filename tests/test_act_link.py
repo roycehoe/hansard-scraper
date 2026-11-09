@@ -1,3 +1,4 @@
+from dataclasses import fields
 from datetime import date, datetime
 
 from crud.report import ReportSittingDateTitleRow
@@ -10,6 +11,7 @@ from services.act_link import (
     get_bill_link,
 )
 from services.bill import group_bills
+from utils.data_files import get_hand_kept_act_links
 from utils.title_key import get_bill_title_key, get_title_key
 
 
@@ -54,6 +56,23 @@ _MONEYLENDERS_BILLS = _build_linkable_bills(
         ),
     ],
     {1, 2},
+)
+
+_HAND_KEPT_ENTRY_COUNT = 11
+_HAND_KEPT_ENTRIES = frozenset(
+    {
+        ("ABA1965", 10),
+        ("NHBA1993", 1),
+        ("CLTPA1955", 7),
+        ("FSA1965", 1),
+        ("IRASA1992", 5),
+        ("PTA2005", 19),
+        ("SAFA1972", 15),
+        ("SFA2001", 3),
+        ("SFA2001", 11),
+        ("SWA1995", 2),
+        ("TMA1998", 4),
+    }
 )
 
 
@@ -352,54 +371,11 @@ def _build_bills_read_on_the_same_dates(
     return _build_linkable_bills(report_rows, third_reading_report_ids)
 
 
-def test_a_misprinted_title_links_to_the_one_similar_bill_read_on_both_dates() -> None:
+def test_a_misprinted_title_links_to_nothing_by_rule() -> None:
     bill_lookups = _build_bills_read_on_the_same_dates(
         ["ANIMALS BILL", "FEEDSTUFFS BILL"], date(1964, 11, 19), date(1965, 6, 16)
     )
 
-    assert get_bill_link(
-        "Feeding Stuffs Ordinance, 1965",
-        date(1964, 11, 19),
-        None,
-        date(1965, 6, 16),
-        bill_lookups,
-    ) == BillLink(1, BillLinkSource.SIMILAR_TITLE_READING_DATES)
-
-
-def test_a_different_bill_read_on_the_same_dates_is_no_similar_title() -> None:
-    bill_lookups = _build_linkable_bills(
-        [
-            ReportSittingDateTitleRow(1, datetime(1964, 11, 19), "ANIMALS BILL"),
-            ReportSittingDateTitleRow(2, datetime(1965, 6, 16), "ANIMALS BILL"),
-            ReportSittingDateTitleRow(3, datetime(1964, 11, 19), "FEEDSTUFFS BILL"),
-            ReportSittingDateTitleRow(4, datetime(1965, 6, 16), "FEEDSTUFFS BILL"),
-            ReportSittingDateTitleRow(
-                5, datetime(1964, 11, 17), "WILD ANIMALS AND BIRDS BILL"
-            ),
-            ReportSittingDateTitleRow(
-                6, datetime(1965, 6, 16), "WILD ANIMALS AND BIRDS BILL"
-            ),
-        ],
-        {2, 4, 6},
-    )
-
-    assert (
-        get_bill_link(
-            "Animals and Birds Ordinance, 1965",
-            date(1964, 11, 19),
-            None,
-            date(1965, 6, 16),
-            bill_lookups,
-        )
-        is None
-    )
-
-
-def test_two_similar_bills_read_on_both_dates_link_to_nothing() -> None:
-    bill_lookups = _build_bills_read_on_the_same_dates(
-        ["FEEDSTUFFS BILL", "FEEDING STUFF BILL"], date(1964, 11, 19), date(1965, 6, 16)
-    )
-
     assert (
         get_bill_link(
             "Feeding Stuffs Ordinance, 1965",
@@ -412,18 +388,23 @@ def test_two_similar_bills_read_on_both_dates_link_to_nothing() -> None:
     )
 
 
-def test_a_similar_title_with_no_third_reading_date_links_to_nothing() -> None:
-    bill_lookups = _build_bills_read_on_the_same_dates(
-        ["FEEDSTUFFS BILL"], date(1964, 11, 19), date(1965, 6, 16)
-    )
+def test_the_hand_kept_file_names_the_eleven_entries_once_each() -> None:
+    entries = [(link.sso_code, link.ordinal) for link in get_hand_kept_act_links()]
 
-    assert (
-        get_bill_link(
-            "Feeding Stuffs Ordinance, 1965",
-            date(1964, 11, 19),
-            None,
-            None,
-            bill_lookups,
-        )
-        is None
-    )
+    assert len(entries) == _HAND_KEPT_ENTRY_COUNT
+    assert set(entries) == _HAND_KEPT_ENTRIES
+
+
+def test_every_hand_kept_entry_lists_report_ids_once_and_gives_a_reason() -> None:
+    for link in get_hand_kept_act_links():
+        assert link.report_ids
+        assert len(set(link.report_ids)) == len(link.report_ids)
+        assert link.reason.endswith(".")
+
+
+def test_the_bill_lookups_carry_no_dated_bills() -> None:
+    assert [field.name for field in fields(BillLookups)] == [
+        "title_key_to_linkable_bills",
+        "loose_title_key_to_linkable_bills",
+        "bill_number_to_linkable_bills",
+    ]
