@@ -43,6 +43,7 @@ import database.bill_report_speaker  # noqa: F401 registers the table for create
 import database.bill_stage_line  # noqa: F401 registers the table for create_all
 import database.bills_supplement  # noqa: F401 registers the table for create_all
 import database.division  # noqa: F401 registers the table for create_all
+import database.division_vote  # noqa: F401 registers the table for create_all
 import database.egazette_supplement  # noqa: F401 registers the table for create_all
 import database.hansard_sitting_date_response  # noqa: F401 registers the table for create_all
 import database.hansard_website_response  # noqa: F401 registers the table for create_all
@@ -50,6 +51,7 @@ import database.leave_period  # noqa: F401 registers the table for create_all
 import database.ministry  # noqa: F401 registers the table for create_all
 import database.ministry_see_also  # noqa: F401 registers the table for create_all
 import database.minutes  # noqa: F401 registers the table for create_all
+import database.minutes_division  # noqa: F401 registers the table for create_all
 import database.office_printed_range  # noqa: F401 registers the table for create_all
 import database.office_title_ministry  # noqa: F401 registers the table for create_all
 import database.party_affiliation  # noqa: F401 registers the table for create_all

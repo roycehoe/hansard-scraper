@@ -505,6 +505,35 @@ class DivisionListStatus(StrEnum):
     LAYOUT_UNREADABLE = "LAYOUT_UNREADABLE"
 
 
+class MinutesDivisionPairing(StrEnum):
+    PAIRED = "PAIRED"
+    NO_MATCHING_DIVISION = "NO_MATCHING_DIVISION"
+    UNEQUAL_NUMBER = "UNEQUAL_NUMBER"
+    TIED = "TIED"
+    ABSTENTIONS_DIFFER = "ABSTENTIONS_DIFFER"
+
+
+class DivisionVoteListSource(StrEnum):
+    MINUTES = "MINUTES"
+    HANSARD = "HANSARD"
+
+
+class DivisionVoteChoice(StrEnum):
+    AYE = "AYE"
+    NO = "NO"
+    ABSTAIN = "ABSTAIN"
+    ABSENT = "ABSENT"
+    PAIRED = "PAIRED"
+
+
+class DivisionVoteNameRule(StrEnum):
+    EXACT = "EXACT"
+    INVERTED = "INVERTED"
+    BIN_FREE = "BIN_FREE"
+    SAME_WORDS = "SAME_WORDS"
+    HAND_LIST = "HAND_LIST"
+
+
 class UnreadDivisionReason(StrEnum):
     OPENING_WITHOUT_COUNTS = "OPENING_WITHOUT_COUNTS"
     OPENING_IN_ROW_OF_OTHER_KIND = "OPENING_IN_ROW_OF_OTHER_KIND"
