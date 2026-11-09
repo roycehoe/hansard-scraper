@@ -17,6 +17,13 @@ class AttendanceSpeakerRow:
 
 
 @dataclass(frozen=True)
+class AttendanceSeatRow:
+    speaker_id: int
+    location_name: str
+    sitting_date: str
+
+
+@dataclass(frozen=True)
 class AttendancePresenceRow:
     sitting_id: int
     speaker_id: int
@@ -194,6 +201,19 @@ class CRUDAttendance:
         return [
             AttendanceLocationRow(*row) for row in self.session.exec(statement).all()
         ]
+
+    def get_seat_rows_by_speaker_ids_and_location_name_not_null(
+        self, speaker_ids: list[int]
+    ) -> list[AttendanceSeatRow]:
+        statement = (
+            select(
+                Attendance.speaker_id, Attendance.location_name, Sitting.sitting_date
+            )
+            .join(Sitting)
+            .where(col(Attendance.speaker_id).in_(speaker_ids))
+            .where(col(Attendance.location_name).is_not(None))
+        )
+        return [AttendanceSeatRow(*row) for row in self.session.exec(statement).all()]
 
     def update_many(self, attendances: list[Attendance]) -> None:
         self.session.add_all(attendances)
