@@ -1,1 +1,313 @@
-[]
+[
+  {
+    "member_name": "Lee Hsien Loong",
+    "speaker_ids": [
+      385,
+      466,
+      556,
+      647,
+      746,
+      849,
+      959,
+      1074,
+      1181,
+      1304
+    ],
+    "ministry_name": "Finance",
+    "start_date": "2001-11-23",
+    "end_date": "2007-11-30",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/lee-hsien-loong"
+  },
+  {
+    "member_name": "Lee Hsien Loong",
+    "speaker_ids": [
+      385,
+      466,
+      556,
+      647,
+      746,
+      849,
+      959,
+      1074,
+      1181,
+      1304
+    ],
+    "ministry_name": "Trade and Industry",
+    "start_date": "1987-01-01",
+    "end_date": "1997-01-24",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/lee-hsien-loong"
+  },
+  {
+    "member_name": "K Shanmugam",
+    "speaker_ids": [
+      456,
+      543,
+      639,
+      737,
+      836,
+      947,
+      1063,
+      1175,
+      1295
+    ],
+    "ministry_name": "Law",
+    "start_date": "2008-05-01",
+    "end_date": "2025-05-23",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/k-shanmugam"
+  },
+  {
+    "member_name": "K Shanmugam",
+    "speaker_ids": [
+      456,
+      543,
+      639,
+      737,
+      836,
+      947,
+      1063,
+      1175,
+      1295
+    ],
+    "ministry_name": "Foreign Affairs",
+    "start_date": "2011-05-21",
+    "end_date": "2015-09-30",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/k-shanmugam"
+  },
+  {
+    "member_name": "Gan Kim Yong",
+    "speaker_ids": [
+      725,
+      820,
+      930,
+      1047,
+      1158,
+      1274
+    ],
+    "ministry_name": "Health",
+    "start_date": "2011-05-21",
+    "end_date": "2021-05-14",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/gan-kim-yong"
+  },
+  {
+    "member_name": "Chan Chun Sing",
+    "speaker_ids": [
+      912,
+      1025,
+      1137,
+      1250
+    ],
+    "ministry_name": "Social and Family Development",
+    "start_date": "2013-09-01",
+    "end_date": "2015-04-08",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/chan-chun-sing"
+  },
+  {
+    "member_name": "Chan Chun Sing",
+    "speaker_ids": [
+      912,
+      1025,
+      1137,
+      1250
+    ],
+    "ministry_name": "Trade and Industry",
+    "start_date": "2018-05-01",
+    "end_date": "2021-05-14",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/chan-chun-sing"
+  },
+  {
+    "member_name": "Chan Chun Sing",
+    "speaker_ids": [
+      912,
+      1025,
+      1137,
+      1250
+    ],
+    "ministry_name": "Education",
+    "start_date": "2021-05-15",
+    "end_date": "2025-05-23",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/chan-chun-sing"
+  },
+  {
+    "member_name": "Lawrence Wong",
+    "speaker_ids": [
+      953,
+      1071,
+      1180,
+      1302
+    ],
+    "ministry_name": "National Development",
+    "start_date": "2015-10-01",
+    "end_date": "2020-07-26",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/lawrence-wong"
+  },
+  {
+    "member_name": "Desmond Lee",
+    "speaker_ids": [
+      921,
+      1039,
+      1151,
+      1262
+    ],
+    "ministry_name": "Social and Family Development",
+    "start_date": "2017-09-11",
+    "end_date": "2020-07-26",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/desmond-lee"
+  },
+  {
+    "member_name": "Grace Fu Hai Yien",
+    "speaker_ids": [
+      823,
+      933,
+      1051,
+      1162,
+      1280
+    ],
+    "ministry_name": "Culture, Community and Youth",
+    "start_date": "2015-10-01",
+    "end_date": "2020-07-26",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/grace-fu-hai-yien"
+  },
+  {
+    "member_name": "Edwin Tong Chun Fai",
+    "speaker_ids": [
+      922,
+      1041,
+      1154,
+      1267
+    ],
+    "ministry_name": "Culture, Community and Youth",
+    "start_date": "2020-07-27",
+    "end_date": "2025-05-23",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/edwin-tong-chun-fai"
+  },
+  {
+    "member_name": "Masagos Zulkifli Bin Masagos Mohamad",
+    "speaker_ids": [
+      863,
+      973,
+      1084,
+      1189,
+      1311
+    ],
+    "ministry_name": "Environment and Water Resources",
+    "start_date": "2015-10-01",
+    "end_date": "2020-07-26",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/masagos-zulkifli-bin-masagos-mohamad"
+  },
+  {
+    "member_name": "Masagos Zulkifli Bin Masagos Mohamad",
+    "speaker_ids": [
+      863,
+      973,
+      1084,
+      1189,
+      1311
+    ],
+    "ministry_name": "Muslim Affairs",
+    "start_date": "2018-05-01",
+    "end_date": "2025-05-23",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/masagos-zulkifli-bin-masagos-mohamad"
+  },
+  {
+    "member_name": "Vivian Balakrishnan",
+    "speaker_ids": [
+      792,
+      892,
+      1008,
+      1123,
+      1233,
+      1342
+    ],
+    "ministry_name": "Environment and Water Resources",
+    "start_date": "2011-05-21",
+    "end_date": "2015-09-30",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/vivian-balakrishnan"
+  },
+  {
+    "member_name": "Ong Ye Kung",
+    "speaker_ids": [
+      1098,
+      1201,
+      1319
+    ],
+    "ministry_name": "Transport",
+    "start_date": "2020-07-27",
+    "end_date": "2021-05-14",
+    "source_url": "https://www.parliament.gov.sg/mps/list-of-current-mps/mp/details/ong-ye-kung"
+  },
+  {
+    "member_name": "S Rajaratnam",
+    "speaker_ids": [
+      48,
+      108,
+      173,
+      247,
+      322,
+      395
+    ],
+    "ministry_name": "Foreign Affairs",
+    "start_date": "1965-08-09",
+    "end_date": "1980-05-31",
+    "source_url": "https://www.mfa.gov.sg/about-mfa/histories-and-milestones/"
+  },
+  {
+    "member_name": "S. Dhanabalan",
+    "speaker_ids": [
+      249,
+      324,
+      396,
+      483,
+      575
+    ],
+    "ministry_name": "Foreign Affairs",
+    "start_date": "1980-06-01",
+    "end_date": "1988-09-12",
+    "source_url": "https://www.mfa.gov.sg/about-mfa/histories-and-milestones/"
+  },
+  {
+    "member_name": "Wong Kan Seng",
+    "speaker_ids": [
+      416,
+      501,
+      592,
+      691,
+      795,
+      895,
+      1009
+    ],
+    "ministry_name": "Foreign Affairs",
+    "start_date": "1988-09-13",
+    "end_date": "1994-01-01",
+    "source_url": "https://www.mfa.gov.sg/about-mfa/histories-and-milestones/"
+  },
+  {
+    "member_name": "S Jayakumar",
+    "speaker_ids": [
+      299,
+      373,
+      455,
+      542,
+      637,
+      736,
+      833
+    ],
+    "ministry_name": "Foreign Affairs",
+    "start_date": "1994-01-02",
+    "end_date": "2004-08-12",
+    "source_url": "https://www.mfa.gov.sg/about-mfa/histories-and-milestones/"
+  },
+  {
+    "member_name": "Yeo Yong-Boon, George",
+    "speaker_ids": [
+      508,
+      600,
+      698,
+      801,
+      903
+    ],
+    "ministry_name": "Foreign Affairs",
+    "start_date": "2004-08-13",
+    "end_date": "2011-05-20",
+    "source_url": "https://www.mfa.gov.sg/about-mfa/histories-and-milestones/"
+  }
+]
