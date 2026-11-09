@@ -195,6 +195,37 @@ def test_write_removes_a_division_the_plan_no_longer_holds(
     assert _get_stored_divisions(scratch_session) == []
 
 
+def test_write_deletes_only_the_divisions_of_the_planned_reports(
+    scratch_session: Session,
+) -> None:
+    first = add_division_report(scratch_session, _FIRST_REPORT_ID, _SITTING_DATE)
+    second = add_division_report(scratch_session, _SECOND_REPORT_ID, _SITTING_DATE)
+    add_division_speech_rows(
+        scratch_session, first, [(SpeechKind.PROCEDURAL, None, _LINE_FIRST)]
+    )
+    add_division_speech_rows(
+        scratch_session, second, [(SpeechKind.PROCEDURAL, None, _LINE_SECOND)]
+    )
+    assert first.id is not None and second.id is not None
+    write_division_plan(
+        scratch_session, get_division_plan(scratch_session, [first.id, second.id])
+    )
+    second_division_id = next(
+        division.id
+        for division in _get_stored_divisions(scratch_session)
+        if division.sprs_report_id == _SECOND_REPORT_ID
+    )
+    scratch_session.exec(delete(Speech).where(col(Speech.report_id) == first.id))
+    plan = get_division_plan(scratch_session, [first.id])
+
+    write_division_plan(scratch_session, plan)
+
+    assert [
+        (division.id, division.sprs_report_id)
+        for division in _get_stored_divisions(scratch_session)
+    ] == [(second_division_id, _SECOND_REPORT_ID)]
+
+
 def test_write_can_swap_two_division_numbers_in_one_write(
     scratch_session: Session,
 ) -> None:
