@@ -1,0 +1,140 @@
+{
+ "why": "One pre block of two columns, with the Abstentions, Absent and Paired headings inside the columns and wrapped names (report 40615, 13 December 1957).",
+ "ayes": 3,
+ "noes": 17,
+ "abstentions": 8,
+ "absent": 2,
+ "paired": 2,
+ "division_index": 0,
+ "division_count": 1,
+ "expected_names": [
+  [
+   "AYE",
+   "Ahmad bin Ibrahim."
+  ],
+  [
+   "NO",
+   "Abdul Hamid bin Haji Jumat."
+  ],
+  [
+   "AYE",
+   "Goh Chew Chua."
+  ],
+  [
+   "AYE",
+   "Lee Kuan Yew."
+  ],
+  [
+   "NO",
+   "Braga, A. J."
+  ],
+  [
+   "NO",
+   "Chew Swee Kee."
+  ],
+  [
+   "NO",
+   "Hart, T. M."
+  ],
+  [
+   "ABSTAIN",
+   "Ede, John."
+  ],
+  [
+   "NO",
+   "Jumabhoy, J. M."
+  ],
+  [
+   "ABSTAIN",
+   "Goh Tong Liang."
+  ],
+  [
+   "NO",
+   "Lim Cher Kheng."
+  ],
+  [
+   "ABSTAIN",
+   "Jumabhoy, R."
+  ],
+  [
+   "NO",
+   "Lim, R. C. H."
+  ],
+  [
+   "ABSTAIN",
+   "Lee Choon Eng."
+  ],
+  [
+   "NO",
+   "Lim Yew Hock."
+  ],
+  [
+   "ABSTAIN",
+   "Lim Choon Mong."
+  ],
+  [
+   "NO",
+   "Mak Pak Shee."
+  ],
+  [
+   "ABSTAIN",
+   "Seah Peng Chuan."
+  ],
+  [
+   "NO",
+   "Mohamed Sidik bin Haji Abdul Hamid."
+  ],
+  [
+   "ABSTAIN",
+   "Soh Ghee Soon."
+  ],
+  [
+   "ABSTAIN",
+   "Tan, William."
+  ],
+  [
+   "NO",
+   "Nair, M. P. D."
+  ],
+  [
+   "NO",
+   "Ong Piah Teng."
+  ],
+  [
+   "NO",
+   "Shanks, E. P."
+  ],
+  [
+   "ABSENT",
+   "Lazarous, A. R."
+  ],
+  [
+   "NO",
+   "Stewart, S. T."
+  ],
+  [
+   "ABSENT",
+   "Lim Ching Siong."
+  ],
+  [
+   "NO",
+   "Sutherland, G. A. P."
+  ],
+  [
+   "NO",
+   "Tan Theng Chiang."
+  ],
+  [
+   "NO",
+   "Thomas, Francis."
+  ],
+  [
+   "PAIRED",
+   "Lim Koon Teck."
+  ],
+  [
+   "PAIRED",
+   "Wong Foo Nam."
+  ]
+ ]
+}

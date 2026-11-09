@@ -1,0 +1,284 @@
+{
+ "why": "The division line sits inside the first pre, and the later heading reads Absention (report 28665, 3 November 1994).",
+ "ayes": 61,
+ "noes": 6,
+ "abstentions": 1,
+ "absent": null,
+ "paired": null,
+ "division_index": 0,
+ "division_count": 1,
+ "expected_names": [
+  [
+   "AYE",
+   "Abdullah Tarmugi"
+  ],
+  [
+   "AYE",
+   "Lee Hsien Loong"
+  ],
+  [
+   "AYE",
+   "Beng Kian Lam, Arthur"
+  ],
+  [
+   "AYE",
+   "Lee Kuan Yew"
+  ],
+  [
+   "AYE",
+   "Chandra Das, S"
+  ],
+  [
+   "AYE",
+   "Lee Yiok Seng"
+  ],
+  [
+   "AYE",
+   "Chay Wai Chuen"
+  ],
+  [
+   "AYE",
+   "Lee Yock Suan"
+  ],
+  [
+   "AYE",
+   "Chen Koon Lap, Kenneth"
+  ],
+  [
+   "AYE",
+   "Leong Horn Kee"
+  ],
+  [
+   "AYE",
+   "Chin Harn Tong"
+  ],
+  [
+   "AYE",
+   "Lew Syn Pau"
+  ],
+  [
+   "AYE",
+   "Chng Hee Kok"
+  ],
+  [
+   "AYE",
+   "Lim Boon Heng"
+  ],
+  [
+   "AYE",
+   "Ch'ng Jit Koon"
+  ],
+  [
+   "AYE",
+   "Lim Chun Leng, Michael"
+  ],
+  [
+   "AYE",
+   "Chong, Charles"
+  ],
+  [
+   "AYE",
+   "Lim Hng Kiang"
+  ],
+  [
+   "AYE",
+   "Choo Wee Khiang"
+  ],
+  [
+   "AYE",
+   "Loh Meng See"
+  ],
+  [
+   "AYE",
+   "Davinder Singh"
+  ],
+  [
+   "AYE",
+   "Mah Bow Tan"
+  ],
+  [
+   "AYE",
+   "De Payva, John"
+  ],
+  [
+   "AYE",
+   "Ong Chit Chung"
+  ],
+  [
+   "AYE",
+   "Dhanabalan, S"
+  ],
+  [
+   "AYE",
+   "Othman bin Haron Eusofe"
+  ],
+  [
+   "AYE",
+   "Goh Chee Wee"
+  ],
+  [
+   "AYE",
+   "Peh Chin Hua"
+  ],
+  [
+   "AYE",
+   "Goh Chok Tong"
+  ],
+  [
+   "AYE",
+   "Shanmugam, K"
+  ],
+  [
+   "AYE",
+   "Goh Choon Kang"
+  ],
+  [
+   "AYE",
+   "Sidek bin Saniff"
+  ],
+  [
+   "AYE",
+   "Harun bin A Ghani"
+  ],
+  [
+   "AYE",
+   "Sinnakaruppan, R"
+  ],
+  [
+   "AYE",
+   "Ho Kah Leong"
+  ],
+  [
+   "AYE",
+   "Sung, Peter"
+  ],
+  [
+   "AYE",
+   "Ho Peng Kee"
+  ],
+  [
+   "AYE",
+   "Tan Cheng Bock"
+  ],
+  [
+   "AYE",
+   "Ho Tat Kin"
+  ],
+  [
+   "AYE",
+   "Teo Chee Hean"
+  ],
+  [
+   "AYE",
+   "Ibrahim bin Othman"
+  ],
+  [
+   "AYE",
+   "Teo Chong Tee"
+  ],
+  [
+   "AYE",
+   "Jayakumar, S"
+  ],
+  [
+   "AYE",
+   "Vasoo, S"
+  ],
+  [
+   "AYE",
+   "Koh Lip Lin"
+  ],
+  [
+   "AYE",
+   "Wan Soon Bee"
+  ],
+  [
+   "AYE",
+   "Lau Ping Sum"
+  ],
+  [
+   "AYE",
+   "Wang Kai Yuen"
+  ],
+  [
+   "AYE",
+   "Lee Ching Yen, Stephen"
+  ],
+  [
+   "AYE",
+   "Wong, Aline K"
+  ],
+  [
+   "AYE",
+   "Wong Kan Seng"
+  ],
+  [
+   "NO",
+   "Cheo Chai Chen"
+  ],
+  [
+   "AYE",
+   "Woon, Walter"
+  ],
+  [
+   "NO",
+   "Chiam See Tong"
+  ],
+  [
+   "AYE",
+   "Yao Chih, Matthias"
+  ],
+  [
+   "NO",
+   "Imram bin Mohamed"
+  ],
+  [
+   "AYE",
+   "Yap Giau Cheng, Eugene"
+  ],
+  [
+   "NO",
+   "Kanwaljit Soin"
+  ],
+  [
+   "AYE",
+   "Yatiman Yusof"
+  ],
+  [
+   "NO",
+   "Lee Tsao Yuan"
+  ],
+  [
+   "AYE",
+   "Yeo Cheow Tong"
+  ],
+  [
+   "NO",
+   "Low Thia Khiang"
+  ],
+  [
+   "AYE",
+   "Yeo Ning Hong"
+  ],
+  [
+   "AYE",
+   "Yeo Toon Chia"
+  ],
+  [
+   "AYE",
+   "Yeo Yong-Boon, George"
+  ],
+  [
+   "AYE",
+   "Yu-Foo Yee Shoon"
+  ],
+  [
+   "ABSTAIN",
+   "Tan Soo Khoon"
+  ],
+  [
+   "AYE",
+   "Zulkifli bin Mohammed"
+  ]
+ ]
+}
