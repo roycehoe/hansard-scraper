@@ -1,35 +1,35 @@
 {
- "why": "A division opening that prints no counts makes no division and is listed as unread (the motion report of SPRS id 00069071-ZZ, 18 April 1962). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "why": "A division opening that prints no counts makes no division and is listed as unread (the motion report of SPRS id 00069071-ZZ, 18 April 1962).",
  "rows": [
   [
    358,
-   "SPEECH",
+   "PROCEDURAL",
    null,
-   "[row 358 text not reproduced]"
+   "Question put, \"That in view of the Government's clearly stated stand on the question of merger, this House welcomes the Government's introduction of the Singapore National Referendum Bill in order to hold a referendum to ascertain the wishes of the people on the mode and manner of the inevitable reunification of Singapore and the Federation of Malaya before arrangements are finalised and before any request is made by the Government of Singapore to the British Government for transfer of territorial sovereignty over Singapore to the Federation of Malaya or Malaysia.\""
   ],
   [
    359,
    "SPEECH",
-   null,
-   "[row 359 text not reproduced]"
+   "Dr Lee Siew Choh",
+   "Division."
   ],
   [
    360,
    "PROCEDURAL",
    null,
-   "The House divided and the Clerk proceeded to call out the names of the Members."
+   "The House divided and the Clerk proceeded to call out the names of hon. Members -"
   ],
   [
    361,
-   "SPEECH",
+   "UNCLASSIFIED",
    null,
-   "[row 361 text not reproduced]"
+   "Upon the name of Mr Lee Kuan Yew being called -"
   ],
   [
    362,
    "SPEECH",
-   null,
-   "[row 362 text not reproduced]"
+   "Dr Toh Chin Chye",
+   "Paired."
   ]
  ],
  "expected_divisions": [],

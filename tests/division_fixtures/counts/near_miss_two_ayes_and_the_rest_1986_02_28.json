@@ -1,47 +1,47 @@
 {
- "why": "A speech row that names Ayes but gives no second count makes no division and is listed as unread (report 32026, 28 February 1986). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "why": "A speech row that names Ayes but gives no second count makes no division and is listed as unread (report 32026, 28 February 1986).",
  "rows": [
   [
    44,
    "SPEECH",
-   null,
-   "[row 44 text not reproduced]"
+   "Mr Jeyaretnam",
+   "I call for a Division, Sir."
   ],
   [
    45,
    "SPEECH",
-   null,
-   "[row 45 text not reproduced]"
+   "Mr Speaker",
+   "Shall we ask for a show of hands?"
   ],
   [
    46,
    "SPEECH",
-   null,
-   "[row 46 text not reproduced]"
+   "Mr Jeyaretnam",
+   "All right."
   ],
   [
    47,
    "SPEECH",
-   null,
+   "Mr Speaker",
    "It will be recorded: there are two \"Ayes\" and the rest \"No\"."
   ],
   [
    48,
-   "SPEECH",
+   "PROCEDURAL",
    null,
-   "[row 48 text not reproduced]"
+   "Amendment accordingly negatived."
   ],
   [
    49,
-   "SPEECH",
+   "PROCEDURAL",
    null,
-   "[row 49 text not reproduced]"
+   "Original Question put, and agreed to."
   ],
   [
    50,
-   "SPEECH",
+   "PROCEDURAL",
    null,
-   "[row 50 text not reproduced]"
+   "Resolved,"
   ]
  ],
  "expected_divisions": [],

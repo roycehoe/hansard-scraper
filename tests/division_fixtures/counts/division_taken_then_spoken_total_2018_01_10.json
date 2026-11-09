@@ -1,47 +1,47 @@
 {
- "why": "A spoken total whose first 'there are' reads no count merges into the printed line two rows on (report 14337, 10 January 2018). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "why": "A spoken total whose first 'there are' reads no count merges into the printed line two rows on (report 14337, 10 January 2018).",
  "rows": [
   [
    380,
    "SPEECH",
-   null,
-   "[row 380 text not reproduced]"
+   "Mr K Shanmugam",
+   "Yes, Sir."
   ],
   [
    381,
    "SPEECH",
-   null,
-   "[row 381 text not reproduced]"
+   "Mr Deputy Speaker",
+   "May I remind Members that they are to be seated in their designated seats and should only start to vote when the voting buttons on their arm rests start to blink. You may start voting now."
   ],
   [
    382,
    "PROCEDURAL",
    null,
-   "Division taken: Ayes, 80; Noes, Nil; Abstention, Nil."
+   "Division taken: Ayes, 80; Noes, Nil; Abstention, Nil"
   ],
   [
    383,
    "SPEECH",
-   null,
-   "[row 383 text not reproduced]"
+   "Mr Deputy Speaker",
+   "Members are advised to check that their names are registered according to their vote indication when the voting results are shown on the display screen. Before I proceed to declare the results of the vote, are there any Members who wish to claim his vote has not been displayed or displayed incorrectly on the screen?"
   ],
   [
    384,
    "SPEECH",
-   null,
-   "As there are none, I will proceed to declare the voting results now. There are 80 \"Ayes, zero \"Noes\", and zero \"Abstentions\"."
+   "Mr Deputy Speaker",
+   "As there are none, I will proceed to declare the voting results now. There are 80 \"Ayes, zero \"Noes\", and zero \"Abstentions\". The \"Ayes\" have it, the \"Ayes\" have it."
   ],
   [
    385,
-   "SPEECH",
+   "PROCEDURAL",
    null,
-   "[row 385 text not reproduced]"
+   "Resolved,"
   ],
   [
    386,
-   "SPEECH",
+   "PROCEDURAL",
    null,
-   "[row 386 text not reproduced]"
+   "“(1) That Parliament appoints a Select Committee to examine and report on:"
   ]
  ],
  "expected_divisions": [

@@ -1,5 +1,5 @@
 {
- "why": "A printed line, a 39-row name list and a spoken total one row after the list are one division (report 38934, 15 January 1962). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "why": "A printed line, a 39-row name list and a spoken total one row after the list are one division (report 38934, 15 January 1962).",
  "rows": [
   [
    28,
@@ -10,7 +10,7 @@
   [
    29,
    "SPEECH",
-   null,
+   "Mr David Marshall",
    "Division. Sir."
   ],
   [
@@ -29,241 +29,253 @@
    32,
    "UNCLASSIFIED",
    null,
-   "[list name 32]"
+   "Ahmad bin            Abdul Hamid bin"
   ],
   [
    33,
    "UNCLASSIFIED",
    null,
-   "[list name 33]"
+   "Ibrahim.             Haji Jumat."
   ],
   [
    34,
    "UNCLASSIFIED",
    null,
-   "[list name 34]"
+   "Buang Bin Omar       Ahmad   Jabri bin"
   ],
   [
    35,
    "UNCLASSIFIED",
    null,
-   "[list name 35]"
+   "Junid.               Mohammad Akib."
   ],
   [
    36,
    "UNCLASSIFIED",
    null,
-   "[list name 36]"
+   "Byrne, K. M.         Bani, S. T."
   ],
   [
    37,
    "UNCLASSIFIED",
    null,
-   "[list name 37]"
+   "Chan Chee Seng.      Chan Sun Wing."
   ],
   [
    38,
    "UNCLASSIFIED",
    null,
-   "[list name 38]"
+   "Chor Yeok Eng.       Fung Yin Ching,"
   ],
   [
    39,
    "UNCLASSIFIED",
    null,
-   "[list name 39]"
+   "Goh Chew Chua.         Miss."
   ],
   [
    40,
    "UNCLASSIFIED",
    null,
-   "[list name 40]"
+   "Goh Keng Swee.       Lee Siew Choh."
   ],
   [
    41,
    "UNCLASSIFIED",
    null,
-   "[list name 41]"
+   "Hoe Puay Choo,       Leong Keng Seng."
   ],
   [
    42,
    "UNCLASSIFIED",
    null,
-   "[list name 42]"
+   "Madam.             Lim Yew Hock."
   ],
   [
    43,
    "UNCLASSIFIED",
    null,
-   "[list name 43]"
+   "Kandasamy, G.        Lin You Eng."
   ],
   [
    44,
    "UNCLASSIFIED",
    null,
-   "[list name 44]"
+   "Lee Khoon Choy.      Lingam, S. V."
   ],
   [
    45,
    "UNCLASSIFIED",
    null,
-   "[list name 45]"
+   "Lim Cheng Lock.      Low Por Tuck."
   ],
   [
    46,
    "UNCLASSIFIED",
    null,
-   "[list name 46]"
+   "Mammen. John.        Marshall, David."
   ],
   [
    47,
    "UNCLASSIFIED",
    null,
-   "[list name 47]"
+   "Mohd.   Ariff Bin    Ng Teng Kian."
   ],
   [
    48,
    "UNCLASSIFIED",
    null,
-   "[list name 48]"
+   "Suradi.            Ong Chang Sam."
   ],
   [
    49,
    "UNCLASSIFIED",
    null,
-   "[list name 49]"
+   "M. Ismail Rahim.     Ong Eng Guan."
   ],
   [
    50,
    "UNCLASSIFIED",
    null,
-   "[list name 50]"
+   "Ong Pang Boon.       Rajah, A. P."
   ],
   [
    51,
    "UNCLASSIFIED",
    null,
-   "[list name 51]"
+   "Rajaratnam, S.       Seow Peck Leng,"
   ],
   [
    52,
    "UNCLASSIFIED",
    null,
-   "[list name 52]"
+   "Ramaswamy, S.          Mrs"
   ],
   [
    53,
    "UNCLASSIFIED",
    null,
-   "[list name 53]"
+   "Sahorah binte        Sheng Nam Chin."
   ],
   [
    54,
    "UNCLASSIFIED",
    null,
-   "[list name 54]"
+   "Ahmat, Madam.      Tan Cheng Tong."
   ],
   [
    55,
    "UNCLASSIFIED",
    null,
-   "[list name 55]"
+   "Tan Kia Gan.         Tee Kim Leng."
   ],
   [
    56,
    "UNCLASSIFIED",
    null,
-   "[list name 56]"
+   "Toh Chin Chye.       Teo Hock Guan."
   ],
   [
    57,
    "UNCLASSIFIED",
    null,
-   "[list name 57]"
+   "Wee Toon Boon.       Thio Chan Bee."
   ],
   [
    58,
    "UNCLASSIFIED",
    null,
-   "[list name 58]"
+   "Yaacob bin Mohamed.  Wong Soon Fong."
   ],
   [
    59,
    "UNCLASSIFIED",
    null,
-   "[list name 59]"
+   "Yong Nyuk Lin."
   ],
   [
    60,
    "UNCLASSIFIED",
    null,
-   "[list name 60]"
+   "Abstention."
   ],
   [
    61,
    "UNCLASSIFIED",
    null,
-   "[list name 61]"
+   "Nil."
   ],
   [
    62,
    "UNCLASSIFIED",
    null,
-   "[list name 62]"
+   "Absent."
   ],
   [
    63,
    "UNCLASSIFIED",
    null,
-   "[list name 63]"
+   "Koh, C. H."
   ],
   [
    64,
    "UNCLASSIFIED",
    null,
-   "[list name 64]"
+   "Lee Kuan Yew."
   ],
   [
    65,
    "UNCLASSIFIED",
    null,
-   "[list name 65]"
+   "Lee Teck Him."
   ],
   [
    66,
    "UNCLASSIFIED",
    null,
-   "[list name 66]"
+   "Paired."
   ],
   [
    67,
    "UNCLASSIFIED",
    null,
-   "[list name 67]"
+   "Chan Choy Siong,"
   ],
   [
    68,
    "UNCLASSIFIED",
    null,
-   "[list name 68]"
+   "Madam. (absent)."
   ],
   [
    69,
    "UNCLASSIFIED",
    null,
-   "[list name 69]"
+   "Mohd. Ali Bin"
   ],
   [
    70,
    "UNCLASSIFIED",
    null,
-   "[list name 70]"
+   "Alwi."
   ],
   [
    71,
    "SPEECH",
-   null,
-   "The result of the voting is 23 Ayes, 23 Noes, 3 Absent, and 2 Paired."
+   "The Chairman",
+   "The result of the voting is 23 Ayes, 23 Noes, 3 Absent, and 2 Paired. Under section 53 of the Constitution - and I will read that section - it says:"
+  ],
+  [
+   72,
+   "SPEECH",
+   "The Chairman",
+   "`Save as otherwise provided in this Order, all questions proposed for decision in the Assembly shall be determined by a majority of the votes of the Members present and voting; and if, upon any question before the Assembly, the votes of the Members are equally divided, the motion shall be lost.'"
+  ],
+  [
+   73,
+   "SPEECH",
+   "The Chairman",
+   "Therefore, the motion is lost. There is now no clause 2 and the Bill is meaningless. Anyway, the Bill will have to be reported."
   ]
  ],
  "expected_divisions": [

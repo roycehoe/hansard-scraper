@@ -1,71 +1,71 @@
 {
- "why": "A spoken total with no printed line near it is its own division (report 41976, 18 November 1957). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "why": "A spoken total with no printed line near it is its own division (report 41976, 18 November 1957).",
  "rows": [
   [
    56,
-   "SPEECH",
+   "UNCLASSIFIED",
    null,
-   "[row 56 text not reproduced]"
+   "Lim Cher Kheng."
   ],
   [
    57,
-   "SPEECH",
+   "UNCLASSIFIED",
    null,
-   "[row 57 text not reproduced]"
+   "Lim Ching Siong."
   ],
   [
    58,
-   "SPEECH",
+   "UNCLASSIFIED",
    null,
-   "[row 58 text not reproduced]"
+   "Lim, R. C. H."
   ],
   [
    59,
-   "SPEECH",
+   "UNCLASSIFIED",
    null,
-   "[row 59 text not reproduced]"
+   "Seah Peng Chuan."
   ],
   [
    60,
-   "SPEECH",
+   "UNCLASSIFIED",
    null,
-   "[row 60 text not reproduced]"
+   "Paired."
   ],
   [
    61,
-   "SPEECH",
+   "UNCLASSIFIED",
    null,
-   "[row 61 text not reproduced]"
+   "Lim Koon Teck."
   ],
   [
    62,
-   "SPEECH",
+   "UNCLASSIFIED",
    null,
-   "[row 62 text not reproduced]"
+   "Wong Foo Nam."
   ],
   [
    63,
    "SPEECH",
-   null,
+   "Mr Speaker",
    "The result of the division is: Ayes, 13; Noes, 10; Paired, 2; Abstentions, Nil."
   ],
   [
    64,
-   "SPEECH",
+   "PROCEDURAL",
    null,
-   "[row 64 text not reproduced]"
+   "Question accordingly agreed to."
   ],
   [
    65,
-   "SPEECH",
+   "PROCEDURAL",
    null,
-   "[row 65 text not reproduced]"
+   "Bill accordingly read a Second time and committed to a Committee of the whole Assembly."
   ],
   [
    66,
-   "SPEECH",
+   "PROCEDURAL",
    null,
-   "[row 66 text not reproduced]"
+   "Assembly immediately resolved itself into a Committee on the Bill. [Inche Abdul Hamid.]"
   ]
  ],
  "expected_divisions": [

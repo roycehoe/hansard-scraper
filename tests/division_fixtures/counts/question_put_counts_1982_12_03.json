@@ -1,5 +1,5 @@
 {
- "why": "Question put with the counts directly after it is a division line; a plain Question put is not (report 33002, 3 December 1982). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "why": "Question put with the counts directly after it is a division line; a plain Question put is not (report 33002, 3 December 1982).",
  "rows": [
   [
    8,
@@ -15,33 +15,33 @@
   ],
   [
    193,
-   "UNCLASSIFIED",
+   "PROCEDURAL",
    null,
-   "[list name 193]"
+   "Bill accordingly read a Second time and committed to a Committee of the whole House."
   ],
   [
    194,
-   "UNCLASSIFIED",
+   "PROCEDURAL",
    null,
-   "[list name 194]"
+   "The House immediately resolved itself into a Committee on the Bill. - [Mr Ong Teng Cheong]."
   ],
   [
    195,
-   "UNCLASSIFIED",
+   "PROCEDURAL",
    null,
-   "[list name 195]"
+   "Bill considered in Committee."
   ],
   [
    196,
-   "UNCLASSIFIED",
+   "PROCEDURAL",
    null,
-   "[list name 196]"
+   "Clauses 1 to 5 inclusive ordered to stand part of the Bill."
   ],
   [
    214,
    "PROCEDURAL",
    null,
-   "Question put: Ayes, 1; Noes, 36; Abstentions, 1."
+   "Question put: Ayes, 1 ; Noes, 36; Abstentions, 1."
   ]
  ],
  "expected_divisions": [
@@ -61,7 +61,7 @@
    "report_division_number": 2,
    "speech_ordinal": 214,
    "count_source": "PRINTED_LINE",
-   "printed_counts": "Question put: Ayes, 1; Noes, 36; Abstentions, 1",
+   "printed_counts": "Question put: Ayes, 1 ; Noes, 36; Abstentions, 1",
    "ayes": 1,
    "noes": 36,
    "abstentions": 1,
