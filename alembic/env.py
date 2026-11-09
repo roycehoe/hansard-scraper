@@ -15,6 +15,7 @@ import database.division  # noqa: F401
 import database.egazette_supplement  # noqa: F401
 import database.hansard_sitting_date_response  # noqa: F401
 import database.hansard_website_response  # noqa: F401
+import database.minutes  # noqa: F401
 import database.party_affiliation  # noqa: F401
 import database.person  # noqa: F401
 import database.person_name_spelling  # noqa: F401
