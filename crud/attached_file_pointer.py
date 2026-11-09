@@ -1,10 +1,12 @@
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import text
 from sqlmodel import Session, col, delete, func, select
 
 from database.attached_file_pointer import AttachedFilePointer
+from database.report import Report
 from enums import AttachedFilePointerShape, ParagraphTieRule
 from utils.attached_file_tie import AttachedFilePointerTie
 
@@ -25,6 +27,21 @@ class AttachedFilePointerRow:
 class AttachedFilePointerUntiedRow:
     id: int
     download_value: str
+
+
+@dataclass(frozen=True)
+class AttachedFilePointerCheckRow:
+    id: int
+    sprs_report_id: str
+    ordinal: int
+    printed_text: str
+    speech_ordinal: int
+    paragraph_tie_rule: ParagraphTieRule
+    attached_file_id: Optional[int]
+    report_int_id: int
+    report_type: str
+    sitting_date: datetime
+    report_title: str
 
 
 class CRUDAttachedFilePointer:
@@ -108,3 +125,31 @@ class CRUDAttachedFilePointer:
         )
 
         return self.session.exec(statement).rowcount
+
+    def get_check_rows_by_speech_ordinal_not_null(
+        self,
+    ) -> list[AttachedFilePointerCheckRow]:
+        statement = (
+            select(
+                AttachedFilePointer.id,
+                AttachedFilePointer.sprs_report_id,
+                AttachedFilePointer.ordinal,
+                AttachedFilePointer.printed_text,
+                AttachedFilePointer.speech_ordinal,
+                AttachedFilePointer.paragraph_tie_rule,
+                AttachedFilePointer.attached_file_id,
+                Report.id,
+                Report.report_type,
+                Report.sitting_date,
+                Report.title,
+            )
+            .join(
+                Report, col(AttachedFilePointer.sprs_report_id) == col(Report.report_id)
+            )
+            .where(col(AttachedFilePointer.speech_ordinal).is_not(None))
+            .order_by(AttachedFilePointer.sprs_report_id, AttachedFilePointer.ordinal)
+        )
+        return [
+            AttachedFilePointerCheckRow(*row)
+            for row in self.session.exec(statement).all()
+        ]

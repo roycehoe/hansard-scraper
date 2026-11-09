@@ -295,6 +295,17 @@ class ParagraphTieRule(StrEnum):
     OCCURRENCE_BESIDE_PLAIN_TEXT = "OCCURRENCE_BESIDE_PLAIN_TEXT"
 
 
+class AttachedFileCheckPlantKind(StrEnum):
+    PARAGRAPH = "PARAGRAPH"
+    FILE = "FILE"
+
+
+class AttachedFileCheckAnswer(StrEnum):
+    RIGHT = "RIGHT"
+    WRONG = "WRONG"
+    UNSURE = "UNSURE"
+
+
 class ActHistoryDefect(StrEnum):
     MISSING_YEAR = "MISSING_YEAR"
     EMPTY_VALUE = "EMPTY_VALUE"

@@ -47,3 +47,19 @@ class CRUDAttachedFile:
             AttachedFile.printed_title,
         )
         return [AttachedFileKeyRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_by_ids(self, attached_file_ids: list[int]) -> list[AttachedFile]:
+        statement = (
+            select(AttachedFile)
+            .where(col(AttachedFile.id).in_(attached_file_ids))
+            .order_by(AttachedFile.id)
+        )
+        return list(self.session.exec(statement).all())
+
+    def get_by_sitting_ids(self, sitting_ids: list[int]) -> list[AttachedFile]:
+        statement = (
+            select(AttachedFile)
+            .where(col(AttachedFile.sitting_id).in_(sitting_ids))
+            .order_by(AttachedFile.id)
+        )
+        return list(self.session.exec(statement).all())

@@ -270,6 +270,20 @@ def build_attached_file_pointers(
     return attached_file_pointers
 
 
+def get_pointer_paragraph_text(content: str, ordinal: int) -> str:
+    pointer_links = _get_pointer_links(BeautifulSoup(content, "html.parser"))
+    try:
+        pointer_tag = pointer_links[ordinal - 1].tag
+    except IndexError as error:
+        raise HansardAttachedFileError(
+            f"The report holds {len(pointer_links)} pointers, not {ordinal}"
+        ) from error
+    paragraph = pointer_tag.find_parent("p")
+    if paragraph is None:
+        return str(pointer_tag.parent.get_text())
+    return str(paragraph.get_text())
+
+
 def get_bad_file_link_count(content: Optional[str]) -> int:
     if content is None:
         return 0
