@@ -6,7 +6,7 @@
 
 ## What a run does
 
-A run only adds rows. It never re-parses a stored report and never rewrites a stored row, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
+A run adds rows, and widens the three bounds columns of a stored `seat_holding` row. It never re-parses a stored report and never rewrites any other stored row, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
 
 In order, a run:
 
@@ -26,15 +26,17 @@ Then, for each month in order, the run:
 11. Runs stage 8, the speaker links, on the new speech and attendance rows only.
 12. Finds the askers of the new parliamentary question reports (`oral-answer`, `written-answer` and `written-answer-na`) and inserts one `report_asker` row for each asker. It reads the speaker links that step 11 set, and it never deletes: the role has no DELETE and a new report has no rows.
 13. Labels the participants of those reports and inserts one `report_participant` row for each person and role, and one `report_question_state` row for each state the record prints. It reads the askers that step 12 stored and raises if its asker, absent filer and reader rows differ from them, which rolls back the month. It never deletes, for the same reason.
-14. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
-15. Commits the month. A halt or a failure rolls back only the month in progress.
+14. Reads the permission list of each new sitting and inserts one `leave_period_printing` row for each entry, with a `leave_period` row for each period no stored row holds. The office on a printing comes from the sitting's attendance list. It never deletes and never updates a stored row.
+15. Adds the `seat_holding` rows of the Members in the new sittings' attendance rows, and widens `first_sitting_date`, `last_sitting_date` and `sitting_count` on a stored row. Those three columns are the only ones the run updates on this table, and it never deletes.
+16. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
+17. Commits the month. A halt or a failure rolls back only the month in progress.
 
 After the last month, the run:
 
-16. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
-17. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
-18. Records the counts and marks the row `SUCCEEDED`.
-19. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
+18. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
+19. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
+20. Records the counts and marks the row `SUCCEEDED`.
+21. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
 
 `refresh.py` exits 0 on success, 2 on a halt and 1 on a failure, after the failure's error propagates.
 
@@ -196,11 +198,14 @@ GRANT USAGE ON SCHEMA public TO hansard_refresh;
 GRANT SELECT ON hansardwebsiteresponse, hansardsittingdateresponse, report, speech, sitting, attendance, speaker, refresh_run TO hansard_refresh;
 GRANT INSERT ON hansardwebsiteresponse, hansardsittingdateresponse, report, speech, sitting, attendance, refresh_run TO hansard_refresh;
 GRANT UPDATE (speaker_id) ON speech, attendance TO hansard_refresh;
+GRANT UPDATE (first_sitting_date, last_sitting_date, sitting_count) ON seat_holding TO hansard_refresh;
 GRANT SELECT, INSERT ON report_asker, report_participant, report_question_state TO hansard_refresh;
+GRANT SELECT, INSERT ON leave_period, leave_period_printing, seat_holding TO hansard_refresh;
 GRANT UPDATE ON refresh_run TO hansard_refresh;
 GRANT MAINTAIN ON speech, report, attendance TO hansard_refresh;
 GRANT USAGE ON SEQUENCE hansardwebsiteresponse_id_seq, hansardsittingdateresponse_id_seq, report_id_seq, speech_id_seq, sitting_id_seq, sittingattendance_id_seq, refresh_run_id_seq TO hansard_refresh;
 GRANT USAGE ON SEQUENCE report_asker_id_seq, report_participant_id_seq, report_question_state_id_seq TO hansard_refresh;
+GRANT USAGE ON SEQUENCE leave_period_id_seq, leave_period_printing_id_seq, seat_holding_id_seq TO hansard_refresh;
 GRANT SELECT (id, website_responses_added, sitting_date_responses_added, sittings_added, reports_added, speeches_added, speeches_linked, speeches_named_unlinked, attendances_added, attendances_linked, reports_held_without_text, reports_without_speech_rows, reports_rechecked, reports_changed, latest_sitting_date_with_text, figures, started_at, finished_at, status) ON refresh_run TO <the API's read-only role>;
 ```
 
