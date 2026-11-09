@@ -92,7 +92,7 @@ _TYPO_KEY = "typo_key"
 _SPEAKER_OVERRIDES_FILE_NAME = "speaker_overrides.json"
 _EXCLUDED_REPORT_IDS_FILE_NAME = "excluded_report_ids.json"
 _HAND_CHECK_OFFICE_HOLDERS_FILE_NAME = "hand_check_office_holders.json"
-_MINISTRY_NAME_COUNT = 47
+_MINISTRY_NAME_COUNT = 48
 
 
 def _get_record_count(loaded: object) -> int:
