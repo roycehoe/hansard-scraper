@@ -1,9 +1,11 @@
 from dataclasses import dataclass
+from datetime import date
 
 from sqlalchemy import Integer, update
 from sqlmodel import Session, col, delete, func, select
 
 from database.seat_holding import SeatHolding
+from database.speaker import Speaker
 from utils.seat_holding_update import SeatHoldingUpdate
 
 _LOCATION_NAME_SEPARATOR_PATTERN = r"[[:space:]-]+"
@@ -17,6 +19,17 @@ _YEARS_IN_DECADE = 10
 class SeatHoldingDecadeCount:
     decade: int
     seat_holding_count: int
+
+
+@dataclass(frozen=True)
+class SeatHoldingCheckRow:
+    id: int
+    division_key: str
+    location_name: str
+    first_sitting_date: date
+    last_sitting_date: date
+    sitting_count: int
+    speaker_name: str
 
 
 class CRUDSeatHolding:
@@ -54,6 +67,22 @@ class CRUDSeatHolding:
             ],
         )
         self.session.flush()
+
+    def get_check_rows(self) -> list[SeatHoldingCheckRow]:
+        statement = (
+            select(
+                SeatHolding.id,
+                SeatHolding.division_key,
+                SeatHolding.location_name,
+                SeatHolding.first_sitting_date,
+                SeatHolding.last_sitting_date,
+                SeatHolding.sitting_count,
+                Speaker.name,
+            )
+            .join(Speaker, col(Speaker.id) == col(SeatHolding.speaker_id))
+            .order_by(col(SeatHolding.id))
+        )
+        return [SeatHoldingCheckRow(*row) for row in self.session.exec(statement).all()]
 
     def delete_by_ids(self, seat_holding_ids: list[int]) -> int:
         statement = delete(SeatHolding).where(col(SeatHolding.id).in_(seat_holding_ids))
