@@ -6,17 +6,20 @@ from typing import Union
 from sqlmodel import Session
 
 from crud.act_history_entry import CRUDActHistoryEntry
+from crud.bill import CRUDBill
 from crud.bill_key import CRUDBillKey
 from crud.bill_report import BillReportSittingDateReportTypeRow, CRUDBillReport
 from crud.bill_report_speaker import BillReportSpeakerRow, CRUDBillReportSpeaker
 from crud.bill_stage_line import BillStageLineRow, CRUDBillStageLine
-from crud.report import CRUDReport
+from crud.report import CRUDReport, ReportPlacementRow
 from crud.speech import CRUDSpeech
+from database.bill import Bill, BillReport
 from database.bill_key import BillKey
 from database.bill_report_speaker import BillReportSpeaker
 from database.bill_stage_line import BillStageLine
-from enums import BillStage, SpeechKind
+from enums import BillReportRole, BillStage, ReportType, SpeechKind
 from exceptions import HansardWriteCheckError
+from logs import logger
 from services.bill import (
     FIRST_READING_PATTERN,
     NOT_FIRST_READING_PATTERNS,
@@ -24,16 +27,23 @@ from services.bill import (
     SECOND_READING_AGREED_PATTERN,
     SECOND_READING_PATTERN,
     THIRD_READING_PATTERN,
+    BillPlacement,
+    get_bill_class,
+    is_other_type_bill_reading,
+    place_bill_reports,
 )
 from services.bill_speaker import (
     build_bill_report_speakers,
     build_bill_stage_lines,
     get_bill_key,
 )
+from utils.bill_join_update import BillJoinUpdate
+from utils.title_key import get_title_key
 
 _REPORT_BATCH = 200
 _YEARS_PER_DECADE = 10
 _STAGE_LINE_KINDS = (SpeechKind.PROCEDURAL, SpeechKind.UNCLASSIFIED)
+_BILL_REPORT_TYPES = (ReportType.BILL, ReportType.BILL_INTRODUCTION)
 
 
 @dataclass(frozen=True)
@@ -388,3 +398,185 @@ def write_report_bill_speaker_plan(
     CRUDBillReportSpeaker(session).add_many(plan.bill_report_speakers)
     CRUDBillStageLine(session).add_many(plan.bill_stage_lines)
     _validate_can_commit_report_bill_speaker_plan(session, plan)
+
+
+def _get_matching_report_ids(
+    session: Session,
+    report_ids: list[int],
+    pattern: str,
+    not_patterns: tuple[str, ...],
+) -> frozenset[int]:
+    return frozenset(
+        CRUDSpeech(
+            session
+        ).get_report_ids_by_report_ids_and_transcript_regex_and_transcript_not_regexes(
+            report_ids, pattern, not_patterns
+        )
+    )
+
+
+def _get_bill_report_rows(
+    session: Session,
+    report_ids: list[int],
+    first_reading_report_ids: frozenset[int],
+    third_reading_report_ids: frozenset[int],
+) -> list[ReportPlacementRow]:
+    second_reading_report_ids = _get_matching_report_ids(
+        session, report_ids, SECOND_READING_PATTERN, ()
+    )
+    return [
+        report_row
+        for report_row in CRUDReport(session).get_placement_rows_by_ids(report_ids)
+        if report_row.report_type in _BILL_REPORT_TYPES
+        or is_other_type_bill_reading(
+            report_row.title,
+            report_row.id in first_reading_report_ids,
+            report_row.id in second_reading_report_ids,
+            report_row.id in third_reading_report_ids,
+        )
+    ]
+
+
+def _get_bill_placement(session: Session, report_ids: list[int]) -> BillPlacement:
+    first_reading_report_ids = _get_matching_report_ids(
+        session, report_ids, FIRST_READING_PATTERN, NOT_FIRST_READING_PATTERNS
+    )
+    third_reading_report_ids = _get_matching_report_ids(
+        session, report_ids, THIRD_READING_PATTERN, NOT_THIRD_READING_PATTERNS
+    )
+    report_rows = _get_bill_report_rows(
+        session, report_ids, first_reading_report_ids, third_reading_report_ids
+    )
+    stored_bill_rows = CRUDBill(session).get_rows_by_title_keys(
+        sorted({get_title_key(report_row.title) for report_row in report_rows})
+    )
+    bill_id_to_bill_key = {
+        bill_key_row.bill_id: bill_key_row.bill_key
+        for bill_key_row in CRUDBillKey(session).get_rows_by_bill_ids(
+            [stored_bill_row.id for stored_bill_row in stored_bill_rows]
+        )
+    }
+    return place_bill_reports(
+        report_rows,
+        first_reading_report_ids,
+        third_reading_report_ids,
+        stored_bill_rows,
+        bill_id_to_bill_key,
+    )
+
+
+def _write_bill_placement(session: Session, bill_placement: BillPlacement) -> list[int]:
+    new_bills: list[Bill] = []
+    new_report_rows_by_bill: list[list[ReportPlacementRow]] = []
+    bill_join_updates: list[BillJoinUpdate] = []
+    joined_bill_reports: list[BillReport] = []
+    for placed_bill in bill_placement.placed_bills:
+        if placed_bill.bill_id is None:
+            new_bills.append(
+                Bill(
+                    title=placed_bill.title,
+                    title_key=placed_bill.title_key,
+                    first_sitting_date=placed_bill.first_sitting_date,
+                    last_sitting_date=placed_bill.last_sitting_date,
+                    is_passed=placed_bill.is_passed,
+                    bill_class=get_bill_class(placed_bill.title_key),
+                )
+            )
+            new_report_rows_by_bill.append(placed_bill.report_rows)
+            continue
+        bill_join_updates.append(
+            BillJoinUpdate(
+                placed_bill.bill_id,
+                placed_bill.title,
+                placed_bill.last_sitting_date,
+                placed_bill.is_passed,
+            )
+        )
+        joined_bill_reports.extend(
+            BillReport(
+                role=BillReportRole.READING,
+                bill_id=placed_bill.bill_id,
+                report_id=report_row.id,
+            )
+            for report_row in placed_bill.report_rows
+        )
+    CRUDBill(session).add_many(new_bills)
+    CRUDBill(session).update_title_and_last_sitting_date_and_is_passed_many(
+        bill_join_updates
+    )
+    new_bill_reports: list[BillReport] = []
+    bill_keys: list[BillKey] = []
+    for new_bill, report_rows in zip(new_bills, new_report_rows_by_bill, strict=True):
+        if new_bill.id is None:
+            continue
+        new_bill_reports.extend(
+            BillReport(
+                role=BillReportRole.READING,
+                bill_id=new_bill.id,
+                report_id=report_row.id,
+            )
+            for report_row in report_rows
+        )
+        bill_keys.append(
+            BillKey(
+                act_count=0,
+                bill_key=get_bill_key(
+                    new_bill.id,
+                    [
+                        BillReportSittingDateReportTypeRow(
+                            new_bill.id,
+                            report_row.id,
+                            report_row.report_id,
+                            report_row.sitting_date,
+                            report_row.report_type,
+                            BillReportRole.READING,
+                        )
+                        for report_row in report_rows
+                    ],
+                ),
+                bill_id=new_bill.id,
+            )
+        )
+    CRUDBillReport(session).add_many(joined_bill_reports + new_bill_reports)
+    CRUDBillKey(session).add_many(bill_keys)
+    return [
+        report_row.id
+        for placed_bill in bill_placement.placed_bills
+        for report_row in placed_bill.report_rows
+    ]
+
+
+# NOTE: inserts and a three-column update only, because the refresh role has no DELETE grant and Postgres checks it per statement
+def populate_bill_speakers(session: Session, report_ids: list[int]) -> None:
+    placed_report_ids = {
+        bill_report_row.report_id
+        for bill_report_row in CRUDBillReport(
+            session
+        ).get_sitting_date_report_type_rows_by_report_ids(report_ids)
+    }
+    bill_placement = _get_bill_placement(
+        session,
+        [report_id for report_id in report_ids if report_id not in placed_report_ids],
+    )
+    for left_out_report in bill_placement.left_out_reports:
+        logger.info(
+            f"Bill report {left_out_report.report_row.report_id} left out: {left_out_report.reason}"
+        )
+    newly_placed_report_ids = _write_bill_placement(session, bill_placement)
+    report_bill_speaker_plan = get_report_bill_speaker_plan(
+        session, newly_placed_report_ids
+    )
+    CRUDBillReportSpeaker(session).add_many(
+        report_bill_speaker_plan.bill_report_speakers
+    )
+    CRUDBillStageLine(session).add_many(report_bill_speaker_plan.bill_stage_lines)
+    started_bill_count = len(
+        [
+            placed_bill
+            for placed_bill in bill_placement.placed_bills
+            if placed_bill.bill_id is None
+        ]
+    )
+    logger.info(
+        f"Bills: placed {len(newly_placed_report_ids)} reports, started {started_bill_count} bills, left out {len(bill_placement.left_out_reports)} reports, added {len(report_bill_speaker_plan.bill_report_speakers)} members and {len(report_bill_speaker_plan.bill_stage_lines)} stage lines"
+    )

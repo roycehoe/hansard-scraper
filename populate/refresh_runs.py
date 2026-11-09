@@ -37,6 +37,7 @@ from gateway.telegram import send_telegram_message
 from logs import logger
 from populate.attendance_offices import populate_attendance_offices
 from populate.attribution_figures import get_attribution_figures
+from populate.bill_speakers import populate_bill_speakers
 from populate.office_printed_ranges import populate_office_printed_ranges
 from populate.office_title_ministries import populate_office_title_ministries
 from populate.report_askers import populate_report_askers
@@ -687,6 +688,7 @@ def _write_window_rows(
     window_result.late_sitting_dates = populate_office_printed_ranges(
         session, sitting_ids
     )
+    populate_bill_speakers(session, report_ids)
 
     window_result.website_responses_added = len(hansard_website_responses)
     window_result.reports_added = len(reports)

@@ -7,6 +7,7 @@ from typing import Optional
 from sqlmodel import Session, col, select
 
 from database.bill import Bill, BillReport
+from database.bill_key import BillKey
 from database.report import Report
 from database.speaker import Speaker
 from database.speech import Speech
@@ -90,6 +91,35 @@ def seed_bill(
         BillReport(role=role, bill_id=bill.id, report_id=report_id)
         for report_id, role in report_id_to_role.items()
     )
+    session.commit()
+    return bill.id
+
+
+def seed_stored_bill(
+    session: Session,
+    title: str,
+    report_ids: list[int],
+    first_sitting_date: datetime,
+    last_sitting_date: datetime,
+    is_passed: bool,
+    bill_key: Optional[str],
+) -> int:
+    bill = Bill(
+        title=title,
+        title_key=get_title_key(title),
+        first_sitting_date=first_sitting_date,
+        last_sitting_date=last_sitting_date,
+        is_passed=is_passed,
+    )
+    session.add(bill)
+    session.flush()
+    assert bill.id is not None
+    session.add_all(
+        BillReport(role=BillReportRole.READING, bill_id=bill.id, report_id=report_id)
+        for report_id in report_ids
+    )
+    if bill_key is not None:
+        session.add(BillKey(act_count=0, bill_key=bill_key, bill_id=bill.id))
     session.commit()
     return bill.id
 

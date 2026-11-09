@@ -11,7 +11,7 @@ The website built on this database is [roycehoe/hansard](https://github.com/royc
 
 ## Status
 
-To keep up with new sittings, I've scheduled `refresh.py` to run once a day and add those SPRS has published since the last stored one. It only adds rows and never re-parses a stored report. [docs/refresh.md](docs/refresh.md) describes a run.
+To keep up with new sittings, I've scheduled `refresh.py` to run once a day and add those SPRS has published since the last stored one. It adds rows, updates three columns of a Bill when a new report joins it, and never re-parses a stored report. [docs/refresh.md](docs/refresh.md) describes a run.
 
 ## Getting the data
 

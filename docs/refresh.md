@@ -6,7 +6,7 @@
 
 ## What a run does
 
-A run only adds rows. It never re-parses a stored report and never rewrites a stored row, except that step 17 extends a stored printed office range, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
+A run only adds rows, apart from three columns of a stored Bill (`title`, `last_sitting_date` and `is_passed`) that move when a new report joins it. It never re-parses a stored report and never rewrites any other stored row, except that step 17 extends a stored printed office range, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
 
 In order, a run:
 
@@ -30,16 +30,17 @@ Then, for each month in order, the run:
 15. Reads the office each new parliamentary question report was put to and inserts one `report_put_to` row for each. It never deletes.
 16. Places each printed office title of the month's new sittings and reports under its ministries and inserts one `office_title_ministry` row for each placement. A title already placed is left alone. A title the rule and the hand-kept list cannot place, or one that names a ministry missing from the `ministry` table, gets no row and goes to the alert. It never writes `ministry` or `ministry_see_also`, and it never deletes.
 17. Adds the month's new sittings to the printed office ranges: it inserts a range for each new run of a title and extends a stored range by `UPDATE`. If a new sitting is dated earlier than the latest sitting that holds an office row, it writes no range for the month and sends the dates to the alert. It never deletes.
-18. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
-19. Commits the month. A halt or a failure rolls back only the month in progress.
+18. Places the month's new Bill reports in Bills, one report at a time, with the start-a-new-Bill test that `apply_act_links` uses. It inserts a new `bill` row (with its class), `billreport` READING rows and one `billkey` row with an Act count of 0 for a Bill it starts, and it updates only `title`, `last_sitting_date` and `is_passed` of a Bill a report joins, adding no key row for it. It then inserts the `billreportspeaker` and `billstageline` rows of the placed reports. It leaves out, and logs, a report whose title lacks the word Bill, one dated before its open Bill's last sitting, one whose title's latest date two Bills share, and one dated on a keyed Bill's first sitting date whose SPRS id sorts below the key. It never deletes, because the role has no DELETE.
+19. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
+20. Commits the month. A halt or a failure rolls back only the month in progress.
 
 After the last month, the run:
 
-20. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
-21. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
-22. Reads the whole corpus, inserts the `report_link` rows the plan has and the table lacks, and counts the stored rows that differ from the plan. It never deletes or updates, and a stale count above 0 sends an alert. The month rows are already committed, so a failure here fails the run and keeps them.
-23. Records the counts and marks the row `SUCCEEDED`.
-24. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
+21. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
+22. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
+23. Reads the whole corpus, inserts the `report_link` rows the plan has and the table lacks, and counts the stored rows that differ from the plan. It never deletes or updates, and a stale count above 0 sends an alert. The month rows are already committed, so a failure here fails the run and keeps them.
+24. Records the counts and marks the row `SUCCEEDED`.
+25. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
 
 The report link step is the last before the run finishes, so a supervised `python -m scripts.apply_report_links --commit` is the only path that removes a `report_link` row. Production order is the migration, then these grants, then the code, because the step fails every refresh without the table and grants.
 
@@ -100,7 +101,7 @@ A VACUUM that fails, or that Postgres skips, is a failure too. Postgres skips a 
 
 Two cases are known and accepted:
 
-- A run swept as stale by another run keeps committing its months. Each month only adds rows, and the swept run cannot overwrite its `FAILED` status when it ends.
+- A run swept as stale by another run keeps committing its months. Each month only adds rows and updates the three Bill columns of step 14, and the swept run cannot overwrite its `FAILED` status when it ends.
 - A killed supervised run leaves its row `RUNNING`, which blocks the next run for 12 hours. Mark it failed by hand:
 
   ```sql
@@ -209,11 +210,14 @@ GRANT SELECT, INSERT ON report_asker, report_participant, report_question_state,
 GRANT SELECT, INSERT ON attendance_office, report_put_to, office_title_ministry TO hansard_refresh;
 GRANT SELECT, INSERT, UPDATE ON office_printed_range TO hansard_refresh;
 GRANT SELECT ON ministry, ministry_see_also TO hansard_refresh;
+GRANT SELECT, INSERT ON bill, billreport, billkey, billreportspeaker, billstageline TO hansard_refresh;
+GRANT UPDATE (title, last_sitting_date, is_passed) ON bill TO hansard_refresh;
 GRANT UPDATE ON refresh_run TO hansard_refresh;
 GRANT MAINTAIN ON speech, report, attendance TO hansard_refresh;
 GRANT USAGE ON SEQUENCE hansardwebsiteresponse_id_seq, hansardsittingdateresponse_id_seq, report_id_seq, speech_id_seq, sitting_id_seq, sittingattendance_id_seq, refresh_run_id_seq TO hansard_refresh;
 GRANT USAGE ON SEQUENCE report_asker_id_seq, report_participant_id_seq, report_question_state_id_seq, report_link_id_seq TO hansard_refresh;
 GRANT USAGE ON SEQUENCE attendance_office_id_seq, office_printed_range_id_seq, report_put_to_id_seq, office_title_ministry_id_seq TO hansard_refresh;
+GRANT USAGE ON SEQUENCE bill_id_seq, billreport_id_seq, billkey_id_seq, billreportspeaker_id_seq, billstageline_id_seq TO hansard_refresh;
 GRANT SELECT (id, website_responses_added, sitting_date_responses_added, sittings_added, reports_added, speeches_added, speeches_linked, speeches_named_unlinked, attendances_added, attendances_linked, reports_held_without_text, reports_without_speech_rows, reports_rechecked, reports_changed, latest_sitting_date_with_text, figures, started_at, finished_at, status) ON refresh_run TO <the API's read-only role>;
 GRANT SELECT ON report_link TO <the API's read-only role>;
 ```
@@ -222,7 +226,23 @@ The office migration and these grants come before any push of the daily job, bec
 
 The table and sequence names are those on the scratch copy. `attendance` owns `sittingattendance_id_seq`, a name kept from an older table name. Confirm each name on the remote with `\d <table>` first.
 
-The role gets no DELETE or TRUNCATE on any table. It gets no `UPDATE` on `hansardwebsiteresponse`, `hansardsittingdateresponse` or `speaker`, and no `CREATE`, so it cannot run migrations. Migrations stay supervised, with the owner role. `SELECT ... FOR UPDATE` on `refresh_run` needs the `UPDATE` grant the role has. `MAINTAIN` lets the role run `VACUUM` and `ANALYZE` on the three tables, and also `REINDEX` and `CLUSTER`, which the refresh never runs. Royce granted it on the remote on 21 October 2026, as `doadmin`, the tables' owner. The figures pass reads every report and speech row, which the `SELECT` grants cover.
+A push to `master` deploys this stage, and every run fails until the tables and these grants exist, so the migrations and the grants come first. Royce runs this after the grants and before the push. Every row must be true. The build never runs it.
+
+```sql
+SELECT table_name AS object, 'SELECT' AS privilege, has_table_privilege('hansard_refresh', table_name, 'SELECT') AS is_granted
+FROM unnest(ARRAY['bill', 'billreport', 'billkey', 'billreportspeaker', 'billstageline']) AS table_name
+UNION ALL
+SELECT table_name, 'INSERT', has_table_privilege('hansard_refresh', table_name, 'INSERT')
+FROM unnest(ARRAY['bill', 'billreport', 'billkey', 'billreportspeaker', 'billstageline']) AS table_name
+UNION ALL
+SELECT 'bill.' || column_name, 'UPDATE', has_column_privilege('hansard_refresh', 'bill', column_name, 'UPDATE')
+FROM unnest(ARRAY['title', 'last_sitting_date', 'is_passed']) AS column_name
+UNION ALL
+SELECT sequence_name, 'USAGE', has_sequence_privilege('hansard_refresh', sequence_name, 'USAGE')
+FROM unnest(ARRAY['bill_id_seq', 'billreport_id_seq', 'billkey_id_seq', 'billreportspeaker_id_seq', 'billstageline_id_seq']) AS sequence_name;
+```
+
+The role gets no DELETE or TRUNCATE on any table. It gets no `UPDATE` on `hansardwebsiteresponse`, `hansardsittingdateresponse` or `speaker`, and `UPDATE` on three columns of `bill` only (`title`, `last_sitting_date` and `is_passed`), and no `CREATE`, so it cannot run migrations. Migrations stay supervised, with the owner role. `SELECT ... FOR UPDATE` on `refresh_run` needs the `UPDATE` grant the role has. `MAINTAIN` lets the role run `VACUUM` and `ANALYZE` on the three tables, and also `REINDEX` and `CLUSTER`, which the refresh never runs. Royce granted it on the remote on 21 October 2026, as `doadmin`, the tables' owner. The figures pass reads every report and speech row, which the `SELECT` grants cover.
 
 The API's role gets a column grant that leaves out `halt_reason` and `failure_reason`, because a failure reason can carry database host and user names. Batch E's reader never selects those two columns.
 
