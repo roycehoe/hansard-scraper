@@ -1,4 +1,5 @@
 import json
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -117,6 +118,86 @@ def seed_speech(
         )
     )
     session.commit()
+
+
+BILL_SPEECHES_FIRST_SPRS_REPORT_ID = "speeches-first"
+BILL_SPEECHES_THIRD_SPRS_REPORT_ID = "speeches-third"
+SPEAKER_A_LABEL = "Ms A"
+SPEAKER_B_LABEL = "Mr B"
+
+
+@dataclass(frozen=True)
+class SeededBillSpeeches:
+    bill_id: int
+    first_report_id: int
+    third_report_id: int
+    speaker_a_id: int
+    speaker_b_id: int
+
+
+def seed_bill_speeches(session: Session) -> SeededBillSpeeches:
+    speaker_a_id = seed_speaker(session, SPEAKER_A_LABEL)
+    speaker_b_id = seed_speaker(session, SPEAKER_B_LABEL)
+    first_report_id = seed_bill_report(
+        session,
+        BILL_SPEECHES_FIRST_SPRS_REPORT_ID,
+        ReportType.BILL_INTRODUCTION,
+        datetime(2024, 11, 12),
+        "Food Bill",
+        [],
+    )
+    third_report_id = seed_bill_report(
+        session,
+        BILL_SPEECHES_THIRD_SPRS_REPORT_ID,
+        ReportType.BILL,
+        datetime(2025, 1, 8),
+        "Food Bill",
+        [],
+    )
+    first_report_rows = (
+        (1, None, None, SpeechKind.PROCEDURAL, "Bill read a First time."),
+        (2, SPEAKER_A_LABEL, speaker_a_id, SpeechKind.SPEECH, "I support the Bill."),
+        (3, SPEAKER_B_LABEL, speaker_b_id, SpeechKind.SPEECH, "I have a question."),
+        (4, SPEAKER_A_LABEL, speaker_a_id, SpeechKind.SPEECH, "I thank the House."),
+        (5, "Hon Member", None, SpeechKind.SPEECH, "Sir."),
+    )
+    third_report_rows = (
+        (
+            1,
+            None,
+            None,
+            SpeechKind.UNCLASSIFIED,
+            "Bill accordingly read a Second time and committed to a Committee of the whole House.",
+        ),
+        (2, SPEAKER_A_LABEL, speaker_a_id, SpeechKind.SPEECH, "Clause 1 is agreed."),
+        (3, None, None, SpeechKind.PROCEDURAL, "Bill read a Third time and passed."),
+        (
+            4,
+            SPEAKER_A_LABEL,
+            speaker_a_id,
+            SpeechKind.SPEECH,
+            "Bill read a Third time and passed.",
+        ),
+    )
+    for ordinal, speaker, speaker_id, kind, transcript in first_report_rows:
+        seed_speech(
+            session, first_report_id, ordinal, speaker, speaker_id, kind, transcript
+        )
+    for ordinal, speaker, speaker_id, kind, transcript in third_report_rows:
+        seed_speech(
+            session, third_report_id, ordinal, speaker, speaker_id, kind, transcript
+        )
+    bill_id = seed_bill(
+        session,
+        "Food Bill",
+        {
+            first_report_id: BillReportRole.READING,
+            third_report_id: BillReportRole.READING,
+        },
+    )
+    return SeededBillSpeeches(
+        bill_id, first_report_id, third_report_id, speaker_a_id, speaker_b_id
+    )
 
 
 _ESTATE_DUTY_ACT_TEXT = """\
