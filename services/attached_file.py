@@ -167,6 +167,9 @@ class _ParagraphTie:
     paragraph_tie_rule: Optional[ParagraphTieRule]
 
 
+_UNTIED_PARAGRAPH = _ParagraphTie(None, None)
+
+
 def _get_occurrence_ordinals(
     words: str, ordinal_to_normalized_transcript: dict[int, str]
 ) -> list[int]:
@@ -217,7 +220,7 @@ def _tie_pointer_links_to_paragraphs(
     paragraph_ties = []
     for pointer_index, words in enumerate(pointer_words):
         if not words:
-            paragraph_ties.append(_ParagraphTie(None, None))
+            paragraph_ties.append(_UNTIED_PARAGRAPH)
             continue
         text_count = normalized_whole_text.count(words)
         occurrence_ordinals = _get_occurrence_ordinals(
@@ -227,10 +230,10 @@ def _tie_pointer_links_to_paragraphs(
             whole_text[: pointer_index_to_offset[pointer_index]]
         ).count(words)
         if len(occurrence_ordinals) != text_count:
-            paragraph_ties.append(_ParagraphTie(None, None))
+            paragraph_ties.append(_UNTIED_PARAGRAPH)
             continue
         if occurrence_index >= len(occurrence_ordinals):
-            paragraph_ties.append(_ParagraphTie(None, None))
+            paragraph_ties.append(_UNTIED_PARAGRAPH)
             continue
         paragraph_ties.append(
             _ParagraphTie(

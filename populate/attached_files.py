@@ -165,6 +165,12 @@ def _get_file_key(
     return (key_row.sitting_id, key_row.kind, key_row.sprs_file_id)
 
 
+def _get_planned_file_key(
+    attached_file: AttachedFile,
+) -> tuple[int, AttachedFileKind, int]:
+    return _get_file_key(_build_planned_key_row(attached_file))
+
+
 def _get_stored_file_keys(session: Session) -> set[tuple[int, AttachedFileKind, int]]:
     return {
         _get_file_key(key_row) for key_row in CRUDAttachedFile(session).get_key_rows()
@@ -179,8 +185,7 @@ def _add_new_attached_files(
         [
             attached_file
             for attached_file in attached_files
-            if _get_file_key(_build_planned_key_row(attached_file))
-            not in stored_file_keys
+            if _get_planned_file_key(attached_file) not in stored_file_keys
         ]
     )
 
@@ -326,7 +331,7 @@ def _validate_can_commit_attached_files(
 ) -> None:
     stored_file_keys = _get_stored_file_keys(session)
     for attached_file in plan.attached_files:
-        planned_key = _get_file_key(_build_planned_key_row(attached_file))
+        planned_key = _get_planned_file_key(attached_file)
         if planned_key not in stored_file_keys:
             raise HansardWriteCheckError(
                 f"Planned attached file {planned_key} is not stored"
