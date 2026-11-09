@@ -6,6 +6,7 @@ from schemas.hansard_report_response import (
 )
 from services.refresh import (
     RECHECK_WINDOW_DAYS,
+    build_attached_file_list_reason,
     build_changed_report_message,
     build_failure_message,
     build_field_mapping_reason,
@@ -248,6 +249,15 @@ def test_new_parliament_reason_names_the_numbers() -> None:
 def test_field_mapping_reason_names_the_first_loss() -> None:
     assert build_field_mapping_reason([_FIELD_LOSS, _FIELD_LOSS]).startswith(
         "2 fields failed the field mapping check. First: FAIL"
+    )
+
+
+def test_attached_file_list_reason_names_the_sitting_and_the_error() -> None:
+    assert (
+        build_attached_file_list_reason(
+            _SITTING_DATE_KEY, "annexureList could not be read: Field required"
+        )
+        == "Sitting 8-4-2025: annexureList could not be read: Field required"
     )
 
 

@@ -23,6 +23,7 @@ from database.sitting import Sitting
 from database.speech import Speech
 from enums import RefreshRunStatus, ReportType
 from exceptions import (
+    HansardAttachedFileError,
     HansardError,
     HansardGatewayError,
     HansardRefreshFailureError,
@@ -57,6 +58,7 @@ from services.api_field_mapping import (
     get_sitting_date_field_losses,
     get_topic_field_losses,
 )
+from services.attached_file import get_annexure_entries, get_vernacular_entries
 from services.attendance import (
     build_constituency_lookups,
     build_sitting_attendances,
@@ -75,6 +77,7 @@ from services.hansard_website import (
     get_topic_id,
 )
 from services.refresh import (
+    build_attached_file_list_reason,
     build_changed_report_message,
     build_error_bodies_reason,
     build_failure_message,
@@ -530,6 +533,18 @@ def _fetch_window(
     )
 
 
+def _validate_can_read_attached_file_lists(
+    sitting_date_key: str, hansard_report_response: HansardReportNewResponse
+) -> None:
+    try:
+        get_annexure_entries(get_json_column(hansard_report_response.annexure_list))
+        get_vernacular_entries(get_json_column(hansard_report_response.vernacular_list))
+    except HansardAttachedFileError as error:
+        raise HansardRefreshHaltError(
+            build_attached_file_list_reason(sitting_date_key, str(error))
+        ) from error
+
+
 def _validate_can_store_fetched_window(
     fetched_window: FetchedWindow, allowed_parliament_number: Optional[int]
 ) -> None:
@@ -559,6 +574,9 @@ def _validate_can_store_fetched_window(
             hansard_report_response, sitting_date_key
         )
         if isinstance(hansard_report_response, HansardReportNewResponse):
+            _validate_can_read_attached_file_lists(
+                sitting_date_key, hansard_report_response
+            )
             if (
                 hansard_report_response.metadata is not None
                 and hansard_report_response.metadata.parliment_no is not None

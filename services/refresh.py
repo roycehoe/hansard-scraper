@@ -122,6 +122,10 @@ def build_field_mapping_reason(field_losses: list[str]) -> str:
     return f"{len(field_losses)} fields failed the field mapping check. First: {field_losses[0].strip()}"
 
 
+def build_attached_file_list_reason(sitting_date_key: str, error_text: str) -> str:
+    return f"Sitting {sitting_date_key}: {error_text}"
+
+
 def _get_label_list_text(label_to_row_count: dict[str, int]) -> str:
     labels = sorted(
         label_to_row_count, key=lambda label: (-label_to_row_count[label], label)

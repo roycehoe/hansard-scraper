@@ -1154,6 +1154,70 @@ def test_sitting_field_mapping_failure_halts(
     assert "sessionNO" in refresh_run.halt_reason
 
 
+def _assert_attached_file_list_halt(
+    scratch_engine: Engine,
+    alerts: _AlertRecorder,
+    row_counts_before: dict[str, int],
+    sitting_date_key: str,
+    status: RefreshRunStatus,
+) -> None:
+    assert status == RefreshRunStatus.HALTED
+    refresh_run = _assert_halted(scratch_engine, alerts, row_counts_before)
+    assert refresh_run.halt_reason is not None
+    assert sitting_date_key in refresh_run.halt_reason
+    assert "annexureList" in refresh_run.halt_reason
+    assert "filePath" in refresh_run.halt_reason
+    assert _get_attached_file_counts(scratch_engine) == [0, 0]
+
+
+def test_attached_file_list_missing_file_path_halts(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+) -> None:
+    seed_stored(scratch_session)
+    row_counts_before = _get_row_counts(scratch_engine)
+    _add_annexure_to_sitting(fake_parliament.new_sitting)
+    del fake_parliament.new_sitting["annexureList"][0]["filePath"]
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    _assert_attached_file_list_halt(
+        scratch_engine,
+        alerts,
+        row_counts_before,
+        get_sitting_date_key(fake_parliament.new_sitting_date),
+        status,
+    )
+
+
+def test_attached_file_list_path_without_solr_files_halts(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+) -> None:
+    seed_stored(scratch_session)
+    row_counts_before = _get_row_counts(scratch_engine)
+    _add_annexure_to_sitting(fake_parliament.new_sitting)
+    fake_parliament.new_sitting["annexureList"][0]["filePath"] = "d:/apps/Annex.pdf"
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    _assert_attached_file_list_halt(
+        scratch_engine,
+        alerts,
+        row_counts_before,
+        get_sitting_date_key(fake_parliament.new_sitting_date),
+        status,
+    )
+
+
 def test_unlinked_share_over_limit_halts(
     scratch_engine: Engine,
     scratch_session: Session,
