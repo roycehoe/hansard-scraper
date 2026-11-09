@@ -27,6 +27,14 @@ class CRUDBillKey:
         ).order_by(BillKey.bill_id)
         return [BillKeyRow(*row) for row in self.session.exec(statement).all()]
 
+    def get_rows_by_bill_ids(self, bill_ids: list[int]) -> list[BillKeyRow]:
+        statement = (
+            select(BillKey.id, BillKey.bill_key, BillKey.act_count, BillKey.bill_id)
+            .where(col(BillKey.bill_id).in_(bill_ids))
+            .order_by(BillKey.bill_id)
+        )
+        return [BillKeyRow(*row) for row in self.session.exec(statement).all()]
+
     def delete_by_bill_ids(self, bill_ids: list[int]) -> int:
         statement = delete(BillKey).where(col(BillKey.bill_id).in_(bill_ids))
 

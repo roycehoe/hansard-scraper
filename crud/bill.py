@@ -9,6 +9,7 @@ from sqlmodel import Session, col, delete, func, select
 from database.bill import Bill
 from enums import ActNumberSource, BillClass, BillNumberSource, RepealedActUrlSource
 from utils.act_link_update import BillUpdate
+from utils.bill_join_update import BillJoinUpdate
 
 
 @dataclass(frozen=True)
@@ -121,6 +122,47 @@ class CRUDBill:
                     "repealed_act_url_source": bill_update.repealed_act_url_source,
                 }
                 for bill_update in bill_updates
+            ],
+        )
+
+    def get_rows_by_title_keys(self, title_keys: list[str]) -> list[BillRow]:
+        statement = (
+            sqlalchemy.select(
+                col(Bill.id),
+                col(Bill.title),
+                col(Bill.title_key),
+                col(Bill.first_sitting_date),
+                col(Bill.last_sitting_date),
+                col(Bill.is_passed),
+                col(Bill.bill_number),
+                col(Bill.bill_number_source),
+                col(Bill.bill_class),
+                col(Bill.act_number),
+                col(Bill.act_number_source),
+                col(Bill.repealed_act_url),
+                col(Bill.repealed_act_url_source),
+            )
+            .where(col(Bill.title_key).in_(title_keys))
+            .order_by(col(Bill.id))
+        )
+        return [BillRow(*row) for row in self.session.execute(statement).all()]
+
+    def update_title_and_last_sitting_date_and_is_passed_many(
+        self, bill_join_updates: list[BillJoinUpdate]
+    ) -> None:
+        if not bill_join_updates:
+            return
+
+        self.session.execute(
+            update(Bill),
+            [
+                {
+                    "id": bill_join_update.id,
+                    "title": bill_join_update.title,
+                    "last_sitting_date": bill_join_update.last_sitting_date,
+                    "is_passed": bill_join_update.is_passed,
+                }
+                for bill_join_update in bill_join_updates
             ],
         )
 
