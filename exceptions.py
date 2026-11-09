@@ -88,3 +88,7 @@ class HansardEgazetteSupplementError(HansardError):
 
 class HansardRepealedActsListingError(HansardError):
     pass
+
+
+class HansardReportLinkCheckError(HansardError):
+    pass
