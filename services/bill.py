@@ -1,12 +1,19 @@
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from difflib import SequenceMatcher
 from typing import Optional
 
-from crud.report import ReportSittingDateTitleRow
-from enums import ActNumberSource, BillClass, BillNumberSource, RepealedActUrlSource
+from crud.bill import BillRow
+from crud.report import ReportPlacementRow, ReportSittingDateTitleRow
+from enums import (
+    ActNumberSource,
+    BillClass,
+    BillLeftOutReason,
+    BillNumberSource,
+    RepealedActUrlSource,
+)
 from exceptions import HansardHandKeptEntryError
 from schemas.bill_title_correction import BillTitleCorrection
 from schemas.hand_kept_bill import HandKeptBill
@@ -128,6 +135,29 @@ class BillGrouping:
     bill_groups: list[BillGroup]
     skipped_report_rows: list[ReportSittingDateTitleRow]
     split_merges: list[SplitMerge]
+
+
+@dataclass(frozen=True)
+class LeftOutReport:
+    report_row: ReportPlacementRow
+    reason: BillLeftOutReason
+
+
+@dataclass(frozen=True)
+class PlacedBill:
+    bill_id: Optional[int]
+    title: str
+    title_key: str
+    first_sitting_date: datetime
+    last_sitting_date: datetime
+    is_passed: bool
+    report_rows: list[ReportPlacementRow]
+
+
+@dataclass(frozen=True)
+class BillPlacement:
+    placed_bills: list[PlacedBill]
+    left_out_reports: list[LeftOutReport]
 
 
 @dataclass
@@ -779,4 +809,135 @@ def group_bills(
             if report_row.id not in hand_kept_report_ids
         ],
         split_merges,
+    )
+
+
+@dataclass
+class _OpenBill:
+    bill_id: Optional[int]
+    title: str
+    title_key: str
+    first_sitting_date: datetime
+    last_sitting_date: datetime
+    is_passed: bool
+    report_rows: list[ReportPlacementRow]
+
+
+def place_bill_reports(
+    report_rows: list[ReportPlacementRow],
+    first_reading_report_ids: frozenset[int],
+    third_reading_report_ids: frozenset[int],
+    stored_bill_rows: list[BillRow],
+    bill_id_to_bill_key: dict[int, str],
+) -> BillPlacement:
+    title_key_to_stored_bill_rows: defaultdict[str, list[BillRow]] = defaultdict(list)
+    for stored_bill_row in stored_bill_rows:
+        title_key_to_stored_bill_rows[stored_bill_row.title_key].append(
+            stored_bill_row
+        )
+    title_key_to_open_bill: dict[str, _OpenBill] = {}
+    open_bills: list[_OpenBill] = []
+    left_out_reports: list[LeftOutReport] = []
+    for report_row in sorted(
+        report_rows,
+        key=lambda report_row: (report_row.sitting_date, report_row.id),
+    ):
+        if _BILL_WORD_PATTERN.search(report_row.title) is None:
+            left_out_reports.append(
+                LeftOutReport(report_row, BillLeftOutReason.NO_BILL_WORD_IN_TITLE)
+            )
+            continue
+        title_key = get_title_key(report_row.title)
+        is_first_reading = report_row.id in first_reading_report_ids
+        open_bill = title_key_to_open_bill.get(title_key)
+        stored_bill_rows_of_title_key = title_key_to_stored_bill_rows.get(title_key)
+        if open_bill is None and stored_bill_rows_of_title_key is not None:
+            latest_last_sitting_date = max(
+                stored_bill_row.last_sitting_date
+                for stored_bill_row in stored_bill_rows_of_title_key
+            )
+            latest_bill_rows = [
+                stored_bill_row
+                for stored_bill_row in stored_bill_rows_of_title_key
+                if stored_bill_row.last_sitting_date == latest_last_sitting_date
+            ]
+            if len(latest_bill_rows) > 1:
+                left_out_reports.append(
+                    LeftOutReport(
+                        report_row, BillLeftOutReason.TWO_BILLS_SHARE_LATEST_DATE
+                    )
+                )
+                continue
+            open_bill = _OpenBill(
+                latest_bill_rows[0].id,
+                latest_bill_rows[0].title,
+                title_key,
+                latest_bill_rows[0].first_sitting_date,
+                latest_bill_rows[0].last_sitting_date,
+                latest_bill_rows[0].is_passed,
+                [],
+            )
+            title_key_to_open_bill[title_key] = open_bill
+            open_bills.append(open_bill)
+        if (
+            open_bill is not None
+            and report_row.sitting_date < open_bill.last_sitting_date
+        ):
+            left_out_reports.append(
+                LeftOutReport(report_row, BillLeftOutReason.DATED_BEFORE_OPEN_BILL)
+            )
+            continue
+        if open_bill is None or should_start_new_bill(
+            open_bill.is_passed,
+            open_bill.last_sitting_date,
+            report_row.sitting_date,
+            is_first_reading,
+        ):
+            open_bill = _OpenBill(
+                None,
+                report_row.title,
+                title_key,
+                report_row.sitting_date,
+                report_row.sitting_date,
+                False,
+                [],
+            )
+            title_key_to_open_bill[title_key] = open_bill
+            open_bills.append(open_bill)
+        else:
+            stored_bill_key = (
+                None
+                if open_bill.bill_id is None
+                else bill_id_to_bill_key.get(open_bill.bill_id)
+            )
+            if (
+                stored_bill_key is not None
+                and report_row.sitting_date == open_bill.first_sitting_date
+                and report_row.report_id < stored_bill_key
+            ):
+                left_out_reports.append(
+                    LeftOutReport(report_row, BillLeftOutReason.SORTS_BELOW_STORED_KEY)
+                )
+                continue
+        open_bill.title = report_row.title
+        open_bill.last_sitting_date = report_row.sitting_date
+        open_bill.is_passed = (
+            open_bill.is_passed or report_row.id in third_reading_report_ids
+        )
+        open_bill.report_rows.append(report_row)
+    return BillPlacement(
+        [
+            PlacedBill(
+                open_bill.bill_id,
+                open_bill.title,
+                open_bill.title_key,
+                open_bill.first_sitting_date,
+                open_bill.last_sitting_date,
+                open_bill.is_passed,
+                open_bill.report_rows,
+            )
+            for open_bill in open_bills
+            if open_bill.report_rows
+        ],
+        left_out_reports,
     )
