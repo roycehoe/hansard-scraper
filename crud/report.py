@@ -125,6 +125,13 @@ class ReportTitleRow:
     subtitle: Optional[str]
 
 
+@dataclass(frozen=True)
+class AttachedFileReportRow:
+    id: int
+    report_id: str
+    content: Optional[str]
+
+
 def _get_frame_order_columns() -> list[SQLColumnExpression]:
     return [
         col(Report.parliament_number),
@@ -710,4 +717,16 @@ class CRUDReport:
                 sitting_date,
                 sprs_report_id,
             ) in self.session.execute(statement).all()
+        ]
+
+    def get_attached_file_report_rows_by_ids(
+        self, report_ids: list[int]
+    ) -> list[AttachedFileReportRow]:
+        statement = (
+            select(Report.id, Report.report_id, Report.content)
+            .where(col(Report.id).in_(report_ids))
+            .order_by(Report.id)
+        )
+        return [
+            AttachedFileReportRow(*row) for row in self.session.exec(statement).all()
         ]

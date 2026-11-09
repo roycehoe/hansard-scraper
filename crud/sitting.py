@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Iterable, Optional
 
-from sqlalchemy import text
+from sqlalchemy import or_, text
 from sqlmodel import Session, col, func, select
 
 from database.sitting import Sitting
@@ -58,6 +58,13 @@ class SittingAttendanceTextRow:
     volume_no: Optional[int]
     markdown_content: Optional[str]
     attendance_list: Optional[str]
+
+
+@dataclass(frozen=True)
+class SittingFileListRow:
+    id: int
+    annexures: Optional[str]
+    vernaculars: Optional[str]
 
 
 _STREAM_BATCH = 50
@@ -252,3 +259,26 @@ class CRUDSitting:
         )
 
         return update_result.rowcount
+
+    def get_ids_by_annexures_or_vernaculars_not_null(self) -> list[int]:
+        statement = (
+            select(Sitting.id)
+            .where(
+                or_(
+                    col(Sitting.annexures).is_not(None),
+                    col(Sitting.vernaculars).is_not(None),
+                )
+            )
+            .order_by(Sitting.id)
+        )
+        return list(self.session.exec(statement).all())
+
+    def get_file_list_rows_by_ids(
+        self, sitting_ids: list[int]
+    ) -> list[SittingFileListRow]:
+        statement = (
+            select(Sitting.id, Sitting.annexures, Sitting.vernaculars)
+            .where(col(Sitting.id).in_(sitting_ids))
+            .order_by(Sitting.id)
+        )
+        return [SittingFileListRow(*row) for row in self.session.exec(statement).all()]
