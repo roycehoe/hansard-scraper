@@ -1,4 +1,4 @@
-# NNNN. A report link row is one printed citation
+# 0019. A report link row is one printed citation
 
 Status: accepted, 9 November 2026. The shape of the table was settled at the two planning gates of the links build, by an independent reviewer while Royce was away. The number stays NNNN until the features that are built together land and the ADRs are numbered in order. The rule that a link comes only from a fixed rule that finds one target is hansard ADR 0011.
 
