@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import update
+from sqlalchemy import text, update
 from sqlmodel import Session, col, delete, func, select
 
 from database.act import ActHistoryEntry
@@ -93,6 +93,29 @@ class CRUDActHistoryEntry:
                 for entry_update in act_history_entry_updates
             ],
         )
+
+    def set_bill_link_sources_bulk(
+        self, act_history_entry_id_to_bill_link_source: dict[int, BillLinkSource]
+    ) -> int:
+        if not act_history_entry_id_to_bill_link_source:
+            return 0
+
+        update_result = self.session.execute(
+            text(
+                "UPDATE acthistoryentry SET bill_link_source = v.bill_link_source "
+                "FROM UNNEST(CAST(:ids AS integer[]), CAST(:bill_link_sources AS billlinksource[])) "
+                "AS v(id, bill_link_source) "
+                "WHERE acthistoryentry.id = v.id"
+            ),
+            {
+                "ids": list(act_history_entry_id_to_bill_link_source.keys()),
+                "bill_link_sources": list(
+                    act_history_entry_id_to_bill_link_source.values()
+                ),
+            },
+        )
+
+        return update_result.rowcount
 
     def delete_by_ids(self, act_history_entry_ids: list[int]) -> None:
         if not act_history_entry_ids:
