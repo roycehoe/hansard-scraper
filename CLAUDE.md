@@ -539,7 +539,6 @@ hansard-scraper/
     ├── check_office_ranges_against_ministers.py
     ├── draw_office_check_sample.py
     ├── list_office_check_flags.py
-
     ├── apply_report_links.py
     ├── build_report_link_check.py
     ├── list_report_link_flags.py
