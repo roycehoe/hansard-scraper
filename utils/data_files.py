@@ -23,6 +23,7 @@ from schemas.ministry_list import (
     OfficeTitleMinistryEntries,
     OfficeTitleMinistryEntry,
 )
+from schemas.office_check_minister import OfficeCheckMinister, OfficeCheckMinisters
 from schemas.party_affiliation import (
     MembershipPartyAffiliations,
     PartyAffiliationMemberships,
@@ -57,6 +58,7 @@ _HAND_CHECK_OFFICE_HOLDERS_FILE = _DATA_DIRECTORY / "hand_check_office_holders.j
 _MINISTRY_NAMES_FILE = _DATA_DIRECTORY / "ministry_names.json"
 _OFFICE_TITLE_MINISTRIES_FILE = _DATA_DIRECTORY / "office_title_ministries.json"
 _MINISTRY_SEE_ALSO_FILE = _DATA_DIRECTORY / "ministry_see_also.json"
+_OFFICE_CHECK_MINISTERS_FILE = _DATA_DIRECTORY / "office_check_ministers.json"
 
 _SchemaT = TypeVar("_SchemaT", bound=BaseModel)
 
@@ -140,3 +142,7 @@ def get_office_title_ministries() -> list[OfficeTitleMinistryEntry]:
 
 def get_ministry_see_also() -> list[MinistrySeeAlsoEntry]:
     return _get_data_file(_MINISTRY_SEE_ALSO_FILE, MinistrySeeAlsoEntries).root
+
+
+def get_office_check_ministers() -> list[OfficeCheckMinister]:
+    return _get_data_file(_OFFICE_CHECK_MINISTERS_FILE, OfficeCheckMinisters).root

@@ -122,6 +122,11 @@ class OfficeTitleMinistrySource(StrEnum):
     HAND_KEPT_TITLE = "HAND_KEPT_TITLE"
 
 
+class OfficeCheckFlagKind(StrEnum):
+    RANGE_OUTSIDE_DATES = "RANGE_OUTSIDE_DATES"
+    NO_PRINT_INSIDE_DATES = "NO_PRINT_INSIDE_DATES"
+
+
 class MissingColumnReason(StrEnum):
     NO_MARKERS = "NO_MARKERS"
     TEXT_NOT_FOUND = "TEXT_NOT_FOUND"
