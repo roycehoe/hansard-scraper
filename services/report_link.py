@@ -286,6 +286,22 @@ def _get_validated_report_title_to_corrected_title(
     }
 
 
+def _build_unplaced_citation(
+    source: ReportLinkReportRow,
+    printed_citation: PrintedCitation,
+    reason: ReportLinkUnplacedReason,
+) -> UnplacedCitation:
+    return UnplacedCitation(
+        source.report_id,
+        printed_citation.ordinal,
+        printed_citation.printed_citation,
+        printed_citation.printed_title,
+        printed_citation.printed_date,
+        reason,
+        printed_citation.paragraph,
+    )
+
+
 def build_report_link_plan(
     printed_citations: list[PrintedCitation],
     resumption_headings: list[ResumptionHeading],
@@ -317,28 +333,16 @@ def build_report_link_plan(
         )
         if isinstance(citation_match, ReportLinkUnplacedReason):
             unplaced_citations.append(
-                UnplacedCitation(
-                    source.report_id,
-                    printed_citation.ordinal,
-                    printed_citation.printed_citation,
-                    printed_citation.printed_title,
-                    printed_citation.printed_date,
-                    citation_match,
-                    printed_citation.paragraph,
-                )
+                _build_unplaced_citation(source, printed_citation, citation_match)
             )
             continue
         link_type = _get_citation_link_type(source, citation_match.target)
         if link_type is None:
             unplaced_citations.append(
-                UnplacedCitation(
-                    source.report_id,
-                    printed_citation.ordinal,
-                    printed_citation.printed_citation,
-                    printed_citation.printed_title,
-                    printed_citation.printed_date,
+                _build_unplaced_citation(
+                    source,
+                    printed_citation,
                     ReportLinkUnplacedReason.SOURCE_NOT_AN_ANSWER,
-                    printed_citation.paragraph,
                 )
             )
             continue
