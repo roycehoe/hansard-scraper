@@ -1,16 +1,20 @@
 import io
+from datetime import date
 from pathlib import Path
 
 import pytest
 from pypdf import PdfWriter
 
-from enums import MinutesFileFormat
+from enums import MinutesFileFormat, MinutesStatus
 from exceptions import HansardMinutesFileError
 from services import minutes_text
 from services.minutes_text import (
     get_minutes_file_format,
+    get_minutes_head_dates,
     get_minutes_pdf_text,
+    get_minutes_text_outcome,
     get_minutes_word_text,
+    is_minutes_head,
 )
 
 _FIXTURE_DIRECTORY = Path(__file__).parent / "division_fixtures" / "minutes"
@@ -138,3 +142,48 @@ def test_word_text_holds_both_divisions_of_the_sample() -> None:
 def test_word_file_that_is_cut_short_raises() -> None:
     with pytest.raises(HansardMinutesFileError):
         get_minutes_word_text(_read_fixture_bytes(_WORD_FIXTURE)[:_TRUNCATED_WORD_BYTES])
+
+
+def test_head_dates_of_the_pdf_and_word_samples() -> None:
+    pdf_text = get_minutes_pdf_text(_read_fixture_bytes(_PDF_FIXTURE))
+    word_text = get_minutes_word_text(_read_fixture_bytes(_WORD_FIXTURE))
+
+    assert get_minutes_head_dates(pdf_text) == [date(2018, 1, 10)]
+    assert get_minutes_head_dates(word_text) == [date(2008, 10, 21)]
+
+
+def test_head_date_reads_ordinal_suffix_and_comma() -> None:
+    assert get_minutes_head_dates("TUESDAY, 21ST OCTOBER, 2008") == [date(2008, 10, 21)]
+
+
+def test_head_date_ignores_an_impossible_month() -> None:
+    assert get_minutes_head_dates("MONDAY, 4 OCTOBRE 2021") == []
+
+
+def test_head_title_matches_ignoring_case() -> None:
+    assert is_minutes_head("Votes And Proceedings")
+    assert is_minutes_head("VOTES   AND PROCEEDINGS")
+    assert not is_minutes_head("keith chua cv")
+
+
+def test_outcome_agrees_when_the_head_date_is_the_sitting_date() -> None:
+    outcome = get_minutes_text_outcome(date(2018, 1, 10), "WEDNESDAY, 10 JANUARY 2018")
+
+    assert outcome.status == MinutesStatus.TEXT_STORED
+    assert outcome.status_note is None
+
+
+def test_outcome_needs_review_when_the_head_prints_another_date() -> None:
+    outcome = get_minutes_text_outcome(date(2018, 1, 11), "WEDNESDAY, 10 JANUARY 2018")
+
+    assert outcome.status == MinutesStatus.NEEDS_REVIEW
+    assert outcome.status_note == (
+        "The file's head prints 10 January 2018, not the sitting date"
+    )
+
+
+def test_outcome_stores_text_when_the_head_prints_no_date() -> None:
+    outcome = get_minutes_text_outcome(date(2018, 1, 10), "no date here")
+
+    assert outcome.status == MinutesStatus.TEXT_STORED
+    assert outcome.status_note is None
