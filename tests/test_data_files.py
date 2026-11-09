@@ -26,6 +26,7 @@ from schemas.ministry_list import MinistrySeeAlsoEntries, OfficeTitleMinistryEnt
 from schemas.party_affiliation import PartyAffiliationMemberships
 from schemas.person_decision import PersonDecision, PersonDecisions
 from schemas.person_name_spelling import PersonNameSpellingEntries
+from schemas.report_link_title_correction import ReportLinkTitleCorrections
 from schemas.speaker_override import SpeakerOverrides
 from schemas.unattributed_speech import UnattributedSpeechRanges
 from utils.data_files import (
@@ -44,6 +45,7 @@ from utils.data_files import (
     get_party_affiliations,
     get_person_decisions,
     get_person_name_spellings,
+    get_report_link_title_corrections,
     get_speaker_overrides,
     get_unattributed_speech_ranges,
     get_unscraped_members,
@@ -65,6 +67,7 @@ _DATA_FILE_SCHEMAS = (
     ("party_affiliations.json", PartyAffiliationMemberships),
     ("person_decisions.json", PersonDecisions),
     ("person_name_spellings.json", PersonNameSpellingEntries),
+    ("report_link_title_corrections.json", ReportLinkTitleCorrections),
     ("speaker_overrides.json", SpeakerOverrides),
     ("unattributed_speech.json", UnattributedSpeechRanges),
     ("unscraped_members.json", HandKeptMembers),
@@ -140,6 +143,10 @@ def _get_hand_check_office_holder(**fields: object) -> dict[str, object]:
 @pytest.mark.parametrize("getter", _DATA_FILE_GETTERS)
 def test_a_getter_returns_the_records_of_its_file(getter: Callable[[], object]) -> None:
     assert _get_record_count(getter()) > 0
+
+
+def test_report_link_title_corrections_getter_parses_the_file() -> None:
+    assert isinstance(get_report_link_title_corrections(), list)
 
 
 def test_a_mistyped_key_raises_data_file_error_naming_the_file(

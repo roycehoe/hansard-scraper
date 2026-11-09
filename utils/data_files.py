@@ -33,6 +33,10 @@ from schemas.person_name_spelling import (
     PersonNameSpellingEntries,
     PersonNameSpellingEntry,
 )
+from schemas.report_link_title_correction import (
+    ReportLinkTitleCorrection,
+    ReportLinkTitleCorrections,
+)
 from schemas.speaker_override import SpeakerOverrides
 from schemas.unattributed_speech import (
     UnattributedSpeechRange,
@@ -59,6 +63,9 @@ _MINISTRY_NAMES_FILE = _DATA_DIRECTORY / "ministry_names.json"
 _OFFICE_TITLE_MINISTRIES_FILE = _DATA_DIRECTORY / "office_title_ministries.json"
 _MINISTRY_SEE_ALSO_FILE = _DATA_DIRECTORY / "ministry_see_also.json"
 _OFFICE_CHECK_MINISTERS_FILE = _DATA_DIRECTORY / "office_check_ministers.json"
+_REPORT_LINK_TITLE_CORRECTIONS_FILE = (
+    _DATA_DIRECTORY / "report_link_title_corrections.json"
+)
 
 _SchemaT = TypeVar("_SchemaT", bound=BaseModel)
 
@@ -148,3 +155,9 @@ def get_ministry_see_also() -> list[MinistrySeeAlsoEntry]:
 
 def get_office_check_ministers() -> list[OfficeCheckMinister]:
     return _get_data_file(_OFFICE_CHECK_MINISTERS_FILE, OfficeCheckMinisters).root
+
+
+def get_report_link_title_corrections() -> list[ReportLinkTitleCorrection]:
+    return _get_data_file(
+        _REPORT_LINK_TITLE_CORRECTIONS_FILE, ReportLinkTitleCorrections
+    ).root

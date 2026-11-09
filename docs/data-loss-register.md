@@ -236,6 +236,7 @@ Rows for `report_link`, which `scripts/apply_report_links.py` stores from the ci
 | What changes or is dropped | Where in code | Why | Cost | Reversible from the raw tables | Decided |
 |---|---|---|---|---|---|
 | Parser marks in a printed citation are removed before it is read and in the stored `report_link.printed_citation`: `_`, a `_ _` pair touching a quote mark, and U+200B. Whitespace is collapsed. Quotes stay as printed. | `services/report_citation.py`: `_remove_parser_marks` | The parser adds the marks and the record prints none of them (ADR 0013). | 1,325 citation rows; U+200B in 479 of them, counted on `hansard_positions`, 9 November 2026. | Yes: rebuilt from `speech.transcript` on every full run. | Independent decider, 9 November 2026 (gate 1 entry 5, gate 2 A5 and D1) |
+| The hand-kept list of report link title corrections changes only the title used for matching, never stored or displayed text. | `data/report_link_title_corrections.json`, read through `get_report_link_title_corrections`. | A printed title that names its report in a form no stored title matches needs a hand-kept correction. | 0 entries until the data phase adds them. | Yes: remove the entry. | Independent decider, 9 November 2026 (gate 1 entry 11) |
 
 ### API-side cleaning (the web app, `roycehoe/hansard`)
 
