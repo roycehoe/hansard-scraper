@@ -25,7 +25,7 @@ CI runs `poetry run ruff check .`, `poetry run ruff format --check .`, `poetry r
 
 ## Changes to stored data
 
-A merged pull request never changes a stored row. The daily refresh only adds rows ([docs/refresh.md](docs/refresh.md)), and the database is not published, so you cannot run a write against it. A fix to the parser reaches stored rows through a supervised write.
+A merged pull request never changes a stored row. The daily refresh adds rows and widens the bounds of the seat history ([docs/refresh.md](docs/refresh.md)), and the database is not published, so you cannot run a write against it. A fix to the parser reaches stored rows through a supervised write.
 
 A write script is a dry run unless it gets `--commit`. In a supervised write, I run it dry, then on a rehearsal copy of the database, then on the real one with `--commit`. Every write to the speech table ends with a figures file committed to `docs/figures/`.
 
