@@ -10,4 +10,6 @@ Consequences. The URL of every link in a report is gone from `Report.markdown_co
 
 Revisit. The user's recommendation is to keep the URLs in a separate column after the loop, so the vernacular-speech pointer is not lost. That needs a migration and a change to the parser's output, and is not built.
 
+On 9 November 2026 [ADR 0018](0018-attached-file-pointers.md) stored the URLs in `attached_file_pointer`, one row per download link, read from the raw HTML.
+
 Alternatives. Keep the links in the text, as before `bbf52de`: speech rows then carry URLs. Store the URLs in a column now: not built. The user's recommendation puts it after the loop. Drop links from sittings too: not done, and no reason is recorded.

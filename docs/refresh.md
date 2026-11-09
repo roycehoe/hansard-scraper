@@ -31,16 +31,17 @@ Then, for each month in order, the run:
 16. Places each printed office title of the month's new sittings and reports under its ministries and inserts one `office_title_ministry` row for each placement. A title already placed is left alone. A title the rule and the hand-kept list cannot place, or one that names a ministry missing from the `ministry` table, gets no row and goes to the alert. It never writes `ministry` or `ministry_see_also`, and it never deletes.
 17. Adds the month's new sittings to the printed office ranges: it inserts a range for each new run of a title and extends a stored range by `UPDATE`. If a new sitting is dated earlier than the latest sitting that holds an office row, it writes no range for the month and sends the dates to the alert. It never deletes.
 18. Places the month's new Bill reports in Bills, one report at a time, with the start-a-new-Bill test that `apply_act_links` uses. It inserts a new `bill` row (with its class), `billreport` READING rows and one `billkey` row with an Act count of 0 for a Bill it starts, and it updates only `title`, `last_sitting_date` and `is_passed` of a Bill a report joins, adding no key row for it. It then inserts the `billreportspeaker` and `billstageline` rows of the placed reports. It leaves out, and logs, a report whose title lacks the word Bill, one dated before its open Bill's last sitting, one whose title's latest date two Bills share, and one dated on a keyed Bill's first sitting date whose SPRS id sorts below the key. It never deletes, because the role has no DELETE.
-19. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
-20. Commits the month. A halt or a failure rolls back only the month in progress.
+19. Inserts the attached files of the month's new sittings and the pointers of its new reports, then ties each new pointer to its speech row and, where exactly one stored file has its address, to that file (`attached_file` and `attached_file_pointer`). It inserts rows and sets `attached_file_id`, and never deletes. It reads the speech rows of step 10, so it runs after them.
+20. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
+21. Commits the month. A halt or a failure rolls back only the month in progress.
 
 After the last month, the run:
 
-21. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
-22. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
-23. Reads the whole corpus, inserts the `report_link` rows the plan has and the table lacks, and counts the stored rows that differ from the plan. It never deletes or updates, and a stale count above 0 sends an alert. The month rows are already committed, so a failure here fails the run and keeps them.
-24. Records the counts and marks the row `SUCCEEDED`.
-25. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
+22. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
+23. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
+24. Reads the whole corpus, inserts the `report_link` rows the plan has and the table lacks, and counts the stored rows that differ from the plan. It never deletes or updates, and a stale count above 0 sends an alert. The month rows are already committed, so a failure here fails the run and keeps them.
+25. Records the counts and marks the row `SUCCEEDED`.
+26. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
 
 The report link step is the last before the run finishes, so a supervised `python -m scripts.apply_report_links --commit` is the only path that removes a `report_link` row. Production order is the migration, then these grants, then the code, because the step fails every refresh without the table and grants.
 
@@ -91,6 +92,7 @@ A halt keeps the months committed before it and writes nothing of the month in p
 
 - **New Parliament number.** A new hit or a fetched sitting carries a Parliament number above the highest stored one. Load its members with `scripts/load_parliament_speakers.py --parliament N` (a dry run, then `--commit`), then run `python refresh.py --allow-parliament N` once, supervised, as in the backfill below. The flag accepts that one number for that one run.
 - **Field mapping.** A field present in a fetched body is missing from the row built from it, which means SPRS changed a field. Run `scripts/validate_api_field_mapping.py` by hand to see the field, fix the schema or the mapping, then run again.
+- **File list shape.** A fetched sitting's annexure or vernacular list does not parse into the shape the run reads, for example an entry with no `filePath`. The halt message names the sitting and the first fault. Fix `schemas/attached_file_list.py` or `services/attached_file.py`, then run again. The month in progress stored nothing.
 - **Unlinked share.** More than 5% of the month's new named speech rows have no registry link. The halt message and `halt_reason` list the unmatched labels with their row counts. Add those members to the registry, then run again.
 
 On the first supervised run, read the log's "No sitting response" lines. Each one is a probed date with no sitting, and SPRS should answer it in a shape the run reads as nothing published. If a line shows an answer that looks like a real sitting, stop and check the gateway.
@@ -218,11 +220,16 @@ GRANT USAGE ON SEQUENCE hansardwebsiteresponse_id_seq, hansardsittingdaterespons
 GRANT USAGE ON SEQUENCE report_asker_id_seq, report_participant_id_seq, report_question_state_id_seq, report_link_id_seq TO hansard_refresh;
 GRANT USAGE ON SEQUENCE attendance_office_id_seq, office_printed_range_id_seq, report_put_to_id_seq, office_title_ministry_id_seq TO hansard_refresh;
 GRANT USAGE ON SEQUENCE bill_id_seq, billreport_id_seq, billkey_id_seq, billreportspeaker_id_seq, billstageline_id_seq TO hansard_refresh;
+GRANT SELECT, INSERT ON attached_file, attached_file_pointer TO hansard_refresh;
+GRANT UPDATE (attached_file_id) ON attached_file_pointer TO hansard_refresh;
+GRANT USAGE ON SEQUENCE attached_file_id_seq, attached_file_pointer_id_seq TO hansard_refresh;
 GRANT SELECT (id, website_responses_added, sitting_date_responses_added, sittings_added, reports_added, speeches_added, speeches_linked, speeches_named_unlinked, attendances_added, attendances_linked, reports_held_without_text, reports_without_speech_rows, reports_rechecked, reports_changed, latest_sitting_date_with_text, figures, started_at, finished_at, status) ON refresh_run TO <the API's read-only role>;
 GRANT SELECT ON report_link TO <the API's read-only role>;
 ```
 
 The office migration and these grants come before any push of the daily job, because a missing grant fails the month. The role needs `UPDATE` on `office_printed_range` only to extend a stored range, and `SELECT` alone on `ministry` and `ministry_see_also`, which only a supervised run writes. The office tables are small, so `_vacuum_analyze_tables` leaves them out, and the role has no `MAINTAIN` on them.
+
+Production order for attached files: the outstanding migrations, then migration `81ba3804b972`, then the three grants above, then the push to `master`, then the backfill (`python -m scripts.apply_attached_files --commit`). A push before the tables and grants fails every run, because a push deploys the job, and the setting that hides an unreleased endpoint does not cover the job. The backfill comes after the push, or runs again after the first daily run on the new code, because the daily path sees only its own run's rows.
 
 The table and sequence names are those on the scratch copy. `attendance` owns `sittingattendance_id_seq`, a name kept from an older table name. Confirm each name on the remote with `\d <table>` first.
 

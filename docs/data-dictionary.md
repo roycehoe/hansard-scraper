@@ -21,9 +21,11 @@ Person (one row per individual)
   └── Speaker    (one row per person per parliament)
 ```
 
+`Sitting` also has `AttachedFile` rows, one per file it lists. `Report` has `AttachedFilePointer` rows, one per download link in its raw HTML, and a pointer can name its `AttachedFile`.
+
 `Report` and `Sitting` share `sitting_date`, `parliament_number`, and `volume_number` as natural join keys. `Speech.speaker_id` links to `Speaker.id` where the match has been resolved.
 
-The sitting API also returns nested list data (PTBA, debate sections, annexures, vernacular files, absence-to-brief records). This data is stored as serialised JSON columns directly on `Sitting` (`ptba_list`, `sections`, `annexures`, `vernaculars`, `a2b`) for record purposes and is not normalised into separate tables.
+The sitting API also returns nested list data (PTBA, debate sections, annexures, vernacular files, absence-to-brief records). This data is stored as serialised JSON columns directly on `Sitting` (`ptba_list`, `sections`, `annexures`, `vernaculars`, `a2b`) for record purposes. Only the annexure and vernacular lists are also stored row by row, in `AttachedFile`.
 
 ---
 
@@ -180,6 +182,37 @@ One row per person and spelling in a spelling note. Stage 9 loads it from `data/
 | `kind` | PersonNameSpellingKind | `CANONICAL` for the row that equals `person.canonical_name`, `OTHER_SPELLING`, `TRANSLITERATION`, or `OTHER_NAME` for a printed name that is not a spelling of it. |
 | `note` | str | The sentence the person page shows. Each source is a `[name](link)` link to an https address or a `/reports/` page. |
 | `person_id` | int | FK → `Person.id`. |
+
+### AttachedFile
+
+One row per file a sitting lists, read from `sitting.annexures` and `sitting.vernaculars`. A list entry with the same kind, title and printed path as an earlier one is stored once, keeping the lowest SPRS file id. See [ADR 0018](adr/0018-attached-file-pointers.md).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `kind` | AttachedFileKind | `ANNEX` for an annexure entry, `VERNACULAR` for a vernacular entry. Unique with `sitting_id` and `sprs_file_id`. |
+| `sprs_file_id` | int | The entry's `annexureID` or `vernacularID`. |
+| `printed_title` | str | The title as the list prints it. |
+| `printed_file_path` | str | The path as the list prints it, under `solr_files/`. |
+| `file_name` | str | The file name as the list prints it. |
+| `section_type` | str | The annexure entry's `sectionType`. `NULL` on a vernacular entry and where the entry has none. |
+| `download_value` | str | The part of the path after `solr_files/`, which is the `value` of the file's download address. `NULL` for the placeholder `vernacular-null`, which is the source's word for no file. |
+| `sitting_id` | int | FK → `Sitting.id`. |
+
+### AttachedFilePointer
+
+One row per download link in a report's raw HTML, numbered in reading order. The link text and address are stored as printed. The speech row and the listed file are optional ties, set by `scripts/apply_attached_files.py` and by the daily refresh. See [ADR 0018](adr/0018-attached-file-pointers.md).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `ordinal` | int | The link's position in the report, from 1. Unique with `sprs_report_id`. |
+| `printed_text` | str | The link text as printed. |
+| `href` | str | The link's `href` as printed. |
+| `shape` | AttachedFilePointerShape | The form of the address: `DATED` (a dated folder and an `annex-` or `vernacular-` name), `PDFS` (under `PDFs/`) or `SECTION_FILE` (a numbered section file). |
+| `download_value` | str | The address after `download?value=`. `NULL` for the placeholder `vernacular-null`. |
+| `speech_ordinal` | int | The `speech.ordinal` of the row that holds the link's words, in the same report. `NULL` where the words cannot be matched to exactly as many rows as the report's text has occurrences. It is a position, not a foreign key, so a write that renumbers speech rows has to run `scripts/apply_attached_files.py` again. |
+| `paragraph_tie_rule` | ParagraphTieRule | How sure the paragraph tie is: `ONLY_OCCURRENCE`, `EVERY_OCCURRENCE_A_LINK` or `OCCURRENCE_BESIDE_PLAIN_TEXT`. `NULL` when `speech_ordinal` is. |
+| `sprs_report_id` | str | FK → `Report.report_id`. |
+| `attached_file_id` | int | FK → `AttachedFile.id`. Set when exactly one stored file has the pointer's `download_value`, otherwise `NULL`. |
 
 ---
 
