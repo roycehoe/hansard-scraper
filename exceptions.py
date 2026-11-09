@@ -96,3 +96,7 @@ class HansardReportLinkCheckError(HansardError):
 
 class HansardBillKeyError(HansardError):
     pass
+
+
+class HansardLawLinkCheckError(HansardError):
+    pass
