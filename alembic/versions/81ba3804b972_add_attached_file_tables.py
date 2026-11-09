@@ -78,7 +78,9 @@ def upgrade() -> None:
         sa.Column(
             "shape",
             postgresql.ENUM(
-                *_POINTER_SHAPE_NAMES, name="attachedfilepointershape", create_type=False
+                *_POINTER_SHAPE_NAMES,
+                name="attachedfilepointershape",
+                create_type=False,
             ),
             nullable=False,
         ),
@@ -91,9 +93,7 @@ def upgrade() -> None:
             ),
             nullable=True,
         ),
-        sa.Column(
-            "sprs_report_id", sqlmodel.sql.sqltypes.AutoString(), nullable=False
-        ),
+        sa.Column("sprs_report_id", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("attached_file_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
             ["sprs_report_id"],
