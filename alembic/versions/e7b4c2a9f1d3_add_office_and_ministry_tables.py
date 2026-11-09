@@ -9,7 +9,7 @@ Create Date: 2026-11-09 09:00:00.000000
 from typing import Optional, Sequence, Union
 
 import sqlalchemy as sa
-import sqlmodel
+import sqlmodel.sql.sqltypes
 from sqlalchemy.dialects import postgresql
 
 from alembic import op
