@@ -92,3 +92,7 @@ class HansardRepealedActsListingError(HansardError):
 
 class HansardReportLinkCheckError(HansardError):
     pass
+
+
+class HansardBillKeyError(HansardError):
+    pass

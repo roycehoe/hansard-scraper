@@ -20,6 +20,7 @@ NOT_FIRST_READING_PATTERNS = (
 THIRD_READING_PATTERN = r'^\W*[^"]{0,150}\ybill\y[^"]{0,120}\yread (a|the) third time'
 NOT_THIRD_READING_PATTERNS = ("be now read", r"^\W*(I|now|sir|mr)\y")
 SECOND_READING_PATTERN = r"\yorder for second reading read\y"
+SECOND_READING_AGREED_PATTERN = r"\ybill accordingly read a second time"
 BILL_TITLE_END_PATTERN = r"bill[^a-z]*$"
 
 _MAX_DAYS_BETWEEN_REPORTS = 366
