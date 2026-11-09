@@ -8,6 +8,8 @@ from sqlmodel import SQLModel
 
 import database.act  # noqa: F401
 import database.acts_supplement  # noqa: F401
+import database.attached_file  # noqa: F401
+import database.attached_file_pointer  # noqa: F401
 import database.attendance  # noqa: F401
 import database.attendance_office  # noqa: F401
 import database.bill  # noqa: F401

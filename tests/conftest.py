@@ -33,6 +33,8 @@ os.environ["DATABASE_URL"] = _SCRATCH_DATABASE_URL
 # NOTE: settings is imported below the assignment so it reads the scratch URL and never a .env URL
 import database.act  # noqa: F401 registers the table for create_all
 import database.acts_supplement  # noqa: F401 registers the table for create_all
+import database.attached_file  # noqa: F401 registers the table for create_all
+import database.attached_file_pointer  # noqa: F401 registers the table for create_all
 import database.attendance  # noqa: F401 registers the table for create_all
 import database.attendance_office  # noqa: F401 registers the table for create_all
 import database.bill  # noqa: F401 registers the table for create_all
