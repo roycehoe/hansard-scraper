@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "ministry_name": "Communications",
+    "see_also_ministry_name": "Communications and Information",
+    "note": "The page states that on 2 January 1985 the Ministry of Communications was renamed the Ministry of Communications and Information.",
+    "source_url": "https://www.mot.gov.sg/who-we-are/about-us/"
+  },
+  {
+    "ministry_name": "Communications and Information",
+    "see_also_ministry_name": "Communications",
+    "note": "The page states that on 28 November 1990 the Ministry of Communications and Information was renamed the Ministry of Communications.",
+    "source_url": "https://www.mot.gov.sg/who-we-are/about-us/"
+  },
+  {
+    "ministry_name": "Communications",
+    "see_also_ministry_name": "Communications and Information Technology",
+    "note": "The page states that on 3 June 1999 the Ministry of Communications was expanded and renamed the Ministry of Communications & Information Technology.",
+    "source_url": "https://www.mot.gov.sg/who-we-are/about-us/"
+  },
+  {
+    "ministry_name": "Communications and Information Technology",
+    "see_also_ministry_name": "Transport",
+    "note": "The page states that on 23 November 2001 the Ministry of Communications & Information Technology was renamed the Ministry of Transport.",
+    "source_url": "https://www.mot.gov.sg/who-we-are/about-us/"
+  },
+  {
+    "ministry_name": "Trade and Industry",
+    "see_also_ministry_name": "Energy, Trade and Industry",
+    "note": "The press release states that the Ministry of Trade and Industry will be renamed the Ministry of Energy, Trade and Industry with effect from 1 October 2026.",
+    "source_url": "https://www.meti.gov.sg/newsroom/mti-to-be-renamed-ministry-of-energy--trade-and-industry/"
+  }
+]

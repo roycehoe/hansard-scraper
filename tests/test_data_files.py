@@ -370,7 +370,3 @@ def test_the_office_titles_are_distinct() -> None:
     ]
 
     assert len(set(office_printeds)) == len(office_printeds)
-
-
-def test_the_ministry_see_also_file_is_empty() -> None:
-    assert get_ministry_see_also() == []
