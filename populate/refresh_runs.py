@@ -965,6 +965,7 @@ def populate_refresh_runs(
                 or minutes_step_result.rows_added
                 + minutes_step_result.rows_listed
                 + minutes_step_result.files_stored
+                + len(minutes_step_result.minutes_to_review)
                 > 0
             )
         run_result.figures = build_attribution_figures_json(

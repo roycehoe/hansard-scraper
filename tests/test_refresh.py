@@ -32,7 +32,13 @@ from database.report_participant import ReportParticipant
 from database.sitting import Sitting
 from database.speaker import Speaker
 from database.speech import Speech
-from enums import MinutesStatus, ParticipantRole, RefreshRunStatus
+from enums import (
+    MinutesFileFormat,
+    MinutesIndexSource,
+    MinutesStatus,
+    ParticipantRole,
+    RefreshRunStatus,
+)
 from exceptions import (
     HansardError,
     HansardGatewayError,
@@ -1317,6 +1323,46 @@ def test_minutes_to_review_are_alerted_when_a_run_with_no_new_rows_fails_at_the_
     seed_stored(scratch_session)
     refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
     add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 11))
+    scratch_session.commit()
+    _list_minutes_file(
+        fake_parliament, date(2018, 1, 11), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
+    )
+    alerts.messages.clear()
+
+    def fail_at_the_figures(session: Session) -> None:
+        raise HansardRefreshFailureError("figures failed")
+
+    monkeypatch.setattr(refresh_runs, "get_attribution_figures", fail_at_the_figures)
+
+    with pytest.raises(HansardRefreshFailureError):
+        refresh_runs.populate_refresh_runs(
+            scratch_session, _get_now(fake_parliament), None
+        )
+
+    review_messages = [
+        message for message in alerts.messages if _MINUTES_ALERT_FRAGMENT in message
+    ]
+    assert len(review_messages) == 1
+
+
+def test_minutes_to_review_of_a_row_listed_before_the_run_are_alerted_after_a_failure(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
+    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 11))
+    scratch_session.add(
+        Minutes(
+            sitting_date=date(2018, 1, 11),
+            status=MinutesStatus.LISTED,
+            index_source=MinutesIndexSource.LIVE_PAGE,
+            file_url=f"{settings.minutes_media_url}/{_MINUTES_FILE_ID}/{_MINUTES_FILE_NAME}",
+            file_format=MinutesFileFormat.PDF,
+        )
+    )
     scratch_session.commit()
     _list_minutes_file(
         fake_parliament, date(2018, 1, 11), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
