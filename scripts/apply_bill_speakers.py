@@ -26,7 +26,7 @@ from settings import settings
 from utils.write_target import validate_can_write
 
 _LOGGED_INVOLVED_LIMIT = 20
-_KEY_TO_VALUE = dict[tuple[object, ...], tuple[object, ...]]
+_KEY_TO_VALUE = dict[tuple[object, ...], object]
 
 
 @dataclass(frozen=True)
@@ -71,11 +71,24 @@ def _log_table_difference(label: str, difference: _TableDifference) -> None:
     )
 
 
+@dataclass(frozen=True)
+class _BillKeyValue:
+    bill_key: str
+    act_count: int
+
+
+@dataclass(frozen=True)
+class _BillReportSpeakerValue:
+    speech_count: int
+    first_ordinal: int
+    printed_speaker: str
+
+
 def _get_bill_key_map(
     bill_keys: Sequence[Union[BillKey, BillKeyRow]],
 ) -> _KEY_TO_VALUE:
     return {
-        (bill_key.bill_id,): (bill_key.bill_key, bill_key.act_count)
+        (bill_key.bill_id,): _BillKeyValue(bill_key.bill_key, bill_key.act_count)
         for bill_key in bill_keys
     }
 
@@ -84,7 +97,10 @@ def _get_bill_report_speaker_map(
     bill_report_speakers: Sequence[Union[BillReportSpeaker, BillReportSpeakerRow]],
 ) -> _KEY_TO_VALUE:
     return {
-        (bill_report_speaker.sprs_report_id, bill_report_speaker.speaker_id): (
+        (
+            bill_report_speaker.sprs_report_id,
+            bill_report_speaker.speaker_id,
+        ): _BillReportSpeakerValue(
             bill_report_speaker.speech_count,
             bill_report_speaker.first_ordinal,
             bill_report_speaker.printed_speaker,
@@ -101,7 +117,7 @@ def _get_bill_stage_line_map(
             bill_stage_line.sprs_report_id,
             bill_stage_line.ordinal,
             bill_stage_line.stage,
-        ): (bill_stage_line.printed_text,)
+        ): bill_stage_line.printed_text
         for bill_stage_line in bill_stage_lines
     }
 

@@ -92,7 +92,7 @@ def test_two_reports_of_one_new_bill_in_one_call_make_one_bill() -> None:
 
     assert len(placement.placed_bills) == 1
     placed_bill = placement.placed_bills[0]
-    assert [row.id for row in placed_bill.report_rows] == [1, 2]
+    assert [report_row.id for report_row in placed_bill.report_rows] == [1, 2]
     assert placed_bill.first_sitting_date == first_row.sitting_date
     assert placed_bill.last_sitting_date == second_row.sitting_date
     assert placed_bill.is_passed
@@ -112,7 +112,7 @@ def test_reports_are_placed_in_sitting_date_then_id_order_whatever_the_input_ord
 
     assert len(placement.placed_bills) == 1
     placed_bill = placement.placed_bills[0]
-    assert [row.id for row in placed_bill.report_rows] == [1, 2]
+    assert [report_row.id for report_row in placed_bill.report_rows] == [1, 2]
     assert placed_bill.first_sitting_date == first_row.sitting_date
     assert placed_bill.last_sitting_date == second_row.sitting_date
     assert placed_bill.is_passed
@@ -377,6 +377,6 @@ def test_batch_grouping_and_placement_make_the_same_bills() -> None:
     assert sorted(
         sorted(bill_group.report_ids) for bill_group in grouping.bill_groups
     ) == sorted(
-        sorted(row.id for row in placed_bill.report_rows)
+        sorted(report_row.id for report_row in placed_bill.report_rows)
         for placed_bill in placement.placed_bills
     )

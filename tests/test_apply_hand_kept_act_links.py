@@ -41,7 +41,7 @@ _SEEDED_SPRS_REPORT_IDS = ("hk-first", "hk-third")
 
 
 class _LogRecorder:
-    def __init__(self) -> None:
+    def __init__(self):
         self.messages: list[str] = []
 
     def info(self, message: str) -> None:

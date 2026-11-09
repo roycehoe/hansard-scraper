@@ -50,7 +50,7 @@ _VERIFICATION_FUNCTIONS = (
 
 
 class _StatementRecorder:
-    def __init__(self) -> None:
+    def __init__(self):
         self.statements: list[str] = []
 
     def record_statement(

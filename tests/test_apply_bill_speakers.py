@@ -32,7 +32,7 @@ _HAND_EDITED_NAME = "Hand edited"
 
 
 class _LogRecorder:
-    def __init__(self) -> None:
+    def __init__(self):
         self.messages: list[str] = []
 
     def info(self, message: str) -> None:
@@ -52,8 +52,8 @@ def log_recorder(
 def _get_key_values(session: Session) -> list[tuple[str, int, int]]:
     session.expire_all()
     return [
-        (row.bill_key, row.act_count, row.bill_id)
-        for row in CRUDBillKey(session).get_rows()
+        (bill_key_row.bill_key, bill_key_row.act_count, bill_key_row.bill_id)
+        for bill_key_row in CRUDBillKey(session).get_rows()
     ]
 
 
@@ -61,21 +61,25 @@ def _get_member_values(session: Session) -> list[tuple[str, int, int, int, str]]
     session.expire_all()
     return [
         (
-            row.sprs_report_id,
-            row.speaker_id,
-            row.speech_count,
-            row.first_ordinal,
-            row.printed_speaker,
+            bill_report_speaker_row.sprs_report_id,
+            bill_report_speaker_row.speaker_id,
+            bill_report_speaker_row.speech_count,
+            bill_report_speaker_row.first_ordinal,
+            bill_report_speaker_row.printed_speaker,
         )
-        for row in CRUDBillReportSpeaker(session).get_rows()
+        for bill_report_speaker_row in CRUDBillReportSpeaker(session).get_rows()
     ]
 
 
 def _get_stage_line_values(session: Session) -> list[tuple[str, int, BillStage]]:
     session.expire_all()
     return [
-        (row.sprs_report_id, row.ordinal, row.stage)
-        for row in CRUDBillStageLine(session).get_rows()
+        (
+            bill_stage_line_row.sprs_report_id,
+            bill_stage_line_row.ordinal,
+            bill_stage_line_row.stage,
+        )
+        for bill_stage_line_row in CRUDBillStageLine(session).get_rows()
     ]
 
 

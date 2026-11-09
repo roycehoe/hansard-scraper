@@ -1,10 +1,11 @@
 import hashlib
 import random
 import re
+from collections.abc import MutableSequence
 from dataclasses import replace
 from datetime import date, datetime
 from pathlib import Path
-from typing import Optional
+from typing import NoReturn, Optional
 
 import pytest
 from sqlmodel import Session
@@ -83,16 +84,18 @@ _ALLOWED_GAPS = frozenset({2, 3})
 
 
 class _RandomOnlyGenerator(random.Random):
-    def randrange(self, *arguments: int, **keyword_arguments: int) -> int:
+    def randrange(
+        self, start: int, stop: Optional[int] = None, step: int = 1
+    ) -> NoReturn:
         pytest.fail("randrange was called")
 
-    def choice(self, sequence: object) -> object:
+    def choice(self, seq: object) -> NoReturn:
         pytest.fail("choice was called")
 
     def sample(self, population: object, k: int, **keyword_arguments: object) -> list:
         pytest.fail("sample was called")
 
-    def shuffle(self, x: list) -> None:
+    def shuffle(self, x: MutableSequence[object]) -> None:
         pytest.fail("shuffle was called")
 
 

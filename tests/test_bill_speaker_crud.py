@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 
 from sqlmodel import Session
@@ -27,7 +28,13 @@ def _seed_two_reports(session: Session) -> list[int]:
     ]
 
 
-def _seed_two_bill_keys(session: Session) -> tuple[int, int]:
+@dataclass(frozen=True)
+class _SeededBillIds:
+    first_bill_id: int
+    second_bill_id: int
+
+
+def _seed_two_bill_keys(session: Session) -> _SeededBillIds:
     first_report_id, second_report_id = _seed_two_reports(session)
     first_bill_id = seed_bill(
         session, "Food Bill", {first_report_id: BillReportRole.READING}
@@ -44,28 +51,31 @@ def _seed_two_bill_keys(session: Session) -> tuple[int, int]:
         ]
     )
     session.commit()
-    return first_bill_id, second_bill_id
+    return _SeededBillIds(first_bill_id, second_bill_id)
 
 
 def test_bill_key_rows_come_back_in_bill_order_and_delete_by_bill_ids_returns_the_count(
     scratch_session: Session,
 ) -> None:
-    first_bill_id, second_bill_id = _seed_two_bill_keys(scratch_session)
+    seeded_bill_ids = _seed_two_bill_keys(scratch_session)
+    first_bill_id = seeded_bill_ids.first_bill_id
+    second_bill_id = seeded_bill_ids.second_bill_id
 
     rows = CRUDBillKey(scratch_session).get_rows()
 
     assert [
-        (row.bill_key, row.act_count, row.bill_id) for row in rows
+        (bill_key_row.bill_key, bill_key_row.act_count, bill_key_row.bill_id)
+        for bill_key_row in rows
     ] == [
         (_FIRST_SPRS_REPORT_ID, 1, first_bill_id),
         (_SECOND_SPRS_REPORT_ID, 2, second_bill_id),
     ]
-    assert all(isinstance(row, BillKeyRow) for row in rows)
+    assert all(isinstance(bill_key_row, BillKeyRow) for bill_key_row in rows)
     assert CRUDBillKey(scratch_session).delete_by_bill_ids([first_bill_id]) == 1
     scratch_session.commit()
-    assert [row.bill_id for row in CRUDBillKey(scratch_session).get_rows()] == [
-        second_bill_id
-    ]
+    assert [
+        bill_key_row.bill_id for bill_key_row in CRUDBillKey(scratch_session).get_rows()
+    ] == [second_bill_id]
     assert CRUDBillKey(scratch_session).delete_by_bill_ids([]) == 0
 
 
@@ -120,7 +130,10 @@ def test_member_rows_by_sprs_report_ids_return_only_those_reports(
         scratch_session
     ).get_rows_by_sprs_report_ids([_FIRST_SPRS_REPORT_ID])
 
-    assert [row.first_ordinal for row in first_report_rows] == [2, 5]
+    assert [
+        bill_report_speaker_row.first_ordinal
+        for bill_report_speaker_row in first_report_rows
+    ] == [2, 5]
     assert len(CRUDBillReportSpeaker(scratch_session).get_rows()) == _THREE_ROWS
 
 
@@ -136,7 +149,8 @@ def test_member_rows_delete_by_sprs_report_ids_returns_the_count_and_keeps_other
 
     assert deleted_count == _TWO_ROWS
     assert [
-        row.sprs_report_id for row in CRUDBillReportSpeaker(scratch_session).get_rows()
+        bill_report_speaker_row.sprs_report_id
+        for bill_report_speaker_row in CRUDBillReportSpeaker(scratch_session).get_rows()
     ] == [_SECOND_SPRS_REPORT_ID]
     assert CRUDBillReportSpeaker(scratch_session).delete_all() == 1
 
@@ -177,13 +191,20 @@ def test_stage_line_rows_by_sprs_report_ids_return_only_those_reports(
         [_FIRST_SPRS_REPORT_ID]
     )
 
-    assert [(row.ordinal, row.stage) for row in first_report_rows] == [
+    assert [
+        (bill_stage_line_row.ordinal, bill_stage_line_row.stage)
+        for bill_stage_line_row in first_report_rows
+    ] == [
         (1, BillStage.FIRST_READING),
         (1, BillStage.THIRD_READING),
     ]
     assert [
-        (row.sprs_report_id, row.ordinal, row.stage)
-        for row in CRUDBillStageLine(scratch_session).get_rows()
+        (
+            bill_stage_line_row.sprs_report_id,
+            bill_stage_line_row.ordinal,
+            bill_stage_line_row.stage,
+        )
+        for bill_stage_line_row in CRUDBillStageLine(scratch_session).get_rows()
     ] == [
         (_FIRST_SPRS_REPORT_ID, 1, BillStage.FIRST_READING),
         (_FIRST_SPRS_REPORT_ID, 1, BillStage.THIRD_READING),
@@ -203,6 +224,7 @@ def test_stage_line_rows_delete_by_sprs_report_ids_returns_the_count_and_keeps_o
 
     assert deleted_count == _TWO_ROWS
     assert [
-        row.sprs_report_id for row in CRUDBillStageLine(scratch_session).get_rows()
+        bill_stage_line_row.sprs_report_id
+        for bill_stage_line_row in CRUDBillStageLine(scratch_session).get_rows()
     ] == [_SECOND_SPRS_REPORT_ID]
     assert CRUDBillStageLine(scratch_session).delete_all() == 1

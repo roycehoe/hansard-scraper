@@ -117,4 +117,6 @@ def test_a_second_act_link_write_leaves_the_key_rows_of_kept_bills(
 
     assert bill_ids_to_delete == []
     stored_key_rows = CRUDBillKey(scratch_session).get_rows()
-    assert [(row.id, row.bill_id) for row in stored_key_rows] == [(stored_key_id, bill_id)]
+    assert [
+        (bill_key_row.id, bill_key_row.bill_id) for bill_key_row in stored_key_rows
+    ] == [(stored_key_id, bill_id)]

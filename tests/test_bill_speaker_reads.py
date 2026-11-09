@@ -91,7 +91,7 @@ def test_bill_report_rows_by_report_ids_return_only_those_reports(
         scratch_session
     ).get_sitting_date_report_type_rows_by_report_ids([seeded.second_report_id])
 
-    assert [row.sprs_report_id for row in rows] == ["read-second"]
+    assert [report_row.sprs_report_id for report_row in rows] == ["read-second"]
     assert (
         CRUDBillReport(scratch_session).get_sitting_date_report_type_rows_by_report_ids(
             []
