@@ -71,7 +71,7 @@ def _get_packet_id_to_verdict(
     return {verdict.packet_id: verdict for verdict in verdicts}
 
 
-def _validate_can_open_plant_key(
+def _get_validated_plant_key(
     plant_key_bytes: bytes, committed_sha256: str, packets: list[OfficeCheckPacket]
 ) -> OfficeCheckPlantKey:
     key_sha256 = hashlib.sha256(plant_key_bytes).hexdigest()
@@ -153,7 +153,7 @@ def list_office_check_flags(
     packets = OfficeCheckPackets.model_validate_json(
         records_path.read_text(encoding="utf-8")
     ).root
-    plant_key = _validate_can_open_plant_key(
+    plant_key = _get_validated_plant_key(
         plant_key_path.read_bytes(),
         plant_key_hash_path.read_text(encoding="utf-8").strip(),
         packets,

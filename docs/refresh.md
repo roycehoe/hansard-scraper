@@ -6,7 +6,7 @@
 
 ## What a run does
 
-A run only adds rows. It never re-parses a stored report and never rewrites a stored row, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
+A run only adds rows. It never re-parses a stored report and never rewrites a stored row, except that step 17 extends a stored printed office range, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
 
 In order, a run:
 

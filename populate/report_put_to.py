@@ -63,7 +63,7 @@ def get_report_put_to_plan(session: Session, report_ids: list[int]) -> ReportPut
             if not put_to_phrases:
                 reports_without_phrase += 1
             decade = get_decade(report_row.sitting_date)
-            for ordinal, put_to_phrase in enumerate(put_to_phrases, 1):
+            for ordinal, put_to_phrase in enumerate(put_to_phrases, start=1):
                 report_put_tos.append(
                     ReportPutTo(
                         ordinal=ordinal,

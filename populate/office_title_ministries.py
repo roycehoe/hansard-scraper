@@ -25,7 +25,7 @@ from utils.data_files import (
     get_office_title_ministries,
 )
 
-REPORT_OFFICE_TITLE_REPORT_TYPES = (
+_REPORT_OFFICE_TITLE_REPORT_TYPES = (
     ReportType.ORAL_ANSWER,
     ReportType.WRITTEN_ANSWER,
     ReportType.WRITTEN_ANSWER_NOT_AVAILABLE,
@@ -74,7 +74,7 @@ def _get_placed_office_titles(
         PlacedOfficeTitle(
             office_printed, ordinal, placement.ministry_name, placement.source
         )
-        for ordinal, placement in enumerate(placements, 1)
+        for ordinal, placement in enumerate(placements, start=1)
     ]
 
 
@@ -221,6 +221,19 @@ def write_ministry_plan(session: Session, plan: MinistryPlan) -> None:
     _validate_can_commit_ministries(session, plan)
 
 
+def _get_placed_ministry_ids(
+    placed_office_titles: list[PlacedOfficeTitle],
+    ministry_name_to_id: dict[str, int],
+) -> Optional[list[int]]:
+    try:
+        return [
+            ministry_name_to_id[placed_office_title.ministry_name]
+            for placed_office_title in placed_office_titles
+        ]
+    except KeyError:
+        return None
+
+
 # NOTE: inserts only, because the refresh role has no DELETE grant and Postgres checks it per statement
 def populate_office_title_ministries(
     session: Session, sitting_ids: list[int], report_ids: list[int]
@@ -230,7 +243,7 @@ def populate_office_title_ministries(
         for put_to_report_row in CRUDReport(
             session
         ).get_put_to_report_rows_by_ids_and_report_types(
-            report_ids, REPORT_OFFICE_TITLE_REPORT_TYPES
+            report_ids, _REPORT_OFFICE_TITLE_REPORT_TYPES
         )
     ]
     window_office_printed_values = (
@@ -270,10 +283,8 @@ def populate_office_title_ministries(
         if placed_office_titles is None:
             unplaced_titles.append(office_printed)
             continue
-        if any(
-            placed_office_title.ministry_name not in ministry_name_to_id
-            for placed_office_title in placed_office_titles
-        ):
+        ministry_ids = _get_placed_ministry_ids(placed_office_titles, ministry_name_to_id)
+        if ministry_ids is None:
             unplaced_titles.append(office_printed)
             continue
         office_title_ministries.extend(
@@ -281,9 +292,9 @@ def populate_office_title_ministries(
                 office_printed=placed_office_title.office_printed,
                 ordinal=placed_office_title.ordinal,
                 source=placed_office_title.source,
-                ministry_id=ministry_name_to_id[placed_office_title.ministry_name],
+                ministry_id=ministry_id,
             )
-            for placed_office_title in placed_office_titles
+            for placed_office_title, ministry_id in zip(placed_office_titles, ministry_ids)
         )
     CRUDOfficeTitleMinistry(session).add_many(office_title_ministries)
     logger.info(

@@ -1,5 +1,4 @@
 import argparse
-from collections import Counter
 
 from sqlmodel import Session
 
@@ -21,24 +20,15 @@ from populate.office_printed_ranges import (
 )
 from populate.written_tables import vacuum_analyze_written_tables
 from settings import settings
+from utils.row_counts import format_row_counts
 from utils.write_target import validate_can_write
-
-
-def _format_row_counts(key_to_row_count: Counter) -> str:
-    return (
-        ", ".join(
-            f"{key} {row_count:,}"
-            for key, row_count in sorted(key_to_row_count.items())
-        )
-        or "none"
-    )
 
 
 def _log_attendance_office_plan(plan: AttendanceOfficePlan) -> None:
     logger.info(
         f"Plan: {len(plan.attendance_offices):,} attendance offices for {len(plan.sitting_ids):,} sittings;"
-        f" by decade: {_format_row_counts(plan.decade_to_row_count)};"
-        f" by source: {_format_row_counts(plan.source_to_row_count)};"
+        f" by decade: {format_row_counts(plan.decade_to_row_count)};"
+        f" by source: {format_row_counts(plan.source_to_row_count)};"
         f" {plan.entries_without_attendance_row:,} entries with no attendance row;"
         f" {plan.duplicate_entries:,} duplicate entries"
     )
@@ -49,7 +39,7 @@ def _log_office_printed_range_plan(
 ) -> None:
     logger.info(
         f"Office printed ranges: deleted {deleted_range_count:,}, plan {len(plan.office_printed_ranges):,};"
-        f" by decade: {_format_row_counts(plan.decade_to_row_count)};"
+        f" by decade: {format_row_counts(plan.decade_to_row_count)};"
         f" {plan.rows_without_speaker_id:,} stored offices with no speaker_id"
     )
 
