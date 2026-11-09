@@ -515,6 +515,26 @@ def test_key_rule_takes_the_last_of_several_parts_and_keeps_its_name() -> None:
     assert planned_link.rule == ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE
 
 
+def test_a_title_variant_on_the_printed_date_leaves_no_certain_continuation() -> None:
+    report_rows = [
+        _build_debate_source(),
+        _build_part(2, 3, report_id="PART#3"),
+        _build_part(3, 11, title="Debate.", report_id="PART#11"),
+    ]
+
+    shipped_plan = _build_plan(report_rows, resumption_headings=[_build_heading()])
+    extended_plan = _build_plan(
+        report_rows,
+        resumption_headings=[_build_heading()],
+        shipped_rules=_EXTENDED_RULES,
+    )
+
+    assert _get_only_reason(shipped_plan) == ReportLinkUnplacedReason.SEVERAL_REPORTS_WITH_TITLE
+    planned_link = _get_only_link(extended_plan)
+    assert planned_link.target_report_id == "PART#11"
+    assert planned_link.rule == ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE
+
+
 def test_hand_kept_entry_links_when_the_exact_title_found_several() -> None:
     first_target = _build_target()
     second_target = _build_report(

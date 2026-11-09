@@ -193,26 +193,25 @@ def _get_continuation_match(
     same_title = [
         report_row for report_row in day_report_rows if report_row.title == source.title
     ]
-    if (
-        len(same_title) == 1
-        and ReportLinkRule.SAME_TITLE_ON_PRINTED_DATE in shipped_rules
-    ):
-        return _RuleMatch(same_title[0], ReportLinkRule.SAME_TITLE_ON_PRINTED_DATE)
-    if (
-        len(same_title) > 1
-        and ReportLinkRule.LAST_PART_ON_PRINTED_DATE in shipped_rules
-    ):
-        return _get_part_match(same_title, ReportLinkRule.LAST_PART_ON_PRINTED_DATE)
     key_titled = [
         report_row
         for report_row in day_report_rows
         if get_title_key(report_row.title) == get_title_key(source.title)
     ]
+    is_title_varied = len(key_titled) > len(same_title)
     if (
-        not same_title
-        and key_titled
-        and ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE in shipped_rules
+        not is_title_varied
+        and len(same_title) == 1
+        and ReportLinkRule.SAME_TITLE_ON_PRINTED_DATE in shipped_rules
     ):
+        return _RuleMatch(same_title[0], ReportLinkRule.SAME_TITLE_ON_PRINTED_DATE)
+    if (
+        not is_title_varied
+        and len(same_title) > 1
+        and ReportLinkRule.LAST_PART_ON_PRINTED_DATE in shipped_rules
+    ):
+        return _get_part_match(same_title, ReportLinkRule.LAST_PART_ON_PRINTED_DATE)
+    if is_title_varied and ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE in shipped_rules:
         return _get_part_match(key_titled, ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE)
     corrected_title = report_title_to_corrected_title.get((source.report_id, source.title))
     if (
@@ -229,7 +228,7 @@ def _get_continuation_match(
             return _RuleMatch(
                 corrected_titled[0], ReportLinkRule.HAND_KEPT_TITLE_ON_PRINTED_DATE
             )
-    if len(same_title) > 1:
+    if len(key_titled) > 1:
         return ReportLinkUnplacedReason.SEVERAL_REPORTS_WITH_TITLE
     return ReportLinkUnplacedReason.NO_REPORT_WITH_TITLE
 
