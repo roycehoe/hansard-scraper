@@ -1,4 +1,5 @@
 import re
+from collections import Counter
 from dataclasses import dataclass
 from typing import Optional
 
@@ -8,7 +9,7 @@ from pydantic import ValidationError
 from crud.speech import SpeechRow
 from database.attached_file import AttachedFile
 from database.attached_file_pointer import AttachedFilePointer
-from enums import AttachedFileKind, AttachedFilePointerShape
+from enums import AttachedFileKind, AttachedFilePointerShape, ParagraphTieRule
 from exceptions import HansardAttachedFileError
 from schemas.attached_file_list import (
     LIST_PATH_MARKER,
@@ -32,6 +33,7 @@ _ZERO_WIDTH_SPACE = "\u200b"
 _NO_BREAK_SPACE = "\xa0"
 _MARKDOWN_MARKER_RE = re.compile(r"\*\*|_")
 _WHITESPACE_RE = re.compile(r"\s+")
+_POINTER_POSITION_RE = re.compile("\x01(\\d+)\x02")
 
 
 def get_annexure_entries(annexures: Optional[str]) -> list[HansardAnnexureEntry]:
@@ -156,13 +158,94 @@ def _get_pointer_links(soup: BeautifulSoup) -> list[_PointerLink]:
     return pointer_links
 
 
+@dataclass(frozen=True)
+class _ParagraphTie:
+    speech_ordinal: Optional[int]
+    paragraph_tie_rule: Optional[ParagraphTieRule]
+
+
+def _get_occurrence_ordinals(
+    words: str, ordinal_to_normalized_transcript: dict[int, str]
+) -> list[int]:
+    occurrence_ordinals = []
+    for ordinal, normalized_transcript in ordinal_to_normalized_transcript.items():
+        start = 0
+        while True:
+            position = normalized_transcript.find(words, start)
+            if position == -1:
+                break
+            occurrence_ordinals.append(ordinal)
+            start = position + len(words)
+    return occurrence_ordinals
+
+
+def _get_paragraph_tie_rule(text_count: int, pointer_count: int) -> ParagraphTieRule:
+    if text_count == 1:
+        return ParagraphTieRule.ONLY_OCCURRENCE
+    if text_count == pointer_count:
+        return ParagraphTieRule.EVERY_OCCURRENCE_A_LINK
+    return ParagraphTieRule.OCCURRENCE_BESIDE_PLAIN_TEXT
+
+
+def _get_paragraph_ties(
+    pointer_links: list[_PointerLink],
+    soup: BeautifulSoup,
+    speech_rows: list[SpeechRow],
+) -> list[_ParagraphTie]:
+    pointer_words = [
+        _normalize_text(pointer_link.tag.get_text()) for pointer_link in pointer_links
+    ]
+    for pointer_index, pointer_link in enumerate(pointer_links):
+        pointer_link.tag.insert_before(f"\x01{pointer_index}\x02")
+
+    parts = _POINTER_POSITION_RE.split(soup.get_text())
+    whole_text = parts[0]
+    pointer_index_to_offset: dict[int, int] = {}
+    for part_index in range(1, len(parts), 2):
+        pointer_index_to_offset[int(parts[part_index])] = len(whole_text)
+        whole_text += parts[part_index + 1]
+
+    normalized_whole_text = _normalize_text(whole_text)
+    words_to_pointer_count = Counter(pointer_words)
+    ordinal_to_normalized_transcript = {
+        speech_row.ordinal: _normalize_text(speech_row.transcript)
+        for speech_row in speech_rows
+    }
+    paragraph_ties = []
+    for pointer_index, words in enumerate(pointer_words):
+        if not words:
+            paragraph_ties.append(_ParagraphTie(None, None))
+            continue
+        text_count = normalized_whole_text.count(words)
+        occurrence_ordinals = _get_occurrence_ordinals(
+            words, ordinal_to_normalized_transcript
+        )
+        occurrence_index = _normalize_text(
+            whole_text[: pointer_index_to_offset[pointer_index]]
+        ).count(words)
+        if len(occurrence_ordinals) != text_count:
+            paragraph_ties.append(_ParagraphTie(None, None))
+            continue
+        if occurrence_index >= len(occurrence_ordinals):
+            paragraph_ties.append(_ParagraphTie(None, None))
+            continue
+        paragraph_ties.append(
+            _ParagraphTie(
+                occurrence_ordinals[occurrence_index],
+                _get_paragraph_tie_rule(text_count, words_to_pointer_count[words]),
+            )
+        )
+    return paragraph_ties
+
+
 def build_attached_file_pointers(
     sprs_report_id: str, content: Optional[str], speech_rows: list[SpeechRow]
 ) -> list[AttachedFilePointer]:
     if content is None:
         return []
     soup = BeautifulSoup(content, "html.parser")
-    return [
+    pointer_links = _get_pointer_links(soup)
+    attached_file_pointers = [
         AttachedFilePointer(
             ordinal=ordinal,
             printed_text=pointer_link.tag.get_text(),
@@ -173,8 +256,15 @@ def build_attached_file_pointers(
             else pointer_link.value,
             sprs_report_id=sprs_report_id,
         )
-        for ordinal, pointer_link in enumerate(_get_pointer_links(soup), 1)
+        for ordinal, pointer_link in enumerate(pointer_links, 1)
     ]
+    paragraph_ties = _get_paragraph_ties(pointer_links, soup, speech_rows)
+    for attached_file_pointer, paragraph_tie in zip(
+        attached_file_pointers, paragraph_ties, strict=True
+    ):
+        attached_file_pointer.speech_ordinal = paragraph_tie.speech_ordinal
+        attached_file_pointer.paragraph_tie_rule = paragraph_tie.paragraph_tie_rule
+    return attached_file_pointers
 
 
 def get_bad_file_link_count(content: Optional[str]) -> int:
