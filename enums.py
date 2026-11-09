@@ -317,3 +317,15 @@ class BillReviewItemKind(StrEnum):
     REPEALED_ACT_BILL_WITH_TWO_ACTS = "REPEALED_ACT_BILL_WITH_TWO_ACTS"
     BUDGET_REPORT_WITH_TWO_SUPPLY_BILLS = "BUDGET_REPORT_WITH_TWO_SUPPLY_BILLS"
     BUDGET_REPORT_WITHOUT_SUPPLY_BILL = "BUDGET_REPORT_WITHOUT_SUPPLY_BILL"
+
+
+class OfficeCheckRule(StrEnum):
+    ATTENDANCE_OFFICE = "attendance-office"
+    PUT_TO = "put-to"
+    MINISTRY = "ministry"
+
+
+class OfficeCheckVerdictKind(StrEnum):
+    RIGHT = "RIGHT"
+    WRONG = "WRONG"
+    CANNOT_TELL = "CANNOT_TELL"

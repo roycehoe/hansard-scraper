@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Optional
 
 from sqlmodel import Session, col, delete, select
 
+from database.report import Report
 from database.report_participant import ReportParticipant
 from enums import OfficeSource, ParticipantRole, ParticipantRoleSource
 
@@ -16,6 +18,12 @@ class ReportParticipantRow:
     printed_name: str
     office_source: Optional[OfficeSource]
     speaker_id: Optional[int]
+
+
+@dataclass(frozen=True)
+class ReportParticipantOfficeDateRow:
+    office_printed: str
+    sitting_date: datetime
 
 
 class CRUDReportParticipant:
@@ -44,6 +52,20 @@ class CRUDReportParticipant:
         )
         return [
             ReportParticipantRow(*row) for row in self.session.exec(statement).all()
+        ]
+
+    def get_office_printed_sitting_date_rows(
+        self,
+    ) -> list[ReportParticipantOfficeDateRow]:
+        statement = (
+            select(ReportParticipant.office_printed, Report.sitting_date)
+            .join(Report, col(Report.id) == ReportParticipant.report_id)
+            .where(col(ReportParticipant.office_printed).is_not(None))
+            .order_by(ReportParticipant.id)
+        )
+        return [
+            ReportParticipantOfficeDateRow(*row)
+            for row in self.session.exec(statement).all()
         ]
 
     def get_distinct_office_printed(self) -> list[str]:

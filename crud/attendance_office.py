@@ -24,6 +24,16 @@ class AttendanceOfficeSittingRow:
     source: AttendanceOfficeSource
 
 
+@dataclass(frozen=True)
+class AttendanceOfficeCheckRow:
+    id: int
+    sitting_date: str
+    is_markdown_source: bool
+    office_printed: str
+    entry_line_printed: str
+    source: AttendanceOfficeSource
+
+
 class CRUDAttendanceOffice:
     def __init__(self, session: Session):
         self.session = session
@@ -74,6 +84,24 @@ class CRUDAttendanceOffice:
         return [
             AttendanceOfficeSittingRow(*row)
             for row in self.session.exec(statement).all()
+        ]
+
+    def get_check_rows(self) -> list[AttendanceOfficeCheckRow]:
+        statement = (
+            select(
+                AttendanceOffice.id,
+                Sitting.sitting_date,
+                col(Sitting.markdown_content).is_not(None),
+                AttendanceOffice.office_printed,
+                AttendanceOffice.entry_line_printed,
+                AttendanceOffice.source,
+            )
+            .join(Attendance, col(Attendance.id) == AttendanceOffice.attendance_id)
+            .join(Sitting, col(Sitting.id) == Attendance.sitting_id)
+            .order_by(AttendanceOffice.id)
+        )
+        return [
+            AttendanceOfficeCheckRow(*row) for row in self.session.exec(statement).all()
         ]
 
     def get_max_sitting_date_by_sitting_ids_not_in(

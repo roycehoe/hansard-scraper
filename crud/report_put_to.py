@@ -1,8 +1,11 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 from sqlmodel import Session, col, delete, select
 
+from database.report import Report
 from database.report_put_to import ReportPutTo
+from database.speech import Speech
 from enums import ReportPutToSource
 
 
@@ -13,6 +16,18 @@ class ReportPutToRow:
     ordinal: int
     office_printed: str
     source: ReportPutToSource
+
+
+@dataclass(frozen=True)
+class ReportPutToCheckRow:
+    id: int
+    sprs_report_id: str
+    sitting_date: datetime
+    report_type: str
+    office_printed: str
+    printed_text: str
+    source: ReportPutToSource
+    transcript: str
 
 
 class CRUDReportPutTo:
@@ -38,6 +53,28 @@ class CRUDReportPutTo:
             .order_by(ReportPutTo.sprs_report_id, ReportPutTo.ordinal)
         )
         return [ReportPutToRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_check_rows(self) -> list[ReportPutToCheckRow]:
+        statement = (
+            select(
+                ReportPutTo.id,
+                ReportPutTo.sprs_report_id,
+                Report.sitting_date,
+                Report.report_type,
+                ReportPutTo.office_printed,
+                ReportPutTo.printed_text,
+                ReportPutTo.source,
+                Speech.transcript,
+            )
+            .join(Report, col(Report.report_id) == ReportPutTo.sprs_report_id)
+            .join(
+                Speech,
+                (col(Speech.report_id) == Report.id)
+                & (col(Speech.ordinal) == ReportPutTo.first_ordinal),
+            )
+            .order_by(ReportPutTo.id)
+        )
+        return [ReportPutToCheckRow(*row) for row in self.session.exec(statement).all()]
 
     def get_distinct_office_printed(self) -> list[str]:
         statement = (
