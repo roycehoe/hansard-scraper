@@ -1,0 +1,101 @@
+{
+  "annexures": [
+    {
+      "annexureID": 4101,
+      "annexureTitle": "Annex to the Committee of Supply debate",
+      "filePath": "d:/apps/reports/solr_files/20230301/annex-Committee of Supply.pdf",
+      "fileName": "annex-Committee of Supply.pdf",
+      "sectionType": "OS",
+      "sittingDate": null,
+      "file": null
+    }
+  ],
+  "vernaculars": [
+    {
+      "vernacularID": 8201,
+      "vernacularTitle": "Vernacular Speech by Mr Thomas Chua Kee Seng",
+      "filePath": "d:/apps/reports/solr_files/20160816/vernacular-Thomas Chua(4).pdf",
+      "fileName": "vernacular-Thomas Chua(4).pdf",
+      "sittingDate": null
+    }
+  ],
+  "placeholder": [
+    {
+      "vernacularID": 8301,
+      "vernacularTitle": "Vernacular Speech by Mr Muhamad Faisal B Abdul Manap",
+      "filePath": "d:/apps/reports/solr_files/20170801/vernacular-null",
+      "fileName": "null",
+      "sittingDate": null
+    }
+  ],
+  "duplicates": [
+    {
+      "vernacularID": 8403,
+      "vernacularTitle": "Vernacular Speech by Mr Thomas Chua Kee Seng",
+      "filePath": "d:/apps/reports/solr_files/20160816/vernacular-Thomas Chua(4).pdf",
+      "fileName": "vernacular-Thomas Chua(4).pdf",
+      "sittingDate": null
+    },
+    {
+      "vernacularID": 8401,
+      "vernacularTitle": "Vernacular Speech by Mr Thomas Chua Kee Seng",
+      "filePath": "d:/apps/reports/solr_files/20160816/vernacular-Thomas Chua(4).pdf",
+      "fileName": "vernacular-Thomas Chua(4).pdf",
+      "sittingDate": null
+    },
+    {
+      "vernacularID": 8402,
+      "vernacularTitle": "Vernacular Speech by Mr Thomas Chua Kee Seng",
+      "filePath": "d:/apps/reports/solr_files/20160816/vernacular-Thomas Chua(4).pdf",
+      "fileName": "vernacular-Thomas Chua(4).pdf",
+      "sittingDate": null
+    }
+  ],
+  "placeholders_with_different_titles": [
+    {
+      "vernacularID": 8501,
+      "vernacularTitle": "Vernacular Speech by Mr Muhamad Faisal B Abdul Manap",
+      "filePath": "d:/apps/reports/solr_files/20170801/vernacular-null",
+      "fileName": "null",
+      "sittingDate": null
+    },
+    {
+      "vernacularID": 8502,
+      "vernacularTitle": "Vernacular Speech by Ms Rahayu Mahzam",
+      "filePath": "d:/apps/reports/solr_files/20170801/vernacular-null",
+      "fileName": "null",
+      "sittingDate": null
+    }
+  ],
+  "missing_file_path": [
+    {
+      "annexureID": 4201,
+      "annexureTitle": "Annex to the Committee of Supply debate",
+      "fileName": "annex-Committee of Supply.pdf",
+      "sectionType": "OS",
+      "sittingDate": null,
+      "file": null
+    }
+  ],
+  "path_without_marker": [
+    {
+      "annexureID": 4301,
+      "annexureTitle": "Annex to the Committee of Supply debate",
+      "filePath": "d:/apps/reports/files/20230301/annex-Committee of Supply.pdf",
+      "fileName": "annex-Committee of Supply.pdf",
+      "sectionType": "OS",
+      "sittingDate": null,
+      "file": null
+    }
+  ],
+  "annexure_without_section_type": [
+    {
+      "annexureID": 4401,
+      "annexureTitle": "Annex to the Committee of Supply debate",
+      "filePath": "d:/apps/reports/solr_files/20230301/annex-Committee of Supply.pdf",
+      "fileName": "annex-Committee of Supply.pdf",
+      "sittingDate": null,
+      "file": null
+    }
+  ]
+}
