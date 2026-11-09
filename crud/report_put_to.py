@@ -39,6 +39,25 @@ class CRUDReportPutTo:
         )
         return [ReportPutToRow(*row) for row in self.session.exec(statement).all()]
 
+    def get_distinct_office_printed(self) -> list[str]:
+        statement = (
+            select(ReportPutTo.office_printed)
+            .distinct()
+            .order_by(ReportPutTo.office_printed)
+        )
+        return list(self.session.exec(statement).all())
+
+    def get_distinct_office_printed_by_sprs_report_ids(
+        self, sprs_report_ids: list[str]
+    ) -> list[str]:
+        statement = (
+            select(ReportPutTo.office_printed)
+            .distinct()
+            .where(col(ReportPutTo.sprs_report_id).in_(sprs_report_ids))
+            .order_by(ReportPutTo.office_printed)
+        )
+        return list(self.session.exec(statement).all())
+
     def delete_by_sprs_report_ids(self, sprs_report_ids: list[str]) -> int:
         statement = delete(ReportPutTo).where(
             col(ReportPutTo.sprs_report_id).in_(sprs_report_ids)

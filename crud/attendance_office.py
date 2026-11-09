@@ -87,6 +87,14 @@ class CRUDAttendanceOffice:
         )
         return self.session.exec(statement).one()
 
+    def get_distinct_office_printed(self) -> list[str]:
+        statement = (
+            select(AttendanceOffice.office_printed)
+            .distinct()
+            .order_by(AttendanceOffice.office_printed)
+        )
+        return list(self.session.exec(statement).all())
+
     def get_distinct_office_printed_by_sitting_ids(
         self, sitting_ids: list[int]
     ) -> list[str]:

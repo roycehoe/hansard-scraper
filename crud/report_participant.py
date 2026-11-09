@@ -46,6 +46,27 @@ class CRUDReportParticipant:
             ReportParticipantRow(*row) for row in self.session.exec(statement).all()
         ]
 
+    def get_distinct_office_printed(self) -> list[str]:
+        statement = (
+            select(ReportParticipant.office_printed)
+            .distinct()
+            .where(col(ReportParticipant.office_printed).is_not(None))
+            .order_by(ReportParticipant.office_printed)
+        )
+        return list(self.session.exec(statement).all())
+
+    def get_distinct_office_printed_by_report_ids(
+        self, report_ids: list[int]
+    ) -> list[str]:
+        statement = (
+            select(ReportParticipant.office_printed)
+            .distinct()
+            .where(col(ReportParticipant.report_id).in_(report_ids))
+            .where(col(ReportParticipant.office_printed).is_not(None))
+            .order_by(ReportParticipant.office_printed)
+        )
+        return list(self.session.exec(statement).all())
+
     def delete_by_report_ids(self, report_ids: list[int]) -> int:
         statement = delete(ReportParticipant).where(
             col(ReportParticipant.report_id).in_(report_ids)
