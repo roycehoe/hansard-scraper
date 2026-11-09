@@ -40,6 +40,7 @@ _SEEDED_REPORT_COUNT = 5
 _CAPPED_SAMPLE_SIZE = 2
 _SAMPLE_SIZE = 4
 _PLANTS_PER_KIND = 3
+_CUT_PARAGRAPH_LENGTH = 2_000
 _PLANT_COUNT = 6
 _SECOND_ORDINAL = 2
 _THIRD_ORDINAL = 3
@@ -424,6 +425,20 @@ def test_the_paragraph_text_is_the_parent_text_without_a_paragraph() -> None:
     content = '<div>Plain <a href="/search/search/download?value=20230301/annex-A.pdf">A</a></div>'
 
     assert get_pointer_paragraph_text(content, 1) == "Plain A"
+
+
+def test_the_paragraph_text_is_cut_around_its_own_pointer() -> None:
+    link = '<a href="/search/search/download?value=20230301/annex-{name}.pdf">Annex</a>'
+    content = (
+        f"<div>{'start ' * 500}{link.format(name='A')}{'middle ' * 500}"
+        f"second-side {link.format(name='B')} first-side{' end' * 500}</div>"
+    )
+
+    paragraph_text = get_pointer_paragraph_text(content, 2)
+
+    assert len(paragraph_text) == _CUT_PARAGRAPH_LENGTH
+    assert "second-side Annex first-side" in paragraph_text
+    assert "start" not in paragraph_text
 
 
 def test_a_pointer_number_beyond_the_links_raises() -> None:

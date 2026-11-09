@@ -37,6 +37,7 @@ _NO_BREAK_SPACE = "\xa0"
 _MARKDOWN_MARKER_RE = re.compile(r"\*\*|_")
 _WHITESPACE_RE = re.compile(r"\s+")
 _POINTER_POSITION_RE = re.compile("\x01(\\d+)\x02")
+_SOURCE_PARAGRAPH_CHARACTERS_EACH_SIDE = 1_000
 
 
 def get_annexure_entries(annexures: Optional[str]) -> list[HansardAnnexureEntry]:
@@ -281,12 +282,16 @@ def get_pointer_paragraph_text(content: str, ordinal: int) -> str:
             f"The report holds {len(pointer_links)} pointers, not {ordinal}"
         ) from error
     paragraph = pointer_tag.find_parent("p")
-    if paragraph is not None:
-        return str(paragraph.get_text())
-    parent = pointer_tag.parent
-    if parent is None:
+    container = pointer_tag.parent if paragraph is None else paragraph
+    if container is None:
         raise HansardAttachedFileError(f"Pointer {ordinal} has no enclosing element")
-    return str(parent.get_text())
+    marker = f"\x01{ordinal}\x02"
+    pointer_tag.insert_before(marker)
+    text_before, _, text_from_pointer = container.get_text().partition(marker)
+    return (
+        text_before[-_SOURCE_PARAGRAPH_CHARACTERS_EACH_SIDE:]
+        + text_from_pointer[:_SOURCE_PARAGRAPH_CHARACTERS_EACH_SIDE]
+    )
 
 
 def get_bad_file_link_count(content: Optional[str]) -> int:

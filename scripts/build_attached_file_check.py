@@ -56,7 +56,9 @@ _BATCH_LEGEND = (
     "cannot tell.\n\n"
     "file_answer: when a file is shown, RIGHT when it is the file the link "
     "names, WRONG when it is another file, UNSURE when you cannot tell. "
-    "When no file is shown, write null.\n"
+    "When no file is shown, write null.\n\n"
+    "A long source paragraph is cut to the text either side of the link, so it "
+    "may start or end in the middle of a word.\n"
 )
 
 
