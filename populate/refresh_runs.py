@@ -40,12 +40,14 @@ from populate.attached_files import populate_attached_files
 from populate.attendance_offices import populate_attendance_offices
 from populate.attribution_figures import get_attribution_figures
 from populate.bill_speakers import populate_bill_speakers
+from populate.leave_periods import populate_leave_periods
 from populate.office_printed_ranges import populate_office_printed_ranges
 from populate.office_title_ministries import populate_office_title_ministries
 from populate.report_askers import populate_report_askers
 from populate.report_links import populate_report_links
 from populate.report_participants import populate_report_participants
 from populate.report_put_to import populate_report_put_to
+from populate.seat_holdings import populate_seat_holdings
 from populate.speaker_links import link_speakers_by_report_ids_and_sitting_ids
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
@@ -721,6 +723,8 @@ def _write_window_rows(
     )
     populate_bill_speakers(session, report_ids)
     populate_attached_files(session, report_ids, sitting_ids)
+    populate_leave_periods(session, sitting_ids)
+    populate_seat_holdings(session, sitting_ids)
 
     window_result.website_responses_added = len(hansard_website_responses)
     window_result.reports_added = len(reports)

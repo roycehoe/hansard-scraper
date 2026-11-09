@@ -23,6 +23,7 @@ from database.attendance import Attendance
 from database.attendance_office import AttendanceOffice
 from database.hansard_sitting_date_response import HansardSittingDateResponse
 from database.hansard_website_response import HansardWebsiteResponse
+from database.leave_period import LeavePeriod, LeavePeriodPrinting
 from database.ministry import Ministry
 from database.office_printed_range import OfficePrintedRange
 from database.office_title_ministry import OfficeTitleMinistry
@@ -33,6 +34,7 @@ from database.report import Report
 from database.report_asker import ReportAsker
 from database.report_participant import ReportParticipant
 from database.report_put_to import ReportPutTo
+from database.seat_holding import SeatHolding
 from database.sitting import Sitting
 from database.speaker import Speaker
 from database.speech import Speech
@@ -93,6 +95,17 @@ _OCTOBER_RUN_DATE = date(2024, 10, 1)
 _OCTOBER_SITTING_DATE_KEY = "1-10-2024"
 _OCTOBER_REPORT_ID = "written-answer-na-99999#"
 _OCTOBER_MONTH = 10
+_LEAVE_MEMBER_NAME = "Mr Chee Hong Tat"
+_NEW_SITTING_DATE_KEY = "10-9-2024"
+_LEAVE_MEMBER_SPEAKER_NAME = "Chee Hong Tat"
+_LEAVE_MEMBER_DIVISION = "Bishan-Toa Payoh"
+_LEAVE_MEMBER_DIVISION_KEY = "bishan toa payoh"
+_EARLIER_SEAT_DATE = date(2024, 1, 1)
+_SEAT_UPDATE_COLUMNS = (
+    "first_sitting_date",
+    "last_sitting_date",
+    "sitting_count",
+)
 _RESUMED_PROBE_START_DATE = date(2024, 9, 11)
 _STRONG_TEXT_RE = re.compile(r"<strong>[^<]+</strong>")
 _SUMMARY_RE = re.compile(
@@ -2113,3 +2126,202 @@ def test_stored_hit_date_without_a_sitting_is_probed_after_the_recheck_window(
     refresh_runs.populate_refresh_runs(scratch_session, _get_october_now(), None)
 
     assert new_sitting_date_key in fake_parliament.sitting_calls
+
+
+def _set_new_sitting_permission_list(fake_parliament: FakeParliament) -> None:
+    fake_parliament.new_sitting["ptbaList"] = [
+        {
+            "mpName": _LEAVE_MEMBER_NAME,
+            "from": "10 Sep",
+            "to": "12 Sep",
+            "endDtFlag": False,
+        },
+        {"mpName": None, "from": "10 Sep", "to": "12 Sep", "endDtFlag": False},
+    ]
+
+
+def test_run_stores_the_leave_printings_and_the_seat_rows_of_the_new_sitting(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+) -> None:
+    seed_stored(scratch_session)
+    _set_new_sitting_permission_list(fake_parliament)
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    with Session(scratch_engine) as session:
+        printings = session.exec(
+            select(LeavePeriodPrinting).order_by(col(LeavePeriodPrinting.ordinal))
+        ).all()
+        assert [
+            (printing.printed_name, printing.carried_name) for printing in printings
+        ] == [(_LEAVE_MEMBER_NAME, None), (None, _LEAVE_MEMBER_NAME)]
+        assert len(session.exec(select(LeavePeriod)).all()) == 1
+        new_sitting_speaker_ids = {
+            attendance.speaker_id
+            for attendance in session.exec(
+                select(Attendance)
+                .join(Sitting, col(Sitting.id) == col(Attendance.sitting_id))
+                .where(Sitting.sitting_date == _NEW_SITTING_DATE_KEY)
+            ).all()
+            if attendance.speaker_id is not None
+        }
+        seat_holdings = session.exec(select(SeatHolding)).all()
+        assert seat_holdings != []
+        assert {seat_holding.speaker_id for seat_holding in seat_holdings} <= (
+            new_sitting_speaker_ids
+        )
+
+
+@dataclass
+class _StatementRecorder:
+    statements: list[str] = field(default_factory=list)
+
+    def record_statement(
+        self,
+        connection: Connection,
+        cursor: object,
+        statement: str,
+        parameters: object,
+        context: object,
+        executemany: bool,
+    ) -> None:
+        self.statements.append(statement)
+
+
+def _seed_earlier_seat_holding(session: Session) -> None:
+    chee = session.exec(
+        select(Speaker)
+        .where(Speaker.name == _LEAVE_MEMBER_SPEAKER_NAME)
+        .where(Speaker.parliament_number == _PREVIOUS_PARLIAMENT_NUMBER)
+    ).one()
+    assert chee.id is not None
+    session.add(
+        SeatHolding(
+            division_key=_LEAVE_MEMBER_DIVISION_KEY,
+            location_name=_LEAVE_MEMBER_DIVISION,
+            first_sitting_date=_EARLIER_SEAT_DATE,
+            last_sitting_date=_EARLIER_SEAT_DATE,
+            sitting_count=1,
+            speaker_id=chee.id,
+        )
+    )
+    session.commit()
+
+
+def test_run_issues_no_delete_and_updates_only_the_three_seat_bounds(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+) -> None:
+    seed_stored(scratch_session)
+    _seed_earlier_seat_holding(scratch_session)
+    _set_new_sitting_permission_list(fake_parliament)
+    statement_recorder = _StatementRecorder()
+    event.listen(
+        scratch_engine, "before_cursor_execute", statement_recorder.record_statement
+    )
+
+    try:
+        refresh_runs.populate_refresh_runs(
+            scratch_session, _get_now(fake_parliament), None
+        )
+    finally:
+        event.remove(
+            scratch_engine, "before_cursor_execute", statement_recorder.record_statement
+        )
+
+    assert not [
+        statement
+        for statement in statement_recorder.statements
+        if statement.lstrip().upper().startswith("DELETE")
+    ]
+    seat_updates = [
+        statement
+        for statement in statement_recorder.statements
+        if statement.startswith("UPDATE seat_holding")
+    ]
+    assert seat_updates != []
+    for seat_update in seat_updates:
+        set_clause = seat_update.partition(" SET ")[2].partition(" WHERE ")[0]
+        assert {
+            assignment.partition("=")[0].strip()
+            for assignment in set_clause.split(", ")
+        } == set(_SEAT_UPDATE_COLUMNS)
+    with Session(scratch_engine) as session:
+        widened = session.exec(
+            select(SeatHolding).where(
+                SeatHolding.division_key == _LEAVE_MEMBER_DIVISION_KEY,
+                SeatHolding.first_sitting_date == _EARLIER_SEAT_DATE,
+            )
+        ).one()
+        assert widened.last_sitting_date == fake_parliament.new_sitting_date
+
+
+def test_a_second_run_leaves_the_same_leave_and_seat_rows(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+) -> None:
+    seed_stored(scratch_session)
+    _set_new_sitting_permission_list(fake_parliament)
+    refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
+    with Session(scratch_engine) as session:
+        printings_after_first_run = session.exec(select(LeavePeriodPrinting)).all()
+        seat_holdings_after_first_run = session.exec(select(SeatHolding)).all()
+        printing_values = sorted(
+            printing.model_dump().items() for printing in printings_after_first_run
+        )
+        seat_holding_values = sorted(
+            seat_holding.model_dump().items()
+            for seat_holding in seat_holdings_after_first_run
+        )
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    with Session(scratch_engine) as session:
+        assert (
+            sorted(
+                printing.model_dump().items()
+                for printing in session.exec(select(LeavePeriodPrinting)).all()
+            )
+            == printing_values
+        )
+        assert (
+            sorted(
+                seat_holding.model_dump().items()
+                for seat_holding in session.exec(select(SeatHolding)).all()
+            )
+            == seat_holding_values
+        )
+
+
+def test_a_failing_seat_step_rolls_the_month_back_and_leaves_no_printing(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    row_counts_before = _get_row_counts(scratch_engine)
+    _set_new_sitting_permission_list(fake_parliament)
+    monkeypatch.setattr(refresh_runs, "populate_seat_holdings", _raise_database_error)
+
+    with pytest.raises(SQLAlchemyError):
+        refresh_runs.populate_refresh_runs(
+            scratch_session, _get_now(fake_parliament), None
+        )
+
+    _assert_failed(scratch_engine, alerts, row_counts_before, "SQLAlchemyError")
+    with Session(scratch_engine) as session:
+        assert session.exec(select(LeavePeriodPrinting)).all() == []
+        assert session.exec(select(LeavePeriod)).all() == []
+        assert session.exec(select(SeatHolding)).all() == []

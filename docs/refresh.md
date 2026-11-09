@@ -6,7 +6,7 @@
 
 ## What a run does
 
-A run only adds rows, apart from three columns of a stored Bill (`title`, `last_sitting_date` and `is_passed`) that move when a new report joins it. It never re-parses a stored report and never rewrites any other stored row, except that step 17 extends a stored printed office range, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
+A run only adds rows, apart from three columns of a stored Bill (`title`, `last_sitting_date` and `is_passed`) that move when a new report joins it, and the three bounds columns of a stored `seat_holding` row that step 21 widens. It never re-parses a stored report and never rewrites any other stored row, except that step 17 extends a stored printed office range, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
 
 In order, a run:
 
@@ -32,16 +32,18 @@ Then, for each month in order, the run:
 17. Adds the month's new sittings to the printed office ranges: it inserts a range for each new run of a title and extends a stored range by `UPDATE`. If a new sitting is dated earlier than the latest sitting that holds an office row, it writes no range for the month and sends the dates to the alert. It never deletes.
 18. Places the month's new Bill reports in Bills, one report at a time, with the start-a-new-Bill test that `apply_act_links` uses. It inserts a new `bill` row (with its class), `billreport` READING rows and one `billkey` row with an Act count of 0 for a Bill it starts, and it updates only `title`, `last_sitting_date` and `is_passed` of a Bill a report joins, adding no key row for it. It then inserts the `billreportspeaker` and `billstageline` rows of the placed reports. It leaves out, and logs, a report whose title lacks the word Bill, one dated before its open Bill's last sitting, one whose title's latest date two Bills share, and one dated on a keyed Bill's first sitting date whose SPRS id sorts below the key. It never deletes, because the role has no DELETE.
 19. Inserts the attached files of the month's new sittings and the pointers of its new reports, then ties each new pointer to its speech row and, where exactly one stored file has its address, to that file (`attached_file` and `attached_file_pointer`). It inserts rows and sets `attached_file_id`, and never deletes. It reads the speech rows of step 10, so it runs after them.
-20. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
-21. Commits the month. A halt or a failure rolls back only the month in progress.
+20. Reads the permission list of each new sitting and inserts one `leave_period_printing` row for each entry, with a `leave_period` row for each period no stored row holds. The office on a printing comes from the sitting's attendance list. It never deletes and never updates a stored row.
+21. Adds the `seat_holding` rows of the Members in the new sittings' attendance rows, and widens `first_sitting_date`, `last_sitting_date` and `sitting_count` on a stored row. Those three columns are the only ones the run updates on this table, and it never deletes.
+22. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
+23. Commits the month. A halt or a failure rolls back only the month in progress.
 
 After the last month, the run:
 
-22. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
-23. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
-24. Reads the whole corpus, inserts the `report_link` rows the plan has and the table lacks, and counts the stored rows that differ from the plan. It never deletes or updates, and a stale count above 0 sends an alert. The month rows are already committed, so a failure here fails the run and keeps them.
-25. Records the counts and marks the row `SUCCEEDED`.
-26. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
+24. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
+25. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
+26. Reads the whole corpus, inserts the `report_link` rows the plan has and the table lacks, and counts the stored rows that differ from the plan. It never deletes or updates, and a stale count above 0 sends an alert. The month rows are already committed, so a failure here fails the run and keeps them.
+27. Records the counts and marks the row `SUCCEEDED`.
+28. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
 
 The report link step is the last before the run finishes, so a supervised `python -m scripts.apply_report_links --commit` is the only path that removes a `report_link` row. Production order is the migration, then these grants, then the code, because the step fails every refresh without the table and grants.
 
@@ -103,7 +105,7 @@ A VACUUM that fails, or that Postgres skips, is a failure too. Postgres skips a 
 
 Two cases are known and accepted:
 
-- A run swept as stale by another run keeps committing its months. Each month only adds rows and updates the three Bill columns of step 18, and the swept run cannot overwrite its `FAILED` status when it ends.
+- A run swept as stale by another run keeps committing its months. Each month only adds rows, updates the three Bill columns of step 18 and widens the seat bounds of step 21, and the swept run cannot overwrite its `FAILED` status when it ends.
 - A killed supervised run leaves its row `RUNNING`, which blocks the next run for 12 hours. Mark it failed by hand:
 
   ```sql
@@ -223,6 +225,9 @@ GRANT USAGE ON SEQUENCE bill_id_seq, billreport_id_seq, billkey_id_seq, billrepo
 GRANT SELECT, INSERT ON attached_file, attached_file_pointer TO hansard_refresh;
 GRANT UPDATE (attached_file_id) ON attached_file_pointer TO hansard_refresh;
 GRANT USAGE ON SEQUENCE attached_file_id_seq, attached_file_pointer_id_seq TO hansard_refresh;
+GRANT SELECT, INSERT ON leave_period, leave_period_printing, seat_holding TO hansard_refresh;
+GRANT UPDATE (first_sitting_date, last_sitting_date, sitting_count) ON seat_holding TO hansard_refresh;
+GRANT USAGE ON SEQUENCE leave_period_id_seq, leave_period_printing_id_seq, seat_holding_id_seq TO hansard_refresh;
 GRANT SELECT (id, website_responses_added, sitting_date_responses_added, sittings_added, reports_added, speeches_added, speeches_linked, speeches_named_unlinked, attendances_added, attendances_linked, reports_held_without_text, reports_without_speech_rows, reports_rechecked, reports_changed, latest_sitting_date_with_text, figures, started_at, finished_at, status) ON refresh_run TO <the API's read-only role>;
 GRANT SELECT ON report_link TO <the API's read-only role>;
 ```
