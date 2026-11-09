@@ -1,0 +1,54 @@
+{
+ "why": "A speech row that names Ayes but gives no second count makes no division and is listed as unread (report 32026, 28 February 1986). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "rows": [
+  [
+   44,
+   "SPEECH",
+   null,
+   "[row 44 text not reproduced]"
+  ],
+  [
+   45,
+   "SPEECH",
+   null,
+   "[row 45 text not reproduced]"
+  ],
+  [
+   46,
+   "SPEECH",
+   null,
+   "[row 46 text not reproduced]"
+  ],
+  [
+   47,
+   "SPEECH",
+   null,
+   "It will be recorded: there are two \"Ayes\" and the rest \"No\"."
+  ],
+  [
+   48,
+   "SPEECH",
+   null,
+   "[row 48 text not reproduced]"
+  ],
+  [
+   49,
+   "SPEECH",
+   null,
+   "[row 49 text not reproduced]"
+  ],
+  [
+   50,
+   "SPEECH",
+   null,
+   "[row 50 text not reproduced]"
+  ]
+ ],
+ "expected_divisions": [],
+ "expected_unread": [
+  {
+   "speech_ordinal": 47,
+   "reason": "TOTAL_WITHOUT_SECOND_COUNT"
+  }
+ ]
+}

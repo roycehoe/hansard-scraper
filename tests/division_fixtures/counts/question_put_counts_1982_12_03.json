@@ -1,0 +1,74 @@
+{
+ "why": "Question put with the counts directly after it is a division line; a plain Question put is not (report 33002, 3 December 1982). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "rows": [
+  [
+   8,
+   "PROCEDURAL",
+   null,
+   "Question put, and agreed to."
+  ],
+  [
+   192,
+   "PROCEDURAL",
+   null,
+   "Question put: Ayes, 33; Noes, 1 ; Abstentions, 1."
+  ],
+  [
+   193,
+   "UNCLASSIFIED",
+   null,
+   "[list name 193]"
+  ],
+  [
+   194,
+   "UNCLASSIFIED",
+   null,
+   "[list name 194]"
+  ],
+  [
+   195,
+   "UNCLASSIFIED",
+   null,
+   "[list name 195]"
+  ],
+  [
+   196,
+   "UNCLASSIFIED",
+   null,
+   "[list name 196]"
+  ],
+  [
+   214,
+   "PROCEDURAL",
+   null,
+   "Question put: Ayes, 1; Noes, 36; Abstentions, 1."
+  ]
+ ],
+ "expected_divisions": [
+  {
+   "report_division_number": 1,
+   "speech_ordinal": 192,
+   "count_source": "PRINTED_LINE",
+   "printed_counts": "Question put: Ayes, 33; Noes, 1 ; Abstentions, 1",
+   "ayes": 33,
+   "noes": 1,
+   "abstentions": 1,
+   "absent": null,
+   "paired": null,
+   "merged_total_ordinal": null
+  },
+  {
+   "report_division_number": 2,
+   "speech_ordinal": 214,
+   "count_source": "PRINTED_LINE",
+   "printed_counts": "Question put: Ayes, 1; Noes, 36; Abstentions, 1",
+   "ayes": 1,
+   "noes": 36,
+   "abstentions": 1,
+   "absent": null,
+   "paired": null,
+   "merged_total_ordinal": null
+  }
+ ],
+ "expected_unread": []
+}

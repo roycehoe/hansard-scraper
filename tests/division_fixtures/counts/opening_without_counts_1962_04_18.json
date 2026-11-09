@@ -1,0 +1,42 @@
+{
+ "why": "A division opening that prints no counts makes no division and is listed as unread (the motion report of SPRS id 00069071-ZZ, 18 April 1962). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "rows": [
+  [
+   358,
+   "SPEECH",
+   null,
+   "[row 358 text not reproduced]"
+  ],
+  [
+   359,
+   "SPEECH",
+   null,
+   "[row 359 text not reproduced]"
+  ],
+  [
+   360,
+   "PROCEDURAL",
+   null,
+   "The House divided and the Clerk proceeded to call out the names of the Members."
+  ],
+  [
+   361,
+   "SPEECH",
+   null,
+   "[row 361 text not reproduced]"
+  ],
+  [
+   362,
+   "SPEECH",
+   null,
+   "[row 362 text not reproduced]"
+  ]
+ ],
+ "expected_divisions": [],
+ "expected_unread": [
+  {
+   "speech_ordinal": 360,
+   "reason": "OPENING_WITHOUT_COUNTS"
+  }
+ ]
+}

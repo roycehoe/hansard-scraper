@@ -1,0 +1,86 @@
+{
+ "why": "A spoken total with no printed line near it is its own division (report 41976, 18 November 1957). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "rows": [
+  [
+   56,
+   "SPEECH",
+   null,
+   "[row 56 text not reproduced]"
+  ],
+  [
+   57,
+   "SPEECH",
+   null,
+   "[row 57 text not reproduced]"
+  ],
+  [
+   58,
+   "SPEECH",
+   null,
+   "[row 58 text not reproduced]"
+  ],
+  [
+   59,
+   "SPEECH",
+   null,
+   "[row 59 text not reproduced]"
+  ],
+  [
+   60,
+   "SPEECH",
+   null,
+   "[row 60 text not reproduced]"
+  ],
+  [
+   61,
+   "SPEECH",
+   null,
+   "[row 61 text not reproduced]"
+  ],
+  [
+   62,
+   "SPEECH",
+   null,
+   "[row 62 text not reproduced]"
+  ],
+  [
+   63,
+   "SPEECH",
+   null,
+   "The result of the division is: Ayes, 13; Noes, 10; Paired, 2; Abstentions, Nil."
+  ],
+  [
+   64,
+   "SPEECH",
+   null,
+   "[row 64 text not reproduced]"
+  ],
+  [
+   65,
+   "SPEECH",
+   null,
+   "[row 65 text not reproduced]"
+  ],
+  [
+   66,
+   "SPEECH",
+   null,
+   "[row 66 text not reproduced]"
+  ]
+ ],
+ "expected_divisions": [
+  {
+   "report_division_number": 1,
+   "speech_ordinal": 63,
+   "count_source": "SPOKEN_TOTAL",
+   "printed_counts": "The result of the division is: Ayes, 13; Noes, 10; Paired, 2; Abstentions, Nil",
+   "ayes": 13,
+   "noes": 10,
+   "abstentions": 0,
+   "absent": null,
+   "paired": 2,
+   "merged_total_ordinal": null
+  }
+ ],
+ "expected_unread": []
+}
