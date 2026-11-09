@@ -1,0 +1,62 @@
+{
+ "why": "A spoken total whose first 'there are' reads no count merges into the printed line two rows on (report 14337, 10 January 2018). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "rows": [
+  [
+   380,
+   "SPEECH",
+   null,
+   "[row 380 text not reproduced]"
+  ],
+  [
+   381,
+   "SPEECH",
+   null,
+   "[row 381 text not reproduced]"
+  ],
+  [
+   382,
+   "PROCEDURAL",
+   null,
+   "Division taken: Ayes, 80; Noes, Nil; Abstention, Nil."
+  ],
+  [
+   383,
+   "SPEECH",
+   null,
+   "[row 383 text not reproduced]"
+  ],
+  [
+   384,
+   "SPEECH",
+   null,
+   "As there are none, I will proceed to declare the voting results now. There are 80 \"Ayes, zero \"Noes\", and zero \"Abstentions\"."
+  ],
+  [
+   385,
+   "SPEECH",
+   null,
+   "[row 385 text not reproduced]"
+  ],
+  [
+   386,
+   "SPEECH",
+   null,
+   "[row 386 text not reproduced]"
+  ]
+ ],
+ "expected_divisions": [
+  {
+   "report_division_number": 1,
+   "speech_ordinal": 382,
+   "count_source": "PRINTED_LINE",
+   "printed_counts": "Division taken: Ayes, 80; Noes, Nil; Abstention, Nil",
+   "ayes": 80,
+   "noes": 0,
+   "abstentions": 0,
+   "absent": null,
+   "paired": null,
+   "merged_total_ordinal": 384
+  }
+ ],
+ "expected_unread": []
+}

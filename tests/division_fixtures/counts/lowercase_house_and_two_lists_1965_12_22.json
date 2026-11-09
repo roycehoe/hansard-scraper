@@ -1,0 +1,398 @@
+{
+ "why": "Two printed lines, the second with a lower-case 'house' and a list that runs to the end of the data; only the first has a spoken total (report 37957, 22 December 1965). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "rows": [
+  [
+   56,
+   "SPEECH",
+   null,
+   "[row 56 text not reproduced]"
+  ],
+  [
+   57,
+   "PROCEDURAL",
+   null,
+   "Question put, \"That the Bill be now read a Second time.\""
+  ],
+  [
+   58,
+   "PROCEDURAL",
+   null,
+   "The House divided: Ayes, 36; Absent, 15."
+  ],
+  [
+   59,
+   "UNCLASSIFIED",
+   null,
+   "[list name 59]"
+  ],
+  [
+   60,
+   "UNCLASSIFIED",
+   null,
+   "[list name 60]"
+  ],
+  [
+   61,
+   "UNCLASSIFIED",
+   null,
+   "[list name 61]"
+  ],
+  [
+   62,
+   "UNCLASSIFIED",
+   null,
+   "[list name 62]"
+  ],
+  [
+   63,
+   "UNCLASSIFIED",
+   null,
+   "[list name 63]"
+  ],
+  [
+   64,
+   "UNCLASSIFIED",
+   null,
+   "[list name 64]"
+  ],
+  [
+   65,
+   "UNCLASSIFIED",
+   null,
+   "[list name 65]"
+  ],
+  [
+   66,
+   "UNCLASSIFIED",
+   null,
+   "[list name 66]"
+  ],
+  [
+   67,
+   "UNCLASSIFIED",
+   null,
+   "[list name 67]"
+  ],
+  [
+   68,
+   "UNCLASSIFIED",
+   null,
+   "[list name 68]"
+  ],
+  [
+   69,
+   "UNCLASSIFIED",
+   null,
+   "[list name 69]"
+  ],
+  [
+   70,
+   "UNCLASSIFIED",
+   null,
+   "[list name 70]"
+  ],
+  [
+   71,
+   "UNCLASSIFIED",
+   null,
+   "[list name 71]"
+  ],
+  [
+   72,
+   "UNCLASSIFIED",
+   null,
+   "[list name 72]"
+  ],
+  [
+   73,
+   "UNCLASSIFIED",
+   null,
+   "[list name 73]"
+  ],
+  [
+   74,
+   "UNCLASSIFIED",
+   null,
+   "[list name 74]"
+  ],
+  [
+   75,
+   "UNCLASSIFIED",
+   null,
+   "[list name 75]"
+  ],
+  [
+   76,
+   "UNCLASSIFIED",
+   null,
+   "[list name 76]"
+  ],
+  [
+   77,
+   "UNCLASSIFIED",
+   null,
+   "[list name 77]"
+  ],
+  [
+   78,
+   "UNCLASSIFIED",
+   null,
+   "[list name 78]"
+  ],
+  [
+   79,
+   "UNCLASSIFIED",
+   null,
+   "[list name 79]"
+  ],
+  [
+   80,
+   "UNCLASSIFIED",
+   null,
+   "[list name 80]"
+  ],
+  [
+   81,
+   "UNCLASSIFIED",
+   null,
+   "[list name 81]"
+  ],
+  [
+   82,
+   "UNCLASSIFIED",
+   null,
+   "[list name 82]"
+  ],
+  [
+   83,
+   "UNCLASSIFIED",
+   null,
+   "[list name 83]"
+  ],
+  [
+   84,
+   "UNCLASSIFIED",
+   null,
+   "[list name 84]"
+  ],
+  [
+   85,
+   "UNCLASSIFIED",
+   null,
+   "[list name 85]"
+  ],
+  [
+   86,
+   "UNCLASSIFIED",
+   null,
+   "[list name 86]"
+  ],
+  [
+   87,
+   "UNCLASSIFIED",
+   null,
+   "[list name 87]"
+  ],
+  [
+   88,
+   "UNCLASSIFIED",
+   null,
+   "[list name 88]"
+  ],
+  [
+   89,
+   "UNCLASSIFIED",
+   null,
+   "[list name 89]"
+  ],
+  [
+   90,
+   "UNCLASSIFIED",
+   null,
+   "[list name 90]"
+  ],
+  [
+   91,
+   "UNCLASSIFIED",
+   null,
+   "[list name 91]"
+  ],
+  [
+   92,
+   "UNCLASSIFIED",
+   null,
+   "[list name 92]"
+  ],
+  [
+   93,
+   "UNCLASSIFIED",
+   null,
+   "[list name 93]"
+  ],
+  [
+   94,
+   "UNCLASSIFIED",
+   null,
+   "[list name 94]"
+  ],
+  [
+   95,
+   "UNCLASSIFIED",
+   null,
+   "[list name 95]"
+  ],
+  [
+   96,
+   "UNCLASSIFIED",
+   null,
+   "[list name 96]"
+  ],
+  [
+   97,
+   "UNCLASSIFIED",
+   null,
+   "[list name 97]"
+  ],
+  [
+   98,
+   "UNCLASSIFIED",
+   null,
+   "[list name 98]"
+  ],
+  [
+   99,
+   "UNCLASSIFIED",
+   null,
+   "[list name 99]"
+  ],
+  [
+   100,
+   "UNCLASSIFIED",
+   null,
+   "[list name 100]"
+  ],
+  [
+   101,
+   "UNCLASSIFIED",
+   null,
+   "[list name 101]"
+  ],
+  [
+   102,
+   "SPEECH",
+   null,
+   "36 Ayes, 15 Absent. I declare the Motion carried."
+  ],
+  [
+   103,
+   "SPEECH",
+   null,
+   "[row 103 text not reproduced]"
+  ],
+  [
+   104,
+   "SPEECH",
+   null,
+   "[row 104 text not reproduced]"
+  ],
+  [
+   105,
+   "SPEECH",
+   null,
+   "[row 105 text not reproduced]"
+  ],
+  [
+   106,
+   "SPEECH",
+   null,
+   "[row 106 text not reproduced]"
+  ],
+  [
+   107,
+   "SPEECH",
+   null,
+   "[row 107 text not reproduced]"
+  ],
+  [
+   108,
+   "SPEECH",
+   null,
+   "[row 108 text not reproduced]"
+  ],
+  [
+   109,
+   "SPEECH",
+   null,
+   "[row 109 text not reproduced]"
+  ],
+  [
+   110,
+   "PROCEDURAL",
+   null,
+   "Question put, \"That the Bill be now read a Third time.\""
+  ],
+  [
+   111,
+   "SPEECH",
+   null,
+   "[row 111 text not reproduced]"
+  ],
+  [
+   112,
+   "PROCEDURAL",
+   null,
+   "Division Bells rung."
+  ],
+  [
+   113,
+   "PROCEDURAL",
+   null,
+   "The house divided: Ayes, 36; Absent, 15."
+  ],
+  [
+   114,
+   "UNCLASSIFIED",
+   null,
+   "[list name 114]"
+  ],
+  [
+   115,
+   "UNCLASSIFIED",
+   null,
+   "[list name 115]"
+  ],
+  [
+   116,
+   "UNCLASSIFIED",
+   null,
+   "[list name 116]"
+  ]
+ ],
+ "expected_divisions": [
+  {
+   "report_division_number": 1,
+   "speech_ordinal": 58,
+   "count_source": "PRINTED_LINE",
+   "printed_counts": "The House divided: Ayes, 36; Absent, 15",
+   "ayes": 36,
+   "noes": null,
+   "abstentions": null,
+   "absent": 15,
+   "paired": null,
+   "merged_total_ordinal": 102
+  },
+  {
+   "report_division_number": 2,
+   "speech_ordinal": 113,
+   "count_source": "PRINTED_LINE",
+   "printed_counts": "The house divided: Ayes, 36; Absent, 15",
+   "ayes": 36,
+   "noes": null,
+   "abstentions": null,
+   "absent": 15,
+   "paired": null,
+   "merged_total_ordinal": null
+  }
+ ],
+ "expected_unread": []
+}

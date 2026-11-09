@@ -219,3 +219,4 @@ __marimo__/
 statistics.csv
 !tests/fixtures/*.json
 !tests/fixtures/refresh/*.json
+!tests/division_fixtures/*/*.json

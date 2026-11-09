@@ -1,0 +1,284 @@
+{
+ "why": "A printed line, a 39-row name list and a spoken total one row after the list are one division (report 38934, 15 January 1962). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "rows": [
+  [
+   28,
+   "PROCEDURAL",
+   null,
+   "Question put, \"That clause 2 stand part of the Bill.\""
+  ],
+  [
+   29,
+   "SPEECH",
+   null,
+   "Division. Sir."
+  ],
+  [
+   30,
+   "PROCEDURAL",
+   null,
+   "The Committee divided: Ayes, 23; Noes, 23; Abstention, Nil; Absent, 3; Paired, 2."
+  ],
+  [
+   31,
+   "PROCEDURAL",
+   null,
+   "Ayes.                Noes."
+  ],
+  [
+   32,
+   "UNCLASSIFIED",
+   null,
+   "[list name 32]"
+  ],
+  [
+   33,
+   "UNCLASSIFIED",
+   null,
+   "[list name 33]"
+  ],
+  [
+   34,
+   "UNCLASSIFIED",
+   null,
+   "[list name 34]"
+  ],
+  [
+   35,
+   "UNCLASSIFIED",
+   null,
+   "[list name 35]"
+  ],
+  [
+   36,
+   "UNCLASSIFIED",
+   null,
+   "[list name 36]"
+  ],
+  [
+   37,
+   "UNCLASSIFIED",
+   null,
+   "[list name 37]"
+  ],
+  [
+   38,
+   "UNCLASSIFIED",
+   null,
+   "[list name 38]"
+  ],
+  [
+   39,
+   "UNCLASSIFIED",
+   null,
+   "[list name 39]"
+  ],
+  [
+   40,
+   "UNCLASSIFIED",
+   null,
+   "[list name 40]"
+  ],
+  [
+   41,
+   "UNCLASSIFIED",
+   null,
+   "[list name 41]"
+  ],
+  [
+   42,
+   "UNCLASSIFIED",
+   null,
+   "[list name 42]"
+  ],
+  [
+   43,
+   "UNCLASSIFIED",
+   null,
+   "[list name 43]"
+  ],
+  [
+   44,
+   "UNCLASSIFIED",
+   null,
+   "[list name 44]"
+  ],
+  [
+   45,
+   "UNCLASSIFIED",
+   null,
+   "[list name 45]"
+  ],
+  [
+   46,
+   "UNCLASSIFIED",
+   null,
+   "[list name 46]"
+  ],
+  [
+   47,
+   "UNCLASSIFIED",
+   null,
+   "[list name 47]"
+  ],
+  [
+   48,
+   "UNCLASSIFIED",
+   null,
+   "[list name 48]"
+  ],
+  [
+   49,
+   "UNCLASSIFIED",
+   null,
+   "[list name 49]"
+  ],
+  [
+   50,
+   "UNCLASSIFIED",
+   null,
+   "[list name 50]"
+  ],
+  [
+   51,
+   "UNCLASSIFIED",
+   null,
+   "[list name 51]"
+  ],
+  [
+   52,
+   "UNCLASSIFIED",
+   null,
+   "[list name 52]"
+  ],
+  [
+   53,
+   "UNCLASSIFIED",
+   null,
+   "[list name 53]"
+  ],
+  [
+   54,
+   "UNCLASSIFIED",
+   null,
+   "[list name 54]"
+  ],
+  [
+   55,
+   "UNCLASSIFIED",
+   null,
+   "[list name 55]"
+  ],
+  [
+   56,
+   "UNCLASSIFIED",
+   null,
+   "[list name 56]"
+  ],
+  [
+   57,
+   "UNCLASSIFIED",
+   null,
+   "[list name 57]"
+  ],
+  [
+   58,
+   "UNCLASSIFIED",
+   null,
+   "[list name 58]"
+  ],
+  [
+   59,
+   "UNCLASSIFIED",
+   null,
+   "[list name 59]"
+  ],
+  [
+   60,
+   "UNCLASSIFIED",
+   null,
+   "[list name 60]"
+  ],
+  [
+   61,
+   "UNCLASSIFIED",
+   null,
+   "[list name 61]"
+  ],
+  [
+   62,
+   "UNCLASSIFIED",
+   null,
+   "[list name 62]"
+  ],
+  [
+   63,
+   "UNCLASSIFIED",
+   null,
+   "[list name 63]"
+  ],
+  [
+   64,
+   "UNCLASSIFIED",
+   null,
+   "[list name 64]"
+  ],
+  [
+   65,
+   "UNCLASSIFIED",
+   null,
+   "[list name 65]"
+  ],
+  [
+   66,
+   "UNCLASSIFIED",
+   null,
+   "[list name 66]"
+  ],
+  [
+   67,
+   "UNCLASSIFIED",
+   null,
+   "[list name 67]"
+  ],
+  [
+   68,
+   "UNCLASSIFIED",
+   null,
+   "[list name 68]"
+  ],
+  [
+   69,
+   "UNCLASSIFIED",
+   null,
+   "[list name 69]"
+  ],
+  [
+   70,
+   "UNCLASSIFIED",
+   null,
+   "[list name 70]"
+  ],
+  [
+   71,
+   "SPEECH",
+   null,
+   "The result of the voting is 23 Ayes, 23 Noes, 3 Absent, and 2 Paired."
+  ]
+ ],
+ "expected_divisions": [
+  {
+   "report_division_number": 1,
+   "speech_ordinal": 30,
+   "count_source": "PRINTED_LINE",
+   "printed_counts": "The Committee divided: Ayes, 23; Noes, 23; Abstention, Nil; Absent, 3; Paired, 2",
+   "ayes": 23,
+   "noes": 23,
+   "abstentions": 0,
+   "absent": 3,
+   "paired": 2,
+   "merged_total_ordinal": 71
+  }
+ ],
+ "expected_unread": []
+}
