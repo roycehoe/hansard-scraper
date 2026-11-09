@@ -6,11 +6,13 @@ from sqlmodel import Session
 
 from crud.report import CRUDReport
 from database.division import Division
+from database.division_vote import DivisionVote
 from database.init import engine
 from exceptions import HansardWriteCheckError
 from logs import logger
 from populate.divisions import (
     get_decade_and_source_counts,
+    get_decade_label,
     get_division_match,
     get_division_plan,
     get_paired_divisions_at_risk,
@@ -29,6 +31,21 @@ def _log_plan(session: Session, plan: DivisionPlan) -> None:
     decade_and_source_counts = get_decade_and_source_counts(plan.divisions)
     logger.info(
         f"Divisions by decade and source: {', '.join(f'{decade} {source} {count:,}' for (decade, source), count in sorted(decade_and_source_counts.items()))}"
+    )
+    decade_and_list_status_counts = Counter(
+        (get_decade_label(division.sitting_date), division.list_status)
+        for division in plan.divisions
+    )
+    logger.info(
+        f"Divisions by decade and list status: {', '.join(f'{decade} {list_status} {count:,}' for (decade, list_status), count in sorted(decade_and_list_status_counts.items()))}"
+    )
+    vote_counts = Counter(
+        (vote.vote_choice, "linked" if vote.speaker_id is not None else "unlinked")
+        for division in plan.divisions
+        for vote in division.votes
+    )
+    logger.info(
+        f"Hansard vote rows by choice and link: {', '.join(f'{vote_choice} {link} {count:,}' for (vote_choice, link), count in sorted(vote_counts.items())) or 'none'}"
     )
     reason_to_count = Counter(unread_row.reason for unread_row in plan.unread_rows)
     logger.info(
@@ -75,7 +92,9 @@ def apply_divisions(
         write_division_plan(session, plan, is_detaching_paired=is_detach_paired)
         session.commit()
         logger.info("Committed")
-        vacuum_analyze_written_tables(session, [Division.__tablename__])
+        vacuum_analyze_written_tables(
+            session, [Division.__tablename__, DivisionVote.__tablename__]
+        )
 
 
 if __name__ == "__main__":

@@ -98,6 +98,12 @@ class ReportLinkReportRow:
 
 
 @dataclass(frozen=True)
+class ReportContentRow:
+    id: int
+    content: Optional[str]
+
+
+@dataclass(frozen=True)
 class ReportDivisionRow:
     id: int
     report_id: str
@@ -515,6 +521,14 @@ class CRUDReport:
             .order_by(col(Report.id))
         )
         return [ReportDivisionRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_content_rows_by_ids(self, report_ids: list[int]) -> list[ReportContentRow]:
+        statement = (
+            select(Report.id, Report.content)
+            .where(col(Report.id).in_(report_ids))
+            .order_by(col(Report.id))
+        )
+        return [ReportContentRow(*row) for row in self.session.exec(statement).all()]
 
     def get_participant_report_rows_by_ids_and_report_types(
         self, report_ids: list[int], report_types: Sequence[str]
