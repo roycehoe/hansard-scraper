@@ -107,6 +107,8 @@ _SEAT_UPDATE_COLUMNS = (
     "last_sitting_date",
     "sitting_count",
 )
+_UNREAD_REPORT_ID = 123
+_UNREAD_DIVISION_ALERT_FRAGMENT = "new reports hold a division opening"
 _RESUMED_PROBE_START_DATE = date(2024, 9, 11)
 _STRONG_TEXT_RE = re.compile(r"<strong>[^<]+</strong>")
 _SUMMARY_RE = re.compile(
@@ -1508,6 +1510,58 @@ def test_gateway_failure_fails_the_run(
     )
     assert refresh_run.failure_reason is not None
     assert "Topic request failed" in refresh_run.failure_reason
+
+
+def test_unread_division_openings_are_alerted_once_for_the_run(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    monkeypatch.setattr(
+        refresh_runs, "populate_divisions", lambda session, report_ids: [_UNREAD_REPORT_ID]
+    )
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    division_messages = [
+        message
+        for message in alerts.messages
+        if _UNREAD_DIVISION_ALERT_FRAGMENT in message
+    ]
+    assert len(division_messages) == 1
+    assert f"report ids {_UNREAD_REPORT_ID}" in division_messages[0]
+
+
+def test_a_division_failure_rolls_back_the_month(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    row_counts_before = _get_row_counts(scratch_engine)
+
+    def raise_division_error(session: Session, report_ids: list[int]) -> list[int]:
+        raise HansardRefreshRunError("division stage failed")
+
+    monkeypatch.setattr(refresh_runs, "populate_divisions", raise_division_error)
+
+    with pytest.raises(HansardRefreshRunError):
+        refresh_runs.populate_refresh_runs(
+            scratch_session, _get_now(fake_parliament), None
+        )
+
+    refresh_run = _assert_failed(
+        scratch_engine, alerts, row_counts_before, "HansardRefreshRunError"
+    )
+    assert refresh_run.failure_reason is not None
+    assert "division stage failed" in refresh_run.failure_reason
 
 
 def test_database_error_mid_write_fails_the_run(

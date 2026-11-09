@@ -11,6 +11,7 @@ RECHECK_WINDOW_DAYS = 14
 _UNLINKED_HALT_SHARE = 0.05
 SINGAPORE_TIMEZONE = timezone(timedelta(hours=8))
 _MAX_ALERT_LABELS = 20
+_MAX_ALERT_REPORT_IDS = 20
 _MAX_TELEGRAM_MESSAGE_LENGTH = 4_000
 _PERCENT = 100
 _FIRST_ALERT_WINDOW_DAYS = 1
@@ -224,6 +225,20 @@ def build_unplaced_office_titles_message(office_titles: list[str]) -> str:
 
 def build_stale_report_links_message(stale_count: int) -> str:
     return f"{stale_count:,} report links differ from the record. Rewrite them with python -m scripts.apply_report_links --commit."
+
+
+def build_unread_division_openings_message(report_ids: list[int]) -> str:
+    report_id_list_text = ", ".join(
+        str(report_id) for report_id in report_ids[:_MAX_ALERT_REPORT_IDS]
+    )
+    if len(report_ids) > _MAX_ALERT_REPORT_IDS:
+        report_id_list_text = (
+            f"{report_id_list_text} and {len(report_ids) - _MAX_ALERT_REPORT_IDS} more"
+        )
+    return (
+        f"{len(report_ids)} new reports hold a division opening the parser could not read (report ids {report_id_list_text}). "
+        "A new wording may have appeared; list them with scripts/apply_divisions.py."
+    )
 
 
 def build_held_report_message(report_id: str, sitting_date: str) -> str:

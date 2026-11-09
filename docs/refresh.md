@@ -34,16 +34,17 @@ Then, for each month in order, the run:
 19. Inserts the attached files of the month's new sittings and the pointers of its new reports, then ties each new pointer to its speech row and, where exactly one stored file has its address, to that file (`attached_file` and `attached_file_pointer`). It inserts rows and sets `attached_file_id`, and never deletes. It reads the speech rows of step 10, so it runs after them.
 20. Reads the permission list of each new sitting and inserts one `leave_period_printing` row for each entry, with a `leave_period` row for each period no stored row holds. The office on a printing comes from the sitting's attendance list. It never deletes and never updates a stored row.
 21. Adds the `seat_holding` rows of the Members in the new sittings' attendance rows, and widens `first_sitting_date`, `last_sitting_date` and `sitting_count` on a stored row. Those three columns are the only ones the run updates on this table, and it never deletes.
-22. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
-23. Commits the month. A halt or a failure rolls back only the month in progress.
+22. Reads the speech rows of the month's new reports and inserts one `division` row for each division it finds: a printed division line, or a spoken total with no printed line near it. It never updates or deletes: the role has neither UPDATE nor DELETE on `division`, and a new report has no rows. A report with an opening or a total it could not read is named in an alert.
+23. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
+24. Commits the month. A halt or a failure rolls back only the month in progress.
 
 After the last month, the run:
 
-24. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
-25. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
-26. Reads the whole corpus, inserts the `report_link` rows the plan has and the table lacks, and counts the stored rows that differ from the plan. It never deletes or updates, and a stale count above 0 sends an alert. The month rows are already committed, so a failure here fails the run and keeps them.
-27. Records the counts and marks the row `SUCCEEDED`.
-28. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
+25. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
+26. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
+27. Reads the whole corpus, inserts the `report_link` rows the plan has and the table lacks, and counts the stored rows that differ from the plan. It never deletes or updates, and a stale count above 0 sends an alert. The month rows are already committed, so a failure here fails the run and keeps them.
+28. Records the counts and marks the row `SUCCEEDED`.
+29. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
 
 The report link step is the last before the run finishes, so a supervised `python -m scripts.apply_report_links --commit` is the only path that removes a `report_link` row. Production order is the migration, then these grants, then the code, because the step fails every refresh without the table and grants.
 
@@ -127,6 +128,7 @@ Every alert goes to the one Telegram chat, cut to 4,000 characters.
 | Unlinked labels | `Speaker labels with no registry match: {labels}. Add the members to the registry, then link them with scripts/apply_speaker_links.py.` | After a successful run, or a halted or failed run that committed rows, whose new rows hold labels with no registry link, at or under the 5% limit. Up to 20 labels, most rows first, then "and N more". |
 | Late sittings | `Sittings arrived after a later sitting: {dates}. Their office rows are stored and the ranges of their months were left alone. Run python -m scripts.apply_attendance_offices --commit.` | After a successful run, or a halted or failed run that committed rows, that stored a sitting dated earlier than the latest sitting with an office row. Up to 20 dates, in date order, then "and N more". |
 | Unplaced office titles | `Printed office titles with no ministry: {titles}. Add them to data/office_title_ministries.json, then run python -m scripts.apply_ministries --commit.` | After a successful run, or a halted or failed run that committed rows, whose new sittings or reports print a title with no ministry placement. Up to 20 titles in alphabetical order, then "and N more". A title that stays unplaced alerts on each run that prints it again, until it is on the hand-kept list. |
+| Unread division openings | `{n} new reports hold a division opening the parser could not read (report ids ...)...` | After a successful run, or a halted or failed run that committed rows, when a new report holds a printed division opening, or a spoken total, that no rule read. |
 | Held report | `Report {report id} of {sitting date} still has no text after 14 days and will not be fetched again.` | After a successful run, or a halted or failed run that committed rows, for a held hit whose sitting date is 13 or 14 days before the run's date. The two-day span keeps one missed run from losing the alert, so a hit can alert twice. |
 | Many held reports | `{n} new reports came back with no text, above the limit of 5. SPRS may have changed its format.` | After a successful run, or a halted or failed run that committed rows, that holds more than 5 new hits without text. It repeats each day while those hits stay held in the 14-day window. |
 | Halt | `Hansard refresh halted. {reason}` | On every halt. |
@@ -228,6 +230,8 @@ GRANT USAGE ON SEQUENCE attached_file_id_seq, attached_file_pointer_id_seq TO ha
 GRANT SELECT, INSERT ON leave_period, leave_period_printing, seat_holding TO hansard_refresh;
 GRANT UPDATE (first_sitting_date, last_sitting_date, sitting_count) ON seat_holding TO hansard_refresh;
 GRANT USAGE ON SEQUENCE leave_period_id_seq, leave_period_printing_id_seq, seat_holding_id_seq TO hansard_refresh;
+GRANT SELECT, INSERT ON division TO hansard_refresh;
+GRANT USAGE ON SEQUENCE division_id_seq TO hansard_refresh;
 GRANT SELECT (id, website_responses_added, sitting_date_responses_added, sittings_added, reports_added, speeches_added, speeches_linked, speeches_named_unlinked, attendances_added, attendances_linked, reports_held_without_text, reports_without_speech_rows, reports_rechecked, reports_changed, latest_sitting_date_with_text, figures, started_at, finished_at, status) ON refresh_run TO <the API's read-only role>;
 GRANT SELECT ON report_link TO <the API's read-only role>;
 ```

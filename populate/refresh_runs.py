@@ -40,6 +40,7 @@ from populate.attached_files import populate_attached_files
 from populate.attendance_offices import populate_attendance_offices
 from populate.attribution_figures import get_attribution_figures
 from populate.bill_speakers import populate_bill_speakers
+from populate.divisions import populate_divisions
 from populate.leave_periods import populate_leave_periods
 from populate.office_printed_ranges import populate_office_printed_ranges
 from populate.office_title_ministries import populate_office_title_ministries
@@ -94,6 +95,7 @@ from services.refresh import (
     build_unlinked_labels_message,
     build_unlinked_reason,
     build_unplaced_office_titles_message,
+    build_unread_division_openings_message,
     get_content_hash,
     get_dates_between,
     get_probe_start_date,
@@ -214,6 +216,7 @@ class RunResult:
     figures: Optional[dict[str, object]] = None
     changed_reports: list[ChangedReport] = field(default_factory=list)
     held_reports_to_alert: list[HeldReport] = field(default_factory=list)
+    report_ids_with_unread_division_openings: list[int] = field(default_factory=list)
     label_to_row_count: dict[str, int] = field(default_factory=dict)
     late_sitting_dates: list[str] = field(default_factory=list)
     unplaced_office_titles: list[str] = field(default_factory=list)
@@ -725,6 +728,9 @@ def _write_window_rows(
     populate_attached_files(session, report_ids, sitting_ids)
     populate_leave_periods(session, sitting_ids)
     populate_seat_holdings(session, sitting_ids)
+    window_result.report_ids_with_unread_division_openings = populate_divisions(
+        session, report_ids
+    )
 
     window_result.website_responses_added = len(hansard_website_responses)
     window_result.reports_added = len(reports)
@@ -854,6 +860,9 @@ def _add_window_result(run_result: RunResult, window_result: RunResult) -> None:
     run_result.held_reports_to_alert.extend(window_result.held_reports_to_alert)
     run_result.late_sitting_dates.extend(window_result.late_sitting_dates)
     run_result.unplaced_office_titles.extend(window_result.unplaced_office_titles)
+    run_result.report_ids_with_unread_division_openings.extend(
+        window_result.report_ids_with_unread_division_openings
+    )
     for label, row_count in window_result.label_to_row_count.items():
         run_result.label_to_row_count[label] = (
             run_result.label_to_row_count.get(label, 0) + row_count
@@ -874,6 +883,12 @@ def _send_success_alerts(run_result: RunResult) -> None:
     for held_report in run_result.held_reports_to_alert:
         _send_alert(
             build_held_report_message(held_report.report_id, held_report.sitting_date)
+        )
+    if run_result.report_ids_with_unread_division_openings:
+        _send_alert(
+            build_unread_division_openings_message(
+                run_result.report_ids_with_unread_division_openings
+            )
         )
     if is_held_report_count_over_limit(run_result.reports_held_without_text):
         _send_alert(
