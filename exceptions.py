@@ -104,3 +104,7 @@ class HansardLawLinkCheckError(HansardError):
 
 class HansardAttachedFileError(HansardError):
     pass
+
+
+class HansardMinutesIndexError(HansardError):
+    pass
