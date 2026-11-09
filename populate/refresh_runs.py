@@ -25,6 +25,7 @@ from enums import RefreshRunStatus, ReportType
 from exceptions import (
     HansardError,
     HansardGatewayError,
+    HansardMinutesIndexError,
     HansardRefreshFailureError,
     HansardRefreshHaltError,
     HansardRefreshRunError,
@@ -37,6 +38,7 @@ from gateway.telegram import send_telegram_message
 from logs import logger
 from populate.attribution_figures import get_attribution_figures
 from populate.divisions import populate_divisions
+from populate.minutes import MinutesToReview, populate_minutes
 from populate.report_askers import populate_report_askers
 from populate.report_participants import populate_report_participants
 from populate.speaker_links import link_speakers_by_report_ids_and_sitting_ids
@@ -76,6 +78,7 @@ from services.refresh import (
     build_halt_message,
     build_held_report_message,
     build_many_held_reports_message,
+    build_minutes_to_review_message,
     build_new_parliament_reason,
     build_summary_message,
     build_unlinked_labels_message,
@@ -201,6 +204,9 @@ class RunResult:
     changed_reports: list[ChangedReport] = field(default_factory=list)
     held_reports_to_alert: list[HeldReport] = field(default_factory=list)
     report_ids_with_unread_division_openings: list[int] = field(default_factory=list)
+    held_sitting_dates: set[date] = field(default_factory=set)
+    minutes_to_review: list[MinutesToReview] = field(default_factory=list)
+    minutes_index_failure: Optional[HansardError] = None
     label_to_row_count: dict[str, int] = field(default_factory=dict)
 
 
@@ -606,9 +612,9 @@ def _write_window_rows(
             website_report_ids.append(search_result.report_id)
             continue
         window_result.reports_held_without_text += 1
-        if is_held_report_alert_due(
-            parse_sitting_date(search_result.sitting_date).date(), today
-        ):
+        held_sitting_date = parse_sitting_date(search_result.sitting_date).date()
+        window_result.held_sitting_dates.add(held_sitting_date)
+        if is_held_report_alert_due(held_sitting_date, today):
             window_result.held_reports_to_alert.append(
                 HeldReport(search_result.report_id, search_result.sitting_date)
             )
@@ -801,6 +807,7 @@ def _add_window_result(run_result: RunResult, window_result: RunResult) -> None:
     run_result.topics_with_error_body += window_result.topics_with_error_body
     run_result.reports_without_speech_rows += window_result.reports_without_speech_rows
     run_result.held_reports_to_alert.extend(window_result.held_reports_to_alert)
+    run_result.held_sitting_dates.update(window_result.held_sitting_dates)
     run_result.report_ids_with_unread_division_openings.extend(
         window_result.report_ids_with_unread_division_openings
     )
@@ -827,6 +834,12 @@ def _send_success_alerts(run_result: RunResult) -> None:
         _send_alert(
             build_unread_division_openings_message(
                 run_result.report_ids_with_unread_division_openings
+            )
+        )
+    for minutes_to_review in run_result.minutes_to_review:
+        _send_alert(
+            build_minutes_to_review_message(
+                minutes_to_review.sitting_date, minutes_to_review.status_note
             )
         )
     if is_held_report_count_over_limit(run_result.reports_held_without_text):
@@ -937,6 +950,16 @@ def populate_refresh_runs(
             raise HansardRefreshFailureError(
                 build_error_bodies_reason(run_result.topics_fetched)
             )
+        try:
+            minutes_step_result = populate_minutes(
+                session, run_result.held_sitting_dates
+            )
+        except HansardGatewayError as error:
+            run_result.minutes_index_failure = error
+        except HansardMinutesIndexError as error:
+            run_result.minutes_index_failure = error
+        else:
+            run_result.minutes_to_review = minutes_step_result.minutes_to_review
         run_result.figures = build_attribution_figures_json(
             get_attribution_figures(session), datetime.now(timezone.utc)
         )
@@ -947,6 +970,8 @@ def populate_refresh_runs(
             None if latest_sitting_date is None else latest_sitting_date.date()
         )
         _vacuum_analyze_tables(session)
+        if run_result.minutes_index_failure is not None:
+            raise run_result.minutes_index_failure
         _finish_refresh_run(
             session, refresh_run_id, run_result, RefreshRunStatus.SUCCEEDED, None, None
         )

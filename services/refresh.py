@@ -211,6 +211,10 @@ def build_unread_division_openings_message(report_ids: list[int]) -> str:
     )
 
 
+def build_minutes_to_review_message(sitting_date: date, status_note: str) -> str:
+    return f"Minutes of {sitting_date:%d %B %Y} need review: {status_note}"
+
+
 def build_held_report_message(report_id: str, sitting_date: str) -> str:
     return f"Report {report_id} of {sitting_date} still has no text after {RECHECK_WINDOW_DAYS} days and will not be fetched again."
 

@@ -6,7 +6,7 @@
 
 ## What a run does
 
-A run only adds rows. It never re-parses a stored report and never rewrites a stored row, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
+A run adds rows. It never re-parses a stored report and never rewrites a stored row, with one exception: the minutes step updates named columns of the `minutes` rows it lists or reads (see 'Write role SQL'). A fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
 
 In order, a run:
 
@@ -32,10 +32,11 @@ Then, for each month in order, the run:
 
 After the last month, the run:
 
-17. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
-18. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
-19. Records the counts and marks the row `SUCCEEDED`.
-20. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
+17. Runs the minutes step: reads the live Votes and Proceedings index page (10 rows), adds a `minutes` row for each sitting date that has reports and none yet (`NOT_YET_LISTED`), moves a listed date to `LISTED`, then, for each `LISTED` row whose date has at least one stored report and is not among the dates of this run's held hits, fetches the file, extracts its text and stores the address, size, SHA-256 and text, committing each file on its own. A network failure or a non-200 answer leaves the row `LISTED` for the next run. A file that is unreadable, a scan, not a PDF, or whose head prints another date becomes `NEEDS_REVIEW` with an alert. A failure on the index page is held until the figures and the VACUUM have run, then raised.
+18. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
+19. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
+20. Records the counts and marks the row `SUCCEEDED`.
+21. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
 
 `refresh.py` exits 0 on success, 2 on a halt and 1 on a failure, after the failure's error propagates.
 
@@ -59,6 +60,8 @@ A daily run sends:
 - one topic request per new hit
 - one topic request per stored report whose sitting falls in the last 14 days
 - one sitting request per date in the range with no stored sitting
+- one request for the minutes index page
+- one request per listed minutes file whose sitting has stored reports
 
 ## Env vars and accounts
 
@@ -117,6 +120,7 @@ Every alert goes to the one Telegram chat, cut to 4,000 characters.
 | Unread division openings | `{n} new reports hold a division opening the parser could not read (report ids ...)...` | After a successful run, or a halted or failed run that committed rows, when a new report holds a printed division opening, or a spoken total, that no rule read. |
 | Held report | `Report {report id} of {sitting date} still has no text after 14 days and will not be fetched again.` | After a successful run, or a halted or failed run that committed rows, for a held hit whose sitting date is 13 or 14 days before the run's date. The two-day span keeps one missed run from losing the alert, so a hit can alert twice. |
 | Many held reports | `{n} new reports came back with no text, above the limit of 5. SPRS may have changed its format.` | After a successful run, or a halted or failed run that committed rows, that holds more than 5 new hits without text. It repeats each day while those hits stay held in the 14-day window. |
+| Minutes to review | `Minutes of 10 January 2018 need review: {note}` | After a successful run, or a halted or failed run that committed rows, for each minutes file the step set to `NEEDS_REVIEW`. |
 | Halt | `Hansard refresh halted. {reason}` | On every halt. |
 | Failure | `Hansard refresh failed. {error}` | On every failure, including a run that cannot start. For an error the code raises on purpose, `{error}` is its type and message. For any other error it is the type alone, so a database host or user name never reaches the chat. |
 
@@ -200,17 +204,20 @@ GRANT INSERT ON hansardwebsiteresponse, hansardsittingdateresponse, report, spee
 GRANT UPDATE (speaker_id) ON speech, attendance TO hansard_refresh;
 GRANT SELECT, INSERT ON report_asker, report_participant, report_question_state TO hansard_refresh;
 GRANT SELECT, INSERT ON division TO hansard_refresh;
+GRANT SELECT, INSERT ON minutes, minutes_index_capture TO hansard_refresh;
+GRANT UPDATE (status, index_source, index_capture_id, printed_label, printed_parliament, file_url, archive_timestamp, file_format, sha256, size_bytes, fetched_at, extracted_text, status_note) ON minutes TO hansard_refresh;
 GRANT UPDATE ON refresh_run TO hansard_refresh;
 GRANT MAINTAIN ON speech, report, attendance TO hansard_refresh;
 GRANT USAGE ON SEQUENCE hansardwebsiteresponse_id_seq, hansardsittingdateresponse_id_seq, report_id_seq, speech_id_seq, sitting_id_seq, sittingattendance_id_seq, refresh_run_id_seq TO hansard_refresh;
 GRANT USAGE ON SEQUENCE report_asker_id_seq, report_participant_id_seq, report_question_state_id_seq TO hansard_refresh;
 GRANT USAGE ON SEQUENCE division_id_seq TO hansard_refresh;
+GRANT USAGE ON SEQUENCE minutes_id_seq, minutes_index_capture_id_seq TO hansard_refresh;
 GRANT SELECT (id, website_responses_added, sitting_date_responses_added, sittings_added, reports_added, speeches_added, speeches_linked, speeches_named_unlinked, attendances_added, attendances_linked, reports_held_without_text, reports_without_speech_rows, reports_rechecked, reports_changed, latest_sitting_date_with_text, figures, started_at, finished_at, status) ON refresh_run TO <the API's read-only role>;
 ```
 
 The table and sequence names are those on the scratch copy. `attendance` owns `sittingattendance_id_seq`, a name kept from an older table name. Confirm each name on the remote with `\d <table>` first.
 
-The role gets no DELETE or TRUNCATE on any table. It gets no `UPDATE` on `hansardwebsiteresponse`, `hansardsittingdateresponse` or `speaker`, and no `CREATE`, so it cannot run migrations. Migrations stay supervised, with the owner role. `SELECT ... FOR UPDATE` on `refresh_run` needs the `UPDATE` grant the role has. `MAINTAIN` lets the role run `VACUUM` and `ANALYZE` on the three tables, and also `REINDEX` and `CLUSTER`, which the refresh never runs. Royce granted it on the remote on 21 October 2026, as `doadmin`, the tables' owner. The figures pass reads every report and speech row, which the `SELECT` grants cover.
+The role gets no DELETE or TRUNCATE on any table. It gets no `UPDATE` on `hansardwebsiteresponse`, `hansardsittingdateresponse` or `speaker`, its `UPDATE` on `minutes` is limited to the columns above (every column but `id` and `sitting_date`), and it gets no `CREATE`, so it cannot run migrations. Migrations stay supervised, with the owner role. `SELECT ... FOR UPDATE` on `refresh_run` needs the `UPDATE` grant the role has. `MAINTAIN` lets the role run `VACUUM` and `ANALYZE` on the three tables, and also `REINDEX` and `CLUSTER`, which the refresh never runs. Royce granted it on the remote on 21 October 2026, as `doadmin`, the tables' owner. The figures pass reads every report and speech row, which the `SELECT` grants cover.
 
 The API's role gets a column grant that leaves out `halt_reason` and `failure_reason`, because a failure reason can carry database host and user names. Batch E's reader never selects those two columns.
 

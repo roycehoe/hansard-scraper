@@ -11,6 +11,7 @@ from services.refresh import (
     build_field_mapping_reason,
     build_halt_message,
     build_held_report_message,
+    build_minutes_to_review_message,
     build_new_parliament_reason,
     build_summary_message,
     build_unlinked_labels_message,
@@ -283,3 +284,9 @@ def test_no_message_carries_an_em_dash_or_please() -> None:
     for message in messages:
         for forbidden_word in _FORBIDDEN_WORDS:
             assert forbidden_word not in message.lower()
+
+
+def test_minutes_to_review_message_names_the_date_and_the_note() -> None:
+    assert build_minutes_to_review_message(
+        date(2018, 1, 11), "The file is a scan."
+    ) == ("Minutes of 11 January 2018 need review: The file is a scan.")
