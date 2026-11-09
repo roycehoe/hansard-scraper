@@ -12,6 +12,7 @@ from services.refresh import (
     build_halt_message,
     build_held_report_message,
     build_new_parliament_reason,
+    build_stale_report_links_message,
     build_summary_message,
     build_unlinked_labels_message,
     build_unlinked_reason,
@@ -204,6 +205,13 @@ def test_summary_message() -> None:
 
 def test_summary_message_omits_the_share_when_unknown() -> None:
     assert build_summary_message(1, 0, 0, None) == "1 sitting, 0 reports, 0 rows"
+
+
+def test_stale_report_links_message_names_the_count_and_the_rewrite() -> None:
+    assert build_stale_report_links_message(1_234) == (
+        "1,234 report links differ from the record. "
+        "Rewrite them with python -m scripts.apply_report_links --commit."
+    )
 
 
 def test_labels_message_caps_the_label_list() -> None:

@@ -37,8 +37,11 @@ After the last month, the run:
 
 20. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
 21. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
-22. Records the counts and marks the row `SUCCEEDED`.
-23. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
+22. Reads the whole corpus, inserts the `report_link` rows the plan has and the table lacks, and counts the stored rows that differ from the plan. It never deletes or updates, and a stale count above 0 sends an alert. The month rows are already committed, so a failure here fails the run and keeps them.
+23. Records the counts and marks the row `SUCCEEDED`.
+24. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
+
+The report link step is the last before the run finishes, so a supervised `python -m scripts.apply_report_links --commit` is the only path that removes a `report_link` row. Production order is the migration, then these grants, then the code, because the step fails every refresh without the table and grants.
 
 `refresh.py` exits 0 on success, 2 on a halt and 1 on a failure, after the failure's error propagates.
 
@@ -202,16 +205,17 @@ GRANT USAGE ON SCHEMA public TO hansard_refresh;
 GRANT SELECT ON hansardwebsiteresponse, hansardsittingdateresponse, report, speech, sitting, attendance, speaker, refresh_run TO hansard_refresh;
 GRANT INSERT ON hansardwebsiteresponse, hansardsittingdateresponse, report, speech, sitting, attendance, refresh_run TO hansard_refresh;
 GRANT UPDATE (speaker_id) ON speech, attendance TO hansard_refresh;
-GRANT SELECT, INSERT ON report_asker, report_participant, report_question_state TO hansard_refresh;
+GRANT SELECT, INSERT ON report_asker, report_participant, report_question_state, report_link TO hansard_refresh;
 GRANT SELECT, INSERT ON attendance_office, report_put_to, office_title_ministry TO hansard_refresh;
 GRANT SELECT, INSERT, UPDATE ON office_printed_range TO hansard_refresh;
 GRANT SELECT ON ministry, ministry_see_also TO hansard_refresh;
 GRANT UPDATE ON refresh_run TO hansard_refresh;
 GRANT MAINTAIN ON speech, report, attendance TO hansard_refresh;
 GRANT USAGE ON SEQUENCE hansardwebsiteresponse_id_seq, hansardsittingdateresponse_id_seq, report_id_seq, speech_id_seq, sitting_id_seq, sittingattendance_id_seq, refresh_run_id_seq TO hansard_refresh;
-GRANT USAGE ON SEQUENCE report_asker_id_seq, report_participant_id_seq, report_question_state_id_seq TO hansard_refresh;
+GRANT USAGE ON SEQUENCE report_asker_id_seq, report_participant_id_seq, report_question_state_id_seq, report_link_id_seq TO hansard_refresh;
 GRANT USAGE ON SEQUENCE attendance_office_id_seq, office_printed_range_id_seq, report_put_to_id_seq, office_title_ministry_id_seq TO hansard_refresh;
 GRANT SELECT (id, website_responses_added, sitting_date_responses_added, sittings_added, reports_added, speeches_added, speeches_linked, speeches_named_unlinked, attendances_added, attendances_linked, reports_held_without_text, reports_without_speech_rows, reports_rechecked, reports_changed, latest_sitting_date_with_text, figures, started_at, finished_at, status) ON refresh_run TO <the API's read-only role>;
+GRANT SELECT ON report_link TO <the API's read-only role>;
 ```
 
 The office migration and these grants come before any push of the daily job, because a missing grant fails the month. The role needs `UPDATE` on `office_printed_range` only to extend a stored range, and `SELECT` alone on `ministry` and `ministry_see_also`, which only a supervised run writes. The office tables are small, so `_vacuum_analyze_tables` leaves them out, and the role has no `MAINTAIN` on them.

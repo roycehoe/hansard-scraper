@@ -218,6 +218,10 @@ def build_unplaced_office_titles_message(office_titles: list[str]) -> str:
     )
 
 
+def build_stale_report_links_message(stale_count: int) -> str:
+    return f"{stale_count:,} report links differ from the record. Rewrite them with python -m scripts.apply_report_links --commit."
+
+
 def build_held_report_message(report_id: str, sitting_date: str) -> str:
     return f"Report {report_id} of {sitting_date} still has no text after {RECHECK_WINDOW_DAYS} days and will not be fetched again."
 

@@ -53,7 +53,11 @@ from schemas.hansard_report_response import (
 from schemas.hansard_search_result import HansardSearchResult
 from schemas.hansard_topic_response import HansardTopicResponse
 from services.hansard_website import get_topic_id
-from services.refresh import MAX_NEW_HITS_WITHOUT_TEXT, SINGAPORE_TIMEZONE
+from services.refresh import (
+    MAX_NEW_HITS_WITHOUT_TEXT,
+    SINGAPORE_TIMEZONE,
+    build_stale_report_links_message,
+)
 from settings import settings
 from tests.refresh_fixtures import FakeParliament, load_speaker_rows, seed_stored
 from utils.data_files import get_ministry_names
@@ -639,6 +643,122 @@ def test_vacuum_database_error_fails_the_run_and_keeps_its_rows(
     ]
     assert failure_messages == [
         "Hansard refresh failed. ProgrammingError after the data commit"
+    ]
+    _assert_failure_pinged(alerts)
+
+
+def test_clean_run_links_reports_after_the_vacuum(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    vacuum_analyze_speech = CRUDSpeech.vacuum_analyze
+    speech_vacuum_count = 0
+    speech_vacuum_counts_at_link: list[int] = []
+    run_statuses_at_link: list[str] = []
+
+    def record_and_vacuum_analyze_speech(crud_speech: CRUDSpeech) -> None:
+        nonlocal speech_vacuum_count
+        vacuum_analyze_speech(crud_speech)
+        speech_vacuum_count += 1
+
+    def record_and_populate_report_links(session: Session) -> int:
+        speech_vacuum_counts_at_link.append(speech_vacuum_count)
+        run_statuses_at_link.append(_get_only_refresh_run(scratch_engine).status)
+        return 0
+
+    monkeypatch.setattr(CRUDSpeech, "vacuum_analyze", record_and_vacuum_analyze_speech)
+    monkeypatch.setattr(
+        refresh_runs, "populate_report_links", record_and_populate_report_links
+    )
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    assert speech_vacuum_counts_at_link == [1]
+    assert run_statuses_at_link == [RefreshRunStatus.RUNNING]
+    assert _get_only_refresh_run(scratch_engine).status == RefreshRunStatus.SUCCEEDED
+    _assert_success_pinged(alerts)
+
+
+def test_stale_report_links_are_alerted(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    monkeypatch.setattr(refresh_runs, "populate_report_links", lambda session: 3)
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    assert build_stale_report_links_message(3) in alerts.messages
+    _assert_success_pinged(alerts)
+
+
+def test_run_with_no_stale_report_links_sends_no_such_alert(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    monkeypatch.setattr(refresh_runs, "populate_report_links", lambda session: 0)
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    assert not [
+        message for message in alerts.messages if "report links differ" in message
+    ]
+
+
+def test_report_link_failure_fails_the_run_and_keeps_its_rows(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    row_counts_before = _get_row_counts(scratch_engine)
+
+    def populate_report_links_that_fails(session: Session) -> int:
+        raise SQLAlchemyError("report link failure")
+
+    monkeypatch.setattr(
+        refresh_runs, "populate_report_links", populate_report_links_that_fails
+    )
+
+    with pytest.raises(SQLAlchemyError):
+        refresh_runs.populate_refresh_runs(
+            scratch_session, _get_now(fake_parliament), None
+        )
+
+    refresh_run = _get_only_refresh_run(scratch_engine)
+    assert refresh_run.status == RefreshRunStatus.FAILED
+    assert refresh_run.failure_reason is not None
+    assert refresh_run.failure_reason.startswith(
+        "After the data commit: SQLAlchemyError"
+    )
+    _assert_rows_added(scratch_engine, row_counts_before, refresh_run)
+    failure_messages = [
+        message
+        for message in alerts.messages
+        if message.startswith("Hansard refresh failed.")
+    ]
+    assert failure_messages == [
+        "Hansard refresh failed. SQLAlchemyError after the data commit"
     ]
     _assert_failure_pinged(alerts)
 

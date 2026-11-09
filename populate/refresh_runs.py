@@ -40,6 +40,7 @@ from populate.attribution_figures import get_attribution_figures
 from populate.office_printed_ranges import populate_office_printed_ranges
 from populate.office_title_ministries import populate_office_title_ministries
 from populate.report_askers import populate_report_askers
+from populate.report_links import populate_report_links
 from populate.report_participants import populate_report_participants
 from populate.report_put_to import populate_report_put_to
 from populate.speaker_links import link_speakers_by_report_ids_and_sitting_ids
@@ -81,6 +82,7 @@ from services.refresh import (
     build_late_sittings_message,
     build_many_held_reports_message,
     build_new_parliament_reason,
+    build_stale_report_links_message,
     build_summary_message,
     build_unlinked_labels_message,
     build_unlinked_reason,
@@ -200,6 +202,7 @@ class RunResult:
     reports_without_speech_rows: int = 0
     reports_rechecked: int = 0
     reports_changed: int = 0
+    report_links_stale: int = 0
     latest_sitting_date_with_text: Optional[date] = None
     figures: Optional[dict[str, object]] = None
     changed_reports: list[ChangedReport] = field(default_factory=list)
@@ -828,6 +831,8 @@ def _send_success_alerts(run_result: RunResult) -> None:
         )
     if run_result.label_to_row_count:
         _send_alert(build_unlinked_labels_message(run_result.label_to_row_count))
+    if run_result.report_links_stale > 0:
+        _send_alert(build_stale_report_links_message(run_result.report_links_stale))
     for held_report in run_result.held_reports_to_alert:
         _send_alert(
             build_held_report_message(held_report.report_id, held_report.sitting_date)
@@ -956,6 +961,8 @@ def populate_refresh_runs(
             None if latest_sitting_date is None else latest_sitting_date.date()
         )
         _vacuum_analyze_tables(session)
+        run_result.report_links_stale = populate_report_links(session)
+        session.commit()
         _finish_refresh_run(
             session, refresh_run_id, run_result, RefreshRunStatus.SUCCEEDED, None, None
         )
