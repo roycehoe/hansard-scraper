@@ -20,7 +20,7 @@ from services.attendance import (
 )
 from utils.data_files import get_constituency_names
 
-_ROW_NAME_COUNT = 51
+_ROW_NAME_COUNT = 53
 _ACTING_ROW_NAME_COUNT = 43
 _GRC_NAME_COUNT = 17
 

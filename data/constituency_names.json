@@ -176,6 +176,8 @@
   {"sitting_date": "22-5-1957", "speaker_name": "Stewart, S.T.", "printed": "Acting", "constituency": "ex-officio", "reason": "the line prints \"Chief Secretary (Acting) (ex-officio)\": Acting qualifies the office, and ex-officio is the seat type"},
   {"sitting_date": "29-7-1957", "speaker_name": "Stewart, S.T.", "printed": "Acting", "constituency": "ex-officio", "reason": "the line prints \"Chief Secretary (Acting) (ex-officio)\": Acting qualifies the office, and ex-officio is the seat type"},
   {"sitting_date": "16-12-1957", "speaker_name": "Stewart, S.T.", "printed": "Acting", "constituency": "ex-officio", "reason": "the line prints \"Chief Secretary (Acting) (ex-officio)\": Acting qualifies the office, and ex-officio is the seat type"},
-  {"sitting_date": "3-3-1959", "speaker_name": "Oon Khye Kiang", "printed": "Acting", "constituency": "ex-officio", "reason": "the line prints \"Financial Secretary (Acting) (ex-officio)\": Acting qualifies the office, and ex-officio is the seat type"}
+  {"sitting_date": "3-3-1959", "speaker_name": "Oon Khye Kiang", "printed": "Acting", "constituency": "ex-officio", "reason": "the line prints \"Financial Secretary (Acting) (ex-officio)\": Acting qualifies the office, and ex-officio is the seat type"},
+  {"sitting_date": "25-9-2025", "speaker_name": "Shawn Huang Wei Zhong", "printed": "West Coast-Jurong", "constituency": "West Coast-Jurong West", "reason": "a misprint that drops the division's last word: the Member's rows on the sittings either side say West Coast-Jurong West"},
+  {"sitting_date": "6-11-2025", "speaker_name": "Shawn Huang Wei Zhong", "printed": "West Coast-Jurong", "constituency": "West Coast-Jurong West", "reason": "a misprint that drops the division's last word: the Member's rows on the sittings either side say West Coast-Jurong West"}
  ]
 }
