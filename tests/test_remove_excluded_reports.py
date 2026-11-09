@@ -8,14 +8,18 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session, col, select
 
 import scripts.remove_excluded_reports as remove_excluded_reports_script
+from database.bill_report_speaker import BillReportSpeaker
+from database.bill_stage_line import BillStageLine
 from database.report import Report
 from database.report_asker import ReportAsker
 from database.report_link import ReportLink
 from database.report_participant import ReportParticipant
 from database.report_put_to import ReportPutTo
 from database.report_question_state import ReportQuestionState
+from database.speaker import Speaker
 from database.speech import Speech
 from enums import (
+    BillStage,
     ParticipantRole,
     ParticipantRoleSource,
     QuestionState,
@@ -35,6 +39,7 @@ _OTHER_REPORT_ID = "other-report"
 _THIRD_REPORT_ID = "third-report"
 _TEXT = "Same text."
 _SEEDED_SPEECH_COUNT = 2
+_EXCLUDED_STAGE_LINE_COUNT = 2
 
 
 def _add_report(session: Session, report_id: str, content: str) -> Report:
@@ -163,6 +168,37 @@ def _seed_duplicate(session: Session, excluded_content: str = _TEXT) -> None:
         _add_speech(session, _add_report(session, report_id, content))
 
 
+def _add_bill_speaker_rows(session: Session, report_id: str, row_count: int) -> None:
+    speaker = Speaker(
+        name=f"Speaker of {report_id}",
+        party="PAP",
+        is_legislative_assembly=False,
+        parliament_number=11,
+    )
+    session.add(speaker)
+    session.flush()
+    assert speaker.id is not None
+    session.add(
+        BillReportSpeaker(
+            speech_count=1,
+            first_ordinal=1,
+            printed_speaker="Mr A",
+            sprs_report_id=report_id,
+            speaker_id=speaker.id,
+        )
+    )
+    session.add_all(
+        BillStageLine(
+            stage=BillStage.FIRST_READING,
+            printed_text="Bill read a First time.",
+            ordinal=ordinal,
+            sprs_report_id=report_id,
+        )
+        for ordinal in range(1, row_count + 1)
+    )
+    session.commit()
+
+
 def _use_scratch(scratch_engine: Engine, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(remove_excluded_reports_script, "engine", scratch_engine)
     excluded_report_ids = [
@@ -226,6 +262,16 @@ def _get_question_state_report_ids(session: Session) -> list[str]:
             )
         ).all()
     )
+
+
+def _get_bill_report_speaker_report_ids(session: Session) -> list[str]:
+    session.expire_all()
+    return sorted(session.exec(select(BillReportSpeaker.sprs_report_id)).all())
+
+
+def _get_bill_stage_line_report_ids(session: Session) -> list[str]:
+    session.expire_all()
+    return sorted(session.exec(select(BillStageLine.sprs_report_id)).all())
 
 
 def test_dry_run_writes_the_plan_and_no_rows(
@@ -391,6 +437,55 @@ def test_commit_deletes_the_removed_reports_participants_and_question_states_and
     assert _get_report_ids(scratch_session) == [_KEPT_REPORT_ID]
     assert _get_participant_report_ids(scratch_session) == [_KEPT_REPORT_ID]
     assert _get_question_state_report_ids(scratch_session) == [_KEPT_REPORT_ID]
+
+
+def test_commit_deletes_the_removed_reports_bill_report_speakers_and_stage_lines_and_keeps_the_others(
+    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_bill_speaker_rows(scratch_session, _EXCLUDED_REPORT_ID, 2)
+    _add_bill_speaker_rows(scratch_session, _KEPT_REPORT_ID, 1)
+    assert _get_bill_report_speaker_report_ids(scratch_session) == [
+        _EXCLUDED_REPORT_ID,
+        _KEPT_REPORT_ID,
+    ]
+    assert _get_bill_stage_line_report_ids(scratch_session) == [
+        _EXCLUDED_REPORT_ID,
+        _EXCLUDED_REPORT_ID,
+        _KEPT_REPORT_ID,
+    ]
+
+    remove_excluded_reports_script.remove_excluded_reports(True, None)
+
+    assert _get_report_ids(scratch_session) == [_KEPT_REPORT_ID]
+    assert _get_bill_report_speaker_report_ids(scratch_session) == [_KEPT_REPORT_ID]
+    assert _get_bill_stage_line_report_ids(scratch_session) == [_KEPT_REPORT_ID]
+
+
+def test_dry_run_plan_counts_the_bill_report_speaker_and_stage_line_rows(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_bill_speaker_rows(scratch_session, _EXCLUDED_REPORT_ID, _EXCLUDED_STAGE_LINE_COUNT)
+    plan_path = tmp_path / "plan.json"
+
+    remove_excluded_reports_script.remove_excluded_reports(False, plan_path)
+
+    plan = json.loads(plan_path.read_text())
+    assert [
+        (removal["bill_report_speaker_count"], removal["bill_stage_line_count"])
+        for removal in plan
+    ] == [(1, _EXCLUDED_STAGE_LINE_COUNT)]
+    assert _get_bill_report_speaker_report_ids(scratch_session) == [_EXCLUDED_REPORT_ID]
+    assert _get_bill_stage_line_report_ids(scratch_session) == [
+        _EXCLUDED_REPORT_ID,
+        _EXCLUDED_REPORT_ID,
+    ]
 
 
 def test_commit_refuses_the_protected_local_port(

@@ -10,6 +10,7 @@ from crud.act import CRUDAct
 from crud.act_history_entry import CRUDActHistoryEntry
 from crud.acts_supplement_entry import CRUDActsSupplementEntry
 from crud.bill import CRUDBill
+from crud.bill_key import CRUDBillKey
 from crud.bill_report import CRUDBillReport
 from crud.bills_supplement_entry import CRUDBillsSupplementEntry
 from crud.egazette_supplement import CRUDEgazetteSupplement, EgazetteSupplementRow
@@ -694,5 +695,6 @@ def write_act_link_plan(
     CRUDActHistoryEntry(session).delete_by_ids(act_link_write.entry_ids_to_delete)
     CRUDAct(session).delete_by_ids(act_link_write.act_ids_to_delete)
     CRUDBillReport(session).delete_by_ids(act_link_write.budget_report_ids_to_delete)
+    CRUDBillKey(session).delete_by_bill_ids(act_link_write.bill_ids_to_delete)
     CRUDBillReport(session).delete_by_bill_ids(act_link_write.bill_ids_to_delete)
     CRUDBill(session).delete_by_ids(act_link_write.bill_ids_to_delete)
