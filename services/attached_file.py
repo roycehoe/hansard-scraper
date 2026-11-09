@@ -1,11 +1,13 @@
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from typing import Optional
 
 from bs4 import BeautifulSoup, Tag
 from pydantic import ValidationError
 
+from crud.attached_file import AttachedFileRow
+from crud.attached_file_pointer import AttachedFilePointerUntiedRow
 from crud.speech import SpeechRow
 from database.attached_file import AttachedFile
 from database.attached_file_pointer import AttachedFilePointer
@@ -18,6 +20,7 @@ from schemas.attached_file_list import (
     HansardVernacularEntries,
     HansardVernacularEntry,
 )
+from utils.attached_file_tie import AttachedFilePointerTie
 
 _PLACEHOLDER_VALUE_RE = re.compile(r"^\d{8}/(?:annex|vernacular)-null$")
 _DOWNLOAD_PREFIX = "/search/search/download?value="
@@ -276,4 +279,43 @@ def get_bad_file_link_count(content: Optional[str]) -> int:
         for tag in soup.select("a[href]")
         if _BAD_HREF_RE.fullmatch(str(tag["href"]))
         and _FILE_LINK_TEXT_RE.search(_normalize_text(tag.get_text()).lower())
+    )
+
+
+def get_attached_file_ties(
+    attached_file_pointer_untied_rows: list[AttachedFilePointerUntiedRow],
+    attached_file_rows: list[AttachedFileRow],
+) -> list[AttachedFilePointerTie]:
+    download_value_to_attached_file_ids: defaultdict[str, list[int]] = defaultdict(list)
+    for attached_file_row in attached_file_rows:
+        download_value_to_attached_file_ids[attached_file_row.download_value].append(
+            attached_file_row.id
+        )
+    ties = []
+    for attached_file_pointer_untied_row in attached_file_pointer_untied_rows:
+        attached_file_ids = download_value_to_attached_file_ids[
+            attached_file_pointer_untied_row.download_value
+        ]
+        if len(attached_file_ids) != 1:
+            continue
+        ties.append(
+            AttachedFilePointerTie(
+                attached_file_pointer_untied_row.id, attached_file_ids[0]
+            )
+        )
+    return ties
+
+
+def is_paragraph_tie_stale(printed_text: str, transcript: str) -> bool:
+    return _normalize_text(printed_text) not in _normalize_text(transcript)
+
+
+def get_file_tie_count(
+    pointer_download_values: list[str], attached_file_download_values: list[str]
+) -> int:
+    download_value_to_file_count = Counter(attached_file_download_values)
+    return sum(
+        1
+        for download_value in pointer_download_values
+        if download_value_to_file_count[download_value] == 1
     )
