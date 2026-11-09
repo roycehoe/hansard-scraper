@@ -1,7 +1,7 @@
 """add attached file tables
 
 Revision ID: 81ba3804b972
-Revises: d9e4f2a7b3c1
+Revises: e1a5c7b9d3f2
 Create Date: 2026-11-09 09:00:00.000000
 
 """
@@ -15,7 +15,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 revision: str = "81ba3804b972"
-down_revision: Optional[Union[str, Sequence[str]]] = "d9e4f2a7b3c1"
+down_revision: Optional[Union[str, Sequence[str]]] = "e1a5c7b9d3f2"
 branch_labels: Optional[Union[str, Sequence[str]]] = None
 depends_on: Optional[Union[str, Sequence[str]]] = None
 
