@@ -110,6 +110,11 @@ def test_golden_fixture(fixture_path: Path) -> None:
         ),
         (
             "SPEECH",
+            "36 Ayes, 15 Absent. I declare the motion carried.",
+            (36, None, None, 15, None),
+        ),
+        (
+            "SPEECH",
             "There are 77 Ayes and no Noes.",
             (77, 0, None, None, None),
         ),
@@ -145,6 +150,7 @@ def test_counts_of_a_single_row(
         ("SPEECH", 'To the contrary say "No". I think the "Ayes" have it'),
         ("PROCEDURAL", "Question put, and agreed to."),
         ("PROCEDURAL", "Division Bells rung."),
+        ("SPEECH", "Ayes, 12; Noes, 3."),
     ],
 )
 def test_row_that_is_not_a_division_makes_none(kind: str, transcript: str) -> None:
@@ -152,6 +158,30 @@ def test_row_that_is_not_a_division_makes_none(kind: str, transcript: str) -> No
 
     assert report_divisions.divisions == []
     assert report_divisions.unread_rows == []
+
+
+def test_row_starting_with_a_count_of_noes_is_not_a_division() -> None:
+    report_divisions = get_report_divisions(
+        _build_rows([("SPEECH", "3 Noes and 36 Ayes.")])
+    )
+
+    assert report_divisions.divisions == []
+
+
+@pytest.mark.parametrize(
+    "transcript",
+    [
+        "The House divided: Ayes, 36.",
+        "The House divided: Noes, 3; Absent, 1.",
+    ],
+)
+def test_opening_that_reads_no_division_span_is_unread(transcript: str) -> None:
+    report_divisions = get_report_divisions(_build_rows([("PROCEDURAL", transcript)]))
+
+    assert report_divisions.divisions == []
+    assert [unread_row.reason for unread_row in report_divisions.unread_rows] == [
+        UnreadDivisionReason.OPENING_WITHOUT_COUNTS
+    ]
 
 
 def test_repeated_label_is_unread() -> None:

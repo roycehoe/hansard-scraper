@@ -261,6 +261,12 @@ def _get_spoken_total(
         span = _read_count_span(stripped, read_start)
         if span is None or not _is_division_span(span.side_to_value):
             continue
+        is_row_start_read = read_start == 0
+        if is_row_start_read and (
+            _NUMBER_PATTERN.match(stripped) is None
+            or next(iter(span.side_to_value)) != _SIDE_AYES
+        ):
+            continue
         if span.is_repeated_label:
             return UnreadDivisionRow(
                 row.report_id,
