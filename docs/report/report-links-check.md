@@ -23,6 +23,8 @@ A reply is right when the citing report is an answer and the answer refers to th
 
 A continuation is right when the linked report is the part of the same debate, on the printed date, that the resumed debate carries on from. Where several parts of that debate exist on the printed date, the linked report must be the last one. Read the opening and closing text of each part to see which comes last.
 
+Start from the entry marked `[this is the linked report]`, read that entry's own opening and closing text, and take no other entry's text for it. A part that opens with a motion being moved, a Second Reading being read or a Minister's statement comes before a part that opens `Debate resumed`. If the marked entry is the part that opens the debate and another entry opens `Debate resumed`, the link is `WRONG`. The last part of a day can end with the Chair calling the next speaker, because the debate was adjourned there, so that ending alone does not show that a later part exists.
+
 ## What a misread citation is
 
 A citation is misread when any of these holds:
