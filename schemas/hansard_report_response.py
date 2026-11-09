@@ -87,6 +87,18 @@ class HansardReportAttendanceEntry(BaseModel):
     location_name: Optional[str] = None
 
 
+class HansardReportPermissionEntry(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    mp_name: Optional[str] = None
+    printed_from: Optional[str] = Field(default=None, alias="from")
+    printed_to: Optional[str] = Field(default=None, alias="to")
+    start_dt_text: Optional[str] = None
+    end_dt_text: Optional[str] = None
+    start_dt_flag: Optional[bool] = None
+    end_dt_flag: Optional[bool] = None
+
+
 class HansardReportSection(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
