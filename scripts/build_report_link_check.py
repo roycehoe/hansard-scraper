@@ -81,6 +81,12 @@ class _PoolEntry:
 
 
 @dataclass(frozen=True)
+class _PlantAttempt:
+    pool_entry: _PoolEntry
+    plant_kind: ReportLinkPlantKind
+
+
+@dataclass(frozen=True)
 class _GroupDraw:
     group: str
     link_count: int
@@ -103,6 +109,12 @@ class _DrawnLink:
     plant_kind: Optional[ReportLinkPlantKind]
     target_row: ReportLinkReportRow
     same_title_rows: list[ReportLinkReportRow]
+
+
+@dataclass(frozen=True)
+class _PacketDraw:
+    packet: ReportLinkCheckPacket
+    drawn_link: _DrawnLink
 
 
 @dataclass
@@ -217,14 +229,14 @@ def _get_group_seed(seed: int, group: str) -> str:
 
 
 def _get_group_draw(
-    group: str, links: list[PlannedReportLink], rng: random.Random
+    group: str, links: list[PlannedReportLink], generator: random.Random
 ) -> _GroupDraw:
-    sampled = rng.sample(links, min(_SAMPLE_PER_GROUP, len(links)))
+    sampled = generator.sample(links, min(_SAMPLE_PER_GROUP, len(links)))
     sampled_links = set(sampled)
     unsampled = [link for link in links if link not in sampled_links]
     plant_pool = [
-        *rng.sample(unsampled, len(unsampled)),
-        *rng.sample(sampled, len(sampled)),
+        *generator.sample(unsampled, len(unsampled)),
+        *generator.sample(sampled, len(sampled)),
     ]
     return _GroupDraw(group, len(links), sampled, plant_pool)
 
@@ -274,7 +286,7 @@ def _get_wrong_target(
     planned_link: PlannedReportLink,
     plant_kind: ReportLinkPlantKind,
     lookups: _ReportLookups,
-    rng: random.Random,
+    generator: random.Random,
 ) -> Optional[ReportLinkReportRow]:
     true_target = lookups.report_id_to_row[planned_link.target_report_id]
     excluded_report_ids = {
@@ -294,18 +306,18 @@ def _get_wrong_target(
     )
     if not candidates:
         return None
-    return rng.choice(candidates)
+    return generator.choice(candidates)
 
 
 def _walk_plant_pool(
     pool: list[_PoolEntry],
-) -> Iterator[tuple[_PoolEntry, ReportLinkPlantKind]]:
+) -> Iterator[_PlantAttempt]:
     for position, pool_entry in enumerate(pool):
         plant_kinds = _get_plant_kinds(pool_entry.group)
-        yield pool_entry, plant_kinds[position % len(plant_kinds)]
+        yield _PlantAttempt(pool_entry, plant_kinds[position % len(plant_kinds)])
     for pool_entry in pool:
         for plant_kind in _get_plant_kinds(pool_entry.group):
-            yield pool_entry, plant_kind
+            yield _PlantAttempt(pool_entry, plant_kind)
 
 
 def _draw_plants(
@@ -313,11 +325,13 @@ def _draw_plants(
     quota: int,
     scope: str,
     lookups: _ReportLookups,
-    group_to_rng: dict[str, random.Random],
+    group_to_generator: dict[str, random.Random],
 ) -> list[_Plant]:
     plants: list[_Plant] = []
     tried_pairs: set[tuple[PlannedReportLink, ReportLinkPlantKind]] = set()
-    for pool_entry, plant_kind in _walk_plant_pool(pool):
+    for plant_attempt in _walk_plant_pool(pool):
+        pool_entry = plant_attempt.pool_entry
+        plant_kind = plant_attempt.plant_kind
         if (pool_entry.planned_link, plant_kind) in tried_pairs:
             continue
         tried_pairs.add((pool_entry.planned_link, plant_kind))
@@ -325,7 +339,7 @@ def _draw_plants(
             pool_entry.planned_link,
             plant_kind,
             lookups,
-            group_to_rng[pool_entry.group],
+            group_to_generator[pool_entry.group],
         )
         if wrong_target is None:
             continue
@@ -343,7 +357,7 @@ def _get_same_title_rows(
     target_row: ReportLinkReportRow,
     link_type: ReportLinkType,
     lookups: _ReportLookups,
-    rng: random.Random,
+    generator: random.Random,
 ) -> list[ReportLinkReportRow]:
     if link_type != ReportLinkType.CONTINUATION:
         return []
@@ -355,14 +369,14 @@ def _get_same_title_rows(
     ]
     if len(same_title_rows) < _MIN_SAME_TITLE_REPORTS:
         return []
-    return rng.sample(same_title_rows, len(same_title_rows))
+    return generator.sample(same_title_rows, len(same_title_rows))
 
 
 def _get_drawn_links(
     group_draws: list[_GroupDraw],
     plants: list[_Plant],
     lookups: _ReportLookups,
-    group_to_rng: dict[str, random.Random],
+    group_to_generator: dict[str, random.Random],
 ) -> list[_DrawnLink]:
     drawn_links: list[_DrawnLink] = []
     for group_draw in group_draws:
@@ -378,7 +392,7 @@ def _get_drawn_links(
                         target_row,
                         planned_link.link_type,
                         lookups,
-                        group_to_rng[group_draw.group],
+                        group_to_generator[group_draw.group],
                     ),
                 )
             )
@@ -393,7 +407,7 @@ def _get_drawn_links(
                     plant.wrong_target,
                     plant.planned_link.link_type,
                     lookups,
-                    group_to_rng[plant.group],
+                    group_to_generator[plant.group],
                 ),
             )
         )
@@ -443,50 +457,49 @@ def _build_report_text(
     )
 
 
-def _build_packets(
+def _build_packet_draws(
     drawn_links: list[_DrawnLink],
     lookups: _ReportLookups,
     report_id_to_text: dict[int, str],
     seed: int,
-) -> list[ReportLinkCheckPacket]:
-    packet_id_rng = random.Random(f"{seed}:packet-ids")
-    packets: list[ReportLinkCheckPacket] = []
+) -> list[_PacketDraw]:
+    packet_id_generator = random.Random(f"{seed}:packet-ids")
+    packet_draws: list[_PacketDraw] = []
     for drawn_link in drawn_links:
         planned_link = drawn_link.planned_link
-        packets.append(
-            ReportLinkCheckPacket(
-                packet_id=f"{packet_id_rng.getrandbits(_PACKET_ID_BITS):016x}",
-                group=drawn_link.group,
-                rule=planned_link.rule,
-                link_type=planned_link.link_type,
-                source_report_id=planned_link.source_report_id,
-                target_report_id=drawn_link.target_row.report_id,
-                printed_citation=planned_link.printed_citation,
-                paragraph=planned_link.paragraph,
-                source_report=_build_report_text(
-                    lookups.report_id_to_row[planned_link.source_report_id],
-                    report_id_to_text,
-                ),
-                target_report=_build_report_text(
-                    drawn_link.target_row, report_id_to_text
-                ),
-                same_title_reports=[
-                    ReportLinkCheckSameTitleReport(
-                        title=same_title_row.title,
-                        sitting_date=same_title_row.sitting_date.date(),
-                        opening_text=report_id_to_text[same_title_row.id][
-                            :_OPENING_TEXT_LENGTH
-                        ],
-                        closing_text=report_id_to_text[same_title_row.id][
-                            -_CLOSING_TEXT_LENGTH:
-                        ],
-                        is_link_target=same_title_row.id == drawn_link.target_row.id,
-                    )
-                    for same_title_row in drawn_link.same_title_rows
-                ],
-            )
+        packet = ReportLinkCheckPacket(
+            packet_id=f"{packet_id_generator.getrandbits(_PACKET_ID_BITS):016x}",
+            group=drawn_link.group,
+            rule=planned_link.rule,
+            link_type=planned_link.link_type,
+            source_report_id=planned_link.source_report_id,
+            target_report_id=drawn_link.target_row.report_id,
+            printed_citation=planned_link.printed_citation,
+            paragraph=planned_link.paragraph,
+            source_report=_build_report_text(
+                lookups.report_id_to_row[planned_link.source_report_id],
+                report_id_to_text,
+            ),
+            target_report=_build_report_text(
+                drawn_link.target_row, report_id_to_text
+            ),
+            same_title_reports=[
+                ReportLinkCheckSameTitleReport(
+                    title=same_title_row.title,
+                    sitting_date=same_title_row.sitting_date.date(),
+                    opening_text=report_id_to_text[same_title_row.id][
+                        :_OPENING_TEXT_LENGTH
+                    ],
+                    closing_text=report_id_to_text[same_title_row.id][
+                        -_CLOSING_TEXT_LENGTH:
+                    ],
+                    is_link_target=same_title_row.id == drawn_link.target_row.id,
+                )
+                for same_title_row in drawn_link.same_title_rows
+            ],
         )
-    return packets
+        packet_draws.append(_PacketDraw(packet, drawn_link))
+    return packet_draws
 
 
 def _get_packet_markdown(packet: ReportLinkCheckPacket) -> str:
@@ -532,7 +545,7 @@ def _is_packet_allowed_in_batch(
     )
 
 
-def _get_batch_for_packet(
+def _claim_batch_for_packet(
     batches: list[_Batch], markdown: str, citation_key: tuple[str, str]
 ) -> _Batch:
     for batch in batches:
@@ -546,12 +559,12 @@ def _get_batch_for_packet(
 def _get_batches(
     packets: list[ReportLinkCheckPacket], seed: int, reader_name: str
 ) -> list[_Batch]:
-    rng = random.Random(f"{seed}:{reader_name}")
+    generator = random.Random(f"{seed}:{reader_name}")
     batches: list[_Batch] = []
-    for packet in rng.sample(packets, len(packets)):
+    for packet in generator.sample(packets, len(packets)):
         markdown = _get_packet_markdown(packet)
         citation_key = (packet.source_report_id, packet.printed_citation)
-        batch = _get_batch_for_packet(batches, markdown, citation_key)
+        batch = _claim_batch_for_packet(batches, markdown, citation_key)
         batch.markdowns.append(markdown)
         batch.character_count += len(markdown)
         batch.citation_keys.add(citation_key)
@@ -621,7 +634,7 @@ def _draw_stage_plants(
     group_draws: list[_GroupDraw],
     rule: Optional[ReportLinkRule],
     lookups: _ReportLookups,
-    group_to_rng: dict[str, random.Random],
+    group_to_generator: dict[str, random.Random],
 ) -> list[_Plant]:
     if rule is None:
         return [
@@ -632,7 +645,7 @@ def _draw_stage_plants(
                 _PLANTS_PER_GROUP,
                 group_draw.group,
                 lookups,
-                group_to_rng,
+                group_to_generator,
             )
         ]
     round_robin_pool = [
@@ -644,7 +657,7 @@ def _draw_stage_plants(
         if pool_entry is not None
     ]
     return _draw_plants(
-        round_robin_pool, _PLANTS_PER_RULE, str(rule), lookups, group_to_rng
+        round_robin_pool, _PLANTS_PER_RULE, str(rule), lookups, group_to_generator
     )
 
 
@@ -660,32 +673,33 @@ def build_report_link_check(
             if rule is None
             else _get_stage_two_group_to_links(plan, lookups, rule)
         )
-        group_to_rng = {
+        group_to_generator = {
             group: random.Random(_get_group_seed(seed, group))
             for group in group_to_links
         }
         group_draws = [
-            _get_group_draw(group, group_to_links[group], group_to_rng[group])
+            _get_group_draw(group, group_to_links[group], group_to_generator[group])
             for group in sorted(group_to_links)
         ]
-        plants = _draw_stage_plants(group_draws, rule, lookups, group_to_rng)
-        drawn_links = _get_drawn_links(group_draws, plants, lookups, group_to_rng)
-        packets = _build_packets(
+        plants = _draw_stage_plants(group_draws, rule, lookups, group_to_generator)
+        drawn_links = _get_drawn_links(group_draws, plants, lookups, group_to_generator)
+        packet_draws = _build_packet_draws(
             drawn_links,
             lookups,
             _get_report_texts(session, drawn_links, lookups),
             seed,
         )
+    packets = [packet_draw.packet for packet_draw in packet_draws]
     key = ReportLinkCheckKey(
         seed=seed,
         plants=[
             ReportLinkCheckPlant(
-                packet_id=packet.packet_id,
-                kind=drawn_link.plant_kind,
-                true_target_report_id=drawn_link.planned_link.target_report_id,
+                packet_id=packet_draw.packet.packet_id,
+                kind=packet_draw.drawn_link.plant_kind,
+                true_target_report_id=packet_draw.drawn_link.planned_link.target_report_id,
             )
-            for packet, drawn_link in zip(packets, drawn_links)
-            if drawn_link.plant_kind is not None
+            for packet_draw in packet_draws
+            if packet_draw.drawn_link.plant_kind is not None
         ],
     )
     _write_check_files(

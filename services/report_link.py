@@ -114,7 +114,7 @@ def _get_citation_match(
     printed_citation: PrintedCitation,
     source: ReportLinkReportRow,
     sitting_day_to_report_rows: dict[date, list[ReportLinkReportRow]],
-    corrected_titles: dict[tuple[str, str], str],
+    report_title_to_corrected_title: dict[tuple[str, str], str],
     shipped_rules: Sequence[ReportLinkRule],
 ) -> Union[_RuleMatch, ReportLinkUnplacedReason]:
     printed_title = printed_citation.printed_title
@@ -151,7 +151,7 @@ def _get_citation_match(
         and ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE in shipped_rules
     ):
         return _RuleMatch(key_candidates[0], ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE)
-    corrected_title = corrected_titles.get((source.report_id, printed_title))
+    corrected_title = report_title_to_corrected_title.get((source.report_id, printed_title))
     if (
         corrected_title is not None
         and ReportLinkRule.HAND_KEPT_TITLE_ON_PRINTED_DATE in shipped_rules
@@ -180,7 +180,7 @@ def _get_continuation_match(
     heading: ResumptionHeading,
     source: ReportLinkReportRow,
     sitting_day_to_report_rows: dict[date, list[ReportLinkReportRow]],
-    corrected_titles: dict[tuple[str, str], str],
+    report_title_to_corrected_title: dict[tuple[str, str], str],
     shipped_rules: Sequence[ReportLinkRule],
 ) -> Union[_RuleMatch, ReportLinkUnplacedReason]:
     if heading.printed_date is None:
@@ -214,7 +214,7 @@ def _get_continuation_match(
         and ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE in shipped_rules
     ):
         return _get_part_match(key_titled, ReportLinkRule.TITLE_KEY_ON_PRINTED_DATE)
-    corrected_title = corrected_titles.get((source.report_id, source.title))
+    corrected_title = report_title_to_corrected_title.get((source.report_id, source.title))
     if (
         corrected_title is not None
         and ReportLinkRule.HAND_KEPT_TITLE_ON_PRINTED_DATE in shipped_rules
@@ -251,7 +251,7 @@ def _get_citation_link_type(
     return None
 
 
-def _get_validated_corrected_titles(
+def _get_validated_report_title_to_corrected_title(
     title_corrections: list[ReportLinkTitleCorrection],
     printed_citations: list[PrintedCitation],
     resumption_headings: list[ResumptionHeading],
@@ -299,7 +299,7 @@ def build_report_link_plan(
         sitting_day_to_report_rows.setdefault(
             report_row.sitting_date.date(), []
         ).append(report_row)
-    corrected_titles = _get_validated_corrected_titles(
+    report_title_to_corrected_title = _get_validated_report_title_to_corrected_title(
         title_corrections, printed_citations, resumption_headings, id_to_report_row
     )
     key_to_planned_link: dict[
@@ -312,7 +312,7 @@ def build_report_link_plan(
             printed_citation,
             source,
             sitting_day_to_report_rows,
-            corrected_titles,
+            report_title_to_corrected_title,
             shipped_rules,
         )
         if isinstance(citation_match, ReportLinkUnplacedReason):
@@ -360,7 +360,7 @@ def build_report_link_plan(
             resumption_heading,
             source,
             sitting_day_to_report_rows,
-            corrected_titles,
+            report_title_to_corrected_title,
             shipped_rules,
         )
         if isinstance(heading_match, ReportLinkUnplacedReason):

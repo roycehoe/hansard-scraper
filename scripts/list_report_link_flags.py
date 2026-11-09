@@ -42,7 +42,7 @@ def _get_verdicts(verdicts_directory: Path) -> list[ReportLinkCheckVerdict]:
     return verdicts
 
 
-def _get_packet_id_to_verdict(
+def _get_validated_packet_id_to_verdict(
     packets: list[ReportLinkCheckPacket],
     verdicts: list[ReportLinkCheckVerdict],
     reader_name: str,
@@ -71,7 +71,7 @@ def _get_packet_id_to_verdict(
     return {verdict.packet_id: verdict for verdict in verdicts}
 
 
-def _get_key(key_path: Path, key_hash_path: Path) -> ReportLinkCheckKey:
+def _get_validated_key(key_path: Path, key_hash_path: Path) -> ReportLinkCheckKey:
     key_bytes = key_path.read_bytes()
     key_sha256 = hashlib.sha256(key_bytes).hexdigest()
     committed_sha256 = key_hash_path.read_text(encoding="utf-8").strip()
@@ -130,12 +130,12 @@ def list_report_link_flags(
     packets = ReportLinkCheckPackets.model_validate_json(
         packets_path.read_text(encoding="utf-8")
     ).root
-    key = _get_key(key_path, key_hash_path)
+    key = _get_validated_key(key_path, key_hash_path)
     reader_name_to_packet_id_to_verdict = {
-        _SONNET_READER_NAME: _get_packet_id_to_verdict(
+        _SONNET_READER_NAME: _get_validated_packet_id_to_verdict(
             packets, _get_verdicts(sonnet_verdicts_directory), _SONNET_READER_NAME
         ),
-        _OPUS_READER_NAME: _get_packet_id_to_verdict(
+        _OPUS_READER_NAME: _get_validated_packet_id_to_verdict(
             packets, _get_verdicts(opus_verdicts_directory), _OPUS_READER_NAME
         ),
     }
