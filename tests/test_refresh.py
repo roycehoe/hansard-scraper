@@ -1760,6 +1760,37 @@ def test_minutes_index_failure_fails_the_run_after_the_figures_and_the_vacuum(
     )
 
 
+def test_minutes_to_review_are_alerted_when_a_run_with_no_new_rows_fails_at_the_figures(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
+    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 11))
+    scratch_session.commit()
+    _list_minutes_file(
+        fake_parliament, date(2018, 1, 11), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
+    )
+    alerts.messages.clear()
+
+    def fail_at_the_figures(session: Session) -> None:
+        raise HansardRefreshFailureError("figures failed")
+
+    monkeypatch.setattr(refresh_runs, "get_attribution_figures", fail_at_the_figures)
+
+    with pytest.raises(HansardRefreshFailureError):
+        refresh_runs.populate_refresh_runs(
+            scratch_session, _get_now(fake_parliament), None
+        )
+
+    review_messages = [
+        message for message in alerts.messages if _MINUTES_ALERT_FRAGMENT in message
+    ]
+    assert len(review_messages) == 1
+
+
 def test_non_200_index_answer_fails_the_run_the_same_way(
     scratch_engine: Engine,
     scratch_session: Session,

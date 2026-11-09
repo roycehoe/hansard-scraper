@@ -1027,6 +1027,13 @@ def populate_refresh_runs(
             run_result.minutes_index_failure = error
         else:
             run_result.minutes_to_review = minutes_step_result.minutes_to_review
+            is_data_committed = (
+                is_data_committed
+                or minutes_step_result.rows_added
+                + minutes_step_result.rows_listed
+                + minutes_step_result.files_stored
+                > 0
+            )
         run_result.figures = build_attribution_figures_json(
             get_attribution_figures(session), datetime.now(timezone.utc)
         )
