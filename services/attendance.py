@@ -354,6 +354,11 @@ def get_entry_office_parts(entry_line: str) -> Optional[EntryOfficeParts]:
         office = office.strip(_ENTRY_OFFICE_STRIP_CHARACTERS)
         if not office:
             return None
+        if not office[0].isalpha():
+            return None
+        # NOTE: a closing bracket with no opening bracket is a constituency, not an office.
+        if CLOSING_PARENTHESIS in office and OPENING_PARENTHESIS not in office:
+            return None
         return EntryOfficeParts(office, AttendanceOfficeSource.AFTER_NAME_COMMA)
     chair_form = text[:first_open].strip()
     if _CHAIR_ENTRY_RE.search(chair_form):
@@ -368,6 +373,8 @@ def get_entry_office_parts(entry_line: str) -> Optional[EntryOfficeParts]:
     if office == text[first_open : close_index + 1]:
         return None
     if not office:
+        return None
+    if not office[0].isalpha():
         return None
     return EntryOfficeParts(office, AttendanceOfficeSource.AFTER_CONSTITUENCY_BRACKET)
 

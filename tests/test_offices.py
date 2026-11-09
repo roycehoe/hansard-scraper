@@ -36,6 +36,21 @@ _ENTRY_OFFICE_CASES = [
         id="sitting_of_11_january_1988_a_lone_semicolon_is_no_office",
     ),
     pytest.param(
+        "Mr Charles Chong (Pasir Ris).] ",
+        None,
+        id="attendance_office_6062_a_stray_bracket_is_no_office",
+    ),
+    pytest.param(
+        "Mr Yeo Choo Kok (Delta). (Policy).",
+        None,
+        id="attendance_office_4407_a_bracket_opening_the_office_is_no_office",
+    ),
+    pytest.param(
+        "Dr Thio Chan Bee, J.P.Tanglin).   ",
+        None,
+        id="attendance_office_8572_a_constituency_without_its_opening_bracket",
+    ),
+    pytest.param(
         "Mr Eugene Yap Giau Cheng (Mountbatten), Parliamentary Secretary to the Minister for Trade and Industry and Minister for Social Affairs; ",
         "Parliamentary Secretary to the Minister for Trade and Industry and Minister for Social Affairs",
         id="a_trailing_semicolon_is_trimmed",
