@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 from sqlmodel import Session, col, delete, func, select
 
 from database.bill import BillReport
+from database.report import Report
 from enums import BillReportRole
 
 
@@ -11,6 +13,16 @@ class BillReportRow:
     id: int
     bill_id: int
     report_id: int
+    role: BillReportRole
+
+
+@dataclass(frozen=True)
+class BillReportSittingDateReportTypeRow:
+    bill_id: int
+    report_id: int
+    sprs_report_id: str
+    sitting_date: datetime
+    report_type: str
     role: BillReportRole
 
 
@@ -36,6 +48,53 @@ class CRUDBillReport:
             col(BillReport.role),
         ).order_by(col(BillReport.bill_id), col(BillReport.id))
         return [BillReportRow(*row) for row in self.session.execute(statement).all()]
+
+    def get_sitting_date_report_type_rows(
+        self,
+    ) -> list[BillReportSittingDateReportTypeRow]:
+        statement = (
+            select(
+                BillReport.bill_id,
+                BillReport.report_id,
+                Report.report_id,
+                Report.sitting_date,
+                Report.report_type,
+                BillReport.role,
+            )
+            .select_from(BillReport)
+            .join(Report, col(BillReport.report_id) == col(Report.id))
+            .order_by(
+                col(BillReport.bill_id), col(Report.sitting_date), col(Report.report_id)
+            )
+        )
+        return [
+            BillReportSittingDateReportTypeRow(*row)
+            for row in self.session.exec(statement).all()
+        ]
+
+    def get_sitting_date_report_type_rows_by_report_ids(
+        self, report_ids: list[int]
+    ) -> list[BillReportSittingDateReportTypeRow]:
+        statement = (
+            select(
+                BillReport.bill_id,
+                BillReport.report_id,
+                Report.report_id,
+                Report.sitting_date,
+                Report.report_type,
+                BillReport.role,
+            )
+            .select_from(BillReport)
+            .join(Report, col(BillReport.report_id) == col(Report.id))
+            .where(col(BillReport.report_id).in_(report_ids))
+            .order_by(
+                col(BillReport.bill_id), col(Report.sitting_date), col(Report.report_id)
+            )
+        )
+        return [
+            BillReportSittingDateReportTypeRow(*row)
+            for row in self.session.exec(statement).all()
+        ]
 
     def delete_by_ids(self, ids: list[int]) -> None:
         if not ids:

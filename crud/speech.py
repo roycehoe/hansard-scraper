@@ -26,6 +26,21 @@ class SpeechRow:
 
 
 @dataclass(frozen=True)
+class SpeechOrdinalLabelRow:
+    report_id: int
+    speaker_id: int
+    ordinal: int
+    speaker: str
+
+
+@dataclass(frozen=True)
+class SpeechOrdinalTranscriptRow:
+    report_id: int
+    ordinal: int
+    transcript: str
+
+
+@dataclass(frozen=True)
 class SpeechSpeakerRow:
     id: int
     speaker: Optional[str]
@@ -343,6 +358,43 @@ class CRUDSpeech:
             .order_by(Speech.report_id, Speech.ordinal)
         )
         return [SpeechRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_ordinal_label_rows_by_report_ids_and_kind_and_speaker_id_not_null(
+        self, report_ids: list[int], kind: SpeechKind
+    ) -> list[SpeechOrdinalLabelRow]:
+        statement = (
+            select(Speech.report_id, Speech.speaker_id, Speech.ordinal, Speech.speaker)
+            .where(col(Speech.report_id).in_(report_ids))
+            .where(Speech.kind == kind)
+            .where(col(Speech.speaker_id).is_not(None))
+            .order_by(Speech.report_id, Speech.ordinal)
+        )
+        return [
+            SpeechOrdinalLabelRow(*row) for row in self.session.exec(statement).all()
+        ]
+
+    def get_ordinal_transcript_rows_by_report_ids_and_kinds_and_transcript_regex_and_transcript_not_regexes(
+        self,
+        report_ids: list[int],
+        kinds: tuple[SpeechKind, ...],
+        pattern: str,
+        not_patterns: tuple[str, ...],
+    ) -> list[SpeechOrdinalTranscriptRow]:
+        statement = (
+            select(Speech.report_id, Speech.ordinal, Speech.transcript)
+            .where(col(Speech.report_id).in_(report_ids))
+            .where(col(Speech.kind).in_(kinds))
+            .where(col(Speech.transcript).regexp_match(pattern, flags="i"))
+            .order_by(Speech.report_id, Speech.ordinal)
+        )
+        for not_pattern in not_patterns:
+            statement = statement.where(
+                not_(col(Speech.transcript).regexp_match(not_pattern, flags="i"))
+            )
+        return [
+            SpeechOrdinalTranscriptRow(*row)
+            for row in self.session.exec(statement).all()
+        ]
 
     def get_parse_rows_by_report_ids(
         self, report_ids: list[int]

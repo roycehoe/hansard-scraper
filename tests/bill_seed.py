@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from sqlmodel import Session, col, select
 
@@ -8,7 +9,7 @@ from database.bill import Bill, BillReport
 from database.report import Report
 from database.speaker import Speaker
 from database.speech import Speech
-from enums import BillReportRole, ReportType
+from enums import BillReportRole, ReportType, SpeechKind
 from utils.title_key import get_title_key
 
 _PARLIAMENT_NUMBER = 12
@@ -90,6 +91,32 @@ def seed_bill(
     )
     session.commit()
     return bill.id
+
+
+def seed_speech(
+    session: Session,
+    report_id: int,
+    ordinal: int,
+    speaker: Optional[str],
+    speaker_id: Optional[int],
+    kind: SpeechKind,
+    transcript: str,
+) -> None:
+    report = session.get(Report, report_id)
+    assert report is not None
+    session.add(
+        Speech(
+            ordinal=ordinal,
+            speaker=speaker,
+            transcript=transcript,
+            kind=kind,
+            speaker_id=speaker_id,
+            sitting_date=report.sitting_date,
+            report_type=report.report_type,
+            report_id=report_id,
+        )
+    )
+    session.commit()
 
 
 _ESTATE_DUTY_ACT_TEXT = """\

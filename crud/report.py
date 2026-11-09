@@ -31,6 +31,15 @@ class ReportSittingDateTitleRow:
 
 
 @dataclass(frozen=True)
+class ReportPlacementRow:
+    id: int
+    report_id: str
+    sitting_date: datetime
+    title: str
+    report_type: str
+
+
+@dataclass(frozen=True)
 class ReportFrameRow:
     id: int
     report_id: int
@@ -278,6 +287,24 @@ class CRUDReport:
         return [
             ReportSittingDateTitleRow(*row)
             for row in self.session.exec(statement).all()
+        ]
+
+    def get_placement_rows_by_ids(
+        self, report_ids: list[int]
+    ) -> list[ReportPlacementRow]:
+        statement = (
+            select(
+                Report.id,
+                Report.report_id,
+                Report.sitting_date,
+                Report.title,
+                Report.report_type,
+            )
+            .where(col(Report.id).in_(report_ids))
+            .order_by(col(Report.sitting_date), col(Report.id))
+        )
+        return [
+            ReportPlacementRow(*row) for row in self.session.exec(statement).all()
         ]
 
     def delete_by_ids(self, report_ids: list[int]) -> int:
