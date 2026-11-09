@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable, Optional, Sequence
 
-from sqlalchemy import not_, text
+from sqlalchemy import not_, or_, text
 from sqlmodel import Session, col, delete, func, select
 
 from database.report import Report
@@ -66,6 +66,13 @@ class SpeechLinkRow:
 @dataclass(frozen=True)
 class SpeechTranscriptRow:
     id: int
+    transcript: str
+
+
+@dataclass(frozen=True)
+class SpeechCitationRow:
+    report_id: int
+    ordinal: int
     transcript: str
 
 
@@ -484,6 +491,18 @@ class CRUDSpeech:
             .order_by(Speech.id)
         )
         return [SpeechTranscriptRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_citation_rows_by_transcript_ilike_patterns(
+        self, patterns: Sequence[str]
+    ) -> list[SpeechCitationRow]:
+        statement = (
+            select(Speech.report_id, Speech.ordinal, Speech.transcript)
+            .where(
+                or_(*[col(Speech.transcript).ilike(pattern) for pattern in patterns])
+            )
+            .order_by(Speech.report_id, Speech.ordinal)
+        )
+        return [SpeechCitationRow(*row) for row in self.session.exec(statement).all()]
 
     def get_transcript_rows_by_speaker_id_null_and_kind(
         self, kind: SpeechKind
