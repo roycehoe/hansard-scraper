@@ -5,11 +5,13 @@ import pytest
 
 from crud.sitting import SittingAttendanceTextRow
 from database.speaker import Speaker
-from enums import OfficeClass
+from enums import AttendanceOfficeSource, OfficeClass
 from services.attendance import (
     EntryOffice,
     build_speaker_lookups,
     get_entry_office,
+    get_entry_office_parts,
+    get_sitting_attendance_offices,
     get_sitting_entry_offices,
     split_entry_line,
 )
@@ -770,6 +772,53 @@ def test_entry_office_is_the_text_after_the_constituency_bracket(
     assert get_entry_office(entry_line) == expected_office
 
 
+_ENTRY_OFFICE_PARTS_CASES = [
+    pytest.param(
+        "Mr Charles Chong (Joo Chiat), Deputy Speaker.",
+        "Deputy Speaker",
+        AttendanceOfficeSource.AFTER_CONSTITUENCY_BRACKET,
+        id="constructed_after_constituency_bracket",
+    ),
+    pytest.param(
+        "Mr Punch Coomaraswamy, Deputy Speaker.   ",
+        "Deputy Speaker",
+        AttendanceOfficeSource.AFTER_NAME_COMMA,
+        id="constructed_after_name_comma",
+    ),
+    pytest.param(
+        "Mr SPEAKER (Mr Abdullah Tarmugi (East Coast)).  ",
+        "Mr SPEAKER",
+        AttendanceOfficeSource.CHAIR_FORM,
+        id="constructed_chair_form",
+    ),
+    pytest.param(
+        "The Honourable Mr E. J. Davies, Q.C., Attorney-General (ex-officio).   ",
+        "Attorney-General",
+        AttendanceOfficeSource.BEFORE_EX_OFFICIO_BRACKET,
+        id="constructed_before_ex_officio_bracket",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    ("entry_line", "expected_office", "expected_source"), _ENTRY_OFFICE_PARTS_CASES
+)
+def test_entry_office_parts_name_the_rule_that_read_the_office(
+    entry_line: str,
+    expected_office: str,
+    expected_source: AttendanceOfficeSource,
+) -> None:
+    entry_office_parts = get_entry_office_parts(entry_line)
+
+    assert entry_office_parts is not None
+    assert entry_office_parts.office_printed == expected_office
+    assert entry_office_parts.source == expected_source
+
+
+def test_entry_office_parts_is_none_for_a_line_without_an_office() -> None:
+    assert get_entry_office_parts("Mr Pritam Singh (Aljunied).") is None
+
+
 def test_sitting_5847_1995_glued_line_gives_each_member_their_own_office() -> None:
     entries = split_entry_line(_GLUED_LINE_SITTING_5847)
 
@@ -928,3 +977,36 @@ def test_sitting_with_neither_markdown_nor_a_list_gives_no_entry_offices() -> No
         )
         == []
     )
+
+
+def test_sitting_attendance_offices_keep_the_whole_printed_line_and_match_the_entry_offices() -> (
+    None
+):
+    entry_line = "Mr Chee Hong Tat (Bishan-Toa Payoh), Senior Minister of State for Finance.   "
+    markdown_content = f"PRESENT:\n{entry_line}\n"
+    sitting_attendance_text_row = _build_sitting_attendance_text_row(
+        markdown_content, None
+    )
+
+    sitting_attendance_offices = get_sitting_attendance_offices(
+        sitting_attendance_text_row, _ENTRY_OFFICE_LOOKUPS
+    )
+    entry_offices = get_sitting_entry_offices(
+        sitting_attendance_text_row, _ENTRY_OFFICE_LOOKUPS
+    )
+
+    assert [
+        sitting_attendance_office.entry_line_printed
+        for sitting_attendance_office in sitting_attendance_offices
+    ] == [entry_line]
+    assert [
+        sitting_attendance_office.source
+        for sitting_attendance_office in sitting_attendance_offices
+    ] == [AttendanceOfficeSource.AFTER_CONSTITUENCY_BRACKET]
+    assert entry_offices == [
+        EntryOffice(
+            sitting_attendance_office.speaker_name,
+            sitting_attendance_office.office_printed,
+        )
+        for sitting_attendance_office in sitting_attendance_offices
+    ]

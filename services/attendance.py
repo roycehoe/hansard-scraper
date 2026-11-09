@@ -10,6 +10,7 @@ from crud.sitting import SittingAttendanceTextRow
 from database.attendance import Attendance
 from database.sitting import Sitting
 from database.speaker import Speaker
+from enums import AttendanceOfficeSource
 from exceptions import HansardWriteCheckError
 from schemas.constituency_names import ConstituencyNames
 from schemas.hansard_report_response import HansardReportAttendanceEntry
@@ -334,18 +335,29 @@ def _get_constituency_open_index(text: str) -> int:
     return text.find(OPENING_PARENTHESIS, rank_match.end())
 
 
-def get_entry_office(entry_line: str) -> Optional[str]:
+@dataclass(frozen=True)
+class EntryOfficeParts:
+    office_printed: str
+    source: AttendanceOfficeSource
+
+
+def get_entry_office_parts(entry_line: str) -> Optional[EntryOfficeParts]:
     text = entry_line.strip().removeprefix(_BULLET_MARKER)
     ex_officio_match = _EX_OFFICIO_OFFICE_RE.search(text)
     if ex_officio_match is not None:
-        return ex_officio_match.group(1)
+        return EntryOfficeParts(
+            ex_officio_match.group(1), AttendanceOfficeSource.BEFORE_EX_OFFICIO_BRACKET
+        )
     first_open = _get_constituency_open_index(text)
     if first_open == -1:
         office = text.partition(_ENTRY_OFFICE_SEPARATOR)[2]
-        return office.strip(_ENTRY_OFFICE_STRIP_CHARACTERS) or None
+        office = office.strip(_ENTRY_OFFICE_STRIP_CHARACTERS)
+        if not office:
+            return None
+        return EntryOfficeParts(office, AttendanceOfficeSource.AFTER_NAME_COMMA)
     chair_form = text[:first_open].strip()
     if _CHAIR_ENTRY_RE.search(chair_form):
-        return chair_form
+        return EntryOfficeParts(chair_form, AttendanceOfficeSource.CHAIR_FORM)
     close_index = _get_closing_parenthesis_index(text, first_open)
     if close_index is None:
         return None
@@ -355,7 +367,16 @@ def get_entry_office(entry_line: str) -> Optional[str]:
     # NOTE: a line that repeats its constituency bracket prints no office.
     if office == text[first_open : close_index + 1]:
         return None
-    return office or None
+    if not office:
+        return None
+    return EntryOfficeParts(office, AttendanceOfficeSource.AFTER_CONSTITUENCY_BRACKET)
+
+
+def get_entry_office(entry_line: str) -> Optional[str]:
+    entry_office_parts = get_entry_office_parts(entry_line)
+    if entry_office_parts is None:
+        return None
+    return entry_office_parts.office_printed
 
 
 def parse_speaker_line(line: str) -> ParsedAttendee:
@@ -760,16 +781,24 @@ def _get_entry_lines(
     return _get_list_entry_lines(sitting_attendance_text_row.attendance_list)
 
 
-def get_sitting_entry_offices(
+@dataclass(frozen=True)
+class SittingAttendanceOffice:
+    speaker_name: str
+    office_printed: str
+    entry_line_printed: str
+    source: AttendanceOfficeSource
+
+
+def get_sitting_attendance_offices(
     sitting_attendance_text_row: SittingAttendanceTextRow, lookups: SpeakerLookups
-) -> list[EntryOffice]:
+) -> list[SittingAttendanceOffice]:
     parliament_number = infer_parliament(
         sitting_attendance_text_row.parlement_no, sitting_attendance_text_row.volume_no
     )
-    entry_offices = []
+    sitting_attendance_offices = []
     for entry_line in _get_entry_lines(sitting_attendance_text_row):
-        office_printed = get_entry_office(entry_line)
-        if office_printed is None:
+        entry_office_parts = get_entry_office_parts(entry_line)
+        if entry_office_parts is None:
             continue
         parsed = parse_entry_line(entry_line, sitting_attendance_text_row.sitting_date)
         if parsed is None:
@@ -782,8 +811,29 @@ def get_sitting_entry_offices(
             if parliament_number is None
             else resolve_canonical_name(name, parliament_number, lookups)
         )
-        entry_offices.append(EntryOffice(canonical_name or name, office_printed))
-    return entry_offices
+        sitting_attendance_offices.append(
+            SittingAttendanceOffice(
+                speaker_name=canonical_name or name,
+                office_printed=entry_office_parts.office_printed,
+                entry_line_printed=entry_line,
+                source=entry_office_parts.source,
+            )
+        )
+    return sitting_attendance_offices
+
+
+def get_sitting_entry_offices(
+    sitting_attendance_text_row: SittingAttendanceTextRow, lookups: SpeakerLookups
+) -> list[EntryOffice]:
+    return [
+        EntryOffice(
+            sitting_attendance_office.speaker_name,
+            sitting_attendance_office.office_printed,
+        )
+        for sitting_attendance_office in get_sitting_attendance_offices(
+            sitting_attendance_text_row, lookups
+        )
+    ]
 
 
 def _drop_equal_attendances(
