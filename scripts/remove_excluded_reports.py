@@ -6,11 +6,13 @@ from typing import Optional
 
 from sqlmodel import Session
 
+from crud.division import CRUDDivision
 from crud.report import CRUDReport
 from crud.report_asker import CRUDReportAsker
 from crud.report_participant import CRUDReportParticipant
 from crud.report_question_state import CRUDReportQuestionState
 from crud.speech import CRUDSpeech
+from database.division import Division
 from database.init import engine
 from database.report import Report
 from database.report_asker import ReportAsker
@@ -36,6 +38,7 @@ class ReportRemoval:
     asker_count: int
     participant_count: int
     question_state_count: int
+    division_count: int
 
 
 def _get_validated_removal(
@@ -80,6 +83,7 @@ def _get_validated_removal(
         len(CRUDReportAsker(session).get_rows_by_report_ids([report.id])),
         len(CRUDReportParticipant(session).get_rows_by_report_ids([report.id])),
         len(CRUDReportQuestionState(session).get_rows_by_report_ids([report.id])),
+        len(CRUDDivision(session).get_by_sprs_report_ids([report.report_id])),
     )
 
 
@@ -118,6 +122,14 @@ def _get_removals(
 
 def _remove_reports(session: Session, removals: list[ReportRemoval]) -> None:
     report_ids = [removal.id for removal in removals]
+    division_ids = [
+        division.id
+        for division in CRUDDivision(session).get_by_sprs_report_ids(
+            [removal.report_id for removal in removals]
+        )
+        if division.id is not None
+    ]
+    deleted_division_count = CRUDDivision(session).delete_by_ids(division_ids)
     deleted_asker_count = CRUDReportAsker(session).delete_by_report_ids(report_ids)
     deleted_participant_count = CRUDReportParticipant(session).delete_by_report_ids(
         report_ids
@@ -127,6 +139,10 @@ def _remove_reports(session: Session, removals: list[ReportRemoval]) -> None:
     ).delete_by_report_ids(report_ids)
     deleted_speech_count = CRUDSpeech(session).delete_by_report_ids(report_ids)
     deleted_report_count = CRUDReport(session).delete_by_ids(report_ids)
+    if deleted_division_count != sum(removal.division_count for removal in removals):
+        raise HansardWriteCheckError(
+            f"Deleted {deleted_division_count} division rows, planned {sum(removal.division_count for removal in removals)}"
+        )
     if deleted_asker_count != sum(removal.asker_count for removal in removals):
         raise HansardWriteCheckError(
             f"Deleted {deleted_asker_count} asker rows, planned {sum(removal.asker_count for removal in removals)}"
@@ -164,10 +180,10 @@ def remove_excluded_reports(is_commit: bool, plan_path: Optional[Path]) -> None:
         removals = _get_removals(session, excluded_report_ids)
         for removal in removals:
             logger.info(
-                f"Remove report {removal.id} ({removal.report_id}), {removal.speech_count} speech rows, {removal.asker_count} asker rows, {removal.participant_count} participant rows, {removal.question_state_count} question state rows; keep {removal.kept_id}"
+                f"Remove report {removal.id} ({removal.report_id}), {removal.speech_count} speech rows, {removal.asker_count} asker rows, {removal.participant_count} participant rows, {removal.question_state_count} question state rows, {removal.division_count} division rows; keep {removal.kept_id}"
             )
         logger.info(
-            f"Plan: {len(removals)} reports, {sum(removal.speech_count for removal in removals)} speech rows, {sum(removal.asker_count for removal in removals)} asker rows, {sum(removal.participant_count for removal in removals)} participant rows, {sum(removal.question_state_count for removal in removals)} question state rows"
+            f"Plan: {len(removals)} reports, {sum(removal.speech_count for removal in removals)} speech rows, {sum(removal.asker_count for removal in removals)} asker rows, {sum(removal.participant_count for removal in removals)} participant rows, {sum(removal.question_state_count for removal in removals)} question state rows, {sum(removal.division_count for removal in removals)} division rows"
         )
         if plan_path is not None:
             plan_path.write_text(
@@ -187,6 +203,7 @@ def remove_excluded_reports(is_commit: bool, plan_path: Optional[Path]) -> None:
                 ReportAsker.__tablename__,
                 ReportParticipant.__tablename__,
                 ReportQuestionState.__tablename__,
+                Division.__tablename__,
                 Report.__tablename__,
             ],
         )

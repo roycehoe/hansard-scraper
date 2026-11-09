@@ -171,6 +171,8 @@ A write that adds, rewrites or deletes speech rows of an older-system report (Pa
 
 A write that adds, rewrites, deletes or relinks speech rows of a parliamentary question report (oral-answer, written-answer, written-answer-na) ends with `python -m scripts.apply_report_askers --commit --report-id ...` and then `python -m scripts.apply_report_participants --commit --report-id ...` for the reports it touched.
 
+A write that adds, rewrites, deletes or relinks speech rows of a report ends with `python -m scripts.apply_divisions --plan-file ... --commit --report-id ...` for the reports it touched, as the askers' write does, because a moved speech ordinal moves a division's number.
+
 The scripts:
 
 - `diagnose.py` — inspect parsing failures across the corpus
