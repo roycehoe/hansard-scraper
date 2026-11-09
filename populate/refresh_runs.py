@@ -35,6 +35,7 @@ from gateway.hansard_topic import get_hansard_topic_response_async
 from gateway.healthchecks import send_healthchecks_failure_ping, send_healthchecks_ping
 from gateway.telegram import send_telegram_message
 from logs import logger
+from populate.attached_files import populate_attached_files
 from populate.attendance_offices import populate_attendance_offices
 from populate.attribution_figures import get_attribution_figures
 from populate.bill_speakers import populate_bill_speakers
@@ -689,6 +690,7 @@ def _write_window_rows(
         session, sitting_ids
     )
     populate_bill_speakers(session, report_ids)
+    populate_attached_files(session, report_ids, sitting_ids)
 
     window_result.website_responses_added = len(hansard_website_responses)
     window_result.reports_added = len(reports)

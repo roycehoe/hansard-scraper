@@ -17,6 +17,8 @@ from crud.attendance import CRUDAttendance
 from crud.refresh_run import CRUDRefreshRun
 from crud.report import CRUDReport
 from crud.speech import CRUDSpeech
+from database.attached_file import AttachedFile
+from database.attached_file_pointer import AttachedFilePointer
 from database.attendance import Attendance
 from database.attendance_office import AttendanceOffice
 from database.hansard_sitting_date_response import HansardSittingDateResponse
@@ -35,10 +37,13 @@ from database.sitting import Sitting
 from database.speaker import Speaker
 from database.speech import Speech
 from enums import (
+    AttachedFileKind,
+    AttachedFilePointerShape,
     AttendanceOfficeSource,
     OfficeClass,
     ParticipantRole,
     RefreshRunStatus,
+    ReportType,
 )
 from exceptions import (
     HansardGatewayError,
@@ -72,6 +77,10 @@ _NEW_PARLIAMENT_NUMBER = 15
 _OTHER_PARLIAMENT_NUMBER = 16
 _PREVIOUS_PARLIAMENT_NUMBER = 14
 _UNREGISTERED_LABEL = "Mr Nobody Registered"
+_ATTACHED_FILE_ADDRESS = "20240910/annex-Refresh Test.pdf"
+_STORED_REPORT_ID = "motion-2475#"
+_ATTACHED_FILE_ID = 9001
+_FIXTURE_FILE_COUNT = 9
 _FRESH_RUN_AGE = timedelta(hours=1)
 _STALE_RUN_AGE = timedelta(hours=13)
 _DAYS_AFTER_NEW_SITTING = 2
@@ -482,6 +491,221 @@ def test_clean_run_adds_rows_and_links_them(
         assert sorted(report_id_asker_participant_names) == sorted(
             report_id_asker_names
         )
+
+
+def _add_pointer_to_first_new_report(fake_parliament: FakeParliament) -> str:
+    report_id = _get_first_new_report_id(fake_parliament)
+    result_html = fake_parliament.report_id_to_topic[report_id]["resultHTML"]
+    result_html["content"] += (
+        f'<p><a href="/search/search/download?value={_ATTACHED_FILE_ADDRESS}">'
+        "Annex A</a></p>"
+    )
+    return report_id
+
+
+def _add_annexure_to_sitting(sitting_body: dict) -> None:
+    sitting_body["annexureList"] = [
+        {
+            "annexureID": _ATTACHED_FILE_ID,
+            "annexureTitle": "Annex A",
+            "filePath": f"d:/apps/reports/solr_files/{_ATTACHED_FILE_ADDRESS}",
+            "fileName": "annex-Refresh Test.pdf",
+            "sectionType": None,
+            "sittingDate": None,
+            "file": None,
+        }
+    ]
+
+
+def _get_attached_file_counts(scratch_engine: Engine) -> list[int]:
+    with Session(scratch_engine) as session:
+        return [
+            session.exec(select(func.count()).select_from(table)).one()
+            for table in (AttachedFile, AttachedFilePointer)
+        ]
+
+
+def _get_pointer_file_ids(
+    scratch_engine: Engine, sprs_report_id: str
+) -> list[Optional[int]]:
+    with Session(scratch_engine) as session:
+        return list(
+            session.exec(
+                select(AttachedFilePointer.attached_file_id)
+                .where(AttachedFilePointer.sprs_report_id == sprs_report_id)
+                .order_by(col(AttachedFilePointer.ordinal))
+            ).all()
+        )
+
+
+def _seed_stored_attached_file(
+    session: Session, fake_parliament: FakeParliament
+) -> int:
+    stored_sitting = session.exec(
+        select(Sitting).where(
+            Sitting.sitting_date
+            == get_sitting_date_key(fake_parliament.stored_sitting_date)
+        )
+    ).one()
+    assert stored_sitting.id is not None
+    attached_file = AttachedFile(
+        kind=AttachedFileKind.ANNEX,
+        sprs_file_id=_ATTACHED_FILE_ID,
+        printed_title="Annex A",
+        printed_file_path=f"d:/apps/reports/solr_files/{_ATTACHED_FILE_ADDRESS}",
+        file_name="annex-Refresh Test.pdf",
+        download_value=_ATTACHED_FILE_ADDRESS,
+        sitting_id=stored_sitting.id,
+    )
+    session.add(attached_file)
+    session.commit()
+    assert attached_file.id is not None
+    return attached_file.id
+
+
+def test_new_report_pointer_ties_to_a_stored_file(
+    scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament
+) -> None:
+    seed_stored(scratch_session)
+    stored_file_id = _seed_stored_attached_file(scratch_session, fake_parliament)
+    report_id = _add_pointer_to_first_new_report(fake_parliament)
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    assert _get_pointer_file_ids(scratch_engine, report_id) == [stored_file_id]
+    assert _get_attached_file_counts(scratch_engine) == [_FIXTURE_FILE_COUNT + 1, 1]
+
+
+def test_new_report_without_text_gives_no_pointers(
+    scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament
+) -> None:
+    seed_stored(scratch_session)
+    atbp_report_id = fake_parliament.new_search_results[-1]["reportId"]
+    fake_parliament.new_search_results[-1]["reportType"] = ReportType.ATBP
+    fake_parliament.report_id_to_topic[atbp_report_id] = {
+        "resultHTML": {"content": None}
+    }
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    with Session(scratch_engine) as session:
+        assert (
+            session.exec(
+                select(Report.content).where(Report.report_id == atbp_report_id)
+            ).one()
+            is None
+        )
+    assert _get_attached_file_counts(scratch_engine) == [_FIXTURE_FILE_COUNT, 0]
+
+
+def test_sitting_that_arrives_after_its_report_ties_the_stored_pointer(
+    scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament
+) -> None:
+    seed_stored(scratch_session)
+    scratch_session.add(
+        AttachedFilePointer(
+            ordinal=1,
+            printed_text="Annex A",
+            href=f"/search/search/download?value={_ATTACHED_FILE_ADDRESS}",
+            shape=AttachedFilePointerShape.DATED,
+            download_value=_ATTACHED_FILE_ADDRESS,
+            sprs_report_id=_STORED_REPORT_ID,
+        )
+    )
+    scratch_session.commit()
+    _add_annexure_to_sitting(fake_parliament.new_sitting)
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    with Session(scratch_engine) as session:
+        new_file_id = session.exec(
+            select(AttachedFile.id).where(
+                AttachedFile.download_value == _ATTACHED_FILE_ADDRESS
+            )
+        ).one()
+    assert _get_pointer_file_ids(scratch_engine, _STORED_REPORT_ID) == [new_file_id]
+
+
+def test_pointer_whose_file_never_arrives_stays_untied(
+    scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament
+) -> None:
+    seed_stored(scratch_session)
+    report_id = _add_pointer_to_first_new_report(fake_parliament)
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    assert _get_pointer_file_ids(scratch_engine, report_id) == [None]
+    assert _get_attached_file_counts(scratch_engine) == [_FIXTURE_FILE_COUNT, 1]
+
+
+def test_halt_after_attached_files_are_written_leaves_no_file_or_pointer(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    new_contents = _get_new_contents(fake_parliament)
+    speaker_names_to_drop = frozenset(
+        speaker_row["name"]
+        for speaker_row in load_speaker_rows()
+        if any(speaker_row["name"] in content for content in new_contents)
+    )
+    seed_stored(scratch_session, speaker_names_to_drop)
+    row_counts_before = _get_row_counts(scratch_engine)
+    _add_pointer_to_first_new_report(fake_parliament)
+    _add_annexure_to_sitting(fake_parliament.new_sitting)
+    attached_file_counts_at_write: list[list[int]] = []
+    populate_attached_files = refresh_runs.populate_attached_files
+
+    def record_and_populate_attached_files(
+        session: Session, report_ids: list[int], sitting_ids: list[int]
+    ) -> None:
+        populate_attached_files(session, report_ids, sitting_ids)
+        attached_file_counts_at_write.append(
+            [
+                session.exec(select(func.count()).select_from(table)).one()
+                for table in (AttachedFile, AttachedFilePointer)
+            ]
+        )
+
+    monkeypatch.setattr(
+        refresh_runs, "populate_attached_files", record_and_populate_attached_files
+    )
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.HALTED
+    _assert_halted(scratch_engine, alerts, row_counts_before)
+    assert attached_file_counts_at_write[-1] == [_FIXTURE_FILE_COUNT + 1, 1]
+    assert _get_attached_file_counts(scratch_engine) == [0, 0]
+
+
+def test_clean_run_with_no_pointers_adds_none(
+    scratch_engine: Engine, scratch_session: Session, fake_parliament: FakeParliament
+) -> None:
+    seed_stored(scratch_session)
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    assert _get_attached_file_counts(scratch_engine) == [_FIXTURE_FILE_COUNT, 0]
 
 
 def test_run_that_adds_nothing_sends_no_message(
