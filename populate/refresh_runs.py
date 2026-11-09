@@ -36,6 +36,7 @@ from gateway.healthchecks import send_healthchecks_failure_ping, send_healthchec
 from gateway.telegram import send_telegram_message
 from logs import logger
 from populate.attribution_figures import get_attribution_figures
+from populate.divisions import populate_divisions
 from populate.report_askers import populate_report_askers
 from populate.report_participants import populate_report_participants
 from populate.speaker_links import link_speakers_by_report_ids_and_sitting_ids
@@ -79,6 +80,7 @@ from services.refresh import (
     build_summary_message,
     build_unlinked_labels_message,
     build_unlinked_reason,
+    build_unread_division_openings_message,
     get_content_hash,
     get_dates_between,
     get_probe_start_date,
@@ -198,6 +200,7 @@ class RunResult:
     figures: Optional[dict[str, object]] = None
     changed_reports: list[ChangedReport] = field(default_factory=list)
     held_reports_to_alert: list[HeldReport] = field(default_factory=list)
+    report_ids_with_unread_division_openings: list[int] = field(default_factory=list)
     label_to_row_count: dict[str, int] = field(default_factory=dict)
 
 
@@ -668,6 +671,9 @@ def _write_window_rows(
     link_speakers_by_report_ids_and_sitting_ids(session, report_ids, sitting_ids)
     populate_report_askers(session, report_ids)
     populate_report_participants(session, report_ids)
+    window_result.report_ids_with_unread_division_openings = populate_divisions(
+        session, report_ids
+    )
 
     window_result.website_responses_added = len(hansard_website_responses)
     window_result.reports_added = len(reports)
@@ -795,6 +801,9 @@ def _add_window_result(run_result: RunResult, window_result: RunResult) -> None:
     run_result.topics_with_error_body += window_result.topics_with_error_body
     run_result.reports_without_speech_rows += window_result.reports_without_speech_rows
     run_result.held_reports_to_alert.extend(window_result.held_reports_to_alert)
+    run_result.report_ids_with_unread_division_openings.extend(
+        window_result.report_ids_with_unread_division_openings
+    )
     for label, row_count in window_result.label_to_row_count.items():
         run_result.label_to_row_count[label] = (
             run_result.label_to_row_count.get(label, 0) + row_count
@@ -813,6 +822,12 @@ def _send_success_alerts(run_result: RunResult) -> None:
     for held_report in run_result.held_reports_to_alert:
         _send_alert(
             build_held_report_message(held_report.report_id, held_report.sitting_date)
+        )
+    if run_result.report_ids_with_unread_division_openings:
+        _send_alert(
+            build_unread_division_openings_message(
+                run_result.report_ids_with_unread_division_openings
+            )
         )
     if is_held_report_count_over_limit(run_result.reports_held_without_text):
         _send_alert(

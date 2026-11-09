@@ -15,6 +15,7 @@ from services.refresh import (
     build_summary_message,
     build_unlinked_labels_message,
     build_unlinked_reason,
+    build_unread_division_openings_message,
     get_content_hash,
     get_dates_between,
     get_probe_start_date,
@@ -52,6 +53,8 @@ _SUMMARY_COUNTS = (2, 14, 1203)
 _SUMMARY_LINKED_SHARE = 0.989
 _LABEL_CAP = 20
 _LABEL_COUNT_OVER_CAP = 21
+_REPORT_ID_CAP = 20
+_REPORT_ID_COUNT_OVER_CAP = 25
 _UNLINKED_SHARE = 0.06
 _UNLINKED_LABEL = "Mr Nobody"
 _UNLINKED_LABEL_ROW_COUNT = 3
@@ -220,6 +223,19 @@ def test_labels_sort_by_row_count_then_label() -> None:
     message = build_unlinked_labels_message({"Mr B": 1, "Mr A": 1, "Mr C": 2})
 
     assert "Mr C (2 rows); Mr A (1 rows); Mr B (1 rows)" in message
+
+
+def test_unread_division_openings_message_lists_the_ids_up_to_the_limit() -> None:
+    short_message = build_unread_division_openings_message([101, 102])
+    long_message = build_unread_division_openings_message(
+        list(range(1, _REPORT_ID_COUNT_OVER_CAP + 1))
+    )
+
+    assert short_message.startswith("2 new reports hold a division opening")
+    assert "report ids 101, 102)" in short_message
+    assert long_message.startswith(f"{_REPORT_ID_COUNT_OVER_CAP} new reports hold")
+    assert f"report ids {', '.join(str(i) for i in range(1, _REPORT_ID_CAP + 1))} and 5 more" in long_message
+    assert "21," not in long_message
 
 
 def test_unlinked_reason_names_the_share_and_labels() -> None:
