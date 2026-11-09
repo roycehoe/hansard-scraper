@@ -39,6 +39,7 @@ import database.bills_supplement  # noqa: F401 registers the table for create_al
 import database.egazette_supplement  # noqa: F401 registers the table for create_all
 import database.hansard_sitting_date_response  # noqa: F401 registers the table for create_all
 import database.hansard_website_response  # noqa: F401 registers the table for create_all
+import database.leave_period  # noqa: F401 registers the table for create_all
 import database.party_affiliation  # noqa: F401 registers the table for create_all
 import database.person  # noqa: F401 registers the table for create_all
 import database.person_name_spelling  # noqa: F401 registers the table for create_all
@@ -48,6 +49,7 @@ import database.report  # noqa: F401 registers the table for create_all
 import database.report_asker  # noqa: F401 registers the table for create_all
 import database.report_participant  # noqa: F401 registers the table for create_all
 import database.report_question_state  # noqa: F401 registers the table for create_all
+import database.seat_holding  # noqa: F401 registers the table for create_all
 import database.sitting  # noqa: F401 registers the table for create_all
 import database.speaker  # noqa: F401 registers the table for create_all
 import database.speech  # noqa: F401 registers the table for create_all
