@@ -267,6 +267,36 @@ def build_speaker_lookups(speakers: list[Speaker]) -> SpeakerLookups:
     )
 
 
+def _get_natural_order_name(name: str) -> Optional[str]:
+    inverted_name = invert_to_natural(name)
+    if inverted_name is not None:
+        return inverted_name
+    words = name.split()
+    if len(words) < _MIN_REARRANGEABLE_WORD_COUNT:
+        return None
+    rearranged = f"{words[-1]} {' '.join(words[1:-1])} {words[0]}"
+    if rearranged == name:
+        return None
+    return strip_title(rearranged).strip()
+
+
+def build_inverted_name_to_canonical(
+    speakers: list[Speaker],
+) -> dict[tuple[str, int], str]:
+    key_to_count: dict[tuple[str, int], int] = {}
+    entries: list[tuple[tuple[str, int], str]] = []
+    for speaker in speakers:
+        natural_name = _get_natural_order_name(speaker.name)
+        if natural_name is None:
+            continue
+        key = (normalize_for_lookup(natural_name), speaker.parliament_number)
+        key_to_count[key] = key_to_count.get(key, 0) + 1
+        entries.append((key, speaker.name))
+    return {
+        key: canonical_name for key, canonical_name in entries if key_to_count[key] == 1
+    }
+
+
 @dataclass(frozen=True)
 class ParsedAttendee:
     name: str

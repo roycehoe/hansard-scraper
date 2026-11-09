@@ -2,7 +2,9 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
+from enums import DivisionVoteNameRule
 from utils.names import (
+    invert_to_natural,
     normalize_name,
     period_normalize,
     spelling_normalize,
@@ -422,3 +424,92 @@ def resolve_canonical_name(
     if len(normalized_words) == 1:
         return lookups.surname_fallback.get((normalized_words[0], parliament_number))
     return None
+
+
+@dataclass(frozen=True)
+class StrictNameMatch:
+    canonical_name: str
+    name_rule: DivisionVoteNameRule
+
+
+def _get_strict_matches(
+    name: str,
+    parliament_number: int,
+    lookups: SpeakerLookups,
+    inverted_name_to_canonical: dict[tuple[str, int], str],
+    rule: Optional[DivisionVoteNameRule],
+) -> list[StrictNameMatch]:
+    normalized = period_normalize(name)
+    bin_free_key = (period_normalize(strip_bin(name)), parliament_number)
+    words = normalized.split()
+    rule_to_canonical_name = (
+        (
+            DivisionVoteNameRule.EXACT,
+            lookups.direct.get((normalized, parliament_number)),
+        ),
+        (
+            DivisionVoteNameRule.INVERTED,
+            inverted_name_to_canonical.get(
+                (normalize_for_lookup(name), parliament_number)
+            ),
+        ),
+        (
+            DivisionVoteNameRule.BIN_FREE,
+            lookups.bin_free.get(bin_free_key) or lookups.direct.get(bin_free_key),
+        ),
+        (
+            DivisionVoteNameRule.SAME_WORDS,
+            lookups.wordset.get((frozenset(words), len(words), parliament_number)),
+        ),
+    )
+    return [
+        StrictNameMatch(canonical_name, rule if rule is not None else tier_rule)
+        for tier_rule, canonical_name in rule_to_canonical_name
+        if canonical_name is not None
+    ]
+
+
+def resolve_strict_canonical_name(
+    name: str,
+    parliament_number: int,
+    lookups: SpeakerLookups,
+    inverted_name_to_canonical: dict[tuple[str, int], str],
+) -> Optional[StrictNameMatch]:
+    matches: list[StrictNameMatch] = []
+    hand_listed_name = NAME_PARLIAMENT_TO_CANONICAL_SPEAKER.get(
+        (period_normalize(name), parliament_number)
+    )
+    if hand_listed_name is not None:
+        matches.append(
+            StrictNameMatch(hand_listed_name, DivisionVoteNameRule.HAND_LIST)
+        )
+    corrected_name = _OCR_FORM_TO_CORRECTED_NAME.get(period_normalize(name))
+    if corrected_name is not None:
+        matches.extend(
+            _get_strict_matches(
+                corrected_name,
+                parliament_number,
+                lookups,
+                inverted_name_to_canonical,
+                DivisionVoteNameRule.HAND_LIST,
+            )
+        )
+    matches.extend(
+        _get_strict_matches(
+            name, parliament_number, lookups, inverted_name_to_canonical, None
+        )
+    )
+    natural_name = invert_to_natural(name)
+    if natural_name is not None:
+        matches.extend(
+            _get_strict_matches(
+                natural_name,
+                parliament_number,
+                lookups,
+                inverted_name_to_canonical,
+                DivisionVoteNameRule.INVERTED,
+            )
+        )
+    if len({match.canonical_name for match in matches}) != 1:
+        return None
+    return matches[0]

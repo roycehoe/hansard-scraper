@@ -11,7 +11,7 @@ from typing import Iterable, Optional, Sequence
 
 from crud.attendance import AttendanceSpeakerRow
 from crud.speech import SpeechRow, SpeechSpeakerRow
-from enums import ReportVersion
+from enums import DivisionVoteNameRule, ReportVersion
 from schemas.hansard_report_response import HansardReportSection
 from utils.markdown_parser import (
     ASTERISK,
@@ -28,7 +28,11 @@ from utils.names import (
     strip_title,
 )
 from utils.parliament_numbers import infer_parliament
-from utils.speaker_resolution import SpeakerLookups, resolve_canonical_name
+from utils.speaker_resolution import (
+    SpeakerLookups,
+    resolve_canonical_name,
+    resolve_strict_canonical_name,
+)
 from utils.speaker_resolution_constants import (
     COLONIAL_PARLIAMENT_FALLBACKS,
     COLONIAL_PARLIAMENT_NUMBER,
@@ -658,6 +662,45 @@ def _get_speaker_id(
         if resolved_name.canonical_name
         else None
     )
+
+
+@dataclass(frozen=True)
+class VoteSpeakerMatch:
+    speaker_id: int
+    name_rule: DivisionVoteNameRule
+
+
+def resolve_vote_speaker(
+    name: str,
+    parliament_number: int,
+    lookups: SpeakerLookups,
+    inverted_name_to_canonical: dict[tuple[str, int], str],
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> Optional[VoteSpeakerMatch]:
+    if parliament_number != COLONIAL_PARLIAMENT_NUMBER:
+        candidate_parliament_numbers = (parliament_number,)
+    else:
+        candidate_parliament_numbers = (
+            COLONIAL_PARLIAMENT_NUMBER,
+            *COLONIAL_PARLIAMENT_FALLBACKS,
+        )
+    vote_speaker_matches: list[VoteSpeakerMatch] = []
+    for candidate_parliament_number in candidate_parliament_numbers:
+        strict_match = resolve_strict_canonical_name(
+            name, candidate_parliament_number, lookups, inverted_name_to_canonical
+        )
+        if strict_match is None:
+            continue
+        speaker_id = name_parliament_number_to_speaker_id.get(
+            (strict_match.canonical_name, candidate_parliament_number)
+        )
+        if speaker_id is not None:
+            vote_speaker_matches.append(
+                VoteSpeakerMatch(speaker_id, strict_match.name_rule)
+            )
+    if len({match.speaker_id for match in vote_speaker_matches}) != 1:
+        return None
+    return vote_speaker_matches[0]
 
 
 def _get_presiding_officer_id(
