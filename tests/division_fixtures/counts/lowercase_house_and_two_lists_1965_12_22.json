@@ -1,17 +1,17 @@
 {
- "why": "Two printed lines, the second with a lower-case 'house' and a list that runs to the end of the data; only the first has a spoken total (report 37957, 22 December 1965). Rows other than the named division lines are placeholders, because the rows could not be read from the database when this fixture was written; replace them with the stored rows.",
+ "why": "Two printed lines, the second with a lower-case 'house' and a list that runs to the end of the data; only the first has a spoken total (report 37957, 22 December 1965).",
  "rows": [
   [
    56,
    "SPEECH",
-   null,
-   "[row 56 text not reproduced]"
+   "Mr Speaker",
+   "As the Prime Minister has already indicated, under the provisions of Article 90 of the Constitution of the State of Singapore, this Bill as it now stands before the House shall not be passed by the Legislative Assembly unless it has been supported on Second and Third Readings by the votes of not less than two-thirds of the total number of Members thereof. It, therefore, means that the Bill now before the House requires the votes of not less than 34 Members on its Second and Third Readings. After I have put the Question and after the Division Bells have been rung for two minutes, the Clerk will call the names of Members in alphabetical order and record each Member's vote and the names of Members who abstain from voting."
   ],
   [
    57,
    "PROCEDURAL",
    null,
-   "Question put, \"That the Bill be now read a Second time.\""
+   "Question put, \"That the Bill be now read a Second Time.\""
   ],
   [
    58,
@@ -23,307 +23,307 @@
    59,
    "UNCLASSIFIED",
    null,
-   "[list name 59]"
+   "Ayes.                    Absent"
   ],
   [
    60,
    "UNCLASSIFIED",
    null,
-   "[list name 60]"
+   "A. Rahim Ishak            Bani. S.T"
   ],
   [
    61,
    "UNCLASSIFIED",
    null,
-   "[list name 61]"
+   "Barker, E. W.             Chan Sun Wing."
   ],
   [
    62,
    "UNCLASSIFIED",
    null,
-   "[list name 62]"
+   "Buang bin                 Chia Thye Poh."
   ],
   [
    63,
    "UNCLASSIFIED",
    null,
-   "[list name 63]"
+   "Omar Junid"
   ],
   [
    64,
    "UNCLASSIFIED",
    null,
-   "[list name 64]"
+   "Chan Chee Seng            Chio Cheng Thun"
   ],
   [
    65,
    "UNCLASSIFIED",
    null,
-   "[list name 65]"
+   "Chan Choy Siong,          Fong Kim Heng"
   ],
   [
    66,
    "UNCLASSIFIED",
    null,
-   "[list name 66]"
+   "Madam."
   ],
   [
    67,
    "UNCLASSIFIED",
    null,
-   "[list name 67]"
+   "Chow Chiok Hock           Goh Keng Swee"
   ],
   [
    68,
    "UNCLASSIFIED",
    null,
-   "[list name 68]"
+   "Fong Sip Chee             Koo Young"
   ],
   [
    69,
    "UNCLASSIFIED",
    null,
-   "[list name 69]"
+   "Gonzales, R. A.           Kow Kee Seng"
   ],
   [
    70,
    "UNCLASSIFIED",
    null,
-   "[list name 70]"
+   "Govindaswamy. P.          Lee Tee Tong"
   ],
   [
    71,
    "UNCLASSIFIED",
    null,
-   "[list name 71]"
+   "Ayes - contd.             Absent -- contd"
   ],
   [
    72,
    "UNCLASSIFIED",
    null,
-   "[list name 72]"
+   "Ho Cheng Choon            Lim Huan Boon"
   ],
   [
    73,
    "UNCLASSIFIED",
    null,
-   "[list name 73]"
+   "Ho See Beng               Loh Miaw Gong"
   ],
   [
    74,
    "UNCLASSIFIED",
    null,
-   "[list name 74]"
+   "Miss"
   ],
   [
    75,
    "UNCLASSIFIED",
    null,
-   "[list name 75]"
+   "Jek Yeun Thong            Ong Lian Teng"
   ],
   [
    76,
    "UNCLASSIFIED",
    null,
-   "[list name 76]"
+   "Lee Khoon Choy            Poh Ber Liak"
   ],
   [
    77,
    "UNCLASSIFIED",
    null,
-   "[list name 77]"
+   "Lee Kuan Yew              Tan Cheng Tong"
   ],
   [
    78,
    "UNCLASSIFIED",
    null,
-   "[list name 78]"
+   "Lee Teck Him              Wong Soon Fong"
   ],
   [
    79,
    "UNCLASSIFIED",
    null,
-   "[list name 79]"
+   "Lim Cheng Lock"
   ],
   [
    80,
    "UNCLASSIFIED",
    null,
-   "[list name 80]"
+   "Lim Kim San"
   ],
   [
    81,
    "UNCLASSIFIED",
    null,
-   "[list name 81]"
+   "Lingam, S. V."
   ],
   [
    82,
    "UNCLASSIFIED",
    null,
-   "[list name 82]"
+   "Mahmud Awang"
   ],
   [
    83,
    "UNCLASSIFIED",
    null,
-   "[list name 83]"
+   "Mohd. Ariff"
   ],
   [
    84,
    "UNCLASSIFIED",
    null,
-   "[list name 84]"
+   "bin Suradi"
   ],
   [
    85,
    "UNCLASSIFIED",
    null,
-   "[list name 85]"
+   "Nair, Mrs. Devan."
   ],
   [
    86,
    "UNCLASSIFIED",
    null,
-   "[list name 86]"
+   "Ng Kah Ting"
   ],
   [
    87,
    "UNCLASSIFIED",
    null,
-   "[list name 87]"
+   "Ng Yeow Chong"
   ],
   [
    88,
    "UNCLASSIFIED",
    null,
-   "[list name 88]"
+   "Ong Pang Boon"
   ],
   [
    89,
    "UNCLASSIFIED",
    null,
-   "[list name 89]"
+   "Othman bin Wok"
   ],
   [
    90,
    "UNCLASSIFIED",
    null,
-   "[list name 90]"
+   "Rahamat bin Kenap"
   ],
   [
    91,
    "UNCLASSIFIED",
    null,
-   "[list name 91]"
+   "Rajaratnam, S."
   ],
   [
    92,
    "UNCLASSIFIED",
    null,
-   "[list name 92]"
+   "Rajoo, S."
   ],
   [
    93,
    "UNCLASSIFIED",
    null,
-   "[list name 93]"
+   "Rodrigues, Bernard."
   ],
   [
    94,
    "UNCLASSIFIED",
    null,
-   "[list name 94]"
+   "Sia Kah Hui"
   ],
   [
    95,
    "UNCLASSIFIED",
    null,
-   "[list name 95]"
+   "Sim  Boon Woo"
   ],
   [
    96,
    "UNCLASSIFIED",
    null,
-   "[list name 96]"
+   "Teong Eng Siong"
   ],
   [
    97,
    "UNCLASSIFIED",
    null,
-   "[list name 97]"
+   "Toh Chin Chye"
   ],
   [
    98,
    "UNCLASSIFIED",
    null,
-   "[list name 98]"
+   "Wee Toon Boon"
   ],
   [
    99,
    "UNCLASSIFIED",
    null,
-   "[list name 99]"
+   "Yaacob bin"
   ],
   [
    100,
    "UNCLASSIFIED",
    null,
-   "[list name 100]"
+   "Mohamed Al-Haj"
   ],
   [
    101,
    "UNCLASSIFIED",
    null,
-   "[list name 101]"
+   "Yong Nyuk Lin"
   ],
   [
    102,
    "SPEECH",
-   null,
-   "36 Ayes, 15 Absent. I declare the Motion carried."
+   "Mr Speaker",
+   "36 Ayes, 15 Absent. I declare that under Article 90 of the Constitution of the State of Singapore the Second Reading has been carried by not less than two-thirds of the total number of Members of the House."
   ],
   [
    103,
-   "SPEECH",
+   "PROCEDURAL",
    null,
-   "[row 103 text not reproduced]"
+   "Bill accordingly read a Second time and committed to a Committee of the whole Assembly."
   ],
   [
    104,
-   "SPEECH",
+   "PROCEDURAL",
    null,
-   "[row 104 text not reproduced]"
+   "Assembly immediately resolved itself into a Committee on the Bill. - [The Prime Minister]."
   ],
   [
    105,
-   "SPEECH",
+   "PROCEDURAL",
    null,
-   "[row 105 text not reproduced]"
+   "Bill considered in Committee; reported without amendment."
   ],
   [
    106,
    "SPEECH",
-   null,
-   "[row 106 text not reproduced]"
+   "Mr Speaker",
+   "Third Reading, what day?"
   ],
   [
    107,
    "SPEECH",
-   null,
-   "[row 107 text not reproduced]"
+   "The Prime Minister",
+   "Now, Sir."
   ],
   [
    108,
    "SPEECH",
-   null,
-   "[row 108 text not reproduced]"
+   "Mr Speaker",
+   "Please move."
   ],
   [
    109,
    "SPEECH",
-   null,
-   "[row 109 text not reproduced]"
+   "The Prime Minister",
+   "I beg to move, \"That the Bill be now read a Third time.\""
   ],
   [
    110,
@@ -334,8 +334,8 @@
   [
    111,
    "SPEECH",
-   null,
-   "[row 111 text not reproduced]"
+   "Mr Speaker",
+   "The procedure that was adopted on the Second Reading will again he adopted on this Bill. The Clerk will ring the Division Bells."
   ],
   [
    112,
@@ -353,19 +353,19 @@
    114,
    "UNCLASSIFIED",
    null,
-   "[list name 114]"
+   "Ayes.              Absent."
   ],
   [
    115,
    "UNCLASSIFIED",
    null,
-   "[list name 115]"
+   "A. Rahim Ishak      Bani, S.T"
   ],
   [
    116,
    "UNCLASSIFIED",
    null,
-   "[list name 116]"
+   "Barker, E. W.       Chan Sun Wing"
   ]
  ],
  "expected_divisions": [
