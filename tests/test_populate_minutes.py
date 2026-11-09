@@ -298,6 +298,21 @@ def test_unreadable_scan_and_non_pdf_become_needs_review(
     ] == [(_PDF_DATE, stored_minutes.status_note)]
 
 
+def test_scan_keeps_its_pdf_format_when_extraction_fails(
+    scratch_session: Session, fake_parliament: FakeParliament
+) -> None:
+    _add_report(scratch_session, _PDF_DATE, "R1")
+    _add_listed_minutes(scratch_session, _PDF_DATE, _FILE_URL)
+    _answer_file(fake_parliament, _FILE_URL, _build_blank_pdf())
+
+    minutes_step.populate_minutes(scratch_session, set())
+
+    stored_minutes = _get_minutes(scratch_session, _PDF_DATE)
+    assert stored_minutes is not None
+    assert stored_minutes.status == MinutesStatus.NEEDS_REVIEW
+    assert stored_minutes.file_format == MinutesFileFormat.PDF
+
+
 def test_head_date_mismatch_becomes_needs_review(
     scratch_session: Session, fake_parliament: FakeParliament
 ) -> None:

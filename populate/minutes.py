@@ -123,13 +123,16 @@ def _build_listed_minutes(
 def _get_file_fields(content: bytes, sitting_date: date) -> _FileFields:
     try:
         file_format = get_minutes_file_format(content)
-        if file_format != MinutesFileFormat.PDF:
-            return _FileFields(
-                file_format, None, MinutesStatus.NEEDS_REVIEW, _WORD_FILE_NOTE
-            )
-        extracted_text = get_minutes_pdf_text(content)
     except HansardMinutesFileError as error:
         return _FileFields(None, None, MinutesStatus.NEEDS_REVIEW, str(error))
+    if file_format != MinutesFileFormat.PDF:
+        return _FileFields(
+            file_format, None, MinutesStatus.NEEDS_REVIEW, _WORD_FILE_NOTE
+        )
+    try:
+        extracted_text = get_minutes_pdf_text(content)
+    except HansardMinutesFileError as error:
+        return _FileFields(file_format, None, MinutesStatus.NEEDS_REVIEW, str(error))
     text_outcome = get_minutes_text_outcome(sitting_date, extracted_text)
     return _FileFields(
         file_format, extracted_text, text_outcome.status, text_outcome.status_note
