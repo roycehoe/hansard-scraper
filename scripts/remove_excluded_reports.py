@@ -278,7 +278,7 @@ def remove_excluded_reports(is_commit: bool, plan_path: Optional[Path]) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Delete the stored reports listed in data/excluded_report_ids.json and their speech, asker, participant, question state, report link, bill report speaker and bill stage line rows"
+        description="Delete the stored reports listed in data/excluded_report_ids.json and their speech, asker, participant, question state, report link, bill report speaker, bill stage line and attached file pointer rows"
     )
     parser.add_argument(
         "--commit",
