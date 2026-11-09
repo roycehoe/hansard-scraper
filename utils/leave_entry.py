@@ -3,6 +3,7 @@ from datetime import date
 from typing import Optional, Sequence
 
 from enums import LeaveEntryFormat, LeaveNameSource, LeaveYearSource
+from utils.names import normalize_name, strip_title
 
 _UNMERGED_KEY_PREFIX = "entry"
 _OPEN_END_KEY = "open"
@@ -157,3 +158,7 @@ def is_covering_sitting(
     if end_date is None:
         return start_date <= sitting_date
     return start_date <= sitting_date <= end_date
+
+
+def get_leave_name_key(name: str) -> str:
+    return " ".join(strip_title(normalize_name(name)).split()).casefold()
