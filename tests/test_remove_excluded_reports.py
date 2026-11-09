@@ -10,6 +10,7 @@ from sqlmodel import Session, col, select
 import scripts.remove_excluded_reports as remove_excluded_reports_script
 from database.report import Report
 from database.report_asker import ReportAsker
+from database.report_link import ReportLink
 from database.report_participant import ReportParticipant
 from database.report_put_to import ReportPutTo
 from database.report_question_state import ReportQuestionState
@@ -19,6 +20,8 @@ from enums import (
     ParticipantRoleSource,
     QuestionState,
     ReportAskerSource,
+    ReportLinkRule,
+    ReportLinkType,
     ReportPutToSource,
 )
 from exceptions import HansardWriteCheckError, HansardWriteTargetError
@@ -27,6 +30,9 @@ from schemas.excluded_report_id import ExcludedReportId
 _SITTING_DATE = datetime(2007, 10, 22)
 _KEPT_REPORT_ID = "kept-report"
 _EXCLUDED_REPORT_ID = "excluded-report"
+_SECOND_EXCLUDED_REPORT_ID = "second-excluded-report"
+_OTHER_REPORT_ID = "other-report"
+_THIRD_REPORT_ID = "third-report"
 _TEXT = "Same text."
 _SEEDED_SPEECH_COUNT = 2
 
@@ -123,6 +129,30 @@ def _add_participants_and_question_states(
         )
     )
     session.commit()
+
+
+def _add_report_link(
+    session: Session, source_report_id: str, target_report_id: str
+) -> None:
+    session.add(
+        ReportLink(
+            link_type=ReportLinkType.REPLY,
+            rule=ReportLinkRule.PRINTED_TITLE_ON_PRINTED_DATE,
+            printed_citation="Official Report, 1 January 2000",
+            source_report_id=source_report_id,
+            target_report_id=target_report_id,
+        )
+    )
+    session.commit()
+
+
+def _get_link_pairs(session: Session) -> list[tuple[str, str]]:
+    session.expire_all()
+    return sorted(
+        session.exec(
+            select(ReportLink.source_report_id, ReportLink.target_report_id)
+        ).all()
+    )
 
 
 def _seed_duplicate(session: Session, excluded_content: str = _TEXT) -> None:
@@ -264,6 +294,77 @@ def test_commit_deletes_the_removed_reports_askers_and_keeps_the_others(
 
     assert _get_report_ids(scratch_session) == [_KEPT_REPORT_ID]
     assert _get_asker_report_ids(scratch_session) == [_KEPT_REPORT_ID]
+
+
+def test_dry_run_plan_holds_the_link_count(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_report(scratch_session, _OTHER_REPORT_ID, _TEXT)
+    _add_report_link(scratch_session, _EXCLUDED_REPORT_ID, _OTHER_REPORT_ID)
+    _add_report_link(scratch_session, _OTHER_REPORT_ID, _EXCLUDED_REPORT_ID)
+    plan_path = tmp_path / "plan.json"
+
+    remove_excluded_reports_script.remove_excluded_reports(False, plan_path)
+
+    plan = json.loads(plan_path.read_text())
+    assert [removal["link_count"] for removal in plan] == [2]
+    assert _get_link_pairs(scratch_session) == [
+        (_EXCLUDED_REPORT_ID, _OTHER_REPORT_ID),
+        (_OTHER_REPORT_ID, _EXCLUDED_REPORT_ID),
+    ]
+
+
+def test_commit_deletes_links_of_a_removed_source_and_target_and_keeps_the_others(
+    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_report(scratch_session, _OTHER_REPORT_ID, _TEXT)
+    _add_report(scratch_session, _THIRD_REPORT_ID, _TEXT)
+    _add_report_link(scratch_session, _EXCLUDED_REPORT_ID, _OTHER_REPORT_ID)
+    _add_report_link(scratch_session, _OTHER_REPORT_ID, _EXCLUDED_REPORT_ID)
+    _add_report_link(scratch_session, _OTHER_REPORT_ID, _THIRD_REPORT_ID)
+
+    remove_excluded_reports_script.remove_excluded_reports(True, None)
+
+    assert _get_report_ids(scratch_session) == [
+        _KEPT_REPORT_ID,
+        _OTHER_REPORT_ID,
+        _THIRD_REPORT_ID,
+    ]
+    assert _get_link_pairs(scratch_session) == [(_OTHER_REPORT_ID, _THIRD_REPORT_ID)]
+
+
+def test_commit_counts_a_link_between_two_removed_reports_once(
+    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_speech(scratch_session, _add_report(scratch_session, _SECOND_EXCLUDED_REPORT_ID, _TEXT))
+    excluded_report_ids = [
+        ExcludedReportId(
+            report_id=report_id,
+            kept_report_id=_KEPT_REPORT_ID,
+            reason="duplicate",
+        )
+        for report_id in (_EXCLUDED_REPORT_ID, _SECOND_EXCLUDED_REPORT_ID)
+    ]
+    monkeypatch.setattr(
+        remove_excluded_reports_script,
+        "get_excluded_report_ids",
+        lambda: excluded_report_ids,
+    )
+    _add_report_link(scratch_session, _EXCLUDED_REPORT_ID, _SECOND_EXCLUDED_REPORT_ID)
+
+    remove_excluded_reports_script.remove_excluded_reports(True, None)
+
+    assert _get_report_ids(scratch_session) == [_KEPT_REPORT_ID]
+    assert _get_link_pairs(scratch_session) == []
 
 
 def test_commit_deletes_the_removed_reports_participants_and_question_states_and_keeps_the_others(
