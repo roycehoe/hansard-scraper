@@ -63,7 +63,8 @@ class CRUDSeatHolding:
     def get_first_sitting_date_decade_counts(self) -> list[SeatHoldingDecadeCount]:
         decade = (
             func.floor(
-                func.extract("year", SeatHolding.first_sitting_date) / _YEARS_IN_DECADE
+                func.extract("year", col(SeatHolding.first_sitting_date))
+                / _YEARS_IN_DECADE
             )
             * _YEARS_IN_DECADE
         ).cast(Integer)
