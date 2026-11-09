@@ -25,6 +25,26 @@ class CRUDMinutes:
         )
         return list(self.session.exec(statement).all())
 
+    def get_by_ids(self, minutes_ids: list[int]) -> list[Minutes]:
+        statement = (
+            select(Minutes)
+            .where(col(Minutes.id).in_(minutes_ids))
+            .order_by(col(Minutes.id))
+            .execution_options(populate_existing=True)
+        )
+        return list(self.session.exec(statement).all())
+
+    def get_by_sitting_date_from_and_extracted_text_not_null(
+        self, sitting_date_from: date
+    ) -> list[Minutes]:
+        statement = (
+            select(Minutes)
+            .where(col(Minutes.sitting_date) >= sitting_date_from)
+            .where(col(Minutes.extracted_text).is_not(None))
+            .order_by(col(Minutes.sitting_date))
+        )
+        return list(self.session.exec(statement).all())
+
     def get_by_statuses(self, statuses: list[MinutesStatus]) -> list[Minutes]:
         statement = (
             select(Minutes)
