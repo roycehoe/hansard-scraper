@@ -21,7 +21,7 @@ class CRUDLeavePeriod:
         statement = select(func.count()).select_from(LeavePeriod)
         return self.session.exec(statement).one()
 
-    def delete_all(self) -> int:
+    def delete_all(self) -> None:
         statement = delete(LeavePeriod)
 
-        return self.session.exec(statement).rowcount
+        self.session.exec(statement)

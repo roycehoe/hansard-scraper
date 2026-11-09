@@ -8,8 +8,6 @@ from database.seat_holding import SeatHolding
 from database.speaker import Speaker
 from utils.seat_holding_update import SeatHoldingUpdate
 
-_LOCATION_NAME_SEPARATOR_PATTERN = r"[[:space:]-]+"
-_LOCATION_NAME_SUFFIX_PATTERN = r"[[:space:]](GRC|SMC)$"
 _REPLACE_ALL = "g"
 _CASE_INSENSITIVE = "i"
 _YEARS_IN_DECADE = 10
@@ -102,18 +100,20 @@ class CRUDSeatHolding:
             SeatHoldingDecadeCount(*row) for row in self.session.exec(statement).all()
         ]
 
-    def get_count_by_division_key_not_equal_folded_location_name(self) -> int:
+    def get_count_by_division_key_not_equal_folded_location_name(
+        self, separator_pattern: str, suffix_pattern: str
+    ) -> int:
         folded_location_name = func.lower(
             func.regexp_replace(
                 func.btrim(
                     func.regexp_replace(
                         SeatHolding.location_name,
-                        _LOCATION_NAME_SEPARATOR_PATTERN,
+                        separator_pattern,
                         " ",
                         _REPLACE_ALL,
                     )
                 ),
-                _LOCATION_NAME_SUFFIX_PATTERN,
+                suffix_pattern,
                 "",
                 _CASE_INSENSITIVE,
             )

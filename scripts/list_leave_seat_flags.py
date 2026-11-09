@@ -14,9 +14,9 @@ from schemas.leave_seat_check import (
     LeaveSeatCheckPacket,
     LeaveSeatCheckVerdictLine,
 )
+from utils.leave_entry import YEAR_ORDER_BREAK_GROUP
 
 _VERDICTS_FILE_NAME = "verdicts.jsonl"
-_YEAR_ORDER_BREAK_GROUP = "year_order_break"
 _DEFAULT_OUTPUT_PATH = Path("plans/positions-over-time/flags/leave.json")
 _DEFAULT_SUMMARY_PATH = Path("plans/positions-over-time/flags/leave-summary.txt")
 _SUMMARY_HEADER = (
@@ -146,7 +146,7 @@ def list_leave_seat_flags(
         if (
             sonnet_line.verdict == LeaveSeatCheckVerdict.RIGHT
             and opus_line.verdict == LeaveSeatCheckVerdict.RIGHT
-            and key_entry.group != _YEAR_ORDER_BREAK_GROUP
+            and key_entry.group != YEAR_ORDER_BREAK_GROUP
         ):
             continue
         group_to_flagged_count[key_entry.group] += 1

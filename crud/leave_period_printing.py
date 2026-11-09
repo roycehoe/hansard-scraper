@@ -114,7 +114,7 @@ class CRUDLeavePeriodPrinting:
             for row in self.session.exec(statement).all()
         ]
 
-    def delete_all(self) -> int:
+    def delete_all(self) -> None:
         statement = delete(LeavePeriodPrinting)
 
-        return self.session.exec(statement).rowcount
+        self.session.exec(statement)
