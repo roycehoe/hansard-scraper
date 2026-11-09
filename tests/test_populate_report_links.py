@@ -28,6 +28,11 @@ _STALE_CITATION = "A citation the record no longer prints"
 _FIRST_PLANNED_COUNT = 1
 
 
+@pytest.fixture(autouse=True)
+def _no_report_link_title_corrections(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("populate.report_links.get_report_link_title_corrections", list)
+
+
 def _add_report(
     session: Session,
     report_id: str,

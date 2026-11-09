@@ -87,6 +87,7 @@ _DATA_FILE_GETTERS = (
     get_party_affiliations,
     get_person_decisions,
     get_person_name_spellings,
+    get_report_link_title_corrections,
     get_speaker_overrides,
     get_unattributed_speech_ranges,
     get_unscraped_members,
@@ -143,10 +144,6 @@ def _get_hand_check_office_holder(**fields: object) -> dict[str, object]:
 @pytest.mark.parametrize("getter", _DATA_FILE_GETTERS)
 def test_a_getter_returns_the_records_of_its_file(getter: Callable[[], object]) -> None:
     assert _get_record_count(getter()) > 0
-
-
-def test_report_link_title_corrections_getter_parses_the_file() -> None:
-    assert isinstance(get_report_link_title_corrections(), list)
 
 
 def test_a_mistyped_key_raises_data_file_error_naming_the_file(

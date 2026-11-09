@@ -149,6 +149,11 @@ class _AlertRecorder:
 
 
 @pytest.fixture(autouse=True)
+def _no_report_link_title_corrections(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("populate.report_links.get_report_link_title_corrections", list)
+
+
+@pytest.fixture(autouse=True)
 def fake_parliament(monkeypatch: pytest.MonkeyPatch) -> FakeParliament:
     fake_parliament = FakeParliament()
     monkeypatch.setattr(
