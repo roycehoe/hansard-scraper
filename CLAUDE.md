@@ -196,6 +196,8 @@ A run of `python -m scripts.apply_bill_speakers --commit` without `--report-id` 
 
 A write that adds, rewrites or deletes speech rows of a report whose raw text holds a download link ends with `python -m scripts.apply_attached_files --commit --report-id ...` for the reports it touched. `apply_fresh_parse.py` does this inside its own write.
 
+A write that adds, rewrites, deletes or relinks speech rows of a report ends with `python -m scripts.apply_divisions --plan-file ... --commit --report-id ...` for the reports it touched, as the askers' write does, because a moved speech ordinal moves a division's number.
+
 The scripts:
 
 - `diagnose.py` — inspect parsing failures across the corpus

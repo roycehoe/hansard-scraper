@@ -11,6 +11,7 @@ import scripts.remove_excluded_reports as remove_excluded_reports_script
 from database.attached_file_pointer import AttachedFilePointer
 from database.bill_report_speaker import BillReportSpeaker
 from database.bill_stage_line import BillStageLine
+from database.division import Division
 from database.report import Report
 from database.report_asker import ReportAsker
 from database.report_link import ReportLink
@@ -22,6 +23,8 @@ from database.speech import Speech
 from enums import (
     AttachedFilePointerShape,
     BillStage,
+    DivisionCountSource,
+    DivisionListStatus,
     ParticipantRole,
     ParticipantRoleSource,
     QuestionState,
@@ -42,6 +45,10 @@ _THIRD_REPORT_ID = "third-report"
 _TEXT = "Same text."
 _SEEDED_SPEECH_COUNT = 2
 _EXCLUDED_STAGE_LINE_COUNT = 2
+_DIVISION_PARLIAMENT_NUMBER = 11
+_DIVISION_AYES = 5
+_DIVISION_NOES = 2
+_DIVISION_PRINTED_COUNTS = "The House divided: Ayes, 5; Noes, 2"
 
 
 def _add_report(session: Session, report_id: str, content: str) -> Report:
@@ -153,6 +160,24 @@ def _add_report_link(
     session.commit()
 
 
+def _add_division(session: Session, report_id: str) -> None:
+    session.add(
+        Division(
+            sitting_date=_SITTING_DATE.date(),
+            parliament_number=_DIVISION_PARLIAMENT_NUMBER,
+            report_division_number=1,
+            speech_ordinal=1,
+            count_source=DivisionCountSource.PRINTED_LINE,
+            printed_counts=_DIVISION_PRINTED_COUNTS,
+            ayes=_DIVISION_AYES,
+            noes=_DIVISION_NOES,
+            list_status=DivisionListStatus.NOT_PRINTED,
+            sprs_report_id=report_id,
+        )
+    )
+    session.commit()
+
+
 def _get_link_pairs(session: Session) -> list[tuple[str, str]]:
     session.expire_all()
     return sorted(
@@ -180,6 +205,15 @@ def _add_pointers(session: Session, report_id: str, pointer_count: int) -> None:
 def _get_pointer_report_ids(session: Session) -> list[str]:
     session.expire_all()
     return sorted(session.exec(select(AttachedFilePointer.sprs_report_id)).all())
+
+
+def _get_division_report_ids(session: Session) -> list[str]:
+    session.expire_all()
+    return sorted(
+        report_id
+        for report_id in session.exec(select(Division.sprs_report_id)).all()
+        if report_id is not None
+    )
 
 
 def _seed_duplicate(session: Session, excluded_content: str = _TEXT) -> None:
@@ -317,6 +351,23 @@ def test_dry_run_writes_the_plan_and_no_rows(
     assert _get_speech_count(scratch_session) == _SEEDED_SPEECH_COUNT
 
 
+def test_division_count_is_in_the_plan_file(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_division(scratch_session, _EXCLUDED_REPORT_ID)
+    plan_path = tmp_path / "plan.json"
+
+    remove_excluded_reports_script.remove_excluded_reports(False, plan_path)
+
+    plan = json.loads(plan_path.read_text())
+    assert [removal["division_count"] for removal in plan] == [1]
+
+
 def test_commit_refuses_when_the_duplicate_text_differs(
     scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -335,10 +386,13 @@ def test_commit_deletes_exactly_the_planned_report_and_speeches(
 ) -> None:
     _use_scratch(scratch_engine, monkeypatch)
     _seed_duplicate(scratch_session)
+    _add_division(scratch_session, _EXCLUDED_REPORT_ID)
+    _add_division(scratch_session, _KEPT_REPORT_ID)
 
     remove_excluded_reports_script.remove_excluded_reports(True, None)
 
     assert _get_report_ids(scratch_session) == [_KEPT_REPORT_ID]
+    assert _get_division_report_ids(scratch_session) == [_KEPT_REPORT_ID]
     assert _get_speech_count(scratch_session) == 1
     remove_excluded_reports_script.remove_excluded_reports(True, None)
     assert _get_report_ids(scratch_session) == [_KEPT_REPORT_ID]
