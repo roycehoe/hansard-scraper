@@ -1,0 +1,39 @@
+Law link check flags
+Sampled rows: 2761
+Flags: 97
+Flags by rule:
+  ACT_FIRST_READING_DATE: 0 of 472
+  ACT_THIRD_READING_DATE: 0 of 55
+  ACT_LOOSE_TITLE_READING_DATES: 0 of 31
+  ACT_HAND_KEPT: 0 of 11
+  MEMBER: 97 of 506
+  STAGE_FIRST_READING: 0 of 461
+  STAGE_SECOND_READING_ORDER: 0 of 408
+  STAGE_SECOND_READING_AGREED: 0 of 408
+  STAGE_THIRD_READING: 0 of 409
+Flags by reader (a row can be flagged by both):
+  Sonnet: 97
+  Opus: 97
+Sonnet caught 45 of 45 planted errors
+  ACT_FIRST_READING_DATE: caught 5 of 5
+  ACT_THIRD_READING_DATE: caught 5 of 5
+  ACT_LOOSE_TITLE_READING_DATES: caught 5 of 5
+  ACT_HAND_KEPT: caught 5 of 5
+  MEMBER: caught 5 of 5
+  STAGE_FIRST_READING: caught 5 of 5
+  STAGE_SECOND_READING_ORDER: caught 5 of 5
+  STAGE_SECOND_READING_AGREED: caught 5 of 5
+  STAGE_THIRD_READING: caught 5 of 5
+  recall at least 93.6% (one-sided exact 95%)
+Opus caught 45 of 45 planted errors
+  ACT_FIRST_READING_DATE: caught 5 of 5
+  ACT_THIRD_READING_DATE: caught 5 of 5
+  ACT_LOOSE_TITLE_READING_DATES: caught 5 of 5
+  ACT_HAND_KEPT: caught 5 of 5
+  MEMBER: caught 5 of 5
+  STAGE_FIRST_READING: caught 5 of 5
+  STAGE_SECOND_READING_ORDER: caught 5 of 5
+  STAGE_SECOND_READING_AGREED: caught 5 of 5
+  STAGE_THIRD_READING: caught 5 of 5
+  recall at least 93.6% (one-sided exact 95%)
+Readers that missed a plant: none
