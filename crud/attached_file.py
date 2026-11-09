@@ -52,7 +52,7 @@ class CRUDAttachedFile:
         statement = (
             select(AttachedFile)
             .where(col(AttachedFile.id).in_(attached_file_ids))
-            .order_by(AttachedFile.id)
+            .order_by(col(AttachedFile.id))
         )
         return list(self.session.exec(statement).all())
 
@@ -60,6 +60,6 @@ class CRUDAttachedFile:
         statement = (
             select(AttachedFile)
             .where(col(AttachedFile.sitting_id).in_(sitting_ids))
-            .order_by(AttachedFile.id)
+            .order_by(col(AttachedFile.id))
         )
         return list(self.session.exec(statement).all())

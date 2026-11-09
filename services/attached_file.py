@@ -279,9 +279,12 @@ def get_pointer_paragraph_text(content: str, ordinal: int) -> str:
             f"The report holds {len(pointer_links)} pointers, not {ordinal}"
         ) from error
     paragraph = pointer_tag.find_parent("p")
-    if paragraph is None:
-        return str(pointer_tag.parent.get_text())
-    return str(paragraph.get_text())
+    if paragraph is not None:
+        return str(paragraph.get_text())
+    parent = pointer_tag.parent
+    if parent is None:
+        raise HansardAttachedFileError(f"Pointer {ordinal} has no enclosing element")
+    return str(parent.get_text())
 
 
 def get_bad_file_link_count(content: Optional[str]) -> int:
