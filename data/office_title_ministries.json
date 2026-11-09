@@ -916,21 +916,6 @@
     "reason": "a constituency bracket printed where an office belongs; not an office"
   },
   {
-    "office_printed": "]",
-    "ministry_names": [],
-    "reason": "a stray closing bracket; not an office"
-  },
-  {
-    "office_printed": "J.P.Tanglin)",
-    "ministry_names": [],
-    "reason": "a stray fragment of a name and constituency; not an office"
-  },
-  {
-    "office_printed": "(Policy)",
-    "ministry_names": [],
-    "reason": "a stray bracket remnant of a portfolio qualifier; not an office"
-  },
-  {
     "office_printed": "Acting Minister for Community Develop- ment",
     "ministry_names": [
       "Community Development"
