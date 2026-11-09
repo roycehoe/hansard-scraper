@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import update
+from sqlalchemy import or_, update
 from sqlmodel import Session, col, delete, select
 
+from database.attendance_office import AttendanceOffice
 from database.office_printed_range import OfficePrintedRange
 from utils.office_printed_range_update import OfficePrintedRangeUpdate
 
@@ -64,6 +65,23 @@ class CRUDOfficePrintedRange:
                 for office_printed_range_update in office_printed_range_updates
             ],
         )
+
+    def delete_by_attendance_ids(self, attendance_ids: list[int]) -> int:
+        attendance_office_ids = select(AttendanceOffice.id).where(
+            col(AttendanceOffice.attendance_id).in_(attendance_ids)
+        )
+        statement = delete(OfficePrintedRange).where(
+            or_(
+                col(OfficePrintedRange.first_attendance_office_id).in_(
+                    attendance_office_ids
+                ),
+                col(OfficePrintedRange.last_attendance_office_id).in_(
+                    attendance_office_ids
+                ),
+            )
+        )
+
+        return self.session.exec(statement).rowcount
 
     def delete_all(self) -> int:
         statement = delete(OfficePrintedRange)

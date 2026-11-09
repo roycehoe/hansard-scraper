@@ -8,10 +8,14 @@ from typing import Optional
 from sqlmodel import Session
 
 from crud.attendance import AttendanceSpeakerRow, CRUDAttendance
+from crud.attendance_office import CRUDAttendanceOffice
+from crud.office_printed_range import CRUDOfficePrintedRange
 from crud.sitting import CRUDSitting, SittingDateRow
 from crud.speaker import CRUDSpeaker
 from database.attendance import Attendance
+from database.attendance_office import AttendanceOffice
 from database.init import engine
+from database.office_printed_range import OfficePrintedRange
 from exceptions import HansardWriteCheckError
 from logs import logger
 from populate.written_tables import vacuum_analyze_written_tables
@@ -162,9 +166,18 @@ def _apply_plan(
         for removal_id in plan.removal_id_to_reason
         if attendance_id_to_attendance[removal_id].speaker_id is not None
     }
-    deleted_count = CRUDAttendance(session).delete_by_ids(
-        list(plan.removal_id_to_reason)
+    removal_ids = list(plan.removal_id_to_reason)
+    deleted_range_count = CRUDOfficePrintedRange(session).delete_by_attendance_ids(
+        removal_ids
     )
+    deleted_office_count = CRUDAttendanceOffice(session).delete_by_attendance_ids(
+        removal_ids
+    )
+    logger.info(
+        f"Removed {deleted_office_count} attendance offices and {deleted_range_count} office ranges. "
+        "Rebuild the ranges with python -m scripts.apply_attendance_offices --commit"
+    )
+    deleted_count = CRUDAttendance(session).delete_by_ids(removal_ids)
     if deleted_count != len(plan.removal_id_to_reason):
         raise HansardWriteCheckError(
             f"Deleted {deleted_count} attendance rows, planned {len(plan.removal_id_to_reason)}"
@@ -245,7 +258,14 @@ def clean_attendance(is_commit: bool, plan_path: Optional[Path]) -> None:
         logger.info(
             f"Committed: {len(plan.removal_id_to_reason)} rows deleted, {len(plan.updates)} rows updated"
         )
-        vacuum_analyze_written_tables(session, [Attendance.__tablename__])
+        vacuum_analyze_written_tables(
+            session,
+            [
+                Attendance.__tablename__,
+                AttendanceOffice.__tablename__,
+                OfficePrintedRange.__tablename__,
+            ],
+        )
 
 
 if __name__ == "__main__":

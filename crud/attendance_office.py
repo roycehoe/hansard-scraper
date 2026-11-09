@@ -99,6 +99,13 @@ class CRUDAttendanceOffice:
         )
         return list(self.session.exec(statement).all())
 
+    def delete_by_attendance_ids(self, attendance_ids: list[int]) -> int:
+        statement = delete(AttendanceOffice).where(
+            col(AttendanceOffice.attendance_id).in_(attendance_ids)
+        )
+
+        return self.session.exec(statement).rowcount
+
     def delete_by_sitting_ids(self, sitting_ids: list[int]) -> int:
         attendance_ids = select(Attendance.id).where(
             col(Attendance.sitting_id).in_(sitting_ids)
