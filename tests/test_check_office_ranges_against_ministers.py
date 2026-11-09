@@ -50,7 +50,9 @@ _SITTING_COUNT = 3
 
 
 def _build_range_row(
-    first_sitting_date: date, last_sitting_date: date, office_printed: str = _HEALTH_TITLE
+    first_sitting_date: date,
+    last_sitting_date: date,
+    office_printed: str = _HEALTH_TITLE,
 ) -> OfficePrintedRangeRow:
     return OfficePrintedRangeRow(
         _RANGE_ID,

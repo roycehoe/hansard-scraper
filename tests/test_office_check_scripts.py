@@ -114,7 +114,10 @@ def test_a_group_smaller_than_the_sample_is_sampled_whole() -> None:
 
 def test_plants_come_from_outside_the_sample_with_another_rows_value() -> None:
     draw = _draw(_SEED)
-    row_key_to_data_says = {office_check_row.row_key: office_check_row.data_says for office_check_row in _build_rows()}
+    row_key_to_data_says = {
+        office_check_row.row_key: office_check_row.data_says
+        for office_check_row in _build_rows()
+    }
 
     planted_packets = [
         packet for packet in draw.packets if packet.packet_id in draw.planted_packet_ids

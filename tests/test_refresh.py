@@ -87,11 +87,11 @@ _SUMMARY_RE = re.compile(
 _STRONG_LABEL_RE = re.compile(r"<strong>((?:Mr|Ms|Mrs|Dr) [^<:]+)</strong>")
 _FIRST_WORD_RE = re.compile(r"\bthe\b")
 _LATE_SITTING_MEMBER = "Late Seed Member"
-_LATE_SITTING_ENTRY_LINE = "Mr Late Seed Member (Bishan-Toa Payoh), Minister for Health."
-_UNPLACED_TITLE = "Minister for Nonsense"
-_UNPLACED_ENTRY_LINE = (
-    "Mr Chee Hong Tat (Bishan-Toa Payoh), Minister for Nonsense."
+_LATE_SITTING_ENTRY_LINE = (
+    "Mr Late Seed Member (Bishan-Toa Payoh), Minister for Health."
 )
+_UNPLACED_TITLE = "Minister for Nonsense"
+_UNPLACED_ENTRY_LINE = "Mr Chee Hong Tat (Bishan-Toa Payoh), Minister for Nonsense."
 _MISSING_TABLE_VACUUM = "VACUUM (ANALYZE) no_such_table"
 _DATA_TABLES = (
     HansardWebsiteResponse,
@@ -1574,10 +1574,15 @@ def test_late_sitting_writes_no_range_and_sends_one_alert(
     assert office_table_row_counts["OfficePrintedRange"] == 0
     assert office_table_row_counts["AttendanceOffice"] > attendance_office_count_before
     late_sitting_messages = [
-        message for message in alerts.messages if "arrived after a later sitting" in message
+        message
+        for message in alerts.messages
+        if "arrived after a later sitting" in message
     ]
     assert len(late_sitting_messages) == 1
-    assert get_sitting_date_key(fake_parliament.new_sitting_date) in late_sitting_messages[0]
+    assert (
+        get_sitting_date_key(fake_parliament.new_sitting_date)
+        in late_sitting_messages[0]
+    )
 
 
 def test_new_title_with_no_placement_sends_one_alert_and_the_run_succeeds(
@@ -1601,7 +1606,9 @@ def test_new_title_with_no_placement_sends_one_alert_and_the_run_succeeds(
     assert len(unplaced_messages) == 1
     assert _UNPLACED_TITLE in unplaced_messages[0]
     with Session(scratch_engine) as session:
-        placed_titles = set(session.exec(select(OfficeTitleMinistry.office_printed)).all())
+        placed_titles = set(
+            session.exec(select(OfficeTitleMinistry.office_printed)).all()
+        )
     assert _UNPLACED_TITLE not in placed_titles
     _assert_success_pinged(alerts)
 
@@ -1638,6 +1645,4 @@ def test_office_steps_issue_no_delete_statement(
         statement.startswith("INSERT INTO attendance_office")
         for statement in statements
     )
-    assert not [
-        statement for statement in statements if statement.startswith("DELETE")
-    ]
+    assert not [statement for statement in statements if statement.startswith("DELETE")]

@@ -41,13 +41,22 @@ def get_office_check_flags(
     flags: list[OfficeCheckRangeFlag] = []
     is_range_overlapping = False
     for office_printed_range_row in office_printed_range_rows:
-        if office_printed_range_row.office_printed not in office_printed_values_in_ministry:
+        if (
+            office_printed_range_row.office_printed
+            not in office_printed_values_in_ministry
+        ):
             continue
         first_sitting_date = office_printed_range_row.first_sitting_date.date()
         last_sitting_date = office_printed_range_row.last_sitting_date.date()
-        if first_sitting_date <= minister.end_date and last_sitting_date >= minister.start_date:
+        if (
+            first_sitting_date <= minister.end_date
+            and last_sitting_date >= minister.start_date
+        ):
             is_range_overlapping = True
-        if first_sitting_date < minister.start_date or last_sitting_date > minister.end_date:
+        if (
+            first_sitting_date < minister.start_date
+            or last_sitting_date > minister.end_date
+        ):
             flags.append(
                 OfficeCheckRangeFlag(
                     minister.member_name,

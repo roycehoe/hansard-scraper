@@ -100,7 +100,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["first_attendance_office_id"], ["attendance_office.id"]
         ),
-        sa.ForeignKeyConstraint(["last_attendance_office_id"], ["attendance_office.id"]),
+        sa.ForeignKeyConstraint(
+            ["last_attendance_office_id"], ["attendance_office.id"]
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
             "first_attendance_office_id",
@@ -126,17 +128,19 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("first_ordinal", sa.Integer(), nullable=False),
-        sa.Column(
-            "sprs_report_id", sqlmodel.sql.sqltypes.AutoString(), nullable=False
-        ),
+        sa.Column("sprs_report_id", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.ForeignKeyConstraint(["sprs_report_id"], ["report.report_id"]),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
             "sprs_report_id", "ordinal", name="uq_report_put_to_sprs_report_id_ordinal"
         ),
     )
-    op.create_index("ix_report_put_to_office_printed", "report_put_to", ["office_printed"])
-    op.create_index("ix_report_put_to_sprs_report_id", "report_put_to", ["sprs_report_id"])
+    op.create_index(
+        "ix_report_put_to_office_printed", "report_put_to", ["office_printed"]
+    )
+    op.create_index(
+        "ix_report_put_to_sprs_report_id", "report_put_to", ["sprs_report_id"]
+    )
     op.create_table(
         "ministry",
         sa.Column("id", sa.Integer(), nullable=False),

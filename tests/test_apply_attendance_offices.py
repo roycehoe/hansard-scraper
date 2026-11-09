@@ -202,7 +202,8 @@ def test_commit_writes_the_offices_and_the_ranges(
 
     assert log_recorder.messages[-1] == "Committed"
     assert [
-        office_printed for _, office_printed, _, _ in _get_stored_office_rows(scratch_session)
+        office_printed
+        for _, office_printed, _, _ in _get_stored_office_rows(scratch_session)
     ] == [_PRIME_MINISTER, _SENIOR_MINISTER_OF_STATE]
     assert _get_stored_range_rows(scratch_session) == _get_planned_range_rows(
         seeded_sittings
@@ -236,9 +237,10 @@ def test_commit_with_sitting_ids_leaves_other_sittings_rows(
     apply_attendance_offices([seeded_sittings.older_sitting.id], is_commit=True)
 
     office_ids_after = _get_attendance_office_ids(scratch_session)
-    assert office_ids_after[_SENIOR_MINISTER_OF_STATE] == office_ids_before[
-        _SENIOR_MINISTER_OF_STATE
-    ]
+    assert (
+        office_ids_after[_SENIOR_MINISTER_OF_STATE]
+        == office_ids_before[_SENIOR_MINISTER_OF_STATE]
+    )
     assert office_ids_after[_PRIME_MINISTER] != office_ids_before[_PRIME_MINISTER]
     assert len(office_ids_after) == _STORED_ATTENDANCE_OFFICE_COUNT
     assert _get_stored_range_rows(scratch_session) == _get_planned_range_rows(
@@ -278,9 +280,7 @@ def test_commit_refuses_stored_rows_that_differ_from_the_plan(
     ) -> None:
         real_add_many(self, attendance_offices[:-1])
 
-    monkeypatch.setattr(
-        CRUDAttendanceOffice, "add_many", add_many_without_the_last_row
-    )
+    monkeypatch.setattr(CRUDAttendanceOffice, "add_many", add_many_without_the_last_row)
 
     with pytest.raises(
         HansardWriteCheckError, match="Stored attendance offices by decade"

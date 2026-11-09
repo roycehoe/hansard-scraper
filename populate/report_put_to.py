@@ -42,7 +42,9 @@ def get_report_put_to_plan(session: Session, report_ids: list[int]) -> ReportPut
     reports_without_phrase = 0
     sorted_report_ids = sorted(report_ids)
     for start in range(0, len(sorted_report_ids), _REPORT_BATCH):
-        report_rows = CRUDReport(session).get_put_to_report_rows_by_ids_and_report_types(
+        report_rows = CRUDReport(
+            session
+        ).get_put_to_report_rows_by_ids_and_report_types(
             sorted_report_ids[start : start + _REPORT_BATCH],
             REPORT_PUT_TO_REPORT_TYPES,
         )
@@ -99,7 +101,9 @@ def _validate_can_commit_report_put_to(session: Session, plan: ReportPutToPlan) 
         ):
             stored_decade_to_row_count[
                 get_decade(
-                    plan.sprs_report_id_to_sitting_date[report_put_to_row.sprs_report_id]
+                    plan.sprs_report_id_to_sitting_date[
+                        report_put_to_row.sprs_report_id
+                    ]
                 )
             ] += 1
             stored_source_to_row_count[report_put_to_row.source] += 1
@@ -127,9 +131,9 @@ def write_report_put_to_plan(session: Session, plan: ReportPutToPlan) -> None:
         stored_report_put_to_count = len(
             CRUDReportPutTo(session).get_rows_by_sprs_report_ids(batch_sprs_report_ids)
         )
-        deleted_report_put_to_count = CRUDReportPutTo(session).delete_by_sprs_report_ids(
-            batch_sprs_report_ids
-        )
+        deleted_report_put_to_count = CRUDReportPutTo(
+            session
+        ).delete_by_sprs_report_ids(batch_sprs_report_ids)
         if deleted_report_put_to_count != stored_report_put_to_count:
             raise HansardWriteCheckError(
                 f"Deleted {deleted_report_put_to_count} report put-tos, read {stored_report_put_to_count}"

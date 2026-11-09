@@ -267,7 +267,9 @@ def populate_office_title_ministries(
         window_office_printed_values
         - set(CRUDOfficeTitleMinistry(session).get_distinct_office_printed())
     )
-    ministry_names_longest_first = _get_ministry_names_longest_first(get_ministry_names())
+    ministry_names_longest_first = _get_ministry_names_longest_first(
+        get_ministry_names()
+    )
     title_to_ministry_names = _get_title_to_ministry_names()
     ministry_name_to_id = {
         ministry.name: ministry.id
@@ -283,7 +285,9 @@ def populate_office_title_ministries(
         if placed_office_titles is None:
             unplaced_titles.append(office_printed)
             continue
-        ministry_ids = _get_placed_ministry_ids(placed_office_titles, ministry_name_to_id)
+        ministry_ids = _get_placed_ministry_ids(
+            placed_office_titles, ministry_name_to_id
+        )
         if ministry_ids is None:
             unplaced_titles.append(office_printed)
             continue
@@ -294,7 +298,9 @@ def populate_office_title_ministries(
                 source=placed_office_title.source,
                 ministry_id=ministry_id,
             )
-            for placed_office_title, ministry_id in zip(placed_office_titles, ministry_ids)
+            for placed_office_title, ministry_id in zip(
+                placed_office_titles, ministry_ids
+            )
         )
     CRUDOfficeTitleMinistry(session).add_many(office_title_ministries)
     logger.info(

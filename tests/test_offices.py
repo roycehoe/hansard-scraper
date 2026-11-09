@@ -982,7 +982,9 @@ def test_sitting_with_neither_markdown_nor_a_list_gives_no_entry_offices() -> No
 def test_sitting_attendance_offices_keep_the_whole_printed_line_and_match_the_entry_offices() -> (
     None
 ):
-    entry_line = "Mr Chee Hong Tat (Bishan-Toa Payoh), Senior Minister of State for Finance.   "
+    entry_line = (
+        "Mr Chee Hong Tat (Bishan-Toa Payoh), Senior Minister of State for Finance.   "
+    )
     markdown_content = f"PRESENT:\n{entry_line}\n"
     sitting_attendance_text_row = _build_sitting_attendance_text_row(
         markdown_content, None

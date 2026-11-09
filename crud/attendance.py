@@ -148,9 +148,7 @@ class CRUDAttendance:
         statement = select(
             Attendance.id, Attendance.sitting_id, Attendance.speaker_name
         ).where(col(Attendance.sitting_id).in_(sitting_ids))
-        return [
-            AttendanceIdNameRow(*row) for row in self.session.exec(statement).all()
-        ]
+        return [AttendanceIdNameRow(*row) for row in self.session.exec(statement).all()]
 
     def get_sitting_counts(self) -> list[AttendanceSittingCount]:
         statement = select(Attendance.sitting_id, func.count()).group_by(

@@ -82,7 +82,9 @@ def _get_attendance_office_rule_rows(session: Session) -> OfficeCheckRuleRows:
             session
         ).get_check_rows()
     ]
-    return OfficeCheckRuleRows(rows, sorted({office_check_row.data_says for office_check_row in rows}))
+    return OfficeCheckRuleRows(
+        rows, sorted({office_check_row.data_says for office_check_row in rows})
+    )
 
 
 def _get_put_to_rule_rows(session: Session) -> OfficeCheckRuleRows:
@@ -97,7 +99,9 @@ def _get_put_to_rule_rows(session: Session) -> OfficeCheckRuleRows:
         )
         for report_put_to_check_row in CRUDReportPutTo(session).get_check_rows()
     ]
-    return OfficeCheckRuleRows(rows, sorted({office_check_row.data_says for office_check_row in rows}))
+    return OfficeCheckRuleRows(
+        rows, sorted({office_check_row.data_says for office_check_row in rows})
+    )
 
 
 def _get_title_to_first_print(session: Session) -> dict[str, datetime]:
@@ -165,7 +169,10 @@ def _get_rule_rows(session: Session, rule: OfficeCheckRule) -> OfficeCheckRuleRo
 
 
 def _build_packet(
-    generator: random.Random, rule: OfficeCheckRule, office_check_row: OfficeCheckRow, data_says: str
+    generator: random.Random,
+    rule: OfficeCheckRule,
+    office_check_row: OfficeCheckRow,
+    data_says: str,
 ) -> OfficeCheckPacket:
     return OfficeCheckPacket(
         packet_id=uuid.UUID(int=generator.getrandbits(_RANDOM_BITS), version=4).hex,
@@ -182,7 +189,9 @@ def draw_office_check(
     rule: OfficeCheckRule, rule_rows: OfficeCheckRuleRows, seed: int
 ) -> OfficeCheckDraw:
     generator = random.Random(seed)
-    sorted_rows = sorted(rule_rows.rows, key=lambda office_check_row: office_check_row.row_id)
+    sorted_rows = sorted(
+        rule_rows.rows, key=lambda office_check_row: office_check_row.row_id
+    )
     group_to_rows: defaultdict[str, list[OfficeCheckRow]] = defaultdict(list)
     for office_check_row in sorted_rows:
         group_to_rows[office_check_row.group].append(office_check_row)

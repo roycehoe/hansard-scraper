@@ -40,7 +40,9 @@ class CRUDOfficePrintedRange:
                 OfficePrintedRange.last_sitting_date,
             )
             .where(col(OfficePrintedRange.speaker_id).in_(speaker_ids))
-            .order_by(OfficePrintedRange.speaker_id, OfficePrintedRange.first_sitting_date)
+            .order_by(
+                OfficePrintedRange.speaker_id, OfficePrintedRange.first_sitting_date
+            )
         )
         return [
             OfficePrintedRangeRow(*row) for row in self.session.exec(statement).all()

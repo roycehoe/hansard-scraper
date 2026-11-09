@@ -137,7 +137,9 @@ def get_ministry_names() -> list[str]:
 
 
 def get_office_title_ministries() -> list[OfficeTitleMinistryEntry]:
-    return _get_data_file(_OFFICE_TITLE_MINISTRIES_FILE, OfficeTitleMinistryEntries).root
+    return _get_data_file(
+        _OFFICE_TITLE_MINISTRIES_FILE, OfficeTitleMinistryEntries
+    ).root
 
 
 def get_ministry_see_also() -> list[MinistrySeeAlsoEntry]:

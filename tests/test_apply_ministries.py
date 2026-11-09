@@ -263,9 +263,13 @@ def test_populate_inserts_only_the_new_titles_of_the_window_and_issues_no_delete
 ) -> None:
     seeded_reports = _seed_reports(scratch_session)
     apply_ministries(is_commit=True)
-    education_report = _seed_put_to(scratch_session, "report-education", _EDUCATION_TITLE)
+    education_report = _seed_put_to(
+        scratch_session, "report-education", _EDUCATION_TITLE
+    )
     report_ids = [
-        report.id for report in [*seeded_reports, education_report] if report.id is not None
+        report.id
+        for report in [*seeded_reports, education_report]
+        if report.id is not None
     ]
     statements: list[str] = []
 
@@ -293,9 +297,7 @@ def test_populate_inserts_only_the_new_titles_of_the_window_and_issues_no_delete
         statement.startswith("INSERT INTO office_title_ministry")
         for statement in statements
     )
-    assert not [
-        statement for statement in statements if statement.startswith("DELETE")
-    ]
+    assert not [statement for statement in statements if statement.startswith("DELETE")]
     assert not [
         statement
         for statement in statements
@@ -322,7 +324,9 @@ def test_populate_returns_a_title_whose_ministry_is_missing_from_the_table(
     ).one()
     scratch_session.delete(education)
     scratch_session.commit()
-    education_report = _seed_put_to(scratch_session, "report-education", _EDUCATION_TITLE)
+    education_report = _seed_put_to(
+        scratch_session, "report-education", _EDUCATION_TITLE
+    )
     assert education_report.id is not None
 
     unplaced_titles = populate_office_title_ministries(

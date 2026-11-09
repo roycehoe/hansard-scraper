@@ -111,7 +111,8 @@ def test_other_text_in_the_middle_gives_three_ranges() -> None:
     )
 
     assert [
-        office_printed_range.office_printed for office_printed_range in office_printed_ranges
+        office_printed_range.office_printed
+        for office_printed_range in office_printed_ranges
     ] == [_FINANCE, _DEFENCE, _FINANCE]
 
 
@@ -126,7 +127,8 @@ def test_a_middle_sitting_with_no_row_gives_two_ranges() -> None:
     )
 
     assert [
-        office_printed_range.sitting_count for office_printed_range in office_printed_ranges
+        office_printed_range.sitting_count
+        for office_printed_range in office_printed_ranges
     ] == [1, 1]
 
 
@@ -152,7 +154,8 @@ def test_two_speakers_never_join() -> None:
     )
 
     assert [
-        office_printed_range.speaker_id for office_printed_range in office_printed_ranges
+        office_printed_range.speaker_id
+        for office_printed_range in office_printed_ranges
     ] == [_FIRST_SPEAKER_ID, _SECOND_SPEAKER_ID]
 
 
@@ -170,8 +173,15 @@ def test_a_row_with_no_speaker_id_is_skipped() -> None:
 
 
 def test_a_window_run_extends_the_range_that_ends_the_sitting_before() -> None:
-    range_rows = [_build_range_row(_STORED_RANGE_ID, _FIRST_SPEAKER_ID, 1, 2, _FIRST_TWO_SITTINGS_COUNT)]
-    rows = [_build_row(3, 3, _FIRST_SPEAKER_ID), _build_row(_LAST_ROW_ID, 4, _FIRST_SPEAKER_ID)]
+    range_rows = [
+        _build_range_row(
+            _STORED_RANGE_ID, _FIRST_SPEAKER_ID, 1, 2, _FIRST_TWO_SITTINGS_COUNT
+        )
+    ]
+    rows = [
+        _build_row(3, 3, _FIRST_SPEAKER_ID),
+        _build_row(_LAST_ROW_ID, 4, _FIRST_SPEAKER_ID),
+    ]
 
     changes = get_office_printed_range_changes(
         rows, range_rows, _SORTED_SITTING_DATES, _LATER_BUILT_AT
@@ -188,7 +198,11 @@ def test_a_window_run_extends_the_range_that_ends_the_sitting_before() -> None:
 
 
 def test_a_window_run_with_other_text_is_a_new_range() -> None:
-    range_rows = [_build_range_row(_STORED_RANGE_ID, _FIRST_SPEAKER_ID, 1, 2, _FIRST_TWO_SITTINGS_COUNT)]
+    range_rows = [
+        _build_range_row(
+            _STORED_RANGE_ID, _FIRST_SPEAKER_ID, 1, 2, _FIRST_TWO_SITTINGS_COUNT
+        )
+    ]
     rows = [_build_row(3, 3, _FIRST_SPEAKER_ID, _DEFENCE)]
 
     changes = get_office_printed_range_changes(
@@ -200,7 +214,11 @@ def test_a_window_run_with_other_text_is_a_new_range() -> None:
 
 
 def test_a_window_run_after_a_sitting_with_no_row_is_a_new_range() -> None:
-    range_rows = [_build_range_row(_STORED_RANGE_ID, _FIRST_SPEAKER_ID, 1, 2, _FIRST_TWO_SITTINGS_COUNT)]
+    range_rows = [
+        _build_range_row(
+            _STORED_RANGE_ID, _FIRST_SPEAKER_ID, 1, 2, _FIRST_TWO_SITTINGS_COUNT
+        )
+    ]
     rows = [_build_row(4, 4, _FIRST_SPEAKER_ID)]
 
     changes = get_office_printed_range_changes(
@@ -212,7 +230,11 @@ def test_a_window_run_after_a_sitting_with_no_row_is_a_new_range() -> None:
 
 
 def test_only_the_first_window_run_of_a_speaker_can_extend() -> None:
-    range_rows = [_build_range_row(_STORED_RANGE_ID, _FIRST_SPEAKER_ID, 1, 2, _FIRST_TWO_SITTINGS_COUNT)]
+    range_rows = [
+        _build_range_row(
+            _STORED_RANGE_ID, _FIRST_SPEAKER_ID, 1, 2, _FIRST_TWO_SITTINGS_COUNT
+        )
+    ]
     rows = [
         _build_row(3, 3, _FIRST_SPEAKER_ID),
         _build_row(5, 5, _FIRST_SPEAKER_ID),
@@ -228,7 +250,11 @@ def test_only_the_first_window_run_of_a_speaker_can_extend() -> None:
 
 
 def test_a_run_at_the_first_sitting_is_a_new_range() -> None:
-    range_rows = [_build_range_row(_STORED_RANGE_ID, _FIRST_SPEAKER_ID, 2, 3, _FIRST_TWO_SITTINGS_COUNT)]
+    range_rows = [
+        _build_range_row(
+            _STORED_RANGE_ID, _FIRST_SPEAKER_ID, 2, 3, _FIRST_TWO_SITTINGS_COUNT
+        )
+    ]
     rows = [_build_row(1, 1, _FIRST_SPEAKER_ID)]
 
     changes = get_office_printed_range_changes(
@@ -283,7 +309,9 @@ def _build_entry_line(name: str, office: Optional[str]) -> str:
 
 
 def _seed_three_sittings(
-    session: Session, entry_lines_by_day: dict[int, list[str]], listed_names_by_day: dict[int, list[str]]
+    session: Session,
+    entry_lines_by_day: dict[int, list[str]],
+    listed_names_by_day: dict[int, list[str]],
 ) -> list[int]:
     chee = Speaker(
         name="Chee Hong Tat",
@@ -359,7 +387,8 @@ def test_a_listed_member_who_prints_no_office_at_the_middle_sitting_gives_two_ra
     plan = get_office_printed_range_plan(scratch_session)
 
     assert [
-        office_printed_range.sitting_count for office_printed_range in plan.office_printed_ranges
+        office_printed_range.sitting_count
+        for office_printed_range in plan.office_printed_ranges
     ] == [1, 1]
     assert plan.rows_without_speaker_id == 0
 
@@ -378,7 +407,8 @@ def test_a_member_not_listed_at_the_middle_sitting_gives_two_ranges(
     plan = get_office_printed_range_plan(scratch_session)
 
     assert [
-        office_printed_range.sitting_count for office_printed_range in plan.office_printed_ranges
+        office_printed_range.sitting_count
+        for office_printed_range in plan.office_printed_ranges
     ] == [1, 1]
 
 
@@ -439,9 +469,7 @@ def test_populate_extends_a_stored_range_and_issues_no_delete(
         event.remove(scratch_engine, "before_cursor_execute", record_statement)
 
     assert late_sitting_dates == []
-    assert not [
-        statement for statement in statements if statement.startswith("DELETE")
-    ]
+    assert not [statement for statement in statements if statement.startswith("DELETE")]
     stored_ranges = _get_stored_ranges(scratch_session)
     assert [stored_range.sitting_count for stored_range in stored_ranges] == [
         _ALL_THREE_SITTINGS_COUNT

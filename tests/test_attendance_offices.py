@@ -49,7 +49,9 @@ def _build_speaker(name: str, parliament_number: int) -> Speaker:
     )
 
 
-def _seed_sittings(session: Session, older_markdown_lines: list[str]) -> _SeededSittings:
+def _seed_sittings(
+    session: Session, older_markdown_lines: list[str]
+) -> _SeededSittings:
     goh = _build_speaker("Goh Chok Tong", _OLDER_PARLIAMENT_NUMBER)
     chee = _build_speaker("Chee Hong Tat", _NEWER_PARLIAMENT_NUMBER)
     older_sitting = Sitting(
@@ -175,7 +177,8 @@ def test_plan_keeps_the_first_of_two_entries_for_one_attendance_row(
 
     assert plan.duplicate_entries == 1
     assert [
-        attendance_office.office_printed for attendance_office in plan.attendance_offices
+        attendance_office.office_printed
+        for attendance_office in plan.attendance_offices
     ] == ["Prime Minister", _SENIOR_MINISTER_OF_STATE]
 
 
@@ -197,9 +200,7 @@ def test_populate_inserts_the_rows_and_issues_no_delete(
 
     event.listen(scratch_engine, "before_cursor_execute", record_statement)
     try:
-        populate_attendance_offices(
-            scratch_session, _get_sitting_ids(seeded_sittings)
-        )
+        populate_attendance_offices(scratch_session, _get_sitting_ids(seeded_sittings))
         scratch_session.commit()
     finally:
         event.remove(scratch_engine, "before_cursor_execute", record_statement)
@@ -208,10 +209,11 @@ def test_populate_inserts_the_rows_and_issues_no_delete(
         statement.startswith("INSERT INTO attendance_office")
         for statement in statements
     )
-    assert not [
-        statement for statement in statements if statement.startswith("DELETE")
-    ]
-    assert len(_get_stored_attendance_offices(scratch_session)) == _STORED_ATTENDANCE_OFFICE_COUNT
+    assert not [statement for statement in statements if statement.startswith("DELETE")]
+    assert (
+        len(_get_stored_attendance_offices(scratch_session))
+        == _STORED_ATTENDANCE_OFFICE_COUNT
+    )
 
 
 def test_write_replaces_the_stored_rows_of_the_planned_sittings(

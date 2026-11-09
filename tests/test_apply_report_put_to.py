@@ -111,7 +111,9 @@ def _seed_reports(session: Session) -> _SeededReports:
         ]
     )
     session.commit()
-    return _SeededReports(oral_report, older_written_report, annex_report, motion_report)
+    return _SeededReports(
+        oral_report, older_written_report, annex_report, motion_report
+    )
 
 
 def _get_oral_rows() -> list[tuple]:
@@ -279,9 +281,7 @@ def test_populate_inserts_the_rows_of_new_reports_and_issues_no_delete(
     assert any(
         statement.startswith("INSERT INTO report_put_to") for statement in statements
     )
-    assert not [
-        statement for statement in statements if statement.startswith("DELETE")
-    ]
+    assert not [statement for statement in statements if statement.startswith("DELETE")]
     assert _get_stored_rows(scratch_session) == _get_oral_rows()
 
 
@@ -318,10 +318,14 @@ def test_commit_refuses_a_short_delete_count_and_keeps_the_rows(
         return real_delete_by_sprs_report_ids(self, sprs_report_ids) - 1
 
     monkeypatch.setattr(
-        CRUDReportPutTo, "delete_by_sprs_report_ids", delete_by_sprs_report_ids_one_short
+        CRUDReportPutTo,
+        "delete_by_sprs_report_ids",
+        delete_by_sprs_report_ids_one_short,
     )
 
-    with pytest.raises(HansardWriteCheckError, match="Deleted 2 report put-tos, read 3"):
+    with pytest.raises(
+        HansardWriteCheckError, match="Deleted 2 report put-tos, read 3"
+    ):
         apply_report_put_to([], is_commit=True)
 
     assert _get_stored_rows(scratch_session) == (

@@ -20,7 +20,9 @@ _CLAUSE_HEAD = (
     r"|Ministry of|Attorney|Chief Secretary|Financial Secretary)"
 )
 _CLAUSE_BOUNDARY_RE = re.compile(
-    r"(?:,\s*and\s+|\s+and\s+|,\s+|;\s+(?:and\s+)?)(?=(?:the\s+)?" + _CLAUSE_HEAD + r"\b)"
+    r"(?:,\s*and\s+|\s+and\s+|,\s+|;\s+(?:and\s+)?)(?=(?:the\s+)?"
+    + _CLAUSE_HEAD
+    + r"\b)"
 )
 _ROLE_ONLY_CLAUSES = frozenset(
     {

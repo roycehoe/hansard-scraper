@@ -62,7 +62,8 @@ class CRUDAttendanceOffice:
             .order_by(AttendanceOffice.id)
         )
         return [
-            AttendanceOfficeSittingRow(*row) for row in self.session.exec(statement).all()
+            AttendanceOfficeSittingRow(*row)
+            for row in self.session.exec(statement).all()
         ]
 
     def get_sitting_rows(self) -> list[AttendanceOfficeSittingRow]:
@@ -108,9 +109,13 @@ class CRUDAttendanceOffice:
         self, sitting_ids: list[int]
     ) -> Optional[date]:
         statement = (
-            select(func.max(func.to_date(Sitting.sitting_date, _SITTING_DATE_SQL_FORMAT)))
+            select(
+                func.max(func.to_date(Sitting.sitting_date, _SITTING_DATE_SQL_FORMAT))
+            )
             .join(Attendance, col(Attendance.sitting_id) == Sitting.id)
-            .join(AttendanceOffice, col(AttendanceOffice.attendance_id) == Attendance.id)
+            .join(
+                AttendanceOffice, col(AttendanceOffice.attendance_id) == Attendance.id
+            )
             .where(col(Sitting.id).not_in(sitting_ids))
         )
         return self.session.exec(statement).one()
