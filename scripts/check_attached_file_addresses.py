@@ -263,13 +263,11 @@ def check_attached_file_addresses(output_path: Path) -> None:
     }
 
     known_good_answer = get_sprs_file_response(_KNOWN_GOOD_VALUE)
-    if (
-        known_good_answer.status_code >= _MINIMUM_ERROR_STATUS
-        or known_good_answer.is_body_empty
-    ):
-        raise HansardAttachedFileError(
-            f"SPRS gave no real answer for the known-good address {_KNOWN_GOOD_VALUE}: {_get_compared_answer(known_good_answer)}"
-        )
+    no_real_answer_text = f"SPRS gave no real answer for the known-good address {_KNOWN_GOOD_VALUE}: {_get_compared_answer(known_good_answer)}"
+    if known_good_answer.status_code >= _MINIMUM_ERROR_STATUS:
+        raise HansardAttachedFileError(no_real_answer_text)
+    if known_good_answer.is_body_empty:
+        raise HansardAttachedFileError(no_real_answer_text)
     known_bad_answers = _get_known_bad_answers(
         _get_known_bad_values(value_to_group), known_good_answer
     )

@@ -301,7 +301,7 @@ def _write_check_files(
         shuffled_packets = list(packets)
         generator.shuffle(shuffled_packets)
         batches = _get_batches([_render_packet(packet) for packet in shuffled_packets])
-        for batch_number, batch in enumerate(batches, 1):
+        for batch_number, batch in enumerate(batches, start=1):
             (reader_directory / f"packets-{batch_number:03d}.md").write_text(
                 _BATCH_LEGEND + "\n" + "".join(batch), encoding="utf-8"
             )

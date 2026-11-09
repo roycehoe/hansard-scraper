@@ -147,7 +147,7 @@ class _PointerLink:
     shape: AttachedFilePointerShape
 
 
-def _get_pointer_links(soup: BeautifulSoup) -> list[_PointerLink]:
+def _extract_pointer_links(soup: BeautifulSoup) -> list[_PointerLink]:
     pointer_links = []
     for tag in soup.select("a[href]"):
         href = str(tag["href"])
@@ -190,7 +190,7 @@ def _get_paragraph_tie_rule(text_count: int, pointer_count: int) -> ParagraphTie
     return ParagraphTieRule.OCCURRENCE_BESIDE_PLAIN_TEXT
 
 
-def _get_paragraph_ties(
+def _tie_pointer_links_to_paragraphs(
     pointer_links: list[_PointerLink],
     soup: BeautifulSoup,
     speech_rows: list[SpeechRow],
@@ -247,8 +247,9 @@ def build_attached_file_pointers(
     if content is None:
         return []
     soup = BeautifulSoup(content, "html.parser")
-    pointer_links = _get_pointer_links(soup)
-    attached_file_pointers = [
+    pointer_links = _extract_pointer_links(soup)
+    paragraph_ties = _tie_pointer_links_to_paragraphs(pointer_links, soup, speech_rows)
+    return [
         AttachedFilePointer(
             ordinal=ordinal,
             printed_text=pointer_link.tag.get_text(),
@@ -257,21 +258,18 @@ def build_attached_file_pointers(
             download_value=None
             if _PLACEHOLDER_VALUE_RE.match(pointer_link.value)
             else pointer_link.value,
+            speech_ordinal=paragraph_tie.speech_ordinal,
+            paragraph_tie_rule=paragraph_tie.paragraph_tie_rule,
             sprs_report_id=sprs_report_id,
         )
-        for ordinal, pointer_link in enumerate(pointer_links, 1)
+        for ordinal, (pointer_link, paragraph_tie) in enumerate(
+            zip(pointer_links, paragraph_ties, strict=True), start=1
+        )
     ]
-    paragraph_ties = _get_paragraph_ties(pointer_links, soup, speech_rows)
-    for attached_file_pointer, paragraph_tie in zip(
-        attached_file_pointers, paragraph_ties, strict=True
-    ):
-        attached_file_pointer.speech_ordinal = paragraph_tie.speech_ordinal
-        attached_file_pointer.paragraph_tie_rule = paragraph_tie.paragraph_tie_rule
-    return attached_file_pointers
 
 
 def get_pointer_paragraph_text(content: str, ordinal: int) -> str:
-    pointer_links = _get_pointer_links(BeautifulSoup(content, "html.parser"))
+    pointer_links = _extract_pointer_links(BeautifulSoup(content, "html.parser"))
     try:
         pointer_tag = pointer_links[ordinal - 1].tag
     except IndexError as error:

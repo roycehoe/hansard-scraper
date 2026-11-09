@@ -149,7 +149,7 @@ def _set_file_ties(session: Session, download_values: set[str]) -> int:
     return tied_count
 
 
-def _get_planned_key_row(attached_file: AttachedFile) -> AttachedFileKeyRow:
+def _build_planned_key_row(attached_file: AttachedFile) -> AttachedFileKeyRow:
     return AttachedFileKeyRow(
         attached_file.sitting_id,
         attached_file.kind,
@@ -179,13 +179,13 @@ def _add_new_attached_files(
         [
             attached_file
             for attached_file in attached_files
-            if _get_file_key(_get_planned_key_row(attached_file))
+            if _get_file_key(_build_planned_key_row(attached_file))
             not in stored_file_keys
         ]
     )
 
 
-def _get_planned_pointer_row(
+def _build_planned_pointer_row(
     attached_file_pointer: AttachedFilePointer,
 ) -> AttachedFilePointerRow:
     return AttachedFilePointerRow(
@@ -241,7 +241,7 @@ def _replace_differing_report_pointers(
             for sprs_report_id in batch_sprs_report_ids
             if sprs_report_id_to_stored_rows[sprs_report_id]
             != [
-                _get_planned_pointer_row(attached_file_pointer)
+                _build_planned_pointer_row(attached_file_pointer)
                 for attached_file_pointer in sprs_report_id_to_planned_pointers[
                     sprs_report_id
                 ]
@@ -274,7 +274,7 @@ def _replace_differing_report_pointers(
 def _validate_can_write_every_sitting(session: Session, plan: AttachedFilePlan) -> None:
     file_key_to_planned_key_row = {}
     for attached_file in plan.attached_files:
-        planned_key_row = _get_planned_key_row(attached_file)
+        planned_key_row = _build_planned_key_row(attached_file)
         file_key_to_planned_key_row[_get_file_key(planned_key_row)] = planned_key_row
     for stored_key_row in sorted(
         CRUDAttachedFile(session).get_key_rows(), key=_get_file_key
@@ -326,7 +326,7 @@ def _validate_can_commit_attached_files(
 ) -> None:
     stored_file_keys = _get_stored_file_keys(session)
     for attached_file in plan.attached_files:
-        planned_key = _get_file_key(_get_planned_key_row(attached_file))
+        planned_key = _get_file_key(_build_planned_key_row(attached_file))
         if planned_key not in stored_file_keys:
             raise HansardWriteCheckError(
                 f"Planned attached file {planned_key} is not stored"
@@ -342,7 +342,7 @@ def _validate_can_commit_attached_files(
         )
         for sprs_report_id in batch_sprs_report_ids:
             planned_rows = [
-                _get_planned_pointer_row(attached_file_pointer)
+                _build_planned_pointer_row(attached_file_pointer)
                 for attached_file_pointer in sprs_report_id_to_planned_pointers[
                     sprs_report_id
                 ]

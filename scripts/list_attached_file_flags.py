@@ -49,7 +49,7 @@ def _get_verdicts(verdicts_directory: Path) -> list[AttachedFileCheckVerdict]:
     verdicts = []
     for path in sorted(verdicts_directory.rglob(_VERDICTS_FILE_NAME)):
         for line_number, line in enumerate(
-            path.read_text(encoding="utf-8").splitlines(), 1
+            path.read_text(encoding="utf-8").splitlines(), start=1
         ):
             try:
                 verdicts.append(AttachedFileCheckVerdict.model_validate_json(line))
