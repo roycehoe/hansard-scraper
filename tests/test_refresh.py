@@ -43,7 +43,11 @@ from schemas.hansard_report_response import (
 from schemas.hansard_search_result import HansardSearchResult
 from schemas.hansard_topic_response import HansardTopicResponse
 from services.hansard_website import get_topic_id
-from services.refresh import MAX_NEW_HITS_WITHOUT_TEXT, SINGAPORE_TIMEZONE
+from services.refresh import (
+    MAX_NEW_HITS_WITHOUT_TEXT,
+    SINGAPORE_TIMEZONE,
+    get_dates_between,
+)
 from settings import settings
 from tests.refresh_fixtures import FakeParliament, load_speaker_rows, seed_stored
 from utils.sitting_dates import get_sitting_date_key, parse_sitting_date
@@ -1434,3 +1438,56 @@ def test_unlinked_share_halt_in_a_later_month_records_only_committed_counts(
             ).all()
             == []
         )
+
+
+def test_run_probes_dates_without_a_hit_only_inside_the_recheck_window(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+) -> None:
+    seed_stored(scratch_session)
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_october_now(), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    recheck_start_date = _OCTOBER_RUN_DATE - timedelta(days=_RECHECK_WINDOW_DAYS)
+    assert fake_parliament.sitting_calls == [
+        get_sitting_date_key(sitting_date)
+        for sitting_date in [
+            fake_parliament.new_sitting_date,
+            *get_dates_between(recheck_start_date, _OCTOBER_RUN_DATE),
+        ]
+    ]
+
+
+def test_stored_hit_date_without_a_sitting_is_probed_after_the_recheck_window(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    new_sitting_date_key = get_sitting_date_key(fake_parliament.new_sitting_date)
+
+    def get_unpublished_new_sitting(
+        sitting_date: str,
+    ) -> Union[HansardReportOldResponse, HansardReportNewResponse]:
+        if sitting_date == new_sitting_date_key:
+            fake_parliament.sitting_calls.append(sitting_date)
+            return HansardReportNewResponse()
+        return fake_parliament.get_hansard_report_response(sitting_date)
+
+    monkeypatch.setattr(
+        refresh_runs, "get_hansard_report_response", get_unpublished_new_sitting
+    )
+    refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
+    first_run = _get_only_refresh_run(scratch_engine)
+    assert first_run.status == RefreshRunStatus.SUCCEEDED
+    assert first_run.reports_added == len(fake_parliament.new_search_results)
+    assert first_run.sittings_added == 0
+    fake_parliament.sitting_calls.clear()
+
+    refresh_runs.populate_refresh_runs(scratch_session, _get_october_now(), None)
+
+    assert new_sitting_date_key in fake_parliament.sitting_calls

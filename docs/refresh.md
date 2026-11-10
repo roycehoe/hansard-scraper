@@ -20,7 +20,7 @@ Then, for each month in order, the run:
 
 6. Searches SPRS over the month. It drops hits already stored and hits listed in `data/excluded_report_ids.json`.
 7. Halts if a new hit carries a Parliament number above the highest stored one.
-8. Fetches the topic text of each new hit, then asks for the sitting of every date in the month that has no stored sitting.
+8. Fetches the topic text of each new hit, then asks for the sitting of each date in the month that has no stored sitting and either has a search hit, stored or new, or falls in the last 14 days. SPRS answers a date with no sitting with an error the gateway retries, about 34 seconds a date, so asking for every date made a run grow by that much each day of a recess, and the run of 10 November 2026 passed the 30-minute job timeout.
 9. Halts if any field of a fetched body is lost on its way to a row, or if a fetched sitting carries a new Parliament number.
 10. Writes the raw report rows, the reports, their speech rows, the raw sitting rows, the sittings and their attendance rows. A hit whose topic has no text is not stored (see "Halts and how to clear each").
 11. Runs stage 8, the speaker links, on the new speech and attendance rows only.
@@ -57,7 +57,7 @@ A daily run sends:
 - the search pages for its date range
 - one topic request per new hit
 - one topic request per stored report whose sitting falls in the last 14 days
-- one sitting request per date in the range with no stored sitting
+- one sitting request per date in the range with no stored sitting that has a search hit or falls in the last 14 days, retried up to four times when SPRS has no sitting for it
 
 ## Env vars and accounts
 
