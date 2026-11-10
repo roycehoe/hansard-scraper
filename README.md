@@ -25,9 +25,7 @@ The record runs from the Legislative Assembly before independence, through the 1
 
 ## How accurate the speaker links are
 
-In a check of 191 reports, 99.4% of the words here were credited to the right person, against 95.5% on sgparliament.com ([comparison](docs/report/sgparliament-comparison-2026-10-18.md)). I used AI models to judge the sample under rules I set for this project. They saw the two sites as "Site A" and "Site B", so they couldn't tell which was which. The [checks](docs/report/sgparliament-comparison-2026-10-18.md#method-1) say how the verdicts were tested. Most of sgparliament.com's errors are presiding officers and heads of state it leaves unlinked, which this project links to the holder of the day.
-
-About 98% of the text sits in a speech linked to a member ([figures](docs/figures/2026-10-19-backfill-15.txt)). Most of the rest is text no member spoke, such as "Question put, and agreed to."
+About 98% of the text sits in a speech linked to a member ([figures](docs/figures/2026-10-19-backfill-15.txt)). Most of the rest is text no member spoke, such as "Question put, and agreed to." In a sample of 1,000 paragraphs checked on 2 November 2026, no more than 0.47% of credited paragraphs named the wrong person ([methods page](https://openhansard.sg/coverage/methods)).
 
 ## How it was built
 
@@ -38,13 +36,11 @@ flowchart TD
   store["Save the original reports"] --> extract["Split into speeches and identify speakers"]
   extract --> check["Check against the originals"]
   check -->|"Fix mistakes"| extract
-  check --> compare["Compare with sgparliament.com"]
 ```
 
 1. Save the original reports. I store every report as received so I can rebuild the speeches without fetching it again.
 2. Split into speeches and identify speakers. The parser splits each report at bold speaker names. I used repeated rounds of testing and fixes to handle reports it failed to split, then matched names to parliament.gov.sg's members and hand-kept facts, such as colonial Assembly members.
 3. Check against the originals. I used another loop to read samples against the source, find what the parser got wrong and fix it.
-4. Compare with sgparliament.com. A check of 191 reports, judged by AI models, found 99.4% of words credited to the right person, against sgparliament.com's 95.5%.
 
 [How the data was checked](#how-the-data-was-checked) describes both loops.
 
@@ -103,6 +99,8 @@ From [docs/benchmark.md](docs/benchmark.md), surveyed 18 October 2026.
 | Words credited to the right person | 99.4% | Not applicable | Not measured | 95.5% | Not measured |
 | Published accuracy | Figures after every rebuild, and an audit | None | Click rank only | None | None |
 | API or download | Not yet | Undocumented JSON endpoints | None public | None | BigQuery, access required |
+
+The 99.4% and 95.5% come from a check of 191 reports ([comparison](docs/report/sgparliament-comparison-2026-10-18.md)). I used AI models to judge the sample under rules I set for this project. They saw the two sites as "Site A" and "Site B", so they couldn't tell which was which. The [checks](docs/report/sgparliament-comparison-2026-10-18.md#method-1) say how the verdicts were tested. Most of sgparliament.com's errors are presiding officers and heads of state it leaves unlinked, which this project links to the holder of the day.
 
 The 99.4% and 95.5% credit each Addendum to the President's Address to the minister who signs it. Read as nobody's words, the figures are 98.5% and 96.8%.
 
