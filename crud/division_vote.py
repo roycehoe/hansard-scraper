@@ -34,6 +34,19 @@ class DivisionVoteSittingRow:
     speaker_id: int
 
 
+@dataclass(frozen=True)
+class DivisionVoteLinkRow:
+    division_id: int
+    sitting_date: date
+    list_source: DivisionVoteListSource
+    ordinal: int
+    printed_name: str
+    speaker_id: int
+    name_rule: Optional[DivisionVoteNameRule]
+    party: Optional[str]
+    is_party_uncertain: bool
+
+
 class CRUDDivisionVote:
     def __init__(self, session: Session):
         self.session = session
@@ -86,6 +99,54 @@ class CRUDDivisionVote:
         return [
             DivisionVoteSittingRow(*row) for row in self.session.exec(statement).all()
         ]
+
+    def get_link_rows_by_name_rule(
+        self, name_rule: DivisionVoteNameRule
+    ) -> list[DivisionVoteLinkRow]:
+        statement = (
+            select(
+                DivisionVote.division_id,
+                Division.sitting_date,
+                DivisionVote.list_source,
+                DivisionVote.ordinal,
+                DivisionVote.printed_name,
+                DivisionVote.speaker_id,
+                DivisionVote.name_rule,
+                DivisionVote.party,
+                DivisionVote.is_party_uncertain,
+            )
+            .join(Division, col(Division.id) == col(DivisionVote.division_id))
+            .where(col(DivisionVote.name_rule) == name_rule)
+            .where(col(DivisionVote.speaker_id).is_not(None))
+            .order_by(
+                DivisionVote.division_id, DivisionVote.list_source, DivisionVote.ordinal
+            )
+        )
+        return [DivisionVoteLinkRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_link_rows_by_speaker_id_not_null_and_party_not_null(
+        self,
+    ) -> list[DivisionVoteLinkRow]:
+        statement = (
+            select(
+                DivisionVote.division_id,
+                Division.sitting_date,
+                DivisionVote.list_source,
+                DivisionVote.ordinal,
+                DivisionVote.printed_name,
+                DivisionVote.speaker_id,
+                DivisionVote.name_rule,
+                DivisionVote.party,
+                DivisionVote.is_party_uncertain,
+            )
+            .join(Division, col(Division.id) == col(DivisionVote.division_id))
+            .where(col(DivisionVote.speaker_id).is_not(None))
+            .where(col(DivisionVote.party).is_not(None))
+            .order_by(
+                DivisionVote.division_id, DivisionVote.list_source, DivisionVote.ordinal
+            )
+        )
+        return [DivisionVoteLinkRow(*row) for row in self.session.exec(statement).all()]
 
     def get_distinct_division_ids(self) -> list[int]:
         statement = select(DivisionVote.division_id).distinct().order_by(

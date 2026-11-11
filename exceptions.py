@@ -112,3 +112,7 @@ class HansardMinutesIndexError(HansardError):
 
 class HansardMinutesFileError(HansardError):
     pass
+
+
+class HansardDivisionCheckError(HansardError):
+    pass

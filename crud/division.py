@@ -61,6 +61,14 @@ class CRUDDivision:
         )
         return list(self.session.exec(statement).all())
 
+    def get_by_count_source(self, count_source: DivisionCountSource) -> list[Division]:
+        statement = (
+            select(Division)
+            .where(col(Division.count_source) == count_source)
+            .order_by(col(Division.sitting_date), col(Division.id))
+        )
+        return list(self.session.exec(statement).all())
+
     def get_by_list_statuses(
         self, list_statuses: list[DivisionListStatus]
     ) -> list[Division]:

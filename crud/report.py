@@ -112,6 +112,13 @@ class ReportDivisionRow:
 
 
 @dataclass(frozen=True)
+class ReportTypeRow:
+    id: int
+    report_id: str
+    report_type: str
+
+
+@dataclass(frozen=True)
 class ReportParticipantReportRow:
     id: int
     parliament_number: int
@@ -521,6 +528,14 @@ class CRUDReport:
             .order_by(col(Report.id))
         )
         return [ReportDivisionRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_type_rows_by_report_ids(self, report_ids: list[str]) -> list[ReportTypeRow]:
+        statement = (
+            select(Report.id, Report.report_id, Report.report_type)
+            .where(col(Report.report_id).in_(report_ids))
+            .order_by(Report.id)
+        )
+        return [ReportTypeRow(*row) for row in self.session.exec(statement).all()]
 
     def get_content_rows_by_ids(self, report_ids: list[int]) -> list[ReportContentRow]:
         statement = (

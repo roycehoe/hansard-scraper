@@ -279,3 +279,22 @@ def test_counts_that_differ_stand_on_the_printed_line_and_flag_the_total() -> No
         (unread_row.speech_ordinal, unread_row.reason)
         for unread_row in report_divisions.unread_rows
     ] == [(2, UnreadDivisionReason.MERGED_COUNTS_DIFFER)]
+
+
+def test_a_total_with_differing_counts_still_sets_the_merged_total_ordinal() -> None:
+    report_divisions = get_report_divisions(
+        _build_rows(
+            [
+                ("PROCEDURAL", "The House divided: Ayes, 10; Noes, 3"),
+                ("SPEECH", "There are 11 Ayes and 3 Noes."),
+            ]
+        )
+    )
+
+    assert [division.merged_total_ordinal for division in report_divisions.divisions] == [
+        2
+    ]
+    assert [
+        (unread_row.speech_ordinal, unread_row.reason)
+        for unread_row in report_divisions.unread_rows
+    ] == [(2, UnreadDivisionReason.MERGED_COUNTS_DIFFER)]
