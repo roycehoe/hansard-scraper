@@ -5,8 +5,10 @@ from crud.sitting import SittingAttendanceTextRow
 from database.speaker import Speaker
 from enums import LeaveSpeakerLinkSource
 from services.attendance import (
+    EntryLine,
     EntryName,
     build_speaker_lookups,
+    get_sitting_entry_lines,
     get_sitting_entry_names,
 )
 from services.leave_period import LeaveEntrySpeakerLink, get_leave_entry_speaker_link
@@ -172,3 +174,36 @@ def test_get_sitting_entry_names_on_a_list_sitting_gives_the_printed_names() -> 
 
     assert [entry_name.printed_name for entry_name in entry_names] == ["S Iswaran"]
     assert [entry_name.speaker_name for entry_name in entry_names] == ["S. Iswaran"]
+
+
+def test_get_sitting_entry_lines_keeps_the_whole_line_with_the_speaker_name() -> None:
+    markdown_content = (
+        "PRESENT:\n"
+        "Mr Lee Hsien Loong (Ang Mo Kio).\n"
+        "ABSENT:\n"
+        "Mr Nobody Known (Nowhere).\n"
+    )
+
+    entry_lines = get_sitting_entry_lines(
+        _build_sitting_attendance_text_row(markdown_content, None), _LOOKUPS
+    )
+
+    assert entry_lines == [
+        EntryLine("Mr Lee Hsien Loong (Ang Mo Kio).", "Lee Hsien Loong"),
+        EntryLine("Mr Nobody Known (Nowhere).", "Nobody Known"),
+    ]
+
+
+def test_get_sitting_entry_lines_on_a_list_sitting_keeps_the_printed_entry() -> None:
+    attendance_list = json.dumps(
+        [
+            {"mpName": "Mr S Iswaran (West Coast)", "attendance": True},
+            {"mpName": None, "attendance": True},
+        ]
+    )
+
+    entry_lines = get_sitting_entry_lines(
+        _build_sitting_attendance_text_row(None, attendance_list), _LOOKUPS
+    )
+
+    assert entry_lines == [EntryLine("Mr S Iswaran (West Coast)", "S. Iswaran")]

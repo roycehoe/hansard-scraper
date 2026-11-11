@@ -43,6 +43,7 @@ class LeavePeriodPrintingCheckRow:
     speaker_link_source: Optional[LeaveSpeakerLinkSource]
     office_source: Optional[LeaveOfficeSource]
     sitting_id: int
+    speaker_id: Optional[int]
     speaker_name: Optional[str]
     start_date: Optional[date]
     end_date: Optional[date]
@@ -99,6 +100,7 @@ class CRUDLeavePeriodPrinting:
                 LeavePeriodPrinting.speaker_link_source,
                 LeavePeriodPrinting.office_source,
                 LeavePeriodPrinting.sitting_id,
+                LeavePeriodPrinting.speaker_id,
                 Speaker.name,
                 LeavePeriod.start_date,
                 LeavePeriod.end_date,

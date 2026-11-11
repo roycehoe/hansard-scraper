@@ -27,6 +27,7 @@ class SeatHoldingCheckRow:
     first_sitting_date: date
     last_sitting_date: date
     sitting_count: int
+    speaker_id: int
     speaker_name: str
 
 
@@ -80,6 +81,7 @@ class CRUDSeatHolding:
                 SeatHolding.first_sitting_date,
                 SeatHolding.last_sitting_date,
                 SeatHolding.sitting_count,
+                SeatHolding.speaker_id,
                 Speaker.name,
             )
             .join(Speaker, col(Speaker.id) == col(SeatHolding.speaker_id))
