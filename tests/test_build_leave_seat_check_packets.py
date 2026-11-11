@@ -287,6 +287,8 @@ def test_the_second_and_fourth_seat_plants_misspell_the_division_only() -> None:
     items = _build_items(_LARGE_GROUP_SIZE)
 
     group_draw = _draw_group(_SEED, "seat|2010", items)
+    division_key = _ITEM.division_key
+    assert division_key is not None
 
     assert len(group_draw.plants) == _PLANTS_AT_FIFTY
     for plant_index, plant in enumerate(group_draw.plants):
@@ -301,7 +303,7 @@ def test_the_second_and_fourth_seat_plants_misspell_the_division_only() -> None:
         assert plant.item.start_date == _ITEM.start_date
         assert plant.item.end_date == _ITEM.end_date
         assert plant.item.member == _ITEM.member
-        assert _ITEM.division_key in plant.note
+        assert division_key in plant.note
         assert misspelt_key in plant.note
 
 
