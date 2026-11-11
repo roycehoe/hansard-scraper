@@ -91,6 +91,22 @@ _PERIOD = "."
 _BOLD_MARKER = "**"
 _TABLE_CELL_SEPARATOR = "|"
 _SECTION_END_PREFIXES = ("#", "[")
+_EMPHASIS_MARKS = "_*"
+_YEARS_IN_CENTURY = 100
+_FULL_YEAR_DIGIT_COUNT = 4
+_TABLE_DATE_PATTERN = rf"\d{{1,2}}\s+{_MONTH_PATTERN}(?:\s+\d{{4}})?"
+_TABLE_ROW_RE = re.compile(
+    rf"^\s*(?:\|\s*)*(?:(?P<name>[^|]*?)\s*\|\s*)?(?P<from>{_TABLE_DATE_PATTERN})\s*\|\s*(?P<to>{_TABLE_DATE_PATTERN}|-+|–|—)\s*\|?\s*$",
+    re.IGNORECASE,
+)
+_TABLE_HEADING_YEAR_RE = re.compile(
+    r"\(?(\d{4})(?:/(\d{4}(?!\d)|\d{2}(?=\d{4}|\D|$)))?\)?"
+)
+_TABLE_HEADING_NOISE_RE = re.compile(r"[|\s]+")
+_TABLE_SPACER_RE = re.compile(r"^[|\s_]*$")
+_TABLE_HEADING_FRAGMENT_RE = re.compile(r"^\(?\d{4}(?:/\d{2,4})?\)?\s*\*{0,2}$")
+_TABLE_DATE_TOKEN_RE = re.compile(r"\b\d{1,2}\s+[A-Za-z]")
+_ONE_DAY_MARK_RE = re.compile(r"^(?:-+|–|—)$")
 
 
 def apply_leave_date_misprints(
@@ -406,14 +422,23 @@ def _get_range_dates(
         return None
 
 
+def _get_unchanged_text(
+    printed_line: str, reading_line: str, start: int, end: int
+) -> Optional[str]:
+    if printed_line[start:end] != reading_line[start:end]:
+        return None
+    return reading_line[start:end]
+
+
 def _get_printed_text(
     entry_parts: _ProseEntryParts, date_text_start: int, date_text_end: int
 ) -> Optional[str]:
-    start = entry_parts.date_text_offset + date_text_start
-    end = entry_parts.date_text_offset + date_text_end
-    if entry_parts.printed_line[start:end] != entry_parts.reading_line[start:end]:
-        return None
-    return entry_parts.reading_line[start:end]
+    return _get_unchanged_text(
+        entry_parts.printed_line,
+        entry_parts.reading_line,
+        entry_parts.date_text_offset + date_text_start,
+        entry_parts.date_text_offset + date_text_end,
+    )
 
 
 def _get_range_printing(
@@ -714,6 +739,242 @@ def _get_prose_printings(
     return [_UNREAD_PRINTING]
 
 
+@dataclass
+class _TableSection:
+    heading_text: str = ""
+    is_row_seen: bool = False
+    last_printed_name: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class _TableHeading:
+    printed_from: Optional[str]
+    printed_to: Optional[str]
+    years: list[int]
+
+
+@dataclass(frozen=True)
+class _TableRowName:
+    printed_name: Optional[str]
+    carried_name: Optional[str]
+    name_source: LeaveNameSource
+
+
+@dataclass(frozen=True)
+class _TableDateParts:
+    day: int
+    month: int
+    year: Optional[int]
+
+
+_NO_TABLE_ROW_NAME = _TableRowName(None, None, LeaveNameSource.NONE)
+
+
+def _add_table_heading_text(table_section: _TableSection, line: str) -> None:
+    if table_section.is_row_seen:
+        table_section.heading_text = ""
+        table_section.is_row_seen = False
+    table_section.heading_text += _TABLE_HEADING_NOISE_RE.sub("", line)
+
+
+def _get_table_heading_years(year_match: re.Match) -> list[int]:
+    first_year = int(year_match.group(1))
+    second_year_text = year_match.group(2)
+    if second_year_text is None:
+        return [first_year]
+    if len(second_year_text) == _FULL_YEAR_DIGIT_COUNT:
+        return [first_year, int(second_year_text)]
+    second_year = first_year // _YEARS_IN_CENTURY * _YEARS_IN_CENTURY + int(
+        second_year_text
+    )
+    if second_year < first_year:
+        second_year += _YEARS_IN_CENTURY
+    return [first_year, second_year]
+
+
+def _get_table_heading(heading_text: str) -> _TableHeading:
+    year_matches = list(_TABLE_HEADING_YEAR_RE.finditer(heading_text))[:2]
+    return _TableHeading(
+        printed_from=year_matches[0].group(0) if year_matches else None,
+        printed_to=year_matches[1].group(0) if len(year_matches) > 1 else None,
+        years=sorted(
+            {
+                year
+                for year_match in year_matches
+                for year in _get_table_heading_years(year_match)
+            }
+        ),
+    )
+
+
+def _take_table_row_name(
+    table_section: _TableSection, name: Optional[str]
+) -> _TableRowName:
+    if name:
+        table_section.last_printed_name = name
+        return _TableRowName(name, None, LeaveNameSource.PRINTED)
+    if table_section.last_printed_name is not None:
+        return _TableRowName(
+            None,
+            table_section.last_printed_name,
+            LeaveNameSource.CARRIED_FROM_ROW_ABOVE,
+        )
+    return _NO_TABLE_ROW_NAME
+
+
+def _get_table_date_parts(cell_text: str) -> _TableDateParts:
+    day_text, month_text, *year_texts = cell_text.split()
+    return _TableDateParts(
+        _get_day(day_text),
+        _get_month(month_text),
+        _get_printed_year(year_texts[0] if year_texts else None),
+    )
+
+
+def _get_table_printed_year_dates(
+    start: _TableDateParts, end: _TableDateParts
+) -> Optional[LeaveDates]:
+    if start.year is not None and end.year is not None:
+        return _get_range_dates(
+            start.day, start.month, start.year, end.day, end.month, end.year
+        )
+    year_step = int((end.month, end.day) < (start.month, start.day))
+    if start.year is not None:
+        return _get_range_dates(
+            start.day,
+            start.month,
+            start.year,
+            end.day,
+            end.month,
+            start.year + year_step,
+        )
+    if end.year is not None:
+        return _get_range_dates(
+            start.day,
+            start.month,
+            end.year - year_step,
+            end.day,
+            end.month,
+            end.year,
+        )
+    return None
+
+
+def _get_table_printing(
+    row_match: re.Match,
+    printed_line: str,
+    reading_line: str,
+    sitting_date: date,
+    heading_years: list[int],
+) -> _PrintingDates:
+    to_text = row_match.group("to")
+    start = _get_table_date_parts(row_match.group("from"))
+    end = start if _ONE_DAY_MARK_RE.match(to_text) else _get_table_date_parts(to_text)
+    if start.year is not None or end.year is not None:
+        leave_dates = _get_table_printed_year_dates(start, end)
+        year_source = LeaveYearSource.PRINTED_IN_ENTRY
+    else:
+        leave_dates = get_nearest_year_dates(
+            DayAndMonth(start.day, start.month),
+            DayAndMonth(end.day, end.month),
+            sitting_date,
+            heading_years or get_candidate_years(sitting_date),
+        )
+        year_source = (
+            LeaveYearSource.PRINTED_COLUMN_HEADING
+            if heading_years
+            else LeaveYearSource.NEAREST_TO_SITTING
+        )
+    if leave_dates is None:
+        return _UNREAD_PRINTING
+    return _PrintingDates(
+        LeaveEntryFormat.TABLE_ROW,
+        _get_unchanged_text(printed_line, reading_line, *row_match.span("from")),
+        _get_unchanged_text(printed_line, reading_line, *row_match.span("to")),
+        leave_dates,
+        year_source,
+    )
+
+
+def _build_table_entry(
+    ordinal: int,
+    printed_line: str,
+    row_name: _TableRowName,
+    heading: _TableHeading,
+    printing_dates: _PrintingDates,
+) -> LeaveEntry:
+    return LeaveEntry(
+        ordinal=ordinal,
+        printed_name=row_name.printed_name,
+        carried_name=row_name.carried_name,
+        printed_from=printing_dates.printed_from,
+        printed_to=printing_dates.printed_to,
+        printed_line=printed_line,
+        printed_heading_from=heading.printed_from,
+        printed_heading_to=heading.printed_to,
+        office_printed=None,
+        leave_dates=printing_dates.leave_dates,
+        end_text=None,
+        entry_format=printing_dates.entry_format,
+        name_source=row_name.name_source,
+        year_source=printing_dates.year_source,
+    )
+
+
+def _get_table_entries(
+    printed_line: str,
+    ordinal: int,
+    table_section: _TableSection,
+    sitting_date: date,
+    leave_date_misprints: list[LeaveDateMisprint],
+) -> Optional[list[LeaveEntry]]:
+    reading_line = apply_leave_date_misprints(printed_line, leave_date_misprints)
+    row_match = _TABLE_ROW_RE.match(reading_line)
+    if row_match is not None:
+        table_section.is_row_seen = True
+        heading = _get_table_heading(table_section.heading_text)
+        return [
+            _build_table_entry(
+                ordinal,
+                printed_line,
+                _take_table_row_name(table_section, row_match.group("name")),
+                heading,
+                _get_table_printing(
+                    row_match, printed_line, reading_line, sitting_date, heading.years
+                ),
+            )
+        ]
+    if _TABLE_HEADING_FRAGMENT_RE.match(printed_line):
+        _add_table_heading_text(table_section, printed_line)
+        return []
+    if _TABLE_CELL_SEPARATOR not in printed_line:
+        return None
+    if _TABLE_SPACER_RE.match(printed_line):
+        return []
+    first_cell = printed_line.strip(" |").split(_TABLE_CELL_SEPARATOR, 1)[0].strip()
+    title_free_cell = first_cell.lstrip(_EMPHASIS_MARKS)
+    if (
+        _TABLE_DATE_TOKEN_RE.search(reading_line) is None
+        and strip_title(title_free_cell) == title_free_cell
+    ):
+        _add_table_heading_text(table_section, printed_line)
+        return []
+    is_name_cell = bool(first_cell) and _DIGIT_RE.search(first_cell) is None
+    return [
+        _build_table_entry(
+            ordinal,
+            printed_line,
+            (
+                _take_table_row_name(table_section, first_cell)
+                if is_name_cell
+                else _NO_TABLE_ROW_NAME
+            ),
+            _get_table_heading(table_section.heading_text),
+            _UNREAD_PRINTING,
+        )
+    ]
+
+
 def build_leave_entries_from_markdown(
     markdown_content: str,
     sitting_date: date,
@@ -721,7 +982,18 @@ def build_leave_entries_from_markdown(
 ) -> list[LeaveEntry]:
     leave_entries: list[LeaveEntry] = []
     for section_lines in get_leave_sections(markdown_content):
+        table_section = _TableSection()
         for printed_line in section_lines:
+            table_entries = _get_table_entries(
+                printed_line,
+                len(leave_entries) + 1,
+                table_section,
+                sitting_date,
+                leave_date_misprints,
+            )
+            if table_entries is not None:
+                leave_entries.extend(table_entries)
+                continue
             entry_parts = _get_prose_entry_parts(printed_line, leave_date_misprints)
             for printing_dates in _get_prose_printings(entry_parts, sitting_date):
                 leave_entries.append(

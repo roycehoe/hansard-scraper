@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Optional
 
 import pytest
 
@@ -800,3 +801,363 @@ def test_a_duration_with_text_left_over_is_unread() -> None:
     )
 
     assert _get_formats(leave_entries) == [LeaveEntryFormat.UNREAD]
+
+
+_TABLE_SITTING_DATE = date(2006, 5, 3)
+
+
+def _get_names(
+    leave_entries: list[LeaveEntry],
+) -> list[tuple[Optional[str], Optional[str], LeaveNameSource]]:
+    return [
+        (leave_entry.printed_name, leave_entry.carried_name, leave_entry.name_source)
+        for leave_entry in leave_entries
+    ]
+
+
+def test_a_table_row_reads_its_dates_in_the_heading_year() -> None:
+    leave_entries = _build_entries(
+        "| (2006) | (2006)",
+        "Mr Zulkifli Baharudin| 26 Apr| 28 Apr",
+        "| 5 May| 11 May",
+        sitting_date=_TABLE_SITTING_DATE,
+    )
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.TABLE_ROW] * 2
+    assert [leave_entry.ordinal for leave_entry in leave_entries] == [1, 2]
+    assert _get_date_pairs(leave_entries) == [
+        (date(2006, 4, 26), date(2006, 4, 28)),
+        (date(2006, 5, 5), date(2006, 5, 11)),
+    ]
+    assert _get_names(leave_entries) == [
+        ("Mr Zulkifli Baharudin", None, LeaveNameSource.PRINTED),
+        (None, "Mr Zulkifli Baharudin", LeaveNameSource.CARRIED_FROM_ROW_ABOVE),
+    ]
+    first_entry = leave_entries[0]
+    assert first_entry.year_source == LeaveYearSource.PRINTED_COLUMN_HEADING
+    assert first_entry.printed_from == "26 Apr"
+    assert first_entry.printed_to == "28 Apr"
+    assert first_entry.printed_line == "Mr Zulkifli Baharudin| 26 Apr| 28 Apr"
+    assert first_entry.printed_heading_from == "(2006)"
+    assert first_entry.printed_heading_to == "(2006)"
+    assert first_entry.office_printed is None
+    assert first_entry.end_text is None
+
+
+def test_a_row_with_no_name_carries_the_name_above() -> None:
+    leave_entries = _build_entries(
+        "Mr Alvin Yeo | 11 Apr | 14 Apr",
+        "30 Apr | 06 May",
+        sitting_date=_TABLE_SITTING_DATE,
+    )
+
+    assert _get_names(leave_entries) == [
+        ("Mr Alvin Yeo", None, LeaveNameSource.PRINTED),
+        (None, "Mr Alvin Yeo", LeaveNameSource.CARRIED_FROM_ROW_ABOVE),
+    ]
+    assert _get_date_pairs(leave_entries)[1] == (date(2006, 4, 30), date(2006, 5, 6))
+
+
+def test_a_row_with_an_empty_first_cell_reads_the_name_after_it() -> None:
+    leave_entries = _build_entries(
+        "|  | Mr Goh Chok Tong| 30 Jan| 05 Feb", sitting_date=date(1998, 2, 2)
+    )
+
+    assert _get_names(leave_entries) == [
+        ("Mr Goh Chok Tong", None, LeaveNameSource.PRINTED)
+    ]
+    assert _get_date_pairs(leave_entries) == [(date(1998, 1, 30), date(1998, 2, 5))]
+    assert leave_entries[0].year_source == LeaveYearSource.NEAREST_TO_SITTING
+    assert leave_entries[0].printed_heading_from is None
+    assert leave_entries[0].printed_heading_to is None
+
+
+def test_a_row_with_no_name_above_has_no_name() -> None:
+    leave_entries = _build_entries("| 5 May| 11 May", sitting_date=_TABLE_SITTING_DATE)
+
+    assert _get_names(leave_entries) == [(None, None, LeaveNameSource.NONE)]
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.TABLE_ROW]
+
+
+def test_a_spacer_line_leaves_the_heading_and_the_carried_name() -> None:
+    leave_entries = _build_entries(
+        "| (2006) | (2006)",
+        "Mr A| 5 Jan| 9 Jan",
+        "|  |",
+        "| 12 Jan| 15 Jan",
+        sitting_date=date(2006, 1, 10),
+    )
+
+    assert [leave_entry.ordinal for leave_entry in leave_entries] == [1, 2]
+    second_entry = leave_entries[1]
+    assert second_entry.carried_name == "Mr A"
+    assert second_entry.year_source == LeaveYearSource.PRINTED_COLUMN_HEADING
+    assert second_entry.printed_heading_from == "(2006)"
+    assert second_entry.leave_dates == LeaveDates(date(2006, 1, 12), date(2006, 1, 15))
+
+
+def test_a_heading_split_over_three_lines_gives_its_years() -> None:
+    leave_entries = _build_entries(
+        "| **Name** | **From",
+        "(2006)** | **To",
+        "(2006) **",
+        "Mr A| 5 Jan| 9 Jan",
+        sitting_date=date(2006, 1, 10),
+    )
+
+    assert len(leave_entries) == 1
+    assert leave_entries[0].printed_heading_from == "(2006)"
+    assert leave_entries[0].printed_heading_to == "(2006)"
+    assert leave_entries[0].leave_dates == LeaveDates(
+        date(2006, 1, 5), date(2006, 1, 9)
+    )
+
+
+def test_a_pair_heading_split_over_two_lines_gives_both_years() -> None:
+    leave_entries = _build_entries(
+        "| **Name** | **From (2006/",
+        "2007)** | **To**",
+        "Mr A| 5 Jan| 9 Jan",
+        sitting_date=date(2007, 1, 8),
+    )
+
+    assert len(leave_entries) == 1
+    assert leave_entries[0].printed_heading_from == "(2006/2007)"
+    assert leave_entries[0].printed_heading_to is None
+    assert leave_entries[0].leave_dates == LeaveDates(
+        date(2007, 1, 5), date(2007, 1, 9)
+    )
+
+
+def test_a_bare_heading_year_is_read() -> None:
+    leave_entries = _build_entries(
+        "| 1998| 1998", "Mr A| 5 Jan| 9 Jan", sitting_date=date(1998, 1, 14)
+    )
+
+    assert leave_entries[0].printed_heading_from == "1998"
+    assert leave_entries[0].printed_heading_to == "1998"
+    assert leave_entries[0].leave_dates == LeaveDates(
+        date(1998, 1, 5), date(1998, 1, 9)
+    )
+
+
+def test_a_two_digit_second_heading_year_takes_the_century() -> None:
+    leave_entries = _build_entries(
+        "| 1997/98| 1997/98", "Mr A| 5 Jan| 9 Jan", sitting_date=date(1998, 1, 14)
+    )
+
+    assert leave_entries[0].printed_heading_from == "1997/98"
+    assert leave_entries[0].printed_heading_to == "1997/98"
+    assert leave_entries[0].leave_dates == LeaveDates(
+        date(1998, 1, 5), date(1998, 1, 9)
+    )
+
+
+def test_a_pair_heading_across_a_century_reads_the_next_century() -> None:
+    leave_entries = _build_entries(
+        "| 1999/00| 1999/00", "Mr A| 5 Jan| 9 Jan", sitting_date=date(2000, 1, 14)
+    )
+
+    assert leave_entries[0].leave_dates == LeaveDates(
+        date(2000, 1, 5), date(2000, 1, 9)
+    )
+
+
+def test_a_new_year_row_under_a_pair_heading_ends_in_the_next_year() -> None:
+    leave_entries = _build_entries(
+        "| 1997/98| 1997/98", "Mr A| 30 Dec| 3 Jan", sitting_date=date(1998, 1, 1)
+    )
+
+    assert leave_entries[0].leave_dates == LeaveDates(
+        date(1997, 12, 30), date(1998, 1, 3)
+    )
+
+
+def test_a_dash_in_the_to_column_is_one_day() -> None:
+    leave_entries = _build_entries(
+        "| 2006| 2006", "Mr A| 5 Jan| -", sitting_date=date(2006, 1, 5)
+    )
+
+    assert leave_entries[0].leave_dates == LeaveDates(
+        date(2006, 1, 5), date(2006, 1, 5)
+    )
+    assert leave_entries[0].printed_to == "-"
+
+
+def test_a_repeated_heading_after_a_page_break_replaces_the_old_one() -> None:
+    leave_entries = _build_entries(
+        "| 2006| 2006",
+        "Mr A| 5 Jan| 9 Jan",
+        "| 2007| 2007",
+        "| 12 Jan| 15 Jan",
+        sitting_date=date(2007, 1, 10),
+    )
+
+    second_entry = leave_entries[1]
+    assert second_entry.carried_name == "Mr A"
+    assert second_entry.printed_heading_from == "2007"
+    assert second_entry.leave_dates == LeaveDates(date(2007, 1, 12), date(2007, 1, 15))
+
+
+def test_a_cell_that_prints_its_year_is_read_with_that_year() -> None:
+    leave_entries = _build_entries(
+        "| 1990| 1990",
+        "Mr A| 5 Jan 1998| 9 Jan 1998",
+        "Mr B| 28 Dec 1997| 2 Jan",
+        "Mr C| 28 Dec| 2 Jan 1998",
+        sitting_date=date(1998, 1, 1),
+    )
+
+    assert _get_date_pairs(leave_entries) == [
+        (date(1998, 1, 5), date(1998, 1, 9)),
+        (date(1997, 12, 28), date(1998, 1, 2)),
+        (date(1997, 12, 28), date(1998, 1, 2)),
+    ]
+    assert {leave_entry.year_source for leave_entry in leave_entries} == {
+        LeaveYearSource.PRINTED_IN_ENTRY
+    }
+
+
+def test_a_row_with_a_day_its_month_lacks_is_unread_with_its_name() -> None:
+    leave_entries = _build_entries(
+        "| 2006| 2006", "Mr X| 31 Apr| 31 Apr", sitting_date=_TABLE_SITTING_DATE
+    )
+
+    assert len(leave_entries) == 1
+    leave_entry = leave_entries[0]
+    assert leave_entry.entry_format == LeaveEntryFormat.UNREAD
+    assert leave_entry.printed_name == "Mr X"
+    assert leave_entry.leave_dates is None
+    assert leave_entry.year_source is None
+    assert leave_entry.printed_from is None
+    assert leave_entry.printed_to is None
+    assert leave_entry.printed_line == "Mr X| 31 Apr| 31 Apr"
+
+
+def test_a_row_with_one_date_is_unread_and_the_next_row_keeps_the_heading() -> None:
+    leave_entries = _build_entries(
+        "| 2006| 2006",
+        "Mr C| 12 May|",
+        "| 15 May| 17 May",
+        sitting_date=_TABLE_SITTING_DATE,
+    )
+
+    assert _get_formats(leave_entries) == [
+        LeaveEntryFormat.UNREAD,
+        LeaveEntryFormat.TABLE_ROW,
+    ]
+    assert _get_names(leave_entries) == [
+        ("Mr C", None, LeaveNameSource.PRINTED),
+        (None, "Mr C", LeaveNameSource.CARRIED_FROM_ROW_ABOVE),
+    ]
+    assert leave_entries[1].year_source == LeaveYearSource.PRINTED_COLUMN_HEADING
+    assert leave_entries[0].printed_heading_from == "2006"
+
+
+def test_a_single_cell_row_with_a_digit_is_unread_with_no_name() -> None:
+    leave_entries = _build_entries(
+        "| 2002| 2002",
+        "Mr A| 5 Oct| 6 Oct",
+        "| _Mr Seng Han Thong 29 Sep 9 Oct_",
+        "| 10 Oct| 11 Oct",
+        sitting_date=date(2002, 10, 1),
+    )
+
+    assert _get_formats(leave_entries) == [
+        LeaveEntryFormat.TABLE_ROW,
+        LeaveEntryFormat.UNREAD,
+        LeaveEntryFormat.TABLE_ROW,
+    ]
+    assert _get_names(leave_entries)[1] == (None, None, LeaveNameSource.NONE)
+    assert leave_entries[1].printed_line == "| _Mr Seng Han Thong 29 Sep 9 Oct_"
+    assert leave_entries[2].carried_name == "Mr A"
+
+
+def test_an_italic_one_cell_entry_is_unread_and_the_rows_around_it_are_unchanged() -> (
+    None
+):
+    line = "| _Mr Lee Kuan Yew (Tanjong Pagar), Prime Minister - on 8th April, 1969._"
+    leave_entries = _build_entries(
+        "| 1969| 1969",
+        "Mr A| 5 Apr| 9 Apr",
+        line,
+        "| 10 Apr| 12 Apr",
+        sitting_date=date(1969, 4, 8),
+    )
+
+    assert _get_formats(leave_entries) == [
+        LeaveEntryFormat.TABLE_ROW,
+        LeaveEntryFormat.UNREAD,
+        LeaveEntryFormat.TABLE_ROW,
+    ]
+    unread_entry = leave_entries[1]
+    assert unread_entry.printed_line == line
+    assert unread_entry.name_source == LeaveNameSource.NONE
+    assert unread_entry.printed_name is None
+    assert leave_entries[2].carried_name == "Mr A"
+    assert leave_entries[2].printed_heading_from == "1969"
+    assert leave_entries[2].leave_dates == LeaveDates(
+        date(1969, 4, 10), date(1969, 4, 12)
+    )
+
+
+def test_unread_rows_with_a_name_cell_give_that_name_to_the_next_blank_row() -> None:
+    leave_entries = _build_entries(
+        "| 2006| 2006",
+        "Mr G| |",
+        "Mr H| 26Apr| 28Apr",
+        "| 5 May| 11 May",
+        sitting_date=_TABLE_SITTING_DATE,
+    )
+
+    assert _get_formats(leave_entries) == [
+        LeaveEntryFormat.UNREAD,
+        LeaveEntryFormat.UNREAD,
+        LeaveEntryFormat.TABLE_ROW,
+    ]
+    assert _get_names(leave_entries) == [
+        ("Mr G", None, LeaveNameSource.PRINTED),
+        ("Mr H", None, LeaveNameSource.PRINTED),
+        (None, "Mr H", LeaveNameSource.CARRIED_FROM_ROW_ABOVE),
+    ]
+    assert leave_entries[2].year_source == LeaveYearSource.PRINTED_COLUMN_HEADING
+
+
+def test_a_table_row_is_read_after_the_misprint_list_and_keeps_the_print() -> None:
+    line = "Mr B| 7 Septmber| 9 September"
+    leave_entries = _build_entries("| 1977| 1977", line, sitting_date=date(1977, 9, 8))
+
+    assert leave_entries[0].leave_dates == LeaveDates(
+        date(1977, 9, 7), date(1977, 9, 9)
+    )
+    assert leave_entries[0].printed_line == line
+    assert leave_entries[0].printed_from is None
+    assert leave_entries[0].printed_to is None
+
+
+def test_a_table_name_keeps_its_title_and_bracketed_words() -> None:
+    leave_entries = _build_entries(
+        "RAdm (NS) Lui Tuck Yew| 05 Dec| 14 Dec", sitting_date=date(2006, 12, 6)
+    )
+
+    assert leave_entries[0].printed_name == "RAdm (NS) Lui Tuck Yew"
+    assert leave_entries[0].leave_dates == LeaveDates(
+        date(2006, 12, 5), date(2006, 12, 14)
+    )
+
+
+def test_table_rows_and_prose_lines_share_one_run_of_ordinals() -> None:
+    leave_entries = _build_entries(
+        "Mr X - from 3rd to 5th March, 1990.",
+        "|  |",
+        "Mr A| 5 Mar| 9 Mar",
+        "| 12 Mar| 15 Mar",
+        sitting_date=date(1990, 3, 8),
+    )
+
+    assert _get_formats(leave_entries) == [
+        LeaveEntryFormat.PROSE_RANGE,
+        LeaveEntryFormat.TABLE_ROW,
+        LeaveEntryFormat.TABLE_ROW,
+    ]
+    assert [leave_entry.ordinal for leave_entry in leave_entries] == [1, 2, 3]
