@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from enums import DivisionListStatus, DivisionVoteChoice
 from services.minutes_division import (
     MinutesTextDivisions,
@@ -117,6 +119,35 @@ def test_a_name_moved_across_a_column_gives_no_vote_rows() -> None:
     assert moved_divisions[0].printed_list is not None
     assert moved_divisions[1].list_status == DivisionListStatus.STORED
     assert len(moved_divisions[1].names) == _NAME_COUNT_75_11_2
+
+
+@pytest.mark.parametrize(
+    "printed_counts",
+    [
+        "Ayes 3, Noes 2, Abstentions 2",
+        "Ayes 2, Noes 3, Abstentions 2",
+        "Ayes 2, Noes 2, Abstentions 3",
+    ],
+)
+def test_one_side_short_of_a_name_gives_counts_disagree_and_no_names(
+    printed_counts: str,
+) -> None:
+    text = "\n".join(
+        [
+            f"On Question put, a division was taken: {printed_counts}.",
+            "",
+            _HEADER,
+            "",
+            "     Aa Bb          Cc Dd          Ee Ff",
+            "     Gg Hh          Ii Jj          Kk Ll",
+        ]
+    )
+
+    division = _get_single_division(text)
+
+    assert division.list_status == DivisionListStatus.COUNTS_DISAGREE
+    assert division.names == []
+    assert division.printed_list is not None
 
 
 def test_a_division_opening_with_no_readable_counts_is_flagged() -> None:
