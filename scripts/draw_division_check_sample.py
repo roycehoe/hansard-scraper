@@ -24,6 +24,7 @@ from crud.speech import CRUDSpeech, SpeechParseRow
 from database.division import Division
 from database.init import build_read_only_engine
 from database.minutes import Minutes
+from database.minutes_division import MinutesDivision
 from enums import (
     DivisionCheckPlantKind,
     DivisionCheckRule,
@@ -31,12 +32,14 @@ from enums import (
     DivisionListStatus,
     DivisionVoteListSource,
     DivisionVoteNameRule,
+    MinutesDivisionPairing,
     MinutesIndexSource,
     MinutesStatus,
 )
 from exceptions import HansardDivisionCheckError
 from logs import logger
 from populate.divisions import get_decade_label
+from populate.minutes_divisions import get_pairable_hansard_divisions
 from schemas.division_check_sample import (
     DivisionCheckCandidate,
     DivisionCheckKey,
@@ -44,6 +47,7 @@ from schemas.division_check_sample import (
     DivisionCheckPlant,
 )
 from services.division import get_report_divisions
+from services.division_pairing import PairableHansardDivision
 from services.minutes_index import (
     MinutesIndexRow,
     parse_archive_index_page,
@@ -84,6 +88,7 @@ _SOURCE_SPANS_MARKER = "; spans: "
 _SOURCE_SPAN_SEPARATOR = "; "
 _SOURCE_SPAN_PARTY_PATTERN = re.compile(r"^(.*) from \d{4}-\d{2}-\d{2} \(")
 _NO_PAIRED_DIVISION_CLAIM = "no Hansard division paired"
+_THIS_DIVISION_MARK = " (this one)"
 _DIGIT_BASE = 10
 
 
@@ -356,54 +361,102 @@ def _get_minutes_side_candidates(
     ]
 
 
+def _get_pairing_claim(
+    pairing: MinutesDivisionPairing,
+    division_id: int,
+    hansard_division_ids: list[int],
+) -> str:
+    if division_id in hansard_division_ids:
+        return f"pairing {pairing}, Hansard division {hansard_division_ids.index(division_id) + 1}"
+    return f"pairing {pairing}, {_NO_PAIRED_DIVISION_CLAIM}"
+
+
 def _get_pairing_candidates(
     session: Session, stored_minutes: list[Minutes]
 ) -> list[DivisionCheckCandidate]:
     minutes_id_to_minutes = {minutes.id: minutes for minutes in stored_minutes}
     minutes_divisions = CRUDMinutesDivision(session).get_all()
-    sitting_date_to_hansard_divisions: defaultdict[date, list[Division]] = defaultdict(
-        list
+    sitting_dates = sorted(
+        {
+            minutes_id_to_minutes[minutes_division.minutes_id].sitting_date
+            for minutes_division in minutes_divisions
+        }
     )
-    for hansard_division in CRUDDivision(
-        session
-    ).get_by_sitting_dates_and_sprs_report_id_not_null(
-        sorted(
-            {
-                minutes_id_to_minutes[minutes_division.minutes_id].sitting_date
-                for minutes_division in minutes_divisions
-            }
+    pairable_hansard_divisions = sorted(
+        get_pairable_hansard_divisions(session, sitting_dates),
+        key=lambda hansard_division: (
+            hansard_division.sitting_date,
+            hansard_division.speech_number,
+            hansard_division.speech_ordinal,
+        ),
+    )
+    division_id_to_printed_counts = {
+        division.id: division.printed_counts
+        for division in CRUDDivision(
+            session
+        ).get_by_sitting_dates_and_sprs_report_id_not_null(sitting_dates)
+    }
+    sprs_report_id_to_title = {
+        title_row.report_id: title_row.title
+        for title_row in CRUDReport(session).get_title_rows_by_report_ids(
+            sorted(
+                {
+                    hansard_division.sprs_report_id
+                    for hansard_division in pairable_hansard_divisions
+                }
+            )
         )
-    ):
+    }
+    sitting_date_to_hansard_divisions: defaultdict[
+        date, list[PairableHansardDivision]
+    ] = defaultdict(list)
+    for hansard_division in pairable_hansard_divisions:
         sitting_date_to_hansard_divisions[hansard_division.sitting_date].append(
             hansard_division
         )
+    sitting_date_to_minutes_divisions: defaultdict[
+        date, list[MinutesDivision]
+    ] = defaultdict(list)
+    for minutes_division in sorted(
+        minutes_divisions, key=lambda minutes_division: minutes_division.ordinal
+    ):
+        sitting_date_to_minutes_divisions[
+            minutes_id_to_minutes[minutes_division.minutes_id].sitting_date
+        ].append(minutes_division)
     candidates: list[DivisionCheckCandidate] = []
     for minutes_division in minutes_divisions:
         minutes = minutes_id_to_minutes[minutes_division.minutes_id]
         hansard_divisions = sitting_date_to_hansard_divisions[minutes.sitting_date]
-        hansard_division_ids = [
-            hansard_division.id for hansard_division in hansard_divisions
-        ]
-        pairing_claim = f"pairing {minutes_division.pairing}, no Hansard division paired"
-        if minutes_division.division_id in hansard_division_ids:
-            pairing_claim = f"pairing {minutes_division.pairing}, Hansard division {hansard_division_ids.index(minutes_division.division_id) + 1}"
         candidates.append(
             DivisionCheckCandidate(
                 rule=DivisionCheckRule.PAIRING,
                 group=_get_group(minutes.sitting_date, _get_file_format_label(minutes)),
                 source_text=_LINE_SEPARATOR.join(
                     [
-                        f"Minutes of {minutes.sitting_date}: {minutes_division.printed_counts}",
-                        "Hansard divisions of the date:",
+                        f"Minutes of {minutes.sitting_date}, divisions in order:",
                         *[
-                            f"{number}. {hansard_division.printed_counts}"
+                            f"Minutes division {date_minutes_division.ordinal}{_THIS_DIVISION_MARK if date_minutes_division.ordinal == minutes_division.ordinal else ''}: {date_minutes_division.printed_counts}"
+                            for date_minutes_division in sitting_date_to_minutes_divisions[
+                                minutes.sitting_date
+                            ]
+                        ],
+                        "Hansard divisions of the date, in order of report speech number and row:",
+                        *[
+                            f"{number}. {division_id_to_printed_counts[hansard_division.division_id]} ({sprs_report_id_to_title[hansard_division.sprs_report_id]}, speech {hansard_division.speech_number}, row {hansard_division.speech_ordinal})"
                             for number, hansard_division in enumerate(
                                 hansard_divisions, 1
                             )
                         ],
                     ]
                 ),
-                data_claim=pairing_claim,
+                data_claim=_get_pairing_claim(
+                    minutes_division.pairing,
+                    minutes_division.division_id,
+                    [
+                        hansard_division.division_id
+                        for hansard_division in hansard_divisions
+                    ],
+                ),
                 database_key=f"minutes_division:{minutes_division.id}",
             )
         )

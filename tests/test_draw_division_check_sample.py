@@ -703,6 +703,87 @@ def test_the_index_row_source_is_the_capture_and_the_claim_is_the_stored_row(
     assert "Stale label" in candidate.data_claim
 
 
+def _add_division_on_report(
+    session: Session, report_id: str, speech_number: int, title: str
+) -> Division:
+    report = add_division_report(
+        session, report_id, _SITTING_DATETIME, _PARLIAMENT_NUMBER
+    )
+    report.speech_number = speech_number
+    report.title = title
+    division = Division(
+        sitting_date=_SITTING_DATE,
+        parliament_number=_PARLIAMENT_NUMBER,
+        report_division_number=1,
+        speech_ordinal=1,
+        count_source=DivisionCountSource.PRINTED_LINE,
+        printed_counts=_MERGE_LINE,
+        ayes=_AYES,
+        noes=_NOES,
+        list_status=DivisionListStatus.NOT_PRINTED,
+        sprs_report_id=report_id,
+    )
+    session.add(division)
+    session.flush()
+    return division
+
+
+def test_the_pairing_frame_lists_the_date_in_the_order_the_rule_pairs(
+    scratch_session: Session,
+) -> None:
+    later_division = _add_division_on_report(
+        scratch_session, "pairing-later", 5, "Later debate"
+    )
+    earlier_division = _add_division_on_report(
+        scratch_session, "pairing-earlier", 2, "Earlier debate"
+    )
+    minutes = Minutes(
+        sitting_date=_SITTING_DATE,
+        file_format=MinutesFileFormat.PDF,
+        status=MinutesStatus.TEXT_STORED,
+    )
+    scratch_session.add(minutes)
+    scratch_session.flush()
+    assert minutes.id is not None
+    scratch_session.add_all(
+        MinutesDivision(
+            ordinal=ordinal,
+            printed_counts=f"Minutes counts {ordinal}",
+            ayes=_AYES,
+            noes=_NOES,
+            list_status=DivisionListStatus.NOT_PRINTED,
+            pairing=MinutesDivisionPairing.PAIRED,
+            minutes_id=minutes.id,
+            division_id=division.id,
+        )
+        for ordinal, division in ((1, earlier_division), (2, later_division))
+    )
+    scratch_session.flush()
+
+    candidates = draw_division_check_sample_script.get_division_check_candidates(
+        scratch_session, DivisionCheckRule.PAIRING
+    )
+
+    first_candidate = next(
+        candidate
+        for candidate in candidates
+        if candidate.source_text.count("(this one): Minutes counts 1") == 1
+    )
+    assert first_candidate.source_text.split("\n") == [
+        "Minutes of 2021-10-04, divisions in order:",
+        "Minutes division 1 (this one): Minutes counts 1",
+        "Minutes division 2: Minutes counts 2",
+        "Hansard divisions of the date, in order of report speech number and row:",
+        f"1. {_MERGE_LINE} (Earlier debate, speech 2, row 1)",
+        f"2. {_MERGE_LINE} (Later debate, speech 5, row 1)",
+    ]
+    assert first_candidate.data_claim == "pairing PAIRED, Hansard division 1"
+    assert {candidate.data_claim for candidate in candidates} == {
+        "pairing PAIRED, Hansard division 1",
+        "pairing PAIRED, Hansard division 2",
+    }
+
+
 def test_an_index_row_the_capture_does_not_print_is_refused(
     scratch_session: Session,
 ) -> None:
