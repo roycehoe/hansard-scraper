@@ -1,4 +1,5 @@
 import json
+from collections import Counter
 from datetime import date
 from types import SimpleNamespace
 from typing import Optional
@@ -594,7 +595,9 @@ def test_an_office_printed_on_the_entry_comes_before_the_attendance_entry(
     ]
     monkeypatch.setattr(
         "populate.leave_periods._get_leave_entries",
-        lambda sitting_leave_text_row, sitting_date: older_entries,
+        lambda sitting_leave_text_row,
+        sitting_date,
+        leave_date_misprints: older_entries,
     )
 
     apply_leave_periods(is_commit=True)
@@ -609,3 +612,76 @@ def test_an_office_printed_on_the_entry_comes_before_the_attendance_entry(
         (_OFFICE_PRINTED, LeaveOfficeSource.ATTENDANCE_LIST),
         (_UNLINKED_ENTRY_OFFICE_PRINTED, LeaveOfficeSource.PRINTED_ON_ENTRY),
     ]
+
+
+_OLDER_SITTING_ID = 2
+_OLDER_UNREAD_LINE = "Mr Garbled - nothing to read here"
+_OLDER_MARKDOWN = "\n".join(
+    [
+        "Permission to Members to be Absent",
+        "Mr Lee Hsien Loong (Ang Mo Kio), Prime Minister - from 5th to 7th March, 1970.",
+        _OLDER_UNREAD_LINE,
+    ]
+)
+
+
+def _seed_markdown_and_list_sittings(session: Session) -> None:
+    session.add_all(
+        [
+            _build_sitting(1, "6-3-2020", _build_permission_list("Mr Lee Hsien Loong")),
+            Sitting(
+                id=_OLDER_SITTING_ID,
+                sitting_date="6-3-1970",
+                parlement_no=_PARLIAMENT_NUMBER,
+                markdown_content=_OLDER_MARKDOWN,
+            ),
+        ]
+    )
+    session.commit()
+
+
+def test_a_markdown_sitting_and_a_list_sitting_are_planned_in_one_commit(
+    scratch_session: Session, log_recorder: _LogRecorder
+) -> None:
+    _seed_markdown_and_list_sittings(scratch_session)
+
+    apply_leave_periods(is_commit=True)
+
+    printings = scratch_session.exec(select(LeavePeriodPrinting)).all()
+    assert Counter(printing.entry_format for printing in printings) == {
+        LeaveEntryFormat.STRUCTURED_LIST: 1,
+        LeaveEntryFormat.PROSE_RANGE: 1,
+        LeaveEntryFormat.UNREAD: 1,
+    }
+    range_printing = next(
+        printing
+        for printing in printings
+        if printing.entry_format == LeaveEntryFormat.PROSE_RANGE
+    )
+    assert range_printing.sitting_id == _OLDER_SITTING_ID
+    assert range_printing.office_printed == _OFFICE_PRINTED
+    assert range_printing.office_source == LeaveOfficeSource.PRINTED_ON_ENTRY
+
+
+def test_an_unread_line_is_stored_with_its_printed_line_and_no_dates(
+    scratch_session: Session, log_recorder: _LogRecorder
+) -> None:
+    _seed_markdown_and_list_sittings(scratch_session)
+
+    apply_leave_periods(is_commit=True)
+
+    unread_printing = scratch_session.exec(
+        select(LeavePeriodPrinting).where(
+            LeavePeriodPrinting.entry_format == LeaveEntryFormat.UNREAD
+        )
+    ).one()
+    unread_period = scratch_session.get(LeavePeriod, unread_printing.leave_period_id)
+    assert unread_printing.printed_line == _OLDER_UNREAD_LINE
+    assert unread_printing.printed_name is None
+    assert unread_printing.name_source == LeaveNameSource.NONE
+    assert unread_printing.year_source is None
+    assert unread_printing.is_covering_sitting is None
+    assert unread_period is not None
+    assert unread_period.start_date is None
+    assert unread_period.end_date is None
+    assert unread_period.period_key == f"entry|{_OLDER_SITTING_ID}|2"
