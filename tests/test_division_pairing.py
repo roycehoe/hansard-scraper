@@ -76,6 +76,19 @@ def test_unequal_numbers_pair_nothing_and_name_both_sides() -> None:
     assert [pairing.hansard_division_ids for pairing in pairings] == [(10,), (10,)]
 
 
+def test_different_counts_on_one_date_do_not_pair() -> None:
+    pairings = get_division_pairs(
+        [_hansard(10, 1, 70, 10)],
+        [_minutes(1, 70, 11), _minutes(2, 71, 10)],
+    )
+
+    assert [pairing.pairing for pairing in pairings] == [
+        MinutesDivisionPairing.NO_MATCHING_DIVISION
+    ] * 2
+    assert [pairing.division_id for pairing in pairings] == [None, None]
+    assert [pairing.hansard_division_ids for pairing in pairings] == [(), ()]
+
+
 def test_a_tie_on_speech_number_between_reports_is_tied() -> None:
     pairings = get_division_pairs(
         [
