@@ -18,6 +18,10 @@ erDiagram
     speaker ||--o{ partyaffiliation : "speaker_id"
     speaker |o--o{ report_asker : "speaker_id"
     speaker |o--o{ report_participant : "speaker_id"
+    sitting ||--o{ leave_period_printing : "sitting_id"
+    leave_period ||--o{ leave_period_printing : "leave_period_id"
+    speaker |o--o{ leave_period_printing : "speaker_id"
+    speaker ||--o{ seat_holding : "speaker_id"
     person |o--o{ speaker : "person_id"
     person ||--o{ personnamespelling : "person_id"
     attendance ||--o| attendance_office : "attendance_id"
@@ -152,6 +156,30 @@ erDiagram
         int id PK
         int ministry_id FK
         int see_also_ministry_id FK "unique with ministry_id"
+    }
+
+    leave_period {
+        int id PK
+        varchar period_key UK
+        varchar name
+        date start_date
+        date end_date
+    }
+
+    leave_period_printing {
+        int id PK
+        int sitting_id FK "unique with ordinal"
+        int leave_period_id FK
+        int speaker_id FK "null when the name links to no Member"
+        leaveentryformat entry_format
+    }
+
+    seat_holding {
+        int id PK
+        int speaker_id FK "unique with division_key"
+        varchar division_key
+        date first_sitting_date
+        date last_sitting_date
     }
 
     refresh_run {

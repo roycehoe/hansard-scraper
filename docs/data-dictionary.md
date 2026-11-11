@@ -214,6 +214,57 @@ One row per download link in a report's raw HTML, numbered in reading order. The
 | `sprs_report_id` | str | FK → `Report.report_id`. |
 | `attached_file_id` | int | FK → `AttachedFile.id`. Set when exactly one stored file has the pointer's `download_value`, otherwise `NULL`. |
 
+### LeavePeriod
+
+One row per leave period. The permission list prints a leave again at every sitting it covers, so a period holds many printings. A printing with a name and a start date joins the period with the same name (spacing and case folded), start date and end date. A printing with no name or no start date is a period of its own.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `period_key` | str | Unique. The folded name, the start date and the end date, or `entry|sitting id|ordinal` for a printing with no name or no start date. |
+| `name` | str | The name of the first printing of the period: the printed name, or the name carried from the row above. NULL when the printing has none. |
+| `start_date` | date | The first day of the leave. NULL when the entry's dates were not read. |
+| `end_date` | date | The last day of the leave. NULL for an entry that gives no end ("Till further notice" and a start date with no end) and when the dates were not read. |
+| `end_text` | str | The words the structured list prints in place of an end date ("Till further notice"). Never read as a date. NULL in the older sections. |
+
+### LeavePeriodPrinting
+
+One row per date a permission entry prints at a sitting. A line that prints three dates makes three rows. Sittings from 10 September 2012 take their rows from the structured permission list (`Sitting.ptba_list`). Earlier sittings take them from the permission section of `Sitting.markdown_content`, read by `services/leave_section.py`.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `ordinal` | int | Order of the printing in its sitting, counted by printing and not by line. Unique with `sitting_id`. |
+| `sitting_date` | date | The date of the sitting that printed the entry. |
+| `printed_name` | str | The name as printed, with its title, up to the constituency bracket. NULL for a printed blank and for a line whose name cannot be trusted. |
+| `carried_name` | str | The printed name of the nearest named row above, for a row with a blank name. Never set beside `printed_name`. |
+| `printed_from` | str | The words the date reader read for the start, after the misprint list of `data/leave_date_misprints.json`. In the older sections it is NULL where the misprint list changed those words, and for an `UNREAD` entry. For a single day or a day list it holds the matched day item and `printed_to` is NULL, and for a duration or an entry with a start only it holds the start date's words. |
+| `printed_to` | str | The words the date reader read for the end, on the same terms as `printed_from`. A dash in the To column of a table is kept as printed. |
+| `printed_line` | str | The whole line of an older section as printed, with wrapped lines joined by one space. NULL for the structured list. |
+| `printed_heading_from` | str | The heading printed over the From column: the structured list's heading, or the first year group of a table heading in the older sections. NULL elsewhere. |
+| `printed_heading_to` | str | The heading over the To column, on the same terms. |
+| `office_printed` | str | The office as printed. See `office_source`. It is the office at the sitting that printed the list, which may differ from the office held during the leave. |
+| `entry_format` | LeaveEntryFormat | `STRUCTURED_LIST`, `PROSE_RANGE`, `PROSE_SINGLE_DAY`, `PROSE_DAY_LIST`, `PROSE_DURATION`, `PROSE_MIXED`, `TABLE_ROW`, or `UNREAD` for an entry no rule reads. |
+| `name_source` | LeaveNameSource | `PRINTED`, `CARRIED_FROM_ROW_ABOVE` or `NONE`. |
+| `year_source` | LeaveYearSource | `NEAREST_TO_SITTING` for a printed day and month placed in the year nearest the sitting, `PRINTED_IN_ENTRY` for a year the entry prints, `PRINTED_COLUMN_HEADING` for a table row placed in a year of its heading. NULL when no dates were read. |
+| `speaker_link_source` | LeaveSpeakerLinkSource | `ROSTER_NAME` for a name that equals a roster name of the sitting's Parliament once the title is dropped, or `SITTING_ATTENDANCE_ENTRY` for a name the sitting's attendance entries give to one Member. NULL when no link was made. |
+| `office_source` | LeaveOfficeSource | `PRINTED_ON_ENTRY` for an office the entry's own line prints, `ATTENDANCE_LIST` for the office the sitting's attendance entry prints for the linked Member. NULL when none. |
+| `is_covering_sitting` | bool | Whether the printing's dates cover its own sitting date. NULL when no start date was read. |
+| `sitting_id` | int | FK → `Sitting.id`. |
+| `leave_period_id` | int | FK → `LeavePeriod.id`. |
+| `speaker_id` | int | FK → `Speaker.id`. NULL when no link was made. |
+
+### SeatHolding
+
+One row per Member and division, built from the attendance rows that have a `speaker_id` and a constituency label. The labels `Nominated Member`, `Nominated`, `Non-Constituency Member`, `ex-officio` and `Acting` are seat types and make no row. The dates bound the Member's sittings in the division. They do not show an unbroken term, and `sitting_count` counts the sittings in between.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `division_key` | str | The label folded: separators to one space, a trailing GRC or SMC dropped, lower case. Unique with `speaker_id`. |
+| `location_name` | str | The label as printed at the Member's first sitting in the division. |
+| `first_sitting_date` | date | The Member's first sitting with this division. |
+| `last_sitting_date` | date | The Member's last sitting with this division. |
+| `sitting_count` | int | The number of distinct sittings with this division. |
+| `speaker_id` | int | FK → `Speaker.id`. |
+
 ---
 
 ## Report types
