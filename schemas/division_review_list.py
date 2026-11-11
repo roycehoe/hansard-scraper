@@ -31,6 +31,14 @@ class DivisionListStatusCount(BaseModel):
     division_count: int
 
 
+class MinutesListStatusCount(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    decade: str
+    list_status: DivisionListStatus
+    minutes_division_count: int
+
+
 class MinutesDivisionPairingCount(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -44,4 +52,5 @@ class DivisionReviewList(BaseModel):
     items: list[DivisionReviewItem]
     kind_to_count: dict[DivisionReviewItemKind, int]
     list_status_counts: list[DivisionListStatusCount]
+    minutes_list_status_counts: list[MinutesListStatusCount]
     pairing_counts: list[MinutesDivisionPairingCount]

@@ -79,8 +79,12 @@ class CRUDDivision:
         )
         return list(self.session.exec(statement).all())
 
-    def get_list_status_rows(self) -> list[DivisionListStatusRow]:
-        statement = select(Division.sitting_date, Division.list_status)
+    def get_list_status_rows_by_sprs_report_id_not_null(
+        self,
+    ) -> list[DivisionListStatusRow]:
+        statement = select(Division.sitting_date, Division.list_status).where(
+            col(Division.sprs_report_id).is_not(None)
+        )
         return [
             DivisionListStatusRow(*row) for row in self.session.exec(statement).all()
         ]

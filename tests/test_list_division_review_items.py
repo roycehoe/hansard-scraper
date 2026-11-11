@@ -534,6 +534,39 @@ def test_a_stale_pairing_is_listed(scratch_session: Session) -> None:
     assert "rerun: pairing UNEQUAL_NUMBER" in item.data_says
 
 
+def test_the_list_status_share_keeps_hansard_and_minutes_lists_apart(
+    scratch_session: Session,
+) -> None:
+    report = add_division_report(
+        scratch_session, _REPORT_ID, _SITTING_DATETIME, _PARLIAMENT_NUMBER
+    )
+    hansard_division = _add_hansard_division(
+        scratch_session,
+        report,
+        1,
+        list_status=DivisionListStatus.STORED,
+        printed_list=_PRINTED_LIST,
+    )
+    _add_minutes_only_division(scratch_session)
+    minutes = _add_minutes(scratch_session)
+    _add_minutes_division(
+        scratch_session,
+        minutes,
+        hansard_division,
+        MinutesDivisionPairing.PAIRED,
+        list_status=DivisionListStatus.COUNTS_DISAGREE,
+        printed_list=_PRINTED_LIST,
+    )
+
+    lines = get_summary_lines(get_division_review_list(scratch_session))
+
+    assert "Hansard divisions of the 2020s by list status: STORED 1 of 1 (100.0%)" in lines
+    assert (
+        "Minutes lists of the 2020s by list status: COUNTS_DISAGREE 1 of 1 (100.0%)"
+        in lines
+    )
+
+
 def test_a_clean_database_gives_an_empty_list(scratch_session: Session) -> None:
     review_list = get_division_review_list(scratch_session)
 

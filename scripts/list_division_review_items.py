@@ -37,6 +37,7 @@ from schemas.division_review_list import (
     DivisionReviewItem,
     DivisionReviewList,
     MinutesDivisionPairingCount,
+    MinutesListStatusCount,
 )
 from services.division import get_report_divisions
 from services.division_pairing import (
@@ -482,7 +483,16 @@ def get_division_review_list(session: Session) -> DivisionReviewList:
     kind_counts = Counter(item.kind for item in items)
     decade_and_list_status_counts = Counter(
         (get_decade_label(division_row.sitting_date), division_row.list_status)
-        for division_row in CRUDDivision(session).get_list_status_rows()
+        for division_row in CRUDDivision(
+            session
+        ).get_list_status_rows_by_sprs_report_id_not_null()
+    )
+    minutes_decade_and_list_status_counts = Counter(
+        (
+            get_decade_label(minutes_id_to_sitting_date[minutes_division.minutes_id]),
+            minutes_division.list_status,
+        )
+        for minutes_division in minutes_divisions
     )
     pairing_counts = Counter(
         minutes_division.pairing for minutes_division in minutes_divisions
@@ -498,6 +508,16 @@ def get_division_review_list(session: Session) -> DivisionReviewList:
                 decade_and_list_status_counts.items()
             )
         ],
+        minutes_list_status_counts=[
+            MinutesListStatusCount(
+                decade=decade,
+                list_status=list_status,
+                minutes_division_count=minutes_division_count,
+            )
+            for (decade, list_status), minutes_division_count in sorted(
+                minutes_decade_and_list_status_counts.items()
+            )
+        ],
         pairing_counts=[
             MinutesDivisionPairingCount(
                 pairing=pairing, minutes_division_count=minutes_division_count
@@ -511,6 +531,26 @@ def _format_share(count: int, total: int) -> str:
     if total == 0:
         return f"{count:,} of 0"
     return f"{count:,} of {total:,} ({count / total:.1%})"
+
+
+def _get_list_status_lines(
+    label: str,
+    decade_and_list_status_to_count: dict[tuple[str, DivisionListStatus], int],
+) -> list[str]:
+    decade_to_total: Counter[str] = Counter()
+    for (decade, _), count in decade_and_list_status_to_count.items():
+        decade_to_total[decade] += count
+    return [
+        f"{label} of the {decade} by list status: "
+        + ", ".join(
+            f"{list_status} {_format_share(count, decade_to_total[decade])}"
+            for (count_decade, list_status), count in sorted(
+                decade_and_list_status_to_count.items()
+            )
+            if count_decade == decade
+        )
+        for decade in sorted(decade_to_total)
+    ]
 
 
 def get_summary_lines(review_list: DivisionReviewList) -> list[str]:
@@ -533,18 +573,24 @@ def get_summary_lines(review_list: DivisionReviewList) -> list[str]:
         ),
         f"Expected, not defects, {expected_kind}: {review_list.kind_to_count[expected_kind]:,}",
     ]
-    decade_to_total: Counter[str] = Counter()
-    for list_status_count in review_list.list_status_counts:
-        decade_to_total[list_status_count.decade] += list_status_count.division_count
-    for decade in sorted(decade_to_total):
-        lines.append(
-            f"Divisions of the {decade} by list status: "
-            + ", ".join(
-                f"{list_status_count.list_status} {_format_share(list_status_count.division_count, decade_to_total[decade])}"
+    lines.extend(
+        _get_list_status_lines(
+            "Hansard divisions",
+            {
+                (list_status_count.decade, list_status_count.list_status): list_status_count.division_count
                 for list_status_count in review_list.list_status_counts
-                if list_status_count.decade == decade
-            )
+            },
         )
+    )
+    lines.extend(
+        _get_list_status_lines(
+            "Minutes lists",
+            {
+                (list_status_count.decade, list_status_count.list_status): list_status_count.minutes_division_count
+                for list_status_count in review_list.minutes_list_status_counts
+            },
+        )
+    )
     pairing_total = sum(
         pairing_count.minutes_division_count
         for pairing_count in review_list.pairing_counts
