@@ -92,6 +92,8 @@ _OFFICE_TRAILING_CHARACTERS = ",-. "
 _PERIOD = "."
 _BOLD_MARKER = "**"
 _TABLE_CELL_SEPARATOR = "|"
+_TABLE_CELL_STRIP_CHARACTERS = " |"
+_TABLE_DATE_COLUMN_COUNT = 2
 _SECTION_END_PREFIXES = ("#", "[")
 _EMPHASIS_MARKS = "_*"
 _YEARS_IN_CENTURY = 100
@@ -592,13 +594,15 @@ def _get_duration_end_date(start_date: date, count: int, unit: str) -> date:
     return _add_calendar_months(start_date, _MONTHS_IN_YEAR * count) - timedelta(days=1)
 
 
+def _get_count(count_text: str) -> int:
+    try:
+        return int(count_text)
+    except ValueError:
+        return _NUMBER_WORD_TO_COUNT[count_text.lower()]
+
+
 def _get_duration_leave_dates(match: re.Match) -> Optional[LeaveDates]:
-    count_text = match.group("count")
-    count = (
-        int(count_text)
-        if count_text.isdigit()
-        else _NUMBER_WORD_TO_COUNT[count_text.lower()]
-    )
+    count = _get_count(match.group("count"))
     try:
         start_date = date(
             int(match.group("year")),
@@ -805,7 +809,9 @@ def _get_table_heading_years(year_match: re.Match) -> list[int]:
 
 
 def _get_table_heading(heading_text: str) -> _TableHeading:
-    year_matches = list(_TABLE_HEADING_YEAR_RE.finditer(heading_text))[:2]
+    year_matches = list(_TABLE_HEADING_YEAR_RE.finditer(heading_text))[
+        :_TABLE_DATE_COLUMN_COUNT
+    ]
     return _TableHeading(
         printed_from=year_matches[0].group(0) if year_matches else None,
         printed_to=year_matches[1].group(0) if len(year_matches) > 1 else None,
@@ -933,7 +939,7 @@ def _build_table_entry(
     )
 
 
-def _get_table_entries(
+def _parse_table_entries(
     printed_line: str,
     ordinal: int,
     table_section: _TableSection,
@@ -963,7 +969,11 @@ def _get_table_entries(
         return None
     if _TABLE_SPACER_RE.match(printed_line):
         return []
-    first_cell = printed_line.strip(" |").split(_TABLE_CELL_SEPARATOR, 1)[0].strip()
+    first_cell = (
+        printed_line.strip(_TABLE_CELL_STRIP_CHARACTERS)
+        .split(_TABLE_CELL_SEPARATOR, 1)[0]
+        .strip()
+    )
     title_free_cell = first_cell.lstrip(_EMPHASIS_MARKS)
     if (
         _TABLE_DATE_TOKEN_RE.search(reading_line) is None
@@ -996,7 +1006,7 @@ def build_leave_entries_from_markdown(
     for section_lines in get_leave_sections(markdown_content):
         table_section = _TableSection()
         for printed_line in section_lines:
-            table_entries = _get_table_entries(
+            table_entries = _parse_table_entries(
                 printed_line,
                 len(leave_entries) + 1,
                 table_section,
