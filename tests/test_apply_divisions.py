@@ -231,6 +231,7 @@ _FIRST_AYES = 10
 _FIRST_NOES = 3
 _CHANGED_AYES = 99
 _LINE_FIRST_WITH_CHANGED_AYES = "The House divided: Ayes, 11; Noes, 3."
+_WRITE_VERBS = frozenset({"INSERT", "UPDATE", "DELETE"})
 
 
 def _store_and_pair_first_division(
@@ -425,6 +426,43 @@ def test_a_paired_division_whose_printed_counts_changed_is_refused_even_with_det
     assert refused_division is not None
     assert refused_division.ayes == _FIRST_AYES
     assert refused_division.sprs_report_id == _FIRST_REPORT_ID
+
+
+def test_the_changed_counts_refusal_comes_before_any_write(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    log_recorder: _LogRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _store_and_pair_first_division(scratch_session, log_recorder, monkeypatch, tmp_path)
+    _change_first_division_line(scratch_session)
+    plan_path = tmp_path / "plan.json"
+    apply_divisions([], plan_path, is_commit=False, is_detach_paired=False)
+    statements: list[str] = []
+
+    def record_statement(
+        connection: object,
+        cursor: object,
+        statement: str,
+        parameters: object,
+        context: object,
+        is_many: bool,
+    ) -> None:
+        statements.append(statement)
+
+    event.listen(scratch_engine, "before_cursor_execute", record_statement)
+    try:
+        with pytest.raises(HansardWriteCheckError, match="change its Ayes or Noes"):
+            apply_divisions([], plan_path, is_commit=True, is_detach_paired=True)
+    finally:
+        event.remove(scratch_engine, "before_cursor_execute", record_statement)
+
+    assert statements
+    assert not {
+        verb
+        for verb, _ in (_get_statement_effects(statement) for statement in statements)
+    } & _WRITE_VERBS
 
 
 def test_an_unpaired_division_whose_line_has_gone_is_deleted_without_the_option(
