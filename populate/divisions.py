@@ -622,9 +622,14 @@ def get_paired_divisions_at_risk(
         if division_update.id not in paired_division_ids:
             continue
         stored_division = division_id_to_stored_division[division_update.id]
-        if (division_update.ayes, division_update.noes) != (
+        if (
+            division_update.ayes,
+            division_update.noes,
+            division_update.abstentions,
+        ) != (
             stored_division.ayes,
             stored_division.noes,
+            stored_division.abstentions,
         ):
             at_risk_divisions.append(
                 _build_paired_division_at_risk(stored_division, is_line_gone=False)
@@ -677,7 +682,7 @@ def write_division_plan(
     for at_risk in at_risk_divisions:
         if not at_risk.is_line_gone:
             raise HansardWriteCheckError(
-                f"Division {at_risk.division_id} of report {at_risk.sprs_report_id} ({at_risk.printed_counts}) is paired with a minutes division and the plan would change its Ayes or Noes"
+                f"Division {at_risk.division_id} of report {at_risk.sprs_report_id} ({at_risk.printed_counts}) is paired with a minutes division and the plan would change its counts"
             )
         if not is_detaching_paired:
             raise HansardWriteCheckError(

@@ -230,6 +230,7 @@ _MINUTES_PRINTED_COUNTS = "On Question put, a division was taken: Ayes 10, Noes 
 _FIRST_AYES = 10
 _FIRST_NOES = 3
 _CHANGED_AYES = 99
+_CHANGED_ABSTENTIONS = 1
 _LINE_FIRST_WITH_CHANGED_AYES = "The House divided: Ayes, 11; Noes, 3."
 _WRITE_VERBS = frozenset({"INSERT", "UPDATE", "DELETE"})
 
@@ -387,7 +388,7 @@ def test_a_paired_division_whose_counts_would_change_is_refused_even_with_detach
     plan_path = tmp_path / "plan.json"
     apply_divisions([], plan_path, is_commit=False, is_detach_paired=False)
 
-    with pytest.raises(HansardWriteCheckError, match="change its Ayes or Noes"):
+    with pytest.raises(HansardWriteCheckError, match="would change its counts"):
         apply_divisions([], plan_path, is_commit=True, is_detach_paired=True)
 
     scratch_session.rollback()
@@ -396,6 +397,35 @@ def test_a_paired_division_whose_counts_would_change_is_refused_even_with_detach
     assert refused_division is not None
     assert refused_division.ayes == _CHANGED_AYES
     assert refused_division.sprs_report_id == _FIRST_REPORT_ID
+
+
+def test_a_paired_division_whose_abstentions_would_change_is_refused_even_with_detach_paired(
+    scratch_session: Session,
+    log_recorder: _LogRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    division_id = _store_and_pair_first_division(
+        scratch_session, log_recorder, monkeypatch, tmp_path
+    )
+    stored_division = scratch_session.get(Division, division_id)
+    assert stored_division is not None
+    stored_division.abstentions = _CHANGED_ABSTENTIONS
+    scratch_session.commit()
+    plan_path = tmp_path / "plan.json"
+    apply_divisions([], plan_path, is_commit=False, is_detach_paired=False)
+
+    with pytest.raises(HansardWriteCheckError, match="would change its counts"):
+        apply_divisions([], plan_path, is_commit=True, is_detach_paired=True)
+
+    scratch_session.rollback()
+    scratch_session.expire_all()
+    refused_division = scratch_session.get(Division, division_id)
+    assert refused_division is not None
+    assert refused_division.abstentions == _CHANGED_ABSTENTIONS
+    assert refused_division.sprs_report_id == _FIRST_REPORT_ID
+    minutes_division = scratch_session.exec(select(MinutesDivision)).one()
+    assert minutes_division.pairing == MinutesDivisionPairing.PAIRED
 
 
 def _change_first_division_line(session: Session) -> None:
@@ -417,7 +447,7 @@ def test_a_paired_division_whose_printed_counts_changed_is_refused_even_with_det
     plan_path = tmp_path / "plan.json"
     apply_divisions([], plan_path, is_commit=False, is_detach_paired=False)
 
-    with pytest.raises(HansardWriteCheckError, match="change its Ayes or Noes"):
+    with pytest.raises(HansardWriteCheckError, match="would change its counts"):
         apply_divisions([], plan_path, is_commit=True, is_detach_paired=True)
 
     scratch_session.rollback()
@@ -453,7 +483,7 @@ def test_the_changed_counts_refusal_comes_before_any_write(
 
     event.listen(scratch_engine, "before_cursor_execute", record_statement)
     try:
-        with pytest.raises(HansardWriteCheckError, match="change its Ayes or Noes"):
+        with pytest.raises(HansardWriteCheckError, match="would change its counts"):
             apply_divisions([], plan_path, is_commit=True, is_detach_paired=True)
     finally:
         event.remove(scratch_engine, "before_cursor_execute", record_statement)
