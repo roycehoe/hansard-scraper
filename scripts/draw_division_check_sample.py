@@ -16,6 +16,7 @@ from crud.division import CRUDDivision
 from crud.division_vote import CRUDDivisionVote, DivisionVoteLinkRow
 from crud.minutes import CRUDMinutes
 from crud.minutes_division import CRUDMinutesDivision
+from crud.minutes_index_capture import CRUDMinutesIndexCapture
 from crud.party_affiliation import CRUDPartyAffiliation
 from crud.report import CRUDReport, ReportTypeRow
 from crud.speaker import CRUDSpeaker
@@ -43,6 +44,11 @@ from schemas.division_check_sample import (
     DivisionCheckPlant,
 )
 from services.division import get_report_divisions
+from services.minutes_index import (
+    MinutesIndexRow,
+    parse_archive_index_page,
+    parse_live_index_page,
+)
 from settings import settings
 from utils.database_label import get_database_label
 
@@ -225,20 +231,78 @@ def _get_file_format_label(minutes: Minutes) -> str:
     return minutes.file_format
 
 
-def _get_index_row_candidates(
-    stored_minutes: list[Minutes],
-) -> list[DivisionCheckCandidate]:
-    return [
-        DivisionCheckCandidate(
-            rule=DivisionCheckRule.INDEX_ROW,
-            group=_get_group(minutes.sitting_date, _get_file_format_label(minutes)),
-            source_text=f"{minutes.printed_label} (Parliament {minutes.printed_parliament})",
-            data_claim=f"sitting date {minutes.sitting_date}; label {minutes.printed_label}; address {minutes.file_url}",
-            database_key=f"minutes:{minutes.id}",
+def _get_index_capture_id(minutes: Minutes) -> int:
+    if minutes.index_capture_id is None:
+        raise HansardDivisionCheckError(
+            f"Minutes {minutes.id} names an index source and no index capture"
         )
+    return minutes.index_capture_id
+
+
+def _get_capture_index_rows(content: str, is_live_page: bool) -> list[MinutesIndexRow]:
+    if is_live_page:
+        return parse_live_index_page(content, settings.minutes_media_url)
+    return parse_archive_index_page(content, settings.minutes_index_url)
+
+
+def _get_printed_index_row(
+    minutes: Minutes, capture_index_rows: list[MinutesIndexRow]
+) -> MinutesIndexRow:
+    printed_index_rows = {
+        index_row
+        for index_row in capture_index_rows
+        if index_row.sitting_date == minutes.sitting_date
+        and index_row.file_url == minutes.file_url
+    }
+    if len(printed_index_rows) != 1:
+        raise HansardDivisionCheckError(
+            f"Minutes {minutes.id} matches {len(printed_index_rows)} rows of its index capture"
+        )
+    return next(iter(printed_index_rows))
+
+
+def _get_index_row_candidates(
+    session: Session, stored_minutes: list[Minutes]
+) -> list[DivisionCheckCandidate]:
+    indexed_minutes = [
+        minutes
         for minutes in stored_minutes
-        if minutes.index_source is not None
+        if minutes.index_source == MinutesIndexSource.LIVE_PAGE
+        or minutes.index_source == MinutesIndexSource.ARCHIVE_INDEX_CAPTURE
     ]
+    capture_id_to_is_live_page = {
+        _get_index_capture_id(minutes): minutes.index_source
+        == MinutesIndexSource.LIVE_PAGE
+        for minutes in indexed_minutes
+    }
+    capture_ids = sorted(capture_id_to_is_live_page)
+    capture_id_to_index_rows = {
+        content_row.id: _get_capture_index_rows(
+            content_row.content, capture_id_to_is_live_page[content_row.id]
+        )
+        for start in range(0, len(capture_ids), _REPORT_BATCH)
+        for content_row in CRUDMinutesIndexCapture(session).get_content_rows_by_ids(
+            capture_ids[start : start + _REPORT_BATCH]
+        )
+    }
+    candidates: list[DivisionCheckCandidate] = []
+    for minutes in indexed_minutes:
+        printed_index_row = _get_printed_index_row(
+            minutes, capture_id_to_index_rows[_get_index_capture_id(minutes)]
+        )
+        candidates.append(
+            DivisionCheckCandidate(
+                rule=DivisionCheckRule.INDEX_ROW,
+                group=_get_group(
+                    minutes.sitting_date,
+                    f"{minutes.index_source}{_GROUP_SEPARATOR}{_get_file_format_label(minutes)}",
+                ),
+                source_text=f"{printed_index_row.printed_label} (Parliament {printed_index_row.printed_parliament}); sitting date {printed_index_row.sitting_date}; address {printed_index_row.file_url}",
+                data_claim=f"sitting date {minutes.sitting_date}; label {minutes.printed_label}; address {minutes.file_url}",
+                database_key=f"minutes:{minutes.id}",
+            )
+        )
+    return candidates
 
 
 def _get_file_head_date_candidates(
@@ -498,7 +562,7 @@ def get_division_check_candidates(
         return _get_name_tier_candidates(session, rule, name_rule)
     stored_minutes = CRUDMinutes(session).get_by_statuses(list(MinutesStatus))
     if rule == DivisionCheckRule.INDEX_ROW:
-        return _get_index_row_candidates(stored_minutes)
+        return _get_index_row_candidates(session, stored_minutes)
     if rule == DivisionCheckRule.FILE_HEAD_DATE:
         return _get_file_head_date_candidates(stored_minutes)
     if rule == DivisionCheckRule.MINUTES_DIVISION_AND_SIDE:

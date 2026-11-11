@@ -10,7 +10,7 @@ import scripts.draw_division_check_sample as draw_division_check_sample_script
 from database.division import Division
 from database.division_party_count import DivisionPartyCount
 from database.division_vote import DivisionVote
-from database.minutes import Minutes
+from database.minutes import Minutes, MinutesIndexCapture
 from database.minutes_division import MinutesDivision
 from database.speaker import Speaker
 from enums import (
@@ -29,7 +29,9 @@ from enums import (
 )
 from exceptions import HansardDivisionCheckError
 from schemas.division_check_sample import DivisionCheckCandidate, DivisionCheckKey
+from settings import settings
 from tests.division_seed import add_division_report, add_division_speech_rows
+from tests.refresh_fixtures import build_live_index_page, build_live_index_row
 
 _SITTING_DATE = date(2021, 10, 4)
 _SITTING_DATETIME = datetime(2021, 10, 4)
@@ -53,6 +55,12 @@ _DECADE = "2020s"
 _SMALL_GROUP_SIZE = 10
 _OTHER_SEED = 8
 _TABLES = (Division, Minutes, MinutesDivision, DivisionVote, DivisionPartyCount)
+_INDEX_SITTING_DATE = date(2021, 10, 5)
+_INDEX_FILE_ID = "file-7"
+_INDEX_FILE_NAME = "VP 7.pdf"
+_INDEX_FILE_URL = f"{settings.minutes_media_url}/{_INDEX_FILE_ID}/VP%207.pdf"
+_INDEX_LABEL = "Votes and Proceedings No. 7"
+_INDEX_PARLIAMENT = "14th Parliament"
 _SIDE_CLAIM = "AYE: Mr A\nNO: Mr B"
 _SWAPPED_SIDE_CLAIM = "AYE: Mr B\nNO: Mr A"
 
@@ -510,6 +518,36 @@ def test_the_written_key_hash_matches_the_key_file(tmp_path: Path) -> None:
         )
 
 
+def _add_live_index_minutes(
+    session: Session,
+    stored_date: date,
+    printed_date: date,
+    stored_label: str = _INDEX_LABEL,
+) -> Minutes:
+    capture = MinutesIndexCapture(
+        original_url=settings.minutes_index_url,
+        capture_url=f"{settings.minutes_index_url}#sha256=draw-{stored_date}",
+        content=build_live_index_page(
+            [build_live_index_row(printed_date, 7, _INDEX_FILE_ID, _INDEX_FILE_NAME)]
+        ),
+    )
+    session.add(capture)
+    session.flush()
+    minutes = Minutes(
+        sitting_date=stored_date,
+        printed_label=stored_label,
+        printed_parliament=_INDEX_PARLIAMENT,
+        file_url=_INDEX_FILE_URL,
+        file_format=MinutesFileFormat.PDF,
+        status=MinutesStatus.LISTED,
+        index_source=MinutesIndexSource.LIVE_PAGE,
+        index_capture_id=capture.id,
+    )
+    session.add(minutes)
+    session.flush()
+    return minutes
+
+
 def _seed_every_frame(session: Session) -> None:
     speaker = Speaker(
         name=_SPEAKER_NAME,
@@ -567,8 +605,6 @@ def _seed_every_frame(session: Session) -> None:
     )
     minutes = Minutes(
         sitting_date=_SITTING_DATE,
-        printed_label="Votes and Proceedings",
-        printed_parliament=str(_PARLIAMENT_NUMBER),
         file_url="https://example.invalid/minutes.pdf",
         file_format=MinutesFileFormat.PDF,
         extracted_text="Votes and Proceedings of 4 October 2021",
@@ -576,6 +612,7 @@ def _seed_every_frame(session: Session) -> None:
         index_source=MinutesIndexSource.ARCHIVE_FILE_LISTING,
     )
     session.add_all([speaker, other_speaker, printed_division, total_division, minutes])
+    _add_live_index_minutes(session, _INDEX_SITTING_DATE, _INDEX_SITTING_DATE)
     session.flush()
     session.add(
         MinutesDivision(
@@ -628,6 +665,53 @@ def test_each_rule_has_a_frame_that_reads_a_seeded_database(
     assert candidates
     assert all(candidate.rule == rule for candidate in candidates)
     assert all(candidate.group.startswith(f"{_DECADE}|") for candidate in candidates)
+
+
+def test_the_index_row_frame_reads_the_printed_date_and_address_of_the_capture(
+    scratch_session: Session,
+) -> None:
+    _seed_every_frame(scratch_session)
+
+    candidates = draw_division_check_sample_script.get_division_check_candidates(
+        scratch_session, DivisionCheckRule.INDEX_ROW
+    )
+
+    assert [
+        (candidate.group, candidate.source_text, candidate.data_claim)
+        for candidate in candidates
+    ] == [
+        (
+            "2020s|LIVE_PAGE|PDF",
+            f"{_INDEX_LABEL} (Parliament {_INDEX_PARLIAMENT}); sitting date {_INDEX_SITTING_DATE}; address {_INDEX_FILE_URL}",
+            f"sitting date {_INDEX_SITTING_DATE}; label {_INDEX_LABEL}; address {_INDEX_FILE_URL}",
+        )
+    ]
+
+
+def test_the_index_row_source_is_the_capture_and_the_claim_is_the_stored_row(
+    scratch_session: Session,
+) -> None:
+    _add_live_index_minutes(
+        scratch_session, _INDEX_SITTING_DATE, _INDEX_SITTING_DATE, "Stale label"
+    )
+
+    (candidate,) = draw_division_check_sample_script.get_division_check_candidates(
+        scratch_session, DivisionCheckRule.INDEX_ROW
+    )
+
+    assert candidate.source_text.startswith(_INDEX_LABEL)
+    assert "Stale label" in candidate.data_claim
+
+
+def test_an_index_row_the_capture_does_not_print_is_refused(
+    scratch_session: Session,
+) -> None:
+    _add_live_index_minutes(scratch_session, _INDEX_SITTING_DATE, _SITTING_DATE)
+
+    with pytest.raises(HansardDivisionCheckError, match="matches 0 rows"):
+        draw_division_check_sample_script.get_division_check_candidates(
+            scratch_session, DivisionCheckRule.INDEX_ROW
+        )
 
 
 def _count_rows(session: Session) -> list[int]:

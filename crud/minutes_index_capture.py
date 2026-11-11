@@ -11,6 +11,12 @@ class MinutesIndexCaptureRow:
     capture_url: str
 
 
+@dataclass(frozen=True)
+class MinutesIndexCaptureContentRow:
+    id: int
+    content: str
+
+
 class CRUDMinutesIndexCapture:
     def __init__(self, session: Session):
         self.session = session
@@ -29,6 +35,19 @@ class CRUDMinutesIndexCapture:
         )
         return [
             MinutesIndexCaptureRow(*row) for row in self.session.exec(statement).all()
+        ]
+
+    def get_content_rows_by_ids(
+        self, capture_ids: list[int]
+    ) -> list[MinutesIndexCaptureContentRow]:
+        statement = (
+            select(MinutesIndexCapture.id, MinutesIndexCapture.content)
+            .where(col(MinutesIndexCapture.id).in_(capture_ids))
+            .order_by(col(MinutesIndexCapture.id))
+        )
+        return [
+            MinutesIndexCaptureContentRow(*row)
+            for row in self.session.exec(statement).all()
         ]
 
     def get_count(self) -> int:
