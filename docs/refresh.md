@@ -40,7 +40,7 @@ Then, for each month in order, the run:
 
 After the last month, the run:
 
-25. Runs the minutes step: reads the live Votes and Proceedings index page (10 rows), adds a `minutes` row for each sitting date that has reports and none yet (`NOT_YET_LISTED`), moves a listed date to `LISTED`, then, for each `LISTED` row whose date has at least one stored report and is not among the dates of this run's held hits, fetches the file, extracts its text and stores the address, size, SHA-256 and text, reads the file's divisions, pairs them with the date's Hansard divisions and stores the vote rows in the file's own commit. A network failure or a non-200 answer leaves the row `LISTED` for the next run. A file that is unreadable, a scan, not a PDF, or whose head prints another date becomes `NEEDS_REVIEW` with an alert. A failure on the index page is held until the figures, the VACUUM and the report link step have run, then raised.
+25. Runs the minutes step: reads the live Votes and Proceedings index page (10 rows), adds a `minutes` row for each sitting date that has reports and none yet (`NOT_YET_LISTED`), moves a listed date to `LISTED`, then, for each `LISTED` row whose date has at least one stored report and is not among the dates of this run's held hits, fetches the file, extracts its text and stores the address, size, SHA-256 and text, reads the file's divisions, pairs them with the date's Hansard divisions and stores the vote rows and the party breakdown of each division of the sitting in the file's own commit. A network failure or a non-200 answer leaves the row `LISTED` for the next run. A file that is unreadable, a scan, not a PDF, or whose head prints another date becomes `NEEDS_REVIEW` with an alert. A failure on the index page is held until the figures, the VACUUM and the report link step have run, then raised.
 26. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
 27. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
 28. Reads the whole corpus, inserts the `report_link` rows the plan has and the table lacks, and counts the stored rows that differ from the plan. It never deletes or updates, and a stale count above 0 sends an alert. The month rows are already committed, so a failure here fails the run and keeps them.
@@ -224,6 +224,7 @@ GRANT SELECT, INSERT ON bill, billreport, billkey, billreportspeaker, billstagel
 GRANT UPDATE (title, last_sitting_date, is_passed) ON bill TO hansard_refresh;
 GRANT SELECT, INSERT ON minutes, minutes_index_capture TO hansard_refresh;
 GRANT SELECT, INSERT ON minutes_division, division_vote TO hansard_refresh;
+GRANT SELECT, INSERT ON division_party_count TO hansard_refresh;
 GRANT SELECT ON partyaffiliation TO hansard_refresh;
 GRANT UPDATE (status, index_source, index_capture_id, printed_label, printed_parliament, file_url, archive_timestamp, file_format, sha256, size_bytes, fetched_at, extracted_text, status_note) ON minutes TO hansard_refresh;
 GRANT UPDATE ON refresh_run TO hansard_refresh;
@@ -241,7 +242,7 @@ GRANT USAGE ON SEQUENCE leave_period_id_seq, leave_period_printing_id_seq, seat_
 GRANT SELECT, INSERT ON division TO hansard_refresh;
 GRANT USAGE ON SEQUENCE division_id_seq TO hansard_refresh;
 GRANT USAGE ON SEQUENCE minutes_id_seq, minutes_index_capture_id_seq TO hansard_refresh;
-GRANT USAGE ON SEQUENCE minutes_division_id_seq, division_vote_id_seq TO hansard_refresh;
+GRANT USAGE ON SEQUENCE minutes_division_id_seq, division_vote_id_seq, division_party_count_id_seq TO hansard_refresh;
 GRANT SELECT (id, website_responses_added, sitting_date_responses_added, sittings_added, reports_added, speeches_added, speeches_linked, speeches_named_unlinked, attendances_added, attendances_linked, reports_held_without_text, reports_without_speech_rows, reports_rechecked, reports_changed, latest_sitting_date_with_text, figures, started_at, finished_at, status) ON refresh_run TO <the API's read-only role>;
 GRANT SELECT ON report_link TO <the API's read-only role>;
 ```

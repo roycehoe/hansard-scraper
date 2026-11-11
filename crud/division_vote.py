@@ -49,6 +49,12 @@ class CRUDDivisionVote:
         )
         return [DivisionVoteRow(*row) for row in self.session.exec(statement).all()]
 
+    def get_distinct_division_ids(self) -> list[int]:
+        statement = select(DivisionVote.division_id).distinct().order_by(
+            DivisionVote.division_id
+        )
+        return list(self.session.exec(statement).all())
+
     def delete_by_division_ids_and_list_source(
         self, division_ids: list[int], list_source: DivisionVoteListSource
     ) -> int:

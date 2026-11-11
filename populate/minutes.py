@@ -5,6 +5,7 @@ from typing import Optional
 
 from sqlmodel import Session
 
+from crud.division import CRUDDivision
 from crud.minutes import CRUDMinutes
 from crud.minutes_index_capture import CRUDMinutesIndexCapture
 from crud.report import CRUDReport
@@ -17,6 +18,7 @@ from exceptions import (
 )
 from gateway.minutes import get_minutes_file_response, get_minutes_index_response
 from logs import logger
+from populate.division_party_counts import populate_division_party_counts
 from populate.minutes_divisions import populate_minutes_divisions
 from schemas.minutes_response import MinutesResponse
 from services.minutes_index import (
@@ -181,6 +183,16 @@ def _store_minutes_file(
         if review_note is not None:
             session.commit()
             return StoredMinutesFile(MinutesStatus.NEEDS_REVIEW, review_note)
+        populate_division_party_counts(
+            session,
+            [
+                division.id
+                for division in CRUDDivision(session).get_by_sitting_dates(
+                    [sitting_date]
+                )
+                if division.id is not None
+            ],
+        )
     session.commit()
     return StoredMinutesFile(file_fields.status, file_fields.status_note)
 

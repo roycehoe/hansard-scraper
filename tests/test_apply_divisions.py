@@ -11,6 +11,7 @@ from sqlmodel import Session, func, select
 
 import scripts.apply_divisions as apply_divisions_script
 from database.division import Division
+from database.division_party_count import DivisionPartyCount
 from database.division_vote import DivisionVote
 from database.minutes import Minutes
 from database.minutes_division import MinutesDivision
@@ -810,3 +811,67 @@ def test_a_rerun_keeps_the_division_id_and_replaces_the_hansard_vote_rows(
         sum(vote.speaker_id is not None for vote in second_votes)
         == len(_LINKED_NAMES) + 1
     )
+
+
+def _add_party_counts(session: Session, division_ids: list[int]) -> None:
+    session.add_all(
+        DivisionPartyCount(
+            member_count=_FIRST_AYES,
+            uncertain_member_count=0,
+            party="PAP",
+            list_source=DivisionVoteListSource.HANSARD,
+            vote_choice=DivisionVoteChoice.AYE,
+            division_id=division_id,
+        )
+        for division_id in division_ids
+    )
+    session.commit()
+
+
+def _get_party_count_division_ids(session: Session) -> list[int]:
+    session.expire_all()
+    return sorted(session.exec(select(DivisionPartyCount.division_id)).all())
+
+
+def test_a_rerun_after_a_breakdown_exists_deletes_the_breakdown_before_the_division(
+    scratch_session: Session,
+    log_recorder: _LogRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        apply_divisions_script, "vacuum_analyze_written_tables", _VacuumRecorder()
+    )
+    _seed_reports(scratch_session)
+    plan_path = tmp_path / "plan.json"
+    apply_divisions([], plan_path, is_commit=False, is_detach_paired=False)
+    apply_divisions([], plan_path, is_commit=True, is_detach_paired=False)
+    _add_party_counts(scratch_session, _get_division_ids(scratch_session))
+    _remove_first_division_line(scratch_session)
+    apply_divisions([], plan_path, is_commit=False, is_detach_paired=False)
+
+    apply_divisions([], plan_path, is_commit=True, is_detach_paired=False)
+
+    surviving_division_ids = _get_division_ids(scratch_session)
+    assert len(surviving_division_ids) == _SEEDED_DIVISION_COUNT - 1
+    assert _get_party_count_division_ids(scratch_session) == surviving_division_ids
+
+
+def test_detach_paired_deletes_the_hansard_breakdown(
+    scratch_session: Session,
+    log_recorder: _LogRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    division_id = _store_and_pair_first_division(
+        scratch_session, log_recorder, monkeypatch, tmp_path
+    )
+    _add_party_counts(scratch_session, [division_id])
+    _remove_first_division_line(scratch_session)
+    plan_path = tmp_path / "plan.json"
+    apply_divisions([], plan_path, is_commit=False, is_detach_paired=False)
+
+    apply_divisions([], plan_path, is_commit=True, is_detach_paired=True)
+
+    assert _get_party_count_division_ids(scratch_session) == []
+    assert scratch_session.get(Division, division_id) is not None

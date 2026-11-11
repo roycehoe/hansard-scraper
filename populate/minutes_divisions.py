@@ -6,6 +6,7 @@ from typing import Optional
 from sqlmodel import Session
 
 from crud.division import CRUDDivision
+from crud.division_party_count import CRUDDivisionPartyCount
 from crud.division_vote import CRUDDivisionVote
 from crud.minutes import CRUDMinutes
 from crud.minutes_division import CRUDMinutesDivision
@@ -534,6 +535,17 @@ def _insert_minutes_divisions(session: Session, plan: MinutesDivisionPlan) -> in
     return len(new_divisions) + len(minutes_divisions) + len(division_votes)
 
 
+def _delete_party_counts(session: Session, division_ids: list[int]) -> None:
+    stored_count = len(
+        CRUDDivisionPartyCount(session).get_rows_by_division_ids(division_ids)
+    )
+    deleted_count = CRUDDivisionPartyCount(session).delete_by_division_ids(division_ids)
+    if deleted_count != stored_count:
+        raise HansardWriteCheckError(
+            f"Deleted {deleted_count} party count rows, read {stored_count}"
+        )
+
+
 def _delete_stored_minutes_divisions(session: Session, minutes_ids: list[int]) -> None:
     stored_rows = CRUDMinutesDivision(session).get_rows_by_minutes_ids(minutes_ids)
     division_ids = [row.division_id for row in stored_rows]
@@ -561,6 +573,7 @@ def _delete_stored_minutes_divisions(session: Session, minutes_ids: list[int]) -
         and division.count_source == DivisionCountSource.MINUTES
         and division.sprs_report_id is None
     ]
+    _delete_party_counts(session, division_ids_to_delete)
     deleted_division_count = CRUDDivision(session).delete_by_ids(division_ids_to_delete)
     if deleted_division_count != len(division_ids_to_delete):
         raise HansardWriteCheckError(

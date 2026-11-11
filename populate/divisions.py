@@ -6,6 +6,7 @@ from typing import Optional, Sequence, Union
 from sqlmodel import Session
 
 from crud.division import CRUDDivision
+from crud.division_party_count import CRUDDivisionPartyCount
 from crud.division_vote import CRUDDivisionVote
 from crud.minutes_division import CRUDMinutesDivision
 from crud.party_affiliation import CRUDPartyAffiliation
@@ -637,6 +638,17 @@ def get_paired_divisions_at_risk(
     return sorted(at_risk_divisions, key=lambda at_risk: at_risk.division_id)
 
 
+def _delete_party_counts(session: Session, division_ids: list[int]) -> None:
+    stored_count = len(
+        CRUDDivisionPartyCount(session).get_rows_by_division_ids(division_ids)
+    )
+    deleted_count = CRUDDivisionPartyCount(session).delete_by_division_ids(division_ids)
+    if deleted_count != stored_count:
+        raise HansardWriteCheckError(
+            f"Deleted {deleted_count} party count rows, read {stored_count}"
+        )
+
+
 def _detach_paired_divisions(
     session: Session, at_risk_divisions: list[PairedDivisionAtRisk]
 ) -> None:
@@ -658,6 +670,7 @@ def _detach_paired_divisions(
         raise HansardWriteCheckError(
             f"{len(division_ids)} paired divisions to detach, {len(division_detachments)} paired minutes rows read"
         )
+    _delete_party_counts(session, division_ids)
     detached_count = CRUDDivision(session).detach_report_many(division_detachments)
     if detached_count != len(division_ids):
         raise HansardWriteCheckError(
@@ -696,6 +709,7 @@ def write_division_plan(
         DivisionVoteListSource.HANSARD,
     )
     if match.division_ids_to_delete:
+        _delete_party_counts(session, match.division_ids_to_delete)
         deleted_count = CRUDDivision(session).delete_by_ids(
             match.division_ids_to_delete
         )

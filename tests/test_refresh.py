@@ -23,6 +23,9 @@ from database.attached_file import AttachedFile
 from database.attached_file_pointer import AttachedFilePointer
 from database.attendance import Attendance
 from database.attendance_office import AttendanceOffice
+from database.division import Division
+from database.division_party_count import DivisionPartyCount
+from database.division_vote import DivisionVote
 from database.hansard_sitting_date_response import HansardSittingDateResponse
 from database.hansard_website_response import HansardWebsiteResponse
 from database.leave_period import LeavePeriod, LeavePeriodPrinting
@@ -46,6 +49,10 @@ from enums import (
     AttachedFileKind,
     AttachedFilePointerShape,
     AttendanceOfficeSource,
+    DivisionCountSource,
+    DivisionListStatus,
+    DivisionVoteChoice,
+    DivisionVoteListSource,
     MinutesFileFormat,
     MinutesIndexSource,
     MinutesStatus,
@@ -98,6 +105,7 @@ _MINUTES_DIVISION_TEXT_FIXTURE = (
 )
 _UNREADABLE_DIVISION_TEXT = "On Question put, the House divided."
 _MINUTES_DIVISION_ROW_COUNT = 2
+_HANSARD_ONLY_PRINTED_COUNTS = "The House divided: Ayes, 1; Noes, 1."
 _MINUTES_FILE_ID = "minutes-file-id"
 _MINUTES_FILE_NAME = "VP-11Jan2018.pdf"
 _MINUTES_FILE_NUMBER = 57
@@ -115,6 +123,8 @@ _MINUTES_STEP_ALLOWED_STATEMENTS = frozenset(
         ("SELECT", "division"),
         ("SELECT", "minutes_division"),
         ("SELECT", "division_vote"),
+        ("INSERT", "division_party_count"),
+        ("SELECT", "division_party_count"),
         ("SELECT", "speaker"),
         ("SELECT", "partyaffiliation"),
         ("UPDATE", "minutes"),
@@ -1939,9 +1949,11 @@ def test_minutes_step_emits_only_the_granted_statements(
         ("INSERT", "division"),
         ("INSERT", "minutes_division"),
         ("INSERT", "division_vote"),
+        ("INSERT", "division_party_count"),
         ("UPDATE", "minutes"),
         ("SELECT", "report"),
         ("SELECT", "speaker"),
+        ("SELECT", "division_party_count"),
     } <= observed_effects
     update_statements = [
         statement
@@ -1987,6 +1999,68 @@ def test_the_daily_minutes_step_writes_divisions_in_the_file_commit(
         scratch_session.exec(select(func.count()).select_from(MinutesDivision)).one()
         == _MINUTES_DIVISION_ROW_COUNT
     )
+
+
+def test_the_daily_minutes_step_writes_the_breakdown_for_every_division_of_the_sitting(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        minutes_step,
+        "get_minutes_pdf_text",
+        lambda content: _MINUTES_DIVISION_TEXT_FIXTURE.read_text(encoding="utf-8"),
+    )
+    seed_stored(scratch_session)
+    report = add_division_report(
+        scratch_session, "MINUTES-REPORT", datetime(2018, 1, 10)
+    )
+    hansard_only_division = Division(
+        sitting_date=date(2018, 1, 10),
+        parliament_number=report.parliament_number,
+        report_division_number=1,
+        speech_ordinal=1,
+        count_source=DivisionCountSource.PRINTED_LINE,
+        printed_counts=_HANSARD_ONLY_PRINTED_COUNTS,
+        ayes=1,
+        noes=1,
+        list_status=DivisionListStatus.STORED,
+        sprs_report_id=report.report_id,
+    )
+    scratch_session.add(hansard_only_division)
+    scratch_session.add(
+        Minutes(sitting_date=date(2018, 1, 10), status=MinutesStatus.NOT_YET_LISTED)
+    )
+    scratch_session.flush()
+    assert hansard_only_division.id is not None
+    hansard_only_division_id = hansard_only_division.id
+    scratch_session.add(
+        DivisionVote(
+            ordinal=1,
+            printed_name="Mr A",
+            vote_choice=DivisionVoteChoice.AYE,
+            list_source=DivisionVoteListSource.HANSARD,
+            party="PAP",
+            division_id=hansard_only_division_id,
+        )
+    )
+    scratch_session.commit()
+    _list_minutes_file(
+        fake_parliament, date(2018, 1, 10), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
+    )
+
+    minutes_step.populate_minutes(scratch_session, set())
+
+    scratch_session.expire_all()
+    division_ids_with_breakdown = set(
+        scratch_session.exec(select(DivisionPartyCount.division_id)).all()
+    )
+    minutes_division_ids = set(
+        scratch_session.exec(select(MinutesDivision.division_id)).all()
+    )
+    assert hansard_only_division_id in division_ids_with_breakdown
+    assert len(minutes_division_ids) == _MINUTES_DIVISION_ROW_COUNT
+    assert minutes_division_ids <= division_ids_with_breakdown
 
 
 def test_a_failed_division_step_leaves_the_file_listed_with_no_rows(

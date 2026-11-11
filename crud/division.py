@@ -46,6 +46,14 @@ class CRUDDivision:
         )
         return list(self.session.exec(statement).all())
 
+    def get_by_sitting_dates(self, sitting_dates: list[date]) -> list[Division]:
+        statement = (
+            select(Division)
+            .where(col(Division.sitting_date).in_(sitting_dates))
+            .order_by(col(Division.sitting_date), col(Division.id))
+        )
+        return list(self.session.exec(statement).all())
+
     def delete_by_ids(self, division_ids: list[int]) -> int:
         statement = delete(Division).where(col(Division.id).in_(division_ids))
 
