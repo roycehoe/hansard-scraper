@@ -1161,3 +1161,69 @@ def test_table_rows_and_prose_lines_share_one_run_of_ordinals() -> None:
         LeaveEntryFormat.TABLE_ROW,
     ]
     assert [leave_entry.ordinal for leave_entry in leave_entries] == [1, 2, 3]
+
+
+@pytest.mark.parametrize(
+    ("line", "office_printed"),
+    [
+        (
+            "Mr S. Rajaratnam (Kampong Glam), Minister for Culture - from 7th to 29th May, 1960.",
+            "Minister for Culture",
+        ),
+        (
+            "Mr Goh Keng Swee (Kreta Ayer), Minister for Finance - on 5th March, 1967.",
+            "Minister for Finance",
+        ),
+        (
+            "Mr X (Tanglin), Minister of State for Law - 5th March, 1967.",
+            "Minister of State for Law",
+        ),
+        (
+            "BG (NS) Lee Hsien Loong (Teck Ghee), Minister for Trade and Industry - from 3rd to 10th June, 1990.",
+            "Minister for Trade and Industry",
+        ),
+        (
+            "RAdm (NS) Teo Chee Hean (Pasir Ris), Minister for Education - on 5th March, 1998.",
+            "Minister for Education",
+        ),
+        (
+            "Mr X (Tanglin), Deputy Speaker, - from 3rd to 5th June, 1977.",
+            "Deputy Speaker",
+        ),
+    ],
+)
+def test_the_office_after_the_constituency_bracket_is_stored(
+    line: str, office_printed: str
+) -> None:
+    leave_entries = _build_entries(line)
+
+    assert leave_entries[0].office_printed == office_printed
+    assert leave_entries[0].entry_format != LeaveEntryFormat.UNREAD
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Mr X (Tanglin) - form 3rd to 10th June, 1977",
+        "Mr X - from 3rd to 10th June, 1977.",
+        "Dr Beng Kian Lam, Arthur - from 29th May to 3rd June, 1993.",
+        "Mr X (Tanglin) - with effect from 3rd June, 1977",
+        "Mr X (Tanglin), - from 3rd to 5th June, 1977.",
+        "Mr X (Tanglin) Prime Minister - from 3rd to 5th June, 1977.",
+    ],
+)
+def test_a_line_with_no_office_after_the_bracket_stores_none(line: str) -> None:
+    leave_entries = _build_entries(line)
+
+    assert leave_entries[0].office_printed is None
+
+
+def test_every_printing_of_a_line_carries_its_office() -> None:
+    leave_entries = _build_entries(
+        "Mr X (Tanglin), Minister for Law - on 5th and 6th March, 1967."
+    )
+
+    assert [leave_entry.office_printed for leave_entry in leave_entries] == [
+        "Minister for Law",
+        "Minister for Law",
+    ]

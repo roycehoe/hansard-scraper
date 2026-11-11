@@ -6,7 +6,7 @@ from typing import Optional
 import pytest
 from sqlalchemy import event
 from sqlalchemy.engine import Connection, Engine
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 import scripts.apply_leave_periods as apply_leave_periods_script
 from crud.leave_period_printing import CRUDLeavePeriodPrinting
@@ -14,10 +14,17 @@ from database.attendance import Attendance
 from database.leave_period import LeavePeriod, LeavePeriodPrinting
 from database.sitting import Sitting
 from database.speaker import Speaker
-from enums import LeaveNameSource, LeaveOfficeSource, LeaveSpeakerLinkSource
+from enums import (
+    LeaveEntryFormat,
+    LeaveNameSource,
+    LeaveOfficeSource,
+    LeaveSpeakerLinkSource,
+    LeaveYearSource,
+)
 from exceptions import HansardWriteCheckError, HansardWriteTargetError
 from populate.leave_periods import populate_leave_periods
 from scripts.apply_leave_periods import apply_leave_periods
+from utils.leave_entry import LeaveDates, LeaveEntry
 
 _PARLIAMENT_NUMBER = 14
 _PROTECTED_DATABASE_URL = "postgresql://user:password@localhost:5432/hansard"
@@ -547,3 +554,58 @@ def test_an_unlinked_printing_has_no_office(
     assert printing.speaker_id is None
     assert printing.office_printed is None
     assert printing.office_source is None
+
+
+_ENTRY_OFFICE_PRINTED = "Minister for Law"
+_UNLINKED_ENTRY_OFFICE_PRINTED = "Minister for Culture"
+
+
+def _build_older_entry(
+    ordinal: int, printed_name: str, start_day: int, office_printed: Optional[str]
+) -> LeaveEntry:
+    return LeaveEntry(
+        ordinal=ordinal,
+        printed_name=printed_name,
+        carried_name=None,
+        printed_from=None,
+        printed_to=None,
+        printed_line=f"{printed_name} - line {ordinal}",
+        printed_heading_from=None,
+        printed_heading_to=None,
+        office_printed=office_printed,
+        leave_dates=LeaveDates(date(2020, 3, start_day), date(2020, 3, start_day + 1)),
+        end_text=None,
+        entry_format=LeaveEntryFormat.PROSE_RANGE,
+        name_source=LeaveNameSource.PRINTED,
+        year_source=LeaveYearSource.PRINTED_IN_ENTRY,
+    )
+
+
+def test_an_office_printed_on_the_entry_comes_before_the_attendance_entry(
+    scratch_session: Session,
+    log_recorder: _LogRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _seed_sitting_with_attendance_offices(scratch_session)
+    older_entries = [
+        _build_older_entry(1, "Mr Lee Hsien Loong", 5, _ENTRY_OFFICE_PRINTED),
+        _build_older_entry(2, "Mr Lee Hsien Loong", 8, None),
+        _build_older_entry(3, "Mr Nobody Known", 5, _UNLINKED_ENTRY_OFFICE_PRINTED),
+    ]
+    monkeypatch.setattr(
+        "populate.leave_periods._get_leave_entries",
+        lambda sitting_leave_text_row, sitting_date: older_entries,
+    )
+
+    apply_leave_periods(is_commit=True)
+
+    printings = scratch_session.exec(
+        select(LeavePeriodPrinting).order_by(col(LeavePeriodPrinting.ordinal))
+    ).all()
+    assert [
+        (printing.office_printed, printing.office_source) for printing in printings
+    ] == [
+        (_ENTRY_OFFICE_PRINTED, LeaveOfficeSource.PRINTED_ON_ENTRY),
+        (_OFFICE_PRINTED, LeaveOfficeSource.ATTENDANCE_LIST),
+        (_UNLINKED_ENTRY_OFFICE_PRINTED, LeaveOfficeSource.PRINTED_ON_ENTRY),
+    ]

@@ -111,6 +111,18 @@ def _get_speaker_id_to_office_printed(
     return speaker_id_to_office_printed
 
 
+def _get_leave_office(
+    leave_entry: LeaveEntry, attendance_office_printed: Optional[str]
+) -> Optional[LeaveOffice]:
+    if leave_entry.office_printed is not None:
+        return LeaveOffice(
+            leave_entry.office_printed, LeaveOfficeSource.PRINTED_ON_ENTRY
+        )
+    if attendance_office_printed is None:
+        return None
+    return LeaveOffice(attendance_office_printed, LeaveOfficeSource.ATTENDANCE_LIST)
+
+
 def _get_sitting_printings(
     sitting_leave_text_row: SittingLeaveTextRow,
     lookups: SpeakerLookups,
@@ -147,7 +159,7 @@ def _get_sitting_printings(
         leave_dates = leave_entry.leave_dates
         start_date = None if leave_dates is None else leave_dates.start_date
         end_date = None if leave_dates is None else leave_dates.end_date
-        office_printed = (
+        attendance_office_printed = (
             None
             if speaker_link is None
             else speaker_id_to_office_printed.get(speaker_link.speaker_id)
@@ -168,11 +180,7 @@ def _get_sitting_printings(
                 is_covering_sitting=is_covering_sitting(
                     start_date, end_date, sitting_date
                 ),
-                leave_office=(
-                    None
-                    if office_printed is None
-                    else LeaveOffice(office_printed, LeaveOfficeSource.ATTENDANCE_LIST)
-                ),
+                leave_office=_get_leave_office(leave_entry, attendance_office_printed),
             )
         )
     return planned_printings

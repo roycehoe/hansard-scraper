@@ -87,6 +87,8 @@ _DATE_LEFTOVER_RE = re.compile(r"^[\s,.;]*(?:and[\s,.;]*)*$", re.IGNORECASE)
 _NON_DIGIT_RE = re.compile(r"\D")
 _DIGIT_RE = re.compile(r"\d")
 _NAME_TRAILING_CHARACTERS = ".,-_ "
+_OFFICE_OPENING = ","
+_OFFICE_TRAILING_CHARACTERS = ",-. "
 _PERIOD = "."
 _BOLD_MARKER = "**"
 _TABLE_CELL_SEPARATOR = "|"
@@ -241,6 +243,12 @@ _UNREAD_PRINTING = _PrintingDates(LeaveEntryFormat.UNREAD, None, None, None, Non
 _NO_RANGE_YEARS = _RangeYears(None, None)
 
 
+def _get_office_printed(text_after_bracket: str) -> Optional[str]:
+    if not text_after_bracket.startswith(_OFFICE_OPENING):
+        return None
+    return text_after_bracket.strip(_OFFICE_TRAILING_CHARACTERS) or None
+
+
 def _get_prose_entry_parts(
     line: str, leave_date_misprints: list[LeaveDateMisprint]
 ) -> Optional[_ProseEntryParts]:
@@ -262,7 +270,11 @@ def _get_prose_entry_parts(
     margin_length = len(date_text_with_margin) - len(date_text_with_margin.lstrip())
     return _ProseEntryParts(
         printed_name=printed_name,
-        office_printed=None,
+        office_printed=(
+            None
+            if bracket is None
+            else _get_office_printed(line[bracket.end() : match.start()])
+        ),
         printed_line=line,
         reading_line=reading_line,
         date_text=date_text_with_margin.strip().rstrip(_PERIOD),
