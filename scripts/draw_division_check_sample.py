@@ -234,7 +234,7 @@ def _get_merge_candidates(session: Session) -> list[DivisionCheckCandidate]:
                     continue
                 if division.speech_ordinal is None:
                     raise HansardDivisionCheckError(
-                        f"Division {division.id} holds no report or speech row"
+                        f"Division {division.id} holds no speech row"
                     )
                 candidates.append(
                     DivisionCheckCandidate(

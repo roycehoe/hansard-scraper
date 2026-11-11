@@ -1063,7 +1063,7 @@ def test_a_merged_division_with_no_speech_row_is_refused_by_name(
     )
     scratch_session.flush()
 
-    with pytest.raises(HansardDivisionCheckError, match="holds no report or speech row"):
+    with pytest.raises(HansardDivisionCheckError, match="holds no speech row"):
         draw_division_check_sample_script.get_division_check_candidates(
             scratch_session, DivisionCheckRule.PRINTED_AND_SPOKEN_MERGE
         )
