@@ -14,8 +14,15 @@ For HTML artifact details and parsing edge cases, see [parsing.md](parsing.md).
 Sitting (one day's session)
   └── Attendance  (one row per person listed in PRESENT/ABSENT)
 
+Sitting date
+  └── Minutes     (the Votes and Proceedings file of that date)
+        └── MinutesDivision (one division the file prints)
+
 Report (one parliamentary item within a sitting)
-  └── Speech      (one utterance by one speaker)
+  ├── Speech      (one utterance by one speaker)
+  └── Division    (one recorded vote)
+        ├── DivisionVote       (one printed name and the side it stood on)
+        └── DivisionPartyCount (members per party and side)
 
 Person (one row per individual)
   └── Speaker    (one row per person per parliament)
@@ -265,6 +272,88 @@ One row per Member and division, built from the attendance rows that have a `spe
 | `sitting_count` | int | The number of distinct sittings with this division. |
 | `speaker_id` | int | FK → `Speaker.id`. |
 
+### Division
+
+One row per recorded vote. The counts come from the line the Hansard prints ("The House divided: Ayes, 10; Noes, 3") or from a spoken total ("There are 11 Ayes and 3 Noes"), or from a minutes file for a division only the minutes show. `printed_counts` keeps the text the counts were read from. A division with `count_source` MINUTES has no report, no speech row and no `report_division_number`. A division whose record prints no name list has `list_status` NOT_PRINTED.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `sitting_date` | date | The sitting the vote took place in. |
+| `parliament_number` | int | The Parliament of that sitting. |
+| `report_division_number` | int | The division's number within its report, in speech order. Unique with `sprs_report_id`. NULL for a minutes-only division. |
+| `speech_ordinal` | int | The `speech.ordinal` of the row that prints the counts. NULL for a minutes-only division. |
+| `count_source` | DivisionCountSource | `PRINTED_LINE` for a printed counts line, `SPOKEN_TOTAL` for a total spoken in a speech row, `MINUTES` for a division only the minutes show. |
+| `printed_counts` | str | The counts as the source prints them. |
+| `ayes`, `noes`, `abstentions`, `absent`, `paired` | int | The counts the source gives. NULL where it gives none. |
+| `list_status` | DivisionListStatus | `NOT_PRINTED` when the record prints no list, `STORED` when the names were read and add up to the printed counts, `COUNTS_DISAGREE` when they do not (counts and `printed_list` are kept, no vote rows), `LAYOUT_UNREADABLE` when the list's shape is not one the reader handles. |
+| `printed_list` | str | The list as printed. NULL when the record prints none. |
+| `sprs_report_id` | str | FK → `Report.report_id`. NULL for a minutes-only division. |
+
+### Minutes
+
+One row per sitting date: the Votes and Proceedings file that records what the House did at the sitting, divisions included. The text is kept as the extractor returned it and the bytes are not stored; see [ADR 0018](adr/NNNN-minutes-kept-as-address-hash-and-text.md). `status` is one of `NOT_YET_LISTED` (a sitting with no file listed yet), `LISTED` (the index lists a file and its text is not stored yet), `TEXT_STORED`, `FILE_NOT_FOUND` and `NEEDS_REVIEW` (the file could not be read, or is a Word file; `status_note` says why). Each row comes from the live index page, an Internet Archive capture of the index (`MinutesIndexCapture`, kept as received) or an archived file listing, and `index_source` says which.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `sitting_date` | date | The sitting. Unique. |
+| `printed_label` | str | The index's label for the file, as printed. |
+| `printed_parliament` | str | The Parliament the index prints for it, as printed. |
+| `file_url` | str | The address of the file. |
+| `archive_timestamp` | str | The Internet Archive timestamp of the copy read, where there is one. |
+| `file_format` | MinutesFileFormat | `PDF` or `WORD`. |
+| `sha256` | str | The SHA-256 of the file's bytes. |
+| `size_bytes` | int | The file's size. |
+| `extracted_text` | str | The text the extractor returned, uncleaned. |
+| `status_note` | str | Why a file needs review, or another note on the status. |
+| `fetched_at` | datetime | When the file was fetched. |
+| `status` | MinutesStatus | See above. |
+| `index_source` | MinutesIndexSource | `LIVE_PAGE`, `ARCHIVE_INDEX_CAPTURE` or `ARCHIVE_FILE_LISTING`. |
+| `index_capture_id` | int | FK → `MinutesIndexCapture.id`, for a row read from a capture. |
+
+### MinutesDivision
+
+One row per division a minutes file prints, from 1 October 2008. Each is paired with the Hansard divisions of its date that have the same Ayes and Noes. `pairing` is one of `PAIRED` (the group has as many Hansard divisions as minutes divisions, and they pair in order), `NO_MATCHING_DIVISION` (no Hansard division has those counts on that date; the row keeps its own minutes-only division), `UNEQUAL_NUMBER` (the two sources hold a different number of divisions with those counts), `TIED` (two reports of the date share a speech number, so the order cannot be trusted) and `ABSTENTIONS_DIFFER` (both print abstentions and they differ). A list whose sides disagree with the printed counts stores no vote rows, and `list_status` says so.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `ordinal` | int | Order within the file. Unique with `minutes_id`. |
+| `printed_counts` | str | The counts as the file prints them. |
+| `ayes`, `noes`, `abstentions` | int | The counts. `abstentions` is NULL where none are printed. |
+| `printed_list` | str | The list as printed. |
+| `list_status` | DivisionListStatus | As on `Division`. |
+| `pairing` | MinutesDivisionPairing | See above. |
+| `minutes_id` | int | FK → `Minutes.id`. |
+| `division_id` | int | FK → `Division.id`: the paired Hansard division, or the minutes-only division the row owns. |
+
+### DivisionVote
+
+One row per printed name in a division's list, from the Hansard (`list_source` HANSARD) or the minutes (`MINUTES`). Rows with `vote_choice` ABSENT or PAIRED are stored because the record prints them, and they are not votes. The party breakdown counts only AYE, NO and ABSTAIN. A printed name links to a `Speaker` only by `name_rule` EXACT, INVERTED, BIN_FREE, SAME_WORDS or HAND_LIST, never by subset, prefix or surname; a name that matches no single Member stays with no link. `party` is the Member's party on the sitting date, and `is_party_uncertain` is true when the party history does not settle it. Spoken corrections to a list are not applied.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `ordinal` | int | Position in the list. Unique with `division_id` and `list_source`. |
+| `printed_name` | str | The name as printed. |
+| `vote_choice` | DivisionVoteChoice | `AYE`, `NO`, `ABSTAIN`, `ABSENT` or `PAIRED`. |
+| `list_source` | DivisionVoteListSource | `MINUTES` or `HANSARD`. |
+| `name_rule` | DivisionVoteNameRule | The rule that linked the name. NULL when there is no link. |
+| `party` | str | The party on the sitting date. NULL when there is no link. |
+| `is_party_uncertain` | bool | Whether the party on that date is a best reading. |
+| `division_id` | int | FK → `Division.id`. |
+| `speaker_id` | int | FK → `Speaker.id`. NULL when the name links to no one. |
+
+### DivisionPartyCount
+
+One row per division, side and party: how many Members of the party stood on that side. It is rebuilt from `DivisionVote` rows and counts only AYE, NO and ABSTAIN. A division is counted from its minutes list when that is stored, and from its Hansard list otherwise; `list_source` says which. `party` is NULL for the Members whose party is not known.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `member_count` | int | Members of the party on that side. |
+| `uncertain_member_count` | int | How many of them have `is_party_uncertain` set. |
+| `party` | str | The party. NULL when none is known. |
+| `list_source` | DivisionVoteListSource | The list the rows came from. |
+| `vote_choice` | DivisionVoteChoice | `AYE`, `NO` or `ABSTAIN`. A check constraint refuses any other. |
+| `division_id` | int | FK → `Division.id`. Unique with `vote_choice` and `party`. |
+
 ---
 
 ## Report types
@@ -319,4 +408,5 @@ SPRS types 39 reports `oral-answer` that hold no spoken exchange, only a numbere
 - Some raw titles hold Windows-1252 mojibake (e.g. `â€™` instead of `’`). `Report.title` and `Report.subtitle` are fixed: since 19 October 2026 none holds it. 11 `Report.original_title` values keep it, the 7 `budget` and 4 `president-address` titles rewritten that day. The raw title is in `hansardwebsiteresponse.title`.
 - Colonial-era records from 1955–1961 (Parliament 0) have no `MPs Speaking` field, so single-speaker attribution fallback cannot apply.
 - `Speech.speaker_id` is incomplete for colonial-era and early-parliament records.
+- Hansard name lists are read by position from `report.content`, so lists printed as `<pre>` blocks, as tables and as one name per paragraph are read. A list printed as an image, a bare heading with no names and any other shape stay unread (`LAYOUT_UNREADABLE` or `NOT_PRINTED`). A list whose names do not add up to its printed counts (15 May 1985: 55 names against 56 printed) stores its counts and `printed_list` and no names.
 - ~3% of modern-era sitting documents have a missing space before the time (e.g. `"The House met at3.00 pm"`). This is a defect in the raw HTML.
