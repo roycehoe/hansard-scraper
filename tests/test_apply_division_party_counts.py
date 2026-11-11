@@ -9,6 +9,7 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session, func, select
 
 import scripts.apply_division_party_counts as apply_division_party_counts_script
+from crud.division_party_count import CRUDDivisionPartyCount
 from database.division import Division
 from database.division_party_count import DivisionPartyCount
 from database.division_vote import DivisionVote
@@ -228,6 +229,34 @@ def test_commit_stores_the_breakdown_and_a_rerun_replaces_it(
     assert len(minutes_counts) == _MINUTES_ROW_COUNT
     assert minutes_counts[0].list_source == DivisionVoteListSource.MINUTES
     assert (minutes_counts[0].party, minutes_counts[0].member_count) == (_PARTY, 1)
+
+
+def test_a_breakdown_delete_that_returns_a_wrong_count_refuses_the_rewrite(
+    scratch_session: Session,
+    log_recorder: _LogRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _add_division_with_hansard_votes(scratch_session)
+    first_plan_path = tmp_path / "first.json"
+    apply_division_party_counts([], first_plan_path, is_commit=False)
+    apply_division_party_counts([], first_plan_path, is_commit=True)
+    second_plan_path = tmp_path / "second.json"
+    apply_division_party_counts([], second_plan_path, is_commit=False)
+    delete_by_division_ids = CRUDDivisionPartyCount.delete_by_division_ids
+    monkeypatch.setattr(
+        CRUDDivisionPartyCount,
+        "delete_by_division_ids",
+        lambda crud_party_count, deleted_division_ids: delete_by_division_ids(
+            crud_party_count, deleted_division_ids
+        )
+        - 1,
+    )
+
+    with pytest.raises(HansardWriteCheckError, match="party count rows"):
+        apply_division_party_counts([], second_plan_path, is_commit=True)
+
+    assert _get_party_count_count(scratch_session) == _HANSARD_ROW_COUNT
 
 
 def test_populate_division_party_counts_emits_no_delete(

@@ -10,6 +10,7 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session, func, select
 
 import scripts.apply_divisions as apply_divisions_script
+from crud.division_party_count import CRUDDivisionPartyCount
 from database.division import Division
 from database.division_party_count import DivisionPartyCount
 from database.division_vote import DivisionVote
@@ -855,6 +856,40 @@ def test_a_rerun_after_a_breakdown_exists_deletes_the_breakdown_before_the_divis
     surviving_division_ids = _get_division_ids(scratch_session)
     assert len(surviving_division_ids) == _SEEDED_DIVISION_COUNT - 1
     assert _get_party_count_division_ids(scratch_session) == surviving_division_ids
+
+
+def test_a_breakdown_delete_that_returns_a_wrong_count_refuses_the_division_write(
+    scratch_session: Session,
+    log_recorder: _LogRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        apply_divisions_script, "vacuum_analyze_written_tables", _VacuumRecorder()
+    )
+    _seed_reports(scratch_session)
+    plan_path = tmp_path / "plan.json"
+    apply_divisions([], plan_path, is_commit=False, is_detach_paired=False)
+    apply_divisions([], plan_path, is_commit=True, is_detach_paired=False)
+    division_ids = _get_division_ids(scratch_session)
+    _add_party_counts(scratch_session, division_ids)
+    _remove_first_division_line(scratch_session)
+    apply_divisions([], plan_path, is_commit=False, is_detach_paired=False)
+    delete_by_division_ids = CRUDDivisionPartyCount.delete_by_division_ids
+    monkeypatch.setattr(
+        CRUDDivisionPartyCount,
+        "delete_by_division_ids",
+        lambda crud_party_count, deleted_division_ids: delete_by_division_ids(
+            crud_party_count, deleted_division_ids
+        )
+        - 1,
+    )
+
+    with pytest.raises(HansardWriteCheckError, match="party count rows"):
+        apply_divisions([], plan_path, is_commit=True, is_detach_paired=False)
+
+    assert _get_division_ids(scratch_session) == division_ids
+    assert _get_party_count_division_ids(scratch_session) == division_ids
 
 
 def test_detach_paired_deletes_the_hansard_breakdown(

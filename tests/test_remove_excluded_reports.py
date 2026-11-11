@@ -9,6 +9,7 @@ from sqlmodel import Session, col, func, select
 
 import scripts.remove_excluded_reports as remove_excluded_reports_script
 from crud.division import CRUDDivision
+from crud.division_party_count import CRUDDivisionPartyCount
 from database.attached_file_pointer import AttachedFilePointer
 from database.bill_report_speaker import BillReportSpeaker
 from database.bill_stage_line import BillStageLine
@@ -747,6 +748,42 @@ def test_removing_a_report_deletes_its_minutes_division_and_vote_rows(
     assert _get_row_count(scratch_session, MinutesDivision) == 0
     assert _get_row_count(scratch_session, DivisionVote) == 0
     assert _get_row_count(scratch_session, Minutes) == 1
+
+
+def test_commit_refuses_when_fewer_party_count_rows_are_deleted_than_planned(
+    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_division(scratch_session, _EXCLUDED_REPORT_ID)
+    for division in scratch_session.exec(select(Division)).all():
+        assert division.id is not None
+        scratch_session.add(
+            DivisionPartyCount(
+                member_count=_DIVISION_AYES,
+                uncertain_member_count=0,
+                party="PAP",
+                list_source=DivisionVoteListSource.HANSARD,
+                vote_choice=DivisionVoteChoice.AYE,
+                division_id=division.id,
+            )
+        )
+    scratch_session.commit()
+    delete_by_division_ids = CRUDDivisionPartyCount.delete_by_division_ids
+    monkeypatch.setattr(
+        CRUDDivisionPartyCount,
+        "delete_by_division_ids",
+        lambda crud_party_count, deleted_division_ids: delete_by_division_ids(
+            crud_party_count, deleted_division_ids
+        )
+        - 1,
+    )
+
+    with pytest.raises(HansardWriteCheckError, match="party count rows"):
+        remove_excluded_reports_script.remove_excluded_reports(True, None)
+
+    assert _get_report_ids(scratch_session) == [_EXCLUDED_REPORT_ID, _KEPT_REPORT_ID]
+    assert _get_row_count(scratch_session, DivisionPartyCount) == 1
 
 
 def test_removing_a_report_deletes_its_party_count_rows(

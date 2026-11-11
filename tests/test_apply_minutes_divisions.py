@@ -11,6 +11,7 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session, func, select
 
 import scripts.apply_minutes_divisions as apply_minutes_divisions_script
+from crud.division_party_count import CRUDDivisionPartyCount
 from database.division import Division
 from database.division_party_count import DivisionPartyCount
 from database.division_vote import DivisionVote
@@ -734,6 +735,46 @@ def test_populate_minutes_divisions_inserts_with_no_delete(
         if statement.lstrip().upper().startswith("DELETE")
     ]
     assert len(_get_minutes_divisions(scratch_session)) == _DIVISION_COUNT
+
+
+def test_a_breakdown_delete_that_returns_a_wrong_count_refuses_the_minutes_write(
+    scratch_session: Session,
+    log_recorder: _LogRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _, minutes_id = _seed_standard(scratch_session)
+    first_plan_path = tmp_path / "first.json"
+    _commit(first_plan_path, [minutes_id])
+    scratch_session.add_all(
+        DivisionPartyCount(
+            member_count=_AYE_COUNT,
+            uncertain_member_count=0,
+            party="PAP",
+            list_source=DivisionVoteListSource.MINUTES,
+            vote_choice=DivisionVoteChoice.AYE,
+            division_id=division.id,
+        )
+        for division in scratch_session.exec(select(Division)).all()
+    )
+    scratch_session.commit()
+    party_count_total = _get_count(scratch_session, DivisionPartyCount)
+    second_plan_path = tmp_path / "second.json"
+    apply_minutes_divisions([minutes_id], second_plan_path, is_commit=False)
+    delete_by_division_ids = CRUDDivisionPartyCount.delete_by_division_ids
+    monkeypatch.setattr(
+        CRUDDivisionPartyCount,
+        "delete_by_division_ids",
+        lambda crud_party_count, deleted_division_ids: delete_by_division_ids(
+            crud_party_count, deleted_division_ids
+        )
+        - 1,
+    )
+
+    with pytest.raises(HansardWriteCheckError, match="party count rows"):
+        apply_minutes_divisions([minutes_id], second_plan_path, is_commit=True)
+
+    assert _get_count(scratch_session, DivisionPartyCount) == party_count_total
 
 
 def test_a_rerun_after_a_breakdown_exists_deletes_the_breakdown_before_the_minutes_only_division(
