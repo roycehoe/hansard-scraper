@@ -22,6 +22,7 @@ from enums import (
     DivisionListStatus,
     DivisionVoteChoice,
     DivisionVoteListSource,
+    DivisionVoteNameRule,
     MinutesDivisionPairing,
     MinutesStatus,
 )
@@ -59,6 +60,16 @@ _LINKED_SPEAKER_NAMES = (
     "Louis Chua Kheng Wee",
 )
 _VOTE_INSERT_PREFIX = "INSERT INTO division_vote"
+_HAND_LIST_PRINTED_NAME = "Masagos Zulkifli B M M"
+_HAND_LIST_CANONICAL_NAME = "Masagos Zulkifli Bin Masagos Mohamad"
+_HAND_LIST_MINUTES_TEXT = """
+On Question put, a division was taken: Ayes 2, Noes 1.
+
+Ayes                          Noes
+
+Masagos Zulkifli B M M        Pritam Singh
+Lee Hsien Loong
+"""
 
 
 class _LogRecorder:
@@ -638,6 +649,54 @@ def test_a_rerun_over_a_date_with_a_minutes_only_division_gives_the_same_plan_an
     } == {MinutesDivisionPairing.NO_MATCHING_DIVISION}
     assert _get_stored_state(scratch_session) == first_state
     assert _get_count(scratch_session, Division) == first_division_count
+
+
+def test_a_hand_listed_name_that_two_speaker_rows_hold_links_to_nobody(
+    scratch_session: Session,
+) -> None:
+    scratch_session.add(
+        Speaker(
+            name=_HAND_LIST_CANONICAL_NAME,
+            party="PAP",
+            is_legislative_assembly=False,
+            parliament_number=_PARLIAMENT_NUMBER,
+        )
+    )
+    add_division_report(
+        scratch_session,
+        _REPORT_ID,
+        datetime(2021, 10, 4),
+        parliament_number=_PARLIAMENT_NUMBER,
+    )
+    minutes_id = _add_minutes(scratch_session, _SITTING_DATE, _HAND_LIST_MINUTES_TEXT)
+    scratch_session.commit()
+
+    one_row_plan = get_minutes_division_plan(scratch_session, [minutes_id])
+    scratch_session.add(
+        Speaker(
+            name=_HAND_LIST_CANONICAL_NAME,
+            party="PAP",
+            is_legislative_assembly=False,
+            parliament_number=_PARLIAMENT_NUMBER,
+        )
+    )
+    scratch_session.commit()
+    two_row_plan = get_minutes_division_plan(scratch_session, [minutes_id])
+
+    (one_row_vote,) = [
+        vote
+        for vote in one_row_plan.minutes_divisions[0].votes
+        if vote.printed_name == _HAND_LIST_PRINTED_NAME
+    ]
+    (two_row_vote,) = [
+        vote
+        for vote in two_row_plan.minutes_divisions[0].votes
+        if vote.printed_name == _HAND_LIST_PRINTED_NAME
+    ]
+    assert one_row_vote.name_rule == DivisionVoteNameRule.HAND_LIST
+    assert one_row_vote.speaker_id is not None
+    assert two_row_vote.speaker_id is None
+    assert two_row_vote.name_rule is None
 
 
 def test_populate_minutes_divisions_inserts_with_no_delete(

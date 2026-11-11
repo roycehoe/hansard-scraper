@@ -22,6 +22,7 @@ from enums import (
     DivisionListStatus,
     DivisionVoteChoice,
     DivisionVoteListSource,
+    DivisionVoteNameRule,
     MinutesDivisionPairing,
     MinutesStatus,
     SpeechKind,
@@ -448,6 +449,11 @@ _LIST_LINE = "The House divided: Ayes, 23; Noes, 20; Absent, 3; Paired, 4."
 _LIST_PARLIAMENT_NUMBER = 1
 _LIST_VOTE_ROW_COUNT = 50
 _LINKED_NAMES = ("Goh Keng Swee", "Chan Choy Siong", "Lim Yew Hock")
+_HAND_LIST_REPORT_ID = "report-hand-list"
+_HAND_LIST_PARLIAMENT_NUMBER = 11
+_HAND_LIST_PRINTED_NAME = "Masagos Zulkifli B M M"
+_HAND_LIST_CANONICAL_NAME = "Masagos Zulkifli Bin Masagos Mohamad"
+_HAND_LIST_LINE = "Division taken: Ayes, 5; Noes, 62; Abstention, Nil."
 _LATER_LINKED_NAME = "Toh Chin Chye"
 
 
@@ -542,6 +548,60 @@ def test_a_linked_name_carries_its_party_and_name_rule_and_an_unlinked_name_carr
         sum(vote.speaker_id is not None for vote in plan.divisions[0].votes)
         == len(_LINKED_NAMES)
     )
+
+
+def test_a_hand_listed_name_that_two_speaker_rows_hold_links_to_nobody(
+    scratch_session: Session,
+) -> None:
+    scratch_session.add(
+        Speaker(
+            name=_HAND_LIST_CANONICAL_NAME,
+            party="PAP",
+            is_legislative_assembly=False,
+            parliament_number=_HAND_LIST_PARLIAMENT_NUMBER,
+        )
+    )
+    report = add_division_report(
+        scratch_session,
+        _HAND_LIST_REPORT_ID,
+        datetime(2008, 8, 27),
+        parliament_number=_HAND_LIST_PARLIAMENT_NUMBER,
+    )
+    report.content = (_FIXTURE_DIRECTORY / "hansard_list_2008_08_27.html").read_text(
+        encoding="utf-8"
+    )
+    add_division_speech_rows(
+        scratch_session, report, [(SpeechKind.PROCEDURAL, None, _HAND_LIST_LINE)]
+    )
+    scratch_session.commit()
+    assert report.id is not None
+
+    one_row_plan = get_division_plan(scratch_session, [report.id])
+    scratch_session.add(
+        Speaker(
+            name=_HAND_LIST_CANONICAL_NAME,
+            party="PAP",
+            is_legislative_assembly=False,
+            parliament_number=_HAND_LIST_PARLIAMENT_NUMBER,
+        )
+    )
+    scratch_session.commit()
+    two_row_plan = get_division_plan(scratch_session, [report.id])
+
+    (one_row_vote,) = [
+        vote
+        for vote in one_row_plan.divisions[0].votes
+        if vote.printed_name == _HAND_LIST_PRINTED_NAME
+    ]
+    (two_row_vote,) = [
+        vote
+        for vote in two_row_plan.divisions[0].votes
+        if vote.printed_name == _HAND_LIST_PRINTED_NAME
+    ]
+    assert one_row_vote.name_rule == DivisionVoteNameRule.HAND_LIST
+    assert one_row_vote.speaker_id is not None
+    assert two_row_vote.speaker_id is None
+    assert two_row_vote.name_rule is None
 
 
 def test_an_unreadable_list_stores_the_division_and_no_vote_rows(

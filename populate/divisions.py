@@ -104,6 +104,9 @@ def get_decade_and_source_counts(
 
 def _build_name_lookups(session: Session) -> _NameLookups:
     speakers = CRUDSpeaker(session).get_all()
+    name_parliament_number_to_speaker_count = Counter(
+        (speaker.name, speaker.parliament_number) for speaker in speakers
+    )
     return _NameLookups(
         speaker_lookups=build_speaker_lookups(speakers),
         inverted_name_to_canonical=build_inverted_name_to_canonical(speakers),
@@ -111,6 +114,10 @@ def _build_name_lookups(session: Session) -> _NameLookups:
             (speaker.name, speaker.parliament_number): speaker.id
             for speaker in speakers
             if speaker.id is not None
+            and name_parliament_number_to_speaker_count[
+                (speaker.name, speaker.parliament_number)
+            ]
+            == 1
         },
         speaker_id_to_party={
             speaker.id: speaker.party for speaker in speakers if speaker.id is not None
