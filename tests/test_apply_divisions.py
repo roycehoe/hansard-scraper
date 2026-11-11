@@ -428,6 +428,16 @@ def test_a_paired_division_whose_abstentions_would_change_is_refused_even_with_d
     assert minutes_division.pairing == MinutesDivisionPairing.PAIRED
 
 
+def _get_statement_effects(statement: str) -> tuple[str, str]:
+    verb = statement.split()[0].upper()
+    table_match = re.search(
+        r"\b(?:FROM|INTO|UPDATE)\s+\"?(\w+)\"?", statement, re.IGNORECASE
+    )
+    if table_match is None:
+        return verb, ""
+    return verb, table_match.group(1).lower()
+
+
 def _change_first_division_line(session: Session) -> None:
     speech = session.exec(select(Speech).where(Speech.transcript == _LINE_FIRST)).one()
     speech.transcript = _LINE_FIRST_WITH_CHANGED_AYES
@@ -591,16 +601,6 @@ def _get_hansard_votes(session: Session) -> list[DivisionVote]:
             .order_by(DivisionVote.ordinal)
         ).all()
     )
-
-
-def _get_statement_effects(statement: str) -> tuple[str, str]:
-    verb = statement.split()[0].upper()
-    table_match = re.search(
-        r"\b(?:FROM|INTO|UPDATE)\s+\"?(\w+)\"?", statement, re.IGNORECASE
-    )
-    if table_match is None:
-        return verb, ""
-    return verb, table_match.group(1).lower()
 
 
 def test_the_plan_stores_hansard_vote_rows_with_list_status_stored(
