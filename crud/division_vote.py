@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from datetime import date
 from typing import Optional
 
 from sqlmodel import Session, col, delete, select
 
+from database.division import Division
 from database.division_vote import DivisionVote
 from enums import DivisionVoteChoice, DivisionVoteListSource, DivisionVoteNameRule
 
@@ -18,6 +20,18 @@ class DivisionVoteRow:
     name_rule: Optional[DivisionVoteNameRule]
     party: Optional[str]
     is_party_uncertain: bool
+
+
+@dataclass(frozen=True)
+class DivisionVoteSittingRow:
+    division_id: int
+    sprs_report_id: Optional[str]
+    sitting_date: date
+    list_source: DivisionVoteListSource
+    ordinal: int
+    printed_name: str
+    vote_choice: DivisionVoteChoice
+    speaker_id: int
 
 
 class CRUDDivisionVote:
@@ -48,6 +62,30 @@ class CRUDDivisionVote:
             .order_by(DivisionVote.division_id, DivisionVote.ordinal)
         )
         return [DivisionVoteRow(*row) for row in self.session.exec(statement).all()]
+
+    def get_sitting_date_rows_by_speaker_id_not_null(
+        self,
+    ) -> list[DivisionVoteSittingRow]:
+        statement = (
+            select(
+                DivisionVote.division_id,
+                Division.sprs_report_id,
+                Division.sitting_date,
+                DivisionVote.list_source,
+                DivisionVote.ordinal,
+                DivisionVote.printed_name,
+                DivisionVote.vote_choice,
+                DivisionVote.speaker_id,
+            )
+            .join(Division, col(Division.id) == col(DivisionVote.division_id))
+            .where(col(DivisionVote.speaker_id).is_not(None))
+            .order_by(
+                DivisionVote.division_id, DivisionVote.list_source, DivisionVote.ordinal
+            )
+        )
+        return [
+            DivisionVoteSittingRow(*row) for row in self.session.exec(statement).all()
+        ]
 
     def get_distinct_division_ids(self) -> list[int]:
         statement = select(DivisionVote.division_id).distinct().order_by(

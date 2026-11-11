@@ -144,6 +144,17 @@ class CRUDAttendance:
         )
         return list(self.session.exec(statement).all())
 
+    def get_by_is_present_and_speaker_id_not_null(
+        self, is_present: bool
+    ) -> list[Attendance]:
+        statement = (
+            select(Attendance)
+            .where(col(Attendance.is_present) == is_present)
+            .where(col(Attendance.speaker_id).is_not(None))
+            .order_by(col(Attendance.sitting_id), col(Attendance.id))
+        )
+        return list(self.session.exec(statement).all())
+
     def get_distinct_sitting_ids(self) -> set[int]:
         statement = select(Attendance.sitting_id).distinct()
         return set(self.session.exec(statement).all())

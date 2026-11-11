@@ -29,6 +29,12 @@ class CRUDMinutesDivision:
         self.session.add_all(minutes_divisions)
         self.session.flush()
 
+    def get_all(self) -> list[MinutesDivision]:
+        statement = select(MinutesDivision).order_by(
+            col(MinutesDivision.minutes_id), col(MinutesDivision.ordinal)
+        )
+        return list(self.session.exec(statement).all())
+
     def get_rows_by_minutes_ids(
         self, minutes_ids: list[int]
     ) -> list[MinutesDivisionRow]:

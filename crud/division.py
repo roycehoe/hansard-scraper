@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import date
 
 from sqlalchemy import update
@@ -7,6 +8,12 @@ from database.division import Division
 from enums import DivisionCountSource, DivisionListStatus
 from utils.division_detachment import DivisionDetachment
 from utils.division_update import DivisionUpdate
+
+
+@dataclass(frozen=True)
+class DivisionListStatusRow:
+    sitting_date: date
+    list_status: DivisionListStatus
 
 
 class CRUDDivision:
@@ -53,6 +60,22 @@ class CRUDDivision:
             .order_by(col(Division.sitting_date), col(Division.id))
         )
         return list(self.session.exec(statement).all())
+
+    def get_by_list_statuses(
+        self, list_statuses: list[DivisionListStatus]
+    ) -> list[Division]:
+        statement = (
+            select(Division)
+            .where(col(Division.list_status).in_(list_statuses))
+            .order_by(col(Division.sitting_date), col(Division.id))
+        )
+        return list(self.session.exec(statement).all())
+
+    def get_list_status_rows(self) -> list[DivisionListStatusRow]:
+        statement = select(Division.sitting_date, Division.list_status)
+        return [
+            DivisionListStatusRow(*row) for row in self.session.exec(statement).all()
+        ]
 
     def delete_by_ids(self, division_ids: list[int]) -> int:
         statement = delete(Division).where(col(Division.id).in_(division_ids))

@@ -184,7 +184,7 @@ def _get_planned_votes(
     return planned_votes
 
 
-def _get_pairable_hansard_divisions(
+def get_pairable_hansard_divisions(
     session: Session, sitting_dates: list[date]
 ) -> list[PairableHansardDivision]:
     divisions = CRUDDivision(session).get_by_sitting_dates_and_sprs_report_id_not_null(
@@ -322,7 +322,7 @@ def _plan_minutes_batch(
             )
         )
     division_pairings = get_division_pairs(
-        _get_pairable_hansard_divisions(
+        get_pairable_hansard_divisions(
             session,
             sorted(
                 {parsed_minutes.sitting_date for parsed_minutes in parsed_minutes_list}
