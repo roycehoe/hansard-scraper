@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from typing import Optional
 
+import pytest
 from bs4 import BeautifulSoup
 
 from enums import DivisionListStatus, DivisionVoteChoice
@@ -142,6 +143,22 @@ def test_the_printed_counts_of_each_stored_fixture_equal_the_names_read() -> Non
 
 def test_15_may_1985_counts_disagree_and_stores_no_names() -> None:
     html, expected = _read_fixture("hansard_list_1985_05_15")
+
+    parsed_list = _get_fixture_list(html, expected)
+
+    assert parsed_list.list_status == DivisionListStatus.COUNTS_DISAGREE
+    assert parsed_list.printed_list is not None
+    assert parsed_list.names == []
+
+
+@pytest.mark.parametrize(
+    "side_with_a_name_dropped", ["ayes", "abstentions", "absent", "paired"]
+)
+def test_one_side_short_of_a_name_gives_counts_disagree_and_no_names(
+    side_with_a_name_dropped: str,
+) -> None:
+    html, expected = _read_fixture("hansard_list_1957_12_13")
+    expected[side_with_a_name_dropped] += 1
 
     parsed_list = _get_fixture_list(html, expected)
 
