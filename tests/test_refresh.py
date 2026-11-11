@@ -60,6 +60,7 @@ from exceptions import (
     HansardMinutesIndexError,
     HansardRefreshFailureError,
     HansardRefreshRunError,
+    HansardWriteCheckError,
 )
 from populate.minutes import MinutesStepResult
 from populate.minutes_divisions import UNREAD_DIVISION_STATUS_NOTE
@@ -1985,6 +1986,45 @@ def test_the_daily_minutes_step_writes_divisions_in_the_file_commit(
     assert (
         scratch_session.exec(select(func.count()).select_from(MinutesDivision)).one()
         == _MINUTES_DIVISION_ROW_COUNT
+    )
+
+
+def test_a_failed_division_step_leaves_the_file_listed_with_no_rows(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_division_step(session: Session, minutes_id: int) -> None:
+        raise HansardWriteCheckError("The division step failed")
+
+    monkeypatch.setattr(
+        minutes_step,
+        "get_minutes_pdf_text",
+        lambda content: _MINUTES_DIVISION_TEXT_FIXTURE.read_text(encoding="utf-8"),
+    )
+    monkeypatch.setattr(minutes_step, "populate_minutes_divisions", fail_division_step)
+    seed_stored(scratch_session)
+    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 10))
+    scratch_session.add(
+        Minutes(sitting_date=date(2018, 1, 10), status=MinutesStatus.NOT_YET_LISTED)
+    )
+    scratch_session.commit()
+    _list_minutes_file(
+        fake_parliament, date(2018, 1, 10), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
+    )
+
+    with pytest.raises(HansardWriteCheckError):
+        minutes_step.populate_minutes(scratch_session, set())
+
+    scratch_session.rollback()
+    stored_minutes = scratch_session.exec(
+        select(Minutes).where(col(Minutes.sitting_date) == date(2018, 1, 10))
+    ).one()
+    assert stored_minutes.status == MinutesStatus.LISTED
+    assert stored_minutes.extracted_text is None
+    assert (
+        scratch_session.exec(select(func.count()).select_from(MinutesDivision)).one()
+        == 0
     )
 
 
