@@ -429,6 +429,28 @@ def test_commit_refuses_when_the_duplicate_text_differs(
     assert _get_speech_count(scratch_session) == _SEEDED_SPEECH_COUNT
 
 
+def test_commit_refuses_when_the_duplicate_speech_rows_differ(
+    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    _seed_duplicate(scratch_session)
+    _add_division(scratch_session, _EXCLUDED_REPORT_ID)
+    speech = scratch_session.exec(
+        select(Speech)
+        .join(Report, col(Report.id) == col(Speech.report_id))
+        .where(Report.report_id == _EXCLUDED_REPORT_ID)
+    ).one()
+    speech.transcript = "Different speech."
+    scratch_session.commit()
+
+    with pytest.raises(HansardWriteCheckError, match="speech rows differ"):
+        remove_excluded_reports_script.remove_excluded_reports(True, None)
+
+    assert _get_report_ids(scratch_session) == [_EXCLUDED_REPORT_ID, _KEPT_REPORT_ID]
+    assert _get_speech_count(scratch_session) == _SEEDED_SPEECH_COUNT
+    assert _get_division_report_ids(scratch_session) == [_EXCLUDED_REPORT_ID]
+
+
 def test_commit_deletes_exactly_the_planned_report_and_speeches(
     scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
