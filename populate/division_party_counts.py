@@ -42,7 +42,10 @@ def _get_batch_plan(
     for minutes_division_row in CRUDMinutesDivision(session).get_rows_by_division_ids(
         batch_division_ids
     ):
-        if minutes_division_row.division_id in division_id_to_minutes_list_status:
+        if (
+            division_id_to_minutes_list_status.get(minutes_division_row.division_id)
+            is not None
+        ):
             raise HansardWriteCheckError(
                 f"Division {minutes_division_row.division_id} has two minutes divisions"
             )

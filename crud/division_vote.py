@@ -100,7 +100,7 @@ class CRUDDivisionVote:
             DivisionVoteSittingRow(*row) for row in self.session.exec(statement).all()
         ]
 
-    def get_link_rows_by_name_rule(
+    def get_link_rows_by_name_rule_and_speaker_id_not_null(
         self, name_rule: DivisionVoteNameRule
     ) -> list[DivisionVoteLinkRow]:
         statement = (

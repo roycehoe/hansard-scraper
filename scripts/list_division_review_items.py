@@ -43,7 +43,7 @@ from services.division_pairing import (
     DivisionPairing,
     PairableHansardDivision,
     PairableMinutesDivision,
-    get_division_pairs,
+    get_division_pairings,
 )
 from settings import settings
 from utils.sitting_dates import get_decade_label, parse_sitting_date
@@ -237,7 +237,7 @@ def _build_pairing_items(inputs: _ReviewInputs) -> list[DivisionReviewItem]:
 def _build_stale_pairing_items(inputs: _ReviewInputs) -> list[DivisionReviewItem]:
     sitting_date_and_ordinal_to_pairing: dict[tuple[date, int], DivisionPairing] = {
         (division_pairing.sitting_date, division_pairing.minutes_ordinal): division_pairing
-        for division_pairing in get_division_pairs(
+        for division_pairing in get_division_pairings(
             inputs.pairable_hansard_divisions,
             [
                 PairableMinutesDivision(

@@ -65,40 +65,41 @@ def _read_live_index(page: str) -> LiveMinutesIndex:
     raise HansardMinutesIndexError("The live index page holds no initialMPs rows")
 
 
-def _build_live_row(row: LiveMinutesRow, media_url: str) -> MinutesIndexRow:
+def _build_live_row(live_minutes_row: LiveMinutesRow, media_url: str) -> MinutesIndexRow:
     try:
-        sitting_date = datetime.fromisoformat(row.date).date()
+        sitting_date = datetime.fromisoformat(live_minutes_row.date).date()
     except ValueError as error:
         raise HansardMinutesIndexError(
-            f"The live row {row.description!r} has no parseable date"
+            f"The live row {live_minutes_row.description!r} has no parseable date"
         ) from error
     try:
-        file_format = _MEDIA_TYPE_TO_FILE_FORMAT[row.report.type]
+        file_format = _MEDIA_TYPE_TO_FILE_FORMAT[live_minutes_row.report.type]
     except KeyError as error:
         raise HansardMinutesIndexError(
-            f"The live row {row.description!r} has the unknown media type {row.report.type!r}"
+            f"The live row {live_minutes_row.description!r} has the unknown media type {live_minutes_row.report.type!r}"
         ) from error
     return MinutesIndexRow(
         sitting_date=sitting_date,
-        printed_label=row.description,
-        printed_parliament=None if row.parliaments is None else row.parliaments.title,
-        file_url=f"{media_url}/{row.report.id}/{quote(row.report.filename_download, safe='')}",
+        printed_label=live_minutes_row.description,
+        printed_parliament=None if live_minutes_row.parliaments is None else live_minutes_row.parliaments.title,
+        file_url=f"{media_url}/{live_minutes_row.report.id}/{quote(live_minutes_row.report.filename_download, safe='')}",
         file_format=file_format,
     )
 
 
 def parse_live_index_page(page: str, media_url: str) -> list[MinutesIndexRow]:
     live_index = _read_live_index(page)
-    return [_build_live_row(row, media_url) for row in live_index.data]
+    return [_build_live_row(live_minutes_row, media_url) for live_minutes_row in live_index.data]
 
 
-def _read_archive_label(indv_vote: Tag, file_url: str) -> str:
-    label_element = indv_vote.select_one("h5")
-    if label_element is None:
-        label_element = indv_vote.select_one("a span")
-    if label_element is None:
+def _read_archive_label(individual_vote_element: Tag, file_url: str) -> str:
+    heading_element = individual_vote_element.select_one("h5")
+    if heading_element is not None:
+        return heading_element.get_text(" ", strip=True)
+    span_element = individual_vote_element.select_one("a span")
+    if span_element is None:
         raise HansardMinutesIndexError(f"The archive row of {file_url} has no label")
-    return label_element.get_text(" ", strip=True)
+    return span_element.get_text(" ", strip=True)
 
 
 def _read_archive_sitting_date(columns: list[Tag], printed_label: str) -> date:
@@ -138,16 +139,16 @@ def _read_archive_file_format(file_url: str) -> MinutesFileFormat:
         ) from error
 
 
-def _build_archive_row(indv_vote: Tag, index_url: str) -> MinutesIndexRow:
-    anchor = indv_vote.select_one("a[href]")
+def _build_archive_row(individual_vote_element: Tag, index_url: str) -> MinutesIndexRow:
+    anchor = individual_vote_element.select_one("a[href]")
     if anchor is None:
         raise HansardMinutesIndexError("An archive row holds no file link")
     href = anchor.get("href")
     if not isinstance(href, str):
         raise HansardMinutesIndexError("An archive row's file link has no address")
     file_url = urljoin(index_url, href)
-    printed_label = _read_archive_label(indv_vote, file_url)
-    columns = indv_vote.select("div.vp-title > div")
+    printed_label = _read_archive_label(individual_vote_element, file_url)
+    columns = individual_vote_element.select("div.vp-title > div")
     return MinutesIndexRow(
         sitting_date=_read_archive_sitting_date(columns, printed_label),
         printed_label=printed_label,
@@ -160,8 +161,8 @@ def _build_archive_row(indv_vote: Tag, index_url: str) -> MinutesIndexRow:
 def parse_archive_index_page(page: str, index_url: str) -> list[MinutesIndexRow]:
     soup = BeautifulSoup(page, "html.parser")
     return [
-        _build_archive_row(indv_vote, index_url)
-        for indv_vote in soup.select("div.indv-votes")
+        _build_archive_row(individual_vote_element, index_url)
+        for individual_vote_element in soup.select("div.indv-votes")
     ]
 
 

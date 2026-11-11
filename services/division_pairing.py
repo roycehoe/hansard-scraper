@@ -124,7 +124,7 @@ def _pair_group(
     ]
 
 
-def get_division_pairs(
+def get_division_pairings(
     hansard_divisions: list[PairableHansardDivision],
     minutes_divisions: list[PairableMinutesDivision],
 ) -> list[DivisionPairing]:

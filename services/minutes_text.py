@@ -45,6 +45,16 @@ _CLX_PCDT_MARKER = 0x02
 _PIECE_DESCRIPTOR_SIZE = 8
 _PIECE_ENTRY_SIZE = 12
 _PIECE_POSITION_SIZE = 4
+_PIECE_DESCRIPTOR_OFFSET_FIELD = 2
+_CLX_PRC_HEADER_SIZE = 3
+_CLX_PCDT_HEADER_SIZE = 5
+_EIGHT_BIT_OFFSET_DIVISOR = 2
+_SIXTEEN_BIT_CHARACTER_SIZE = 2
+_SECTOR_ENTRY_SIZE = 4
+_UINT16_FORMAT = "<H"
+_UINT32_FORMAT = "<I"
+_INT32_FORMAT = "<i"
+_UINT32_ARRAY_FORMAT = "<{count}I"
 _PIECE_IS_EIGHT_BIT_FLAG = 0x40000000
 _PIECE_OFFSET_MASK = 0x3FFFFFFF
 _EIGHT_BIT_ENCODING = "cp1252"
@@ -124,11 +134,11 @@ def _read_exact(content: bytes, start: int, length: int) -> bytes:
 
 
 def _read_uint16(content: bytes, offset: int) -> int:
-    return struct.unpack_from("<H", content, offset)[0]
+    return struct.unpack_from(_UINT16_FORMAT, content, offset)[0]
 
 
 def _read_uint32(content: bytes, offset: int) -> int:
-    return struct.unpack_from("<I", content, offset)[0]
+    return struct.unpack_from(_UINT32_FORMAT, content, offset)[0]
 
 
 def _read_sector(content: bytes, sector_size: int, sector: int) -> bytes:
@@ -139,13 +149,16 @@ def _get_fat_sectors(content: bytes, sector_size: int) -> list[int]:
     fat_sector_count = _read_uint32(content, _HEADER_FAT_SECTOR_COUNT_OFFSET)
     fat_sectors = list(
         struct.unpack_from(
-            f"<{_HEADER_DIFAT_ENTRY_COUNT}I", content, _HEADER_DIFAT_ENTRIES_OFFSET
+            _UINT32_ARRAY_FORMAT.format(count=_HEADER_DIFAT_ENTRY_COUNT),
+            content,
+            _HEADER_DIFAT_ENTRIES_OFFSET,
         )
     )
     difat_sector = _read_uint32(content, _HEADER_FIRST_DIFAT_SECTOR_OFFSET)
     for _ in range(_read_uint32(content, _HEADER_DIFAT_SECTOR_COUNT_OFFSET)):
         difat_entries = struct.unpack(
-            f"<{sector_size // 4}I", _read_sector(content, sector_size, difat_sector)
+            _UINT32_ARRAY_FORMAT.format(count=sector_size // _SECTOR_ENTRY_SIZE),
+            _read_sector(content, sector_size, difat_sector),
         )
         fat_sectors.extend(difat_entries[:-1])
         difat_sector = difat_entries[-1]
@@ -198,7 +211,10 @@ def _open_container(content: bytes) -> _Ole2Container:
         _read_sector(content, sector_size, sector)
         for sector in _get_fat_sectors(content, sector_size)
     )
-    fat = struct.unpack(f"<{len(fat_bytes) // 4}I", fat_bytes)
+    fat = struct.unpack(
+        _UINT32_ARRAY_FORMAT.format(count=len(fat_bytes) // _SECTOR_ENTRY_SIZE),
+        fat_bytes,
+    )
     first_mini_fat_sector = _read_uint32(content, _HEADER_FIRST_MINI_FAT_SECTOR_OFFSET)
     mini_fat_bytes = _read_chain(content, fat, first_mini_fat_sector, sector_size)
     return _Ole2Container(
@@ -207,7 +223,10 @@ def _open_container(content: bytes) -> _Ole2Container:
         mini_sector_size=1 << _read_uint16(content, _HEADER_MINI_SECTOR_SHIFT_OFFSET),
         mini_stream_cutoff=_read_uint32(content, _HEADER_MINI_STREAM_CUTOFF_OFFSET),
         fat=fat,
-        mini_fat=struct.unpack(f"<{len(mini_fat_bytes) // 4}I", mini_fat_bytes),
+        mini_fat=struct.unpack(
+            _UINT32_ARRAY_FORMAT.format(count=len(mini_fat_bytes) // _SECTOR_ENTRY_SIZE),
+            mini_fat_bytes,
+        ),
         directory=_read_directory(
             _read_chain(
                 content,
@@ -245,25 +264,30 @@ def _read_stream(container: _Ole2Container, name: str) -> bytes:
 def _get_piece_table(clx: bytes) -> bytes:
     position = 0
     while clx[position] == _CLX_PRC_MARKER:
-        position += 3 + _read_uint16(clx, position + 1)
+        position += _CLX_PRC_HEADER_SIZE + _read_uint16(clx, position + 1)
     if clx[position] != _CLX_PCDT_MARKER:
         raise HansardMinutesFileError("The Word file holds no piece table")
     piece_table_length = _read_uint32(clx, position + 1)
-    return _read_exact(clx, position + 5, piece_table_length)
+    return _read_exact(clx, position + _CLX_PCDT_HEADER_SIZE, piece_table_length)
 
 
 def _decode_pieces(word_document: bytes, piece_table: bytes) -> str:
     piece_count = (len(piece_table) - _PIECE_POSITION_SIZE) // _PIECE_ENTRY_SIZE
-    positions = struct.unpack_from(f"<{piece_count + 1}I", piece_table)
+    positions = struct.unpack_from(
+        _UINT32_ARRAY_FORMAT.format(count=piece_count + 1), piece_table
+    )
     descriptors_start = _PIECE_POSITION_SIZE * (piece_count + 1)
     pieces = []
     for index in range(piece_count):
         character_offset = _read_uint32(
-            piece_table, descriptors_start + index * _PIECE_DESCRIPTOR_SIZE + 2
+            piece_table,
+            descriptors_start
+            + index * _PIECE_DESCRIPTOR_SIZE
+            + _PIECE_DESCRIPTOR_OFFSET_FIELD,
         )
         character_count = positions[index + 1] - positions[index]
         if character_offset & _PIECE_IS_EIGHT_BIT_FLAG:
-            start = (character_offset & _PIECE_OFFSET_MASK) // 2
+            start = (character_offset & _PIECE_OFFSET_MASK) // _EIGHT_BIT_OFFSET_DIVISOR
             pieces.append(
                 _read_exact(word_document, start, character_count).decode(
                     _EIGHT_BIT_ENCODING
@@ -271,9 +295,11 @@ def _decode_pieces(word_document: bytes, piece_table: bytes) -> str:
             )
             continue
         pieces.append(
-            _read_exact(word_document, character_offset, character_count * 2).decode(
-                _SIXTEEN_BIT_ENCODING
-            )
+            _read_exact(
+                word_document,
+                character_offset,
+                character_count * _SIXTEEN_BIT_CHARACTER_SIZE,
+            ).decode(_SIXTEEN_BIT_ENCODING)
         )
     return "".join(pieces)
 
@@ -293,9 +319,9 @@ def _read_word_text(content: bytes) -> str:
     clx_start = _read_uint32(word_document, _FIB_CLX_OFFSET)
     clx_length = _read_uint32(word_document, _FIB_CLX_LENGTH_OFFSET)
     piece_table = _get_piece_table(_read_exact(table, clx_start, clx_length))
-    character_count = struct.unpack_from("<i", word_document, _FIB_CHARACTER_COUNT_OFFSET)[
-        0
-    ]
+    character_count = struct.unpack_from(
+        _INT32_FORMAT, word_document, _FIB_CHARACTER_COUNT_OFFSET
+    )[0]
     text = _decode_pieces(word_document, piece_table)[:character_count]
     # NOTE: only the paragraph mark becomes a newline; tabs carry the column layout of the lists
     return text.replace(_WORD_PARAGRAPH_MARK, "\n")

@@ -170,19 +170,24 @@ def _get_count_source_candidates(
     candidates: list[DivisionCheckCandidate] = []
     for report_id_to_parse_rows in _get_report_parse_rows(session, report_ids):
         for division in divisions:
-            if division.sprs_report_id is None or division.speech_ordinal is None:
+            if division.sprs_report_id is None:
                 raise HansardDivisionCheckError(
-                    f"Division {division.id} holds no report or speech row"
+                    f"Division {division.id} holds no report"
+                )
+            if division.speech_ordinal is None:
+                raise HansardDivisionCheckError(
+                    f"Division {division.id} holds no speech row"
                 )
             type_row = sprs_report_id_to_type_row[division.sprs_report_id]
-            if type_row.id not in report_id_to_parse_rows:
+            report_parse_rows = report_id_to_parse_rows.get(type_row.id)
+            if report_parse_rows is None:
                 continue
             candidates.append(
                 DivisionCheckCandidate(
                     rule=rule,
                     group=_get_group(division.sitting_date, type_row.report_type),
                     source_text=_get_transcript(
-                        report_id_to_parse_rows[type_row.id], division.speech_ordinal
+                        report_parse_rows, division.speech_ordinal
                     ),
                     data_claim=_format_counts(division),
                     database_key=f"division:{division.id}",
@@ -570,7 +575,9 @@ def _get_name_tier_candidates(
             data_claim=f"{speaker_id_to_speaker[vote_row.speaker_id].name} | Parliament {speaker_id_to_speaker[vote_row.speaker_id].parliament_number}",
             database_key=_get_vote_key(vote_row),
         )
-        for vote_row in CRUDDivisionVote(session).get_link_rows_by_name_rule(name_rule)
+        for vote_row in CRUDDivisionVote(
+            session
+        ).get_link_rows_by_name_rule_and_speaker_id_not_null(name_rule)
     ]
 
 

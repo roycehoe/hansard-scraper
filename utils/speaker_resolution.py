@@ -442,7 +442,7 @@ def _get_strict_matches(
     normalized = period_normalize(name)
     bin_free_key = (period_normalize(strip_bin(name)), parliament_number)
     words = normalized.split()
-    rule_to_canonical_name = (
+    rule_and_canonical_names = (
         (
             DivisionVoteNameRule.EXACT,
             lookups.direct.get((normalized, parliament_number)),
@@ -464,7 +464,7 @@ def _get_strict_matches(
     )
     return [
         StrictNameMatch(canonical_name, rule if rule is not None else tier_rule)
-        for tier_rule, canonical_name in rule_to_canonical_name
+        for tier_rule, canonical_name in rule_and_canonical_names
         if canonical_name is not None
     ]
 

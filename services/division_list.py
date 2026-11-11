@@ -87,6 +87,12 @@ class _PreCell:
     text: str
 
 
+@dataclass(frozen=True)
+class _PreLineCell:
+    offset: int
+    text: str
+
+
 @dataclass
 class _NameDraft:
     printed_name: str
@@ -177,8 +183,8 @@ def _collect_items(parent: Tag, items: list[_Item], run_parts: list[str]) -> Non
                     _ItemKind.TABLE,
                     "",
                     [
-                        [_get_cell_lines(table_cell) for table_cell in row.find_all("td")]
-                        for row in child.find_all("tr")
+                        [_get_cell_lines(table_cell) for table_cell in table_row.find_all("td")]
+                        for table_row in child.find_all("tr")
                     ],
                 )
             )
@@ -295,19 +301,22 @@ def _is_marker_line(line: str) -> bool:
     return _MARKER_PATTERN.match(line.strip()) is not None
 
 
-def _get_pre_row_cells(line: str) -> list[tuple[int, str]]:
-    return [(match.start(), match.group()) for match in _CELL_PATTERN.finditer(line)]
+def _get_pre_row_cells(line: str) -> list[_PreLineCell]:
+    return [
+        _PreLineCell(match.start(), match.group())
+        for match in _CELL_PATTERN.finditer(line)
+    ]
 
 
 def get_pre_column_starts(lines: list[str]) -> Optional[list[int]]:
-    data_rows: list[list[tuple[int, str]]] = []
+    data_rows: list[list[_PreLineCell]] = []
     for line in lines:
         if not line.strip():
             continue
         if _is_marker_line(line):
             continue
         cells = _get_pre_row_cells(line)
-        if any(_is_heading_cell(cell) for _, cell in cells):
+        if any(_is_heading_cell(cell.text) for cell in cells):
             continue
         data_rows.append(cells)
     most_common_counts = Counter(len(cells) for cells in data_rows).most_common(2)
@@ -317,7 +326,7 @@ def get_pre_column_starts(lines: list[str]) -> Optional[list[int]]:
         return None
     cell_count = most_common_counts[0][0]
     first_full_row = next(cells for cells in data_rows if len(cells) == cell_count)
-    return [start for start, _ in first_full_row]
+    return [cell.offset for cell in first_full_row]
 
 
 def _get_nearest_column(offset: int, column_starts: list[int]) -> Optional[int]:
@@ -332,14 +341,14 @@ def _get_row_pre_cells(
     line: str, column_starts: list[int]
 ) -> Optional[list[_PreCell]]:
     pre_cells: list[_PreCell] = []
-    for offset, cell in _get_pre_row_cells(line):
-        column = _get_nearest_column(offset, column_starts)
+    for line_cell in _get_pre_row_cells(line):
+        column = _get_nearest_column(line_cell.offset, column_starts)
         if column is None:
             return None
         if pre_cells and pre_cells[-1].column == column:
-            pre_cells[-1] = _PreCell(column, f"{pre_cells[-1].text} {cell}")
+            pre_cells[-1] = _PreCell(column, f"{pre_cells[-1].text} {line_cell.text}")
             continue
-        pre_cells.append(_PreCell(column, cell))
+        pre_cells.append(_PreCell(column, line_cell.text))
     return pre_cells
 
 
@@ -349,21 +358,21 @@ def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
     all_block_texts: list[str] = []
     is_geometry_unreadable = False
     for block_lines in pre_blocks:
-        rows = [
+        pre_lines = [
             line.rstrip()
             for line in block_lines
             if line.strip() and not _is_marker_line(line)
         ]
-        all_block_texts.append(_LINE_SEPARATOR.join(rows))
+        all_block_texts.append(_LINE_SEPARATOR.join(pre_lines))
         if state.is_ended or is_geometry_unreadable:
             continue
-        column_starts = get_pre_column_starts(rows)
+        column_starts = get_pre_column_starts(pre_lines)
         if column_starts is None:
             is_geometry_unreadable = True
             continue
-        read_rows: list[str] = []
-        for row in rows:
-            pre_cells = _get_row_pre_cells(row, column_starts)
+        read_pre_lines: list[str] = []
+        for pre_line in pre_lines:
+            pre_cells = _get_row_pre_cells(pre_line, column_starts)
             if pre_cells is None:
                 is_geometry_unreadable = True
                 break
@@ -373,8 +382,8 @@ def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
                     break
             if state.is_ended:
                 break
-            read_rows.append(row)
-        block_texts.append(_LINE_SEPARATOR.join(read_rows))
+            read_pre_lines.append(pre_line)
+        block_texts.append(_LINE_SEPARATOR.join(read_pre_lines))
     if is_geometry_unreadable:
         return _ListReading(True, _BLOCK_SEPARATOR.join(all_block_texts), [])
     return _ListReading(

@@ -39,7 +39,7 @@ from services.division_pairing import (
     DivisionPairing,
     PairableHansardDivision,
     PairableMinutesDivision,
-    get_division_pairs,
+    get_division_pairings,
 )
 from services.minutes_division import ParsedMinutesDivision, get_minutes_divisions
 from services.party_affiliation import get_party_on_date
@@ -280,9 +280,13 @@ def _plan_minutes_batch(
     for minutes in batch_minutes:
         minutes_id = minutes.id
         extracted_text = minutes.extracted_text
-        if minutes_id is None or extracted_text is None:
+        if minutes_id is None:
             raise HansardWriteCheckError(
-                f"The minutes of {minutes.sitting_date} have no id or no text"
+                f"The minutes of {minutes.sitting_date} have no id"
+            )
+        if extracted_text is None:
+            raise HansardWriteCheckError(
+                f"The minutes of {minutes.sitting_date} have no text"
             )
         parliament_numbers = sitting_date_to_parliament_numbers[minutes.sitting_date]
         if not parliament_numbers:
@@ -321,7 +325,7 @@ def _plan_minutes_batch(
                 },
             )
         )
-    division_pairings = get_division_pairs(
+    division_pairings = get_division_pairings(
         get_pairable_hansard_divisions(
             session,
             sorted(
@@ -443,20 +447,20 @@ def _validate_can_commit_minutes_divisions(
     session: Session, plan: MinutesDivisionPlan
 ) -> None:
     stored_rows = CRUDMinutesDivision(session).get_rows_by_minutes_ids(plan.minutes_ids)
-    if Counter(row.list_status for row in stored_rows) != Counter(
+    if Counter(stored_row.list_status for stored_row in stored_rows) != Counter(
         planned.list_status for planned in plan.minutes_divisions
     ):
         raise HansardWriteCheckError(
             "The stored minutes divisions by list status differ from the plan"
         )
-    if Counter(row.pairing for row in stored_rows) != Counter(
+    if Counter(stored_row.pairing for stored_row in stored_rows) != Counter(
         planned.pairing for planned in plan.minutes_divisions
     ):
         raise HansardWriteCheckError(
             "The stored minutes divisions by pairing differ from the plan"
         )
     stored_vote_rows = CRUDDivisionVote(session).get_rows_by_division_ids_and_list_source(
-        [row.division_id for row in stored_rows], DivisionVoteListSource.MINUTES
+        [stored_row.division_id for stored_row in stored_rows], DivisionVoteListSource.MINUTES
     )
     stored_vote_counts = Counter(
         (vote_row.vote_choice, vote_row.speaker_id is not None)
@@ -548,7 +552,7 @@ def _delete_party_counts(session: Session, division_ids: list[int]) -> None:
 
 def _delete_stored_minutes_divisions(session: Session, minutes_ids: list[int]) -> None:
     stored_rows = CRUDMinutesDivision(session).get_rows_by_minutes_ids(minutes_ids)
-    division_ids = [row.division_id for row in stored_rows]
+    division_ids = [stored_row.division_id for stored_row in stored_rows]
     stored_vote_count = len(
         CRUDDivisionVote(session).get_rows_by_division_ids_and_list_source(
             division_ids, DivisionVoteListSource.MINUTES

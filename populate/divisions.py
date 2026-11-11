@@ -231,9 +231,15 @@ def _get_planned_votes(
     return planned_votes
 
 
+@dataclass(frozen=True)
+class _PlannedReportBatch:
+    divisions: list[PlannedDivision]
+    unread_rows: list[PlannedUnreadRow]
+
+
 def _plan_report_batch(
     session: Session, report_rows: list[ReportDivisionRow], name_lookups: _NameLookups
-) -> tuple[list[PlannedDivision], list[PlannedUnreadRow]]:
+) -> _PlannedReportBatch:
     report_id_to_speech_parse_rows: defaultdict[int, list[SpeechParseRow]] = (
         defaultdict(list)
     )
@@ -324,7 +330,9 @@ def _plan_report_batch(
         for report_row in report_rows
         for unread_row in report_id_to_report_divisions[report_row.id].unread_rows
     ]
-    return planned_divisions, planned_unread_rows
+    return _PlannedReportBatch(
+        divisions=planned_divisions, unread_rows=planned_unread_rows
+    )
 
 
 def get_division_plan(session: Session, report_ids: list[int]) -> DivisionPlan:
@@ -338,13 +346,11 @@ def get_division_plan(session: Session, report_ids: list[int]) -> DivisionPlan:
         report_rows = CRUDReport(session).get_division_report_rows_by_ids(
             sorted_report_ids[start : start + _REPORT_BATCH]
         )
-        batch_divisions, batch_unread_rows = _plan_report_batch(
-            session, report_rows, name_lookups
-        )
+        planned_report_batch = _plan_report_batch(session, report_rows, name_lookups)
         planned_report_ids.extend(report_row.id for report_row in report_rows)
         sprs_report_ids.extend(report_row.report_id for report_row in report_rows)
-        planned_divisions.extend(batch_divisions)
-        planned_unread_rows.extend(batch_unread_rows)
+        planned_divisions.extend(planned_report_batch.divisions)
+        planned_unread_rows.extend(planned_report_batch.unread_rows)
     return DivisionPlan(
         report_ids=planned_report_ids,
         sprs_report_ids=sprs_report_ids,
@@ -567,8 +573,10 @@ def _validate_can_commit_divisions(session: Session, plan: DivisionPlan) -> None
 def _build_paired_division_at_risk(
     stored_division: Division, is_line_gone: bool
 ) -> PairedDivisionAtRisk:
-    if stored_division.id is None or stored_division.sprs_report_id is None:
-        raise HansardWriteCheckError("A stored division holds no id or no report")
+    if stored_division.id is None:
+        raise HansardWriteCheckError("A stored division holds no id")
+    if stored_division.sprs_report_id is None:
+        raise HansardWriteCheckError("A stored division holds no report")
     return PairedDivisionAtRisk(
         division_id=stored_division.id,
         sprs_report_id=stored_division.sprs_report_id,

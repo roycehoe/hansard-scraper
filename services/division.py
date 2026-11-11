@@ -169,12 +169,13 @@ class _CountLine:
 
 
 def _get_number_value(text: str) -> int:
-    if text.isdigit():
+    try:
         return int(text)
-    return sum(
-        _NUMBER_WORD_TO_VALUE[word]
-        for word in _NUMBER_WORD_SEPARATOR_PATTERN.split(text.lower())
-    )
+    except ValueError:
+        return sum(
+            _NUMBER_WORD_TO_VALUE[word]
+            for word in _NUMBER_WORD_SEPARATOR_PATTERN.split(text.lower())
+        )
 
 
 def _read_pairs(text: str, start: int, is_label_first: bool) -> Optional[_CountSpan]:
@@ -216,34 +217,34 @@ def _is_division_span(side_to_value: dict[str, int]) -> bool:
 
 
 def _get_printed_line(
-    row: SpeechParseRow, position: int, opening: re.Match[str]
+    speech_parse_row: SpeechParseRow, position: int, opening: re.Match[str]
 ) -> Union[_CountLine, UnreadDivisionRow]:
-    if row.kind not in _PRINTED_LINE_KINDS:
+    if speech_parse_row.kind not in _PRINTED_LINE_KINDS:
         return UnreadDivisionRow(
-            row.report_id,
-            row.ordinal,
+            speech_parse_row.report_id,
+            speech_parse_row.ordinal,
             UnreadDivisionReason.OPENING_IN_ROW_OF_OTHER_KIND,
-            row.transcript,
+            speech_parse_row.transcript,
         )
-    stripped = row.transcript.lstrip()
+    stripped = speech_parse_row.transcript.lstrip()
     span = _read_count_span(stripped, opening.end())
     if span is not None and span.is_repeated_label:
         return UnreadDivisionRow(
-            row.report_id,
-            row.ordinal,
+            speech_parse_row.report_id,
+            speech_parse_row.ordinal,
             UnreadDivisionReason.REPEATED_COUNT_LABEL,
-            row.transcript,
+            speech_parse_row.transcript,
         )
     if span is None or not _is_division_span(span.side_to_value):
         return UnreadDivisionRow(
-            row.report_id,
-            row.ordinal,
+            speech_parse_row.report_id,
+            speech_parse_row.ordinal,
             UnreadDivisionReason.OPENING_WITHOUT_COUNTS,
-            row.transcript,
+            speech_parse_row.transcript,
         )
     return _CountLine(
         position,
-        row.ordinal,
+        speech_parse_row.ordinal,
         DivisionCountSource.PRINTED_LINE,
         stripped[: span.end],
         span.side_to_value,
@@ -251,9 +252,9 @@ def _get_printed_line(
 
 
 def _get_spoken_total(
-    row: SpeechParseRow, position: int
+    speech_parse_row: SpeechParseRow, position: int
 ) -> Optional[Union[_CountLine, UnreadDivisionRow]]:
-    stripped = row.transcript.lstrip()
+    stripped = speech_parse_row.transcript.lstrip()
     phrase_matches = list(_SPOKEN_TOTAL_PATTERN.finditer(stripped))
     span_and_read_starts = [(match.start(), match.end()) for match in phrase_matches]
     span_and_read_starts.append((0, 0))
@@ -269,14 +270,14 @@ def _get_spoken_total(
             continue
         if span.is_repeated_label:
             return UnreadDivisionRow(
-                row.report_id,
-                row.ordinal,
+                speech_parse_row.report_id,
+                speech_parse_row.ordinal,
                 UnreadDivisionReason.REPEATED_COUNT_LABEL,
-                row.transcript,
+                speech_parse_row.transcript,
             )
         return _CountLine(
             position,
-            row.ordinal,
+            speech_parse_row.ordinal,
             DivisionCountSource.SPOKEN_TOTAL,
             stripped[span_start : span.end],
             span.side_to_value,
@@ -286,22 +287,22 @@ def _get_spoken_total(
     if len(phrase_matches) == 0 and _NUMBER_PATTERN.match(stripped) is None:
         return None
     return UnreadDivisionRow(
-        row.report_id,
-        row.ordinal,
+        speech_parse_row.report_id,
+        speech_parse_row.ordinal,
         UnreadDivisionReason.TOTAL_WITHOUT_SECOND_COUNT,
-        row.transcript,
+        speech_parse_row.transcript,
     )
 
 
 def _get_count_line(
-    row: SpeechParseRow, position: int
+    speech_parse_row: SpeechParseRow, position: int
 ) -> Optional[Union[_CountLine, UnreadDivisionRow]]:
-    opening = _PRINTED_OPENING_PATTERN.match(row.transcript.lstrip())
+    opening = _PRINTED_OPENING_PATTERN.match(speech_parse_row.transcript.lstrip())
     if opening is not None:
-        return _get_printed_line(row, position, opening)
-    if row.kind != SpeechKind.SPEECH:
+        return _get_printed_line(speech_parse_row, position, opening)
+    if speech_parse_row.kind != SpeechKind.SPEECH:
         return None
-    return _get_spoken_total(row, position)
+    return _get_spoken_total(speech_parse_row, position)
 
 
 def _get_last_list_position(
@@ -343,8 +344,8 @@ def _is_count_disagreement(
 def get_report_divisions(speech_parse_rows: list[SpeechParseRow]) -> ReportDivisions:
     count_lines: list[_CountLine] = []
     unread_rows: list[UnreadDivisionRow] = []
-    for position, row in enumerate(speech_parse_rows):
-        count_line = _get_count_line(row, position)
+    for position, speech_parse_row in enumerate(speech_parse_rows):
+        count_line = _get_count_line(speech_parse_row, position)
         if count_line is None:
             continue
         if isinstance(count_line, UnreadDivisionRow):
