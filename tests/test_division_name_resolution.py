@@ -102,6 +102,24 @@ def test_surname_only_name_does_not_link() -> None:
     assert _resolve("Wee", _PARLIAMENT_NUMBER, speakers) is None
 
 
+def test_spelling_variant_name_does_not_link() -> None:
+    speakers = [_build_speaker(1, "Abdul Mohamed", _PARLIAMENT_NUMBER)]
+
+    assert _resolve("Abdul Mohammed", _PARLIAMENT_NUMBER, speakers) is None
+
+
+def test_name_with_a_haji_inserted_does_not_link() -> None:
+    speakers = [_build_speaker(1, "Ali Hassan", _PARLIAMENT_NUMBER)]
+
+    assert _resolve("Ali Haji Hassan", _PARLIAMENT_NUMBER, speakers) is None
+
+
+def test_glued_camel_case_name_does_not_link() -> None:
+    speakers = [_build_speaker(1, "Tan Wei Ming", _PARLIAMENT_NUMBER)]
+
+    assert _resolve("TanWeiMing", _PARLIAMENT_NUMBER, speakers) is None
+
+
 def test_name_two_members_fit_does_not_link() -> None:
     same_name_speakers = [
         _build_speaker(1, "Tan Wei Ming", _PARLIAMENT_NUMBER),
