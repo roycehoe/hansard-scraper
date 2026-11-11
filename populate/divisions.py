@@ -601,11 +601,21 @@ def get_paired_divisions_at_risk(
         return []
     match = get_division_match(session, plan)
     at_risk_divisions: list[PairedDivisionAtRisk] = []
+    sprs_report_id_and_number_of_added_divisions = {
+        (added_division.sprs_report_id, added_division.report_division_number)
+        for added_division in match.divisions_to_add
+    }
     for division_id in match.division_ids_to_delete:
         if division_id in paired_division_ids:
+            stored_division = division_id_to_stored_division[division_id]
             at_risk_divisions.append(
                 _build_paired_division_at_risk(
-                    division_id_to_stored_division[division_id], is_line_gone=True
+                    stored_division,
+                    is_line_gone=(
+                        stored_division.sprs_report_id,
+                        stored_division.report_division_number,
+                    )
+                    not in sprs_report_id_and_number_of_added_divisions,
                 )
             )
     for division_update in match.division_updates:
