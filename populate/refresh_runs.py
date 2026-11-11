@@ -479,6 +479,7 @@ def _fetch_window(
     stored_refresh_state: StoredRefreshState,
     month_window: MonthWindow,
     allowed_parliament_number: Optional[int],
+    today: date,
 ) -> FetchedWindow:
     # NOTE: the search can return one hit twice, so keep the first hit per report_id.
     report_id_to_first_search_result: dict[str, HansardSearchResult] = {}
@@ -511,19 +512,30 @@ def _fetch_window(
             ]
         )
     )
-    sitting_dates_with_search_results = {
+    sitting_dates_with_new_search_results = {
         parse_sitting_date(search_result.sitting_date).date()
         for search_result in new_search_results
     }
+    sitting_dates_with_any_search_results = {
+        parse_sitting_date(search_result.sitting_date).date()
+        for search_result in report_id_to_first_search_result.values()
+    }
+    recheck_start_date = get_recheck_start_date(today)
+    # NOTE: SPRS answers a date with no sitting with an error the gateway retries for ~34 s.
+    # Probing every date with no hit made a run grow by that much each day of a recess.
     sitting_dates_to_probe = [
         sitting_date
         for sitting_date in get_dates_between(
             month_window.first_date, month_window.last_date
         )
         if sitting_date not in stored_refresh_state.stored_sitting_dates
+        and (
+            sitting_date >= recheck_start_date
+            or sitting_date in sitting_dates_with_any_search_results
+        )
     ]
     sitting_date_key_to_response = _fetch_sitting_responses(
-        sitting_dates_to_probe, sitting_dates_with_search_results
+        sitting_dates_to_probe, sitting_dates_with_new_search_results
     )
     return FetchedWindow(
         new_search_results,
@@ -931,7 +943,7 @@ def populate_refresh_runs(
         for month_window in get_month_windows(probe_start_date, today):
             window_result = RunResult()
             fetched_window = _fetch_window(
-                stored_refresh_state, month_window, allowed_parliament_number
+                stored_refresh_state, month_window, allowed_parliament_number, today
             )
             _validate_can_store_fetched_window(
                 fetched_window, allowed_parliament_number
