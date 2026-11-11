@@ -322,6 +322,8 @@ def _build_absent_vote_items(
     }
     items: list[DivisionReviewItem] = []
     for vote_row in vote_rows:
+        if vote_row.vote_choice not in _COUNTED_VOTE_CHOICES:
+            continue
         attendance = speaker_id_and_sitting_date_to_attendance.get(
             (vote_row.speaker_id, vote_row.sitting_date)
         )

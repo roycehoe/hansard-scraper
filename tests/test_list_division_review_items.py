@@ -362,6 +362,22 @@ def test_a_hansard_division_with_stored_minutes_and_no_pair_is_listed(
     assert item.sprs_report_id == _REPORT_ID
 
 
+def _add_absent_attendance(session: Session, speaker: Speaker) -> Attendance:
+    sitting = Sitting(sitting_date=_SITTING_DATE_TEXT)
+    session.add(sitting)
+    session.flush()
+    assert sitting.id is not None
+    attendance = Attendance(
+        sitting_id=sitting.id,
+        speaker_name=_SPEAKER_NAME,
+        is_present=False,
+        speaker_id=speaker.id,
+    )
+    session.add(attendance)
+    session.flush()
+    return attendance
+
+
 def test_a_vote_for_a_member_absent_that_sitting_is_listed(
     scratch_session: Session,
 ) -> None:
@@ -370,18 +386,7 @@ def test_a_vote_for_a_member_absent_that_sitting_is_listed(
     )
     division = _add_hansard_division(scratch_session, report, 1)
     speaker = _add_speaker(scratch_session)
-    sitting = Sitting(sitting_date=_SITTING_DATE_TEXT)
-    scratch_session.add(sitting)
-    scratch_session.flush()
-    assert sitting.id is not None
-    attendance = Attendance(
-        sitting_id=sitting.id,
-        speaker_name=_SPEAKER_NAME,
-        is_present=False,
-        speaker_id=speaker.id,
-    )
-    scratch_session.add(attendance)
-    scratch_session.flush()
+    attendance = _add_absent_attendance(scratch_session, speaker)
     _add_vote(
         scratch_session,
         division,
@@ -398,6 +403,40 @@ def test_a_vote_for_a_member_absent_that_sitting_is_listed(
     )
     assert item.division_id == division.id
     assert f"attendance row {attendance.id}" in item.data_says
+
+
+def test_an_absent_or_paired_row_of_an_absent_member_is_not_listed(
+    scratch_session: Session,
+) -> None:
+    report = add_division_report(
+        scratch_session, _REPORT_ID, _SITTING_DATETIME, _PARLIAMENT_NUMBER
+    )
+    division = _add_hansard_division(scratch_session, report, 1)
+    speaker = _add_speaker(scratch_session)
+    _add_absent_attendance(scratch_session, speaker)
+    _add_vote(
+        scratch_session,
+        division,
+        DivisionVoteListSource.HANSARD,
+        1,
+        DivisionVoteChoice.ABSENT,
+        speaker,
+    )
+    _add_vote(
+        scratch_session,
+        division,
+        DivisionVoteListSource.HANSARD,
+        2,
+        DivisionVoteChoice.PAIRED,
+        speaker,
+    )
+
+    review_list = get_division_review_list(scratch_session)
+
+    assert (
+        _get_items(review_list, DivisionReviewItemKind.VOTE_MEMBER_ABSENT_THAT_SITTING)
+        == []
+    )
 
 
 def test_a_member_on_two_sides_is_listed(scratch_session: Session) -> None:
