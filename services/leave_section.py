@@ -56,6 +56,20 @@ _DATE_PART_START_RE = re.compile(
     rf"(?:\s*-+\s*|\s*[–—]\s*|,\s*|\s+)(?=from\b|on\s+{_DAY_PATTERN}|{_DURATION_START_PATTERN}|{_DAY_PATTERN}\s*(?:{_MONTH_PATTERN}|to\b|and\b|,))",
     re.IGNORECASE,
 )
+_DAY_LIST_RE = re.compile(
+    rf"(?:on\s+)?(?P<days>{_DAY_PATTERN}(?:\s*(?:,|and)\s*{_DAY_PATTERN})+)\s+(?P<month>{_MONTH_PATTERN}),?\s*(?P<year>\d{{4}})",
+    re.IGNORECASE,
+)
+_SINGLE_DAY_RE = re.compile(
+    rf"^(?:on\s+)?(?P<day>{_DAY_PATTERN})\s+(?P<month>{_MONTH_PATTERN}),?\s*(?P<year>\d{{4}})",
+    re.IGNORECASE,
+)
+_DAY_ITEM_RE = re.compile(
+    rf"(?:on\s+)?(?P<days>{_DAY_PATTERN}(?:\s*(?:,|and)\s*{_DAY_PATTERN})*)\s+(?P<month>{_MONTH_PATTERN})(?:,?\s*(?P<year>\d{{4}}))?",
+    re.IGNORECASE,
+)
+_MIN_MIXED_ITEM_COUNT = 2
+_DAY_RE = re.compile(_DAY_PATTERN)
 _DATE_LEFTOVER_RE = re.compile(r"^[\s,.;]*(?:and[\s,.;]*)*$", re.IGNORECASE)
 _NON_DIGIT_RE = re.compile(r"\D")
 _DIGIT_RE = re.compile(r"\d")
@@ -168,6 +182,16 @@ class _PrintingDates:
 
 
 @dataclass(frozen=True)
+class _DateItemTexts:
+    start_day: str
+    start_month: Optional[str]
+    start_year: Optional[str]
+    end_day: str
+    end_month: Optional[str]
+    end_year: Optional[str]
+
+
+@dataclass(frozen=True)
 class _RangeParts:
     match: re.Match
     start_day: int
@@ -227,10 +251,14 @@ def _has_date_text_left(date_text: str, matches: list[re.Match]) -> bool:
     return _DATE_LEFTOVER_RE.match("".join(remaining_parts)) is None
 
 
-def _get_month(month_text: Optional[str]) -> Optional[int]:
+def _get_month(month_text: str) -> int:
+    return MONTH_NAME_TO_NUMBER[month_text.rstrip(_PERIOD).lower()]
+
+
+def _get_printed_month(month_text: Optional[str]) -> Optional[int]:
     if month_text is None:
         return None
-    return MONTH_NAME_TO_NUMBER.get(month_text.rstrip(_PERIOD).lower())
+    return _get_month(month_text)
 
 
 def _get_day(day_text: str) -> int:
@@ -243,10 +271,31 @@ def _get_printed_year(year_text: Optional[str]) -> Optional[int]:
     return int(year_text)
 
 
+def _get_date_item_texts(match: re.Match) -> _DateItemTexts:
+    if match.re is _DAY_ITEM_RE:
+        first_day = _DAY_RE.findall(match.group("days"))[0]
+        return _DateItemTexts(
+            first_day,
+            match.group("month"),
+            match.group("year"),
+            first_day,
+            match.group("month"),
+            match.group("year"),
+        )
+    return _DateItemTexts(
+        match.group("start_day"),
+        match.group("start_month"),
+        match.group("start_year"),
+        match.group("end_day"),
+        match.group("end_month"),
+        match.group("end_year"),
+    )
+
+
 def _get_end_month(
-    match: re.Match, later_range_parts: Optional[_RangeParts]
+    date_item_texts: _DateItemTexts, later_range_parts: Optional[_RangeParts]
 ) -> Optional[int]:
-    printed_end_month = _get_month(match.group("end_month"))
+    printed_end_month = _get_printed_month(date_item_texts.end_month)
     if printed_end_month is not None:
         return printed_end_month
     if later_range_parts is None:
@@ -255,15 +304,15 @@ def _get_end_month(
 
 
 def _get_range_years(
-    match: re.Match,
+    date_item_texts: _DateItemTexts,
     start_day: int,
     start_month: int,
     end_day: int,
     end_month: int,
     later_range_parts: Optional[_RangeParts],
 ) -> Optional[_RangeYears]:
-    printed_start_year = _get_printed_year(match.group("start_year"))
-    printed_end_year = _get_printed_year(match.group("end_year"))
+    printed_start_year = _get_printed_year(date_item_texts.start_year)
+    printed_end_year = _get_printed_year(date_item_texts.end_year)
     is_end_earlier = (end_month, end_day) < (start_month, start_day)
     if printed_end_year is not None:
         end_year = printed_end_year
@@ -283,24 +332,32 @@ def _get_range_years(
     return _RangeYears(end_year - 1 if is_end_earlier else end_year, end_year)
 
 
-def _get_range_parts(range_matches: list[re.Match]) -> Optional[list[_RangeParts]]:
+def _get_range_parts(date_matches: list[re.Match]) -> Optional[list[_RangeParts]]:
+    date_items_texts = [_get_date_item_texts(match) for match in date_matches]
     is_year_printed = any(
-        match.group("start_year") is not None or match.group("end_year") is not None
-        for match in range_matches
+        date_item_texts.start_year is not None or date_item_texts.end_year is not None
+        for date_item_texts in date_items_texts
     )
     range_parts_in_reverse: list[_RangeParts] = []
     later_range_parts: Optional[_RangeParts] = None
-    for match in reversed(range_matches):
-        end_month = _get_end_month(match, later_range_parts)
+    for match, date_item_texts in zip(
+        reversed(date_matches), reversed(date_items_texts)
+    ):
+        end_month = _get_end_month(date_item_texts, later_range_parts)
         if end_month is None:
             return None
-        printed_start_month = _get_month(match.group("start_month"))
+        printed_start_month = _get_printed_month(date_item_texts.start_month)
         start_month = end_month if printed_start_month is None else printed_start_month
-        start_day = _get_day(match.group("start_day"))
-        end_day = _get_day(match.group("end_day"))
+        start_day = _get_day(date_item_texts.start_day)
+        end_day = _get_day(date_item_texts.end_day)
         if is_year_printed:
             range_years = _get_range_years(
-                match, start_day, start_month, end_day, end_month, later_range_parts
+                date_item_texts,
+                start_day,
+                start_month,
+                end_day,
+                end_month,
+                later_range_parts,
             )
             if range_years is None:
                 return None
@@ -337,18 +394,20 @@ def _get_range_dates(
 
 
 def _get_printed_text(
-    entry_parts: _ProseEntryParts, match: re.Match, group_name: str
+    entry_parts: _ProseEntryParts, date_text_start: int, date_text_end: int
 ) -> Optional[str]:
-    group_start, group_end = match.span(group_name)
-    start = entry_parts.date_text_offset + group_start
-    end = entry_parts.date_text_offset + group_end
+    start = entry_parts.date_text_offset + date_text_start
+    end = entry_parts.date_text_offset + date_text_end
     if entry_parts.printed_line[start:end] != entry_parts.reading_line[start:end]:
         return None
     return entry_parts.reading_line[start:end]
 
 
 def _get_range_printing(
-    range_parts: _RangeParts, entry_parts: _ProseEntryParts, sitting_date: date
+    range_parts: _RangeParts,
+    entry_parts: _ProseEntryParts,
+    sitting_date: date,
+    entry_format: LeaveEntryFormat,
 ) -> _PrintingDates:
     if range_parts.start_year is not None and range_parts.end_year is not None:
         leave_dates = _get_range_dates(
@@ -371,9 +430,9 @@ def _get_range_printing(
     if leave_dates is None:
         return _UNREAD_PRINTING
     return _PrintingDates(
-        LeaveEntryFormat.PROSE_RANGE,
-        _get_printed_text(entry_parts, range_parts.match, "start"),
-        _get_printed_text(entry_parts, range_parts.match, "end"),
+        entry_format,
+        _get_printed_text(entry_parts, *range_parts.match.span("start")),
+        _get_printed_text(entry_parts, *range_parts.match.span("end")),
         leave_dates,
         year_source,
     )
@@ -391,9 +450,133 @@ def _get_range_printings(
     if range_parts_in_order is None:
         return [_UNREAD_PRINTING]
     return [
-        _get_range_printing(range_parts, entry_parts, sitting_date)
+        _get_range_printing(
+            range_parts, entry_parts, sitting_date, LeaveEntryFormat.PROSE_RANGE
+        )
         for range_parts in range_parts_in_order
     ]
+
+
+def _get_day_printings(
+    entry_parts: _ProseEntryParts,
+    match: re.Match,
+    month: int,
+    year: int,
+    entry_format: LeaveEntryFormat,
+) -> list[_PrintingDates]:
+    days_group_name = "day" if match.re is _SINGLE_DAY_RE else "days"
+    printed_from = _get_printed_text(
+        entry_parts, match.start(days_group_name), match.end()
+    )
+    day_printings = []
+    for day_text in _DAY_RE.findall(match.group(days_group_name)):
+        try:
+            day_date = date(year, month, _get_day(day_text))
+        except ValueError:
+            day_printings.append(_UNREAD_PRINTING)
+            continue
+        day_printings.append(
+            _PrintingDates(
+                entry_format,
+                printed_from,
+                None,
+                LeaveDates(day_date, day_date),
+                LeaveYearSource.PRINTED_IN_ENTRY,
+            )
+        )
+    return day_printings
+
+
+def _get_day_list_printings(
+    entry_parts: _ProseEntryParts,
+) -> Optional[list[_PrintingDates]]:
+    day_list_matches = list(_DAY_LIST_RE.finditer(entry_parts.date_text))
+    if not day_list_matches:
+        return None
+    if _has_date_text_left(entry_parts.date_text, day_list_matches):
+        return None
+    return [
+        printing_dates
+        for match in day_list_matches
+        for printing_dates in _get_day_printings(
+            entry_parts,
+            match,
+            _get_month(match.group("month")),
+            int(match.group("year")),
+            LeaveEntryFormat.PROSE_DAY_LIST,
+        )
+    ]
+
+
+def _get_single_day_printings(
+    entry_parts: _ProseEntryParts,
+) -> Optional[list[_PrintingDates]]:
+    single_day_match = _SINGLE_DAY_RE.match(entry_parts.date_text)
+    if single_day_match is None:
+        return None
+    if _has_date_text_left(entry_parts.date_text, [single_day_match]):
+        return None
+    return _get_day_printings(
+        entry_parts,
+        single_day_match,
+        _get_month(single_day_match.group("month")),
+        int(single_day_match.group("year")),
+        LeaveEntryFormat.PROSE_SINGLE_DAY,
+    )
+
+
+def _get_mixed_date_matches(date_text: str) -> Optional[list[re.Match]]:
+    range_matches = list(_RANGE_RE.finditer(date_text))
+    date_matches = list(range_matches)
+    stretch_start = 0
+    for range_match in range_matches:
+        date_matches.extend(
+            _DAY_ITEM_RE.finditer(date_text, stretch_start, range_match.start())
+        )
+        stretch_start = range_match.end()
+    date_matches.extend(_DAY_ITEM_RE.finditer(date_text, stretch_start, len(date_text)))
+    date_matches.sort(key=lambda date_match: date_match.start())
+    if len(date_matches) < _MIN_MIXED_ITEM_COUNT:
+        return None
+    if _has_date_text_left(date_text, date_matches):
+        return None
+    last_date_item_texts = _get_date_item_texts(date_matches[-1])
+    if last_date_item_texts.end_year is None:
+        return None
+    return date_matches
+
+
+def _get_mixed_printings(
+    entry_parts: _ProseEntryParts, sitting_date: date
+) -> Optional[list[_PrintingDates]]:
+    date_matches = _get_mixed_date_matches(entry_parts.date_text)
+    if date_matches is None:
+        return None
+    range_parts_in_order = _get_range_parts(date_matches)
+    if range_parts_in_order is None:
+        return [_UNREAD_PRINTING]
+    mixed_printings: list[_PrintingDates] = []
+    for range_parts in range_parts_in_order:
+        if range_parts.match.re is _RANGE_RE:
+            mixed_printings.append(
+                _get_range_printing(
+                    range_parts, entry_parts, sitting_date, LeaveEntryFormat.PROSE_MIXED
+                )
+            )
+            continue
+        if range_parts.start_year is None:
+            mixed_printings.append(_UNREAD_PRINTING)
+            continue
+        mixed_printings.extend(
+            _get_day_printings(
+                entry_parts,
+                range_parts.match,
+                range_parts.start_month,
+                range_parts.start_year,
+                LeaveEntryFormat.PROSE_MIXED,
+            )
+        )
+    return mixed_printings
 
 
 def _get_prose_printings(
@@ -402,9 +585,18 @@ def _get_prose_printings(
     if entry_parts is None:
         return [_UNREAD_PRINTING]
     range_printings = _get_range_printings(entry_parts, sitting_date)
-    if range_printings is None:
-        return [_UNREAD_PRINTING]
-    return range_printings
+    if range_printings is not None:
+        return range_printings
+    day_list_printings = _get_day_list_printings(entry_parts)
+    if day_list_printings is not None:
+        return day_list_printings
+    single_day_printings = _get_single_day_printings(entry_parts)
+    if single_day_printings is not None:
+        return single_day_printings
+    mixed_printings = _get_mixed_printings(entry_parts, sitting_date)
+    if mixed_printings is not None:
+        return mixed_printings
+    return [_UNREAD_PRINTING]
 
 
 def build_leave_entries_from_markdown(

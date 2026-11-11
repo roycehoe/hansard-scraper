@@ -537,3 +537,173 @@ def test_ordinals_run_across_sections() -> None:
     )
 
     assert [leave_entry.ordinal for leave_entry in leave_entries] == [1, 2]
+
+
+def _get_formats(leave_entries: list[LeaveEntry]) -> list[LeaveEntryFormat]:
+    return [leave_entry.entry_format for leave_entry in leave_entries]
+
+
+def _get_start_dates(leave_entries: list[LeaveEntry]) -> list[date]:
+    return [
+        leave_entry.leave_dates.start_date
+        for leave_entry in leave_entries
+        if leave_entry.leave_dates is not None
+    ]
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Mr X (Tanglin) - on 5th March, 1957",
+        "Mr X (Tanglin) - 5th March, 1957",
+        "Mr X (Tanglin), Minister for Law - 5th March, 1957.",
+        "Mr Goh Keng Swee (Kreta Ayer), Minister for Finance - on 5th March, 1957.",
+    ],
+)
+def test_a_single_day_is_read(line: str) -> None:
+    leave_entries = _build_entries(line)
+
+    assert len(leave_entries) == 1
+    leave_entry = leave_entries[0]
+    assert leave_entry.entry_format == LeaveEntryFormat.PROSE_SINGLE_DAY
+    assert leave_entry.leave_dates == LeaveDates(date(1957, 3, 5), date(1957, 3, 5))
+    assert leave_entry.year_source == LeaveYearSource.PRINTED_IN_ENTRY
+    assert leave_entry.printed_from == "5th March, 1957"
+    assert leave_entry.printed_to is None
+
+
+def test_a_day_list_makes_one_printing_per_day() -> None:
+    leave_entries = _build_entries("Mr X (Tanglin) - 5th and 6th March, 1957")
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.PROSE_DAY_LIST] * 2
+    assert _get_start_dates(leave_entries) == [date(1957, 3, 5), date(1957, 3, 6)]
+    assert [leave_entry.ordinal for leave_entry in leave_entries] == [1, 2]
+    assert [leave_entry.printed_from for leave_entry in leave_entries] == [
+        "5th and 6th March, 1957"
+    ] * 2
+    assert [leave_entry.printed_to for leave_entry in leave_entries] == [None, None]
+
+
+def test_a_comma_day_list_makes_three_printings() -> None:
+    leave_entries = _build_entries("Mr X (Tanglin) - 5th, 6th and 7th March, 1957")
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.PROSE_DAY_LIST] * 3
+    assert _get_start_dates(leave_entries) == [
+        date(1957, 3, 5),
+        date(1957, 3, 6),
+        date(1957, 3, 7),
+    ]
+    assert {leave_entry.printed_from for leave_entry in leave_entries} == {
+        "5th, 6th and 7th March, 1957"
+    }
+
+
+def test_a_day_list_after_the_word_on_makes_two_printings() -> None:
+    leave_entries = _build_entries("Mr X - on 11th and 12th November, 1981")
+
+    assert _get_start_dates(leave_entries) == [date(1981, 11, 11), date(1981, 11, 12)]
+
+
+def test_a_day_that_does_not_exist_is_its_own_unread_printing() -> None:
+    leave_entries = _build_entries("Mr X - 30th and 31st April, 1957")
+
+    assert _get_formats(leave_entries) == [
+        LeaveEntryFormat.PROSE_DAY_LIST,
+        LeaveEntryFormat.UNREAD,
+    ]
+    assert leave_entries[1].printed_from is None
+
+
+def test_a_mixed_line_makes_one_printing_per_date() -> None:
+    leave_entries = _build_entries(
+        "Mr X - on 24th April, from 15th to 16th May and from 3rd to 5th June, 1993."
+    )
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.PROSE_MIXED] * 3
+    assert _get_start_dates(leave_entries) == [
+        date(1993, 4, 24),
+        date(1993, 5, 15),
+        date(1993, 6, 3),
+    ]
+    assert leave_entries[0].leave_dates == LeaveDates(
+        date(1993, 4, 24), date(1993, 4, 24)
+    )
+    assert leave_entries[0].printed_from == "24th April"
+    assert leave_entries[0].printed_to is None
+    assert leave_entries[1].printed_from == "15th"
+    assert leave_entries[1].printed_to == "16th May"
+    assert [leave_entry.ordinal for leave_entry in leave_entries] == [1, 2, 3]
+    assert {leave_entry.year_source for leave_entry in leave_entries} == {
+        LeaveYearSource.PRINTED_IN_ENTRY
+    }
+
+
+def test_a_day_list_and_a_range_make_three_printings() -> None:
+    leave_entries = _build_entries(
+        "Mr X - on 3rd and 4th January and from 8th to 16th January, 1990."
+    )
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.PROSE_MIXED] * 3
+    assert _get_start_dates(leave_entries) == [
+        date(1990, 1, 3),
+        date(1990, 1, 4),
+        date(1990, 1, 8),
+    ]
+    assert leave_entries[0].printed_from == "3rd and 4th January"
+    assert leave_entries[1].printed_from == "3rd and 4th January"
+
+
+def test_two_single_days_with_the_word_on_make_two_printings() -> None:
+    leave_entries = _build_entries("Mr X - on 3rd February and on 27th February, 1995.")
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.PROSE_MIXED] * 2
+    assert _get_start_dates(leave_entries) == [date(1995, 2, 3), date(1995, 2, 27)]
+
+
+def test_a_single_day_and_a_range_make_two_printings() -> None:
+    leave_entries = _build_entries(
+        "Mr X - on 5th March and from 7th to 9th April, 1957."
+    )
+
+    assert leave_entries[0].leave_dates == LeaveDates(
+        date(1957, 3, 5), date(1957, 3, 5)
+    )
+    assert leave_entries[1].leave_dates == LeaveDates(
+        date(1957, 4, 7), date(1957, 4, 9)
+    )
+
+
+def test_a_mixed_line_across_new_year_dates_the_first_printing_a_year_back() -> None:
+    leave_entries = _build_entries(
+        "Mr X - on 30th December and from 2nd to 5th January, 1990."
+    )
+
+    assert _get_start_dates(leave_entries) == [date(1989, 12, 30), date(1990, 1, 2)]
+
+
+def test_two_ranges_with_years_printed_make_two_range_printings() -> None:
+    leave_entries = _build_entries(
+        "Mr X - from 28th December, 1968, to 11th February, 1969; and from 21st March to 3rd April, 1969."
+    )
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.PROSE_RANGE] * 2
+    assert _get_date_pairs(leave_entries) == [
+        (date(1968, 12, 28), date(1969, 2, 11)),
+        (date(1969, 3, 21), date(1969, 4, 3)),
+    ]
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Mr X - on 5th March and to the end of April, 1957",
+        "Mr X - on 6th and 11th December and from 17th to 18th December ,1996.",
+        "Mr X - on 5th March and on 7th April",
+    ],
+)
+def test_a_mixed_shaped_line_the_rule_cannot_read_is_unread(line: str) -> None:
+    leave_entries = _build_entries(line)
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.UNREAD]
+    assert leave_entries[0].printed_line == line
+    assert leave_entries[0].printed_name == "Mr X"
