@@ -58,6 +58,11 @@ _MERGE_TOTAL = "There are 10 Ayes and 3 Noes."
 _PRINTED_LIST = "Ayes: Mr A. Noes: Mr B."
 _DECADE = "2020s"
 _SMALL_GROUP_SIZE = 10
+_SHORT_OUTSIDE_COUNT = 2
+_COPY_BATCH_COUNT = 2
+_MAX_BATCH_PACKETS = 100
+_BATCH_TEST_PACKET_COUNT = 150
+_ONE_SIDED_CLAIM = "AYE: Mr A\nAYE: Mr B"
 _OTHER_SEED = 8
 _TABLES = (Division, Minutes, MinutesDivision, DivisionVote, DivisionPartyCount)
 _INDEX_SITTING_DATE = date(2021, 10, 5)
@@ -368,19 +373,143 @@ def test_a_wrong_pair_plant_can_fill_an_unpaired_claim() -> None:
 
 
 def test_a_kind_that_plants_nothing_is_refused() -> None:
-    candidates = [_build_candidate(key) for key in range(_SMALL_GROUP_SIZE)]
+    candidates = [
+        _build_candidate(key, data_claim=_ONE_SIDED_CLAIM)
+        for key in range(_SMALL_GROUP_SIZE)
+    ]
     drawn_candidates = draw_division_check_sample_script.draw_candidates(
         candidates, _SEED
     )
 
-    with pytest.raises(HansardDivisionCheckError, match="WRONG_COUNT_DIGIT"):
+    with pytest.raises(HansardDivisionCheckError, match="SWAPPED_SIDE"):
         draw_division_check_sample_script.draw_plants(
             candidates,
             drawn_candidates,
-            (DivisionCheckPlantKind.WRONG_COUNT_DIGIT,),
+            (DivisionCheckPlantKind.SWAPPED_SIDE,),
             _SEED,
             list,
         )
+
+
+def _draw_whole_frame_with_copied_plants() -> tuple[
+    list[DivisionCheckCandidate],
+    list[DivisionCheckCandidate],
+    list[draw_division_check_sample_script.PlantedCandidate],
+]:
+    candidates = [_build_candidate(key) for key in range(_SMALL_GROUP_SIZE)]
+    drawn_candidates = draw_division_check_sample_script.draw_candidates(
+        candidates, _SEED
+    )
+    planted_candidates = draw_division_check_sample_script.draw_plants(
+        candidates,
+        drawn_candidates,
+        (DivisionCheckPlantKind.WRONG_COUNT_DIGIT,),
+        _SEED,
+        list,
+    )
+    return candidates, drawn_candidates, planted_candidates
+
+
+def test_a_frame_drawn_whole_with_no_sibling_rows_plants_copies_of_sampled_rows() -> (
+    None
+):
+    candidates, drawn_candidates, planted_candidates = (
+        _draw_whole_frame_with_copied_plants()
+    )
+
+    drawn_keys = {candidate.database_key for candidate in drawn_candidates}
+    assert len(planted_candidates) == _PLANT_COUNT
+    assert all(
+        planted.candidate.database_key in drawn_keys for planted in planted_candidates
+    )
+    assert (
+        len({planted.candidate.database_key for planted in planted_candidates})
+        == _PLANT_COUNT
+    )
+    assert all(
+        planted.planted_claim != planted.candidate.data_claim
+        for planted in planted_candidates
+    )
+    lines = draw_division_check_sample_script.get_summary_lines(
+        DivisionCheckRule.PRINTED_LINE,
+        _SEED,
+        "db",
+        candidates,
+        drawn_candidates,
+        planted_candidates,
+    )
+    assert (
+        f"plant kind {DivisionCheckPlantKind.WRONG_COUNT_DIGIT}: 5 planted, 0 from the frames of sibling rules, 5 copies of sampled rows"
+        in lines
+    )
+
+
+def test_a_frame_short_of_outside_rows_takes_them_all_before_copying_sampled_rows() -> (
+    None
+):
+    candidates = [
+        _build_candidate(key) for key in range(_ROWS_PER_GROUP + _SHORT_OUTSIDE_COUNT)
+    ]
+    drawn_candidates = draw_division_check_sample_script.draw_candidates(
+        candidates, _SEED
+    )
+
+    planted_candidates = draw_division_check_sample_script.draw_plants(
+        candidates,
+        drawn_candidates,
+        (DivisionCheckPlantKind.WRONG_COUNT_DIGIT,),
+        _SEED,
+        list,
+    )
+
+    drawn_keys = {candidate.database_key for candidate in drawn_candidates}
+    assert len(planted_candidates) == _PLANT_COUNT
+    assert (
+        sum(planted.candidate.database_key not in drawn_keys for planted in planted_candidates)
+        == _SHORT_OUTSIDE_COUNT
+    )
+    assert (
+        sum(planted.candidate.database_key in drawn_keys for planted in planted_candidates)
+        == _PLANT_COUNT - _SHORT_OUTSIDE_COUNT
+    )
+
+
+def test_no_reader_batch_holds_a_sampled_row_and_its_copy() -> None:
+    _, drawn_candidates, planted_candidates = _draw_whole_frame_with_copied_plants()
+    packets_and_key = draw_division_check_sample_script.build_packets_and_key(
+        DivisionCheckRule.PRINTED_LINE, _SEED, drawn_candidates, planted_candidates
+    )
+
+    batches = draw_division_check_sample_script.get_reader_batches(
+        packets_and_key.packets, packets_and_key.key.packet_id_to_database_key
+    )
+
+    assert len(batches) == _COPY_BATCH_COUNT
+    for batch in batches:
+        batch_keys = [
+            packets_and_key.key.packet_id_to_database_key[packet.packet_id]
+            for packet in batch
+        ]
+        assert len(batch_keys) == len(set(batch_keys))
+    assert sorted(packet.packet_id for batch in batches for packet in batch) == sorted(
+        packet.packet_id for packet in packets_and_key.packets
+    )
+
+
+def test_a_reader_batch_holds_at_most_a_hundred_packets() -> None:
+    drawn_candidates = [_build_candidate(key) for key in range(_BATCH_TEST_PACKET_COUNT)]
+    packets_and_key = draw_division_check_sample_script.build_packets_and_key(
+        DivisionCheckRule.PRINTED_LINE, _SEED, drawn_candidates, []
+    )
+
+    batches = draw_division_check_sample_script.get_reader_batches(
+        packets_and_key.packets, packets_and_key.key.packet_id_to_database_key
+    )
+
+    assert [len(batch) for batch in batches] == [
+        _MAX_BATCH_PACKETS,
+        _BATCH_TEST_PACKET_COUNT - _MAX_BATCH_PACKETS,
+    ]
 
 
 def test_a_frame_drawn_whole_takes_its_plant_rows_from_a_sibling_frame() -> None:
@@ -498,7 +627,7 @@ def test_the_summary_says_which_plant_kinds_the_rule_does_not_use() -> None:
 
     assert f"plant kind {DivisionCheckPlantKind.SWAPPED_SIDE}: not used for this rule" in lines
     assert (
-        f"plant kind {DivisionCheckPlantKind.WRONG_COUNT_DIGIT}: 1 planted, 1 from the frames of sibling rules"
+        f"plant kind {DivisionCheckPlantKind.WRONG_COUNT_DIGIT}: 1 planted, 1 from the frames of sibling rules, 0 copies of sampled rows"
         in lines
     )
     assert f"seed\t{_SEED}" in lines
@@ -528,6 +657,12 @@ def test_the_written_key_hash_matches_the_key_file(tmp_path: Path) -> None:
     assert (output_directory / "key.sha256").read_text().strip() == hashlib.sha256(
         key_bytes
     ).hexdigest()
+    batch_packet_dicts = json.loads(
+        (output_directory / "batches" / "batch-01" / "packets.json").read_text()
+    )
+    assert [packet_dict["packet_id"] for packet_dict in batch_packet_dicts] == [
+        packets_and_key.packets[0].packet_id
+    ]
     with pytest.raises(FileExistsError):
         draw_division_check_sample_script.write_check_files(
             output_directory, packets_and_key.packets, packets_and_key.key, ["line"]
@@ -891,6 +1026,14 @@ def test_the_script_writes_nothing_to_the_database(
     assert all(
         set(packet_dict) == {"packet_id", "source_text", "data_claim"}
         for packet_dict in packet_dicts
+    )
+    batch_packet_ids = [
+        packet_dict["packet_id"]
+        for batch_file in sorted((tmp_path / "check" / "batches").glob("batch-*/packets.json"))
+        for packet_dict in json.loads(batch_file.read_text())
+    ]
+    assert sorted(batch_packet_ids) == sorted(
+        packet_dict["packet_id"] for packet_dict in packet_dicts
     )
 
 

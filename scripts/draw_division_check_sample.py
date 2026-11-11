@@ -62,6 +62,9 @@ _REPORT_BATCH = 200
 _SOURCE_TEXT_LIMIT = 400
 _PACKET_ID_BITS = 64
 _READ_ISOLATION_LEVEL = "REPEATABLE READ"
+_MAX_BATCH_PACKETS = 100
+_MAX_BATCH_CHARACTERS = 160_000
+_BATCHES_DIRECTORY_NAME = "batches"
 _PACKETS_FILE_NAME = "packets.json"
 _KEY_FILE_NAME = "key.json"
 _KEY_HASH_FILE_NAME = "key.sha256"
@@ -111,6 +114,13 @@ class _PacketDraft:
     data_claim: str
     database_key: str
     plant_kind: Optional[DivisionCheckPlantKind]
+
+
+@dataclass
+class _ReaderBatch:
+    packets: list[DivisionCheckPacket]
+    character_count: int
+    database_keys: set[str]
 
 
 def _get_group(sitting_date: date, group_label: str) -> str:
@@ -883,6 +893,23 @@ def _get_usable_plants(
     ]
 
 
+def _draw_copy_plants(
+    kind: DivisionCheckPlantKind,
+    candidates: list[DivisionCheckCandidate],
+    drawn_candidates: list[DivisionCheckCandidate],
+    seed: int,
+    copy_count: int,
+) -> list[PlantedCandidate]:
+    copy_plants = _get_usable_plants(
+        kind,
+        sorted(drawn_candidates, key=lambda candidate: candidate.database_key),
+        candidates,
+    )
+    return random.Random(
+        f"{seed}{_GROUP_SEPARATOR}copy{_GROUP_SEPARATOR}{kind}"
+    ).sample(copy_plants, min(len(copy_plants), copy_count))
+
+
 def draw_plants(
     candidates: list[DivisionCheckCandidate],
     drawn_candidates: list[DivisionCheckCandidate],
@@ -909,15 +936,22 @@ def draw_plants(
                 sorted(sibling_candidates, key=lambda candidate: candidate.database_key),
                 candidates + sibling_candidates,
             )
-        if not usable_plants:
+        kind_planted_candidates = random.Random(
+            f"{seed}{_GROUP_SEPARATOR}plant{_GROUP_SEPARATOR}{kind}"
+        ).sample(usable_plants, min(len(usable_plants), _PLANT_COUNT_PER_KIND))
+        if len(kind_planted_candidates) < _PLANT_COUNT_PER_KIND:
+            kind_planted_candidates = kind_planted_candidates + _draw_copy_plants(
+                kind,
+                candidates,
+                drawn_candidates,
+                seed,
+                _PLANT_COUNT_PER_KIND - len(kind_planted_candidates),
+            )
+        if not kind_planted_candidates:
             raise HansardDivisionCheckError(
-                f"No row outside the draw can take a {kind} plant; the check would carry no planted error"
+                f"No row of the frame or its sibling frames can take a {kind} plant; the check would carry no planted error"
             )
-        planted_candidates.extend(
-            random.Random(f"{seed}{_GROUP_SEPARATOR}plant{_GROUP_SEPARATOR}{kind}").sample(
-                usable_plants, min(len(usable_plants), _PLANT_COUNT_PER_KIND)
-            )
-        )
+        planted_candidates.extend(kind_planted_candidates)
     return planted_candidates
 
 
@@ -988,6 +1022,7 @@ def get_summary_lines(
     for candidate in drawn_candidates:
         group_to_draw_size[candidate.group] += 1
     applicable_kinds = get_plant_kinds(rule)
+    drawn_keys = {candidate.database_key for candidate in drawn_candidates}
     lines = [
         f"rule\t{rule}",
         f"seed\t{seed}",
@@ -1008,9 +1043,44 @@ def get_summary_lines(
             planted for planted in planted_candidates if planted.kind == kind
         ]
         lines.append(
-            f"plant kind {kind}: {len(kind_planted_candidates)} planted, {sum(planted.candidate.rule != rule for planted in kind_planted_candidates)} from the frames of sibling rules"
+            f"plant kind {kind}: {len(kind_planted_candidates)} planted, {sum(planted.candidate.rule != rule for planted in kind_planted_candidates)} from the frames of sibling rules, {sum(planted.candidate.database_key in drawn_keys for planted in kind_planted_candidates)} copies of sampled rows"
         )
     return lines
+
+
+def _is_packet_allowed_in_batch(
+    batch: _ReaderBatch, packet: DivisionCheckPacket, database_key: str
+) -> bool:
+    return (
+        len(batch.packets) < _MAX_BATCH_PACKETS
+        and batch.character_count + len(packet.source_text) + len(packet.data_claim)
+        <= _MAX_BATCH_CHARACTERS
+        and database_key not in batch.database_keys
+    )
+
+
+def _claim_batch_for_packet(
+    batches: list[_ReaderBatch], packet: DivisionCheckPacket, database_key: str
+) -> _ReaderBatch:
+    for batch in batches:
+        if _is_packet_allowed_in_batch(batch, packet, database_key):
+            return batch
+    new_batch = _ReaderBatch([], 0, set())
+    batches.append(new_batch)
+    return new_batch
+
+
+def get_reader_batches(
+    packets: list[DivisionCheckPacket], packet_id_to_database_key: dict[str, str]
+) -> list[list[DivisionCheckPacket]]:
+    batches: list[_ReaderBatch] = []
+    for packet in packets:
+        database_key = packet_id_to_database_key[packet.packet_id]
+        batch = _claim_batch_for_packet(batches, packet, database_key)
+        batch.packets.append(packet)
+        batch.character_count += len(packet.source_text) + len(packet.data_claim)
+        batch.database_keys.add(database_key)
+    return [batch.packets for batch in batches]
 
 
 def write_check_files(
@@ -1031,6 +1101,16 @@ def write_check_files(
     (output_directory / _SUMMARY_FILE_NAME).write_text(
         _LINE_SEPARATOR.join(summary_lines) + _LINE_SEPARATOR, encoding="utf-8"
     )
+    for batch_number, batch_packets in enumerate(
+        get_reader_batches(packets, key.packet_id_to_database_key), start=1
+    ):
+        batch_directory = (
+            output_directory / _BATCHES_DIRECTORY_NAME / f"batch-{batch_number:02d}"
+        )
+        batch_directory.mkdir(parents=True)
+        (batch_directory / _PACKETS_FILE_NAME).write_bytes(
+            TypeAdapter(list[DivisionCheckPacket]).dump_json(batch_packets, indent=2)
+        )
 
 
 def draw_division_check_sample(
