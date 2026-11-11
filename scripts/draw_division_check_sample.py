@@ -3,7 +3,7 @@ import hashlib
 import random
 import re
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -72,6 +72,12 @@ _DIGIT_PATTERN = re.compile(r"\d")
 _CLAIMED_HANSARD_DIVISION_PATTERN = re.compile(r"Hansard division (\d+)")
 _SOURCE_HANSARD_DIVISION_PATTERN = re.compile(r"^\d+\. ", re.MULTILINE)
 _CLAIMED_PARLIAMENT_PATTERN = re.compile(r"^(.*) \| Parliament (\d+)$")
+_CLAIMED_SITTING_DATE_PATTERN = re.compile(r"sitting date (\d{4}-\d{2}-\d{2})")
+_CLAIMED_PARTY_PATTERN = re.compile(r"^party (.*), uncertain (?:True|False)$")
+_SOURCE_SPANS_MARKER = "; spans: "
+_SOURCE_SPAN_SEPARATOR = "; "
+_SOURCE_SPAN_PARTY_PATTERN = re.compile(r"^(.*) from \d{4}-\d{2}-\d{2} \(")
+_NO_PAIRED_DIVISION_CLAIM = "no Hansard division paired"
 _DIGIT_BASE = 10
 
 
@@ -526,6 +532,8 @@ def get_plant_kinds(rule: DivisionCheckRule) -> tuple[DivisionCheckPlantKind, ..
         or rule == DivisionCheckRule.PRINTED_AND_SPOKEN_MERGE
     ):
         return (DivisionCheckPlantKind.WRONG_COUNT_DIGIT,)
+    if rule == DivisionCheckRule.INDEX_ROW or rule == DivisionCheckRule.FILE_HEAD_DATE:
+        return (DivisionCheckPlantKind.WRONG_DATE,)
     if (
         rule == DivisionCheckRule.MINUTES_DIVISION_AND_SIDE
         or rule == DivisionCheckRule.HANSARD_LIST_BY_LAYOUT_ERA
@@ -533,9 +541,35 @@ def get_plant_kinds(rule: DivisionCheckRule) -> tuple[DivisionCheckPlantKind, ..
         return (DivisionCheckPlantKind.SWAPPED_SIDE,)
     if rule == DivisionCheckRule.PAIRING:
         return (DivisionCheckPlantKind.WRONG_PAIR,)
+    if rule == DivisionCheckRule.PARTY_ON_DATE:
+        return (DivisionCheckPlantKind.WRONG_PARTY,)
     if _get_name_rule(rule) is not None:
         return (DivisionCheckPlantKind.WRONG_PERSON,)
-    return ()
+    raise HansardDivisionCheckError(f"No plant kind is set for {rule}")
+
+
+def get_sibling_rules(rule: DivisionCheckRule) -> tuple[DivisionCheckRule, ...]:
+    if rule == DivisionCheckRule.PRINTED_LINE:
+        return (DivisionCheckRule.SPOKEN_TOTAL,)
+    if rule == DivisionCheckRule.SPOKEN_TOTAL:
+        return (DivisionCheckRule.PRINTED_LINE,)
+    if _get_name_rule(rule) is None:
+        return ()
+    return tuple(
+        other_rule
+        for other_rule in DivisionCheckRule
+        if other_rule != rule and _get_name_rule(other_rule) is not None
+    )
+
+
+def get_sibling_candidates(
+    session: Session, rule: DivisionCheckRule
+) -> list[DivisionCheckCandidate]:
+    return [
+        candidate
+        for sibling_rule in get_sibling_rules(rule)
+        for candidate in get_division_check_candidates(session, sibling_rule)
+    ]
 
 
 def _swap_sides(data_claim: str) -> Optional[str]:
@@ -595,14 +629,22 @@ def _replace_person(
 
 
 def _replace_pair(candidate: DivisionCheckCandidate) -> Optional[str]:
+    hansard_division_count = len(
+        _SOURCE_HANSARD_DIVISION_PATTERN.findall(candidate.source_text)
+    )
     claim_match = _CLAIMED_HANSARD_DIVISION_PATTERN.search(candidate.data_claim)
     if claim_match is None:
-        return None
+        if _NO_PAIRED_DIVISION_CLAIM not in candidate.data_claim:
+            return None
+        if hansard_division_count == 0:
+            return None
+        return candidate.data_claim.replace(
+            _NO_PAIRED_DIVISION_CLAIM,
+            f"Hansard division {random.Random(candidate.database_key).randint(1, hansard_division_count)}",
+        )
     other_numbers = [
         number
-        for number in range(
-            1, len(_SOURCE_HANSARD_DIVISION_PATTERN.findall(candidate.source_text)) + 1
-        )
+        for number in range(1, hansard_division_count + 1)
         if number != int(claim_match.group(1))
     ]
     if not other_numbers:
@@ -610,6 +652,64 @@ def _replace_pair(candidate: DivisionCheckCandidate) -> Optional[str]:
     return (
         candidate.data_claim[: claim_match.start(1)]
         + str(random.Random(candidate.database_key).choice(other_numbers))
+        + candidate.data_claim[claim_match.end(1) :]
+    )
+
+
+def _replace_date(
+    candidate: DivisionCheckCandidate, candidates: list[DivisionCheckCandidate]
+) -> Optional[str]:
+    claim_match = _CLAIMED_SITTING_DATE_PATTERN.search(candidate.data_claim)
+    if claim_match is None:
+        return None
+    claimed_date = date.fromisoformat(claim_match.group(1))
+    other_dates: set[date] = set()
+    for other_candidate in candidates:
+        other_match = _CLAIMED_SITTING_DATE_PATTERN.search(other_candidate.data_claim)
+        if other_match is not None:
+            other_dates.add(date.fromisoformat(other_match.group(1)))
+    other_dates.discard(claimed_date)
+    if not other_dates:
+        return None
+    nearest_date = min(
+        other_dates, key=lambda other_date: (abs((other_date - claimed_date).days), other_date)
+    )
+    return (
+        candidate.data_claim[: claim_match.start(1)]
+        + nearest_date.isoformat()
+        + candidate.data_claim[claim_match.end(1) :]
+    )
+
+
+def _replace_party(
+    candidate: DivisionCheckCandidate, candidates: list[DivisionCheckCandidate]
+) -> Optional[str]:
+    claim_match = _CLAIMED_PARTY_PATTERN.match(candidate.data_claim)
+    if claim_match is None:
+        return None
+    claimed_party = claim_match.group(1)
+    _, _, spans_text = candidate.source_text.partition(_SOURCE_SPANS_MARKER)
+    span_parties = [
+        span_match.group(1)
+        for span_text in spans_text.split(_SOURCE_SPAN_SEPARATOR)
+        for span_match in [_SOURCE_SPAN_PARTY_PATTERN.match(span_text)]
+        if span_match is not None and span_match.group(1) != claimed_party
+    ]
+    if span_parties:
+        other_party = span_parties[0]
+    else:
+        frame_parties: set[str] = set()
+        for other_candidate in candidates:
+            other_match = _CLAIMED_PARTY_PATTERN.match(other_candidate.data_claim)
+            if other_match is not None:
+                frame_parties.add(other_match.group(1))
+        frame_parties.discard(claimed_party)
+        if not frame_parties:
+            return None
+        other_party = random.Random(candidate.database_key).choice(sorted(frame_parties))
+    return (
+        candidate.data_claim[: claim_match.start(1)]
+        + other_party
         + candidate.data_claim[claim_match.end(1) :]
     )
 
@@ -625,7 +725,26 @@ def build_plant_claim(
         return _change_count_digit(candidate.data_claim)
     if kind == DivisionCheckPlantKind.WRONG_PERSON:
         return _replace_person(candidate, candidates)
-    return _replace_pair(candidate)
+    if kind == DivisionCheckPlantKind.WRONG_DATE:
+        return _replace_date(candidate, candidates)
+    if kind == DivisionCheckPlantKind.WRONG_PARTY:
+        return _replace_party(candidate, candidates)
+    if kind == DivisionCheckPlantKind.WRONG_PAIR:
+        return _replace_pair(candidate)
+    raise HansardDivisionCheckError(f"No plant is built for {kind}")
+
+
+def _get_usable_plants(
+    kind: DivisionCheckPlantKind,
+    pool: list[DivisionCheckCandidate],
+    claim_candidates: list[DivisionCheckCandidate],
+) -> list[PlantedCandidate]:
+    return [
+        PlantedCandidate(candidate, kind, planted_claim)
+        for candidate in pool
+        for planted_claim in [build_plant_claim(kind, candidate, claim_candidates)]
+        if planted_claim is not None and planted_claim != candidate.data_claim
+    ]
 
 
 def draw_plants(
@@ -633,6 +752,7 @@ def draw_plants(
     drawn_candidates: list[DivisionCheckCandidate],
     kinds: tuple[DivisionCheckPlantKind, ...],
     seed: int,
+    load_sibling_candidates: Callable[[], list[DivisionCheckCandidate]],
 ) -> list[PlantedCandidate]:
     drawn_keys = {candidate.database_key for candidate in drawn_candidates}
     outside_candidates = sorted(
@@ -645,13 +765,18 @@ def draw_plants(
     )
     planted_candidates: list[PlantedCandidate] = []
     for kind in kinds:
-        usable_plants = [
-            PlantedCandidate(candidate, kind, planted_claim)
-            for candidate in outside_candidates
-            for planted_claim in [build_plant_claim(kind, candidate, candidates)]
-            if planted_claim is not None
-            and planted_claim != candidate.data_claim
-        ]
+        usable_plants = _get_usable_plants(kind, outside_candidates, candidates)
+        if len(usable_plants) < _PLANT_COUNT_PER_KIND:
+            sibling_candidates = load_sibling_candidates()
+            usable_plants = usable_plants + _get_usable_plants(
+                kind,
+                sorted(sibling_candidates, key=lambda candidate: candidate.database_key),
+                candidates + sibling_candidates,
+            )
+        if not usable_plants:
+            raise HansardDivisionCheckError(
+                f"No row outside the draw can take a {kind} plant; the check would carry no planted error"
+            )
         planted_candidates.extend(
             random.Random(f"{seed}{_GROUP_SEPARATOR}plant{_GROUP_SEPARATOR}{kind}").sample(
                 usable_plants, min(len(usable_plants), _PLANT_COUNT_PER_KIND)
@@ -738,10 +863,13 @@ def get_summary_lines(
     ]
     for kind in DivisionCheckPlantKind:
         if kind not in applicable_kinds:
-            lines.append(f"plant kind {kind}: skipped, the rule has no field for it")
+            lines.append(f"plant kind {kind}: not used for this rule")
             continue
+        kind_planted_candidates = [
+            planted for planted in planted_candidates if planted.kind == kind
+        ]
         lines.append(
-            f"plant kind {kind}: {sum(planted.kind == kind for planted in planted_candidates)} planted"
+            f"plant kind {kind}: {len(kind_planted_candidates)} planted, {sum(planted.candidate.rule != rule for planted in kind_planted_candidates)} from the frames of sibling rules"
         )
     return lines
 
@@ -774,10 +902,14 @@ def draw_division_check_sample(
     )
     with Session(read_only_engine) as session:
         candidates = get_division_check_candidates(session, rule)
-    drawn_candidates = draw_candidates(candidates, seed)
-    planted_candidates = draw_plants(
-        candidates, drawn_candidates, get_plant_kinds(rule), seed
-    )
+        drawn_candidates = draw_candidates(candidates, seed)
+        planted_candidates = draw_plants(
+            candidates,
+            drawn_candidates,
+            get_plant_kinds(rule),
+            seed,
+            lambda: get_sibling_candidates(session, rule),
+        )
     packets, key = build_packets_and_key(
         rule, seed, drawn_candidates, planted_candidates
     )

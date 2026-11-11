@@ -27,7 +27,8 @@ from enums import (
     MinutesStatus,
     SpeechKind,
 )
-from schemas.division_check_sample import DivisionCheckCandidate
+from exceptions import HansardDivisionCheckError
+from schemas.division_check_sample import DivisionCheckCandidate, DivisionCheckKey
 from tests.division_seed import add_division_report, add_division_speech_rows
 
 _SITTING_DATE = date(2021, 10, 4)
@@ -175,16 +176,46 @@ def test_a_draw_takes_fifty_per_group_and_repeats_with_the_same_seed() -> None:
     assert first_draw == second_draw
 
 
-def test_a_rule_without_a_field_to_break_gets_no_plant_kind() -> None:
+def test_each_rule_has_the_plant_kind_that_fits_its_claim() -> None:
     assert draw_division_check_sample_script.get_plant_kinds(
         DivisionCheckRule.INDEX_ROW
-    ) == ()
+    ) == (DivisionCheckPlantKind.WRONG_DATE,)
+    assert draw_division_check_sample_script.get_plant_kinds(
+        DivisionCheckRule.FILE_HEAD_DATE
+    ) == (DivisionCheckPlantKind.WRONG_DATE,)
+    assert draw_division_check_sample_script.get_plant_kinds(
+        DivisionCheckRule.PARTY_ON_DATE
+    ) == (DivisionCheckPlantKind.WRONG_PARTY,)
     assert draw_division_check_sample_script.get_plant_kinds(
         DivisionCheckRule.PRINTED_LINE
     ) == (DivisionCheckPlantKind.WRONG_COUNT_DIGIT,)
     assert draw_division_check_sample_script.get_plant_kinds(
         DivisionCheckRule.NAME_TIER_HAND_LIST
     ) == (DivisionCheckPlantKind.WRONG_PERSON,)
+    assert all(
+        draw_division_check_sample_script.get_plant_kinds(rule)
+        for rule in DivisionCheckRule
+    )
+
+
+def test_only_rules_with_packets_of_one_shape_share_plant_rows() -> None:
+    assert draw_division_check_sample_script.get_sibling_rules(
+        DivisionCheckRule.PRINTED_LINE
+    ) == (DivisionCheckRule.SPOKEN_TOTAL,)
+    assert set(
+        draw_division_check_sample_script.get_sibling_rules(
+            DivisionCheckRule.NAME_TIER_EXACT
+        )
+    ) == {
+        DivisionCheckRule.NAME_TIER_INVERTED,
+        DivisionCheckRule.NAME_TIER_BIN_FREE,
+        DivisionCheckRule.NAME_TIER_SAME_WORDS,
+        DivisionCheckRule.NAME_TIER_HAND_LIST,
+    }
+    assert (
+        draw_division_check_sample_script.get_sibling_rules(DivisionCheckRule.PAIRING)
+        == ()
+    )
 
 
 def test_a_wrong_count_digit_plant_changes_the_claim() -> None:
@@ -234,6 +265,158 @@ def test_a_wrong_person_plant_names_another_person_of_the_same_parliament() -> N
     assert planted_claim == second_candidate.data_claim
 
 
+def _build_date_candidate(
+    key: int, sitting_date: date, data_claim_tail: str = ""
+) -> DivisionCheckCandidate:
+    return _build_candidate(
+        key, data_claim=f"sitting date {sitting_date}{data_claim_tail}"
+    )
+
+
+def test_a_wrong_date_plant_names_the_nearest_other_sitting_date() -> None:
+    claimed = _build_date_candidate(1, date(2021, 10, 4), "; label V&P; address a")
+    near = _build_date_candidate(2, date(2021, 10, 6))
+    far = _build_date_candidate(3, date(2020, 1, 1))
+
+    planted_claim = draw_division_check_sample_script.build_plant_claim(
+        DivisionCheckPlantKind.WRONG_DATE, claimed, [claimed, far, near]
+    )
+
+    assert planted_claim == "sitting date 2021-10-06; label V&P; address a"
+    assert (
+        draw_division_check_sample_script.build_plant_claim(
+            DivisionCheckPlantKind.WRONG_DATE, claimed, [claimed]
+        )
+        is None
+    )
+
+
+def test_a_wrong_party_plant_names_the_other_span_party_of_the_member() -> None:
+    claimed = _build_candidate(
+        1, data_claim="party WP, uncertain False"
+    ).model_copy(
+        update={
+            "source_text": "Lee on 2021-10-04; ballot party PAP; spans: PAP from 2011-05-01 (DAY, upper bound False); WP from 2021-01-01 (MONTH, upper bound True)"
+        }
+    )
+    other = _build_candidate(2, data_claim="party SDP, uncertain False")
+
+    planted_claim = draw_division_check_sample_script.build_plant_claim(
+        DivisionCheckPlantKind.WRONG_PARTY, claimed, [claimed, other]
+    )
+
+    assert planted_claim == "party PAP, uncertain False"
+
+
+def test_a_wrong_party_plant_falls_back_to_another_party_of_the_frame() -> None:
+    claimed = _build_candidate(
+        1, data_claim="party PAP, uncertain True"
+    ).model_copy(
+        update={"source_text": "Lee on 2021-10-04; ballot party PAP; spans: none"}
+    )
+    other = _build_candidate(2, data_claim="party WP, uncertain False")
+
+    assert (
+        draw_division_check_sample_script.build_plant_claim(
+            DivisionCheckPlantKind.WRONG_PARTY, claimed, [claimed, other]
+        )
+        == "party WP, uncertain True"
+    )
+    assert (
+        draw_division_check_sample_script.build_plant_claim(
+            DivisionCheckPlantKind.WRONG_PARTY, claimed, [claimed]
+        )
+        is None
+    )
+
+
+def test_a_wrong_pair_plant_can_fill_an_unpaired_claim() -> None:
+    unpaired = _build_candidate(
+        1, data_claim="pairing NO_MATCHING_DIVISION, no Hansard division paired"
+    ).model_copy(update={"source_text": "Hansard divisions of the date:\n1. Ayes 10"})
+    no_division_on_the_date = unpaired.model_copy(
+        update={"source_text": "Hansard divisions of the date:"}
+    )
+
+    assert (
+        draw_division_check_sample_script.build_plant_claim(
+            DivisionCheckPlantKind.WRONG_PAIR, unpaired, [unpaired]
+        )
+        == "pairing NO_MATCHING_DIVISION, Hansard division 1"
+    )
+    assert (
+        draw_division_check_sample_script.build_plant_claim(
+            DivisionCheckPlantKind.WRONG_PAIR,
+            no_division_on_the_date,
+            [no_division_on_the_date],
+        )
+        is None
+    )
+
+
+def test_a_kind_that_plants_nothing_is_refused() -> None:
+    candidates = [_build_candidate(key) for key in range(_SMALL_GROUP_SIZE)]
+    drawn_candidates = draw_division_check_sample_script.draw_candidates(
+        candidates, _SEED
+    )
+
+    with pytest.raises(HansardDivisionCheckError, match="WRONG_COUNT_DIGIT"):
+        draw_division_check_sample_script.draw_plants(
+            candidates,
+            drawn_candidates,
+            (DivisionCheckPlantKind.WRONG_COUNT_DIGIT,),
+            _SEED,
+            list,
+        )
+
+
+def test_a_frame_drawn_whole_takes_its_plant_rows_from_a_sibling_frame() -> None:
+    candidates = [_build_candidate(key) for key in range(_SMALL_GROUP_SIZE)]
+    drawn_candidates = draw_division_check_sample_script.draw_candidates(
+        candidates, _SEED
+    )
+    sibling_candidates = [
+        _build_candidate(_GROUP_SIZE + key).model_copy(
+            update={"rule": DivisionCheckRule.SPOKEN_TOTAL}
+        )
+        for key in range(_PLANT_COUNT)
+    ]
+
+    planted_candidates = draw_division_check_sample_script.draw_plants(
+        candidates,
+        drawn_candidates,
+        (DivisionCheckPlantKind.WRONG_COUNT_DIGIT,),
+        _SEED,
+        lambda: sibling_candidates,
+    )
+
+    assert len(planted_candidates) == _PLANT_COUNT
+    assert all(
+        planted.candidate.rule == DivisionCheckRule.SPOKEN_TOTAL
+        for planted in planted_candidates
+    )
+
+
+def test_a_frame_with_enough_outside_rows_reads_no_sibling_frame() -> None:
+    candidates = [_build_candidate(key) for key in range(_GROUP_SIZE + _PLANT_COUNT)]
+    drawn_candidates = draw_division_check_sample_script.draw_candidates(
+        candidates, _SEED
+    )
+
+    def fail_on_sibling_read() -> list[DivisionCheckCandidate]:
+        raise AssertionError("the sibling frame was read")
+
+    planted_candidates = draw_division_check_sample_script.draw_plants(
+        candidates,
+        drawn_candidates,
+        (DivisionCheckPlantKind.WRONG_COUNT_DIGIT,),
+        _SEED,
+        fail_on_sibling_read,
+    )
+
+    assert len(planted_candidates) == _PLANT_COUNT
+
+
 def test_plants_come_from_rows_outside_the_sample() -> None:
     candidates = [_build_candidate(key) for key in range(_GROUP_SIZE + _PLANT_COUNT)]
     drawn_candidates = draw_division_check_sample_script.draw_candidates(
@@ -245,6 +428,7 @@ def test_plants_come_from_rows_outside_the_sample() -> None:
         drawn_candidates,
         (DivisionCheckPlantKind.WRONG_COUNT_DIGIT,),
         _SEED,
+        list,
     )
 
     drawn_keys = {candidate.database_key for candidate in drawn_candidates}
@@ -265,6 +449,7 @@ def test_the_packets_show_no_database_key_and_the_key_names_each_plant() -> None
         drawn_candidates,
         (DivisionCheckPlantKind.WRONG_COUNT_DIGIT,),
         _SEED,
+        list,
     )
 
     packets, key = draw_division_check_sample_script.build_packets_and_key(
@@ -278,17 +463,30 @@ def test_the_packets_show_no_database_key_and_the_key_names_each_plant() -> None
     assert set(key.packet_id_to_database_key) == {packet.packet_id for packet in packets}
 
 
-def test_the_summary_says_which_plant_kinds_the_rule_skipped() -> None:
+def test_the_summary_says_which_plant_kinds_the_rule_does_not_use() -> None:
     candidates = [_build_candidate(1)]
+    sibling_planted = draw_division_check_sample_script.PlantedCandidate(
+        _build_candidate(2).model_copy(update={"rule": DivisionCheckRule.SPOKEN_TOTAL}),
+        DivisionCheckPlantKind.WRONG_COUNT_DIGIT,
+        "Ayes 20, Noes 3",
+    )
 
     lines = draw_division_check_sample_script.get_summary_lines(
-        DivisionCheckRule.INDEX_ROW, _SEED, "db", candidates, candidates, []
+        DivisionCheckRule.PRINTED_LINE,
+        _SEED,
+        "db",
+        candidates,
+        candidates,
+        [sibling_planted],
     )
 
+    assert f"plant kind {DivisionCheckPlantKind.SWAPPED_SIDE}: not used for this rule" in lines
     assert (
-        f"plant kind {DivisionCheckPlantKind.SWAPPED_SIDE}: skipped, the rule has no field for it"
+        f"plant kind {DivisionCheckPlantKind.WRONG_COUNT_DIGIT}: 1 planted, 1 from the frames of sibling rules"
         in lines
     )
+    assert f"seed\t{_SEED}" in lines
+    assert "database\tdb" in lines
 
 
 def test_the_written_key_hash_matches_the_key_file(tmp_path: Path) -> None:
@@ -315,6 +513,12 @@ def test_the_written_key_hash_matches_the_key_file(tmp_path: Path) -> None:
 def _seed_every_frame(session: Session) -> None:
     speaker = Speaker(
         name=_SPEAKER_NAME,
+        party="PAP",
+        is_legislative_assembly=False,
+        parliament_number=_PARLIAMENT_NUMBER,
+    )
+    other_speaker = Speaker(
+        name=_OTHER_SPEAKER_NAME,
         party="PAP",
         is_legislative_assembly=False,
         parliament_number=_PARLIAMENT_NUMBER,
@@ -371,7 +575,7 @@ def _seed_every_frame(session: Session) -> None:
         status=MinutesStatus.TEXT_STORED,
         index_source=MinutesIndexSource.ARCHIVE_FILE_LISTING,
     )
-    session.add_all([speaker, printed_division, total_division, minutes])
+    session.add_all([speaker, other_speaker, printed_division, total_division, minutes])
     session.flush()
     session.add(
         MinutesDivision(
@@ -395,7 +599,9 @@ def _seed_every_frame(session: Session) -> None:
             name_rule=name_rule,
             party=None if name_rule is None else "PAP",
             division_id=printed_division.id,
-            speaker_id=None if name_rule is None else speaker.id,
+            speaker_id=None
+            if name_rule is None
+            else (speaker.id if ordinal % 2 else other_speaker.id),
         )
         for list_source, name_rules in (
             (DivisionVoteListSource.HANSARD, list(DivisionVoteNameRule)),
@@ -453,6 +659,10 @@ def test_the_script_writes_nothing_to_the_database(
     scratch_session.expire_all()
     assert _count_rows(scratch_session) == row_counts_before
     assert (tmp_path / "check" / "packets.json").exists()
+    key = DivisionCheckKey.model_validate_json(
+        (tmp_path / "check" / "key.json").read_text()
+    )
+    assert key.plants
 
 
 def test_the_script_refuses_an_existing_output_directory(

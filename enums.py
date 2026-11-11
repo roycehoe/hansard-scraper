@@ -532,6 +532,8 @@ class DivisionCheckPlantKind(StrEnum):
     WRONG_COUNT_DIGIT = "WRONG_COUNT_DIGIT"
     WRONG_PERSON = "WRONG_PERSON"
     WRONG_PAIR = "WRONG_PAIR"
+    WRONG_DATE = "WRONG_DATE"
+    WRONG_PARTY = "WRONG_PARTY"
 
 
 class DivisionCountSource(StrEnum):
