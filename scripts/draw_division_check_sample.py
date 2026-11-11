@@ -38,7 +38,6 @@ from enums import (
 )
 from exceptions import HansardDivisionCheckError
 from logs import logger
-from populate.divisions import get_decade_label
 from populate.minutes_divisions import get_pairable_hansard_divisions
 from schemas.division_check_sample import (
     DivisionCheckCandidate,
@@ -55,6 +54,7 @@ from services.minutes_index import (
 )
 from settings import settings
 from utils.database_label import get_database_label
+from utils.sitting_dates import get_decade_label
 
 _ROWS_PER_GROUP = 50
 _PLANT_COUNT_PER_KIND = 5

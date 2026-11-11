@@ -31,7 +31,12 @@ from services.refresh import (
     is_published_sitting_response,
     is_unlinked_share_over_limit,
 )
-from utils.sitting_dates import MonthWindow, get_month_windows, get_sitting_date_key
+from utils.sitting_dates import (
+    MonthWindow,
+    get_decade_label,
+    get_month_windows,
+    get_sitting_date_key,
+)
 
 _TODAY = date(2025, 4, 20)
 _RECENT_STORED_DAYS_AGO = 10
@@ -120,6 +125,12 @@ def test_month_windows_from_a_month_end_start_with_one_day() -> None:
         MonthWindow(date(2024, 8, 31), date(2024, 8, 31)),
         MonthWindow(date(2024, 9, 1), date(2024, 9, 12)),
     ]
+
+
+def test_decade_label_names_the_decade_of_the_year() -> None:
+    assert get_decade_label(date(1959, 12, 31)) == "1950s"
+    assert get_decade_label(date(1960, 1, 1)) == "1960s"
+    assert get_decade_label(date(2021, 10, 4)) == "2020s"
 
 
 def test_sitting_date_key_is_unpadded() -> None:

@@ -15,10 +15,10 @@ from populate.division_party_counts import (
     get_division_party_count_plan,
     write_division_party_count_plan,
 )
-from populate.divisions import get_decade_label
 from populate.written_tables import vacuum_analyze_written_tables
 from schemas.division_party_count_plan import DivisionPartyCountPlan
 from settings import settings
+from utils.sitting_dates import get_decade_label
 from utils.write_target import validate_can_write
 
 

@@ -34,10 +34,10 @@ from services.speaker_link import VoteSpeakerMatch, resolve_vote_speaker
 from utils.division_detachment import DivisionDetachment
 from utils.division_update import DivisionUpdate
 from utils.division_vote_name import ParsedVoteName, get_name_to_resolve
+from utils.sitting_dates import get_decade_label
 from utils.speaker_resolution import SpeakerLookups
 
 _REPORT_BATCH = 200
-_YEARS_PER_DECADE = 10
 
 
 @dataclass(frozen=True)
@@ -88,10 +88,6 @@ class _DivisionShape:
     abstentions: Optional[int]
     absent: Optional[int]
     paired: Optional[int]
-
-
-def get_decade_label(sitting_date: date) -> str:
-    return f"{sitting_date.year // _YEARS_PER_DECADE * _YEARS_PER_DECADE}s"
 
 
 def get_decade_and_source_counts(

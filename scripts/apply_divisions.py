@@ -12,7 +12,6 @@ from exceptions import HansardWriteCheckError
 from logs import logger
 from populate.divisions import (
     get_decade_and_source_counts,
-    get_decade_label,
     get_division_match,
     get_division_plan,
     get_paired_divisions_at_risk,
@@ -21,6 +20,7 @@ from populate.divisions import (
 from populate.written_tables import vacuum_analyze_written_tables
 from schemas.division_plan import DivisionPlan
 from settings import settings
+from utils.sitting_dates import get_decade_label
 from utils.write_target import validate_can_write
 
 

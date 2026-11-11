@@ -14,6 +14,10 @@ class MonthWindow:
     last_date: date
 
 
+def get_decade_label(sitting_date: date) -> str:
+    return f"{sitting_date.year // _YEARS_PER_DECADE * _YEARS_PER_DECADE}s"
+
+
 def get_month_windows(first_date: date, last_date: date) -> list[MonthWindow]:
     month_windows = []
     window_first_date = first_date

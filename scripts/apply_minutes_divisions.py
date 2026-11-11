@@ -12,7 +12,6 @@ from database.minutes import Minutes
 from database.minutes_division import MinutesDivision
 from exceptions import HansardWriteCheckError
 from logs import logger
-from populate.divisions import get_decade_label
 from populate.minutes_divisions import (
     MINUTES_DIVISION_FIRST_DATE,
     get_minutes_division_plan,
@@ -21,6 +20,7 @@ from populate.minutes_divisions import (
 from populate.written_tables import vacuum_analyze_written_tables
 from schemas.minutes_division_plan import MinutesDivisionPlan
 from settings import settings
+from utils.sitting_dates import get_decade_label
 from utils.write_target import validate_can_write
 
 

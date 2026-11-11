@@ -585,7 +585,7 @@ hansard-scraper/
 │   ├── row_counts.py                # format_row_counts: a Counter as sorted "key count" text for a script's log line
 │   ├── printed_citation.py          # PrintedCitation and ResumptionHeading: the records report_citation hands to report_link
 │   ├── seat_holding_update.py       # SeatHoldingUpdate: one seat holding's widened bounds, for a bulk update
-│   ├── sitting_dates.py             # Sitting-date parsing, the sitting-date key, the month windows and the old/new format cutoff test
+│   ├── sitting_dates.py             # Sitting-date parsing, the sitting-date key, the decade label, the month windows and the old/new format cutoff test
 │   ├── speaker_resolution.py        # Name resolution: build SpeakerLookups, resolve_canonical_name and the OCR and name tables behind it
 │   ├── speaker_resolution_constants.py  # Reference tables for stage 8 (role terms, office holders)
 │   ├── speaker_terms.py             # SPEAKER_TERMS: who presided as Speaker on which dates (stages 7 and 8)

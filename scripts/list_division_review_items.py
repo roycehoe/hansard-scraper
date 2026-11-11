@@ -27,7 +27,6 @@ from enums import (
     MinutesStatus,
 )
 from logs import logger
-from populate.divisions import get_decade_label
 from populate.minutes_divisions import (
     MINUTES_DIVISION_FIRST_DATE,
     get_pairable_hansard_divisions,
@@ -47,7 +46,7 @@ from services.division_pairing import (
     get_division_pairs,
 )
 from settings import settings
-from utils.sitting_dates import parse_sitting_date
+from utils.sitting_dates import get_decade_label, parse_sitting_date
 
 _REPORT_BATCH = 200
 _SOURCE_TEXT_LIMIT = 400
