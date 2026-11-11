@@ -70,6 +70,7 @@ _LINK_FAMILY = "link"
 _OFFICE_FAMILY = "office"
 _SHARED_LINE_FAMILY = "shared_line"
 _SEAT_FAMILY = "seat"
+_MISSPELT_DIVISION_PLANT_INDEXES = frozenset({1, 3})
 _OFFICE_PRINTED_ON_ENTRY_GROUP_PREFIX = _GROUP_SEPARATOR.join(
     [_OFFICE_FAMILY, str(LeaveOfficeSource.PRINTED_ON_ENTRY)]
 )
@@ -118,7 +119,7 @@ _RULE_YEAR_ORDER_BREAK = (
     + _JUDGE_ONLY_THIS_RULE
 )
 _RULE_SEAT = (
-    "First, last and count follow from the labels shown. Flag a label or neighbour that looks like another division or a misprint of this one."
+    "The division is the folded form of the labels shown. First, last and count follow from the labels shown. Flag a label or neighbour that looks like another division or a misprint of this one."
     + _JUDGE_ONLY_THIS_RULE
 )
 _RULE_NONE = "Check the stored values against the source text."
@@ -134,6 +135,7 @@ class CheckItem:
     start_date: Optional[date]
     end_date: Optional[date]
     other_says: str
+    division_key: Optional[str]
 
 
 @dataclass(frozen=True)
@@ -435,6 +437,7 @@ def _build_leave_item(check_row: LeavePeriodPrintingCheckRow) -> CheckItem:
         office=check_row.office_printed,
         start_date=check_row.start_date,
         end_date=check_row.end_date,
+        division_key=None,
         other_says=(
             f"end text: {_get_shown_text(check_row.end_text)};"
             f" name source: {check_row.name_source}; year source: {_get_shown_text(check_row.year_source)};"
@@ -454,6 +457,7 @@ def _build_seat_item(check_row: SeatHoldingCheckRow) -> CheckItem:
         start_date=check_row.first_sitting_date,
         end_date=check_row.last_sitting_date,
         other_says=f"division: {check_row.division_key}; sittings: {check_row.sitting_count}",
+        division_key=check_row.division_key,
     )
 
 
@@ -556,6 +560,55 @@ def _get_moved_year_plant(item: CheckItem) -> Optional[Plant]:
     )
 
 
+def _get_misspelt_division_keys(
+    division_key: str, stored_division_keys: frozenset[str]
+) -> list[str]:
+    misspelt_division_keys = []
+    for character_index in range(len(division_key) - 1):
+        first_character = division_key[character_index]
+        second_character = division_key[character_index + 1]
+        if not first_character.isalpha() or not second_character.isalpha():
+            continue
+        if first_character == second_character:
+            continue
+        misspelt_division_key = (
+            division_key[:character_index]
+            + second_character
+            + first_character
+            + division_key[character_index + 2 :]
+        )
+        if misspelt_division_key not in stored_division_keys:
+            misspelt_division_keys.append(misspelt_division_key)
+    return misspelt_division_keys
+
+
+def _get_misspelt_division_plant(
+    item: CheckItem,
+    stored_division_keys: frozenset[str],
+    generator: random.Random,
+) -> Optional[Plant]:
+    if item.division_key is None:
+        return None
+    misspelt_division_keys = _get_misspelt_division_keys(
+        item.division_key, stored_division_keys
+    )
+    if not misspelt_division_keys:
+        return None
+    misspelt_division_key = generator.choice(misspelt_division_keys)
+    return Plant(
+        replace(
+            item,
+            other_says=item.other_says.replace(
+                f"division: {item.division_key};",
+                f"division: {misspelt_division_key};",
+                1,
+            ),
+        ),
+        f"replaced the division {item.division_key} with {misspelt_division_key},"
+        " which matches no label shown",
+    )
+
+
 def _get_plant(
     item: CheckItem,
     group: str,
@@ -629,7 +682,9 @@ def draw_group_sample(
 
 
 def draw_group_plants(
-    group_sample: GroupSample, taken_item_keys: set[tuple[str, int]]
+    group_sample: GroupSample,
+    taken_item_keys: set[tuple[str, int]],
+    stored_division_keys: frozenset[str],
 ) -> GroupDraw:
     group = group_sample.group
     sample = group_sample.sample
@@ -647,9 +702,16 @@ def draw_group_plants(
     )
     plants = []
     skipped_plant_count = plant_count - len(plant_bases)
-    for plant_base in plant_bases:
-        plant = _get_plant(
-            plant_base, group, group_sample.sorted_items, group_sample.generator
+    for plant_index, plant_base in enumerate(plant_bases):
+        plant = (
+            _get_misspelt_division_plant(
+                plant_base, stored_division_keys, group_sample.generator
+            )
+            if _get_family(group) == _SEAT_FAMILY
+            and plant_index in _MISSPELT_DIVISION_PLANT_INDEXES
+            else _get_plant(
+                plant_base, group, group_sample.sorted_items, group_sample.generator
+            )
         )
         if plant is None:
             skipped_plant_count += 1
@@ -672,9 +734,17 @@ def draw_groups(
         for group_sample in group_samples
         for item in group_sample.sample
     }
+    stored_division_keys = frozenset(
+        item.division_key
+        for items in group_to_items.values()
+        for item in items
+        if item.division_key is not None
+    )
     group_draws = []
     for group_sample in group_samples:
-        group_draw = draw_group_plants(group_sample, taken_item_keys)
+        group_draw = draw_group_plants(
+            group_sample, taken_item_keys, stored_division_keys
+        )
         taken_item_keys.update(_get_item_key(plant.item) for plant in group_draw.plants)
         group_draws.append(group_draw)
     return group_draws

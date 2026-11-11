@@ -52,6 +52,7 @@ _PLANTS_AT_ONE = 1
 _LARGE_GROUP_SIZE = 60
 _SAMPLE_SIZE = 50
 _FORMAT_GROUP = "format|STRUCTURED_LIST|2020"
+_MISSPELT_PLANT_INDEXES = (1, 3)
 
 _LEAVE_ROW = LeavePeriodPrintingCheckRow(
     id=1,
@@ -95,7 +96,8 @@ _ITEM = CheckItem(
     office=None,
     start_date=date(2016, 1, 11),
     end_date=date(2020, 3, 6),
-    other_says="says",
+    other_says="division: ang mo kio; sittings: 40",
+    division_key="ang mo kio",
 )
 
 
@@ -257,7 +259,7 @@ def test_a_29_february_moves_to_28_february_on_either_end() -> None:
         end_date=date(2024, 2, 29),
     )
 
-    group_draw = _draw_group(_SEED, "seat|2020", items)
+    group_draw = _draw_group(_SEED, "year_gap|1-30", items)
 
     assert group_draw.plants
     for plant in group_draw.plants:
@@ -270,10 +272,108 @@ def test_a_year_plant_moves_both_ends_and_a_seat_moves_first_and_last_sitting() 
 
     group_draw = _draw_group(_SEED, "seat|2010", items)
 
-    assert group_draw.plants
-    for plant in group_draw.plants:
+    moved_plants = [
+        plant
+        for plant in group_draw.plants
+        if f"division: {_ITEM.division_key};" in plant.item.other_says
+    ]
+    assert moved_plants
+    for plant in moved_plants:
         assert plant.item.start_date == date(2017, 1, 11)
         assert plant.item.end_date == date(2021, 3, 6)
+
+
+def test_the_second_and_fourth_seat_plants_misspell_the_division_only() -> None:
+    items = _build_items(_LARGE_GROUP_SIZE)
+
+    group_draw = _draw_group(_SEED, "seat|2010", items)
+
+    assert len(group_draw.plants) == _PLANTS_AT_FIFTY
+    for plant_index, plant in enumerate(group_draw.plants):
+        is_misspelt = f"division: {_ITEM.division_key};" not in plant.item.other_says
+        assert is_misspelt == (plant_index in (1, 3))
+        if not is_misspelt:
+            continue
+        misspelt_key = plant.item.other_says.removeprefix("division: ").split(";")[0]
+        assert sorted(misspelt_key) == sorted(_ITEM.division_key or "")
+        assert misspelt_key != _ITEM.division_key
+        assert plant.item.other_says.endswith("; sittings: 40")
+        assert plant.item.start_date == _ITEM.start_date
+        assert plant.item.end_date == _ITEM.end_date
+        assert plant.item.member == _ITEM.member
+        assert _ITEM.division_key in plant.note
+        assert misspelt_key in plant.note
+
+
+def test_a_misspelt_division_plant_keeps_the_source_text_of_its_base_row() -> None:
+    items = _build_items(_LARGE_GROUP_SIZE)
+    group_draw = _draw_group(_SEED, "seat|2010", items)
+
+    packet_entries = get_packet_entries(
+        _SEED, [group_draw], _get_item_key_to_source_text(items)
+    )
+
+    misspelt_entries = [
+        entry
+        for entry in packet_entries
+        if entry.key_entry.is_plant
+        and f"division: {_ITEM.division_key};" not in entry.packet.data_says
+    ]
+    assert len(misspelt_entries) == len(_MISSPELT_PLANT_INDEXES)
+    for entry in misspelt_entries:
+        assert entry.packet.source_text == f"source {entry.key_entry.row_id}"
+        assert entry.packet.data_says.startswith("member: Lee Hsien Loong;")
+        assert entry.packet.rule.startswith(
+            "The division is the folded form of the labels shown."
+        )
+
+
+def test_a_swap_equal_to_a_stored_division_is_not_used() -> None:
+    items = [
+        *_build_items(_LARGE_GROUP_SIZE, division_key="ab", other_says="division: ab;"),
+        replace(
+            _ITEM,
+            row_id=_LARGE_GROUP_SIZE + 1,
+            division_key="ba",
+            other_says="division: ba;",
+        ),
+    ]
+
+    group_draw = _draw_group(_SEED, "seat|2010", items)
+
+    assert len(group_draw.plants) == _PLANTS_AT_FIFTY - len(_MISSPELT_PLANT_INDEXES)
+    assert group_draw.skipped_plant_count == len(_MISSPELT_PLANT_INDEXES)
+    for plant in group_draw.plants:
+        assert plant.item.start_date == date(2017, 1, 11)
+
+
+def test_a_division_key_with_no_usable_pair_is_skipped_and_counted() -> None:
+    items = _build_items(
+        _LARGE_GROUP_SIZE, division_key="aa", other_says="division: aa;"
+    )
+
+    group_draw = _draw_group(_SEED, "seat|2010", items)
+
+    assert len(group_draw.plants) == _PLANTS_AT_FIFTY - len(_MISSPELT_PLANT_INDEXES)
+    assert group_draw.skipped_plant_count == len(_MISSPELT_PLANT_INDEXES)
+
+
+def test_letters_apart_by_a_space_are_not_an_adjacent_pair() -> None:
+    items = _build_items(
+        _LARGE_GROUP_SIZE,
+        division_key="a b",
+        other_says="division: a b; sittings: 40",
+    )
+
+    group_draw = _draw_group(_SEED, "seat|2010", items)
+
+    misspelt_plants = [
+        plant
+        for plant in group_draw.plants
+        if "division: a b;" not in plant.item.other_says
+    ]
+    assert not misspelt_plants
+    assert group_draw.skipped_plant_count == len(_MISSPELT_PLANT_INDEXES)
 
 
 def test_an_open_period_moves_its_start_only() -> None:
