@@ -178,6 +178,29 @@ def test_a_first_row_with_fewer_tokens_than_labels_is_layout_unreadable() -> Non
         assert division.printed_list is not None
 
 
+def test_a_one_token_first_row_whose_only_count_is_not_the_leftmost_label_is_layout_unreadable() -> (
+    None
+):
+    text = "\n".join(
+        [
+            "On Question put, a division was taken: Ayes 0, Noes 3, Abstentions 0.",
+            "",
+            _HEADER,
+            "",
+            "     Aa Bb",
+            "     Cc Dd",
+            "     Ee Ff",
+        ]
+    )
+
+    division = _get_single_division(text)
+
+    assert (division.ayes, division.noes, division.abstentions) == (0, 3, 0)
+    assert division.list_status == DivisionListStatus.LAYOUT_UNREADABLE
+    assert division.names == []
+    assert division.printed_list is not None
+
+
 def test_a_first_row_with_more_tokens_than_labels_is_layout_unreadable() -> None:
     text = "\n".join(
         [

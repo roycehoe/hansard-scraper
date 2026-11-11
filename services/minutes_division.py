@@ -208,7 +208,9 @@ def _get_side_to_start(
         return None
     if len(positive_sides) != 1:
         return None
-    return {positive_sides[0]: tokens[0].start}
+    if positive_sides[0] != header_sides[0]:
+        return None
+    return {header_sides[0]: tokens[0].start}
 
 
 def _get_nearest_side(
