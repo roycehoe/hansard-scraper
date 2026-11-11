@@ -100,6 +100,12 @@ class PlantedCandidate:
 
 
 @dataclass(frozen=True)
+class DivisionCheckPacketsAndKey:
+    packets: list[DivisionCheckPacket]
+    key: DivisionCheckKey
+
+
+@dataclass(frozen=True)
 class _PacketDraft:
     source_text: str
     data_claim: str
@@ -211,13 +217,17 @@ def _get_merge_candidates(session: Session) -> list[DivisionCheckCandidate]:
                 )
                 if division is None:
                     continue
+                if division.speech_ordinal is None:
+                    raise HansardDivisionCheckError(
+                        f"Division {division.id} holds no report or speech row"
+                    )
                 candidates.append(
                     DivisionCheckCandidate(
                         rule=DivisionCheckRule.PRINTED_AND_SPOKEN_MERGE,
                         group=_get_group(division.sitting_date, type_row.report_type),
                         source_text=_LINE_SEPARATOR.join(
                             [
-                                _get_transcript(parse_rows, division.speech_ordinal or 0),
+                                _get_transcript(parse_rows, division.speech_ordinal),
                                 _get_transcript(
                                     parse_rows, parsed_division.merged_total_ordinal
                                 ),
@@ -620,7 +630,9 @@ def get_division_check_candidates(
         return _get_file_head_date_candidates(stored_minutes)
     if rule == DivisionCheckRule.MINUTES_DIVISION_AND_SIDE:
         return _get_minutes_side_candidates(session, stored_minutes)
-    return _get_pairing_candidates(session, stored_minutes)
+    if rule == DivisionCheckRule.PAIRING:
+        return _get_pairing_candidates(session, stored_minutes)
+    raise HansardDivisionCheckError(f"No frame is built for {rule}")
 
 
 def draw_candidates(
@@ -907,7 +919,7 @@ def build_packets_and_key(
     seed: int,
     drawn_candidates: list[DivisionCheckCandidate],
     planted_candidates: list[PlantedCandidate],
-) -> tuple[list[DivisionCheckPacket], DivisionCheckKey]:
+) -> DivisionCheckPacketsAndKey:
     packet_drafts = [
         _PacketDraft(
             candidate.source_text, candidate.data_claim, candidate.database_key, None
@@ -943,11 +955,14 @@ def build_packets_and_key(
             plants.append(
                 DivisionCheckPlant(packet_id=packet_id, kind=packet_draft.plant_kind)
             )
-    return packets, DivisionCheckKey(
-        seed=seed,
-        rule=rule,
-        plants=plants,
-        packet_id_to_database_key=packet_id_to_database_key,
+    return DivisionCheckPacketsAndKey(
+        packets,
+        DivisionCheckKey(
+            seed=seed,
+            rule=rule,
+            plants=plants,
+            packet_id_to_database_key=packet_id_to_database_key,
+        ),
     )
 
 
@@ -1027,7 +1042,7 @@ def draw_division_check_sample(
             seed,
             lambda: get_sibling_candidates(session, rule),
         )
-    packets, key = build_packets_and_key(
+    packets_and_key = build_packets_and_key(
         rule, seed, drawn_candidates, planted_candidates
     )
     summary_lines = get_summary_lines(
@@ -1038,9 +1053,11 @@ def draw_division_check_sample(
         drawn_candidates,
         planted_candidates,
     )
-    write_check_files(output_directory, packets, key, summary_lines)
+    write_check_files(
+        output_directory, packets_and_key.packets, packets_and_key.key, summary_lines
+    )
     logger.info(
-        f"Wrote {len(packets)} packets, {len(key.plants)} planted, to {output_directory}"
+        f"Wrote {len(packets_and_key.packets)} packets, {len(packets_and_key.key.plants)} planted, to {output_directory}"
     )
 
 

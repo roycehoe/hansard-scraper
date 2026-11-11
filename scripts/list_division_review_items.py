@@ -71,6 +71,12 @@ _COUNTED_VOTE_CHOICES = frozenset(
 
 
 @dataclass(frozen=True)
+class _PairingReview:
+    kind: DivisionReviewItemKind
+    rule: str
+
+
+@dataclass(frozen=True)
 class _ReviewInputs:
     minutes_divisions: list[MinutesDivision]
     minutes_id_to_sitting_date: dict[int, date]
@@ -144,9 +150,10 @@ def _build_list_status_items(
             )
         )
     for minutes_division in inputs.minutes_divisions:
-        if minutes_division.list_status not in list_status_to_kind:
+        kind_and_rule = list_status_to_kind.get(minutes_division.list_status)
+        if kind_and_rule is None:
             continue
-        kind, rule = list_status_to_kind[minutes_division.list_status]
+        kind, rule = kind_and_rule
         items.append(
             DivisionReviewItem(
                 kind=kind,
@@ -173,30 +180,34 @@ def _format_hansard_divisions(hansard_divisions: list[PairableHansardDivision]) 
     )
 
 
-def _build_pairing_items(inputs: _ReviewInputs) -> list[DivisionReviewItem]:
-    pairing_to_kind_and_rule = {
-        MinutesDivisionPairing.NO_MATCHING_DIVISION: (
+def _get_pairing_review(pairing: MinutesDivisionPairing) -> Optional[_PairingReview]:
+    if pairing == MinutesDivisionPairing.NO_MATCHING_DIVISION:
+        return _PairingReview(
             DivisionReviewItemKind.MINUTES_DIVISION_WITHOUT_HANSARD_DIVISION,
             _MINUTES_WITHOUT_HANSARD_RULE,
-        ),
-        MinutesDivisionPairing.UNEQUAL_NUMBER: (
-            DivisionReviewItemKind.MINUTES_DIVISION_UNEQUAL_NUMBER,
-            _UNEQUAL_NUMBER_RULE,
-        ),
-        MinutesDivisionPairing.TIED: (
-            DivisionReviewItemKind.MINUTES_DIVISION_TIED,
-            _TIED_RULE,
-        ),
-        MinutesDivisionPairing.ABSTENTIONS_DIFFER: (
+        )
+    if pairing == MinutesDivisionPairing.UNEQUAL_NUMBER:
+        return _PairingReview(
+            DivisionReviewItemKind.MINUTES_DIVISION_UNEQUAL_NUMBER, _UNEQUAL_NUMBER_RULE
+        )
+    if pairing == MinutesDivisionPairing.TIED:
+        return _PairingReview(DivisionReviewItemKind.MINUTES_DIVISION_TIED, _TIED_RULE)
+    if pairing == MinutesDivisionPairing.ABSTENTIONS_DIFFER:
+        return _PairingReview(
             DivisionReviewItemKind.MINUTES_DIVISION_ABSTENTIONS_DIFFER,
             _ABSTENTIONS_DIFFER_RULE,
-        ),
-    }
+        )
+    return None
+
+
+def _build_pairing_items(inputs: _ReviewInputs) -> list[DivisionReviewItem]:
     items: list[DivisionReviewItem] = []
     for minutes_division in inputs.minutes_divisions:
-        if minutes_division.pairing not in pairing_to_kind_and_rule:
+        pairing_review = _get_pairing_review(minutes_division.pairing)
+        if pairing_review is None:
             continue
-        kind, rule = pairing_to_kind_and_rule[minutes_division.pairing]
+        kind = pairing_review.kind
+        rule = pairing_review.rule
         sitting_date = inputs.minutes_id_to_sitting_date[minutes_division.minutes_id]
         data_says = f"minutes division {minutes_division.ordinal}: Ayes {minutes_division.ayes}, Noes {minutes_division.noes}, Abstentions {minutes_division.abstentions}; pairing {minutes_division.pairing}"
         if kind != DivisionReviewItemKind.MINUTES_DIVISION_WITHOUT_HANSARD_DIVISION:

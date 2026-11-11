@@ -465,15 +465,18 @@ def test_the_packets_show_no_database_key_and_the_key_names_each_plant() -> None
         list,
     )
 
-    packets, key = draw_division_check_sample_script.build_packets_and_key(
+    packets_and_key = draw_division_check_sample_script.build_packets_and_key(
         DivisionCheckRule.PRINTED_LINE, _SEED, drawn_candidates, planted_candidates
     )
 
+    packets = packets_and_key.packets
     assert len(packets) == _ROWS_PER_GROUP + _PLANT_COUNT
     assert all("division:" not in packet.model_dump_json() for packet in packets)
     assert len({packet.packet_id for packet in packets}) == len(packets)
-    assert len(key.plants) == _PLANT_COUNT
-    assert set(key.packet_id_to_database_key) == {packet.packet_id for packet in packets}
+    assert len(packets_and_key.key.plants) == _PLANT_COUNT
+    assert set(packets_and_key.key.packet_id_to_database_key) == {
+        packet.packet_id for packet in packets
+    }
 
 
 def test_the_summary_says_which_plant_kinds_the_rule_does_not_use() -> None:
@@ -512,13 +515,13 @@ def test_a_packet_holds_only_a_random_id_the_source_and_the_claim() -> None:
 
 def test_the_written_key_hash_matches_the_key_file(tmp_path: Path) -> None:
     candidates = [_build_candidate(1)]
-    packets, key = draw_division_check_sample_script.build_packets_and_key(
+    packets_and_key = draw_division_check_sample_script.build_packets_and_key(
         DivisionCheckRule.PRINTED_LINE, _SEED, candidates, []
     )
     output_directory = tmp_path / "check"
 
     draw_division_check_sample_script.write_check_files(
-        output_directory, packets, key, ["line"]
+        output_directory, packets_and_key.packets, packets_and_key.key, ["line"]
     )
 
     key_bytes = (output_directory / "key.json").read_bytes()
@@ -527,7 +530,7 @@ def test_the_written_key_hash_matches_the_key_file(tmp_path: Path) -> None:
     ).hexdigest()
     with pytest.raises(FileExistsError):
         draw_division_check_sample_script.write_check_files(
-            output_directory, packets, key, ["line"]
+            output_directory, packets_and_key.packets, packets_and_key.key, ["line"]
         )
 
 
@@ -811,6 +814,42 @@ def test_an_index_row_the_capture_does_not_print_is_refused(
     with pytest.raises(HansardDivisionCheckError, match="matches 0 rows"):
         draw_division_check_sample_script.get_division_check_candidates(
             scratch_session, DivisionCheckRule.INDEX_ROW
+        )
+
+
+def test_a_merged_division_with_no_speech_row_is_refused_by_name(
+    scratch_session: Session,
+) -> None:
+    merge_report = add_division_report(
+        scratch_session, _MERGE_REPORT_ID, _SITTING_DATETIME, _PARLIAMENT_NUMBER
+    )
+    add_division_speech_rows(
+        scratch_session,
+        merge_report,
+        [
+            (SpeechKind.PROCEDURAL, None, _MERGE_LINE),
+            (SpeechKind.SPEECH, None, _MERGE_TOTAL),
+        ],
+    )
+    scratch_session.add(
+        Division(
+            sitting_date=_SITTING_DATE,
+            parliament_number=_PARLIAMENT_NUMBER,
+            report_division_number=1,
+            speech_ordinal=None,
+            count_source=DivisionCountSource.PRINTED_LINE,
+            printed_counts=_MERGE_LINE,
+            ayes=_AYES,
+            noes=_NOES,
+            list_status=DivisionListStatus.NOT_PRINTED,
+            sprs_report_id=_MERGE_REPORT_ID,
+        )
+    )
+    scratch_session.flush()
+
+    with pytest.raises(HansardDivisionCheckError, match="holds no report or speech row"):
+        draw_division_check_sample_script.get_division_check_candidates(
+            scratch_session, DivisionCheckRule.PRINTED_AND_SPOKEN_MERGE
         )
 
 
