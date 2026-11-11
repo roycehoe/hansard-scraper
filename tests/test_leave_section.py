@@ -707,3 +707,96 @@ def test_a_mixed_shaped_line_the_rule_cannot_read_is_unread(line: str) -> None:
     assert _get_formats(leave_entries) == [LeaveEntryFormat.UNREAD]
     assert leave_entries[0].printed_line == line
     assert leave_entries[0].printed_name == "Mr X"
+
+
+@pytest.mark.parametrize(
+    ("line", "start_date", "end_date"),
+    [
+        (
+            "Mr X (Tanglin) - for 8 weeks from 7th April, 1956",
+            date(1956, 4, 7),
+            date(1956, 6, 1),
+        ),
+        ("Mr X - two weeks, from 3rd May, 1960", date(1960, 5, 3), date(1960, 5, 16)),
+        ("Mr X - Two Weeks, from 3rd May, 1960", date(1960, 5, 3), date(1960, 5, 16)),
+        (
+            "Mr X - for a period of 8 weeks from 7th April, 1956",
+            date(1956, 4, 7),
+            date(1956, 6, 1),
+        ),
+        (
+            "Mr X - thirteen days from 3rd May, 1960",
+            date(1960, 5, 3),
+            date(1960, 5, 15),
+        ),
+        (
+            "Mr X - fourteen days from 3rd May, 1960",
+            date(1960, 5, 3),
+            date(1960, 5, 16),
+        ),
+        ("Mr X - one month from 3rd May, 1960", date(1960, 5, 3), date(1960, 6, 2)),
+        (
+            "Mr X - three months from 15th November, 1960",
+            date(1960, 11, 15),
+            date(1961, 2, 14),
+        ),
+        ("Mr X - 1 year from 3rd May, 1960", date(1960, 5, 3), date(1961, 5, 2)),
+        (
+            "Mr X - two years from 1st January, 1960",
+            date(1960, 1, 1),
+            date(1961, 12, 31),
+        ),
+    ],
+)
+def test_a_duration_is_counted_from_its_start_day(
+    line: str, start_date: date, end_date: date
+) -> None:
+    leave_entries = _build_entries(line)
+
+    assert len(leave_entries) == 1
+    leave_entry = leave_entries[0]
+    assert leave_entry.entry_format == LeaveEntryFormat.PROSE_DURATION
+    assert leave_entry.leave_dates == LeaveDates(start_date, end_date)
+    assert leave_entry.year_source == LeaveYearSource.PRINTED_IN_ENTRY
+    assert leave_entry.office_printed is None
+    assert leave_entry.printed_to is None
+    assert leave_entry.printed_line == line
+
+
+def test_a_duration_keeps_the_start_date_text_and_the_words_in_the_line() -> None:
+    leave_entries = _build_entries("Mr X - for 8 weeks from 7th April, 1956")
+
+    assert leave_entries[0].printed_from == "7th April, 1956"
+
+
+def test_a_duration_ending_on_a_day_its_month_lacks_is_unread() -> None:
+    leave_entries = _build_entries("Mr X - one month from 31st January, 1961")
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.UNREAD]
+
+
+def test_a_from_only_entry_has_no_end() -> None:
+    leave_entries = _build_entries("Mr X (Tanglin) - from 7th April, 1956")
+
+    assert len(leave_entries) == 1
+    leave_entry = leave_entries[0]
+    assert leave_entry.entry_format == LeaveEntryFormat.PROSE_DURATION
+    assert leave_entry.leave_dates == LeaveDates(date(1956, 4, 7), None)
+    assert leave_entry.printed_from == "7th April, 1956"
+    assert leave_entry.printed_to is None
+    assert leave_entry.end_text is None
+
+
+def test_a_from_only_entry_with_a_day_that_does_not_exist_is_unread() -> None:
+    leave_entries = _build_entries("Mr X - from 31st April, 1956")
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.UNREAD]
+    assert leave_entries[0].printed_name == "Mr X"
+
+
+def test_a_duration_with_text_left_over_is_unread() -> None:
+    leave_entries = _build_entries(
+        "Mr X - three weeks from 12th August, 1960; and from 21st to 26th September, 1960."
+    )
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.UNREAD]

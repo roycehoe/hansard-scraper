@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional
 
 from enums import LeaveEntryFormat, LeaveNameSource, LeaveYearSource
@@ -69,6 +69,19 @@ _DAY_ITEM_RE = re.compile(
     re.IGNORECASE,
 )
 _MIN_MIXED_ITEM_COUNT = 2
+_DAY_UNIT = "day"
+_WEEK_UNIT = "week"
+_MONTH_UNIT = "month"
+_DAYS_IN_WEEK = 7
+_MONTHS_IN_YEAR = 12
+_DURATION_RE = re.compile(
+    rf"(?:for\s+(?:a\s+period\s+of\s+)?)?(?P<count>\d+|{_NUMBER_WORD_PATTERN})\s+(?P<unit>day|week|month|year)s?,?\s+from\s+(?P<day>{_DAY_PATTERN})\s+(?P<month>{_MONTH_PATTERN}),?\s*(?P<year>\d{{4}})",
+    re.IGNORECASE,
+)
+_FROM_ONLY_RE = re.compile(
+    rf"^from\s+(?P<day>{_DAY_PATTERN})\s+(?P<month>{_MONTH_PATTERN}),?\s*(?P<year>\d{{4}})",
+    re.IGNORECASE,
+)
 _DAY_RE = re.compile(_DAY_PATTERN)
 _DATE_LEFTOVER_RE = re.compile(r"^[\s,.;]*(?:and[\s,.;]*)*$", re.IGNORECASE)
 _NON_DIGIT_RE = re.compile(r"\D")
@@ -525,6 +538,102 @@ def _get_single_day_printings(
     )
 
 
+def _add_calendar_months(start_date: date, month_count: int) -> date:
+    year_count, month_index = divmod(
+        start_date.month - 1 + month_count, _MONTHS_IN_YEAR
+    )
+    return date(start_date.year + year_count, month_index + 1, start_date.day)
+
+
+def _get_duration_end_date(start_date: date, count: int, unit: str) -> date:
+    if unit == _DAY_UNIT:
+        return start_date + timedelta(days=count - 1)
+    if unit == _WEEK_UNIT:
+        return start_date + timedelta(days=_DAYS_IN_WEEK * count - 1)
+    if unit == _MONTH_UNIT:
+        return _add_calendar_months(start_date, count) - timedelta(days=1)
+    return _add_calendar_months(start_date, _MONTHS_IN_YEAR * count) - timedelta(days=1)
+
+
+def _get_duration_leave_dates(match: re.Match) -> Optional[LeaveDates]:
+    count_text = match.group("count")
+    count = (
+        int(count_text)
+        if count_text.isdigit()
+        else _NUMBER_WORD_TO_COUNT[count_text.lower()]
+    )
+    try:
+        start_date = date(
+            int(match.group("year")),
+            _get_month(match.group("month")),
+            _get_day(match.group("day")),
+        )
+        return LeaveDates(
+            start_date,
+            _get_duration_end_date(start_date, count, match.group("unit").lower()),
+        )
+    except ValueError:
+        return None
+
+
+def _get_from_only_leave_dates(match: re.Match) -> Optional[LeaveDates]:
+    try:
+        return LeaveDates(
+            date(
+                int(match.group("year")),
+                _get_month(match.group("month")),
+                _get_day(match.group("day")),
+            ),
+            None,
+        )
+    except ValueError:
+        return None
+
+
+def _get_start_date_printing(
+    entry_parts: _ProseEntryParts, match: re.Match, leave_dates: Optional[LeaveDates]
+) -> _PrintingDates:
+    if leave_dates is None:
+        return _UNREAD_PRINTING
+    return _PrintingDates(
+        LeaveEntryFormat.PROSE_DURATION,
+        _get_printed_text(entry_parts, match.start("day"), match.end()),
+        None,
+        leave_dates,
+        LeaveYearSource.PRINTED_IN_ENTRY,
+    )
+
+
+def _get_duration_printings(
+    entry_parts: _ProseEntryParts,
+) -> Optional[list[_PrintingDates]]:
+    duration_match = _DURATION_RE.match(entry_parts.date_text)
+    if duration_match is None:
+        return None
+    if _has_date_text_left(entry_parts.date_text, [duration_match]):
+        return None
+    return [
+        _get_start_date_printing(
+            entry_parts, duration_match, _get_duration_leave_dates(duration_match)
+        )
+    ]
+
+
+def _get_from_only_printings(
+    entry_parts: _ProseEntryParts,
+) -> Optional[list[_PrintingDates]]:
+    from_only_match = _FROM_ONLY_RE.match(entry_parts.date_text)
+    if from_only_match is None:
+        return None
+    if _has_date_text_left(entry_parts.date_text, [from_only_match]):
+        return None
+    return [
+        _get_start_date_printing(
+            entry_parts, from_only_match, _get_from_only_leave_dates(from_only_match)
+        )
+    ]
+
+
 def _get_mixed_date_matches(date_text: str) -> Optional[list[re.Match]]:
     range_matches = list(_RANGE_RE.finditer(date_text))
     date_matches = list(range_matches)
@@ -593,6 +702,12 @@ def _get_prose_printings(
     single_day_printings = _get_single_day_printings(entry_parts)
     if single_day_printings is not None:
         return single_day_printings
+    duration_printings = _get_duration_printings(entry_parts)
+    if duration_printings is not None:
+        return duration_printings
+    from_only_printings = _get_from_only_printings(entry_parts)
+    if from_only_printings is not None:
+        return from_only_printings
     mixed_printings = _get_mixed_printings(entry_parts, sitting_date)
     if mixed_printings is not None:
         return mixed_printings
