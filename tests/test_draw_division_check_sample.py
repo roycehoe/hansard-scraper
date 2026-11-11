@@ -62,6 +62,8 @@ _SHORT_OUTSIDE_COUNT = 2
 _COPY_BATCH_COUNT = 2
 _MAX_BATCH_PACKETS = 100
 _BATCH_TEST_PACKET_COUNT = 150
+_MAX_BATCH_CHARACTERS = 160_000
+_HALF_BATCH_CLAIM = "Ayes 10, Noes 3"
 _ONE_SIDED_CLAIM = "AYE: Mr A\nAYE: Mr B"
 _OTHER_SEED = 8
 _TABLES = (Division, Minutes, MinutesDivision, DivisionVote, DivisionPartyCount)
@@ -519,6 +521,33 @@ def test_a_reader_batch_holds_at_most_a_hundred_packets() -> None:
     assert [len(batch) for batch in batches] == [
         _MAX_BATCH_PACKETS,
         _BATCH_TEST_PACKET_COUNT - _MAX_BATCH_PACKETS,
+    ]
+
+
+def test_a_reader_batch_holds_at_most_160000_characters() -> None:
+    half_batch_packets = [
+        DivisionCheckPacket(
+            packet_id=f"packet-{key}",
+            source_text="x"
+            * (_MAX_BATCH_CHARACTERS // 2 - len(_HALF_BATCH_CLAIM)),
+            data_claim=_HALF_BATCH_CLAIM,
+        )
+        for key in range(2)
+    ]
+    packets = [
+        *half_batch_packets,
+        DivisionCheckPacket(
+            packet_id="packet-2", source_text="", data_claim=_HALF_BATCH_CLAIM
+        ),
+    ]
+
+    batches = draw_division_check_sample_script.get_reader_batches(
+        packets, {packet.packet_id: packet.packet_id for packet in packets}
+    )
+
+    assert [[packet.packet_id for packet in batch] for batch in batches] == [
+        ["packet-0", "packet-1"],
+        ["packet-2"],
     ]
 
 
