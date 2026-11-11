@@ -313,7 +313,7 @@ def remove_excluded_reports(is_commit: bool, plan_path: Optional[Path]) -> None:
             )
             if removal.minutes_division_count > 0:
                 logger.info(
-                    f"Rerun apply_minutes_divisions for the minutes of {removal.sitting_date}"
+                    f"Rerun apply_minutes_divisions for the minutes of {removal.sitting_date}, then apply_division_party_counts"
                 )
         logger.info(
             f"Plan: {len(removals)} reports, {sum(removal.speech_count for removal in removals)} speech rows, {sum(removal.asker_count for removal in removals)} asker rows, {sum(removal.participant_count for removal in removals)} participant rows, {sum(removal.question_state_count for removal in removals)} question state rows, {sum(removal.put_to_count for removal in removals)} put-to rows, {sum(removal.link_count for removal in removals)} link rows, {sum(removal.bill_report_speaker_count for removal in removals)} bill report speaker rows, {sum(removal.bill_stage_line_count for removal in removals)} bill stage line rows, {sum(removal.pointer_count for removal in removals)} pointer rows, {sum(removal.division_count for removal in removals)} division rows, {sum(removal.party_count_count for removal in removals)} party count rows, {sum(removal.minutes_division_count for removal in removals)} minutes division rows, {sum(removal.division_vote_count for removal in removals)} division vote rows"

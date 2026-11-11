@@ -732,6 +732,33 @@ def test_the_plan_counts_the_minutes_division_and_vote_rows(
     assert _get_row_count(scratch_session, MinutesDivision) == 1
 
 
+class _InfoRecorder:
+    def __init__(self) -> None:
+        self.messages: list[str] = []
+
+    def info(self, message: str) -> None:
+        self.messages.append(message)
+
+
+def test_a_dry_run_names_both_reruns_a_removed_paired_division_needs(
+    scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _use_scratch(scratch_engine, monkeypatch)
+    info_recorder = _InfoRecorder()
+    monkeypatch.setattr(remove_excluded_reports_script, "logger", info_recorder)
+    _seed_duplicate(scratch_session)
+    _add_division(scratch_session, _EXCLUDED_REPORT_ID)
+    _add_paired_minutes_division(scratch_session, _EXCLUDED_REPORT_ID)
+
+    remove_excluded_reports_script.remove_excluded_reports(False, None)
+
+    assert any(
+        message.startswith("Rerun apply_minutes_divisions for the minutes of")
+        and message.endswith("then apply_division_party_counts")
+        for message in info_recorder.messages
+    )
+
+
 def test_removing_a_report_deletes_its_minutes_division_and_vote_rows(
     scratch_engine: Engine, scratch_session: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
