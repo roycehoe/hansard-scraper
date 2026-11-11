@@ -360,7 +360,7 @@ def test_a_wrong_pair_plant_can_fill_an_unpaired_claim() -> None:
         draw_division_check_sample_script.build_plant_claim(
             DivisionCheckPlantKind.WRONG_PAIR, unpaired, [unpaired]
         )
-        == "pairing NO_MATCHING_DIVISION, Hansard division 1"
+        == "pairing PAIRED, Hansard division 1"
     )
     assert (
         draw_division_check_sample_script.build_plant_claim(

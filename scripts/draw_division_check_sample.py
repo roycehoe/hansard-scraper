@@ -784,10 +784,7 @@ def _replace_pair(candidate: DivisionCheckCandidate) -> Optional[str]:
             return None
         if hansard_division_count == 0:
             return None
-        return candidate.data_claim.replace(
-            _NO_PAIRED_DIVISION_CLAIM,
-            f"Hansard division {random.Random(candidate.database_key).randint(1, hansard_division_count)}",
-        )
+        return f"pairing {MinutesDivisionPairing.PAIRED}, Hansard division {random.Random(candidate.database_key).randint(1, hansard_division_count)}"
     other_numbers = [
         number
         for number in range(1, hansard_division_count + 1)
