@@ -1,4 +1,5 @@
 import hashlib
+import json
 from datetime import date, datetime
 from pathlib import Path
 
@@ -28,7 +29,11 @@ from enums import (
     SpeechKind,
 )
 from exceptions import HansardDivisionCheckError
-from schemas.division_check_sample import DivisionCheckCandidate, DivisionCheckKey
+from schemas.division_check_sample import (
+    DivisionCheckCandidate,
+    DivisionCheckKey,
+    DivisionCheckPacket,
+)
 from settings import settings
 from tests.division_seed import add_division_report, add_division_speech_rows
 from tests.refresh_fixtures import build_live_index_page, build_live_index_row
@@ -497,6 +502,14 @@ def test_the_summary_says_which_plant_kinds_the_rule_does_not_use() -> None:
     assert "database\tdb" in lines
 
 
+def test_a_packet_holds_only_a_random_id_the_source_and_the_claim() -> None:
+    assert set(DivisionCheckPacket.model_fields) == {
+        "packet_id",
+        "source_text",
+        "data_claim",
+    }
+
+
 def test_the_written_key_hash_matches_the_key_file(tmp_path: Path) -> None:
     candidates = [_build_candidate(1)]
     packets, key = draw_division_check_sample_script.build_packets_and_key(
@@ -665,6 +678,12 @@ def test_each_rule_has_a_frame_that_reads_a_seeded_database(
     assert candidates
     assert all(candidate.rule == rule for candidate in candidates)
     assert all(candidate.group.startswith(f"{_DECADE}|") for candidate in candidates)
+    assert not [
+        candidate
+        for candidate in candidates
+        for report_id in (_MERGE_REPORT_ID, _TOTAL_REPORT_ID)
+        if report_id in candidate.source_text or report_id in candidate.data_claim
+    ]
 
 
 def test_the_index_row_frame_reads_the_printed_date_and_address_of_the_capture(
@@ -828,6 +847,12 @@ def test_the_script_writes_nothing_to_the_database(
         (tmp_path / "check" / "key.json").read_text()
     )
     assert key.plants
+    packet_dicts = json.loads((tmp_path / "check" / "packets.json").read_text())
+    assert packet_dicts
+    assert all(
+        set(packet_dict) == {"packet_id", "source_text", "data_claim"}
+        for packet_dict in packet_dicts
+    )
 
 
 def test_the_script_refuses_an_existing_output_directory(
