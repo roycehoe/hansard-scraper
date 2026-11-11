@@ -71,6 +71,16 @@ _INDEX_FILE_NAME = "VP 7.pdf"
 _INDEX_FILE_URL = f"{settings.minutes_media_url}/{_INDEX_FILE_ID}/VP%207.pdf"
 _INDEX_LABEL = "Votes and Proceedings No. 7"
 _INDEX_PARLIAMENT = "14th Parliament"
+_ARCHIVE_INDEX_FIXTURE = (
+    Path(__file__).parent
+    / "division_fixtures"
+    / "minutes_index"
+    / "archive-index-2021-08.html"
+)
+_ARCHIVE_INDEX_TIMESTAMP = "20210912134436"
+_ARCHIVE_SITTING_DATE = date(2021, 8, 3)
+_ARCHIVE_LABEL = "Votes and Proceedings No. 36"
+_ARCHIVE_FILE_URL = "https://www.parliament.gov.sg/docs/default-source/default-document-library/vp-3aug21.pdf?sfvrsn=aa9ad958_0"
 _SIDE_CLAIM = "AYE: Mr A\nNO: Mr B"
 _SWAPPED_SIDE_CLAIM = "AYE: Mr B\nNO: Mr A"
 
@@ -858,6 +868,48 @@ def test_the_index_row_source_is_the_capture_and_the_claim_is_the_stored_row(
 
     assert candidate.source_text.startswith(_INDEX_LABEL)
     assert "Stale label" in candidate.data_claim
+
+
+def test_the_index_row_frame_reads_an_archive_capture_with_the_archive_parser(
+    scratch_session: Session,
+) -> None:
+    capture = MinutesIndexCapture(
+        original_url=settings.minutes_index_url,
+        archive_timestamp=_ARCHIVE_INDEX_TIMESTAMP,
+        capture_url=f"https://web.archive.org/web/{_ARCHIVE_INDEX_TIMESTAMP}/{settings.minutes_index_url}",
+        content=_ARCHIVE_INDEX_FIXTURE.read_text(encoding="utf-8"),
+    )
+    scratch_session.add(capture)
+    scratch_session.flush()
+    scratch_session.add(
+        Minutes(
+            sitting_date=_ARCHIVE_SITTING_DATE,
+            printed_label=_ARCHIVE_LABEL,
+            printed_parliament=_INDEX_PARLIAMENT,
+            file_url=_ARCHIVE_FILE_URL,
+            archive_timestamp=_ARCHIVE_INDEX_TIMESTAMP,
+            file_format=MinutesFileFormat.PDF,
+            status=MinutesStatus.LISTED,
+            index_source=MinutesIndexSource.ARCHIVE_INDEX_CAPTURE,
+            index_capture_id=capture.id,
+        )
+    )
+    scratch_session.flush()
+
+    candidates = draw_division_check_sample_script.get_division_check_candidates(
+        scratch_session, DivisionCheckRule.INDEX_ROW
+    )
+
+    assert [
+        (candidate.group, candidate.source_text, candidate.data_claim)
+        for candidate in candidates
+    ] == [
+        (
+            "2020s|ARCHIVE_INDEX_CAPTURE|PDF",
+            f"{_ARCHIVE_LABEL} (Parliament {_INDEX_PARLIAMENT}); sitting date {_ARCHIVE_SITTING_DATE}; address {_ARCHIVE_FILE_URL}",
+            f"sitting date {_ARCHIVE_SITTING_DATE}; label {_ARCHIVE_LABEL}; address {_ARCHIVE_FILE_URL}",
+        )
+    ]
 
 
 def _add_division_on_report(
