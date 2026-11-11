@@ -61,7 +61,7 @@ _DAY_LIST_RE = re.compile(
     re.IGNORECASE,
 )
 _SINGLE_DAY_RE = re.compile(
-    rf"^(?:on\s+)?(?P<day>{_DAY_PATTERN})\s+(?P<month>{_MONTH_PATTERN}),?\s*(?P<year>\d{{4}})",
+    rf"^(?:on\s+)?(?P<days>{_DAY_PATTERN})\s+(?P<month>{_MONTH_PATTERN}),?\s*(?P<year>\d{{4}})",
     re.IGNORECASE,
 )
 _DAY_ITEM_RE = re.compile(
@@ -346,6 +346,26 @@ def _get_end_month(
     return later_range_parts.start_month
 
 
+def _get_range_end_year(
+    printed_start_year: Optional[int],
+    printed_end_year: Optional[int],
+    is_end_earlier: bool,
+    end_month: int,
+    later_range_parts: Optional[_RangeParts],
+) -> Optional[int]:
+    if printed_end_year is not None:
+        return printed_end_year
+    if printed_start_year is not None:
+        return printed_start_year + 1 if is_end_earlier else printed_start_year
+    if later_range_parts is None:
+        return None
+    if later_range_parts.start_year is None:
+        return None
+    if end_month > later_range_parts.start_month:
+        return later_range_parts.start_year - 1
+    return later_range_parts.start_year
+
+
 def _get_range_years(
     date_item_texts: _DateItemTexts,
     start_day: int,
@@ -355,20 +375,15 @@ def _get_range_years(
     later_range_parts: Optional[_RangeParts],
 ) -> Optional[_RangeYears]:
     printed_start_year = _get_printed_year(date_item_texts.start_year)
-    printed_end_year = _get_printed_year(date_item_texts.end_year)
     is_end_earlier = (end_month, end_day) < (start_month, start_day)
-    if printed_end_year is not None:
-        end_year = printed_end_year
-    elif printed_start_year is not None:
-        end_year = printed_start_year + 1 if is_end_earlier else printed_start_year
-    elif later_range_parts is not None and later_range_parts.start_year is not None:
-        is_end_month_after_later_start = end_month > later_range_parts.start_month
-        end_year = (
-            later_range_parts.start_year - 1
-            if is_end_month_after_later_start
-            else later_range_parts.start_year
-        )
-    else:
+    end_year = _get_range_end_year(
+        printed_start_year,
+        _get_printed_year(date_item_texts.end_year),
+        is_end_earlier,
+        end_month,
+        later_range_parts,
+    )
+    if end_year is None:
         return None
     if printed_start_year is not None:
         return _RangeYears(printed_start_year, end_year)
@@ -393,8 +408,8 @@ def _get_range_parts(date_matches: list[re.Match]) -> Optional[list[_RangeParts]
         start_month = end_month if printed_start_month is None else printed_start_month
         start_day = _get_day(date_item_texts.start_day)
         end_day = _get_day(date_item_texts.end_day)
-        if is_year_printed:
-            range_years = _get_range_years(
+        range_years = (
+            _get_range_years(
                 date_item_texts,
                 start_day,
                 start_month,
@@ -402,10 +417,11 @@ def _get_range_parts(date_matches: list[re.Match]) -> Optional[list[_RangeParts]
                 end_month,
                 later_range_parts,
             )
-            if range_years is None:
-                return None
-        else:
-            range_years = _NO_RANGE_YEARS
+            if is_year_printed
+            else _NO_RANGE_YEARS
+        )
+        if range_years is None:
+            return None
         later_range_parts = _RangeParts(
             match,
             start_day,
@@ -516,12 +532,9 @@ def _get_day_printings(
     year: int,
     entry_format: LeaveEntryFormat,
 ) -> list[_PrintingDates]:
-    days_group_name = "day" if match.re is _SINGLE_DAY_RE else "days"
-    printed_from = _get_printed_text(
-        entry_parts, match.start(days_group_name), match.end()
-    )
+    printed_from = _get_printed_text(entry_parts, match.start("days"), match.end())
     day_printings = []
-    for day_text in _DAY_RE.findall(match.group(days_group_name)):
+    for day_text in _DAY_RE.findall(match.group("days")):
         try:
             day_date = date(year, month, _get_day(day_text))
         except ValueError:
@@ -997,6 +1010,32 @@ def _parse_table_entries(
     ]
 
 
+def _build_prose_entry(
+    ordinal: int,
+    printed_line: str,
+    entry_parts: Optional[_ProseEntryParts],
+    printing_dates: _PrintingDates,
+) -> LeaveEntry:
+    return LeaveEntry(
+        ordinal=ordinal,
+        printed_name=None if entry_parts is None else entry_parts.printed_name,
+        carried_name=None,
+        printed_from=printing_dates.printed_from,
+        printed_to=printing_dates.printed_to,
+        printed_line=printed_line,
+        printed_heading_from=None,
+        printed_heading_to=None,
+        office_printed=None if entry_parts is None else entry_parts.office_printed,
+        leave_dates=printing_dates.leave_dates,
+        end_text=None,
+        entry_format=printing_dates.entry_format,
+        name_source=(
+            LeaveNameSource.NONE if entry_parts is None else LeaveNameSource.PRINTED
+        ),
+        year_source=printing_dates.year_source,
+    )
+
+
 def build_leave_entries_from_markdown(
     markdown_content: str,
     sitting_date: date,
@@ -1019,29 +1058,11 @@ def build_leave_entries_from_markdown(
             entry_parts = _get_prose_entry_parts(printed_line, leave_date_misprints)
             for printing_dates in _get_prose_printings(entry_parts, sitting_date):
                 leave_entries.append(
-                    LeaveEntry(
-                        ordinal=len(leave_entries) + 1,
-                        printed_name=(
-                            None if entry_parts is None else entry_parts.printed_name
-                        ),
-                        carried_name=None,
-                        printed_from=printing_dates.printed_from,
-                        printed_to=printing_dates.printed_to,
-                        printed_line=printed_line,
-                        printed_heading_from=None,
-                        printed_heading_to=None,
-                        office_printed=(
-                            None if entry_parts is None else entry_parts.office_printed
-                        ),
-                        leave_dates=printing_dates.leave_dates,
-                        end_text=None,
-                        entry_format=printing_dates.entry_format,
-                        name_source=(
-                            LeaveNameSource.NONE
-                            if entry_parts is None
-                            else LeaveNameSource.PRINTED
-                        ),
-                        year_source=printing_dates.year_source,
+                    _build_prose_entry(
+                        len(leave_entries) + 1,
+                        printed_line,
+                        entry_parts,
+                        printing_dates,
                     )
                 )
     return leave_entries
