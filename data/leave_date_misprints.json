@@ -1,0 +1,122 @@
+[
+  {
+    "printed": "form",
+    "reading": "from",
+    "reason": "Misprint: the letters o and r are swapped."
+  },
+  {
+    "printed": "Septmber",
+    "reading": "September",
+    "reason": "Misprint: a letter is missing."
+  },
+  {
+    "printed": "Novewmber",
+    "reading": "November",
+    "reason": "Misprint: a stray w."
+  },
+  {
+    "printed": "llth",
+    "reading": "11th",
+    "reason": "Misprint: the digit 1 is printed as a letter l."
+  },
+  {
+    "printed": "2 5th",
+    "reading": "25th",
+    "reason": "Misprint: a space splits the day."
+  },
+  {
+    "printed": "7 7 August",
+    "reading": "7 August",
+    "reason": "Misprint: the day is printed twice."
+  },
+  {
+    "printed": "to14th",
+    "reading": "to 14th",
+    "reason": "Misprint: the space after to is missing."
+  },
+  {
+    "printed": "1Oth",
+    "reading": "10th",
+    "reason": "Misprint: the digit 0 is printed as a letter O."
+  },
+  {
+    "printed": "lst",
+    "reading": "1st",
+    "reason": "Misprint: the digit 1 is printed as a letter l."
+  },
+  {
+    "printed": "lstto",
+    "reading": "1st to",
+    "reason": "Misprint: the digit 1 is printed as a letter l and the space is missing."
+  },
+  {
+    "printed": "3oth",
+    "reading": "30th",
+    "reason": "Misprint: the digit 0 is printed as a letter o."
+  },
+  {
+    "printed": "1 5th",
+    "reading": "15th",
+    "reason": "Misprint: a space splits the day."
+  },
+  {
+    "printed": "1 6th",
+    "reading": "16th",
+    "reason": "Misprint: a space splits the day."
+  },
+  {
+    "printed": "1 7th",
+    "reading": "17th",
+    "reason": "Misprint: a space splits the day."
+  },
+  {
+    "printed": "2 1st",
+    "reading": "21st",
+    "reason": "Misprint: a space splits the day."
+  },
+  {
+    "printed": "Januaryy",
+    "reading": "January",
+    "reason": "Misprint: a doubled last letter."
+  },
+  {
+    "printed": "Januray",
+    "reading": "January",
+    "reason": "Misprint: two letters are swapped."
+  },
+  {
+    "printed": "Septemeber",
+    "reading": "September",
+    "reason": "Misprint: two letters are swapped."
+  },
+  {
+    "printed": "Novemberand",
+    "reading": "November and",
+    "reason": "Misprint: the space before and is missing."
+  },
+  {
+    "printed": "to to",
+    "reading": "to",
+    "reason": "Misprint: the word to is printed twice."
+  },
+  {
+    "printed": "3lst",
+    "reading": "31st",
+    "reason": "Misprint: the digit 1 is printed as a letter l."
+  },
+  {
+    "printed": "2lst",
+    "reading": "21st",
+    "reason": "Misprint: the digit 1 is printed as a letter l."
+  },
+  {
+    "printed": "l3th",
+    "reading": "13th",
+    "reason": "Misprint: the digit 1 is printed as a letter l."
+  },
+  {
+    "printed": "from13th",
+    "reading": "from 13th",
+    "reason": "Misprint: the space after from is missing."
+  }
+]
