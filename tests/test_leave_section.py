@@ -545,7 +545,7 @@ def test_a_range_with_no_year_takes_the_nearest_year() -> None:
         "Mr X - from 12th to 15th November, from 5th to 8th December, 1994, and from 18th to 22nd December",
         "Mr X - from 3rd to 5th",
         "Mr X (Tanglin) -- from 21st January to 6th",
-        "Mr Chan Chee Seng (Jalan Besar) - from 20th December, 1960, to 31st March, 1961. 2.31 p.m.",
+        "Mr Chan Sun Wing (Nee Soon) - Absent from all future Assembly sittings until such time as he is able to be present.",
         "Mr X - from 30th to 31st February, 1990.",
     ],
 )
@@ -562,6 +562,62 @@ def test_a_line_no_rule_reads_in_full_is_unread_with_its_printed_line(
     assert leave_entry.year_source is None
     assert leave_entry.printed_from is None
     assert leave_entry.printed_to is None
+
+
+def test_a_full_stop_and_a_new_title_start_a_new_entry_on_the_same_line() -> None:
+    line = "Mr Heng Chiang Meng -- from 25th to 27th June and from 23rd to 31st July, 1996. Radm Teo Chee Hean -- from 27th to 30th June and from 10th to 17th July, 1996."
+    leave_entries = _build_entries(line, sitting_date=date(1996, 7, 12))
+
+    assert [leave_entry.printed_name for leave_entry in leave_entries] == [
+        "Mr Heng Chiang Meng",
+        "Mr Heng Chiang Meng",
+        "Radm Teo Chee Hean",
+        "Radm Teo Chee Hean",
+    ]
+    assert [leave_entry.ordinal for leave_entry in leave_entries] == [1, 2, 3, 4]
+    assert {leave_entry.printed_line for leave_entry in leave_entries} == {line}
+    assert _get_date_pairs(leave_entries) == [
+        (date(1996, 6, 25), date(1996, 6, 27)),
+        (date(1996, 7, 23), date(1996, 7, 31)),
+        (date(1996, 6, 27), date(1996, 6, 30)),
+        (date(1996, 7, 10), date(1996, 7, 17)),
+    ]
+
+
+def test_a_full_stop_inside_a_name_does_not_start_a_new_entry() -> None:
+    leave_entries = _build_entries(
+        "Mr M. P. D. Nair - from 3rd to 10th June, 1977. Mr S. T. Bani - from 4th to 11th June, 1977."
+    )
+
+    assert [leave_entry.printed_name for leave_entry in leave_entries] == [
+        "Mr M. P. D. Nair",
+        "Mr S. T. Bani",
+    ]
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Inche Yaacob Bin Mohamed (Bukit Timah), Parliamentary Secretary to the Minister for National Development - 1st June, 1960. At 3.58 p.m. the Sergeant at Arms came and brought the Mace.",
+        "Mr Chan Chee Seng (Jalan Besar) - from 20th December, 1960, to 31st March, 1961. 2.31 p.m.",
+        'Dr Toh Chin Chye (Rochore), Deputy Prime Minister - from 1st to 10th August, 1963. * * * * The "Guillotine" Motion reads as follows: on Thursday, 1st August, 1963 at 8 p.m. * * *',
+        "Inche Yaacob Bin Mohamed Al-Haj (Southern Islands) - from 28th to 30th October, 1964 (permission obtained from Mr Speaker Barker)",
+    ],
+)
+def test_text_after_the_last_date_is_dropped(line: str) -> None:
+    leave_entries = _build_entries(line)
+
+    assert len(leave_entries) == 1
+    assert leave_entries[0].entry_format != LeaveEntryFormat.UNREAD
+    assert leave_entries[0].printed_line == line
+
+
+def test_a_bracket_before_a_later_date_is_not_dropped() -> None:
+    leave_entries = _build_entries(
+        "Mr S. Rajaratnam (Kampong Glam), Minister for Foreign Affairs - (i) from 3rd to 8th August, 1967 (ii) from 4th to 8th September, 1967."
+    )
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.UNREAD]
 
 
 def test_a_line_read_in_part_keeps_its_name() -> None:

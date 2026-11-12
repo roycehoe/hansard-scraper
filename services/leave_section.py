@@ -13,7 +13,7 @@ from utils.leave_entry import (
     get_candidate_years,
     get_nearest_year_dates,
 )
-from utils.names import strip_title
+from utils.names import TITLE_PREFIXES, strip_title
 
 _SECTION_HEADING_RE = re.compile(
     r"^#*\s*(?:\*\*)?\s*permission\s+to\s+members?\s+(?:to\s+)?be\s+absent\s*(?:\*\*)?\s*:?\s*(?:\*\*)?\s*$",
@@ -86,6 +86,8 @@ _FROM_ONLY_RE = re.compile(
 )
 _DAY_RE = re.compile(_DAY_PATTERN)
 _DATE_LEFTOVER_RE = re.compile(r"^[\s,.;]*(?:and[\s,.;]*)*$", re.IGNORECASE)
+_ENTRY_BREAK_RE = re.compile(r"(?<=\.)\s+(?=\S)")
+_TRAILING_TEXT_RE = re.compile(r"\.\s+\S|\s+\((?=[a-z]{4})")
 _NON_DIGIT_RE = re.compile(r"\D")
 _DIGIT_RE = re.compile(r"\d")
 _NAME_TRAILING_CHARACTERS = ".,-_ "
@@ -786,7 +788,7 @@ def _get_mixed_printings(
     return mixed_printings
 
 
-def _get_prose_printings(
+def _get_dated_printings(
     entry_parts: Optional[_ProseEntryParts], sitting_date: date
 ) -> list[_PrintingDates]:
     if entry_parts is None:
@@ -813,6 +815,46 @@ def _get_prose_printings(
     if mixed_printings is not None:
         return mixed_printings
     return [_UNREAD_PRINTING]
+
+
+def _get_prose_printings(
+    entry_parts: Optional[_ProseEntryParts], sitting_date: date
+) -> list[_PrintingDates]:
+    if entry_parts is None:
+        return [_UNREAD_PRINTING]
+    dated_printings = _get_dated_printings(entry_parts, sitting_date)
+    if dated_printings != [_UNREAD_PRINTING]:
+        return dated_printings
+    for trailing_text in _TRAILING_TEXT_RE.finditer(entry_parts.date_text):
+        trimmed_printings = _get_dated_printings(
+            replace(
+                entry_parts, date_text=entry_parts.date_text[: trailing_text.start()]
+            ),
+            sitting_date,
+        )
+        if trimmed_printings != [_UNREAD_PRINTING]:
+            return trimmed_printings
+    return dated_printings
+
+
+def _has_title_prefix(text: str) -> bool:
+    return any(text.lower().startswith(prefix.lower()) for prefix in TITLE_PREFIXES)
+
+
+def _split_prose_line(
+    line: str, leave_date_misprints: list[LeaveDateMisprint]
+) -> list[str]:
+    entry_parts = _get_prose_entry_parts(line, leave_date_misprints)
+    if entry_parts is None:
+        return [line]
+    for entry_break in _ENTRY_BREAK_RE.finditer(line, entry_parts.date_text_offset):
+        following_text = line[entry_break.end() :]
+        if _has_title_prefix(following_text):
+            return [
+                line[: entry_break.start()],
+                *_split_prose_line(following_text, leave_date_misprints),
+            ]
+    return [line]
 
 
 @dataclass
@@ -1114,14 +1156,15 @@ def build_leave_entries_from_markdown(
             if table_entries is not None:
                 leave_entries.extend(table_entries)
                 continue
-            entry_parts = _get_prose_entry_parts(printed_line, leave_date_misprints)
-            for printing_dates in _get_prose_printings(entry_parts, sitting_date):
-                leave_entries.append(
-                    _build_prose_entry(
-                        len(leave_entries) + 1,
-                        printed_line,
-                        entry_parts,
-                        printing_dates,
+            for entry_text in _split_prose_line(printed_line, leave_date_misprints):
+                entry_parts = _get_prose_entry_parts(entry_text, leave_date_misprints)
+                for printing_dates in _get_prose_printings(entry_parts, sitting_date):
+                    leave_entries.append(
+                        _build_prose_entry(
+                            len(leave_entries) + 1,
+                            printed_line,
+                            entry_parts,
+                            printing_dates,
+                        )
                     )
-                )
     return leave_entries
