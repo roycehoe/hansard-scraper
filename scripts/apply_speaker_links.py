@@ -14,6 +14,7 @@ from database.speech import Speech
 from exceptions import HansardWriteCheckError
 from logs import logger
 from populate.speaker_links import (
+    get_credited_speech_speaker_ids,
     get_deputy_speaker_ids,
     get_role_context_speaker_ids,
     get_sitting_deputy_speaker_ids,
@@ -46,6 +47,7 @@ def _get_speech_plan(
         get_role_context_speaker_ids,
         get_deputy_speaker_ids,
         get_sitting_deputy_speaker_ids,
+        get_credited_speech_speaker_ids,
     ):
         for speech_id, speaker_id in get_pass_speaker_ids(
             session, lookups, name_parliament_number_to_speaker_id

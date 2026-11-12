@@ -353,6 +353,20 @@ class CRUDSpeech:
         )
         return list(self.session.exec(statement).all())
 
+    def get_kind_rows_by_report_id(self, report_id: int) -> list[SpeechKindRow]:
+        statement = (
+            select(
+                Speech.id,
+                Speech.speaker,
+                Speech.transcript,
+                Speech.kind,
+                Speech.speaker_id,
+            )
+            .where(Speech.report_id == report_id)
+            .order_by(Speech.ordinal)
+        )
+        return [SpeechKindRow(*row) for row in self.session.exec(statement).all()]
+
     def get_rows_by_report_ids(self, report_ids: list[int]) -> list[SpeechRow]:
         statement = (
             select(

@@ -11,6 +11,7 @@ from crud.sitting import CRUDSitting
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech, SpeechRow
 from database.report import Report
+from exceptions import HansardUnlabelledSpeechError
 from logs import logger
 from services.attendance import build_speaker_lookups
 from services.speaker_link import (
@@ -29,10 +30,12 @@ from services.speaker_link import (
     get_sitting_deputy_speaker_names,
     get_speaker_id_for_name,
     get_speaker_ids_for_names,
+    get_unlabelled_range_speaker_ids,
     resolve_attendance_rows,
     resolve_speech_rows,
     resolve_speech_speaker_id,
 )
+from utils.data_files import get_unlabelled_speech_ranges
 from utils.sitting_dates import get_sitting_date_key
 from utils.speaker_resolution import SpeakerLookups
 from utils.speaker_resolution_constants import (
@@ -482,6 +485,66 @@ def _populate_sitting_deputy_speaker_links(
     )
 
 
+def _get_credited_speech_speaker_ids_for_report_ids(
+    session: Session,
+    report_ids: list[int],
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> dict[int, int]:
+    report_id_to_range = {
+        speech_range.report_id: speech_range
+        for speech_range in get_unlabelled_speech_ranges()
+        if speech_range.report_id in report_ids
+    }
+    speech_id_to_speaker_id: dict[int, int] = {}
+    for report in CRUDReport(session).get_by_ids(list(report_id_to_range)):
+        speech_range = report_id_to_range[report.id]
+        try:
+            speaker_id = name_parliament_number_to_speaker_id[
+                (speech_range.credited_speaker_name, report.parliament_number)
+            ]
+        except KeyError as error:
+            raise HansardUnlabelledSpeechError(
+                f"Report {report.id}: no speaker named {speech_range.credited_speaker_name!r} in Parliament {report.parliament_number}"
+            ) from error
+        speech_id_to_speaker_id.update(
+            get_unlabelled_range_speaker_ids(
+                speech_range,
+                CRUDSpeech(session).get_kind_rows_by_report_id(report.id),
+                speaker_id,
+            )
+        )
+    logger.info(
+        f"Speech: set speaker_id on {len(speech_id_to_speaker_id)} credited records"
+    )
+    return speech_id_to_speaker_id
+
+
+def get_credited_speech_speaker_ids(
+    session: Session,
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> dict[int, int]:
+    return _get_credited_speech_speaker_ids_for_report_ids(
+        session,
+        [speech_range.report_id for speech_range in get_unlabelled_speech_ranges()],
+        lookups,
+        name_parliament_number_to_speaker_id,
+    )
+
+
+def _populate_credited_speech_links(
+    session: Session,
+    lookups: SpeakerLookups,
+    name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+) -> None:
+    speech_id_to_speaker_id = get_credited_speech_speaker_ids(
+        session, lookups, name_parliament_number_to_speaker_id
+    )
+    _write_in_batches(CRUDSpeech(session).set_speaker_ids_bulk, speech_id_to_speaker_id)
+    session.commit()
+
+
 def populate_speaker_links(session: Session) -> None:
     speakers = CRUDSpeaker(session).get_all()
     name_parliament_number_to_speaker_id = {
@@ -523,6 +586,9 @@ def populate_speaker_links(session: Session) -> None:
         session, lookups, name_parliament_number_to_speaker_id
     )
     _populate_sitting_deputy_speaker_links(
+        session, lookups, name_parliament_number_to_speaker_id
+    )
+    _populate_credited_speech_links(
         session, lookups, name_parliament_number_to_speaker_id
     )
 
@@ -587,3 +653,10 @@ def link_speakers_by_report_ids_and_sitting_ids(
             ),
         )
         session.flush()
+    _write_in_batches(
+        CRUDSpeech(session).set_speaker_ids_bulk,
+        _get_credited_speech_speaker_ids_for_report_ids(
+            session, report_ids, lookups, name_parliament_number_to_speaker_id
+        ),
+    )
+    session.flush()
