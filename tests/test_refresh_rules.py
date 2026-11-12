@@ -326,7 +326,7 @@ def test_minutes_not_fetched_message_names_each_date_and_reason() -> None:
             date(2018, 1, 12): "the request failed",
         }
     ) == (
-        "2 minutes files were listed but not fetched: "
+        "Minutes files listed but not fetched: "
         "11 January 2018 (the file answered 404); 12 January 2018 (the request failed). "
         "Each stays LISTED and the next run tries it again."
     )

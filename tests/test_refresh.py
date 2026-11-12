@@ -110,7 +110,7 @@ _MINUTES_FILE_ID = "minutes-file-id"
 _MINUTES_FILE_NAME = "VP-11Jan2018.pdf"
 _MINUTES_FILE_NUMBER = 57
 _MINUTES_ALERT_FRAGMENT = "Minutes of 11 January 2018 need review"
-_MINUTES_NOT_FETCHED_ALERT_FRAGMENT = "minutes files were listed but not fetched"
+_MINUTES_NOT_FETCHED_ALERT_FRAGMENT = "Minutes files listed but not fetched"
 _MINUTES_STEP_ALLOWED_STATEMENTS = frozenset(
     {
         ("SELECT", "minutes"),

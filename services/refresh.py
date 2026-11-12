@@ -247,7 +247,7 @@ def build_minutes_not_fetched_message(sitting_date_to_reason: dict[date, str]) -
         for sitting_date, reason in sitting_date_to_reason.items()
     ]
     return (
-        f"{len(not_fetched_texts)} minutes files were listed but not fetched: {_get_capped_list_text(not_fetched_texts)}. "
+        f"Minutes files listed but not fetched: {_get_capped_list_text(not_fetched_texts)}. "
         "Each stays LISTED and the next run tries it again."
     )
 
