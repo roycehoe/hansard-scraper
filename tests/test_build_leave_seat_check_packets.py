@@ -34,6 +34,7 @@ from scripts.build_leave_seat_check_packets import (
     get_group_to_items,
     get_leave_printing_groups,
     get_leave_source_text,
+    get_left_out_groups,
     get_order_break_sitting_ids,
     get_packet_entries,
     get_plant_count,
@@ -98,11 +99,12 @@ _ITEM = CheckItem(
     end_date=date(2020, 3, 6),
     other_says="division: ang mo kio; sittings: 40",
     division_key="ang mo kio",
+    entry_format=None,
 )
 
 
 def _draw_group(seed: int, group: str, items: list[CheckItem]) -> GroupDraw:
-    return draw_groups(seed, {group: items})[0]
+    return draw_groups(seed, {group: items}, is_older_formats_only=False)[0]
 
 
 def _get_item_key_to_source_text(
@@ -434,7 +436,7 @@ def test_no_plant_sits_on_a_sampled_row_and_no_row_is_planted_twice() -> None:
     group_to_items = get_group_to_items(leave_rows, [])
     assert len(group_to_items) > 1
 
-    group_draws = draw_groups(_SEED, group_to_items)
+    group_draws = draw_groups(_SEED, group_to_items, is_older_formats_only=False)
 
     sampled_keys = {
         (item.table_name, item.row_id)
@@ -449,6 +451,47 @@ def test_no_plant_sits_on_a_sampled_row_and_no_row_is_planted_twice() -> None:
     assert planted_keys
     assert not sampled_keys & set(planted_keys)
     assert len(planted_keys) == len(set(planted_keys))
+
+
+def _build_mixed_format_group_to_items() -> dict[str, list[CheckItem]]:
+    structured_rows = _build_leave_rows(3)
+    older_rows = [
+        replace(
+            leave_row,
+            id=leave_row.id + 100,
+            sitting_id=leave_row.sitting_id + 100,
+            sitting_date=date(1965, 3, 6),
+            start_date=date(1965, 3, 5),
+            end_date=date(1965, 3, 7),
+            entry_format=LeaveEntryFormat.PROSE_RANGE,
+        )
+        for leave_row in _build_leave_rows(3)
+    ]
+    return get_group_to_items(structured_rows + older_rows, [_SEAT_ROW])
+
+
+def test_older_formats_only_draws_the_groups_with_an_older_format_row() -> None:
+    group_to_items = _build_mixed_format_group_to_items()
+
+    group_draws = draw_groups(_SEED, group_to_items, is_older_formats_only=True)
+
+    assert {group_draw.group for group_draw in group_draws} == {
+        "format|PROSE_RANGE|1960",
+        "year_gap|0",
+    }
+    assert get_left_out_groups(group_to_items, is_older_formats_only=True) == [
+        "format|STRUCTURED_LIST|2020",
+        "seat|2010",
+    ]
+
+
+def test_without_the_option_every_group_is_drawn_and_none_left_out() -> None:
+    group_to_items = _build_mixed_format_group_to_items()
+
+    group_draws = draw_groups(_SEED, group_to_items, is_older_formats_only=False)
+
+    assert {group_draw.group for group_draw in group_draws} == set(group_to_items)
+    assert get_left_out_groups(group_to_items, is_older_formats_only=False) == []
 
 
 def test_a_plant_shortfall_is_counted_as_skipped() -> None:
@@ -530,7 +573,7 @@ def test_adding_a_group_leaves_another_groups_sample_equal() -> None:
         _draw_group(_SEED, _FORMAT_GROUP, before[_FORMAT_GROUP]).sample
         == next(
             group_draw
-            for group_draw in draw_groups(_SEED, after)
+            for group_draw in draw_groups(_SEED, after, is_older_formats_only=False)
             if group_draw.group == _FORMAT_GROUP
         ).sample
     )
@@ -540,7 +583,7 @@ def test_the_packets_hold_no_row_id_group_or_plant_flag() -> None:
     group_to_items = get_group_to_items(
         _build_leave_rows(_LARGE_GROUP_SIZE), [_SEAT_ROW]
     )
-    group_draws = draw_groups(_SEED, group_to_items)
+    group_draws = draw_groups(_SEED, group_to_items, is_older_formats_only=False)
 
     item_key_to_source_text = _get_item_key_to_source_text(
         [item for items in group_to_items.values() for item in items]
@@ -572,7 +615,9 @@ def test_a_database_with_another_label_is_refused(
     with pytest.raises(
         HansardHandCheckError, match="only localhost:5437/hansard_positions"
     ):
-        build_leave_seat_check_packets(_SEED, tmp_path / "packets")
+        build_leave_seat_check_packets(
+            _SEED, tmp_path / "packets", is_older_formats_only=False
+        )
 
     assert not (tmp_path / "packets").exists()
 
@@ -585,7 +630,7 @@ def test_an_existing_output_directory_is_refused(
     )
 
     with pytest.raises(HansardHandCheckError, match="already exists"):
-        build_leave_seat_check_packets(_SEED, tmp_path)
+        build_leave_seat_check_packets(_SEED, tmp_path, is_older_formats_only=False)
 
 
 def test_the_check_rows_join_the_period_and_the_member(

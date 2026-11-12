@@ -136,6 +136,7 @@ class CheckItem:
     end_date: Optional[date]
     other_says: str
     division_key: Optional[str]
+    entry_format: Optional[LeaveEntryFormat]
 
 
 @dataclass(frozen=True)
@@ -438,6 +439,7 @@ def _build_leave_item(check_row: LeavePeriodPrintingCheckRow) -> CheckItem:
         start_date=check_row.start_date,
         end_date=check_row.end_date,
         division_key=None,
+        entry_format=check_row.entry_format,
         other_says=(
             f"end text: {_get_shown_text(check_row.end_text)};"
             f" name source: {check_row.name_source}; year source: {_get_shown_text(check_row.year_source)};"
@@ -458,6 +460,7 @@ def _build_seat_item(check_row: SeatHoldingCheckRow) -> CheckItem:
         end_date=check_row.last_sitting_date,
         other_says=f"division: {check_row.division_key}; sittings: {check_row.sitting_count}",
         division_key=check_row.division_key,
+        entry_format=None,
     )
 
 
@@ -722,12 +725,39 @@ def draw_group_plants(
     )
 
 
+def _has_older_format_item(items: list[CheckItem]) -> bool:
+    return any(
+        item.entry_format is not None
+        and item.entry_format != LeaveEntryFormat.STRUCTURED_LIST
+        for item in items
+    )
+
+
+def get_left_out_groups(
+    group_to_items: dict[str, list[CheckItem]], *, is_older_formats_only: bool
+) -> list[str]:
+    if not is_older_formats_only:
+        return []
+    return sorted(
+        group
+        for group, items in group_to_items.items()
+        if not _has_older_format_item(items)
+    )
+
+
 def draw_groups(
-    seed: int, group_to_items: dict[str, list[CheckItem]]
+    seed: int,
+    group_to_items: dict[str, list[CheckItem]],
+    *,
+    is_older_formats_only: bool,
 ) -> list[GroupDraw]:
+    left_out_groups = frozenset(
+        get_left_out_groups(group_to_items, is_older_formats_only=is_older_formats_only)
+    )
     group_samples = [
         draw_group_sample(seed, group, group_to_items[group])
         for group in sorted(group_to_items)
+        if group not in left_out_groups
     ]
     taken_item_keys = {
         _get_item_key(item)
@@ -805,12 +835,30 @@ def _get_draw_tsv_lines(group_draws: list[GroupDraw]) -> list[str]:
 
 
 def _get_summary_lines(
-    group_draws: list[GroupDraw], database_label: str, seed: int, read_at: datetime
+    group_draws: list[GroupDraw],
+    database_label: str,
+    seed: int,
+    read_at: datetime,
+    left_out_group_to_frame_count: dict[str, int],
+    *,
+    is_older_formats_only: bool,
 ) -> list[str]:
+    older_formats_lines = (
+        [
+            "older_formats_only: True",
+            *(
+                f"left_out_group\t{group}\t{frame_count}"
+                for group, frame_count in left_out_group_to_frame_count.items()
+            ),
+        ]
+        if is_older_formats_only
+        else []
+    )
     return [
         f"database_label: {database_label}",
         f"seed: {seed}",
         f"read_at: {read_at.isoformat()}",
+        *older_formats_lines,
         "group\tframe\tsample\tplants\tskipped_plants",
         *(
             f"{group_draw.group}\t{group_draw.frame_count}\t{len(group_draw.sample)}"
@@ -967,7 +1015,9 @@ def _get_seat_item_key_to_source_text(
     }
 
 
-def build_leave_seat_check_packets(seed: int, output_directory: Path) -> None:
+def build_leave_seat_check_packets(
+    seed: int, output_directory: Path, *, is_older_formats_only: bool
+) -> None:
     database_label = get_database_label(settings.database_url)
     _validate_can_draw_from(database_label)
     try:
@@ -984,9 +1034,16 @@ def build_leave_seat_check_packets(seed: int, output_directory: Path) -> None:
         read_at = datetime.now(timezone.utc)
         leave_check_rows = CRUDLeavePeriodPrinting(session).get_check_rows()
         seat_check_rows = CRUDSeatHolding(session).get_check_rows()
+        group_to_items = get_group_to_items(leave_check_rows, seat_check_rows)
         group_draws = draw_groups(
-            seed, get_group_to_items(leave_check_rows, seat_check_rows)
+            seed, group_to_items, is_older_formats_only=is_older_formats_only
         )
+        left_out_group_to_frame_count = {
+            group: len(group_to_items[group])
+            for group in get_left_out_groups(
+                group_to_items, is_older_formats_only=is_older_formats_only
+            )
+        }
         drawn_item_keys = _get_drawn_item_keys(group_draws)
         item_key_to_source_text = {
             **_get_leave_item_key_to_source_text(
@@ -996,7 +1053,14 @@ def build_leave_seat_check_packets(seed: int, output_directory: Path) -> None:
                 session, seat_check_rows, drawn_item_keys
             ),
         }
-    summary_lines = _get_summary_lines(group_draws, database_label, seed, read_at)
+    summary_lines = _get_summary_lines(
+        group_draws,
+        database_label,
+        seed,
+        read_at,
+        left_out_group_to_frame_count,
+        is_older_formats_only=is_older_formats_only,
+    )
     digest = _write_draw_files(
         output_directory,
         get_packet_entries(seed, group_draws, item_key_to_source_text),
@@ -1019,5 +1083,14 @@ if __name__ == "__main__":
         required=True,
         help="may not exist yet",
     )
+    parser.add_argument(
+        "--older-formats-only",
+        action="store_true",
+        help="draw only the leave groups whose frame holds an older-format row, and no seat groups",
+    )
     arguments = parser.parse_args()
-    build_leave_seat_check_packets(arguments.seed, arguments.output_directory)
+    build_leave_seat_check_packets(
+        arguments.seed,
+        arguments.output_directory,
+        is_older_formats_only=arguments.older_formats_only,
+    )
