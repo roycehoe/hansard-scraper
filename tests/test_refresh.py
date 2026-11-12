@@ -43,6 +43,7 @@ from database.report_participant import ReportParticipant
 from database.report_put_to import ReportPutTo
 from database.seat_holding import SeatHolding
 from database.sitting import Sitting
+from database.sitting_span import SittingSpan
 from database.speaker import Speaker
 from database.speech import Speech
 from enums import (
@@ -2872,6 +2873,10 @@ def test_run_stores_the_leave_printings_and_the_seat_rows_of_the_new_sitting(
         assert {seat_holding.speaker_id for seat_holding in seat_holdings} <= (
             new_sitting_speaker_ids
         )
+        sitting_spans = session.exec(select(SittingSpan)).all()
+        assert {sitting_span.speaker_id for sitting_span in sitting_spans} == (
+            new_sitting_speaker_ids
+        )
 
 
 @dataclass
@@ -3022,3 +3027,25 @@ def test_a_failing_seat_step_rolls_the_month_back_and_leaves_no_printing(
         assert session.exec(select(LeavePeriodPrinting)).all() == []
         assert session.exec(select(LeavePeriod)).all() == []
         assert session.exec(select(SeatHolding)).all() == []
+
+
+def test_a_failing_sitting_span_step_rolls_the_month_back_and_leaves_no_span(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    row_counts_before = _get_row_counts(scratch_engine)
+    monkeypatch.setattr(refresh_runs, "populate_sitting_spans", _raise_database_error)
+
+    with pytest.raises(SQLAlchemyError):
+        refresh_runs.populate_refresh_runs(
+            scratch_session, _get_now(fake_parliament), None
+        )
+
+    _assert_failed(scratch_engine, alerts, row_counts_before, "SQLAlchemyError")
+    with Session(scratch_engine) as session:
+        assert session.exec(select(SeatHolding)).all() == []
+        assert session.exec(select(SittingSpan)).all() == []
