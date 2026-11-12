@@ -52,6 +52,7 @@ def test_live_page_rows_carry_date_label_parliament_and_built_address() -> None:
         "15th Parliament",
         f"{_MEDIA_URL}/{_FIRST_LIVE_REPORT_ID}/VP-5Aug2026.pdf",
         MinutesFileFormat.PDF,
+        "Votes and Proceedings No. 34; date 2026-08-05T12:00:00; 15th Parliament; file VP-5Aug2026.pdf",
     )
 
 
@@ -93,6 +94,7 @@ def test_archive_page_rows_carry_date_label_parliament_and_absolute_address() ->
         "14th Parliament",
         _ARCHIVE_2021_URL,
         MinutesFileFormat.PDF,
+        "Votes and Proceedings No. 36 Sitting on 3 August 2021 14th Parliament",
     )
 
 
@@ -118,6 +120,7 @@ def test_archive_named_capture_label_comes_from_the_span() -> None:
         "11th Parliament",
         _ARCHIVE_NAMED_CAPTURE_URL,
         MinutesFileFormat.WORD,
+        "Votes and Proceedings No. 52 (DOC, 79.87 KB) Sitting on 11 April 2011 11th Parliament",
     )
 
 

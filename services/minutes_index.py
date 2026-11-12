@@ -42,6 +42,7 @@ class MinutesIndexRow:
     printed_parliament: Optional[str]
     file_url: str
     file_format: MinutesFileFormat
+    printed_text: str
 
 
 def _read_live_index(page: str) -> LiveMinutesIndex:
@@ -78,12 +79,16 @@ def _build_live_row(live_minutes_row: LiveMinutesRow, media_url: str) -> Minutes
         raise HansardMinutesIndexError(
             f"The live row {live_minutes_row.description!r} has the unknown media type {live_minutes_row.report.type!r}"
         ) from error
+    printed_parliament = (
+        None if live_minutes_row.parliaments is None else live_minutes_row.parliaments.title
+    )
     return MinutesIndexRow(
         sitting_date=sitting_date,
         printed_label=live_minutes_row.description,
-        printed_parliament=None if live_minutes_row.parliaments is None else live_minutes_row.parliaments.title,
+        printed_parliament=printed_parliament,
         file_url=f"{media_url}/{live_minutes_row.report.id}/{quote(live_minutes_row.report.filename_download, safe='')}",
         file_format=file_format,
+        printed_text=f"{live_minutes_row.description}; date {live_minutes_row.date}; {printed_parliament}; file {live_minutes_row.report.filename_download}",
     )
 
 
@@ -155,6 +160,7 @@ def _build_archive_row(individual_vote_element: Tag, index_url: str) -> MinutesI
         printed_parliament=_read_archive_parliament(columns),
         file_url=file_url,
         file_format=_read_archive_file_format(file_url),
+        printed_text=individual_vote_element.get_text(" ", strip=True),
     )
 
 

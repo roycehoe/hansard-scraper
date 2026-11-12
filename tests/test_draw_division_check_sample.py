@@ -878,7 +878,7 @@ def test_the_index_row_frame_reads_the_printed_date_and_address_of_the_capture(
     ] == [
         (
             "2020s|LIVE_PAGE|PDF",
-            f"{_INDEX_LABEL} (Parliament {_INDEX_PARLIAMENT}); sitting date {_INDEX_SITTING_DATE}; address {_INDEX_FILE_URL}",
+            f"{_INDEX_LABEL}; date {_INDEX_SITTING_DATE.isoformat()}T12:00:00; {_INDEX_PARLIAMENT}; file {_INDEX_FILE_NAME}; links to {_INDEX_FILE_URL}",
             f"sitting date {_INDEX_SITTING_DATE}; label {_INDEX_LABEL}; address {_INDEX_FILE_URL}",
         )
     ]
@@ -935,7 +935,7 @@ def test_the_index_row_frame_reads_an_archive_capture_with_the_archive_parser(
     ] == [
         (
             "2020s|ARCHIVE_INDEX_CAPTURE|PDF",
-            f"{_ARCHIVE_LABEL} (Parliament {_INDEX_PARLIAMENT}); sitting date {_ARCHIVE_SITTING_DATE}; address {_ARCHIVE_FILE_URL}",
+            f"{_ARCHIVE_LABEL} Sitting on 3 August 2021 {_INDEX_PARLIAMENT}; links to {_ARCHIVE_FILE_URL}",
             f"sitting date {_ARCHIVE_SITTING_DATE}; label {_ARCHIVE_LABEL}; address {_ARCHIVE_FILE_URL}",
         )
     ]
@@ -1022,10 +1022,27 @@ def test_the_pairing_frame_lists_the_date_in_the_order_the_rule_pairs(
     }
 
 
-def test_an_index_row_the_capture_does_not_print_is_refused(
+def test_a_stored_date_the_capture_does_not_print_shows_the_printed_date_to_the_reader(
     scratch_session: Session,
 ) -> None:
-    _add_live_index_minutes(scratch_session, _INDEX_SITTING_DATE, _SITTING_DATE)
+    _add_live_index_minutes(scratch_session, _SITTING_DATE, _INDEX_SITTING_DATE)
+
+    (candidate,) = draw_division_check_sample_script.get_division_check_candidates(
+        scratch_session, DivisionCheckRule.INDEX_ROW
+    )
+
+    assert f"date {_INDEX_SITTING_DATE.isoformat()}" in candidate.source_text
+    assert f"sitting date {_SITTING_DATE}" in candidate.data_claim
+
+
+def test_an_index_row_whose_address_the_capture_does_not_print_is_refused(
+    scratch_session: Session,
+) -> None:
+    minutes = _add_live_index_minutes(
+        scratch_session, _INDEX_SITTING_DATE, _INDEX_SITTING_DATE
+    )
+    minutes.file_url = f"{settings.minutes_media_url}/another-file/VP%208.pdf"
+    scratch_session.flush()
 
     with pytest.raises(HansardDivisionCheckError, match="matches 0 rows"):
         draw_division_check_sample_script.get_division_check_candidates(

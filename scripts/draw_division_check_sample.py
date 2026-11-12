@@ -281,8 +281,7 @@ def _get_printed_index_row(
     printed_index_rows = {
         index_row
         for index_row in capture_index_rows
-        if index_row.sitting_date == minutes.sitting_date
-        and index_row.file_url == minutes.file_url
+        if index_row.file_url == minutes.file_url
     }
     if len(printed_index_rows) != 1:
         raise HansardDivisionCheckError(
@@ -327,7 +326,7 @@ def _get_index_row_candidates(
                     minutes.sitting_date,
                     f"{minutes.index_source}{_GROUP_SEPARATOR}{_get_file_format_label(minutes)}",
                 ),
-                source_text=f"{printed_index_row.printed_label} (Parliament {printed_index_row.printed_parliament}); sitting date {printed_index_row.sitting_date}; address {printed_index_row.file_url}",
+                source_text=f"{printed_index_row.printed_text}; links to {printed_index_row.file_url}",
                 data_claim=f"sitting date {minutes.sitting_date}; label {minutes.printed_label}; address {minutes.file_url}",
                 database_key=f"minutes:{minutes.id}",
             )
