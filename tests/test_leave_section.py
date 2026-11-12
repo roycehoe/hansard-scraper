@@ -1010,11 +1010,34 @@ def test_a_duration_and_a_range_on_one_line_make_two_printings() -> None:
     assert leave_entries[1].printed_to == "26th September, 1960"
 
 
-def test_a_duration_with_no_year_stays_unread() -> None:
-    leave_entries = _build_entries("Mr Ong Piah Teng - for one month from 17th August.")
+@pytest.mark.parametrize(
+    ("line", "start_date", "end_date"),
+    [
+        (
+            "Mr Ong Piah Teng - for one month from 17th August.",
+            date(1955, 8, 17),
+            date(1955, 9, 16),
+        ),
+        (
+            "Mr G. A. P. Sutherland - for two months from 26th August.",
+            date(1955, 8, 26),
+            date(1955, 10, 25),
+        ),
+        (
+            "Inche Ahmad Bin Ibrahim - for three weeks from 28th August.",
+            date(1955, 8, 28),
+            date(1955, 9, 17),
+        ),
+    ],
+)
+def test_a_duration_with_no_year_takes_the_year_nearest_the_sitting(
+    line: str, start_date: date, end_date: date
+) -> None:
+    leave_entries = _build_entries(line, sitting_date=date(1955, 9, 21))
 
-    assert _get_formats(leave_entries) == [LeaveEntryFormat.UNREAD]
-    assert leave_entries[0].printed_name == "Mr Ong Piah Teng"
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.PROSE_DURATION]
+    assert leave_entries[0].leave_dates == LeaveDates(start_date, end_date)
+    assert leave_entries[0].year_source == LeaveYearSource.NEAREST_TO_SITTING
 
 
 def test_a_duration_keeps_the_start_date_text_and_the_words_in_the_line() -> None:

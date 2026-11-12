@@ -104,18 +104,9 @@ def _get_candidate_dates(
         return None
 
 
-def get_nearest_year_dates(
-    printed_start: DayAndMonth,
-    printed_end: Optional[DayAndMonth],
-    sitting_date: date,
-    candidate_years: Sequence[int],
+def get_nearest_leave_dates(
+    candidate_leave_dates: Sequence[LeaveDates], sitting_date: date
 ) -> Optional[LeaveDates]:
-    candidate_leave_dates = [
-        leave_dates
-        for year in candidate_years
-        if (leave_dates := _get_candidate_dates(printed_start, printed_end, year))
-        is not None
-    ]
     if not candidate_leave_dates:
         return None
     leave_dates_and_gap_days = [
@@ -136,6 +127,23 @@ def get_nearest_year_dates(
     if len(nearest_leave_dates) != 1:
         return None
     return nearest_leave_dates[0]
+
+
+def get_nearest_year_dates(
+    printed_start: DayAndMonth,
+    printed_end: Optional[DayAndMonth],
+    sitting_date: date,
+    candidate_years: Sequence[int],
+) -> Optional[LeaveDates]:
+    return get_nearest_leave_dates(
+        [
+            leave_dates
+            for year in candidate_years
+            if (leave_dates := _get_candidate_dates(printed_start, printed_end, year))
+            is not None
+        ],
+        sitting_date,
+    )
 
 
 def _is_start_in_open_period_window(

@@ -13,6 +13,7 @@ from utils.leave_entry import (
     LeaveDates,
     LeaveEntry,
     get_candidate_years,
+    get_nearest_leave_dates,
     get_nearest_year_dates,
 )
 from utils.names import TITLE_PREFIXES, strip_title
@@ -79,7 +80,7 @@ _MONTHS_IN_YEAR = 12
 _DURATION_COUNT_PATTERN = rf"(?:for\s+(?:a\s+period\s+of\s+)?)?(?P<count>\d+|{_NUMBER_WORD_PATTERN})\s+(?P<unit>day|week|month|year)s?,?\s+"
 _DURATION_COUNT_RE = re.compile(_DURATION_COUNT_PATTERN, re.IGNORECASE)
 _DURATION_RE = re.compile(
-    rf"{_DURATION_COUNT_PATTERN}(?:commencing\s+)?from\s+(?:the\s+)?(?P<day>{_DAY_PATTERN})(?:\s+of)?\s+(?P<month>{_MONTH_PATTERN}),?\s*(?P<year>\d{{4}})",
+    rf"{_DURATION_COUNT_PATTERN}(?:commencing\s+)?from\s+(?:the\s+)?(?P<day>{_DAY_PATTERN})(?:\s+of)?\s+(?P<month>{_MONTH_PATTERN})(?:,?\s*(?P<year>\d{{4}}))?",
     re.IGNORECASE,
 )
 _FROM_ONLY_RE = re.compile(
@@ -644,11 +645,11 @@ def _get_count(count_text: str) -> int:
         return _NUMBER_WORD_TO_COUNT[count_text.lower()]
 
 
-def _get_duration_leave_dates(match: re.Match) -> Optional[LeaveDates]:
+def _get_duration_leave_dates(match: re.Match, year: int) -> Optional[LeaveDates]:
     count = _get_count(match.group("count"))
     try:
         start_date = date(
-            int(match.group("year")),
+            year,
             _get_month(match.group("month")),
             _get_day(match.group("day")),
         )
@@ -658,6 +659,19 @@ def _get_duration_leave_dates(match: re.Match) -> Optional[LeaveDates]:
         )
     except ValueError:
         return None
+
+
+def _get_nearest_year_duration_dates(
+    match: re.Match, sitting_date: date
+) -> Optional[LeaveDates]:
+    return get_nearest_leave_dates(
+        [
+            leave_dates
+            for year in get_candidate_years(sitting_date)
+            if (leave_dates := _get_duration_leave_dates(match, year)) is not None
+        ],
+        sitting_date,
+    )
 
 
 def _get_from_only_leave_dates(match: re.Match) -> Optional[LeaveDates]:
@@ -675,7 +689,10 @@ def _get_from_only_leave_dates(match: re.Match) -> Optional[LeaveDates]:
 
 
 def _get_start_date_printing(
-    entry_parts: _ProseEntryParts, match: re.Match, leave_dates: Optional[LeaveDates]
+    entry_parts: _ProseEntryParts,
+    match: re.Match,
+    leave_dates: Optional[LeaveDates],
+    year_source: LeaveYearSource,
 ) -> _PrintingDates:
     if leave_dates is None:
         return _UNREAD_PRINTING
@@ -684,7 +701,7 @@ def _get_start_date_printing(
         _get_printed_text(entry_parts, match.start("day"), match.end()),
         None,
         leave_dates,
-        LeaveYearSource.PRINTED_IN_ENTRY,
+        year_source,
     )
 
 
@@ -704,9 +721,22 @@ def _get_duration_printings(
     duration_match = _DURATION_RE.match(entry_parts.date_text)
     if duration_match is None:
         return None
-    duration_printing = _get_start_date_printing(
-        entry_parts, duration_match, _get_duration_leave_dates(duration_match)
-    )
+    if duration_match.group("year") is None:
+        duration_printing = _get_start_date_printing(
+            entry_parts,
+            duration_match,
+            _get_nearest_year_duration_dates(duration_match, sitting_date),
+            LeaveYearSource.NEAREST_TO_SITTING,
+        )
+    else:
+        duration_printing = _get_start_date_printing(
+            entry_parts,
+            duration_match,
+            _get_duration_leave_dates(
+                duration_match, int(duration_match.group("year"))
+            ),
+            LeaveYearSource.PRINTED_IN_ENTRY,
+        )
     if not _has_date_text_left(entry_parts.date_text, [duration_match]):
         return [duration_printing]
     range_printings = _get_range_printings(
@@ -740,7 +770,10 @@ def _get_from_only_printings(
         return None
     return [
         _get_start_date_printing(
-            entry_parts, from_only_match, _get_from_only_leave_dates(from_only_match)
+            entry_parts,
+            from_only_match,
+            _get_from_only_leave_dates(from_only_match),
+            LeaveYearSource.PRINTED_IN_ENTRY,
         )
     ]
 
