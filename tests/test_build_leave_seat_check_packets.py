@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Optional
@@ -110,7 +110,9 @@ _ITEM = CheckItem(
 
 
 def _draw_group(seed: int, group: str, items: list[CheckItem]) -> GroupDraw:
-    return draw_groups(seed, {group: items}, is_older_formats_only=False)[0]
+    return draw_groups(
+        seed, {group: items}, is_older_formats_only=False, group_names=()
+    )[0]
 
 
 def _get_item_key_to_source_text(
@@ -442,7 +444,9 @@ def test_no_plant_sits_on_a_sampled_row_and_no_row_is_planted_twice() -> None:
     group_to_items = get_group_to_items(leave_rows, [])
     assert len(group_to_items) > 1
 
-    group_draws = draw_groups(_SEED, group_to_items, is_older_formats_only=False)
+    group_draws = draw_groups(
+        _SEED, group_to_items, is_older_formats_only=False, group_names=()
+    )
 
     sampled_keys = {
         (item.table_name, item.row_id)
@@ -479,25 +483,90 @@ def _build_mixed_format_group_to_items() -> dict[str, list[CheckItem]]:
 def test_older_formats_only_draws_the_groups_with_an_older_format_row() -> None:
     group_to_items = _build_mixed_format_group_to_items()
 
-    group_draws = draw_groups(_SEED, group_to_items, is_older_formats_only=True)
+    group_draws = draw_groups(
+        _SEED, group_to_items, is_older_formats_only=True, group_names=()
+    )
 
     assert {group_draw.group for group_draw in group_draws} == {
         "format|PROSE_RANGE|1960",
         "year_gap|0",
     }
-    assert get_left_out_groups(group_to_items, is_older_formats_only=True) == [
+    assert get_left_out_groups(
+        group_to_items, is_older_formats_only=True, group_names=()
+    ) == [
         "format|STRUCTURED_LIST|2020",
         "seat|2010",
     ]
 
 
+def test_group_names_draw_only_the_named_groups() -> None:
+    group_to_items = _build_mixed_format_group_to_items()
+    group_names = ("format|PROSE_RANGE|1960", "seat|2010")
+
+    group_draws = draw_groups(
+        _SEED, group_to_items, is_older_formats_only=False, group_names=group_names
+    )
+
+    assert {group_draw.group for group_draw in group_draws} == set(group_names)
+    assert get_left_out_groups(
+        group_to_items, is_older_formats_only=False, group_names=group_names
+    ) == ["format|STRUCTURED_LIST|2020", "year_gap|0"]
+
+
+def test_group_names_narrow_the_older_formats_only_groups() -> None:
+    group_to_items = _build_mixed_format_group_to_items()
+
+    left_out_groups = get_left_out_groups(
+        group_to_items,
+        is_older_formats_only=True,
+        group_names=("format|PROSE_RANGE|1960", "seat|2010"),
+    )
+
+    assert left_out_groups == [
+        "format|STRUCTURED_LIST|2020",
+        "seat|2010",
+        "year_gap|0",
+    ]
+
+
+def test_a_group_name_that_matches_no_group_is_an_error() -> None:
+    group_to_items = _build_mixed_format_group_to_items()
+
+    with pytest.raises(HansardHandCheckError, match="No group is named nope"):
+        draw_groups(
+            _SEED,
+            group_to_items,
+            is_older_formats_only=False,
+            group_names=("nope",),
+        )
+
+
+def test_the_summary_writes_the_groups_left_out_by_group_names() -> None:
+    summary_lines = packets_script._get_summary_lines(
+        [],
+        "label",
+        _SEED,
+        datetime(2026, 11, 12, tzinfo=timezone.utc),
+        {"seat|2010": 3},
+        is_older_formats_only=False,
+    )
+
+    assert "left_out_group\tseat|2010\t3" in summary_lines
+    assert "older_formats_only: True" not in summary_lines
+
+
 def test_without_the_option_every_group_is_drawn_and_none_left_out() -> None:
     group_to_items = _build_mixed_format_group_to_items()
 
-    group_draws = draw_groups(_SEED, group_to_items, is_older_formats_only=False)
+    group_draws = draw_groups(
+        _SEED, group_to_items, is_older_formats_only=False, group_names=()
+    )
 
     assert {group_draw.group for group_draw in group_draws} == set(group_to_items)
-    assert get_left_out_groups(group_to_items, is_older_formats_only=False) == []
+    assert (
+        get_left_out_groups(group_to_items, is_older_formats_only=False, group_names=())
+        == []
+    )
 
 
 def _build_leave_items(
@@ -530,7 +599,9 @@ def test_a_format_group_read_whole_plants_blanked_rows_from_the_left_out_groups(
         ),
     }
 
-    group_draws = draw_groups(_SEED, group_to_items, is_older_formats_only=True)
+    group_draws = draw_groups(
+        _SEED, group_to_items, is_older_formats_only=True, group_names=()
+    )
 
     assert len(group_draws) == 1
     group_draw = group_draws[0]
@@ -554,7 +625,9 @@ def test_another_family_read_whole_plants_its_usual_plant_from_the_left_out_rows
         "year_gap|1-30": _build_leave_items(101, 20, LeaveEntryFormat.STRUCTURED_LIST),
     }
 
-    group_draws = draw_groups(_SEED, group_to_items, is_older_formats_only=True)
+    group_draws = draw_groups(
+        _SEED, group_to_items, is_older_formats_only=True, group_names=()
+    )
 
     group_draw = group_draws[0]
     assert group_draw.skipped_plant_count == 0
@@ -578,7 +651,9 @@ def test_only_the_plants_with_no_base_anywhere_are_skipped() -> None:
         ],
     }
 
-    group_draw = draw_groups(_SEED, group_to_items, is_older_formats_only=True)[0]
+    group_draw = draw_groups(
+        _SEED, group_to_items, is_older_formats_only=True, group_names=()
+    )[0]
 
     assert len(group_draw.plants) == _PLANTS_AT_TWO
     assert group_draw.skipped_plant_count == _PLANTS_AT_FIFTY - _PLANTS_AT_TWO
@@ -664,7 +739,9 @@ def test_adding_a_group_leaves_another_groups_sample_equal() -> None:
         _draw_group(_SEED, _FORMAT_GROUP, before[_FORMAT_GROUP]).sample
         == next(
             group_draw
-            for group_draw in draw_groups(_SEED, after, is_older_formats_only=False)
+            for group_draw in draw_groups(
+                _SEED, after, is_older_formats_only=False, group_names=()
+            )
             if group_draw.group == _FORMAT_GROUP
         ).sample
     )
@@ -674,7 +751,9 @@ def test_the_packets_hold_no_row_id_group_or_plant_flag() -> None:
     group_to_items = get_group_to_items(
         _build_leave_rows(_LARGE_GROUP_SIZE), [_SEAT_ROW]
     )
-    group_draws = draw_groups(_SEED, group_to_items, is_older_formats_only=False)
+    group_draws = draw_groups(
+        _SEED, group_to_items, is_older_formats_only=False, group_names=()
+    )
 
     item_key_to_source_text = _get_item_key_to_source_text(
         [item for items in group_to_items.values() for item in items]
@@ -707,7 +786,10 @@ def test_a_database_with_another_label_is_refused(
         HansardHandCheckError, match="only localhost:5437/hansard_positions"
     ):
         build_leave_seat_check_packets(
-            _SEED, tmp_path / "packets", is_older_formats_only=False
+            _SEED,
+            tmp_path / "packets",
+            is_older_formats_only=False,
+            group_names=(),
         )
 
     assert not (tmp_path / "packets").exists()
@@ -721,7 +803,9 @@ def test_an_existing_output_directory_is_refused(
     )
 
     with pytest.raises(HansardHandCheckError, match="already exists"):
-        build_leave_seat_check_packets(_SEED, tmp_path, is_older_formats_only=False)
+        build_leave_seat_check_packets(
+            _SEED, tmp_path, is_older_formats_only=False, group_names=()
+        )
 
 
 def test_the_check_rows_join_the_period_and_the_member(

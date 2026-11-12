@@ -853,14 +853,19 @@ def _has_older_format_item(items: list[CheckItem]) -> bool:
 
 
 def get_left_out_groups(
-    group_to_items: dict[str, list[CheckItem]], *, is_older_formats_only: bool
+    group_to_items: dict[str, list[CheckItem]],
+    *,
+    is_older_formats_only: bool,
+    group_names: tuple[str, ...],
 ) -> list[str]:
-    if not is_older_formats_only:
-        return []
+    for group_name in group_names:
+        if group_name not in group_to_items:
+            raise HansardHandCheckError(f"No group is named {group_name}")
     return sorted(
         group
         for group, items in group_to_items.items()
-        if not _has_older_format_item(items)
+        if (is_older_formats_only and not _has_older_format_item(items))
+        or (len(group_names) > 0 and group not in group_names)
     )
 
 
@@ -869,9 +874,14 @@ def draw_groups(
     group_to_items: dict[str, list[CheckItem]],
     *,
     is_older_formats_only: bool,
+    group_names: tuple[str, ...],
 ) -> list[GroupDraw]:
     left_out_groups = frozenset(
-        get_left_out_groups(group_to_items, is_older_formats_only=is_older_formats_only)
+        get_left_out_groups(
+            group_to_items,
+            is_older_formats_only=is_older_formats_only,
+            group_names=group_names,
+        )
     )
     group_samples = [
         draw_group_sample(seed, group, group_to_items[group])
@@ -973,17 +983,13 @@ def _get_summary_lines(
     *,
     is_older_formats_only: bool,
 ) -> list[str]:
-    older_formats_lines = (
-        [
-            "older_formats_only: True",
-            *(
-                f"left_out_group\t{group}\t{frame_count}"
-                for group, frame_count in left_out_group_to_frame_count.items()
-            ),
-        ]
-        if is_older_formats_only
-        else []
-    )
+    older_formats_lines = [
+        *(["older_formats_only: True"] if is_older_formats_only else []),
+        *(
+            f"left_out_group\t{group}\t{frame_count}"
+            for group, frame_count in left_out_group_to_frame_count.items()
+        ),
+    ]
     return [
         f"database_label: {database_label}",
         f"seed: {seed}",
@@ -1152,16 +1158,18 @@ def _get_seat_item_key_to_source_text(
 
 
 def build_leave_seat_check_packets(
-    seed: int, output_directory: Path, *, is_older_formats_only: bool
+    seed: int,
+    output_directory: Path,
+    *,
+    is_older_formats_only: bool,
+    group_names: tuple[str, ...],
 ) -> None:
     database_label = get_database_label(settings.database_url)
     _validate_can_draw_from(database_label)
-    try:
-        output_directory.mkdir(parents=True)
-    except FileExistsError as error:
+    if output_directory.exists():
         raise HansardHandCheckError(
             f"Refusing to write: {output_directory} already exists"
-        ) from error
+        )
     logger.info(f"Drawing the leave and seat samples, read only, from {database_label}")
     read_only_engine = build_read_only_engine(settings.database_url).execution_options(
         isolation_level=_DRAW_ISOLATION_LEVEL
@@ -1172,12 +1180,17 @@ def build_leave_seat_check_packets(
         seat_check_rows = CRUDSeatHolding(session).get_check_rows()
         group_to_items = get_group_to_items(leave_check_rows, seat_check_rows)
         group_draws = draw_groups(
-            seed, group_to_items, is_older_formats_only=is_older_formats_only
+            seed,
+            group_to_items,
+            is_older_formats_only=is_older_formats_only,
+            group_names=group_names,
         )
         left_out_group_to_frame_count = {
             group: len(group_to_items[group])
             for group in get_left_out_groups(
-                group_to_items, is_older_formats_only=is_older_formats_only
+                group_to_items,
+                is_older_formats_only=is_older_formats_only,
+                group_names=group_names,
             )
         }
         drawn_item_keys = _get_drawn_item_keys(group_draws)
@@ -1197,6 +1210,7 @@ def build_leave_seat_check_packets(
         left_out_group_to_frame_count,
         is_older_formats_only=is_older_formats_only,
     )
+    output_directory.mkdir(parents=True)
     digest = _write_draw_files(
         output_directory,
         get_packet_entries(seed, group_draws, item_key_to_source_text),
@@ -1224,9 +1238,16 @@ if __name__ == "__main__":
         action="store_true",
         help="draw only the leave groups whose frame holds an older-format row, and no seat groups",
     )
+    parser.add_argument(
+        "--group",
+        action="append",
+        default=[],
+        help="draw only the named group; repeat for several, alone or with --older-formats-only",
+    )
     arguments = parser.parse_args()
     build_leave_seat_check_packets(
         arguments.seed,
         arguments.output_directory,
         is_older_formats_only=arguments.older_formats_only,
+        group_names=tuple(arguments.group),
     )
