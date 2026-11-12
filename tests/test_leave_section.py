@@ -635,12 +635,12 @@ def test_a_line_read_in_part_keeps_its_name() -> None:
     assert leave_entries[0].name_source == LeaveNameSource.PRINTED
 
 
-def test_a_line_with_no_date_part_has_no_name() -> None:
+def test_a_line_with_no_date_part_keeps_its_name() -> None:
     leave_entries = _build_entries("Mr Lee Kuan Yew (Tanjong Pagar), Prime Minister.")
 
     assert leave_entries[0].entry_format == LeaveEntryFormat.UNREAD
-    assert leave_entries[0].name_source == LeaveNameSource.NONE
-    assert leave_entries[0].printed_name is None
+    assert leave_entries[0].name_source == LeaveNameSource.PRINTED
+    assert leave_entries[0].printed_name == "Mr Lee Kuan Yew"
 
 
 def test_a_misprint_before_the_cut_leaves_the_line_unread() -> None:
@@ -1711,3 +1711,45 @@ def test_a_hand_kept_reading_applies_only_on_its_sitting_date() -> None:
     leave_entries = _get_reading_markdown(date(2000, 10, 10), printed_line)
 
     assert _get_formats(leave_entries) == [LeaveEntryFormat.UNREAD]
+
+
+def test_an_unread_line_with_no_date_part_keeps_its_name_and_office() -> None:
+    leave_entries = _build_entries(
+        "Mr S. Dhanabalan (Kallang), Minister for National Development",
+        "Mr Peter Sung (Buona Vista), Minister of State, Ministry of",
+        sitting_date=date(1990, 3, 29),
+    )
+
+    assert [leave_entry.entry_format for leave_entry in leave_entries] == [
+        LeaveEntryFormat.UNREAD,
+        LeaveEntryFormat.UNREAD,
+    ]
+    assert [leave_entry.printed_name for leave_entry in leave_entries] == [
+        "Mr S. Dhanabalan",
+        "Mr Peter Sung",
+    ]
+    assert [leave_entry.office_printed for leave_entry in leave_entries] == [
+        "Minister for National Development",
+        "Minister of State, Ministry of",
+    ]
+    assert leave_entries[0].name_source == LeaveNameSource.PRINTED
+
+
+def test_a_line_with_no_name_and_no_date_part_stays_nameless() -> None:
+    leave_entries = _build_entries("23rd August, 1966")
+
+    assert leave_entries[0].entry_format == LeaveEntryFormat.UNREAD
+    assert leave_entries[0].name_source == LeaveNameSource.NONE
+    assert leave_entries[0].printed_name is None
+
+
+def test_during_starts_the_date_part_of_an_unread_line() -> None:
+    leave_entries = _build_entries(
+        "Dr Fong Kim Heng (Joo Chiat), Deputy Speaker - during December 1965 and January 1966.",
+        sitting_date=date(1965, 12, 8),
+    )
+
+    assert leave_entries[0].entry_format == LeaveEntryFormat.UNREAD
+    assert leave_entries[0].printed_name == "Dr Fong Kim Heng"
+    assert leave_entries[0].office_printed == "Deputy Speaker"
+

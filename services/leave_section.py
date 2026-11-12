@@ -56,7 +56,7 @@ _NUMBER_WORD_TO_COUNT = {
 _NUMBER_WORD_PATTERN = "|".join(_NUMBER_WORD_TO_COUNT)
 _DURATION_START_PATTERN = rf"(?:for\s+(?:a\s+period\s+of\s+)?)?(?:\d+|{_NUMBER_WORD_PATTERN})\s+(?:day|week|month|year)s?\b"
 _DATE_PART_START_RE = re.compile(
-    rf"(?:\s*-+\s*|\s*[–—]\s*|,\s*|\s+)(?=from\b|on\s+{_DAY_PATTERN}|{_DURATION_START_PATTERN}|{_DAY_PATTERN}\s*(?:{_MONTH_PATTERN}|to\b|and\b|,))",
+    rf"(?:\s*-+\s*|\s*[–—]\s*|,\s*|\s+)(?=from\b|during\b|on\s+{_DAY_PATTERN}|{_DURATION_START_PATTERN}|{_DAY_PATTERN}\s*(?:{_MONTH_PATTERN}|to\b|and\b|,))",
     re.IGNORECASE,
 )
 _DAY_LIST_RE = re.compile(
@@ -300,7 +300,20 @@ def _get_prose_entry_parts(
     search_start = title_length if bracket is None else bracket.end()
     match = _DATE_PART_START_RE.search(reading_line, search_start)
     if match is None:
-        return None
+        if bracket is None:
+            return None
+        printed_name = line[: bracket.start()].rstrip(_NAME_TRAILING_CHARACTERS).strip()
+        if _DIGIT_RE.search(printed_name):
+            return None
+        return _ProseEntryParts(
+            printed_name=printed_name,
+            office_printed=_get_office_printed(line[bracket.end() :]),
+            is_office_after_comma=line[bracket.end() :].startswith(_OFFICE_OPENING),
+            printed_line=line,
+            reading_line=reading_line,
+            date_text="",
+            date_text_offset=len(line),
+        )
     # NOTE: a misprint before the cut would shift the offsets, so that line goes to UNREAD and no name or office is altered
     if reading_line[: match.start()] != line[: match.start()]:
         return None
