@@ -3,8 +3,12 @@ from typing import Optional
 import pytest
 
 from exceptions import HansardSittingReportError
-from schemas.hansard_report_response import HansardReportOldResponse
+from schemas.hansard_report_response import (
+    HansardReportNewResponse,
+    HansardReportOldResponse,
+)
 from services.hansard_sitting_date_response import (
+    build_new_hansard_sitting_date_response,
     build_old_hansard_sitting_date_response,
 )
 
@@ -79,3 +83,56 @@ def test_error_body_still_builds() -> None:
     assert hansard_sitting_date_response.sitting_date == _SITTING_DATE
     assert hansard_sitting_date_response.parlement_no is None
     assert hansard_sitting_date_response.sitting_no is None
+
+
+def test_new_format_sitting_keeps_the_four_nested_lists_as_json_text() -> None:
+    hansard_report_response = HansardReportNewResponse.model_validate(
+        {
+            "takesSectionVOList": [{"title": "Prayers"}],
+            "annexureList": [],
+            "vernacularList": [{"vernacularID": 7}],
+            "a2bList": [{"billTitle": "A Bill"}],
+        }
+    )
+
+    hansard_sitting_date_response = build_new_hansard_sitting_date_response(
+        hansard_report_response, _SITTING_DATE
+    )
+
+    assert (
+        hansard_sitting_date_response.sections,
+        hansard_sitting_date_response.annexures,
+        hansard_sitting_date_response.vernaculars,
+        hansard_sitting_date_response.a2b,
+    ) == (
+        '[{"title": "Prayers"}]',
+        "[]",
+        '[{"vernacularID": 7}]',
+        '[{"billTitle": "A Bill"}]',
+    )
+
+
+def test_new_format_sitting_without_the_lists_leaves_the_four_columns_null() -> None:
+    hansard_sitting_date_response = build_new_hansard_sitting_date_response(
+        HansardReportNewResponse(), _SITTING_DATE
+    )
+
+    assert (
+        hansard_sitting_date_response.sections,
+        hansard_sitting_date_response.annexures,
+        hansard_sitting_date_response.vernaculars,
+        hansard_sitting_date_response.a2b,
+    ) == (None, None, None, None)
+
+
+def test_old_format_sitting_leaves_the_four_nested_list_columns_null() -> None:
+    hansard_sitting_date_response = build_old_hansard_sitting_date_response(
+        HansardReportOldResponse(), _SITTING_DATE
+    )
+
+    assert (
+        hansard_sitting_date_response.sections,
+        hansard_sitting_date_response.annexures,
+        hansard_sitting_date_response.vernaculars,
+        hansard_sitting_date_response.a2b,
+    ) == (None, None, None, None)

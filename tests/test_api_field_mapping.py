@@ -1,3 +1,5 @@
+import pytest
+
 from schemas.hansard_report_response import HansardReportNewResponse
 from schemas.hansard_search_result import HansardSearchResult
 from schemas.hansard_topic_response import HansardTopicResponse
@@ -100,3 +102,37 @@ def test_new_format_sitting_with_a_dropped_parliament_number_is_one_loss() -> No
 
     assert len(field_losses) == 1
     assert "parlimentNO" in field_losses[0]
+
+
+@pytest.mark.parametrize(
+    ("wire_key", "field_name"),
+    [
+        ("takesSectionVOList", "sections"),
+        ("annexureList", "annexures"),
+        ("vernacularList", "vernaculars"),
+        ("a2bList", "a2b"),
+    ],
+)
+def test_new_format_sitting_with_a_dropped_nested_list_is_one_loss(
+    wire_key: str, field_name: str
+) -> None:
+    hansard_report_response = HansardReportNewResponse.model_validate(
+        {**SYNTHETIC_NEW_FORMAT, wire_key: [{"title": "Kept"}]}
+    )
+    hansard_sitting_date_response = build_new_hansard_sitting_date_response(
+        hansard_report_response, _SITTING_DATE
+    )
+    assert (
+        get_sitting_date_field_losses(
+            hansard_report_response, hansard_sitting_date_response
+        )
+        == []
+    )
+    setattr(hansard_sitting_date_response, field_name, None)
+
+    field_losses = get_sitting_date_field_losses(
+        hansard_report_response, hansard_sitting_date_response
+    )
+
+    assert len(field_losses) == 1
+    assert wire_key in field_losses[0]

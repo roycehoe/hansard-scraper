@@ -524,6 +524,12 @@ def test_clean_run_adds_rows_and_links_them(
         ).one()
         assert new_sitting.id is not None
         assert new_sitting.sections is not None
+        new_raw_sitting = session.exec(
+            select(HansardSittingDateResponse).where(
+                HansardSittingDateResponse.sitting_date == new_sitting.sitting_date
+            )
+        ).one()
+        assert new_raw_sitting.sections == new_sitting.sections
         assert refresh_run.attendances_linked > 0
         assert refresh_run.attendances_linked == CRUDAttendance(
             session

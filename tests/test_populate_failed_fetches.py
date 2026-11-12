@@ -202,6 +202,25 @@ def test_working_report_fetch_counts_no_failed_fetch_in_the_sitting_details_summ
     )
 
 
+def test_working_report_fetch_fills_the_nested_lists_on_the_sitting_and_the_raw_row(
+    scratch_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sitting = _seed_sitting_without_details(scratch_session)
+    monkeypatch.setattr(
+        sitting_details, "get_hansard_report_response_async", _fetch_report
+    )
+
+    populate_sitting_details(scratch_session)
+
+    scratch_session.refresh(sitting)
+    raw_sitting = CRUDHansardSittingDateResponse(scratch_session).get_by_sitting_date(
+        sitting.sitting_date
+    )
+    assert sitting.sections is not None
+    assert raw_sitting is not None
+    assert raw_sitting.sections == sitting.sections
+
+
 def test_failed_report_fetch_is_counted_in_the_sitting_dates_summary(
     scratch_session: Session, messages: list[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
