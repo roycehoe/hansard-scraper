@@ -480,6 +480,29 @@ def test_other_printed_range_forms_are_read(
     assert leave_entries[0].year_source == LeaveYearSource.PRINTED_IN_ENTRY
 
 
+def test_a_range_whose_end_day_is_before_its_start_day_in_one_month_is_unread_alone() -> (
+    None
+):
+    leave_entries = _build_entries(
+        "Dr Augustine H.H. Tan (Whampoa) - from 14th to 10th April, from 24th to 29th April and from 9th to 11th June, 1980.",
+        sitting_date=date(1980, 6, 25),
+    )
+
+    assert [leave_entry.entry_format for leave_entry in leave_entries] == [
+        LeaveEntryFormat.UNREAD,
+        LeaveEntryFormat.PROSE_RANGE,
+        LeaveEntryFormat.PROSE_RANGE,
+    ]
+    assert leave_entries[0].leave_dates is None
+    assert leave_entries[0].year_source is None
+    assert leave_entries[0].printed_from is None
+    assert leave_entries[0].printed_name == "Dr Augustine H.H. Tan"
+    assert _get_date_pairs(leave_entries[1:]) == [
+        (date(1980, 4, 24), date(1980, 4, 29)),
+        (date(1980, 6, 9), date(1980, 6, 11)),
+    ]
+
+
 def test_a_range_with_no_year_takes_the_nearest_year() -> None:
     leave_entries = _build_entries(
         "Mr X - from 3rd to 10th June", sitting_date=date(1977, 6, 8)

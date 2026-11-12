@@ -231,6 +231,7 @@ class _DateItemTexts:
 @dataclass(frozen=True)
 class _RangeParts:
     match: re.Match
+    is_start_month_printed: bool
     start_day: int
     start_month: int
     start_year: Optional[int]
@@ -432,6 +433,7 @@ def _get_range_parts(date_matches: list[re.Match]) -> Optional[list[_RangeParts]
             return None
         later_range_parts = _RangeParts(
             match,
+            printed_start_month is not None,
             start_day,
             start_month,
             range_years.start_year,
@@ -485,6 +487,11 @@ def _get_range_printing(
     sitting_date: date,
     entry_format: LeaveEntryFormat,
 ) -> _PrintingDates:
+    if (
+        not range_parts.is_start_month_printed
+        and range_parts.end_day < range_parts.start_day
+    ):
+        return _UNREAD_PRINTING
     if range_parts.start_year is not None and range_parts.end_year is not None:
         leave_dates = _get_range_dates(
             range_parts.start_day,
