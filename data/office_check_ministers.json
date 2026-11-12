@@ -309,5 +309,102 @@
     "start_date": "2004-08-13",
     "end_date": "2011-05-20",
     "source_url": "https://www.mfa.gov.sg/about-mfa/histories-and-milestones/"
+  },
+  {
+    "member_name": "Hon Sui Sen",
+    "speaker_ids": [
+      86,
+      152,
+      220,
+      296
+    ],
+    "ministry_name": "Finance",
+    "start_date": "1970-08-11",
+    "end_date": "1983-10-14",
+    "source_url": "https://www.nlb.gov.sg/main/article-detail?cmsuuid=18078256-1e32-4f97-b776-c6dc62bdb7b2"
+  },
+  {
+    "member_name": "Goh Keng Swee",
+    "speaker_ids": [
+      20,
+      80,
+      146,
+      214,
+      293
+    ],
+    "ministry_name": "Defence",
+    "start_date": "1970-08-11",
+    "end_date": "1979-02-11",
+    "source_url": "https://www.nlb.gov.sg/main/article-detail?cmsuuid=73d1f784-af2b-402d-9fac-534e93db040d"
+  },
+  {
+    "member_name": "E.W. Barker",
+    "speaker_ids": [
+      5,
+      68,
+      135,
+      200,
+      276,
+      352
+    ],
+    "ministry_name": "National Development",
+    "start_date": "1965-08-09",
+    "end_date": "1975-06-01",
+    "source_url": "https://www.nlb.gov.sg/main/article-detail?cmsuuid=bf10ef38-0256-4b4f-b01f-bb1b652700ea"
+  },
+  {
+    "member_name": "E.W. Barker",
+    "speaker_ids": [
+      5,
+      68,
+      135,
+      200,
+      276,
+      352
+    ],
+    "ministry_name": "Environment",
+    "start_date": "1975-06-02",
+    "end_date": "1979-01-31",
+    "source_url": "https://www.nlb.gov.sg/main/article-detail?cmsuuid=bf10ef38-0256-4b4f-b01f-bb1b652700ea"
+  },
+  {
+    "member_name": "E.W. Barker",
+    "speaker_ids": [
+      5,
+      68,
+      135,
+      200,
+      276,
+      352
+    ],
+    "ministry_name": "Science and Technology",
+    "start_date": "1977-09-26",
+    "end_date": "1981-04-01",
+    "source_url": "https://www.nlb.gov.sg/main/article-detail?cmsuuid=bf10ef38-0256-4b4f-b01f-bb1b652700ea"
+  },
+  {
+    "member_name": "Teh Cheang Wan",
+    "speaker_ids": [
+      262,
+      337,
+      408
+    ],
+    "ministry_name": "National Development",
+    "start_date": "1979-02-01",
+    "end_date": "1986-12-14",
+    "source_url": "https://www.nlb.gov.sg/main/article-detail?cmsuuid=cdb61827-aedc-413b-8338-286ffe03a735"
+  },
+  {
+    "member_name": "Othman Bin Wok",
+    "speaker_ids": [
+      45,
+      105,
+      169,
+      242
+    ],
+    "ministry_name": "Social Affairs",
+    "start_date": "1963-10-19",
+    "end_date": "1977-06-30",
+    "source_url": "https://www.nlb.gov.sg/main/article-detail?cmsuuid=c4a1cb9f-9800-43c1-a7f9-43b185c785f6"
   }
 ]
