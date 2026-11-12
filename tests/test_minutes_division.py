@@ -105,6 +105,48 @@ def test_2024_08_07_follows_the_noes_continued_heading() -> None:
     assert _get_counts_by_side(division) == (10, 76, 0)
 
 
+def test_2014_11_04_drops_the_spaced_page_header_and_reads_both_lists() -> None:
+    minutes_text_divisions = get_minutes_divisions(
+        _read_fixture("minutes_2014_11_04.txt")
+    )
+
+    assert len(minutes_text_divisions.divisions) == _DIVISION_COUNT
+    first_division, second_division = minutes_text_divisions.divisions
+    for division in minutes_text_divisions.divisions:
+        assert division.list_status == DivisionListStatus.STORED
+        assert _get_names(division, DivisionVoteChoice.NO) == [
+            "Chen Show Mao",
+            "Lee Li Lian",
+            "Lim, Sylvia",
+            "Low Thia Khiang",
+            "Muhamad Faisal Abdul Manap",
+            "Png Eng Huat",
+            "Pritam Singh",
+        ]
+        assert "Ang Wei Neng" in _get_names(division, DivisionVoteChoice.AYE)
+        assert "Zaqy Mohamad" in _get_names(division, DivisionVoteChoice.AYE)
+        assert division.printed_list is not None
+        assert "N o. 17" not in division.printed_list
+    assert (
+        first_division.ayes,
+        first_division.noes,
+        first_division.abstentions,
+    ) == (68, 7, 0)
+    assert _get_counts_by_side(first_division) == (68, 7, 0)
+    assert all(
+        name.printed_name != "De Souza, Christopher" for name in first_division.names
+    )
+    assert (
+        second_division.ayes,
+        second_division.noes,
+        second_division.abstentions,
+    ) == (69, 7, 0)
+    assert _get_counts_by_side(second_division) == (69, 7, 0)
+    assert "De Souza, Christopher" in _get_names(
+        second_division, DivisionVoteChoice.AYE
+    )
+
+
 def test_the_word_file_reads_both_lists_as_one_ayes_column() -> None:
     minutes_text_divisions = get_minutes_divisions(
         get_minutes_word_text(_WORD_FIXTURE.read_bytes())

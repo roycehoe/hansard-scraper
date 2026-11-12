@@ -12,7 +12,7 @@ _COUNT_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _PAGE_HEADER_PATTERN = re.compile(
-    r"^\s*No\.\s*\d+\s+\d{1,2}\s+[A-Za-z]+\s+\d{4}\s+\d+\s*$"
+    r"^\s*N\s?o\.\s*\d+\s+\d{1,2}\s+[A-Za-z]+\s+\d{4}\s+\d+\s*$"
 )
 _CONTINUED_HEADING_PATTERN = re.compile(
     r"^\s*(Ayes|Noes?|No|Abstentions?)\s*[–-]\s*continued\s*$", re.IGNORECASE
