@@ -47,6 +47,10 @@ _NEW_FORMAT_KEY_TO_ORM_FIELD = {
     "ptbaStartPgNo": "ptba_start_pg_no",
     "atbpStartPgNo": "atbp_start_pg_no",
     "onlinePDFFileName": "online_pdf_file_name",
+    "takesSectionVOList": "sections",
+    "annexureList": "annexures",
+    "vernacularList": "vernaculars",
+    "a2bList": "a2b",
 }
 _OLD_FORMAT_KEY_TO_ORM_FIELD = {
     "parlNo": "parlement_no",

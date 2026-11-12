@@ -19,7 +19,6 @@ from crud.speech import CRUDSpeech
 from database.attendance import Attendance
 from database.refresh_run import RefreshRun
 from database.report import Report
-from database.sitting import Sitting
 from database.speech import Speech
 from enums import RefreshRunStatus, ReportType
 from exceptions import (
@@ -625,15 +624,6 @@ def _validate_can_store_fetched_window(
     )
 
 
-def _set_sitting_detail_columns(
-    sitting: Sitting, hansard_report_response: HansardReportNewResponse
-) -> None:
-    sitting.sections = get_json_column(hansard_report_response.takes_section_vo_list)
-    sitting.annexures = get_json_column(hansard_report_response.annexure_list)
-    sitting.vernaculars = get_json_column(hansard_report_response.vernacular_list)
-    sitting.a2b = get_json_column(hansard_report_response.a2b_list)
-
-
 def _write_window_rows(
     session: Session,
     fetched_window: FetchedWindow,
@@ -701,8 +691,6 @@ def _write_window_rows(
             hansard_report_response, sitting_date_key
         )
         sitting = build_sitting(hansard_sitting_date_response)
-        if isinstance(hansard_report_response, HansardReportNewResponse):
-            _set_sitting_detail_columns(sitting, hansard_report_response)
         hansard_sitting_date_responses.append(hansard_sitting_date_response)
         sittings.append(sitting)
     CRUDHansardSittingDateResponse(session).add_many(hansard_sitting_date_responses)

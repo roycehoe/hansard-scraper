@@ -8,6 +8,7 @@ from schemas.hansard_report_response import (
     HansardReportNewResponse,
     HansardReportOldResponse,
 )
+from utils.json_columns import get_json_column
 
 
 def _get_int(value: object, field_name: str, sitting_date: str) -> Optional[int]:
@@ -123,6 +124,10 @@ def build_new_hansard_sitting_date_response(
         ptba_start_pg_no=hansard_report_response.ptba_start_pg_no,
         atbp_start_pg_no=hansard_report_response.atbp_start_pg_no,
         online_pdf_file_name=hansard_report_response.online_pdf_file_name,
+        sections=get_json_column(hansard_report_response.takes_section_vo_list),
+        annexures=get_json_column(hansard_report_response.annexure_list),
+        vernaculars=get_json_column(hansard_report_response.vernacular_list),
+        a2b=get_json_column(hansard_report_response.a2b_list),
     )
 
 

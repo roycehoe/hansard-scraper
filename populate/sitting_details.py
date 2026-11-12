@@ -21,13 +21,10 @@ from services.hansard_sitting_date_response import (
 )
 from services.sitting import build_sitting
 from settings import settings
-from utils.json_columns import get_json_column
 from utils.sitting_dates import parse_sitting_date
 
 _HTTP_TIMEOUT_SECONDS = 120
-_SITTING_NESTED_COLUMNS = frozenset(
-    {"markdown_content", "sections", "annexures", "vernaculars", "a2b"}
-)
+_SITTING_NESTED_COLUMNS = frozenset({"markdown_content"})
 
 
 @dataclass(frozen=True)
@@ -136,18 +133,6 @@ def populate_sitting_details(session: Session) -> None:
             rebuilt_sitting.model_dump(exclude={"id"} | _SITTING_NESTED_COLUMNS),
             sitting_date,
         )
-        if sitting.sections is None:
-            sitting.sections = get_json_column(
-                hansard_report_response.takes_section_vo_list
-            )
-        if sitting.annexures is None:
-            sitting.annexures = get_json_column(hansard_report_response.annexure_list)
-        if sitting.vernaculars is None:
-            sitting.vernaculars = get_json_column(
-                hansard_report_response.vernacular_list
-            )
-        if sitting.a2b is None:
-            sitting.a2b = get_json_column(hansard_report_response.a2b_list)
         CRUDSitting(session).update(sitting)
         filled += 1
     session.commit()
