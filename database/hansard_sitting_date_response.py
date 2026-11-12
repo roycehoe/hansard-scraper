@@ -84,3 +84,9 @@ class HansardSittingDateResponse(SQLModel, table=True):
     clarification_title: Optional[str] = None
     clarification_sub_title: Optional[str] = None
     question_count: Optional[str] = None
+
+    # NOTE: filled by the new API format only: its nested lists as JSON text, null for an older-format sitting
+    sections: Optional[str] = None
+    annexures: Optional[str] = None
+    vernaculars: Optional[str] = None
+    a2b: Optional[str] = None
