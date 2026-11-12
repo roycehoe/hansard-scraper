@@ -43,7 +43,7 @@ from populate.attribution_figures import get_attribution_figures
 from populate.bill_speakers import populate_bill_speakers
 from populate.divisions import populate_divisions
 from populate.leave_periods import populate_leave_periods
-from populate.minutes import MinutesToReview, populate_minutes
+from populate.minutes import MinutesNotFetched, MinutesToReview, populate_minutes
 from populate.office_printed_ranges import populate_office_printed_ranges
 from populate.office_title_ministries import populate_office_title_ministries
 from populate.report_askers import populate_report_askers
@@ -91,6 +91,7 @@ from services.refresh import (
     build_held_report_message,
     build_late_sittings_message,
     build_many_held_reports_message,
+    build_minutes_not_fetched_message,
     build_minutes_to_review_message,
     build_new_parliament_reason,
     build_stale_report_links_message,
@@ -222,6 +223,7 @@ class RunResult:
     report_ids_with_unread_division_openings: list[int] = field(default_factory=list)
     held_sitting_dates: set[date] = field(default_factory=set)
     minutes_to_review: list[MinutesToReview] = field(default_factory=list)
+    minutes_not_fetched: list[MinutesNotFetched] = field(default_factory=list)
     minutes_index_failure: Optional[HansardError] = None
     label_to_row_count: dict[str, int] = field(default_factory=dict)
     late_sitting_dates: list[str] = field(default_factory=list)
@@ -903,6 +905,15 @@ def _send_success_alerts(run_result: RunResult) -> None:
                 minutes_to_review.sitting_date, minutes_to_review.status_note
             )
         )
+    if run_result.minutes_not_fetched:
+        _send_alert(
+            build_minutes_not_fetched_message(
+                {
+                    minutes_not_fetched.sitting_date: minutes_not_fetched.reason
+                    for minutes_not_fetched in run_result.minutes_not_fetched
+                }
+            )
+        )
     if is_held_report_count_over_limit(run_result.reports_held_without_text):
         _send_alert(
             build_many_held_reports_message(run_result.reports_held_without_text)
@@ -1027,6 +1038,7 @@ def populate_refresh_runs(
             run_result.minutes_index_failure = error
         else:
             run_result.minutes_to_review = minutes_step_result.minutes_to_review
+            run_result.minutes_not_fetched = minutes_step_result.minutes_not_fetched
             is_data_committed = (
                 is_data_committed
                 or minutes_step_result.rows_added

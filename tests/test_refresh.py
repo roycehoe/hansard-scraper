@@ -110,6 +110,7 @@ _MINUTES_FILE_ID = "minutes-file-id"
 _MINUTES_FILE_NAME = "VP-11Jan2018.pdf"
 _MINUTES_FILE_NUMBER = 57
 _MINUTES_ALERT_FRAGMENT = "Minutes of 11 January 2018 need review"
+_MINUTES_NOT_FETCHED_ALERT_FRAGMENT = "minutes files were listed but not fetched"
 _MINUTES_STEP_ALLOWED_STATEMENTS = frozenset(
     {
         ("SELECT", "minutes"),
@@ -1738,7 +1739,7 @@ def test_held_hit_dates_reach_the_minutes_step(
         session: Session, held_sitting_dates: set[date]
     ) -> MinutesStepResult:
         recorded_held_sitting_dates.append(held_sitting_dates)
-        return MinutesStepResult(0, 0, 0, [])
+        return MinutesStepResult(0, 0, 0, [], [])
 
     monkeypatch.setattr(refresh_runs, "populate_minutes", record_held_sitting_dates)
 
@@ -2141,6 +2142,38 @@ def test_an_unreadable_division_file_is_needs_review_with_no_division_rows(
     ]
     assert len(review_messages) == 1
     assert UNREAD_DIVISION_STATUS_NOTE in review_messages[0]
+
+
+def test_a_minutes_file_that_cannot_be_fetched_is_alerted_once_and_the_run_succeeds(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+) -> None:
+    seed_stored(scratch_session)
+    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 11))
+    scratch_session.commit()
+    _list_minutes_file(
+        fake_parliament, date(2018, 1, 11), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
+    )
+    fake_parliament.file_url_to_response.clear()
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    scratch_session.expire_all()
+    stored_minutes = scratch_session.exec(
+        select(Minutes).where(col(Minutes.sitting_date) == date(2018, 1, 11))
+    ).one()
+    assert stored_minutes.status == MinutesStatus.LISTED
+    not_fetched_messages = [
+        message
+        for message in alerts.messages
+        if _MINUTES_NOT_FETCHED_ALERT_FRAGMENT in message
+    ]
+    assert len(not_fetched_messages) == 1
+    assert "11 January 2018 (the request failed)" in not_fetched_messages[0]
 
 
 def test_statement_check_flags_an_update_of_a_column_outside_the_grant() -> None:

@@ -35,6 +35,7 @@ from services.minutes_text import (
 from settings import settings
 
 _HTTP_OK = 200
+_REQUEST_FAILED_NOTE = "the request failed"
 _WORD_FILE_NOTE = "The daily step reads PDF files only; this file is Word"
 
 
@@ -45,11 +46,18 @@ class MinutesToReview:
 
 
 @dataclass(frozen=True)
+class MinutesNotFetched:
+    sitting_date: date
+    reason: str
+
+
+@dataclass(frozen=True)
 class MinutesStepResult:
     rows_added: int
     rows_listed: int
     files_stored: int
     minutes_to_review: list[MinutesToReview]
+    minutes_not_fetched: list[MinutesNotFetched]
 
 
 @dataclass(frozen=True)
@@ -142,9 +150,7 @@ def _get_file_fields(content: bytes, sitting_date: date) -> _FileFields:
     )
 
 
-def _store_minutes_file(
-    session: Session, minutes: Minutes
-) -> Optional[StoredMinutesFile]:
+def _store_minutes_file(session: Session, minutes: Minutes) -> StoredMinutesFile:
     sitting_date = minutes.sitting_date
     minutes_id = minutes.id
     file_url = minutes.file_url
@@ -158,12 +164,14 @@ def _store_minutes_file(
         file_response = get_minutes_file_response(file_url)
     except HansardGatewayError as error:
         logger.warning(f"Minutes file for {sitting_date} not fetched: {error}")
-        return None
+        return StoredMinutesFile(MinutesStatus.LISTED, _REQUEST_FAILED_NOTE)
     if file_response.status_code != _HTTP_OK:
         logger.warning(
             f"Minutes file for {sitting_date} answered {file_response.status_code}"
         )
-        return None
+        return StoredMinutesFile(
+            MinutesStatus.LISTED, f"the file answered {file_response.status_code}"
+        )
     content = file_response.content
     file_fields = _get_file_fields(content, sitting_date)
     CRUDMinutes(session).set_file_by_id_and_status(
@@ -278,13 +286,16 @@ def populate_minutes(
     listing_result = _store_listing(session, index_page, report_dates)
     files_stored = 0
     minutes_to_review: list[MinutesToReview] = []
+    minutes_not_fetched: list[MinutesNotFetched] = []
     for listed_minutes in CRUDMinutes(session).get_by_statuses([MinutesStatus.LISTED]):
         sitting_date = listed_minutes.sitting_date
         if sitting_date not in report_dates or sitting_date in held_sitting_dates:
             continue
         stored_minutes_file = _store_minutes_file(session, listed_minutes)
-        if stored_minutes_file is None:
-            continue
+        if stored_minutes_file.status == MinutesStatus.LISTED:
+            minutes_not_fetched.append(
+                MinutesNotFetched(sitting_date, stored_minutes_file.status_note or "")
+            )
         if stored_minutes_file.status == MinutesStatus.TEXT_STORED:
             files_stored += 1
         if stored_minutes_file.status == MinutesStatus.NEEDS_REVIEW:
@@ -299,4 +310,5 @@ def populate_minutes(
         listing_result.rows_listed,
         files_stored,
         minutes_to_review,
+        minutes_not_fetched,
     )

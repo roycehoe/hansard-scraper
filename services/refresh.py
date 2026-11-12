@@ -241,6 +241,17 @@ def build_unread_division_openings_message(report_ids: list[int]) -> str:
     )
 
 
+def build_minutes_not_fetched_message(sitting_date_to_reason: dict[date, str]) -> str:
+    not_fetched_texts = [
+        f"{sitting_date:%d %B %Y} ({reason})"
+        for sitting_date, reason in sitting_date_to_reason.items()
+    ]
+    return (
+        f"{len(not_fetched_texts)} minutes files were listed but not fetched: {_get_capped_list_text(not_fetched_texts)}. "
+        "Each stays LISTED and the next run tries it again."
+    )
+
+
 def build_minutes_to_review_message(sitting_date: date, status_note: str) -> str:
     return f"Minutes of {sitting_date:%d %B %Y} need review: {status_note}"
 

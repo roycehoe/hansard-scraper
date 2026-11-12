@@ -258,11 +258,20 @@ def test_network_failure_and_non_200_leave_the_row_listed(
     _add_report(scratch_session, _PDF_DATE, "R1")
     _add_listed_minutes(scratch_session, _PDF_DATE, _FILE_URL)
 
-    for status_code in (None, _HTTP_NOT_FOUND, _HTTP_FORBIDDEN):
+    for status_code, expected_reason in (
+        (None, "the request failed"),
+        (_HTTP_NOT_FOUND, "the file answered 404"),
+        (_HTTP_FORBIDDEN, "the file answered 403"),
+    ):
         if status_code is not None:
             _answer_file(fake_parliament, _FILE_URL, b"", status_code)
 
         result = minutes_step.populate_minutes(scratch_session, set())
+
+        assert [
+            (minutes_not_fetched.sitting_date, minutes_not_fetched.reason)
+            for minutes_not_fetched in result.minutes_not_fetched
+        ] == [(_PDF_DATE, expected_reason)]
 
         stored_minutes = _get_minutes(scratch_session, _PDF_DATE)
         assert stored_minutes is not None

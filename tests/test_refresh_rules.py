@@ -12,6 +12,7 @@ from services.refresh import (
     build_field_mapping_reason,
     build_halt_message,
     build_held_report_message,
+    build_minutes_not_fetched_message,
     build_minutes_to_review_message,
     build_new_parliament_reason,
     build_stale_report_links_message,
@@ -316,6 +317,19 @@ def test_no_message_carries_an_em_dash_or_please() -> None:
     for message in messages:
         for forbidden_word in _FORBIDDEN_WORDS:
             assert forbidden_word not in message.lower()
+
+
+def test_minutes_not_fetched_message_names_each_date_and_reason() -> None:
+    assert build_minutes_not_fetched_message(
+        {
+            date(2018, 1, 11): "the file answered 404",
+            date(2018, 1, 12): "the request failed",
+        }
+    ) == (
+        "2 minutes files were listed but not fetched: "
+        "11 January 2018 (the file answered 404); 12 January 2018 (the request failed). "
+        "Each stays LISTED and the next run tries it again."
+    )
 
 
 def test_minutes_to_review_message_names_the_date_and_the_note() -> None:
