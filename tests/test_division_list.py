@@ -86,6 +86,16 @@ def test_30_august_1985_joins_a_name_continued_on_an_indented_line() -> None:
     _assert_fixture_is_stored("hansard_list_1985_08_30_indented_wraps")
 
 
+def test_18_december_1963_joins_a_cell_printed_left_of_its_column_to_the_name_before() -> (
+    None
+):
+    _assert_fixture_is_stored("hansard_list_1963_12_18_gutter_cell")
+
+
+def test_24_april_1958_reads_an_initial_b_after_a_comma_as_an_initial_not_bin() -> None:
+    _assert_fixture_is_stored("hansard_list_1958_04_24_initial_b")
+
+
 def test_10_january_1957_stores_absent_names_under_a_line_with_no_absent_count() -> (
     None
 ):
@@ -252,6 +262,35 @@ def test_a_nil_with_a_full_stop_and_a_misspelt_abstentions_heading_are_not_names
     assert _get_names(parsed_list) == [
         (DivisionVoteChoice.AYE, "Aa Bb"),
         (DivisionVoteChoice.AYE, "Cc Dd"),
+        (DivisionVoteChoice.ABSTAIN, "Ee Ff"),
+    ]
+
+
+def test_the_abstentation_heading_opens_the_abstentions_section() -> None:
+    html = _get_pre_html(
+        _OPENING,
+        "",
+        "  Ayes",
+        "",
+        "  Aa Bb",
+        "  Cc Dd",
+        "",
+        "  Noes",
+        "",
+        "  Gg Hh",
+        "",
+        "  Abstentation.",
+        "",
+        "  Ee Ff",
+    )
+
+    parsed_list = _get_list(html, 2, 1, abstentions=1)
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert _get_names(parsed_list) == [
+        (DivisionVoteChoice.AYE, "Aa Bb"),
+        (DivisionVoteChoice.AYE, "Cc Dd"),
+        (DivisionVoteChoice.NO, "Gg Hh"),
         (DivisionVoteChoice.ABSTAIN, "Ee Ff"),
     ]
 

@@ -1,0 +1,140 @@
+{
+ "why": "The initial B. in \"David, E. B.\" was read as the wrap word b (bin), so the next Absent name \"Ede, John.\" joined it; the line prints no Absent count to catch it (division 244, report 40376, 24 April 1958).",
+ "ayes": 16,
+ "noes": 0,
+ "abstentions": 1,
+ "absent": null,
+ "paired": null,
+ "division_index": 0,
+ "division_count": 1,
+ "expected_names": [
+  [
+   "AYE",
+   "Braga, A. J."
+  ],
+  [
+   "AYE",
+   "Chew Swee Kee."
+  ],
+  [
+   "AYE",
+   "Goh Chew Chua."
+  ],
+  [
+   "AYE",
+   "Jumabhoy, J. M."
+  ],
+  [
+   "ABSTAIN",
+   "Lim, R. C. H."
+  ],
+  [
+   "AYE",
+   "Lazarous, A. R."
+  ],
+  [
+   "AYE",
+   "Lee Choon Eng."
+  ],
+  [
+   "AYE",
+   "Lee Kuan Yew."
+  ],
+  [
+   "ABSENT",
+   "Abdul Hamid bin Haji Jumat."
+  ],
+  [
+   "AYE",
+   "Lim Choon Mong."
+  ],
+  [
+   "AYE",
+   "Lim Yew Hock."
+  ],
+  [
+   "ABSENT",
+   "Ahmad bin Ibrahim."
+  ],
+  [
+   "AYE",
+   "Mak Pak Shee."
+  ],
+  [
+   "ABSENT",
+   "David, E. B."
+  ],
+  [
+   "AYE",
+   "Mohd. Sidik bin Haji Abdul Hamid."
+  ],
+  [
+   "ABSENT",
+   "Ede, John."
+  ],
+  [
+   "ABSENT",
+   "Goh Tong Liang."
+  ],
+  [
+   "AYE",
+   "Nair, M. P. D."
+  ],
+  [
+   "ABSENT",
+   "Hart, T. M."
+  ],
+  [
+   "AYE",
+   "Soh Ghee Soon."
+  ],
+  [
+   "ABSENT",
+   "Jumabhoy, R."
+  ],
+  [
+   "AYE",
+   "Tan Theng Chiang."
+  ],
+  [
+   "ABSENT",
+   "Lim Cher Kheng."
+  ],
+  [
+   "AYE",
+   "Tan, William."
+  ],
+  [
+   "ABSENT",
+   "Lim Ching Siong."
+  ],
+  [
+   "AYE",
+   "Thomas, Francis."
+  ],
+  [
+   "ABSENT",
+   "Lim Koon Teck."
+  ],
+  [
+   "ABSENT",
+   "Seah Peng Chuan."
+  ],
+  [
+   "ABSENT",
+   "Shanks, E. P."
+  ],
+  [
+   "ABSENT",
+   "Sutherland, G. A. P."
+  ],
+  [
+   "ABSENT",
+   "Tan Siak Kew."
+  ],
+  [
+   "ABSENT",
+   "Wong Foo Nam."
+  ]
+ ]
+}

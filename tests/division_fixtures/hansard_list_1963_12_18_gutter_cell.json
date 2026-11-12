@@ -1,0 +1,212 @@
+{
+ "why": "A name printed with wide gaps inside it (\"Chan   Choy   Siong,\") left its last word nearer the Noes column than the Ayes column, so \"Siong,\" joined the Noes name \"Kow Kee Seng\" and the counts still matched (division 136, report 38269, 18 December 1963, the report's second division).",
+ "ayes": 27,
+ "noes": 7,
+ "abstentions": 1,
+ "absent": 15,
+ "paired": null,
+ "division_index": 0,
+ "division_count": 1,
+ "expected_names": [
+  [
+   "AYE",
+   "A. Rahim Ishak"
+  ],
+  [
+   "NO",
+   "Chia Thye Poh"
+  ],
+  [
+   "AYE",
+   "Buang Bin Omar Junid"
+  ],
+  [
+   "NO",
+   "Chio Cheng Thun"
+  ],
+  [
+   "AYE",
+   "Chan Chee Seng"
+  ],
+  [
+   "NO",
+   "Koo Young"
+  ],
+  [
+   "AYE",
+   "Chan Choy Siong, Madam"
+  ],
+  [
+   "NO",
+   "Kow Kee Seng"
+  ],
+  [
+   "NO",
+   "Ong Lian Teng"
+  ],
+  [
+   "AYE",
+   "Chow Chiok Hock"
+  ],
+  [
+   "NO",
+   "Poh Ber Liak"
+  ],
+  [
+   "AYE",
+   "Fong Sip Chee"
+  ],
+  [
+   "NO",
+   "Tan Cheng Tong"
+  ],
+  [
+   "AYE",
+   "Gonzales, R. A."
+  ],
+  [
+   "AYE",
+   "Govindasamy, P."
+  ],
+  [
+   "AYE",
+   "Ho Cheng Choon"
+  ],
+  [
+   "AYE",
+   "Jek Yeun Thong"
+  ],
+  [
+   "ABSTAIN",
+   "Barker, E. W."
+  ],
+  [
+   "AYE",
+   "Lee Teck Him"
+  ],
+  [
+   "AYE",
+   "Lim Cheng Lock"
+  ],
+  [
+   "AYE",
+   "Lim Kim San"
+  ],
+  [
+   "ABSENT",
+   "Bani, S. T."
+  ],
+  [
+   "AYE",
+   "Mahmud Awang"
+  ],
+  [
+   "ABSENT",
+   "Chan Sun Wing"
+  ],
+  [
+   "AYE",
+   "Ng Kah Ting"
+  ],
+  [
+   "ABSENT",
+   "Fong Kim Heng"
+  ],
+  [
+   "AYE",
+   "Ng Yeow Chong"
+  ],
+  [
+   "ABSENT",
+   "Goh Keng Swee"
+  ],
+  [
+   "AYE",
+   "Ong Pang Boon"
+  ],
+  [
+   "ABSENT",
+   "Ho See Beng"
+  ],
+  [
+   "AYE",
+   "Othman Bin Wok"
+  ],
+  [
+   "ABSENT",
+   "Lee Kuan Yew"
+  ],
+  [
+   "AYE",
+   "Rahamat Bin Kenap"
+  ],
+  [
+   "ABSENT",
+   "Lim Huan Boon"
+  ],
+  [
+   "AYE",
+   "Rajoo, S."
+  ],
+  [
+   "ABSENT",
+   "Lingam, S. V."
+  ],
+  [
+   "AYE",
+   "Rodrigues, Bernard"
+  ],
+  [
+   "ABSENT",
+   "Loh Miaw Gong, Miss"
+  ],
+  [
+   "AYE",
+   "Sia Kah Hui"
+  ],
+  [
+   "AYE",
+   "Sim Boon Woo"
+  ],
+  [
+   "ABSENT",
+   "Mohd.Ariff Bin Suradi"
+  ],
+  [
+   "AYE",
+   "Teong Eng Siong"
+  ],
+  [
+   "ABSENT",
+   "Nair, Mrs. Devan"
+  ],
+  [
+   "AYE",
+   "Toh Chin Chye"
+  ],
+  [
+   "ABSENT",
+   "Ong Eng Guan"
+  ],
+  [
+   "AYE",
+   "Wee Toon Boon"
+  ],
+  [
+   "ABSENT",
+   "Rajaratnam, S"
+  ],
+  [
+   "AYE",
+   "Yong Nyuk Lin"
+  ],
+  [
+   "ABSENT",
+   "Wong Soon Fong."
+  ],
+  [
+   "ABSENT",
+   "Yaacob Bin Mohamed Al-Haj."
+  ]
+ ]
+}

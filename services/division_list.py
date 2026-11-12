@@ -16,7 +16,7 @@ _OPENING_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _HEADING_CELL_PATTERN = re.compile(
-    r"^_?(Ayes|Noes|No|Abstentions?|Absention|Abstentations|Absent|Paired)_?[.:]?(?:[- ]*\(?(?:contd|cont|continued)\.?\)?)?[.:]?_?$",
+    r"^_?(Ayes|Noes|No|Abstentions?|Absention|Abstentations?|Absent|Paired)_?[.:]?(?:[- ]*\(?(?:contd|cont|continued)\.?\)?)?[.:]?_?$",
     re.IGNORECASE,
 )
 _HEADING_WITH_NAME_PATTERN = re.compile(
@@ -26,11 +26,16 @@ _CELL_PATTERN = re.compile(r"\S+(?: \S+)*")
 _MARKER_PATTERN = re.compile(r"^(?:Column|Page)\s*:?\s*\d+$", re.IGNORECASE)
 _NOISE_CELL_PATTERN = re.compile(r"^[-_–—\s]*$")
 _GLUED_HEADING_OR_NIL_PATTERN = re.compile(
-    r"\.\s+(?:Ayes|Noes|No|Abstentions?|Absention|Abstentations|Absent|Paired|Nil)\.?$",
+    r"\.\s+(?:Ayes|Noes|No|Abstentions?|Absention|Abstentations?|Absent|Paired|Nil)\.?$",
     re.IGNORECASE,
 )
 _NIL = "nil"
 _WRAP_WORDS = frozenset({"bin", "binte", "bte", "bt", "b", "s/o", "d/o"})
+_BIN_ABBREVIATION = "b"
+_INITIALS_SEPARATOR = ","
+_MAX_CELL_LEAD_BEFORE_COLUMN = 3
+_MAX_SPACES_INSIDE_NAME = 4
+_TAB = "\t"
 _TITLE_CELLS = frozenset({"madam", "miss", "mrs", "mr", "dr"})
 _HEADING_WORD_TO_VOTE_CHOICE = {
     "ayes": DivisionVoteChoice.AYE,
@@ -39,6 +44,7 @@ _HEADING_WORD_TO_VOTE_CHOICE = {
     "abstention": DivisionVoteChoice.ABSTAIN,
     "abstentions": DivisionVoteChoice.ABSTAIN,
     "absention": DivisionVoteChoice.ABSTAIN,
+    "abstentation": DivisionVoteChoice.ABSTAIN,
     "abstentations": DivisionVoteChoice.ABSTAIN,
     "absent": DivisionVoteChoice.ABSENT,
     "paired": DivisionVoteChoice.PAIRED,
@@ -92,6 +98,7 @@ class _PreCell:
     column: int
     text: str
     offset: int
+    end: int
 
 
 @dataclass(frozen=True)
@@ -250,6 +257,13 @@ def _get_last_word(name: str) -> str:
     return name.split()[-1].rstrip(".").lower()
 
 
+def _is_wrap_open(name: str) -> bool:
+    last_word = _get_last_word(name)
+    if last_word == _BIN_ABBREVIATION and _INITIALS_SEPARATOR in name:
+        return False
+    return last_word in _WRAP_WORDS
+
+
 def _set_section(state: _ListState, column: int, heading_word: str) -> None:
     state.column_to_section[column] = _HEADING_WORD_TO_VOTE_CHOICE[heading_word.lower()]
     state.column_to_name_index.pop(column, None)
@@ -294,7 +308,7 @@ def _add_cell(
             previous_name.printed_name = f"{previous_name.printed_name} {cell}"
             previous_name.is_wrap_open = False
             return
-    state.names.append(_NameDraft(cell, section, _get_last_word(cell) in _WRAP_WORDS))
+    state.names.append(_NameDraft(cell, section, _is_wrap_open(cell)))
     state.column_to_name_index[column] = len(state.names) - 1
 
 
@@ -352,18 +366,49 @@ def _get_nearest_column(offset: int, column_starts: list[int]) -> Optional[int]:
     return distances.index(nearest_distance)
 
 
+def _get_cell_column(
+    line: str,
+    line_cell: _PreLineCell,
+    column_starts: list[int],
+    previous_pre_cell: Optional[_PreCell],
+) -> Optional[int]:
+    column = _get_nearest_column(line_cell.offset, column_starts)
+    if column is None:
+        return None
+    if previous_pre_cell is None:
+        return column
+    if column != previous_pre_cell.column + 1:
+        return column
+    gap = line[previous_pre_cell.end : line_cell.offset]
+    if _TAB in gap:
+        return column
+    if len(gap) > _MAX_SPACES_INSIDE_NAME:
+        return column
+    if line_cell.offset >= column_starts[column] - _MAX_CELL_LEAD_BEFORE_COLUMN:
+        return column
+    return previous_pre_cell.column
+
+
 def _get_row_pre_cells(line: str, column_starts: list[int]) -> Optional[list[_PreCell]]:
     pre_cells: list[_PreCell] = []
     for line_cell in _get_pre_row_cells(line):
-        column = _get_nearest_column(line_cell.offset, column_starts)
+        column = _get_cell_column(
+            line, line_cell, column_starts, pre_cells[-1] if pre_cells else None
+        )
         if column is None:
             return None
+        line_cell_end = line_cell.offset + len(line_cell.text)
         if pre_cells and pre_cells[-1].column == column:
             pre_cells[-1] = _PreCell(
-                column, f"{pre_cells[-1].text} {line_cell.text}", pre_cells[-1].offset
+                column,
+                f"{pre_cells[-1].text} {line_cell.text}",
+                pre_cells[-1].offset,
+                line_cell_end,
             )
             continue
-        pre_cells.append(_PreCell(column, line_cell.text, line_cell.offset))
+        pre_cells.append(
+            _PreCell(column, line_cell.text, line_cell.offset, line_cell_end)
+        )
     return pre_cells
 
 
