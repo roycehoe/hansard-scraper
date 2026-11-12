@@ -9,7 +9,7 @@ from services.leave_section import (
     build_leave_entries_from_markdown,
     get_leave_sections,
 )
-from utils.data_files import get_leave_date_misprints
+from utils.data_files import get_leave_date_misprints, get_leave_heading_years
 from utils.leave_entry import LeaveDates, LeaveEntry
 
 _LEAVE_DATE_MISPRINT_COUNT = 44
@@ -261,7 +261,10 @@ _SITTING_DATE = date(1977, 6, 8)
 
 def _build_entries(*lines: str, sitting_date: date = _SITTING_DATE) -> list[LeaveEntry]:
     return build_leave_entries_from_markdown(
-        _get_markdown(_HEADING, *lines), sitting_date, get_leave_date_misprints()
+        _get_markdown(_HEADING, *lines),
+        sitting_date,
+        get_leave_date_misprints(),
+        get_leave_heading_years(),
     )
 
 
@@ -684,7 +687,10 @@ def test_ordinals_run_across_sections() -> None:
     )
 
     leave_entries = build_leave_entries_from_markdown(
-        markdown_content, _SITTING_DATE, get_leave_date_misprints()
+        markdown_content,
+        _SITTING_DATE,
+        get_leave_date_misprints(),
+        get_leave_heading_years(),
     )
 
     assert [leave_entry.ordinal for leave_entry in leave_entries] == [1, 2]
@@ -1594,3 +1600,39 @@ def test_every_printing_of_a_line_carries_its_office() -> None:
         "Minister for Law",
         "Minister for Law",
     ]
+
+
+def test_a_one_year_heading_offers_that_year_and_the_year_before() -> None:
+    leave_entries = _build_entries(
+        "| (2004)| (2004)",
+        "Mr A| 20 Dec| 31 Dec",
+        "| 2 Jan| 4 Jan",
+        sitting_date=date(2004, 1, 5),
+    )
+
+    assert _get_date_pairs(leave_entries) == [
+        (date(2003, 12, 20), date(2003, 12, 31)),
+        (date(2004, 1, 2), date(2004, 1, 4)),
+    ]
+    assert leave_entries[0].year_source == LeaveYearSource.PRINTED_COLUMN_HEADING
+
+
+def test_a_two_year_heading_offers_only_its_own_years() -> None:
+    leave_entries = _build_entries(
+        "| (2003)| (2004)",
+        "Mr A| 20 Dec| 31 Dec",
+        sitting_date=date(2005, 1, 5),
+    )
+
+    assert _get_date_pairs(leave_entries) == [(date(2004, 12, 20), date(2004, 12, 31))]
+
+
+def test_a_hand_kept_heading_year_is_the_only_year_offered() -> None:
+    leave_entries = _build_entries(
+        "| (2006)| (2006)",
+        "Mr A| 20 Oct| 31 Oct",
+        sitting_date=date(2005, 11, 21),
+    )
+
+    assert _get_date_pairs(leave_entries) == [(date(2005, 10, 20), date(2005, 10, 31))]
+    assert leave_entries[0].printed_heading_from == "(2006)"

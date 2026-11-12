@@ -1,0 +1,38 @@
+[
+  {
+    "sitting_date": "2005-09-19",
+    "printed_heading": "(2006)",
+    "year": 2005,
+    "reason": "The list prints 2006 over leaves of 2005; the members it names were absent on 29 of 42 rows inside the periods read in 2005."
+  },
+  {
+    "sitting_date": "2005-10-17",
+    "printed_heading": "(2006)",
+    "year": 2005,
+    "reason": "The list prints 2006 over leaves of 2005; the members it names were absent on 25 of 33 rows inside the periods read in 2005."
+  },
+  {
+    "sitting_date": "2005-11-21",
+    "printed_heading": "(2006)",
+    "year": 2005,
+    "reason": "The list prints 2006 over leaves of 2005; the members it names were absent on 14 of 17 rows inside the periods read in 2005."
+  },
+  {
+    "sitting_date": "2006-11-08",
+    "printed_heading": "(2007)",
+    "year": 2006,
+    "reason": "The list prints 2007 over leaves of 2006; the members it names were absent on 7 of 9 rows inside the periods read in 2006."
+  },
+  {
+    "sitting_date": "2003-01-20",
+    "printed_heading": "(2002",
+    "year": 2003,
+    "reason": "The list prints 2002 over leaves of 2003; the members it names were absent on 24 of 24 rows inside the periods read in 2003."
+  },
+  {
+    "sitting_date": "2001-02-23",
+    "printed_heading": "(2000)",
+    "year": 2001,
+    "reason": "The list prints 2000 over a sitting of 2001, and the leaves read as 2001."
+  }
+]

@@ -5,6 +5,7 @@ from typing import Optional
 
 from enums import LeaveEntryFormat, LeaveNameSource, LeaveYearSource
 from schemas.leave_date_misprint import LeaveDateMisprint
+from schemas.leave_heading_year import LeaveHeadingYear
 from utils.leave_entry import (
     MONTH_NAME_TO_NUMBER,
     DayAndMonth,
@@ -936,6 +937,22 @@ def _get_table_heading(heading_text: str) -> _TableHeading:
     )
 
 
+def _get_offered_years(
+    heading: _TableHeading,
+    sitting_date: date,
+    leave_heading_years: list[LeaveHeadingYear],
+) -> list[int]:
+    for leave_heading_year in leave_heading_years:
+        if (
+            leave_heading_year.sitting_date == sitting_date
+            and leave_heading_year.printed_heading == heading.printed_from
+        ):
+            return [leave_heading_year.year]
+    if len(heading.years) != 1:
+        return heading.years
+    return [heading.years[0] - 1, heading.years[0]]
+
+
 def _take_table_row_name(
     table_section: _TableSection, name: Optional[str]
 ) -> _TableRowName:
@@ -1080,6 +1097,7 @@ def _parse_table_entries(
     table_section: _TableSection,
     sitting_date: date,
     leave_date_misprints: list[LeaveDateMisprint],
+    leave_heading_years: list[LeaveHeadingYear],
 ) -> Optional[list[LeaveEntry]]:
     reading_line = apply_leave_date_misprints(printed_line, leave_date_misprints)
     row_match = _TABLE_ROW_RE.match(reading_line)
@@ -1089,6 +1107,7 @@ def _parse_table_entries(
         table_section.is_row_seen = True
         heading = _get_table_heading(table_section.heading_text)
         row_name = _take_table_row_name(table_section, row_match.group("name"))
+        offered_years = _get_offered_years(heading, sitting_date, leave_heading_years)
         table_ranges = [_FIRST_TABLE_RANGE]
         if row_match.groupdict().get(_SECOND_TABLE_RANGE[0]) is not None:
             table_ranges.append(_SECOND_TABLE_RANGE)
@@ -1105,7 +1124,7 @@ def _parse_table_entries(
                     printed_line,
                     reading_line,
                     sitting_date,
-                    heading.years,
+                    offered_years,
                 ),
             )
             for range_index, (from_group, to_group) in enumerate(table_ranges)
@@ -1233,6 +1252,7 @@ def build_leave_entries_from_markdown(
     markdown_content: str,
     sitting_date: date,
     leave_date_misprints: list[LeaveDateMisprint],
+    leave_heading_years: list[LeaveHeadingYear],
 ) -> list[LeaveEntry]:
     leave_entries: list[LeaveEntry] = []
     for section_lines in get_leave_sections(markdown_content):
@@ -1253,6 +1273,7 @@ def build_leave_entries_from_markdown(
                 table_section,
                 sitting_date,
                 leave_date_misprints,
+                leave_heading_years,
             )
             if table_entries is not None:
                 leave_entries.extend(table_entries)

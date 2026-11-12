@@ -597,7 +597,8 @@ def test_an_office_printed_on_the_entry_comes_before_the_attendance_entry(
         "populate.leave_periods._get_leave_entries",
         lambda sitting_leave_text_row,
         sitting_date,
-        leave_date_misprints: older_entries,
+        leave_date_misprints,
+        leave_heading_years: older_entries,
     )
 
     apply_leave_periods(is_commit=True)

@@ -17,6 +17,7 @@ from schemas.hand_kept_bill import HandKeptBill, HandKeptBills
 from schemas.hand_kept_member import HandKeptMember, HandKeptMembers
 from schemas.head_of_state import HeadOfStateResult, HeadsOfState
 from schemas.leave_date_misprint import LeaveDateMisprint, LeaveDateMisprints
+from schemas.leave_heading_year import LeaveHeadingYear, LeaveHeadingYears
 from schemas.ministry_list import (
     MinistryNames,
     MinistrySeeAlsoEntries,
@@ -67,6 +68,7 @@ _OFFICE_CHECK_MINISTERS_FILE = _DATA_DIRECTORY / "office_check_ministers.json"
 _REPORT_LINK_TITLE_CORRECTIONS_FILE = (
     _DATA_DIRECTORY / "report_link_title_corrections.json"
 )
+_LEAVE_HEADING_YEARS_FILE = _DATA_DIRECTORY / "leave_heading_years.json"
 _LEAVE_DATE_MISPRINTS_FILE = _DATA_DIRECTORY / "leave_date_misprints.json"
 
 _SchemaT = TypeVar("_SchemaT", bound=BaseModel)
@@ -167,3 +169,7 @@ def get_report_link_title_corrections() -> list[ReportLinkTitleCorrection]:
 
 def get_leave_date_misprints() -> list[LeaveDateMisprint]:
     return _get_data_file(_LEAVE_DATE_MISPRINTS_FILE, LeaveDateMisprints).root
+
+
+def get_leave_heading_years() -> list[LeaveHeadingYear]:
+    return _get_data_file(_LEAVE_HEADING_YEARS_FILE, LeaveHeadingYears).root

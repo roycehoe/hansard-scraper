@@ -23,6 +23,7 @@ from schemas.hand_kept_bill import HandKeptBills
 from schemas.hand_kept_member import HandKeptMember, HandKeptMembers
 from schemas.head_of_state import HeadOfStateResult, HeadsOfState
 from schemas.leave_date_misprint import LeaveDateMisprints
+from schemas.leave_heading_year import LeaveHeadingYears
 from schemas.ministry_list import MinistrySeeAlsoEntries, OfficeTitleMinistryEntries
 from schemas.party_affiliation import PartyAffiliationMemberships
 from schemas.person_decision import PersonDecision, PersonDecisions
@@ -41,6 +42,7 @@ from utils.data_files import (
     get_hand_kept_bills,
     get_heads_of_state,
     get_leave_date_misprints,
+    get_leave_heading_years,
     get_ministry_names,
     get_ministry_see_also,
     get_office_title_ministries,
@@ -65,6 +67,7 @@ _DATA_FILE_SCHEMAS = (
     ("hand_kept_bills.json", HandKeptBills),
     ("heads_of_state.json", HeadsOfState),
     ("leave_date_misprints.json", LeaveDateMisprints),
+    ("leave_heading_years.json", LeaveHeadingYears),
     ("ministry_see_also.json", MinistrySeeAlsoEntries),
     ("office_title_ministries.json", OfficeTitleMinistryEntries),
     ("party_affiliations.json", PartyAffiliationMemberships),
@@ -86,6 +89,7 @@ _DATA_FILE_GETTERS = (
     get_hand_kept_bills,
     get_heads_of_state,
     get_leave_date_misprints,
+    get_leave_heading_years,
     get_ministry_names,
     get_office_title_ministries,
     get_party_affiliations,
