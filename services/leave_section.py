@@ -1,5 +1,5 @@
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, timedelta
 from typing import Optional
 
@@ -74,8 +74,10 @@ _WEEK_UNIT = "week"
 _MONTH_UNIT = "month"
 _DAYS_IN_WEEK = 7
 _MONTHS_IN_YEAR = 12
+_DURATION_COUNT_PATTERN = rf"(?:for\s+(?:a\s+period\s+of\s+)?)?(?P<count>\d+|{_NUMBER_WORD_PATTERN})\s+(?P<unit>day|week|month|year)s?,?\s+"
+_DURATION_COUNT_RE = re.compile(_DURATION_COUNT_PATTERN, re.IGNORECASE)
 _DURATION_RE = re.compile(
-    rf"(?:for\s+(?:a\s+period\s+of\s+)?)?(?P<count>\d+|{_NUMBER_WORD_PATTERN})\s+(?P<unit>day|week|month|year)s?,?\s+from\s+(?P<day>{_DAY_PATTERN})\s+(?P<month>{_MONTH_PATTERN}),?\s*(?P<year>\d{{4}})",
+    rf"{_DURATION_COUNT_PATTERN}(?:commencing\s+)?from\s+(?:the\s+)?(?P<day>{_DAY_PATTERN})(?:\s+of)?\s+(?P<month>{_MONTH_PATTERN}),?\s*(?P<year>\d{{4}})",
     re.IGNORECASE,
 )
 _FROM_ONLY_RE = re.compile(
@@ -673,19 +675,46 @@ def _get_start_date_printing(
     )
 
 
+def _get_rest_parts(
+    entry_parts: _ProseEntryParts, skipped_length: int
+) -> _ProseEntryParts:
+    return replace(
+        entry_parts,
+        date_text=entry_parts.date_text[skipped_length:],
+        date_text_offset=entry_parts.date_text_offset + skipped_length,
+    )
+
+
 def _get_duration_printings(
-    entry_parts: _ProseEntryParts,
+    entry_parts: _ProseEntryParts, sitting_date: date
 ) -> Optional[list[_PrintingDates]]:
     duration_match = _DURATION_RE.match(entry_parts.date_text)
     if duration_match is None:
         return None
-    if _has_date_text_left(entry_parts.date_text, [duration_match]):
+    duration_printing = _get_start_date_printing(
+        entry_parts, duration_match, _get_duration_leave_dates(duration_match)
+    )
+    if not _has_date_text_left(entry_parts.date_text, [duration_match]):
+        return [duration_printing]
+    range_printings = _get_range_printings(
+        _get_rest_parts(entry_parts, duration_match.end()), sitting_date
+    )
+    if range_printings is None:
         return None
-    return [
-        _get_start_date_printing(
-            entry_parts, duration_match, _get_duration_leave_dates(duration_match)
-        )
-    ]
+    return [duration_printing, *range_printings]
+
+
+def _get_count_free_printings(
+    entry_parts: _ProseEntryParts, sitting_date: date
+) -> Optional[list[_PrintingDates]]:
+    count_match = _DURATION_COUNT_RE.match(entry_parts.date_text)
+    if count_match is None:
+        return None
+    count_free_parts = _get_rest_parts(entry_parts, count_match.end())
+    range_printings = _get_range_printings(count_free_parts, sitting_date)
+    if range_printings is not None:
+        return range_printings
+    return _get_day_list_printings(count_free_parts)
 
 
 def _get_from_only_printings(
@@ -771,12 +800,15 @@ def _get_prose_printings(
     single_day_printings = _get_single_day_printings(entry_parts)
     if single_day_printings is not None:
         return single_day_printings
-    duration_printings = _get_duration_printings(entry_parts)
+    duration_printings = _get_duration_printings(entry_parts, sitting_date)
     if duration_printings is not None:
         return duration_printings
     from_only_printings = _get_from_only_printings(entry_parts)
     if from_only_printings is not None:
         return from_only_printings
+    count_free_printings = _get_count_free_printings(entry_parts, sitting_date)
+    if count_free_printings is not None:
+        return count_free_printings
     mixed_printings = _get_mixed_printings(entry_parts, sitting_date)
     if mixed_printings is not None:
         return mixed_printings

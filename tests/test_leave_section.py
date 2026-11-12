@@ -858,6 +858,97 @@ def test_a_duration_is_counted_from_its_start_day(
     assert leave_entry.printed_line == line
 
 
+@pytest.mark.parametrize(
+    ("line", "start_date", "end_date"),
+    [
+        (
+            "Mr M. P. D. Nair - six weeks, commencing from the 29th of November, 1955.",
+            date(1955, 11, 29),
+            date(1956, 1, 9),
+        ),
+        (
+            "Mr R. Jumabhoy - seven weeks, from the 7th of December, 1955.",
+            date(1955, 12, 7),
+            date(1956, 1, 24),
+        ),
+        (
+            "Mr Wong Foo Nam - 20 days, from the 19th of December, 1955.",
+            date(1955, 12, 19),
+            date(1956, 1, 7),
+        ),
+        (
+            "Mr A. R. Lazarous - one month, from the 9th of January, 1956.",
+            date(1956, 1, 9),
+            date(1956, 2, 8),
+        ),
+        (
+            "Inche Buang Bin Omar Junid (Kallang) - one month from 13th, August, 1960.",
+            date(1960, 8, 13),
+            date(1960, 9, 12),
+        ),
+    ],
+)
+def test_a_duration_in_the_older_wordings_is_counted(
+    line: str, start_date: date, end_date: date
+) -> None:
+    leave_entries = _build_entries(line)
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.PROSE_DURATION]
+    assert leave_entries[0].leave_dates == LeaveDates(start_date, end_date)
+
+
+@pytest.mark.parametrize(
+    ("line", "expected_dates"),
+    [
+        (
+            "Dr Sheng Nam Chin (Nee Soon) - two weeks from 13th to 27th October, 1960.",
+            [(date(1960, 10, 13), date(1960, 10, 27))],
+        ),
+        (
+            "Mr G. Kandasamy (Kampong Kapor), Deputy Speaker, - for seven weeks from 4th June to 23rd July, 1961.",
+            [(date(1961, 6, 4), date(1961, 7, 23))],
+        ),
+        (
+            "Mr David S. Marshall - two days, 5th and 6th March, 1957.",
+            [
+                (date(1957, 3, 5), date(1957, 3, 5)),
+                (date(1957, 3, 6), date(1957, 3, 6)),
+            ],
+        ),
+    ],
+)
+def test_a_count_before_a_printed_range_or_day_list_is_dropped(
+    line: str, expected_dates: list[tuple[date, date]]
+) -> None:
+    leave_entries = _build_entries(line)
+
+    assert _get_date_pairs(leave_entries) == expected_dates
+    assert LeaveEntryFormat.UNREAD not in _get_formats(leave_entries)
+
+
+def test_a_duration_and_a_range_on_one_line_make_two_printings() -> None:
+    leave_entries = _build_entries(
+        "Tun Lim Yew Hock (Cairnhill) - three weeks from 12th August, 1960; and from 21st to 26th September, 1960."
+    )
+
+    assert _get_formats(leave_entries) == [
+        LeaveEntryFormat.PROSE_DURATION,
+        LeaveEntryFormat.PROSE_RANGE,
+    ]
+    assert _get_date_pairs(leave_entries) == [
+        (date(1960, 8, 12), date(1960, 9, 1)),
+        (date(1960, 9, 21), date(1960, 9, 26)),
+    ]
+    assert leave_entries[1].printed_to == "26th September, 1960"
+
+
+def test_a_duration_with_no_year_stays_unread() -> None:
+    leave_entries = _build_entries("Mr Ong Piah Teng - for one month from 17th August.")
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.UNREAD]
+    assert leave_entries[0].printed_name == "Mr Ong Piah Teng"
+
+
 def test_a_duration_keeps_the_start_date_text_and_the_words_in_the_line() -> None:
     leave_entries = _build_entries("Mr X - for 8 weeks from 7th April, 1956")
 
@@ -891,7 +982,7 @@ def test_a_from_only_entry_with_a_day_that_does_not_exist_is_unread() -> None:
 
 def test_a_duration_with_text_left_over_is_unread() -> None:
     leave_entries = _build_entries(
-        "Mr X - three weeks from 12th August, 1960; and from 21st to 26th September, 1960."
+        "Mr X - three weeks from 12th August, 1960; and the first week in October."
     )
 
     assert _get_formats(leave_entries) == [LeaveEntryFormat.UNREAD]
