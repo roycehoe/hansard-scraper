@@ -291,7 +291,7 @@ One row per recorded vote. The counts come from the line the Hansard prints ("Th
 
 ### Minutes
 
-One row per sitting date: the Votes and Proceedings file that records what the House did at the sitting, divisions included. The text is kept as the extractor returned it and the bytes are not stored; see [ADR NNNN](adr/NNNN-minutes-kept-as-address-hash-and-text.md). `status` is one of `NOT_YET_LISTED` (a sitting with no file listed yet), `LISTED` (the index lists a file and its text is not stored yet), `TEXT_STORED`, `FILE_NOT_FOUND` and `NEEDS_REVIEW` (the file could not be read, or is a Word file; `status_note` says why). Each row comes from the live index page, an Internet Archive capture of the index (`MinutesIndexCapture`, kept as received) or an archived file listing, and `index_source` says which.
+One row per sitting date: the Votes and Proceedings file that records what the House did at the sitting, divisions included. The text is kept as the extractor returned it and the bytes are not stored; see [ADR 0021](adr/0021-minutes-kept-as-address-hash-and-text.md). `status` is one of `NOT_YET_LISTED` (a sitting with no file listed yet), `LISTED` (the index lists a file and its text is not stored yet), `TEXT_STORED`, `FILE_NOT_FOUND` and `NEEDS_REVIEW` (the file could not be read, or is a Word file; `status_note` says why). Each row comes from the live index page, an Internet Archive capture of the index (`MinutesIndexCapture`, kept as received) or an archived file listing, and `index_source` says which.
 
 | Field | Type | Meaning |
 |---|---|---|

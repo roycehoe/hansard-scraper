@@ -1,4 +1,4 @@
-# NNNN. Minutes are kept as address, hash and extracted text
+# 0021. Minutes are kept as address, hash and extracted text
 
 Status: proposed, 9 November 2026. From gate 2 of the votes and minutes plan (`plans/votes-and-minutes.md`). Royce confirms it, or drops it by adding a column for the daily files (see Consequences).
 
