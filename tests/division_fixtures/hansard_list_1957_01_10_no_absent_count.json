@@ -1,0 +1,140 @@
+{
+ "why": "One report with two pre blocks; the count line prints Ayes, Noes and Abstentions, Nil but no Absent count, over five Absent names (report 40980, 10 January 1957).",
+ "ayes": 7,
+ "noes": 20,
+ "abstentions": 0,
+ "absent": null,
+ "paired": null,
+ "division_index": 0,
+ "division_count": 1,
+ "expected_names": [
+  [
+   "AYE",
+   "Goh Tong Liang"
+  ],
+  [
+   "NO",
+   "Abdul Hamid Bin Haji Jumat"
+  ],
+  [
+   "AYE",
+   "Jumabhoy, R."
+  ],
+  [
+   "NO",
+   "Ahmad Bin Ibrahim"
+  ],
+  [
+   "AYE",
+   "Lee Choon Eng"
+  ],
+  [
+   "NO",
+   "A. J. Braga"
+  ],
+  [
+   "AYE",
+   "Lim Cher Kheng"
+  ],
+  [
+   "NO",
+   "Butterfield, C. H."
+  ],
+  [
+   "AYE",
+   "Lim Choon Mong"
+  ],
+  [
+   "NO",
+   "Chew Swee Kee"
+  ],
+  [
+   "AYE",
+   "Lim Koon Teck"
+  ],
+  [
+   "NO",
+   "Goh Chew Chua"
+  ],
+  [
+   "AYE",
+   "Tan, William"
+  ],
+  [
+   "NO",
+   "Goode, W. A. C."
+  ],
+  [
+   "NO",
+   "Hart, T. M."
+  ],
+  [
+   "NO",
+   "Jumabhoy, J. M."
+  ],
+  [
+   "NO",
+   "Lee Kuan Yew"
+  ],
+  [
+   "NO",
+   "Lim, R. C. H."
+  ],
+  [
+   "NO",
+   "Lim Yew Hock"
+  ],
+  [
+   "NO",
+   "Mak Pak Shee"
+  ],
+  [
+   "NO",
+   "Mohd. Sidik bin Haji Abdul Hamid"
+  ],
+  [
+   "NO",
+   "Nair, M. P. D."
+  ],
+  [
+   "NO",
+   "Seah Peng Chuan"
+  ],
+  [
+   "NO",
+   "Sutherland, G. A. P."
+  ],
+  [
+   "NO",
+   "Tan Theng Chiang"
+  ],
+  [
+   "NO",
+   "Thomas, Francis"
+  ],
+  [
+   "NO",
+   "Wong Foo Nam"
+  ],
+  [
+   "ABSENT",
+   "Ede, John"
+  ],
+  [
+   "ABSENT",
+   "Lazarous, A. R."
+  ],
+  [
+   "ABSENT",
+   "Lim Ching Siong"
+  ],
+  [
+   "ABSENT",
+   "Marshall, D. S."
+  ],
+  [
+   "ABSENT",
+   "Ong Piah Teng"
+  ]
+ ]
+}

@@ -285,7 +285,7 @@ One row per recorded vote. The counts come from the line the Hansard prints ("Th
 | `count_source` | DivisionCountSource | `PRINTED_LINE` for a printed counts line, `SPOKEN_TOTAL` for a total spoken in a speech row, `MINUTES` for a division only the minutes show. |
 | `printed_counts` | str | The counts as the source prints them. |
 | `ayes`, `noes`, `abstentions`, `absent`, `paired` | int | The counts the source gives. NULL where it gives none. |
-| `list_status` | DivisionListStatus | `NOT_PRINTED` when the record prints no list, `STORED` when the names were read and add up to the printed counts, `COUNTS_DISAGREE` when they do not (counts and `printed_list` are kept, no vote rows), `LAYOUT_UNREADABLE` when the list's shape is not one the reader handles. |
+| `list_status` | DivisionListStatus | `NOT_PRINTED` when the record prints no list, `STORED` when the names were read and add up to the printed count on every side the line prints a count for (Ayes, Noes and Abstentions with no printed count must hold no names; Absent and Paired names under a side with no printed count are stored without a count to check them), `COUNTS_DISAGREE` when they do not (counts and `printed_list` are kept, no vote rows), `LAYOUT_UNREADABLE` when the list's shape is not one the reader handles. |
 | `printed_list` | str | The list as printed. NULL when the record prints none. |
 | `sprs_report_id` | str | FK → `Report.report_id`. NULL for a minutes-only division. |
 

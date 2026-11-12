@@ -543,6 +543,10 @@ def get_division_list(
     }
     vote_choice_to_name_count = Counter(name.vote_choice for name in list_reading.names)
     for vote_choice, printed_count in vote_choice_to_printed_count.items():
+        if printed_count is None and (
+            vote_choice == DivisionVoteChoice.ABSENT or vote_choice == DivisionVoteChoice.PAIRED
+        ):
+            continue
         if vote_choice_to_name_count[vote_choice] != (printed_count or 0):
             return ParsedDivisionList(
                 DivisionListStatus.COUNTS_DISAGREE, list_reading.printed_list, []

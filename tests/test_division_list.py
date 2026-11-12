@@ -86,6 +86,43 @@ def test_30_august_1985_joins_a_name_continued_on_an_indented_line() -> None:
     _assert_fixture_is_stored("hansard_list_1985_08_30_indented_wraps")
 
 
+def test_10_january_1957_stores_absent_names_under_a_line_with_no_absent_count() -> None:
+    _assert_fixture_is_stored("hansard_list_1957_01_10_no_absent_count")
+
+
+def test_a_name_moved_into_the_absent_block_is_counts_disagree_with_no_absent_count() -> None:
+    html, expected = _read_fixture("hansard_list_1957_01_10_no_absent_count")
+    moved_html = html.replace("Lim Cher Kheng ", "Lim Cher Kheng", 1).replace(
+        "Ong Piah Teng\r\n\r\n</pre>",
+        "Ong Piah Teng\r\n\r\n                                               Goh Tong Liang\r\n\r\n</pre>",
+    ).replace("Goh Tong Liang              Abdul", "                            Abdul", 1)
+
+    parsed_list = _get_fixture_list(moved_html, expected)
+
+    assert parsed_list.list_status == DivisionListStatus.COUNTS_DISAGREE
+    assert parsed_list.names == []
+
+
+def test_a_name_under_abstentions_with_no_abstentions_count_is_counts_disagree() -> None:
+    html = _get_pre_html(
+        _OPENING,
+        "",
+        "  Ayes                Noes",
+        "",
+        "  Aa Bb               Cc Dd",
+        "  Ee Ff               Gg Hh",
+        "",
+        "  Abstentions",
+        "",
+        "  Ii Jj",
+    )
+
+    parsed_list = _get_list(html, ayes=2, noes=2)
+
+    assert parsed_list.list_status == DivisionListStatus.COUNTS_DISAGREE
+    assert parsed_list.names == []
+
+
 def test_13_december_1957_reads_five_sides() -> None:
     _assert_fixture_is_stored("hansard_list_1957_12_13")
 
