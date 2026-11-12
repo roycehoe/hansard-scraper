@@ -245,7 +245,7 @@ GRANT USAGE ON SEQUENCE division_id_seq TO hansard_refresh;
 GRANT USAGE ON SEQUENCE minutes_id_seq, minutes_index_capture_id_seq TO hansard_refresh;
 GRANT USAGE ON SEQUENCE minutes_division_id_seq, division_vote_id_seq, division_party_count_id_seq TO hansard_refresh;
 GRANT SELECT (id, website_responses_added, sitting_date_responses_added, sittings_added, reports_added, speeches_added, speeches_linked, speeches_named_unlinked, attendances_added, attendances_linked, reports_held_without_text, reports_without_speech_rows, reports_rechecked, reports_changed, latest_sitting_date_with_text, figures, started_at, finished_at, status) ON refresh_run TO <the API's read-only role>;
-GRANT SELECT ON report_link TO <the API's read-only role>;
+GRANT SELECT (id, link_type, printed_citation, source_report_id, target_report_id) ON report_link TO <the API's read-only role>;
 ```
 
 The office migration and these grants come before any push of the daily job, because a missing grant fails the month. The role needs `UPDATE` on `office_printed_range` only to extend a stored range, and `SELECT` alone on `ministry` and `ministry_see_also`, which only a supervised run writes. The office tables are small, so `_vacuum_analyze_tables` leaves them out, and the role has no `MAINTAIN` on them.
