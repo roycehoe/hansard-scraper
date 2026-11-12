@@ -43,6 +43,7 @@ import database.report_put_to  # noqa: F401
 import database.report_question_state  # noqa: F401
 import database.seat_holding  # noqa: F401
 import database.sitting  # noqa: F401
+import database.sitting_span  # noqa: F401
 import database.speaker  # noqa: F401
 import database.speech  # noqa: F401
 from alembic import context

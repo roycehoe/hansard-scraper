@@ -2836,6 +2836,16 @@
                 }
             }
         ],
+        "./database/sitting_span.py": [
+            {
+                "code": "reportAssignmentType",
+                "range": {
+                    "startColumn": 20,
+                    "endColumn": 34,
+                    "lineCount": 1
+                }
+            }
+        ],
         "./gateway/hansard_report.py": [
             {
                 "code": "reportCallIssue",

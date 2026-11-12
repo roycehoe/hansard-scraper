@@ -68,6 +68,7 @@ import database.report_put_to  # noqa: F401 registers the table for create_all
 import database.report_question_state  # noqa: F401 registers the table for create_all
 import database.seat_holding  # noqa: F401 registers the table for create_all
 import database.sitting  # noqa: F401 registers the table for create_all
+import database.sitting_span  # noqa: F401 registers the table for create_all
 import database.speaker  # noqa: F401 registers the table for create_all
 import database.speech  # noqa: F401 registers the table for create_all
 from settings import settings

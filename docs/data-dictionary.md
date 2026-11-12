@@ -272,6 +272,17 @@ One row per Member and division, built from the attendance rows that have a `spe
 | `sitting_count` | int | The number of distinct sittings with this division. |
 | `speaker_id` | int | FK → `Speaker.id`. |
 
+### SittingSpan
+
+One row per Member and Parliament (one `Speaker` row), built from the attendance rows that have a `speaker_id`. The dates are the first and last sitting whose attendance list names the Member, present or absent. They are the sittings listed in the record and not a term of office: a Member can sit before or after the sittings the lists name, and `sitting_count` counts only the sittings listed in between. A Member with no attendance row has no span.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `first_sitting_date` | date | The first sitting whose attendance list names the Member. |
+| `last_sitting_date` | date | The last sitting whose attendance list names the Member. |
+| `sitting_count` | int | The number of distinct sittings whose attendance list names the Member. |
+| `speaker_id` | int | FK → `Speaker.id`. Unique. |
+
 ### Division
 
 One row per recorded vote. The counts come from the line the Hansard prints ("The House divided: Ayes, 10; Noes, 3") or from a spoken total ("There are 11 Ayes and 3 Noes"), or from a minutes file for a division only the minutes show. `printed_counts` keeps the text the counts were read from. A division with `count_source` MINUTES has no report, no speech row and no `report_division_number`. A division whose record prints no name list has `list_status` NOT_PRINTED.
