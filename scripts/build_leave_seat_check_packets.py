@@ -31,10 +31,19 @@ from enums import (
 )
 from exceptions import HansardHandCheckError
 from logs import logger
+from schemas.leave_date_misprint import LeaveDateMisprint
+from schemas.leave_heading_year import LeaveHeadingYear
+from schemas.leave_line_reading import LeaveLineReading
 from schemas.leave_seat_check import LeaveSeatCheckKeyEntry, LeaveSeatCheckPacket
 from services.attendance import build_speaker_lookups, get_sitting_entry_lines
+from services.leave_section import get_listed_leave_date_misprints
 from services.seat_holding import get_division_key
 from settings import settings
+from utils.data_files import (
+    get_leave_date_misprints,
+    get_leave_heading_years,
+    get_leave_line_readings,
+)
 from utils.database_label import get_database_label
 from utils.leave_entry import YEAR_ORDER_BREAK_GROUP, get_leave_gap_days
 from utils.sitting_dates import parse_sitting_date
@@ -338,10 +347,46 @@ def _is_attendance_entry_shown(check_row: LeavePeriodPrintingCheckRow) -> bool:
     )
 
 
+def _get_hand_kept_lines(
+    check_row: LeavePeriodPrintingCheckRow,
+    shown_text: str,
+    leave_date_misprints: list[LeaveDateMisprint],
+    leave_heading_years: list[LeaveHeadingYear],
+    leave_line_readings: list[LeaveLineReading],
+) -> list[str]:
+    lines = [
+        f"hand-kept heading year: {leave_heading_year.year}"
+        f" (printed heading {leave_heading_year.printed_heading})"
+        for leave_heading_year in leave_heading_years
+        if leave_heading_year.sitting_date == check_row.sitting_date
+        and leave_heading_year.printed_heading == check_row.printed_heading_from
+    ]
+    lines.extend(
+        f"hand-kept reading: {reading}"
+        for leave_line_reading in leave_line_readings
+        if leave_line_reading.sitting_date == check_row.sitting_date
+        and leave_line_reading.printed_line == check_row.printed_line
+        for reading in leave_line_reading.readings
+    )
+    listed_misprints = get_listed_leave_date_misprints(shown_text, leave_date_misprints)
+    if listed_misprints:
+        lines.append(
+            "listed misprints read: "
+            + "; ".join(
+                f"{leave_date_misprint.printed} as {leave_date_misprint.reading}"
+                for leave_date_misprint in listed_misprints
+            )
+        )
+    return lines
+
+
 def get_leave_source_text(
     check_row: LeavePeriodPrintingCheckRow,
     sitting_rows: list[LeavePeriodPrintingCheckRow],
     speaker_id_to_entry_line: dict[int, str],
+    leave_date_misprints: list[LeaveDateMisprint],
+    leave_heading_years: list[LeaveHeadingYear],
+    leave_line_readings: list[LeaveLineReading],
 ) -> str:
     lines = [f"sitting: {check_row.sitting_date.isoformat()}"]
     if check_row.printed_line is not None:
@@ -352,6 +397,15 @@ def get_leave_source_text(
         lines.append(f"end text: {check_row.end_text}")
     lines.append(f"heading from: {_get_shown_text(check_row.printed_heading_from)}")
     lines.append(f"heading to: {_get_shown_text(check_row.printed_heading_to)}")
+    lines.extend(
+        _get_hand_kept_lines(
+            check_row,
+            check_row.printed_line or _get_printed_row_text(check_row),
+            leave_date_misprints,
+            leave_heading_years,
+            leave_line_readings,
+        )
+    )
     if check_row.name_source == LeaveNameSource.CARRIED_FROM_ROW_ABOVE:
         lines.extend(
             f"{context_row.ordinal}. {_get_printed_row_text(context_row)}"
@@ -1059,6 +1113,9 @@ def _get_leave_item_key_to_source_text(
             check_row,
             sitting_id_to_rows[check_row.sitting_id],
             sitting_id_to_speaker_id_to_entry_line.get(check_row.sitting_id, {}),
+            get_leave_date_misprints(),
+            get_leave_heading_years(),
+            get_leave_line_readings(),
         )
         for check_row in drawn_leave_rows
     }

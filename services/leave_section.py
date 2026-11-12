@@ -132,12 +132,26 @@ _TABLE_DATE_TOKEN_RE = re.compile(r"\b\d{1,2}\s+[A-Za-z]")
 _ONE_DAY_MARK_RE = re.compile(r"^(?:-+|–|—)$")
 
 
+def _get_misprint_pattern(leave_date_misprint: LeaveDateMisprint) -> str:
+    return rf"(?<!\w){re.escape(leave_date_misprint.printed)}(?!\w)"
+
+
+def get_listed_leave_date_misprints(
+    date_text: str, leave_date_misprints: list[LeaveDateMisprint]
+) -> list[LeaveDateMisprint]:
+    return [
+        leave_date_misprint
+        for leave_date_misprint in leave_date_misprints
+        if re.search(_get_misprint_pattern(leave_date_misprint), date_text)
+    ]
+
+
 def apply_leave_date_misprints(
     date_text: str, leave_date_misprints: list[LeaveDateMisprint]
 ) -> str:
     for leave_date_misprint in leave_date_misprints:
         date_text = re.sub(
-            rf"(?<!\w){re.escape(leave_date_misprint.printed)}(?!\w)",
+            _get_misprint_pattern(leave_date_misprint),
             leave_date_misprint.reading,
             date_text,
         )

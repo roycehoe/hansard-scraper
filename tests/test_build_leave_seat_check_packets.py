@@ -2,6 +2,7 @@ from dataclasses import replace
 from datetime import date
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Optional
 
 import pytest
 from sqlmodel import Session
@@ -25,6 +26,9 @@ from enums import (
     LeaveYearSource,
 )
 from exceptions import HansardHandCheckError
+from schemas.leave_date_misprint import LeaveDateMisprint
+from schemas.leave_heading_year import LeaveHeadingYear
+from schemas.leave_line_reading import LeaveLineReading
 from scripts.build_leave_seat_check_packets import (
     CheckItem,
     GroupDraw,
@@ -792,12 +796,31 @@ def test_the_check_rows_join_the_period_and_the_member(
     ]
 
 
+def _get_leave_text(
+    check_row: LeavePeriodPrintingCheckRow,
+    sitting_rows: list[LeavePeriodPrintingCheckRow],
+    speaker_id_to_entry_line: dict[int, str],
+    *,
+    leave_date_misprints: Optional[list[LeaveDateMisprint]] = None,
+    leave_heading_years: Optional[list[LeaveHeadingYear]] = None,
+    leave_line_readings: Optional[list[LeaveLineReading]] = None,
+) -> str:
+    return get_leave_source_text(
+        check_row,
+        sitting_rows,
+        speaker_id_to_entry_line,
+        leave_date_misprints or [],
+        leave_heading_years or [],
+        leave_line_readings or [],
+    )
+
+
 def test_a_plain_row_shows_the_sitting_the_printed_row_and_both_headings() -> None:
     check_row = replace(
         _LEAVE_ROW, printed_heading_from="2019", printed_heading_to=None
     )
 
-    assert get_leave_source_text(check_row, [check_row], {}).split("\n") == [
+    assert _get_leave_text(check_row, [check_row], {}).split("\n") == [
         "sitting: 2020-03-06",
         "printed: Mr Lee Hsien Loong | 5 Mar | 7 Mar",
         "heading from: 2019",
@@ -810,7 +833,7 @@ def test_a_printed_line_and_an_end_text_replace_the_printed_row() -> None:
         _LEAVE_ROW, printed_line="Mr Lee on leave", end_text="Till further notice"
     )
 
-    lines = get_leave_source_text(check_row, [check_row], {}).split("\n")
+    lines = _get_leave_text(check_row, [check_row], {}).split("\n")
 
     assert lines[1:3] == [
         "printed line: Mr Lee on leave",
@@ -831,7 +854,7 @@ def test_a_carried_row_shows_the_rows_from_the_nearest_named_row_down_to_it() ->
     )
 
     context_rows = get_carried_context_rows(check_row, sitting_rows)
-    lines = get_leave_source_text(check_row, sitting_rows, {}).split("\n")
+    lines = _get_leave_text(check_row, sitting_rows, {}).split("\n")
 
     assert [context_row.ordinal for context_row in context_rows] == [2, 3, 4]
     assert lines[-3:] == [
@@ -848,7 +871,7 @@ def test_a_linked_row_shows_the_members_whole_attendance_entry() -> None:
         speaker_link_source=LeaveSpeakerLinkSource.ROSTER_NAME,
     )
 
-    lines = get_leave_source_text(check_row, [check_row], {7: "Mr Lee (Ang Mo Kio)."})
+    lines = _get_leave_text(check_row, [check_row], {7: "Mr Lee (Ang Mo Kio)."})
 
     assert lines.endswith("attendance entry: Mr Lee (Ang Mo Kio).")
 
@@ -860,13 +883,13 @@ def test_a_linked_row_with_no_entry_says_so() -> None:
         speaker_link_source=LeaveSpeakerLinkSource.ROSTER_NAME,
     )
 
-    lines = get_leave_source_text(check_row, [check_row], {8: "Mr Tan"})
+    lines = _get_leave_text(check_row, [check_row], {8: "Mr Tan"})
 
     assert lines.endswith("no attendance entry for this member at this sitting")
 
 
 def test_an_unlinked_row_shows_no_attendance_line() -> None:
-    assert "attendance" not in get_leave_source_text(_LEAVE_ROW, [_LEAVE_ROW], {})
+    assert "attendance" not in _get_leave_text(_LEAVE_ROW, [_LEAVE_ROW], {})
 
 
 def test_a_seat_row_shows_its_labels_with_counts_and_the_neighbours() -> None:
@@ -914,3 +937,63 @@ def _office_packet_rule(group: str) -> str:
     return get_packet_entries(
         _SEED, [group_draw], _get_item_key_to_source_text([_ITEM])
     )[0].packet.rule
+
+
+def test_a_row_under_a_hand_kept_heading_year_shows_it() -> None:
+    check_row = replace(_LEAVE_ROW, printed_heading_from="(2006)")
+    heading_year = LeaveHeadingYear(
+        sitting_date=date(2020, 3, 6),
+        printed_heading="(2006)",
+        year=2005,
+        reason="r",
+    )
+    other_sitting = heading_year.model_copy(update={"sitting_date": date(2020, 3, 7)})
+    other_heading = heading_year.model_copy(update={"printed_heading": "(2007)"})
+
+    lines = _get_leave_text(
+        check_row,
+        [check_row],
+        {},
+        leave_heading_years=[heading_year, other_sitting, other_heading],
+    ).split("\n")
+
+    assert lines[4:] == ["hand-kept heading year: 2005 (printed heading (2006))"]
+
+
+def test_a_hand_kept_line_shows_each_of_its_readings() -> None:
+    check_row = replace(_LEAVE_ROW, printed_line="Mr A 5th and 6th Mar; Mr B")
+    line_reading = LeaveLineReading(
+        sitting_date=date(2020, 3, 6),
+        printed_line="Mr A 5th and 6th Mar; Mr B",
+        readings=["Mr A - on 5th March", "Mr B - on 6th March"],
+        reason="r",
+    )
+    other_line = line_reading.model_copy(update={"printed_line": "another line"})
+
+    lines = _get_leave_text(
+        check_row, [check_row], {}, leave_line_readings=[line_reading, other_line]
+    ).split("\n")
+
+    assert lines[-2:] == [
+        "hand-kept reading: Mr A - on 5th March",
+        "hand-kept reading: Mr B - on 6th March",
+    ]
+
+
+def test_a_listed_misprint_shows_only_where_the_whole_token_is_printed() -> None:
+    check_row = replace(_LEAVE_ROW, printed_line="Mr A - form 5th to 7th March")
+    misprints = [
+        LeaveDateMisprint(printed="form", reading="from", reason="r"),
+        LeaveDateMisprint(printed="tcr", reading="to", reason="r"),
+        LeaveDateMisprint(printed="Information", reading="x", reason="r"),
+    ]
+
+    text = _get_leave_text(check_row, [check_row], {}, leave_date_misprints=misprints)
+
+    assert text.endswith("listed misprints read: form as from")
+    assert "tcr" not in text
+
+
+def test_a_row_with_nothing_hand_kept_shows_no_hand_kept_line() -> None:
+    assert "hand-kept" not in _get_leave_text(_LEAVE_ROW, [_LEAVE_ROW], {})
+    assert "misprints" not in _get_leave_text(_LEAVE_ROW, [_LEAVE_ROW], {})
