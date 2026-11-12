@@ -29,6 +29,11 @@ _GLUED_LINE_SITTING_5847 = (
     "Mr Lee Kuan Yew (Tanjong Pagar GRC), Senior Minister, Prime Minister's Office.   "
 )
 
+_HU_TSU_TAU_LINE_SITTING_6937 = (
+    "Dr Hu Tsu Tau (Kreta Ayer), Minister for Finance and Minister for Health, "
+    "Encik lbrahim Othman (Tanah Merah).   "
+)
+
 _ENTRY_OFFICE_CASES = [
     pytest.param(
         "Dr Ho Tat Kin(Boon Teck); ",
@@ -837,6 +842,12 @@ _ENTRY_OFFICE_PARTS_CASES = [
         AttendanceOfficeSource.BEFORE_EX_OFFICIO_BRACKET,
         id="constructed_before_ex_officio_bracket",
     ),
+    pytest.param(
+        "Mr SPEAKER Mr Tan Soo Khoon (Bedok GRC).   ",
+        "Mr SPEAKER",
+        AttendanceOfficeSource.CHAIR_FORM,
+        id="sitting_7456_1994_chair_form_followed_by_the_holders_name",
+    ),
 ]
 
 
@@ -865,6 +876,21 @@ def test_sitting_5847_1995_glued_line_gives_each_member_their_own_office() -> No
     assert [get_entry_office(entry) for entry in entries] == [
         "Deputy Prime Minister, Prime Minister's Office",
         "Senior Minister, Prime Minister's Office",
+    ]
+
+
+def test_sitting_6937_1985_line_with_an_ocr_name_after_the_office_splits_into_two_entries() -> (
+    None
+):
+    entries = split_entry_line(_HU_TSU_TAU_LINE_SITTING_6937)
+
+    assert entries == [
+        "Dr Hu Tsu Tau (Kreta Ayer), Minister for Finance and Minister for Health, ",
+        "Encik lbrahim Othman (Tanah Merah).   ",
+    ]
+    assert [get_entry_office(entry) for entry in entries] == [
+        "Minister for Finance and Minister for Health",
+        None,
     ]
 
 

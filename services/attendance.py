@@ -66,8 +66,9 @@ _TITLE_ALTERNATION = "|".join(
     re.escape(prefix.strip()) for prefix in TITLE_PREFIXES if prefix[0].isalpha()
 )
 _ENTRY_LINE_RE = re.compile(rf"^(?:{_TITLE_ALTERNATION})\s+[A-Z][^()]{{0,80}}\(")
+# NOTE: the source prints a capital I as a lowercase l, as in "Encik lbrahim Othman".
 _NEXT_ENTRY_START_RE = re.compile(
-    rf"(?<=[\s.,;)\d])(?:{_TITLE_ALTERNATION})\s+[A-Z][^()]{{0,80}}\("
+    rf"(?<=[\s.,;)\d])(?:{_TITLE_ALTERNATION})\s+[A-Zl][^()]{{0,80}}\("
 )
 _SECTION_HEADER_RE = re.compile(
     r"^(?:\*{2}|#+)?\s*(?:PRESENT|ABSENT)\s*:(?:\*{2})?\s*$", re.IGNORECASE
@@ -391,8 +392,11 @@ def get_entry_office_parts(entry_line: str) -> Optional[EntryOfficeParts]:
             return None
         return EntryOfficeParts(office, AttendanceOfficeSource.AFTER_NAME_COMMA)
     chair_form = text[:first_open].strip()
-    if _CHAIR_ENTRY_RE.search(chair_form):
-        return EntryOfficeParts(chair_form, AttendanceOfficeSource.CHAIR_FORM)
+    chair_match = _CHAIR_ENTRY_RE.search(chair_form)
+    if chair_match is not None:
+        return EntryOfficeParts(
+            chair_form[: chair_match.end()], AttendanceOfficeSource.CHAIR_FORM
+        )
     close_index = _get_closing_parenthesis_index(text, first_open)
     if close_index is None:
         return None

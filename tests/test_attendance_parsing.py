@@ -359,3 +359,44 @@ def test_two_ocr_forms_from_lines_with_two_members_resolve_to_their_speakers() -
         resolve_canonical_name("Sha'ari bib Tadin", 4, lookups) == "Sha'ari Bin Tadin"
     )
     assert resolve_canonical_name("Tan Soc Khoon", 4, lookups) == "Tan Soo Khoon"
+
+
+def test_the_14_may_1985_line_with_an_ocr_name_after_the_office_gives_each_member_a_row() -> (
+    None
+):
+    speakers = [
+        Speaker(
+            id=1,
+            name="Hu Tsu Tau, Richard",
+            party="People's Action Party",
+            is_legislative_assembly=False,
+            parliament_number=6,
+        ),
+        Speaker(
+            id=2,
+            name="Ibrahim Othman",
+            party="People's Action Party",
+            is_legislative_assembly=False,
+            parliament_number=6,
+        ),
+    ]
+    sitting = Sitting(
+        id=1,
+        sitting_date="14-5-1985",
+        parlement_no=6,
+        markdown_content=(
+            "PRESENT:\n"
+            "Dr Hu Tsu Tau (Kreta Ayer), Minister for Finance and Minister for Health, Encik lbrahim Othman (Tanah Merah).   \n"
+            "Prof. S. Jayakumar (Bedok), Minister for Home Affairs and Second Minister for Law.   \n"
+        ),
+    )
+
+    records = build_sitting_attendances_from_markdown(
+        sitting, build_speaker_lookups(speakers), _CONSTITUENCY_LOOKUPS
+    )
+
+    assert [(record.speaker_name, record.location_name) for record in records] == [
+        ("Hu Tsu Tau, Richard", "Kreta Ayer"),
+        ("Ibrahim Othman", "Tanah Merah"),
+        ("S. Jayakumar", "Bedok"),
+    ]
