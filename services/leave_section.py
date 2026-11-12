@@ -202,6 +202,7 @@ def get_leave_sections(markdown_content: str) -> list[list[str]]:
 class _ProseEntryParts:
     printed_name: str
     office_printed: Optional[str]
+    is_office_after_comma: bool
     printed_line: str
     reading_line: str
     date_text: str
@@ -249,8 +250,6 @@ _NO_RANGE_YEARS = _RangeYears(None, None)
 
 
 def _get_office_printed(text_after_bracket: str) -> Optional[str]:
-    if not text_after_bracket.startswith(_OFFICE_OPENING):
-        return None
     return text_after_bracket.strip(_OFFICE_TRAILING_CHARACTERS) or None
 
 
@@ -279,15 +278,13 @@ def _get_prose_entry_parts(
     printed_name = line[:name_end].rstrip(_NAME_TRAILING_CHARACTERS).strip()
     if _DIGIT_RE.search(printed_name):
         return None
+    text_after_bracket = "" if bracket is None else line[bracket.end() : label_end]
     date_text_with_margin = reading_line[match.end() :]
     margin_length = len(date_text_with_margin) - len(date_text_with_margin.lstrip())
     return _ProseEntryParts(
         printed_name=printed_name,
-        office_printed=(
-            None
-            if bracket is None
-            else _get_office_printed(line[bracket.end() : label_end])
-        ),
+        office_printed=_get_office_printed(text_after_bracket),
+        is_office_after_comma=text_after_bracket.startswith(_OFFICE_OPENING),
         printed_line=line,
         reading_line=reading_line,
         date_text=date_text_with_margin.strip().rstrip(_PERIOD),
@@ -1021,6 +1018,18 @@ def _parse_table_entries(
     ]
 
 
+def _get_entry_office_printed(
+    entry_parts: Optional[_ProseEntryParts], printing_dates: _PrintingDates
+) -> Optional[str]:
+    if entry_parts is None:
+        return None
+    if entry_parts.is_office_after_comma:
+        return entry_parts.office_printed
+    if printing_dates.entry_format == LeaveEntryFormat.UNREAD:
+        return None
+    return entry_parts.office_printed
+
+
 def _build_prose_entry(
     ordinal: int,
     printed_line: str,
@@ -1036,7 +1045,7 @@ def _build_prose_entry(
         printed_line=printed_line,
         printed_heading_from=None,
         printed_heading_to=None,
-        office_printed=None if entry_parts is None else entry_parts.office_printed,
+        office_printed=_get_entry_office_printed(entry_parts, printing_dates),
         leave_dates=printing_dates.leave_dates,
         end_text=None,
         entry_format=printing_dates.entry_format,

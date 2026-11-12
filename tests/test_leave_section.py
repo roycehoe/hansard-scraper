@@ -1234,6 +1234,18 @@ def test_table_rows_and_prose_lines_share_one_run_of_ordinals() -> None:
             "Mr X (Tanglin), Deputy Speaker, - from 3rd to 5th June, 1977.",
             "Deputy Speaker",
         ),
+        (
+            "Mr Lee Khoon Choy (Bukit Panjang) Parliamentary Secretary to the Minister for Culture - from 16th February to 10th March, 1960.",
+            "Parliamentary Secretary to the Minister for Culture",
+        ),
+        (
+            "Mr S. Rajaratnam (Kampong Glam). Minister for Foreign Affairs - from 3rd to 30th October, 1972.",
+            "Minister for Foreign Affairs",
+        ),
+        (
+            "Dr Yeo Ning Hong (Kim Seng) - Minister for Communications - from 3rd to 30th October, 1988.",
+            "Minister for Communications",
+        ),
     ],
 )
 def test_the_office_after_the_constituency_bracket_is_stored(
@@ -1253,12 +1265,20 @@ def test_the_office_after_the_constituency_bracket_is_stored(
         "Dr Beng Kian Lam, Arthur - from 29th May to 3rd June, 1993.",
         "Mr X (Tanglin) - with effect from 3rd June, 1977",
         "Mr X (Tanglin), - from 3rd to 5th June, 1977.",
-        "Mr X (Tanglin) Prime Minister - from 3rd to 5th June, 1977.",
     ],
 )
 def test_a_line_with_no_office_after_the_bracket_stores_none(line: str) -> None:
     leave_entries = _build_entries(line)
 
+    assert leave_entries[0].office_printed is None
+
+
+def test_text_after_the_bracket_with_no_comma_is_no_office_on_an_unread_line() -> None:
+    leave_entries = _build_entries(
+        "Mr Lee Tee Tong (Bukit Timah) - Pursuant to Mr Speaker's letter dated 31st January, 1964, to be absent"
+    )
+
+    assert leave_entries[0].entry_format == LeaveEntryFormat.UNREAD
     assert leave_entries[0].office_printed is None
 
 
