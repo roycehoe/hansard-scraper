@@ -203,14 +203,13 @@ def _get_side_to_start(
         DivisionVoteChoice.NO: counts.noes,
         DivisionVoteChoice.ABSTAIN: counts.abstentions or 0,
     }
-    positive_sides = [side for side, count in side_to_count.items() if count > 0]
-    if len(tokens) != 1:
+    positive_sides = {side for side, count in side_to_count.items() if count > 0}
+    leftmost_sides = header_sides[: len(tokens)]
+    if positive_sides != set(leftmost_sides):
         return None
-    if len(positive_sides) != 1:
-        return None
-    if positive_sides[0] != header_sides[0]:
-        return None
-    return {header_sides[0]: tokens[0].start}
+    return {
+        side: token.start for side, token in zip(leftmost_sides, tokens, strict=True)
+    }
 
 
 def _get_nearest_side(

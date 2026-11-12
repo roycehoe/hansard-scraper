@@ -12,10 +12,18 @@ from services.minutes_text import get_minutes_word_text
 
 _FIXTURE_DIRECTORY = Path(__file__).parent / "division_fixtures"
 _WORD_FIXTURE = _FIXTURE_DIRECTORY / "minutes" / "vp0592008_7.doc"
+_TWO_SIDED_WORD_FIXTURE = _FIXTURE_DIRECTORY / "minutes" / "vp-26-26apr10_0.doc"
 _OPENING = "On Question put, a division was taken: Ayes 2, Noes 1, Abstentions 0."
 _TWO_COLUMN_OPENING = "On Question put, a division was taken: Ayes 2, Noes 1."
 _HEADER = "     Ayes          Noes          Abstentions"
 _TWO_COLUMN_HEADER = "     Ayes          Noes"
+_SHORT_OF_POSITIVE_SIDES_OPENING = (
+    "On Question put, a division was taken: Ayes 2, Noes 0, Abstentions 1."
+)
+_TWO_TOKEN_ROWS = ("     Aa Bb          Cc Dd", "     Ee Ff")
+_ONE_TOKEN_ROWS = ("     Aa Bb", "     Ee Ff")
+_WORD_ROW_WITH_TWO_NAMES = "Magad\tLow Thia Khiang"
+_WORD_AYES_INDENT = 17
 _DIVISION_COUNT = 2
 _NAME_COUNT_75_11_2 = 88
 _NAME_COUNT_2013_NOES = 13
@@ -109,6 +117,53 @@ def test_the_word_file_reads_both_lists_as_one_ayes_column() -> None:
         assert _get_counts_by_side(division) == (75, 0, 0)
 
 
+def test_the_2010_word_file_reads_two_sided_lists_by_the_leftmost_labels() -> None:
+    minutes_text_divisions = get_minutes_divisions(
+        get_minutes_word_text(_TWO_SIDED_WORD_FIXTURE.read_bytes())
+    )
+
+    assert len(minutes_text_divisions.divisions) == _DIVISION_COUNT
+    first_division, second_division = minutes_text_divisions.divisions
+    for division in minutes_text_divisions.divisions:
+        assert division.list_status == DivisionListStatus.STORED
+        assert "Abdullah Tarmugi" in _get_names(division, DivisionVoteChoice.AYE)
+        assert "Zaqy Mohamad" in _get_names(division, DivisionVoteChoice.AYE)
+    assert (
+        first_division.ayes,
+        first_division.noes,
+        first_division.abstentions,
+    ) == (73, 2, 0)
+    assert _get_counts_by_side(first_division) == (73, 2, 0)
+    assert _get_names(first_division, DivisionVoteChoice.NO) == [
+        "Chiam See Tong",
+        "Low Thia Khiang",
+    ]
+    assert (
+        second_division.ayes,
+        second_division.noes,
+        second_division.abstentions,
+    ) == (74, 1, 0)
+    assert _get_counts_by_side(second_division) == (74, 1, 0)
+    assert _get_names(second_division, DivisionVoteChoice.NO) == ["Low Thia Khiang"]
+
+
+def test_a_name_moved_across_the_2010_word_list_gives_no_vote_rows() -> None:
+    text = get_minutes_word_text(_TWO_SIDED_WORD_FIXTURE.read_bytes())
+    assert text.count(_WORD_ROW_WITH_TWO_NAMES) == 1
+
+    moved_divisions = get_minutes_divisions(
+        text.replace(
+            _WORD_ROW_WITH_TWO_NAMES,
+            "Magad\n" + " " * _WORD_AYES_INDENT + "Low Thia Khiang",
+        )
+    ).divisions
+
+    assert moved_divisions[0].list_status == DivisionListStatus.COUNTS_DISAGREE
+    assert moved_divisions[0].names == []
+    assert moved_divisions[0].printed_list is not None
+    assert moved_divisions[1].list_status == DivisionListStatus.STORED
+
+
 def test_a_name_moved_across_a_column_gives_no_vote_rows() -> None:
     moved_divisions = get_minutes_divisions(
         _read_fixture("minutes_2021_10_04_name_moved.txt")
@@ -162,20 +217,31 @@ def test_text_without_a_division_is_not_flagged() -> None:
     assert minutes_text_divisions == MinutesTextDivisions([], False)
 
 
-def test_a_first_row_with_fewer_tokens_than_labels_is_layout_unreadable() -> None:
-    two_tokens = "\n".join(
-        [_OPENING, "", _HEADER, "", "     Aa Bb          Cc Dd", "     Ee Ff"]
-    )
-    one_token_two_positive_counts = "\n".join(
-        [_OPENING, "", _HEADER, "", "     Aa Bb", "     Ee Ff"]
+def test_a_two_token_first_row_takes_the_two_leftmost_labels() -> None:
+    division = _get_single_division(
+        "\n".join([_OPENING, "", _HEADER, "", *_TWO_TOKEN_ROWS])
     )
 
-    for text in (two_tokens, one_token_two_positive_counts):
-        division = _get_single_division(text)
+    assert division.list_status == DivisionListStatus.STORED
+    assert _get_names(division, DivisionVoteChoice.AYE) == ["Aa Bb", "Ee Ff"]
+    assert _get_names(division, DivisionVoteChoice.NO) == ["Cc Dd"]
 
-        assert division.list_status == DivisionListStatus.LAYOUT_UNREADABLE
-        assert division.names == []
-        assert division.printed_list is not None
+
+@pytest.mark.parametrize(
+    ("opening", "rows"),
+    [
+        (_OPENING, _ONE_TOKEN_ROWS),
+        (_SHORT_OF_POSITIVE_SIDES_OPENING, _TWO_TOKEN_ROWS),
+    ],
+)
+def test_a_first_row_short_of_the_positive_sides_is_layout_unreadable(
+    opening: str, rows: tuple[str, ...]
+) -> None:
+    division = _get_single_division("\n".join([opening, "", _HEADER, "", *rows]))
+
+    assert division.list_status == DivisionListStatus.LAYOUT_UNREADABLE
+    assert division.names == []
+    assert division.printed_list is not None
 
 
 def test_a_one_token_first_row_whose_only_count_is_not_the_leftmost_label_is_layout_unreadable() -> (
