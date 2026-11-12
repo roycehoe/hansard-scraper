@@ -12,7 +12,7 @@ from services.leave_section import (
 from utils.data_files import get_leave_date_misprints
 from utils.leave_entry import LeaveDates, LeaveEntry
 
-_LEAVE_DATE_MISPRINT_COUNT = 26
+_LEAVE_DATE_MISPRINT_COUNT = 44
 _ENTRY_LINE = "Mr Lee (Tanglin) - from 3rd to 10th June, 1977."
 _SECOND_ENTRY_LINE = "Mr Tan (Bedok) - from 4th to 11th June, 1977."
 
@@ -218,6 +218,33 @@ def test_a_misprint_is_fixed_only_as_a_whole_token() -> None:
         apply_leave_date_misprints(date_text, get_leave_date_misprints())
         == "Information on the from"
     )
+
+
+@pytest.mark.parametrize(
+    ("line", "reading"),
+    [
+        ("from 12th tcr 22nd March, 1984", "from 12th to 22nd March, 1984"),
+        ("from 7th to 11rh December, 1996", "from 7th to 11th December, 1996"),
+        ("from 13th to 16th December, l987", "from 13th to 16th December, 1987"),
+        ("16 Jan| l7 Jan", "16 Jan| 17 Jan"),
+        ("on 6th ar,d 7th August", "on 6th and 7th August"),
+        ("from from 14th to 16th July", "from 14th to 16th July"),
+        ("from 21st to 28th March March,1992", "from 21st to 28th March,1992"),
+        ("from 30th May to12thJu ne, 1982", "from 30th May to 12th June, 1982"),
+        ("one month from 13th, August, 1960", "one month from 13th August, 1960"),
+        ("from 17th to 21st ,August, 1984", "from 17th to 21st August, 1984"),
+        ("from 22nd to 25th January , 1993", "from 22nd to 25th January, 1993"),
+        ("on 22nd May ,1996", "on 22nd May, 1996"),
+        ("to 18th December ,1996", "to 18th December, 1996"),
+        ("from 8th to 27th, December, 1996", "from 8th to 27th December, 1996"),
+        ("from 28th -September to 31st October", "from 28th September to 31st October"),
+        ("from '16th to 23rd January, 1979", "from 16th to 23rd January, 1979"),
+        ("and from 29th 31st December, 1987", "and from 29th to 31st December, 1987"),
+        ("Speaker from - 9th to 12th February", "Speaker from 9th to 12th February"),
+    ],
+)
+def test_a_listed_token_misprint_is_fixed(line: str, reading: str) -> None:
+    assert apply_leave_date_misprints(line, get_leave_date_misprints()) == reading
 
 
 def test_a_split_day_is_joined() -> None:
@@ -765,7 +792,7 @@ def test_two_ranges_with_years_printed_make_two_range_printings() -> None:
     "line",
     [
         "Mr X - on 5th March and to the end of April, 1957",
-        "Mr X - on 6th and 11th December and from 17th to 18th December ,1996.",
+        "Mr X - on 6th and 11th December and from 17th to 18th December ,,1996.",
         "Mr X - on 5th March and on 7th April",
     ],
 )

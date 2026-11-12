@@ -128,5 +128,95 @@
     "printed": "ftom",
     "reading": "from",
     "reason": "Misprint: the letter r is printed as a letter t."
+  },
+  {
+    "printed": "tcr",
+    "reading": "to",
+    "reason": "Misprint: the word to is printed with the letters t, c and r."
+  },
+  {
+    "printed": "11rh",
+    "reading": "11th",
+    "reason": "Misprint: the letter t is printed as an r."
+  },
+  {
+    "printed": "l987",
+    "reading": "1987",
+    "reason": "Misprint: the digit 1 is printed as a letter l."
+  },
+  {
+    "printed": "l7",
+    "reading": "17",
+    "reason": "Misprint: the digit 1 is printed as a letter l."
+  },
+  {
+    "printed": "ar,d",
+    "reading": "and",
+    "reason": "Misprint: the word and is printed with a comma in place of the letter n."
+  },
+  {
+    "printed": "from from",
+    "reading": "from",
+    "reason": "Misprint: the word from is printed twice."
+  },
+  {
+    "printed": "March March",
+    "reading": "March",
+    "reason": "Misprint: the month is printed twice."
+  },
+  {
+    "printed": "to12thJu ne",
+    "reading": "to 12th June",
+    "reason": "Misprint: a space splits the month, and the space after to is missing."
+  },
+  {
+    "printed": "13th, August",
+    "reading": "13th August",
+    "reason": "Misprint: a stray comma follows the day."
+  },
+  {
+    "printed": "21st ,August",
+    "reading": "21st August",
+    "reason": "Misprint: a stray comma precedes the month."
+  },
+  {
+    "printed": "January , 1993",
+    "reading": "January, 1993",
+    "reason": "Misprint: a space precedes the comma."
+  },
+  {
+    "printed": "May ,1996",
+    "reading": "May, 1996",
+    "reason": "Misprint: the comma is printed after the space."
+  },
+  {
+    "printed": "December ,1996",
+    "reading": "December, 1996",
+    "reason": "Misprint: the comma is printed after the space."
+  },
+  {
+    "printed": "27th, December",
+    "reading": "27th December",
+    "reason": "Misprint: a stray comma follows the day."
+  },
+  {
+    "printed": "28th -September",
+    "reading": "28th September",
+    "reason": "Misprint: a stray dash precedes the month."
+  },
+  {
+    "printed": "'16th",
+    "reading": "16th",
+    "reason": "Misprint: a stray apostrophe precedes the day."
+  },
+  {
+    "printed": "29th 31st",
+    "reading": "29th to 31st",
+    "reason": "Misprint: the word to is missing."
+  },
+  {
+    "printed": "from - 9th",
+    "reading": "from 9th",
+    "reason": "Misprint: a stray dash follows the word from."
   }
 ]
