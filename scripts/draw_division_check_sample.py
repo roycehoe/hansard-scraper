@@ -559,7 +559,12 @@ def _get_layout_era_candidates(session: Session) -> list[DivisionCheckCandidate]
                     ]
                 ),
             ),
-            source_text=division.printed_list or "",
+            source_text=_LINE_SEPARATOR.join(
+                [
+                    f"{_PRINTED_COUNT_LINE_PREFIX}{division.printed_counts}",
+                    division.printed_list or "",
+                ]
+            ),
             data_claim=_LINE_SEPARATOR.join(
                 [
                     f"list status {division.list_status}",

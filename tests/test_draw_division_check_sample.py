@@ -876,6 +876,7 @@ def test_a_stored_list_with_absent_names_and_no_absent_count_takes_its_own_group
     assert candidate.group.endswith("side without a printed count") == (
         printed_absent_count is None
     )
+    assert candidate.source_text == f"Printed count line: {_MERGE_LINE}\n{_PRINTED_LIST}"
 
 
 @pytest.mark.parametrize("rule", list(DivisionCheckRule))
