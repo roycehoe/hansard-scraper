@@ -8,6 +8,7 @@ class UnlabelledSpeechRange(BaseModel):
 
     report_id: int
     speaker: Optional[str]
+    credited_speaker_name: str
     first_transcript_start: str
     last_transcript_start: str
     reason: str

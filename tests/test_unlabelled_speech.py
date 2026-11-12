@@ -8,6 +8,10 @@ from utils.data_files import get_unlabelled_speech_ranges
 
 _CHAIR = "Mr Speaker"
 _MINISTER = "The Minister for Manpower (Dr Tan See Leng)"
+_CREDITED_NAME = "Tan See Leng"
+_OPENING_SPEECH_REPORT_ID = 24248
+_OPENING_SPEECH_CREDITED_NAME = "Gan Kim Yong"
+_NOTICE_OF_MOTION_REPORT_ID = 42017
 
 
 def _build_chair_resumption() -> list[ParsedSpeech]:
@@ -46,6 +50,7 @@ def test_rows_in_the_range_lose_the_wrong_label() -> None:
     speech_range = UnlabelledSpeechRange(
         report_id=8732,
         speaker=_CHAIR,
+        credited_speaker_name=_CREDITED_NAME,
         first_transcript_start="First, look",
         last_transcript_start="The Motion",
         reason="",
@@ -85,6 +90,7 @@ def test_unclassified_rows_before_the_first_speaker_become_speech() -> None:
     speech_range = UnlabelledSpeechRange(
         report_id=24248,
         speaker=None,
+        credited_speaker_name=_CREDITED_NAME,
         first_transcript_start="Mr Speaker, Sir",
         last_transcript_start="Sir, I beg",
         reason="",
@@ -105,6 +111,7 @@ def test_a_range_the_parse_no_longer_holds_raises() -> None:
     speech_range = UnlabelledSpeechRange(
         report_id=8732,
         speaker=_CHAIR,
+        credited_speaker_name=_CREDITED_NAME,
         first_transcript_start="Second, look",
         last_transcript_start="The Motion",
         reason="",
@@ -120,3 +127,18 @@ def test_the_data_file_holds_one_range_per_report() -> None:
     assert len({speech_range.report_id for speech_range in speech_ranges}) == len(
         speech_ranges
     )
+
+
+def test_the_data_file_credits_the_opening_speech_of_24248_and_leaves_42017_out() -> (
+    None
+):
+    report_id_to_credited_name = {
+        speech_range.report_id: speech_range.credited_speaker_name
+        for speech_range in get_unlabelled_speech_ranges()
+    }
+
+    assert (
+        report_id_to_credited_name[_OPENING_SPEECH_REPORT_ID]
+        == _OPENING_SPEECH_CREDITED_NAME
+    )
+    assert _NOTICE_OF_MOTION_REPORT_ID not in report_id_to_credited_name
