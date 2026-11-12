@@ -49,6 +49,8 @@ _ALLOWED_DATABASE_URL = "postgresql://user:password@localhost:5437/hansard_posit
 _WRONG_DATABASE_URL = "postgresql://user:password@localhost:5435/hansard_launch"
 _PLANTS_AT_FIFTY = 5
 _PLANTS_AT_SEVEN = 1
+_PLANTS_AT_TWO = 2
+_LEFT_OUT_ROW_IDS = frozenset(range(101, 121))
 _PLANTS_AT_ONE = 1
 _LARGE_GROUP_SIZE = 60
 _SAMPLE_SIZE = 50
@@ -492,6 +494,91 @@ def test_without_the_option_every_group_is_drawn_and_none_left_out() -> None:
 
     assert {group_draw.group for group_draw in group_draws} == set(group_to_items)
     assert get_left_out_groups(group_to_items, is_older_formats_only=False) == []
+
+
+def _build_leave_items(
+    first_row_id: int, count: int, entry_format: LeaveEntryFormat, **changes: object
+) -> list[CheckItem]:
+    return [
+        replace(
+            _ITEM,
+            table_name="leave_period_printing",
+            row_id=row_id,
+            entry_format=entry_format,
+            division_key=None,
+            other_says="end text: (none); name source: PRINTED; year source: NEAREST_TO_SITTING;"
+            " link source: (none); office source: (none)",
+            **changes,
+        )
+        for row_id in range(first_row_id, first_row_id + count)
+    ]
+
+
+def test_a_format_group_read_whole_plants_blanked_rows_from_the_left_out_groups() -> (
+    None
+):
+    group_to_items = {
+        "format|PROSE_RANGE|1960": _build_leave_items(
+            1, _SAMPLE_SIZE, LeaveEntryFormat.PROSE_RANGE
+        ),
+        "format|STRUCTURED_LIST|2020": _build_leave_items(
+            101, 20, LeaveEntryFormat.STRUCTURED_LIST
+        ),
+    }
+
+    group_draws = draw_groups(_SEED, group_to_items, is_older_formats_only=True)
+
+    assert len(group_draws) == 1
+    group_draw = group_draws[0]
+    assert group_draw.skipped_plant_count == 0
+    assert len(group_draw.plants) == _PLANTS_AT_FIFTY
+    assert len({plant.item.row_id for plant in group_draw.plants}) == _PLANTS_AT_FIFTY
+    for plant in group_draw.plants:
+        assert plant.item.row_id in _LEFT_OUT_ROW_IDS
+        assert plant.item.start_date is None
+        assert plant.item.end_date is None
+        assert plant.item.entry_format == LeaveEntryFormat.UNREAD
+        assert "year source: (none);" in plant.item.other_says
+        assert "blanked" in plant.note
+
+
+def test_another_family_read_whole_plants_its_usual_plant_from_the_left_out_rows() -> (
+    None
+):
+    group_to_items = {
+        "year_gap|0": _build_leave_items(1, _SAMPLE_SIZE, LeaveEntryFormat.PROSE_RANGE),
+        "year_gap|1-30": _build_leave_items(101, 20, LeaveEntryFormat.STRUCTURED_LIST),
+    }
+
+    group_draws = draw_groups(_SEED, group_to_items, is_older_formats_only=True)
+
+    group_draw = group_draws[0]
+    assert group_draw.skipped_plant_count == 0
+    assert len(group_draw.plants) == _PLANTS_AT_FIFTY
+    for plant in group_draw.plants:
+        assert plant.item.row_id in _LEFT_OUT_ROW_IDS
+        assert plant.item.start_date == date(2017, 1, 11)
+        assert plant.item.entry_format == LeaveEntryFormat.STRUCTURED_LIST
+
+
+def test_only_the_plants_with_no_base_anywhere_are_skipped() -> None:
+    group_to_items = {
+        "format|PROSE_RANGE|1960": _build_leave_items(
+            1, _SAMPLE_SIZE, LeaveEntryFormat.PROSE_RANGE
+        ),
+        "format|STRUCTURED_LIST|2020": [
+            *_build_leave_items(101, 2, LeaveEntryFormat.STRUCTURED_LIST),
+            *_build_leave_items(
+                103, 4, LeaveEntryFormat.STRUCTURED_LIST, start_date=None
+            ),
+        ],
+    }
+
+    group_draw = draw_groups(_SEED, group_to_items, is_older_formats_only=True)[0]
+
+    assert len(group_draw.plants) == _PLANTS_AT_TWO
+    assert group_draw.skipped_plant_count == _PLANTS_AT_FIFTY - _PLANTS_AT_TWO
+    assert {plant.item.row_id for plant in group_draw.plants} == {101, 102}
 
 
 def test_a_plant_shortfall_is_counted_as_skipped() -> None:

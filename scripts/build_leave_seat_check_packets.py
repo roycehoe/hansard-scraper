@@ -57,6 +57,7 @@ _NONE_TEXT = "(none)"
 _NO_ATTENDANCE_ENTRY_TEXT = "no attendance entry for this member at this sitting"
 _BLANK_NAME_TEXT = "(blank)"
 _YEAR_RE = re.compile(r"\d{4}")
+_YEAR_SOURCE_RE = re.compile(r"year source: [^;]*;")
 _GAP_BAND_ZERO = "0"
 _GAP_BAND_NEAR = "1-30"
 _GAP_BAND_FAR = "31-90"
@@ -684,10 +685,43 @@ def draw_group_sample(
     return GroupSample(group, sorted_items, sample, generator)
 
 
+def _get_blanked_dated_plant(item: CheckItem) -> Plant:
+    return Plant(
+        replace(
+            item,
+            start_date=None,
+            end_date=None,
+            entry_format=LeaveEntryFormat.UNREAD,
+            other_says=_YEAR_SOURCE_RE.sub(
+                f"year source: {_NONE_TEXT};", item.other_says, count=1
+            ),
+        ),
+        f"blanked the dates {_get_shown_text(item.start_date)} to {_get_shown_text(item.end_date)}"
+        " and the year source of a dated row, which reads as an UNREAD row whose line prints a date",
+    )
+
+
+def _get_group_plant(
+    plant_base: CheckItem,
+    plant_index: int,
+    group: str,
+    donor_items: list[CheckItem],
+    stored_division_keys: frozenset[str],
+    generator: random.Random,
+) -> Optional[Plant]:
+    if (
+        _get_family(group) == _SEAT_FAMILY
+        and plant_index in _MISSPELT_DIVISION_PLANT_INDEXES
+    ):
+        return _get_misspelt_division_plant(plant_base, stored_division_keys, generator)
+    return _get_plant(plant_base, group, donor_items, generator)
+
+
 def draw_group_plants(
     group_sample: GroupSample,
     taken_item_keys: set[tuple[str, int]],
     stored_division_keys: frozenset[str],
+    family_items: list[CheckItem],
 ) -> GroupDraw:
     group = group_sample.group
     sample = group_sample.sample
@@ -704,16 +738,47 @@ def draw_group_plants(
         key=lambda item: item.row_id,
     )
     plants = []
-    skipped_plant_count = plant_count - len(plant_bases)
+    skipped_plant_count = 0
     for plant_index, plant_base in enumerate(plant_bases):
+        plant = _get_group_plant(
+            plant_base,
+            plant_index,
+            group,
+            group_sample.sorted_items,
+            stored_division_keys,
+            group_sample.generator,
+        )
+        if plant is None:
+            skipped_plant_count += 1
+            continue
+        plants.append(plant)
+    shortfall = plant_count - len(plant_bases)
+    own_base_keys = {_get_item_key(plant_base) for plant_base in plant_bases}
+    outside_candidates = [
+        item
+        for item in family_items
+        if item.start_date is not None
+        and _get_item_key(item) not in taken_item_keys
+        and _get_item_key(item) not in own_base_keys
+    ]
+    outside_bases = sorted(
+        group_sample.generator.sample(
+            outside_candidates, min(shortfall, len(outside_candidates))
+        ),
+        key=_get_item_key,
+    )
+    skipped_plant_count += shortfall - len(outside_bases)
+    for outside_index, outside_base in enumerate(outside_bases, start=len(plant_bases)):
         plant = (
-            _get_misspelt_division_plant(
-                plant_base, stored_division_keys, group_sample.generator
-            )
-            if _get_family(group) == _SEAT_FAMILY
-            and plant_index in _MISSPELT_DIVISION_PLANT_INDEXES
-            else _get_plant(
-                plant_base, group, group_sample.sorted_items, group_sample.generator
+            _get_blanked_dated_plant(outside_base)
+            if _get_family(group) == _FORMAT_FAMILY
+            else _get_group_plant(
+                outside_base,
+                outside_index,
+                group,
+                family_items,
+                stored_division_keys,
+                group_sample.generator,
             )
         )
         if plant is None:
@@ -770,10 +835,21 @@ def draw_groups(
         for item in items
         if item.division_key is not None
     )
+    family_to_item_key_to_item: dict[str, dict[tuple[str, int], CheckItem]] = {}
+    for group, items in group_to_items.items():
+        item_key_to_item = family_to_item_key_to_item.setdefault(_get_family(group), {})
+        for item in items:
+            item_key_to_item[_get_item_key(item)] = item
     group_draws = []
     for group_sample in group_samples:
+        family_item_key_to_item = family_to_item_key_to_item[
+            _get_family(group_sample.group)
+        ]
         group_draw = draw_group_plants(
-            group_sample, taken_item_keys, stored_division_keys
+            group_sample,
+            taken_item_keys,
+            stored_division_keys,
+            [family_item_key_to_item[key] for key in sorted(family_item_key_to_item)],
         )
         taken_item_keys.update(_get_item_key(plant.item) for plant in group_draw.plants)
         group_draws.append(group_draw)
