@@ -291,7 +291,7 @@ One row per recorded vote. The counts come from the line the Hansard prints ("Th
 
 ### Minutes
 
-One row per sitting date: the Votes and Proceedings file that records what the House did at the sitting, divisions included. The text is kept as the extractor returned it and the bytes are not stored; see [ADR 0021](adr/0021-minutes-kept-as-address-hash-and-text.md). `status` is one of `NOT_YET_LISTED` (a sitting with no file listed yet), `LISTED` (the index lists a file and its text is not stored yet), `TEXT_STORED`, `FILE_NOT_FOUND` and `NEEDS_REVIEW` (the file could not be read, or is a Word file; `status_note` says why). Each row comes from the live index page, an Internet Archive capture of the index (`MinutesIndexCapture`, kept as received) or an archived file listing, and `index_source` says which.
+One row per sitting date: the Votes and Proceedings file that records what the House did at the sitting, divisions included. The text is kept as the extractor returned it. The daily step also keeps the bytes of each file it fetches, because a new file may later exist only at its live address; the backfill stores none, and its files stay on the build host and in the Internet Archive. `status` is one of `NOT_YET_LISTED` (a sitting with no file listed yet), `LISTED` (the index lists a file and its text is not stored yet), `TEXT_STORED`, `FILE_NOT_FOUND` and `NEEDS_REVIEW` (the file could not be read, or is a Word file; `status_note` says why). Each row comes from the live index page, an Internet Archive capture of the index (`MinutesIndexCapture`, kept as received) or an archived file listing, and `index_source` says which.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -303,6 +303,7 @@ One row per sitting date: the Votes and Proceedings file that records what the H
 | `file_format` | MinutesFileFormat | `PDF` or `WORD`. |
 | `sha256` | str | The SHA-256 of the file's bytes. |
 | `size_bytes` | int | The file's size. |
+| `file_bytes` | bytes | The file as fetched. Set by the daily step only; `NULL` on a backfill row. |
 | `extracted_text` | str | The text the extractor returned, uncleaned. |
 | `status_note` | str | Why a file needs review, or another note on the status. |
 | `fetched_at` | datetime | When the file was fetched. |
