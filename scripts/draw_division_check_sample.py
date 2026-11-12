@@ -30,6 +30,7 @@ from enums import (
     DivisionCheckRule,
     DivisionCountSource,
     DivisionListStatus,
+    DivisionVoteChoice,
     DivisionVoteListSource,
     DivisionVoteNameRule,
     MinutesDivisionPairing,
@@ -76,6 +77,8 @@ _NO_FILE_FORMAT = "NO_FILE"
 _ERA_PRE = "pre"
 _ERA_TABLE = "table"
 _ERA_PARAGRAPH = "paragraph"
+_SIDE_WITHOUT_PRINTED_COUNT_GROUP = "side without a printed count"
+_PRINTED_COUNT_LINE_PREFIX = "Printed count line: "
 _ERA_OPENING_PATTERN = re.compile(
     r"the\s+(?:house|committee)\s+divided|division\s+taken|question\s+put\W*\s*ayes",
     re.IGNORECASE,
@@ -501,6 +504,16 @@ def _get_layout_era(content: Optional[str]) -> str:
     return _ERA_TABLE
 
 
+def _has_names_under_side_without_printed_count(
+    division: Division, vote_choices: set[DivisionVoteChoice]
+) -> bool:
+    if division.list_status != DivisionListStatus.STORED:
+        return False
+    return (division.absent is None and DivisionVoteChoice.ABSENT in vote_choices) or (
+        division.paired is None and DivisionVoteChoice.PAIRED in vote_choices
+    )
+
+
 def _get_layout_era_candidates(session: Session) -> list[DivisionCheckCandidate]:
     divisions = CRUDDivision(session).get_by_list_statuses(
         [
@@ -520,6 +533,9 @@ def _get_layout_era_candidates(session: Session) -> list[DivisionCheckCandidate]
         )
     }
     division_id_to_vote_lines: defaultdict[int, list[str]] = defaultdict(list)
+    division_id_to_vote_choices: defaultdict[int, set[DivisionVoteChoice]] = (
+        defaultdict(set)
+    )
     for vote_row in CRUDDivisionVote(session).get_rows_by_division_ids_and_list_source(
         [division.id for division in divisions if division.id is not None],
         DivisionVoteListSource.HANSARD,
@@ -527,12 +543,17 @@ def _get_layout_era_candidates(session: Session) -> list[DivisionCheckCandidate]
         division_id_to_vote_lines[vote_row.division_id].append(
             f"{vote_row.vote_choice}{_CLAIM_CHOICE_SEPARATOR}{vote_row.printed_name}"
         )
+        division_id_to_vote_choices[vote_row.division_id].add(vote_row.vote_choice)
     return [
         DivisionCheckCandidate(
             rule=DivisionCheckRule.HANSARD_LIST_BY_LAYOUT_ERA,
             group=_get_group(
                 division.sitting_date,
-                _get_layout_era(
+                _SIDE_WITHOUT_PRINTED_COUNT_GROUP
+                if _has_names_under_side_without_printed_count(
+                    division, division_id_to_vote_choices[division.id]
+                )
+                else _get_layout_era(
                     report_id_to_content[
                         sprs_report_id_to_type_row[division.sprs_report_id].id
                     ]

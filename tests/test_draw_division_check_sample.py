@@ -2,6 +2,7 @@ import hashlib
 import json
 from datetime import date, datetime
 from pathlib import Path
+from typing import Optional
 
 import pytest
 from sqlalchemy.engine import Engine
@@ -85,6 +86,7 @@ _ARCHIVE_LABEL = "Votes and Proceedings No. 36"
 _ARCHIVE_FILE_URL = "https://www.parliament.gov.sg/docs/default-source/default-document-library/vp-3aug21.pdf?sfvrsn=aa9ad958_0"
 _SIDE_CLAIM = "AYE: Mr A\nNO: Mr B"
 _SWAPPED_SIDE_CLAIM = "AYE: Mr B\nNO: Mr A"
+_ABSENT_VOTE_ORDINAL = 50
 
 
 def _build_candidate(
@@ -840,6 +842,40 @@ def _seed_every_frame(session: Session) -> None:
         ]
     )
     session.flush()
+
+
+@pytest.mark.parametrize("printed_absent_count", [None, 1])
+def test_a_stored_list_with_absent_names_and_no_absent_count_takes_its_own_group(
+    scratch_session: Session, printed_absent_count: Optional[int]
+) -> None:
+    _seed_every_frame(scratch_session)
+    division = scratch_session.exec(
+        select(Division).where(Division.printed_list == _PRINTED_LIST)
+    ).one()
+    division.absent = printed_absent_count
+    scratch_session.add(
+        DivisionVote(
+            ordinal=_ABSENT_VOTE_ORDINAL,
+            printed_name="Mr C",
+            vote_choice=DivisionVoteChoice.ABSENT,
+            list_source=DivisionVoteListSource.HANSARD,
+            division_id=division.id,
+        )
+    )
+    scratch_session.flush()
+
+    candidates = draw_division_check_sample_script.get_division_check_candidates(
+        scratch_session, DivisionCheckRule.HANSARD_LIST_BY_LAYOUT_ERA
+    )
+
+    candidate = next(
+        candidate
+        for candidate in candidates
+        if candidate.database_key == f"division:{division.id}"
+    )
+    assert candidate.group.endswith("side without a printed count") == (
+        printed_absent_count is None
+    )
 
 
 @pytest.mark.parametrize("rule", list(DivisionCheckRule))
