@@ -1753,3 +1753,12 @@ def test_during_starts_the_date_part_of_an_unread_line() -> None:
     assert leave_entries[0].printed_name == "Dr Fong Kim Heng"
     assert leave_entries[0].office_printed == "Deputy Speaker"
 
+
+def test_a_trailing_and_from_is_cut_off_text() -> None:
+    leave_entries = _build_entries(
+        "Mr Lew Syn Pau (Tanglin) -- from 16th to 18th April and from",
+        sitting_date=date(1990, 3, 29),
+    )
+
+    assert _get_date_pairs(leave_entries) == [(date(1990, 4, 16), date(1990, 4, 18))]
+    assert leave_entries[0].entry_format == LeaveEntryFormat.PROSE_RANGE

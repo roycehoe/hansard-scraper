@@ -88,7 +88,9 @@ _FROM_ONLY_RE = re.compile(
     re.IGNORECASE,
 )
 _DAY_RE = re.compile(_DAY_PATTERN)
-_DATE_LEFTOVER_RE = re.compile(r"^[\s,.;]*(?:and[\s,.;]*)*$", re.IGNORECASE)
+_DATE_LEFTOVER_RE = re.compile(
+    r"^[\s,.;]*(?:and[\s,.;]*(?:from[\s,.;]*)?)*$", re.IGNORECASE
+)
 _ITALIC_LINE_RE = re.compile(r"^\|\s*_(?P<text>[^|]*?)_\s*$")
 _ENTRY_BREAK_RE = re.compile(r"(?<=\.)\s+(?=\S)")
 _TRAILING_TEXT_RE = re.compile(r"\.\s+\S|\s+\((?=[a-z]{4})")
