@@ -26,6 +26,15 @@ class SpeechRow:
 
 
 @dataclass(frozen=True)
+class SpeechKindRow:
+    id: int
+    speaker: Optional[str]
+    transcript: str
+    kind: Optional[SpeechKind]
+    speaker_id: Optional[int]
+
+
+@dataclass(frozen=True)
 class SpeechOrdinalLabelRow:
     report_id: int
     speaker_id: int

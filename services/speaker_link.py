@@ -10,9 +10,11 @@ from enum import StrEnum
 from typing import Iterable, Optional, Sequence
 
 from crud.attendance import AttendanceSpeakerRow
-from crud.speech import SpeechRow, SpeechSpeakerRow
-from enums import DivisionVoteNameRule, ReportVersion
+from crud.speech import SpeechKindRow, SpeechRow, SpeechSpeakerRow
+from enums import DivisionVoteNameRule, ReportVersion, SpeechKind
+from exceptions import HansardUnlabelledSpeechError
 from schemas.hansard_report_response import HansardReportSection
+from schemas.unlabelled_speech import UnlabelledSpeechRange
 from utils.markdown_parser import (
     ASTERISK,
     BYTE_ORDER_MARK,
@@ -564,6 +566,46 @@ def get_carried_role_names(speech_rows: list[SpeechRow]) -> dict[int, str]:
                     .strip()
                 )
     return speech_id_to_name
+
+
+def _is_unlabelled_speech(speech_row: SpeechKindRow) -> bool:
+    return speech_row.speaker is None and speech_row.kind == SpeechKind.SPEECH
+
+
+def _get_unlabelled_row_index(
+    speech_range: UnlabelledSpeechRange,
+    speech_rows: list[SpeechKindRow],
+    transcript_start: str,
+    first_index: int,
+) -> int:
+    for index in range(first_index, len(speech_rows)):
+        speech_row = speech_rows[index]
+        if _is_unlabelled_speech(speech_row) and speech_row.transcript.removeprefix(
+            EMPHASIS_MARK
+        ).startswith(transcript_start):
+            return index
+    raise HansardUnlabelledSpeechError(
+        f"Report {speech_range.report_id}: no unlabelled row starts with {transcript_start!r}"
+    )
+
+
+# NOTE: the stored transcript keeps the stray mark a language note leaves open (`_[_Please refer ...`), which the range's locator, written from the parse, lacks
+def get_unlabelled_range_speaker_ids(
+    speech_range: UnlabelledSpeechRange,
+    speech_rows: list[SpeechKindRow],
+    speaker_id: int,
+) -> dict[int, int]:
+    start = _get_unlabelled_row_index(
+        speech_range, speech_rows, speech_range.first_transcript_start, 0
+    )
+    end = _get_unlabelled_row_index(
+        speech_range, speech_rows, speech_range.last_transcript_start, start
+    )
+    return {
+        speech_row.id: speaker_id
+        for speech_row in speech_rows[start : end + 1]
+        if _is_unlabelled_speech(speech_row) and speech_row.speaker_id is None
+    }
 
 
 def _clean_speaker_label(speaker_label: str) -> str:
