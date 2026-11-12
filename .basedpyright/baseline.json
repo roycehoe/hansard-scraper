@@ -352,6 +352,14 @@
                 }
             },
             {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 42,
+                    "lineCount": 1
+                }
+            },
+            {
                 "code": "reportCallIssue",
                 "range": {
                     "startColumn": 15,
@@ -2024,6 +2032,24 @@
                 }
             }
         ],
+        "./crud/sitting_span.py": [
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 15,
+                    "endColumn": 43,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 33,
+                    "endColumn": 42,
+                    "lineCount": 1
+                }
+            }
+        ],
         "./crud/speaker.py": [
             {
                 "code": "reportAttributeAccessIssue",
@@ -3579,6 +3605,16 @@
             }
         ],
         "./scripts/apply_seat_holdings.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 48,
+                    "endColumn": 73,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./scripts/apply_sitting_spans.py": [
             {
                 "code": "reportArgumentType",
                 "range": {
