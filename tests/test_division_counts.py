@@ -195,6 +195,40 @@ def test_repeated_label_is_unread() -> None:
     ]
 
 
+@pytest.mark.parametrize(
+    "transcript",
+    [
+        "The House divided: Ayes, Nil; Noes, 2; Absentions, 31; Absent, 17.",
+        "The House divided: Ayes, Nil; Noes, 2; Absentation, 31; Absent, 17.",
+    ],
+)
+def test_misprinted_abstentions_label_is_read_with_the_counts_after_it(
+    transcript: str,
+) -> None:
+    report_divisions = get_report_divisions(_build_rows([("PROCEDURAL", transcript)]))
+
+    (division,) = report_divisions.divisions
+    assert (
+        division.ayes,
+        division.noes,
+        division.abstentions,
+        division.absent,
+        division.paired,
+    ) == (0, 2, 31, 17, None)
+    assert division.printed_counts == transcript.rstrip(".")
+
+
+def test_count_after_an_unknown_label_makes_the_line_unread() -> None:
+    report_divisions = get_report_divisions(
+        _build_rows([("PROCEDURAL", "The House divided: Ayes, 10; Noes, 3; Abstainers, 4.")])
+    )
+
+    assert report_divisions.divisions == []
+    assert [unread_row.reason for unread_row in report_divisions.unread_rows] == [
+        UnreadDivisionReason.COUNT_AFTER_READ_COUNTS
+    ]
+
+
 def test_opening_in_unclassified_row_is_unread() -> None:
     report_divisions = get_report_divisions(
         _build_rows([("UNCLASSIFIED", "The House divided: Ayes, 3; Noes, 4")])

@@ -43,7 +43,9 @@ _SPOKEN_TOTAL_PATTERN = re.compile(
     + r")\b",
     re.IGNORECASE,
 )
-_COUNT_LABEL_REGEX = r"\b(?:ayes|noes|no|abstentions?|absention|absent|paired)\b"
+_COUNT_LABEL_REGEX = (
+    r"\b(?:ayes|noes|no|abstentions?|absentions?|absentation|absent|paired)\b"
+)
 _LABEL_TO_SIDE = {
     "ayes": _SIDE_AYES,
     "noes": _SIDE_NOES,
@@ -51,6 +53,8 @@ _LABEL_TO_SIDE = {
     "abstention": _SIDE_ABSTENTIONS,
     "abstentions": _SIDE_ABSTENTIONS,
     "absention": _SIDE_ABSTENTIONS,
+    "absentions": _SIDE_ABSTENTIONS,
+    "absentation": _SIDE_ABSTENTIONS,
     "absent": _SIDE_ABSENT,
     "paired": _SIDE_PAIRED,
 }
@@ -121,6 +125,7 @@ _LIST_HEADING_PATTERN = re.compile(
     r"^(?:ayes|noes|no|abstentions?|absent|paired)\b", re.IGNORECASE
 )
 _AYES_WORD_PATTERN = re.compile(r"\bayes\b", re.IGNORECASE)
+_TRAILING_COUNT_PATTERN = re.compile(r"\d|\bnil\b", re.IGNORECASE)
 _NUMBER_WORD_SEPARATOR_PATTERN = re.compile(r"[-\s]+")
 
 
@@ -240,6 +245,13 @@ def _get_printed_line(
             speech_parse_row.report_id,
             speech_parse_row.ordinal,
             UnreadDivisionReason.OPENING_WITHOUT_COUNTS,
+            speech_parse_row.transcript,
+        )
+    if _TRAILING_COUNT_PATTERN.search(stripped, span.end):
+        return UnreadDivisionRow(
+            speech_parse_row.report_id,
+            speech_parse_row.ordinal,
+            UnreadDivisionReason.COUNT_AFTER_READ_COUNTS,
             speech_parse_row.transcript,
         )
     return _CountLine(
