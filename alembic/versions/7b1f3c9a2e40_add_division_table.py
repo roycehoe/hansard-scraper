@@ -1,7 +1,7 @@
 """add division table
 
 Revision ID: 7b1f3c9a2e40
-Revises: d9e4f2a7b3c1
+Revises: e3b7c1d94a62
 Create Date: 2026-11-09 15:30:00.000000
 
 """
@@ -14,7 +14,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 revision: str = "7b1f3c9a2e40"
-down_revision: Optional[Union[str, Sequence[str]]] = "d9e4f2a7b3c1"
+down_revision: Optional[Union[str, Sequence[str]]] = "e3b7c1d94a62"
 branch_labels: Optional[Union[str, Sequence[str]]] = None
 depends_on: Optional[Union[str, Sequence[str]]] = None
 

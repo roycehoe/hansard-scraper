@@ -6,7 +6,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 
 _ALEMBIC_INI = Path(__file__).parent.parent / "alembic.ini"
-_DOWN_REVISION = "d9e4f2a7b3c1"
+_DOWN_REVISION = "e3b7c1d94a62"
 _REVISION = "7b1f3c9a2e40"
 _CREATE_TABLE = "CREATE TABLE"
 _INDEX_COUNT = 2
