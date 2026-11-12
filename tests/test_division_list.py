@@ -151,6 +151,44 @@ def test_15_may_1985_counts_disagree_and_stores_no_names() -> None:
     assert parsed_list.names == []
 
 
+def test_27_august_2002_reads_the_no_heading_as_a_heading_not_a_name() -> None:
+    html, expected = _read_fixture("hansard_list_2002_08_27_no_heading")
+
+    parsed_list = _get_fixture_list(html, expected)
+
+    assert parsed_list.list_status == DivisionListStatus.COUNTS_DISAGREE
+    assert parsed_list.printed_list is not None
+    assert parsed_list.names == []
+
+
+def test_a_nil_with_a_full_stop_and_a_misspelt_abstentions_heading_are_not_names() -> None:
+    html = _get_pre_html(
+        _OPENING,
+        "",
+        "  Ayes",
+        "",
+        "  Aa Bb",
+        "  Cc Dd",
+        "",
+        "  Noes",
+        "",
+        "  Nil.",
+        "",
+        "  Abstentations.",
+        "",
+        "  Ee Ff",
+    )
+
+    parsed_list = _get_list(html, 2, 0, abstentions=1)
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert _get_names(parsed_list) == [
+        (DivisionVoteChoice.AYE, "Aa Bb"),
+        (DivisionVoteChoice.AYE, "Cc Dd"),
+        (DivisionVoteChoice.ABSTAIN, "Ee Ff"),
+    ]
+
+
 @pytest.mark.parametrize(
     "side_with_a_name_dropped", ["ayes", "abstentions", "absent", "paired"]
 )

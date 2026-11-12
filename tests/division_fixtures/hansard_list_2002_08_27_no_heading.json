@@ -1,0 +1,10 @@
+{
+ "why": "The Noes heading prints as No, so the old reader took it for a Noes name and stored 78 Ayes against 77 names read; the list is COUNTS_DISAGREE and stores no names (division 1 of the report of 27 August 2002).",
+ "ayes": 78,
+ "noes": null,
+ "abstentions": null,
+ "absent": null,
+ "paired": null,
+ "division_index": 0,
+ "division_count": 1
+}

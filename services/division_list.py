@@ -16,7 +16,7 @@ _OPENING_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _HEADING_CELL_PATTERN = re.compile(
-    r"^_?(Ayes|Noes|Abstentions?|Absention|Absent|Paired)_?[.:]?(?:[- ]*\(?(?:contd|cont|continued)\.?\)?)?[.:]?_?$",
+    r"^_?(Ayes|Noes|No|Abstentions?|Absention|Abstentations|Absent|Paired)_?[.:]?(?:[- ]*\(?(?:contd|cont|continued)\.?\)?)?[.:]?_?$",
     re.IGNORECASE,
 )
 _HEADING_WITH_NAME_PATTERN = re.compile(
@@ -31,9 +31,11 @@ _TITLE_CELLS = frozenset({"madam", "miss", "mrs", "mr", "dr"})
 _HEADING_WORD_TO_VOTE_CHOICE = {
     "ayes": DivisionVoteChoice.AYE,
     "noes": DivisionVoteChoice.NO,
+    "no": DivisionVoteChoice.NO,
     "abstention": DivisionVoteChoice.ABSTAIN,
     "abstentions": DivisionVoteChoice.ABSTAIN,
     "absention": DivisionVoteChoice.ABSTAIN,
+    "abstentations": DivisionVoteChoice.ABSTAIN,
     "absent": DivisionVoteChoice.ABSENT,
     "paired": DivisionVoteChoice.PAIRED,
 }
@@ -263,7 +265,7 @@ def _add_cell(state: _ListState, column: int, cell: str, is_run: bool) -> None:
         cell = heading_with_name_match.group(2)
         if _HEADING_CELL_PATTERN.match(cell) is not None:
             return
-    if _NOISE_CELL_PATTERN.match(cell) is not None or cell.lower() == _NIL:
+    if _NOISE_CELL_PATTERN.match(cell) is not None or cell.lower().rstrip(".") == _NIL:
         return
     if _is_list_end_cell(cell, is_run):
         state.is_ended = True
