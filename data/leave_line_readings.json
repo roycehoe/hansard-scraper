@@ -1,0 +1,107 @@
+[
+  {
+    "sitting_date": "1957-07-29",
+    "printed_line": "Mr Seah Peng Chuan - 29th July (afternoon) and 30th July, 1957;",
+    "readings": [
+      "Mr Seah Peng Chuan - on 29th and 30th July, 1957."
+    ],
+    "reason": "The print puts a note and a second day inside the date part, and no rule reads it."
+  },
+  {
+    "sitting_date": "1957-12-13",
+    "printed_line": "Mr Soh Ghee Soon has, under the provisions of subsection (3)(i) of section 47 of the Singapore Colony Order in Council, 1955, obtained from the Speaker, permission to be or to remain absent from meetings of the Assembly on 21st December, 1957.",
+    "readings": [
+      "Mr Soh Ghee Soon - on 21st December, 1957."
+    ],
+    "reason": "The print opens with the Standing Order wording, and no rule reads the name or the day from it."
+  },
+  {
+    "sitting_date": "1965-12-08",
+    "printed_line": "Inche Yaacob Bin Mohamed A1-Haj (Southern Islands), Minister of State for the Prime Minister's Department - from 12th November to 15th December, 1965.",
+    "readings": [
+      "Inche Yaacob Bin Mohamed Al-Haj (Southern Islands), Minister of State for the Prime Minister's Department - from 12th November to 15th December, 1965."
+    ],
+    "reason": "The print has the digit 1 for the letter l in the name."
+  },
+  {
+    "sitting_date": "1967-09-07",
+    "printed_line": "Mr S. Rajaratnam (Kampong Glam), Minister for Foreign Affairs - (i) from 3rd to 8th August, 1967 (ii) from 4th to 8th September, 1967.",
+    "readings": [
+      "Mr S. Rajaratnam (Kampong Glam), Minister for Foreign Affairs - from 3rd to 8th August, 1967 and from 4th to 8th September, 1967."
+    ],
+    "reason": "The print numbers its two ranges (i) and (ii), and no rule reads them."
+  },
+  {
+    "sitting_date": "1970-05-21",
+    "printed_line": "Dr Toh Chin Chye (Rochore), Minister for Science and Technology -Seng (Jalan Besar), Parliamentary on 21st May, 1970.",
+    "readings": [
+      "Dr Toh Chin Chye (Rochore), Minister for Science and Technology - on 21st May, 1970."
+    ],
+    "reason": "The source interleaves this entry with the next one."
+  },
+  {
+    "sitting_date": "1970-05-21",
+    "printed_line": "Mr Chan Chee Secretary to the Minister for Social Affairs - on 21st May, 1970.",
+    "readings": [
+      "Mr Chan Chee Seng (Jalan Besar), Parliamentary Secretary to the Minister for Social Affairs - on 21st May, 1970."
+    ],
+    "reason": "The source interleaves this entry with the one above."
+  },
+  {
+    "sitting_date": "1976-07-23",
+    "printed_line": "Mr Lee Kuan Yew (Tanjong Pagar. Prime Minister - on 23rd July, 1976.",
+    "readings": [
+      "Mr Lee Kuan Yew (Tanjong Pagar), Prime Minister - on 23rd July, 1976."
+    ],
+    "reason": "The print closes the constituency bracket with a full stop."
+  },
+  {
+    "sitting_date": "1990-03-29",
+    "printed_line": "Industry and Second Minister for Defence (Services) -- from",
+    "readings": [
+      "BG Lee Hsien Loong (Teck Ghee), Minister for Trade and Industry and Second Minister for Defence (Services) -- from"
+    ],
+    "reason": "The print wraps the office onto a second line that the reader does not join."
+  },
+  {
+    "sitting_date": "1994-12-05",
+    "printed_line": "BG George Yong-Boon Yeo - from 12th to 15th November, from 5th to 8th December, 1994, and from 18th to 22nd December. Dr Tony Tan Keng Yam - from 14th to 16th November and on 2nd December, 1994.",
+    "readings": [
+      "BG George Yong-Boon Yeo - from 12th to 15th November, from 5th to 8th December and from 18th to 22nd December, 1994. Dr Tony Tan Keng Yam - from 14th to 16th November and on 2nd December, 1994."
+    ],
+    "reason": "The print puts the year after the second range of three and leaves it off the third."
+  },
+  {
+    "sitting_date": "2000-04-25",
+    "printed_line": "Mr K Shanmugam| | 25 Apr 25 Apr",
+    "readings": [
+      "Mr K Shanmugam| 25 Apr| 25 Apr"
+    ],
+    "reason": "The print leaves the cell bars out between the two dates."
+  },
+  {
+    "sitting_date": "2000-10-09",
+    "printed_line": "| | 7Oct 15 Oct",
+    "readings": [
+      "| 7 Oct| 15 Oct"
+    ],
+    "reason": "The print leaves the cell bars out between the two dates and glues the day to the month."
+  },
+  {
+    "sitting_date": "2002-07-08",
+    "printed_line": "Dr Warren Lee 6 Jul 8 Jul (am)| 6 Jul 8 Jul (am)| 8 Jul (am)",
+    "readings": [
+      "Dr Warren Lee| 6 Jul| 8 Jul"
+    ],
+    "reason": "The print repeats the dates with a morning mark in the cells."
+  },
+  {
+    "sitting_date": "2010-10-18",
+    "printed_line": "| 24 Oct| 30 Oct Mr Wee Siew Kim| 03 Nov| 05 Nov",
+    "readings": [
+      "| 24 Oct| 30 Oct",
+      "Mr Wee Siew Kim| 03 Nov| 05 Nov"
+    ],
+    "reason": "The print runs two rows together on one line."
+  }
+]

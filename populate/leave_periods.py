@@ -16,6 +16,7 @@ from exceptions import HansardWriteCheckError
 from logs import logger
 from schemas.leave_date_misprint import LeaveDateMisprint
 from schemas.leave_heading_year import LeaveHeadingYear
+from schemas.leave_line_reading import LeaveLineReading
 from services.attendance import (
     build_speaker_lookups,
     get_sitting_entry_names,
@@ -27,7 +28,11 @@ from services.leave_period import (
     get_leave_entry_speaker_link,
 )
 from services.leave_section import build_leave_entries_from_markdown
-from utils.data_files import get_leave_date_misprints, get_leave_heading_years
+from utils.data_files import (
+    get_leave_date_misprints,
+    get_leave_heading_years,
+    get_leave_line_readings,
+)
 from utils.leave_entry import (
     LeaveEntry,
     get_leave_name_key,
@@ -76,6 +81,7 @@ def _get_leave_entries(
     sitting_date: date,
     leave_date_misprints: list[LeaveDateMisprint],
     leave_heading_years: list[LeaveHeadingYear],
+    leave_line_readings: list[LeaveLineReading],
 ) -> list[LeaveEntry]:
     if sitting_leave_text_row.markdown_content is not None:
         return build_leave_entries_from_markdown(
@@ -83,6 +89,7 @@ def _get_leave_entries(
             sitting_date,
             leave_date_misprints,
             leave_heading_years,
+            leave_line_readings,
         )
     if sitting_leave_text_row.ptba_list is None:
         return []
@@ -144,6 +151,7 @@ def _get_sitting_printings(
     speaker_name_to_speaker_id: dict[Optional[str], int],
     leave_date_misprints: list[LeaveDateMisprint],
     leave_heading_years: list[LeaveHeadingYear],
+    leave_line_readings: list[LeaveLineReading],
 ) -> list[PlannedLeavePrinting]:
     sitting_date = parse_sitting_date(sitting_leave_text_row.sitting_date).date()
     leave_entries = _get_leave_entries(
@@ -151,6 +159,7 @@ def _get_sitting_printings(
         sitting_date,
         leave_date_misprints,
         leave_heading_years,
+        leave_line_readings,
     )
     if not leave_entries:
         return []
@@ -219,6 +228,7 @@ def get_leave_period_plan(
     lookups = build_speaker_lookups(speakers)
     leave_date_misprints = get_leave_date_misprints()
     leave_heading_years = get_leave_heading_years()
+    leave_line_readings = get_leave_line_readings()
     planned_printings = []
     sorted_sitting_ids = sorted(sitting_ids)
     for start in range(0, len(sorted_sitting_ids), _SITTING_BATCH):
@@ -243,6 +253,7 @@ def get_leave_period_plan(
                     sitting_id_to_speaker_name_to_speaker_id[sitting_leave_text_row.id],
                     leave_date_misprints,
                     leave_heading_years,
+                    leave_line_readings,
                 )
             )
     return sorted(

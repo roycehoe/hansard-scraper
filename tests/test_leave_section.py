@@ -9,7 +9,11 @@ from services.leave_section import (
     build_leave_entries_from_markdown,
     get_leave_sections,
 )
-from utils.data_files import get_leave_date_misprints, get_leave_heading_years
+from utils.data_files import (
+    get_leave_date_misprints,
+    get_leave_heading_years,
+    get_leave_line_readings,
+)
 from utils.leave_entry import LeaveDates, LeaveEntry
 
 _LEAVE_DATE_MISPRINT_COUNT = 44
@@ -265,6 +269,7 @@ def _build_entries(*lines: str, sitting_date: date = _SITTING_DATE) -> list[Leav
         sitting_date,
         get_leave_date_misprints(),
         get_leave_heading_years(),
+        get_leave_line_readings(),
     )
 
 
@@ -691,6 +696,7 @@ def test_ordinals_run_across_sections() -> None:
         _SITTING_DATE,
         get_leave_date_misprints(),
         get_leave_heading_years(),
+        get_leave_line_readings(),
     )
 
     assert [leave_entry.ordinal for leave_entry in leave_entries] == [1, 2]
@@ -1636,3 +1642,49 @@ def test_a_hand_kept_heading_year_is_the_only_year_offered() -> None:
 
     assert _get_date_pairs(leave_entries) == [(date(2005, 10, 20), date(2005, 10, 31))]
     assert leave_entries[0].printed_heading_from == "(2006)"
+
+
+def _get_reading_markdown(sitting_date: date, *lines: str) -> list[LeaveEntry]:
+    return build_leave_entries_from_markdown(
+        _get_markdown(_HEADING, *lines),
+        sitting_date,
+        get_leave_date_misprints(),
+        get_leave_heading_years(),
+        get_leave_line_readings(),
+    )
+
+
+def test_a_hand_kept_reading_replaces_the_line_and_keeps_the_print() -> None:
+    printed_line = "Inche Yaacob Bin Mohamed A1-Haj (Southern Islands), Minister of State for the Prime Minister's Department - from 12th November to 15th December, 1965."
+
+    leave_entries = _get_reading_markdown(date(1965, 12, 8), printed_line)
+
+    assert leave_entries[0].printed_name == "Inche Yaacob Bin Mohamed Al-Haj"
+    assert leave_entries[0].printed_line == printed_line
+    assert leave_entries[0].entry_format == LeaveEntryFormat.PROSE_RANGE
+    assert leave_entries[0].printed_from == "12th November"
+
+
+def test_a_hand_kept_reading_with_two_lines_gives_a_row_for_each() -> None:
+    printed_line = "| 24 Oct| 30 Oct Mr Wee Siew Kim| 03 Nov| 05 Nov"
+
+    leave_entries = _get_reading_markdown(
+        date(2010, 10, 18), "Mr A| 20 Oct| 22 Oct", printed_line
+    )
+
+    assert [leave_entry.ordinal for leave_entry in leave_entries] == [1, 2, 3]
+    assert _get_names(leave_entries)[1:] == [
+        (None, "Mr A", LeaveNameSource.CARRIED_FROM_ROW_ABOVE),
+        ("Mr Wee Siew Kim", None, LeaveNameSource.PRINTED),
+    ]
+    assert leave_entries[1].printed_line == printed_line
+    assert leave_entries[2].printed_line == printed_line
+    assert leave_entries[2].printed_from == "03 Nov"
+
+
+def test_a_hand_kept_reading_applies_only_on_its_sitting_date() -> None:
+    printed_line = "| | 7Oct 15 Oct"
+
+    leave_entries = _get_reading_markdown(date(2000, 10, 10), printed_line)
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.UNREAD]

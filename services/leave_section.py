@@ -6,6 +6,7 @@ from typing import Optional
 from enums import LeaveEntryFormat, LeaveNameSource, LeaveYearSource
 from schemas.leave_date_misprint import LeaveDateMisprint
 from schemas.leave_heading_year import LeaveHeadingYear
+from schemas.leave_line_reading import LeaveLineReading
 from utils.leave_entry import (
     MONTH_NAME_TO_NUMBER,
     DayAndMonth,
@@ -1248,43 +1249,88 @@ def _parse_italic_prose_entries(
     return italic_entries
 
 
+def _read_line(
+    line: str,
+    first_ordinal: int,
+    table_section: _TableSection,
+    sitting_date: date,
+    leave_date_misprints: list[LeaveDateMisprint],
+    leave_heading_years: list[LeaveHeadingYear],
+) -> list[LeaveEntry]:
+    italic_entries = _parse_italic_prose_entries(
+        line, first_ordinal, sitting_date, leave_date_misprints
+    )
+    if italic_entries is not None:
+        return italic_entries
+    table_entries = _parse_table_entries(
+        line,
+        first_ordinal,
+        table_section,
+        sitting_date,
+        leave_date_misprints,
+        leave_heading_years,
+    )
+    if table_entries is not None:
+        return table_entries
+    return _build_prose_entries(
+        line, line, first_ordinal, sitting_date, leave_date_misprints
+    )
+
+
+def _keep_printed_text(printed_line: str, text: Optional[str]) -> Optional[str]:
+    if text is None or text not in printed_line:
+        return None
+    return text
+
+
+def _restore_printed_line(leave_entry: LeaveEntry, printed_line: str) -> LeaveEntry:
+    return replace(
+        leave_entry,
+        printed_line=printed_line,
+        printed_from=_keep_printed_text(printed_line, leave_entry.printed_from),
+        printed_to=_keep_printed_text(printed_line, leave_entry.printed_to),
+    )
+
+
 def build_leave_entries_from_markdown(
     markdown_content: str,
     sitting_date: date,
     leave_date_misprints: list[LeaveDateMisprint],
     leave_heading_years: list[LeaveHeadingYear],
+    leave_line_readings: list[LeaveLineReading],
 ) -> list[LeaveEntry]:
+    printed_line_to_readings = {
+        leave_line_reading.printed_line: leave_line_reading.readings
+        for leave_line_reading in leave_line_readings
+        if leave_line_reading.sitting_date == sitting_date
+    }
     leave_entries: list[LeaveEntry] = []
     for section_lines in get_leave_sections(markdown_content):
         table_section = _TableSection()
         for printed_line in section_lines:
-            italic_entries = _parse_italic_prose_entries(
-                printed_line,
-                len(leave_entries) + 1,
-                sitting_date,
-                leave_date_misprints,
-            )
-            if italic_entries is not None:
-                leave_entries.extend(italic_entries)
-                continue
-            table_entries = _parse_table_entries(
-                printed_line,
-                len(leave_entries) + 1,
-                table_section,
-                sitting_date,
-                leave_date_misprints,
-                leave_heading_years,
-            )
-            if table_entries is not None:
-                leave_entries.extend(table_entries)
-                continue
-            leave_entries.extend(
-                _build_prose_entries(
-                    printed_line,
-                    printed_line,
-                    len(leave_entries) + 1,
-                    sitting_date,
-                    leave_date_misprints,
+            readings = printed_line_to_readings.get(printed_line)
+            if readings is None:
+                leave_entries.extend(
+                    _read_line(
+                        printed_line,
+                        len(leave_entries) + 1,
+                        table_section,
+                        sitting_date,
+                        leave_date_misprints,
+                        leave_heading_years,
+                    )
                 )
-            )
+                continue
+            for reading in readings:
+                leave_entries.extend(
+                    _restore_printed_line(read_entry, printed_line)
+                    for read_entry in _read_line(
+                        reading,
+                        len(leave_entries) + 1,
+                        table_section,
+                        sitting_date,
+                        leave_date_misprints,
+                        leave_heading_years,
+                    )
+                )
     return leave_entries
