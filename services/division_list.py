@@ -25,6 +25,10 @@ _HEADING_WITH_NAME_PATTERN = re.compile(
 _CELL_PATTERN = re.compile(r"\S+(?: \S+)*")
 _MARKER_PATTERN = re.compile(r"^(?:Column|Page)\s*:?\s*\d+$", re.IGNORECASE)
 _NOISE_CELL_PATTERN = re.compile(r"^[-_–—\s]*$")
+_GLUED_HEADING_OR_NIL_PATTERN = re.compile(
+    r"\.\s+(?:Ayes|Noes|No|Abstentions?|Absention|Abstentations|Absent|Paired|Nil)\.?$",
+    re.IGNORECASE,
+)
 _NIL = "nil"
 _WRAP_WORDS = frozenset({"bin", "binte", "bte", "bt", "b", "s/o", "d/o"})
 _TITLE_CELLS = frozenset({"madam", "miss", "mrs", "mr", "dr"})
@@ -267,6 +271,9 @@ def _add_cell(
         if _HEADING_CELL_PATTERN.match(cell) is not None:
             return
     if _NOISE_CELL_PATTERN.match(cell) is not None or cell.lower().rstrip(".") == _NIL:
+        return
+    if _GLUED_HEADING_OR_NIL_PATTERN.search(cell) is not None:
+        state.is_unreadable = True
         return
     if _is_list_end_cell(cell, is_run):
         state.is_ended = True

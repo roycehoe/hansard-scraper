@@ -1,0 +1,10 @@
+{
+ "why": "A sparse right column (Noes, Abstentions and Absent headings and two Absent names) is not found as a column, so six cells glue a name to Nil, a heading or another name (\"Goh Chew Chua. Abstentions\", \"Hart, T. M. Absent\"). The Ayes count of 30 matched by luck and the list was stored with six wrong rows (division 274, report 41250, 6 September 1956).",
+ "ayes": 30,
+ "noes": 0,
+ "abstentions": 0,
+ "absent": null,
+ "paired": null,
+ "division_index": 0,
+ "division_count": 1
+}

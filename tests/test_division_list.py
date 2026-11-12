@@ -202,6 +202,16 @@ def test_27_august_2002_reads_the_no_heading_as_a_heading_not_a_name() -> None:
     assert parsed_list.names == []
 
 
+def test_6_september_1956_a_name_glued_to_a_heading_or_nil_makes_the_list_unreadable() -> None:
+    html, expected = _read_fixture("hansard_list_1956_09_06_glued_column")
+
+    parsed_list = _get_fixture_list(html, expected)
+
+    assert parsed_list.list_status == DivisionListStatus.LAYOUT_UNREADABLE
+    assert parsed_list.printed_list is not None
+    assert parsed_list.names == []
+
+
 def test_a_nil_with_a_full_stop_and_a_misspelt_abstentions_heading_are_not_names() -> None:
     html = _get_pre_html(
         _OPENING,
