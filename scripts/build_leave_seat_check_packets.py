@@ -1108,14 +1108,17 @@ def _get_leave_item_key_to_source_text(
             ),
         )
     )
+    leave_date_misprints = get_leave_date_misprints()
+    leave_heading_years = get_leave_heading_years()
+    leave_line_readings = get_leave_line_readings()
     return {
         (_LEAVE_TABLE_NAME, check_row.id): get_leave_source_text(
             check_row,
             sitting_id_to_rows[check_row.sitting_id],
             sitting_id_to_speaker_id_to_entry_line.get(check_row.sitting_id, {}),
-            get_leave_date_misprints(),
-            get_leave_heading_years(),
-            get_leave_line_readings(),
+            leave_date_misprints,
+            leave_heading_years,
+            leave_line_readings,
         )
         for check_row in drawn_leave_rows
     }

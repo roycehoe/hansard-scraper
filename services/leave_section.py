@@ -735,7 +735,8 @@ def _get_duration_printings(
     duration_match = _DURATION_RE.match(entry_parts.date_text)
     if duration_match is None:
         return None
-    if duration_match.group("year") is None:
+    printed_year = _get_printed_year(duration_match.group("year"))
+    if printed_year is None:
         duration_printing = _get_start_date_printing(
             entry_parts,
             duration_match,
@@ -746,9 +747,7 @@ def _get_duration_printings(
         duration_printing = _get_start_date_printing(
             entry_parts,
             duration_match,
-            _get_duration_leave_dates(
-                duration_match, int(duration_match.group("year"))
-            ),
+            _get_duration_leave_dates(duration_match, printed_year),
             LeaveYearSource.PRINTED_IN_ENTRY,
         )
     if not _has_date_text_left(entry_parts.date_text, [duration_match]):
@@ -847,10 +846,8 @@ def _get_mixed_printings(
 
 
 def _get_dated_printings(
-    entry_parts: Optional[_ProseEntryParts], sitting_date: date
+    entry_parts: _ProseEntryParts, sitting_date: date
 ) -> list[_PrintingDates]:
-    if entry_parts is None:
-        return [_UNREAD_PRINTING]
     range_printings = _get_range_printings(entry_parts, sitting_date)
     if range_printings is not None:
         return range_printings
@@ -1019,10 +1016,8 @@ def _take_table_row_name(
 def _get_table_printed_year(
     year_text: Optional[str], sitting_date: date
 ) -> Optional[int]:
-    if year_text is None:
-        return None
-    printed_year = int(year_text)
-    if len(year_text) == _FULL_YEAR_DIGIT_COUNT:
+    printed_year = _get_printed_year(year_text)
+    if printed_year is None or len(year_text) == _FULL_YEAR_DIGIT_COUNT:
         return printed_year
     century_year = (
         sitting_date.year // _YEARS_IN_CENTURY * _YEARS_IN_CENTURY + printed_year
