@@ -86,6 +86,7 @@ _FROM_ONLY_RE = re.compile(
 )
 _DAY_RE = re.compile(_DAY_PATTERN)
 _DATE_LEFTOVER_RE = re.compile(r"^[\s,.;]*(?:and[\s,.;]*)*$", re.IGNORECASE)
+_ITALIC_LINE_RE = re.compile(r"^\|\s*_(?P<text>[^|]*?)_\s*$")
 _ENTRY_BREAK_RE = re.compile(r"(?<=\.)\s+(?=\S)")
 _TRAILING_TEXT_RE = re.compile(r"\.\s+\S|\s+\((?=[a-z]{4})")
 _NON_DIGIT_RE = re.compile(r"\D")
@@ -1137,6 +1138,52 @@ def _build_prose_entry(
     )
 
 
+def _build_prose_entries(
+    printed_line: str,
+    entry_line: str,
+    first_ordinal: int,
+    sitting_date: date,
+    leave_date_misprints: list[LeaveDateMisprint],
+) -> list[LeaveEntry]:
+    leave_entries: list[LeaveEntry] = []
+    for entry_text in _split_prose_line(entry_line, leave_date_misprints):
+        entry_parts = _get_prose_entry_parts(entry_text, leave_date_misprints)
+        for printing_dates in _get_prose_printings(entry_parts, sitting_date):
+            leave_entries.append(
+                _build_prose_entry(
+                    first_ordinal + len(leave_entries),
+                    printed_line,
+                    entry_parts,
+                    printing_dates,
+                )
+            )
+    return leave_entries
+
+
+def _parse_italic_prose_entries(
+    printed_line: str,
+    first_ordinal: int,
+    sitting_date: date,
+    leave_date_misprints: list[LeaveDateMisprint],
+) -> Optional[list[LeaveEntry]]:
+    italic_match = _ITALIC_LINE_RE.match(printed_line)
+    if italic_match is None:
+        return None
+    italic_entries = _build_prose_entries(
+        printed_line,
+        italic_match.group("text"),
+        first_ordinal,
+        sitting_date,
+        leave_date_misprints,
+    )
+    if all(
+        italic_entry.entry_format == LeaveEntryFormat.UNREAD
+        for italic_entry in italic_entries
+    ):
+        return None
+    return italic_entries
+
+
 def build_leave_entries_from_markdown(
     markdown_content: str,
     sitting_date: date,
@@ -1146,6 +1193,15 @@ def build_leave_entries_from_markdown(
     for section_lines in get_leave_sections(markdown_content):
         table_section = _TableSection()
         for printed_line in section_lines:
+            italic_entries = _parse_italic_prose_entries(
+                printed_line,
+                len(leave_entries) + 1,
+                sitting_date,
+                leave_date_misprints,
+            )
+            if italic_entries is not None:
+                leave_entries.extend(italic_entries)
+                continue
             table_entries = _parse_table_entries(
                 printed_line,
                 len(leave_entries) + 1,
@@ -1156,15 +1212,13 @@ def build_leave_entries_from_markdown(
             if table_entries is not None:
                 leave_entries.extend(table_entries)
                 continue
-            for entry_text in _split_prose_line(printed_line, leave_date_misprints):
-                entry_parts = _get_prose_entry_parts(entry_text, leave_date_misprints)
-                for printing_dates in _get_prose_printings(entry_parts, sitting_date):
-                    leave_entries.append(
-                        _build_prose_entry(
-                            len(leave_entries) + 1,
-                            printed_line,
-                            entry_parts,
-                            printing_dates,
-                        )
-                    )
+            leave_entries.extend(
+                _build_prose_entries(
+                    printed_line,
+                    printed_line,
+                    len(leave_entries) + 1,
+                    sitting_date,
+                    leave_date_misprints,
+                )
+            )
     return leave_entries

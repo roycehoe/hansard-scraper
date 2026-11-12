@@ -1314,7 +1314,7 @@ def test_a_single_cell_row_with_a_digit_is_unread_with_no_name() -> None:
     assert leave_entries[2].carried_name == "Mr A"
 
 
-def test_an_italic_one_cell_entry_is_unread_and_the_rows_around_it_are_unchanged() -> (
+def test_an_italic_one_cell_entry_is_read_as_prose_and_the_rows_around_it_are_unchanged() -> (
     None
 ):
     line = "| _Mr Lee Kuan Yew (Tanjong Pagar), Prime Minister - on 8th April, 1969._"
@@ -1328,18 +1328,30 @@ def test_an_italic_one_cell_entry_is_unread_and_the_rows_around_it_are_unchanged
 
     assert _get_formats(leave_entries) == [
         LeaveEntryFormat.TABLE_ROW,
-        LeaveEntryFormat.UNREAD,
+        LeaveEntryFormat.PROSE_SINGLE_DAY,
         LeaveEntryFormat.TABLE_ROW,
     ]
-    unread_entry = leave_entries[1]
-    assert unread_entry.printed_line == line
-    assert unread_entry.name_source == LeaveNameSource.NONE
-    assert unread_entry.printed_name is None
+    prose_entry = leave_entries[1]
+    assert prose_entry.printed_line == line
+    assert prose_entry.printed_name == "Mr Lee Kuan Yew"
+    assert prose_entry.name_source == LeaveNameSource.PRINTED
+    assert prose_entry.office_printed == "Prime Minister"
+    assert prose_entry.leave_dates == LeaveDates(date(1969, 4, 8), date(1969, 4, 8))
     assert leave_entries[2].carried_name == "Mr A"
     assert leave_entries[2].printed_heading_from == "1969"
     assert leave_entries[2].leave_dates == LeaveDates(
         date(1969, 4, 10), date(1969, 4, 12)
     )
+
+
+def test_an_italic_one_cell_range_is_read_as_prose() -> None:
+    leave_entries = _build_entries(
+        "| _Mr Yeoh Ghim Seng (Joo Chiat), Deputy Speaker - from 21st to 31st March, 1969._"
+    )
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.PROSE_RANGE]
+    assert leave_entries[0].printed_from == "21st"
+    assert leave_entries[0].printed_to == "31st March, 1969"
 
 
 def test_unread_rows_with_a_name_cell_give_that_name_to_the_next_blank_row() -> None:
