@@ -14,10 +14,10 @@ from exceptions import HansardWriteCheckError
 from logs import logger
 from populate.column_numbers import get_column_number_plan, write_column_number_plan
 from populate.written_tables import vacuum_analyze_written_tables
-from schemas.unattributed_speech import UnattributedSpeechRange
+from schemas.unlabelled_speech import UnlabelledSpeechRange
 from services.speech import build_report_speeches
 from settings import settings
-from utils.data_files import get_unattributed_speech_ranges
+from utils.data_files import get_unlabelled_speech_ranges
 from utils.text import TextChange
 from utils.write_target import validate_can_write
 
@@ -45,10 +45,10 @@ def _add_report(
     plan: LanguageNoteCloseMarkPlan,
     report: Report,
     speech_rows: list[SpeechRow],
-    report_id_to_unattributed_range: dict[int, UnattributedSpeechRange],
+    report_id_to_unlabelled_range: dict[int, UnlabelledSpeechRange],
 ) -> None:
     parsed_speeches = build_report_speeches(
-        report, report_id_to_unattributed_range
+        report, report_id_to_unlabelled_range
     ).speeches
     if len(parsed_speeches) != len(speech_rows):
         plan.unaligned_report_ids.append(report.id)
@@ -71,9 +71,9 @@ def _add_report(
 
 
 def _get_language_note_close_mark_plan(session: Session) -> LanguageNoteCloseMarkPlan:
-    report_id_to_unattributed_range = {
+    report_id_to_unlabelled_range = {
         speech_range.report_id: speech_range
-        for speech_range in get_unattributed_speech_ranges()
+        for speech_range in get_unlabelled_speech_ranges()
     }
     report_ids = sorted(
         CRUDSpeech(session).get_report_ids_by_transcript_regex(
@@ -91,7 +91,7 @@ def _get_language_note_close_mark_plan(session: Session) -> LanguageNoteCloseMar
                 plan,
                 report,
                 report_id_to_speech_rows[report.id],
-                report_id_to_unattributed_range,
+                report_id_to_unlabelled_range,
             )
         session.expunge_all()
     return plan

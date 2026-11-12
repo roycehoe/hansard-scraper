@@ -121,7 +121,7 @@ from settings import settings
 from utils.data_files import (
     get_constituency_names,
     get_excluded_report_ids,
-    get_unattributed_speech_ranges,
+    get_unlabelled_speech_ranges,
 )
 from utils.json_columns import get_json_column
 from utils.sitting_dates import (
@@ -673,13 +673,13 @@ def _write_window_rows(
     ]
     CRUDReport(session).add_many(reports)
 
-    report_id_to_unattributed_range = {
+    report_id_to_unlabelled_range = {
         speech_range.report_id: speech_range
-        for speech_range in get_unattributed_speech_ranges()
+        for speech_range in get_unlabelled_speech_ranges()
     }
     speeches = []
     for report in reports:
-        report_speeches = build_report_speeches(report, report_id_to_unattributed_range)
+        report_speeches = build_report_speeches(report, report_id_to_unlabelled_range)
         if report_speeches.skip_reason == ReportSkipReason.NO_MARKDOWN_CONTENT:
             logger.debug(f"Skipping report {report.id}: no markdown content")
         if report_speeches.skip_reason == ReportSkipReason.NO_START_OF_SPEECH_LINE:

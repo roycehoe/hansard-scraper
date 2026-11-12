@@ -1,10 +1,10 @@
 import pytest
 
 from enums import SpeechKind
-from exceptions import HansardUnattributedSpeechError
-from schemas.unattributed_speech import UnattributedSpeechRange
-from services.speech import ParsedSpeech, apply_unattributed_speech_range
-from utils.data_files import get_unattributed_speech_ranges
+from exceptions import HansardUnlabelledSpeechError
+from schemas.unlabelled_speech import UnlabelledSpeechRange
+from services.speech import ParsedSpeech, apply_unlabelled_speech_range
+from utils.data_files import get_unlabelled_speech_ranges
 
 _CHAIR = "Mr Speaker"
 _MINISTER = "The Minister for Manpower (Dr Tan See Leng)"
@@ -43,7 +43,7 @@ def _build_chair_resumption() -> list[ParsedSpeech]:
 
 
 def test_rows_in_the_range_lose_the_wrong_label() -> None:
-    speech_range = UnattributedSpeechRange(
+    speech_range = UnlabelledSpeechRange(
         report_id=8732,
         speaker=_CHAIR,
         first_transcript_start="First, look",
@@ -51,7 +51,7 @@ def test_rows_in_the_range_lose_the_wrong_label() -> None:
         reason="",
     )
 
-    parsed_speeches = apply_unattributed_speech_range(
+    parsed_speeches = apply_unlabelled_speech_range(
         _build_chair_resumption(), speech_range
     )
 
@@ -82,7 +82,7 @@ def test_unclassified_rows_before_the_first_speaker_become_speech() -> None:
             speaker=None, transcript="Question proposed.", kind=SpeechKind.PROCEDURAL
         ),
     ]
-    speech_range = UnattributedSpeechRange(
+    speech_range = UnlabelledSpeechRange(
         report_id=24248,
         speaker=None,
         first_transcript_start="Mr Speaker, Sir",
@@ -90,7 +90,7 @@ def test_unclassified_rows_before_the_first_speaker_become_speech() -> None:
         reason="",
     )
 
-    parsed_speeches = apply_unattributed_speech_range(speeches, speech_range)
+    parsed_speeches = apply_unlabelled_speech_range(speeches, speech_range)
 
     assert [
         [parsed_speech.speaker, parsed_speech.kind] for parsed_speech in parsed_speeches
@@ -102,7 +102,7 @@ def test_unclassified_rows_before_the_first_speaker_become_speech() -> None:
 
 
 def test_a_range_the_parse_no_longer_holds_raises() -> None:
-    speech_range = UnattributedSpeechRange(
+    speech_range = UnlabelledSpeechRange(
         report_id=8732,
         speaker=_CHAIR,
         first_transcript_start="Second, look",
@@ -110,12 +110,12 @@ def test_a_range_the_parse_no_longer_holds_raises() -> None:
         reason="",
     )
 
-    with pytest.raises(HansardUnattributedSpeechError):
-        apply_unattributed_speech_range(_build_chair_resumption(), speech_range)
+    with pytest.raises(HansardUnlabelledSpeechError):
+        apply_unlabelled_speech_range(_build_chair_resumption(), speech_range)
 
 
 def test_the_data_file_holds_one_range_per_report() -> None:
-    speech_ranges = get_unattributed_speech_ranges()
+    speech_ranges = get_unlabelled_speech_ranges()
 
     assert len({speech_range.report_id for speech_range in speech_ranges}) == len(
         speech_ranges

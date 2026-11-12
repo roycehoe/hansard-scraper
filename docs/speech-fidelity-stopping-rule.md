@@ -123,5 +123,5 @@ The row rates fail both gates. The first-reading ruling moves Tier A only. The p
 
 Open, and not decided by the brief:
 - How a wrong `kind` scores. Readers note it. It joins no gate until the user rules.
-- How a row with kind SPEECH and no speaker scores. The rows named in `data/unattributed_speech.json` (the eight chair-resumption reports, 31083 and the opening speech of 24248) are in this group (ADR 0009). The speaker is missing, and no member is credited wrongly. Until ruled, a listed report stays in the sampling frame and its rows count as before.
+- How a row with kind SPEECH and no speaker scores. The rows named in `data/unlabelled_speech.json` (the eight chair-resumption reports, 31083 and the opening speech of 24248) are in this group (ADR 0009). The speaker is missing, and no member is credited wrongly. Until ruled, a listed report stays in the sampling frame and its rows count as before.
 - Whether round 1 and round 2 verdicts, read without the full source pass, stay in the pool as they are. The review suggested re-reading them or dividing by a measured reader recall. This amendment adopts neither.

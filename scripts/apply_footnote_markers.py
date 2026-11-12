@@ -16,10 +16,10 @@ from exceptions import HansardWriteCheckError
 from logs import logger
 from populate.column_numbers import get_column_number_plan, write_column_number_plan
 from populate.written_tables import vacuum_analyze_written_tables
-from schemas.unattributed_speech import UnattributedSpeechRange
+from schemas.unlabelled_speech import UnlabelledSpeechRange
 from services.speech import build_report_speeches
 from settings import settings
-from utils.data_files import get_unattributed_speech_ranges
+from utils.data_files import get_unlabelled_speech_ranges
 from utils.markdown_parser import get_cleaned_report_markdown
 from utils.text import TextChange
 from utils.write_target import validate_can_write
@@ -54,10 +54,10 @@ def _add_report_rows(
     plan: FootnoteMarkerPlan,
     report: Report,
     speech_rows: list[SpeechRow],
-    report_id_to_unattributed_range: dict[int, UnattributedSpeechRange],
+    report_id_to_unlabelled_range: dict[int, UnlabelledSpeechRange],
 ) -> None:
     parsed_speeches = build_report_speeches(
-        report, report_id_to_unattributed_range
+        report, report_id_to_unlabelled_range
     ).speeches
     if len(parsed_speeches) != len(speech_rows):
         plan.unaligned_report_ids.append(report.id)
@@ -83,7 +83,7 @@ def _add_report(
     plan: FootnoteMarkerPlan,
     report: Report,
     speech_rows: list[SpeechRow],
-    report_id_to_unattributed_range: dict[int, UnattributedSpeechRange],
+    report_id_to_unlabelled_range: dict[int, UnlabelledSpeechRange],
 ) -> None:
     markdown = get_cleaned_report_markdown(report.content, report.report_version)
     if markdown == report.markdown_content:
@@ -97,13 +97,13 @@ def _add_report(
         TextChange(report.id, report.markdown_content, markdown)
     )
     report.markdown_content = markdown
-    _add_report_rows(plan, report, speech_rows, report_id_to_unattributed_range)
+    _add_report_rows(plan, report, speech_rows, report_id_to_unlabelled_range)
 
 
 def _get_footnote_marker_plan(session: Session) -> FootnoteMarkerPlan:
-    report_id_to_unattributed_range = {
+    report_id_to_unlabelled_range = {
         speech_range.report_id: speech_range
-        for speech_range in get_unattributed_speech_ranges()
+        for speech_range in get_unlabelled_speech_ranges()
     }
     report_ids = CRUDReport(session).get_ids_by_content_regex(_SUPERSCRIPT_TAG_PATTERN)
     plan = FootnoteMarkerPlan(len(report_ids))
@@ -120,7 +120,7 @@ def _get_footnote_marker_plan(session: Session) -> FootnoteMarkerPlan:
                 plan,
                 report,
                 report_id_to_speech_rows[report.id],
-                report_id_to_unattributed_range,
+                report_id_to_unlabelled_range,
             )
     return plan
 

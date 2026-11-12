@@ -31,7 +31,7 @@ from schemas.person_decision import PersonDecision, PersonDecisions
 from schemas.person_name_spelling import PersonNameSpellingEntries
 from schemas.report_link_title_correction import ReportLinkTitleCorrections
 from schemas.speaker_override import SpeakerOverrides
-from schemas.unattributed_speech import UnattributedSpeechRanges
+from schemas.unlabelled_speech import UnlabelledSpeechRanges
 from utils.data_files import (
     get_attendance_cleanup,
     get_bill_title_corrections,
@@ -53,7 +53,7 @@ from utils.data_files import (
     get_person_name_spellings,
     get_report_link_title_corrections,
     get_speaker_overrides,
-    get_unattributed_speech_ranges,
+    get_unlabelled_speech_ranges,
     get_unscraped_members,
 )
 
@@ -78,7 +78,7 @@ _DATA_FILE_SCHEMAS = (
     ("person_name_spellings.json", PersonNameSpellingEntries),
     ("report_link_title_corrections.json", ReportLinkTitleCorrections),
     ("speaker_overrides.json", SpeakerOverrides),
-    ("unattributed_speech.json", UnattributedSpeechRanges),
+    ("unlabelled_speech.json", UnlabelledSpeechRanges),
     ("unscraped_members.json", HandKeptMembers),
 )
 _DATA_FILE_GETTERS = (
@@ -101,7 +101,7 @@ _DATA_FILE_GETTERS = (
     get_person_name_spellings,
     get_report_link_title_corrections,
     get_speaker_overrides,
-    get_unattributed_speech_ranges,
+    get_unlabelled_speech_ranges,
     get_unscraped_members,
 )
 _TYPO_KEY = "typo_key"

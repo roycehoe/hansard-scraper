@@ -22,7 +22,7 @@ class HansardSittingReportError(HansardError):
     pass
 
 
-class HansardUnattributedSpeechError(HansardError):
+class HansardUnlabelledSpeechError(HansardError):
     pass
 
 

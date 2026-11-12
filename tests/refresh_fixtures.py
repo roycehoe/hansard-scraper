@@ -30,7 +30,7 @@ from services.report import build_report
 from services.sitting import build_sitting
 from services.speech import build_report_speeches
 from settings import settings
-from utils.data_files import get_constituency_names, get_unattributed_speech_ranges
+from utils.data_files import get_constituency_names, get_unlabelled_speech_ranges
 from utils.sitting_dates import parse_sitting_date
 
 _FIXTURE_DIRECTORY = Path(__file__).parent / "fixtures" / "refresh"
@@ -82,13 +82,13 @@ def seed_stored(
     )
     session.flush()
 
-    report_id_to_unattributed_range = {
+    report_id_to_unlabelled_range = {
         speech_range.report_id: speech_range
-        for speech_range in get_unattributed_speech_ranges()
+        for speech_range in get_unlabelled_speech_ranges()
     }
     for report in reports:
         session.add_all(
-            build_report_speeches(report, report_id_to_unattributed_range).speeches
+            build_report_speeches(report, report_id_to_unlabelled_range).speeches
         )
     constituency_lookups = build_constituency_lookups(get_constituency_names())
     session.add_all(

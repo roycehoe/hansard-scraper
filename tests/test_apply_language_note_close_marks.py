@@ -106,7 +106,7 @@ def log_recorder(
     )
     monkeypatch.setattr(apply_language_note_close_marks_script, "logger", recorder)
     monkeypatch.setattr(
-        apply_language_note_close_marks_script, "get_unattributed_speech_ranges", list
+        apply_language_note_close_marks_script, "get_unlabelled_speech_ranges", list
     )
     return recorder
 

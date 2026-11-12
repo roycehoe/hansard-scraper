@@ -29,15 +29,15 @@ from schemas.fresh_parse_plan import (
     SpeechRowInsert,
     SpeechRowUpdate,
 )
-from schemas.unattributed_speech import UnattributedSpeechRange
+from schemas.unlabelled_speech import UnlabelledSpeechRange
 from services.speech import (
     ParsedSpeech,
-    apply_unattributed_speech_range,
+    apply_unlabelled_speech_range,
     get_speeches,
     get_start_of_speech_line,
 )
 from settings import settings
-from utils.data_files import get_unattributed_speech_ranges
+from utils.data_files import get_unlabelled_speech_ranges
 from utils.markdown_parser import get_cleaned_report_markdown
 from utils.speech_update import SpeechUpdate
 from utils.text import TextChange
@@ -47,7 +47,7 @@ _REPORT_BATCH = 200
 
 
 def _get_parsed_speeches(
-    report: Report, markdown: str, unattributed_range: Optional[UnattributedSpeechRange]
+    report: Report, markdown: str, unlabelled_range: Optional[UnlabelledSpeechRange]
 ) -> Optional[list[ParsedSpeech]]:
     start_of_speech_line = get_start_of_speech_line(
         markdown,
@@ -62,9 +62,9 @@ def _get_parsed_speeches(
     speeches = get_speeches(
         markdown, start_of_speech_line, report.report_type, report.report_version
     )
-    if unattributed_range is None:
+    if unlabelled_range is None:
         return speeches
-    return apply_unattributed_speech_range(speeches, unattributed_range)
+    return apply_unlabelled_speech_range(speeches, unlabelled_range)
 
 
 def _get_stored_digest(
@@ -185,9 +185,9 @@ def _is_kind_changed(
 def _get_plan(
     session: Session, report_ids: list[int], held_report_ids: frozenset[int]
 ) -> FreshParsePlan:
-    report_id_to_unattributed_range = {
+    report_id_to_unlabelled_range = {
         speech_range.report_id: speech_range
-        for speech_range in get_unattributed_speech_ranges()
+        for speech_range in get_unlabelled_speech_ranges()
     }
     report_plans = []
     planned_held_report_ids = []
@@ -206,7 +206,7 @@ def _get_plan(
                 report.content, report.report_version
             )
             parsed_speeches = _get_parsed_speeches(
-                report, markdown, report_id_to_unattributed_range.get(report.id)
+                report, markdown, report_id_to_unlabelled_range.get(report.id)
             )
             if parsed_speeches is None:
                 if speech_rows:

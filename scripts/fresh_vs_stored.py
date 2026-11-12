@@ -26,13 +26,13 @@ from schemas.fresh_vs_stored_report import (
     FreshVsStoredStatus,
     RowDifferences,
 )
-from schemas.unattributed_speech import UnattributedSpeechRange
+from schemas.unlabelled_speech import UnlabelledSpeechRange
 from services.speech import (
-    apply_unattributed_speech_range,
+    apply_unlabelled_speech_range,
     get_speeches,
     get_start_of_speech_line,
 )
-from utils.data_files import get_unattributed_speech_ranges
+from utils.data_files import get_unlabelled_speech_ranges
 from utils.markdown_parser import get_cleaned_report_markdown
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
@@ -117,7 +117,7 @@ def get_row_differences(
 
 
 def _get_fresh_rows(
-    report: Report, markdown: str, unattributed_range: Optional[UnattributedSpeechRange]
+    report: Report, markdown: str, unlabelled_range: Optional[UnlabelledSpeechRange]
 ) -> Optional[list[ComparedSpeechRow]]:
     start_of_speech_line = get_start_of_speech_line(
         markdown,
@@ -132,8 +132,8 @@ def _get_fresh_rows(
     speeches = get_speeches(
         markdown, start_of_speech_line, report.report_type, report.report_version
     )
-    if unattributed_range is not None:
-        speeches = apply_unattributed_speech_range(speeches, unattributed_range)
+    if unlabelled_range is not None:
+        speeches = apply_unlabelled_speech_range(speeches, unlabelled_range)
     return [
         ComparedSpeechRow(
             speaker=speech.speaker, transcript=speech.transcript, kind=speech.kind
@@ -143,13 +143,13 @@ def _get_fresh_rows(
 
 
 def _get_fresh_parse(
-    report: Report, unattributed_range: Optional[UnattributedSpeechRange]
+    report: Report, unlabelled_range: Optional[UnlabelledSpeechRange]
 ) -> _FreshParse:
     if report.content is None:
         return _FreshParse(markdown=None, rows=None)
     markdown = get_cleaned_report_markdown(report.content, report.report_version)
     return _FreshParse(
-        markdown=markdown, rows=_get_fresh_rows(report, markdown, unattributed_range)
+        markdown=markdown, rows=_get_fresh_rows(report, markdown, unlabelled_range)
     )
 
 
@@ -170,7 +170,7 @@ def _compare_report(
     report: Report,
     speech_rows: list[SpeechParseRow],
     held_reason: Optional[str],
-    unattributed_range: Optional[UnattributedSpeechRange],
+    unlabelled_range: Optional[UnlabelledSpeechRange],
 ) -> FreshVsStoredReport:
     stored_rows = [
         ComparedSpeechRow(
@@ -181,7 +181,7 @@ def _compare_report(
         for speech_row in speech_rows
     ]
     try:
-        fresh_parse = _get_fresh_parse(report, unattributed_range)
+        fresh_parse = _get_fresh_parse(report, unlabelled_range)
     except Exception:  # noqa: BLE001 a corpus survey must record every failing report, not stop at the first
         return FreshVsStoredReport(
             id=report.id,
@@ -226,7 +226,7 @@ def _compare_report(
 def _compare_report_batch(
     report_ids: list[int],
     held_report_id_to_reason: dict[int, str],
-    report_id_to_unattributed_range: dict[int, UnattributedSpeechRange],
+    report_id_to_unlabelled_range: dict[int, UnlabelledSpeechRange],
 ) -> list[FreshVsStoredReport]:
     with Session(_READ_ONLY_ENGINE) as session:
         report_id_to_speech_rows = defaultdict(list)
@@ -237,7 +237,7 @@ def _compare_report_batch(
                 report,
                 report_id_to_speech_rows[report.id],
                 held_report_id_to_reason.get(report.id),
-                report_id_to_unattributed_range.get(report.id),
+                report_id_to_unlabelled_range.get(report.id),
             )
             for report in CRUDReport(session).get_by_ids(report_ids)
         ]
@@ -255,9 +255,9 @@ def fresh_vs_stored(output_path: Path, held_path: Path, report_ids: list[int]) -
         held_report.report_id: held_report.reason
         for held_report in HeldReports.model_validate_json(held_path.read_text()).root
     }
-    report_id_to_unattributed_range = {
+    report_id_to_unlabelled_range = {
         speech_range.report_id: speech_range
-        for speech_range in get_unattributed_speech_ranges()
+        for speech_range in get_unlabelled_speech_ranges()
     }
     report_ids_to_compare = _get_report_ids_to_compare(report_ids)
     report_batches = [
@@ -273,7 +273,7 @@ def fresh_vs_stored(output_path: Path, held_path: Path, report_ids: list[int]) -
     compare_report_batch = partial(
         _compare_report_batch,
         held_report_id_to_reason=held_report_id_to_reason,
-        report_id_to_unattributed_range=report_id_to_unattributed_range,
+        report_id_to_unlabelled_range=report_id_to_unlabelled_range,
     )
     with Pool(_WORKER_COUNT, maxtasksperchild=_TASKS_PER_WORKER) as pool:
         for batch_reports in pool.imap_unordered(compare_report_batch, report_batches):

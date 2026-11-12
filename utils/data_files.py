@@ -41,9 +41,9 @@ from schemas.report_link_title_correction import (
     ReportLinkTitleCorrections,
 )
 from schemas.speaker_override import SpeakerOverrides
-from schemas.unattributed_speech import (
-    UnattributedSpeechRange,
-    UnattributedSpeechRanges,
+from schemas.unlabelled_speech import (
+    UnlabelledSpeechRange,
+    UnlabelledSpeechRanges,
 )
 
 _DATA_DIRECTORY = Path(__file__).parent.parent / "data"
@@ -56,7 +56,7 @@ _SPEAKER_OVERRIDES_FILE = _DATA_DIRECTORY / "speaker_overrides.json"
 _HAND_KEPT_ACT_LINKS_FILE = _DATA_DIRECTORY / "hand_kept_act_links.json"
 _HAND_KEPT_BILLS_FILE = _DATA_DIRECTORY / "hand_kept_bills.json"
 _HEADS_OF_STATE_FILE = _DATA_DIRECTORY / "heads_of_state.json"
-_UNATTRIBUTED_SPEECH_FILE = _DATA_DIRECTORY / "unattributed_speech.json"
+_UNLABELLED_SPEECH_FILE = _DATA_DIRECTORY / "unlabelled_speech.json"
 _PARTY_AFFILIATIONS_FILE = _DATA_DIRECTORY / "party_affiliations.json"
 _ATTENDANCE_CLEANUP_FILE = _DATA_DIRECTORY / "attendance_cleanup.json"
 _PERSON_DECISIONS_FILE = _DATA_DIRECTORY / "person_decisions.json"
@@ -109,8 +109,8 @@ def get_heads_of_state() -> list[HeadOfStateResult]:
     return _get_data_file(_HEADS_OF_STATE_FILE, HeadsOfState).root
 
 
-def get_unattributed_speech_ranges() -> list[UnattributedSpeechRange]:
-    return _get_data_file(_UNATTRIBUTED_SPEECH_FILE, UnattributedSpeechRanges).root
+def get_unlabelled_speech_ranges() -> list[UnlabelledSpeechRange]:
+    return _get_data_file(_UNLABELLED_SPEECH_FILE, UnlabelledSpeechRanges).root
 
 
 def get_party_affiliations() -> list[MembershipPartyAffiliations]:

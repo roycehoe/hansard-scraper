@@ -110,7 +110,7 @@ def log_recorder(
     monkeypatch.setattr(apply_footnote_markers_script, "engine", scratch_engine)
     monkeypatch.setattr(apply_footnote_markers_script, "logger", recorder)
     monkeypatch.setattr(
-        apply_footnote_markers_script, "get_unattributed_speech_ranges", list
+        apply_footnote_markers_script, "get_unlabelled_speech_ranges", list
     )
     return recorder
 

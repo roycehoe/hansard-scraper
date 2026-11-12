@@ -6,8 +6,8 @@ from typing import Optional
 from database.report import Report
 from database.speech import Speech
 from enums import ReportType, ReportVersion, SpeechKind
-from exceptions import HansardUnattributedSpeechError
-from schemas.unattributed_speech import UnattributedSpeechRange
+from exceptions import HansardUnlabelledSpeechError
+from schemas.unlabelled_speech import UnlabelledSpeechRange
 from utils.markdown_parser import (
     ASCII_FOLDED_CHARACTERS,
     ASTERISK,
@@ -1839,21 +1839,21 @@ def get_speeches(
     return [speech for speech in unmarked_speeches if speech.transcript != ""]
 
 
-def _get_unattributed_range_start(
-    speeches: list[ParsedSpeech], speech_range: UnattributedSpeechRange
+def _get_unlabelled_range_start(
+    speeches: list[ParsedSpeech], speech_range: UnlabelledSpeechRange
 ) -> int:
     for index, speech in enumerate(speeches):
         if speech.speaker == speech_range.speaker and speech.transcript.startswith(
             speech_range.first_transcript_start
         ):
             return index
-    raise HansardUnattributedSpeechError(
+    raise HansardUnlabelledSpeechError(
         f"Report {speech_range.report_id}: no row starts with {speech_range.first_transcript_start!r}"
     )
 
 
-def _get_unattributed_range_end(
-    speeches: list[ParsedSpeech], speech_range: UnattributedSpeechRange, start: int
+def _get_unlabelled_range_end(
+    speeches: list[ParsedSpeech], speech_range: UnlabelledSpeechRange, start: int
 ) -> int:
     for index in range(start, len(speeches)):
         speech = speeches[index]
@@ -1861,25 +1861,25 @@ def _get_unattributed_range_end(
             speech_range.last_transcript_start
         ):
             return index
-    raise HansardUnattributedSpeechError(
+    raise HansardUnlabelledSpeechError(
         f"Report {speech_range.report_id}: no row starts with {speech_range.last_transcript_start!r}"
     )
 
 
-def _is_unattributable(speech: ParsedSpeech, speaker: Optional[str]) -> bool:
+def _is_unlabellable(speech: ParsedSpeech, speaker: Optional[str]) -> bool:
     return speech.speaker == speaker and (
         speech.kind == SpeechKind.SPEECH or speech.kind == SpeechKind.UNCLASSIFIED
     )
 
 
-def apply_unattributed_speech_range(
-    speeches: list[ParsedSpeech], speech_range: UnattributedSpeechRange
+def apply_unlabelled_speech_range(
+    speeches: list[ParsedSpeech], speech_range: UnlabelledSpeechRange
 ) -> list[ParsedSpeech]:
-    start = _get_unattributed_range_start(speeches, speech_range)
-    end = _get_unattributed_range_end(speeches, speech_range, start)
+    start = _get_unlabelled_range_start(speeches, speech_range)
+    end = _get_unlabelled_range_end(speeches, speech_range, start)
     return [
         ParsedSpeech(speaker=None, transcript=speech.transcript, kind=SpeechKind.SPEECH)
-        if start <= index <= end and _is_unattributable(speech, speech_range.speaker)
+        if start <= index <= end and _is_unlabellable(speech, speech_range.speaker)
         else speech
         for index, speech in enumerate(speeches)
     ]
@@ -1912,7 +1912,7 @@ class ReportSpeeches:
 
 
 def build_report_speeches(
-    report: Report, report_id_to_unattributed_range: dict[int, UnattributedSpeechRange]
+    report: Report, report_id_to_unlabelled_range: dict[int, UnlabelledSpeechRange]
 ) -> ReportSpeeches:
     if report.markdown_content is None:
         return ReportSpeeches([], ReportSkipReason.NO_MARKDOWN_CONTENT)
@@ -1932,10 +1932,10 @@ def build_report_speeches(
         report.report_type,
         report.report_version,
     )
-    unattributed_range = report_id_to_unattributed_range.get(report.id)
+    unlabelled_range = report_id_to_unlabelled_range.get(report.id)
     speeches_to_store = (
         speeches
-        if unattributed_range is None
-        else apply_unattributed_speech_range(speeches, unattributed_range)
+        if unlabelled_range is None
+        else apply_unlabelled_speech_range(speeches, unlabelled_range)
     )
     return ReportSpeeches(build_speeches(report, speeches_to_store), None)

@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, RootModel
 
 
-class UnattributedSpeechRange(BaseModel):
+class UnlabelledSpeechRange(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     report_id: int
@@ -13,5 +13,5 @@ class UnattributedSpeechRange(BaseModel):
     reason: str
 
 
-class UnattributedSpeechRanges(RootModel[list[UnattributedSpeechRange]]):
+class UnlabelledSpeechRanges(RootModel[list[UnlabelledSpeechRange]]):
     model_config = ConfigDict(frozen=True)
