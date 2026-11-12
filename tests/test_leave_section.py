@@ -12,7 +12,7 @@ from services.leave_section import (
 from utils.data_files import get_leave_date_misprints
 from utils.leave_entry import LeaveDates, LeaveEntry
 
-_LEAVE_DATE_MISPRINT_COUNT = 24
+_LEAVE_DATE_MISPRINT_COUNT = 26
 _ENTRY_LINE = "Mr Lee (Tanglin) - from 3rd to 10th June, 1977."
 _SECOND_ENTRY_LINE = "Mr Tan (Bedok) - from 4th to 11th June, 1977."
 
@@ -377,6 +377,50 @@ def test_a_name_loses_its_trailing_marks() -> None:
     )
 
     assert leave_entries[0].printed_name == "Mr Matthias Yao Chih"
+
+
+@pytest.mark.parametrize(
+    ("line", "printed_name", "office_printed"),
+    [
+        (
+            "Mr Lim Koon Teck- extension of leave from 6th June to 14th June, 1957;",
+            "Mr Lim Koon Teck",
+            None,
+        ),
+        (
+            "Dr Wong Kwei Cheong - fom 26th to 28th January, 1994.",
+            "Dr Wong Kwei Cheong",
+            None,
+        ),
+        (
+            "Mr Yong Nyuk Lin (Geylang West), Minister for Education - extended from 16th April to 19th May, 1963.",
+            "Mr Yong Nyuk Lin",
+            "Minister for Education",
+        ),
+        (
+            "Mr Ong Teng Cheong (Kim Keat), Minister for Culture, Ministry of Communications - ftom 16th to 20th November, 1977.",
+            "Mr Ong Teng Cheong",
+            "Minister for Culture, Ministry of Communications",
+        ),
+        (
+            "Mr S. Rajaratnam (Kampong Glam), Minister for Foreign Affairs - (i) from 3rd to 8th August, 1967.",
+            "Mr S. Rajaratnam",
+            "Minister for Foreign Affairs",
+        ),
+        (
+            "BG George Yong-Boon Yeo (Aljunied GRC), Minister of State - from 3rd to 8th August, 1967.",
+            "BG George Yong-Boon Yeo",
+            "Minister of State",
+        ),
+    ],
+)
+def test_the_name_and_the_office_end_at_the_last_dash_before_the_dates(
+    line: str, printed_name: str, office_printed: Optional[str]
+) -> None:
+    leave_entries = _build_entries(line)
+
+    assert leave_entries[0].printed_name == printed_name
+    assert leave_entries[0].office_printed == office_printed
 
 
 def test_a_name_with_a_digit_is_not_stored() -> None:

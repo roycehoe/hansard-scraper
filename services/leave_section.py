@@ -88,6 +88,9 @@ _NON_DIGIT_RE = re.compile(r"\D")
 _DIGIT_RE = re.compile(r"\d")
 _NAME_TRAILING_CHARACTERS = ".,-_ "
 _OFFICE_OPENING = ","
+_SEPARATOR_DASH_RE = re.compile(
+    r"(?<=\s)[-–—]+(?=\s+[a-z(])|(?<=\S)[-–—]+(?=\s+[a-z]{5})"
+)
 _OFFICE_TRAILING_CHARACTERS = ",-. "
 _PERIOD = "."
 _BOLD_MARKER = "**"
@@ -251,6 +254,13 @@ def _get_office_printed(text_after_bracket: str) -> Optional[str]:
     return text_after_bracket.strip(_OFFICE_TRAILING_CHARACTERS) or None
 
 
+def _get_label_end(line: str, label_start: int, cut_start: int) -> int:
+    label_end = cut_start
+    for separator_dash in _SEPARATOR_DASH_RE.finditer(line, label_start, cut_start):
+        label_end = separator_dash.start()
+    return label_end
+
+
 def _get_prose_entry_parts(
     line: str, leave_date_misprints: list[LeaveDateMisprint]
 ) -> Optional[_ProseEntryParts]:
@@ -264,7 +274,8 @@ def _get_prose_entry_parts(
     # NOTE: a misprint before the cut would shift the offsets, so that line goes to UNREAD and no name or office is altered
     if reading_line[: match.start()] != line[: match.start()]:
         return None
-    name_end = match.start() if bracket is None else bracket.start()
+    label_end = _get_label_end(line, search_start, match.start())
+    name_end = label_end if bracket is None else bracket.start()
     printed_name = line[:name_end].rstrip(_NAME_TRAILING_CHARACTERS).strip()
     if _DIGIT_RE.search(printed_name):
         return None
@@ -275,7 +286,7 @@ def _get_prose_entry_parts(
         office_printed=(
             None
             if bracket is None
-            else _get_office_printed(line[bracket.end() : match.start()])
+            else _get_office_printed(line[bracket.end() : label_end])
         ),
         printed_line=line,
         reading_line=reading_line,

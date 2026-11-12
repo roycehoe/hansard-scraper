@@ -118,5 +118,15 @@
     "printed": "from13th",
     "reading": "from 13th",
     "reason": "Misprint: the space after from is missing."
+  },
+  {
+    "printed": "fom",
+    "reading": "from",
+    "reason": "Misprint: the letter r is missing."
+  },
+  {
+    "printed": "ftom",
+    "reading": "from",
+    "reason": "Misprint: the letter r is printed as a letter t."
   }
 ]
