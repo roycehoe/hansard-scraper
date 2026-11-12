@@ -142,6 +142,7 @@ _MINUTES_STEP_UPDATE_COLUMNS = frozenset(
         "file_format",
         "sha256",
         "size_bytes",
+        "file_bytes",
         "fetched_at",
         "extracted_text",
         "status_note",

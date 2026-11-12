@@ -350,6 +350,7 @@ def test_set_file_refuses_a_row_whose_status_changed(
             None,
             _SHA256_PLACEHOLDER,
             1,
+            None,
             datetime.now(timezone.utc),
             "text",
         )

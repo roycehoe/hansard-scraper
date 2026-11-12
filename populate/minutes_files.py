@@ -386,6 +386,7 @@ def _write_file(
         planned_file.archive_timestamp,
         _get_planned_value(planned_file.sha256, "SHA-256", planned_file),
         _get_planned_value(planned_file.size_bytes, "size", planned_file),
+        None,
         _get_planned_value(planned_file.fetched_at, "fetch time", planned_file),
         extracted_text,
     )

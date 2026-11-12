@@ -124,6 +124,7 @@ class CRUDMinutes:
         archive_timestamp: Optional[str],
         sha256: str,
         size_bytes: int,
+        file_bytes: Optional[bytes],
         fetched_at: datetime,
         extracted_text: Optional[str],
     ) -> None:
@@ -138,6 +139,7 @@ class CRUDMinutes:
                 archive_timestamp=archive_timestamp,
                 sha256=sha256,
                 size_bytes=size_bytes,
+                file_bytes=file_bytes,
                 fetched_at=fetched_at,
                 extracted_text=extracted_text,
             )

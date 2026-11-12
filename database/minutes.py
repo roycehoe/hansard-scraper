@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import Column, DateTime
+from sqlalchemy import Column, DateTime, LargeBinary
 from sqlmodel import Field, SQLModel
 
 from enums import MinutesFileFormat, MinutesIndexSource, MinutesStatus
@@ -29,6 +29,9 @@ class Minutes(SQLModel, table=True):
     file_format: Optional[MinutesFileFormat] = None
     sha256: Optional[str] = None
     size_bytes: Optional[int] = None
+    file_bytes: Optional[bytes] = Field(
+        default=None, sa_column=Column(LargeBinary, nullable=True)
+    )
     extracted_text: Optional[str] = None
     status_note: Optional[str] = None
 

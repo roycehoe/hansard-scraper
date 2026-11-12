@@ -175,6 +175,7 @@ def _store_minutes_file(
         None,
         hashlib.sha256(content).hexdigest(),
         len(content),
+        content,
         datetime.now(timezone.utc),
         file_fields.extracted_text,
     )

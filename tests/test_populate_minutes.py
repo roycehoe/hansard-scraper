@@ -226,6 +226,7 @@ def test_listed_file_is_fetched_and_its_text_stored(
     assert stored_minutes.status == MinutesStatus.TEXT_STORED
     assert stored_minutes.sha256 == hashlib.sha256(content).hexdigest()
     assert stored_minutes.size_bytes == len(content)
+    assert stored_minutes.file_bytes == content
     assert stored_minutes.fetched_at is not None
     assert stored_minutes.fetched_at.tzinfo is not None
     assert stored_minutes.archive_timestamp is None
@@ -291,6 +292,7 @@ def test_unreadable_scan_and_non_pdf_become_needs_review(
     assert stored_minutes.status_note
     assert stored_minutes.sha256 == hashlib.sha256(content).hexdigest()
     assert stored_minutes.size_bytes == len(content)
+    assert stored_minutes.file_bytes == content
     assert stored_minutes.extracted_text is None
     assert [
         (minutes_to_review.sitting_date, minutes_to_review.status_note)

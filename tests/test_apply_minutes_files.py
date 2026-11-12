@@ -155,6 +155,7 @@ def test_commit_stores_the_text_of_an_index_file(
     assert stored_minutes.status == MinutesStatus.TEXT_STORED
     assert stored_minutes.sha256 == record["sha256"]
     assert stored_minutes.size_bytes == record["size_bytes"]
+    assert stored_minutes.file_bytes is None
     assert stored_minutes.fetched_at == _FETCHED_AT
     assert stored_minutes.file_format == MinutesFileFormat.PDF
     assert stored_minutes.extracted_text is not None
