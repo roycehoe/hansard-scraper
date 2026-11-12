@@ -255,7 +255,10 @@ def test_unread_division_openings_message_lists_the_ids_up_to_the_limit() -> Non
     assert short_message.startswith("2 new reports hold a division opening")
     assert "report ids 101, 102)" in short_message
     assert long_message.startswith(f"{_REPORT_ID_COUNT_OVER_CAP} new reports hold")
-    assert f"report ids {', '.join(str(i) for i in range(1, _REPORT_ID_CAP + 1))} and 5 more" in long_message
+    assert (
+        f"report ids {', '.join(str(i) for i in range(1, _REPORT_ID_CAP + 1))} and 5 more"
+        in long_message
+    )
     assert "21," not in long_message
 
 

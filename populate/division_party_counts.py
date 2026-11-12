@@ -52,11 +52,11 @@ def _get_batch_plan(
         division_id_to_minutes_list_status[minutes_division_row.division_id] = (
             minutes_division_row.list_status
         )
-    division_id_to_minutes_votes: defaultdict[int, list[DivisionVoteRow]] = (
-        defaultdict(list)
+    division_id_to_minutes_votes: defaultdict[int, list[DivisionVoteRow]] = defaultdict(
+        list
     )
-    division_id_to_hansard_votes: defaultdict[int, list[DivisionVoteRow]] = (
-        defaultdict(list)
+    division_id_to_hansard_votes: defaultdict[int, list[DivisionVoteRow]] = defaultdict(
+        list
     )
     for list_source, division_id_to_votes in (
         (DivisionVoteListSource.MINUTES, division_id_to_minutes_votes),

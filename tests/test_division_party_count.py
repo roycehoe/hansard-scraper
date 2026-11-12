@@ -30,14 +30,10 @@ def test_minutes_list_is_counted_when_stored() -> None:
         _build_vote(DivisionVoteChoice.AYE, _PARTY),
     ]
 
-    party_counts = get_division_party_counts(
-        minutes_votes, hansard_votes, True, True
-    )
+    party_counts = get_division_party_counts(minutes_votes, hansard_votes, True, True)
 
     assert party_counts == [
-        PartyCount(
-            DivisionVoteListSource.MINUTES, DivisionVoteChoice.AYE, _PARTY, 1, 0
-        )
+        PartyCount(DivisionVoteListSource.MINUTES, DivisionVoteChoice.AYE, _PARTY, 1, 0)
     ]
 
 
@@ -87,7 +83,9 @@ def test_an_unlinked_name_counts_under_a_null_party() -> None:
 
     party_counts = get_division_party_counts(minutes_votes, [], True, False)
 
-    assert [(party_count.party, party_count.member_count) for party_count in party_counts] == [
+    assert [
+        (party_count.party, party_count.member_count) for party_count in party_counts
+    ] == [
         (_PARTY, 1),
         (None, 2),
     ]

@@ -224,7 +224,9 @@ def _open_container(content: bytes) -> _Ole2Container:
         mini_stream_cutoff=_read_uint32(content, _HEADER_MINI_STREAM_CUTOFF_OFFSET),
         fat=fat,
         mini_fat=struct.unpack(
-            _UINT32_ARRAY_FORMAT.format(count=len(mini_fat_bytes) // _SECTOR_ENTRY_SIZE),
+            _UINT32_ARRAY_FORMAT.format(
+                count=len(mini_fat_bytes) // _SECTOR_ENTRY_SIZE
+            ),
             mini_fat_bytes,
         ),
         directory=_read_directory(

@@ -19,7 +19,9 @@ class AppSettings(BaseSettings):
     hansard_topic_url: str = "https://sprs.parl.gov.sg/search/getHansardTopic"
     hansard_report_url: str = "https://sprs.parl.gov.sg/search/getHansardReport/"
     egazette_assets_url: str = "https://assets.egazette.gov.sg"
-    minutes_index_url: str = "https://www.parliament.gov.sg/parliamentary-business/votes-and-proceedings"
+    minutes_index_url: str = (
+        "https://www.parliament.gov.sg/parliamentary-business/votes-and-proceedings"
+    )
     minutes_media_url: str = "https://www.parliament.gov.sg/api/media"
 
     search_page_size: int = 20

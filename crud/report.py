@@ -528,7 +528,10 @@ class CRUDReport:
     ) -> list[ReportDivisionRow]:
         statement = (
             select(
-                Report.id, Report.report_id, Report.parliament_number, Report.sitting_date
+                Report.id,
+                Report.report_id,
+                Report.parliament_number,
+                Report.sitting_date,
             )
             .where(col(Report.id).in_(report_ids))
             .order_by(col(Report.id))

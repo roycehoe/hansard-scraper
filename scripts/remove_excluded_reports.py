@@ -102,9 +102,7 @@ def _get_validated_removal(
         )
     division_ids = [
         division.id
-        for division in CRUDDivision(session).get_by_sprs_report_ids(
-            [report.report_id]
-        )
+        for division in CRUDDivision(session).get_by_sprs_report_ids([report.report_id])
         if division.id is not None
     ]
     return ReportRemoval(

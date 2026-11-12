@@ -250,7 +250,9 @@ def _plan_report_batch(
             speech_parse_row
         )
     report_id_to_report_divisions = {
-        report_row.id: get_report_divisions(report_id_to_speech_parse_rows[report_row.id])
+        report_row.id: get_report_divisions(
+            report_id_to_speech_parse_rows[report_row.id]
+        )
         for report_row in report_rows
     }
     report_id_to_content = {

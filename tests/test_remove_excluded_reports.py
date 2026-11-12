@@ -218,7 +218,9 @@ def _add_paired_minutes_division(session: Session, report_id: str) -> None:
         select(Division).where(col(Division.sprs_report_id) == report_id)
     ).one()
     assert division.id is not None
-    minutes = Minutes(sitting_date=_SITTING_DATE.date(), status=MinutesStatus.TEXT_STORED)
+    minutes = Minutes(
+        sitting_date=_SITTING_DATE.date(), status=MinutesStatus.TEXT_STORED
+    )
     session.add(minutes)
     session.flush()
     assert minutes.id is not None

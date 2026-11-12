@@ -160,12 +160,7 @@ def _get_cell_lines(table_cell: Tag) -> list[str]:
 
 
 def _get_pre_text(pre: Tag) -> str:
-    return (
-        pre.get_text()
-        .replace("\r\n", "\n")
-        .replace("\r", "\n")
-        .replace("\xa0", " ")
-    )
+    return pre.get_text().replace("\r\n", "\n").replace("\r", "\n").replace("\xa0", " ")
 
 
 def _collect_items(parent: Tag, items: list[_Item], run_parts: list[str]) -> None:
@@ -190,7 +185,10 @@ def _collect_items(parent: Tag, items: list[_Item], run_parts: list[str]) -> Non
                     _ItemKind.TABLE,
                     "",
                     [
-                        [_get_cell_lines(table_cell) for table_cell in table_row.find_all("td")]
+                        [
+                            _get_cell_lines(table_cell)
+                            for table_cell in table_row.find_all("td")
+                        ]
                         for table_row in child.find_all("tr")
                     ],
                 )
@@ -336,7 +334,10 @@ def get_pre_column_starts(lines: list[str]) -> Optional[list[int]]:
     most_common_counts = Counter(len(cells) for cells in data_rows).most_common(2)
     if not most_common_counts:
         return None
-    if len(most_common_counts) > 1 and most_common_counts[0][1] == most_common_counts[1][1]:
+    if (
+        len(most_common_counts) > 1
+        and most_common_counts[0][1] == most_common_counts[1][1]
+    ):
         return None
     cell_count = most_common_counts[0][0]
     first_full_row = next(cells for cells in data_rows if len(cells) == cell_count)
@@ -351,9 +352,7 @@ def _get_nearest_column(offset: int, column_starts: list[int]) -> Optional[int]:
     return distances.index(nearest_distance)
 
 
-def _get_row_pre_cells(
-    line: str, column_starts: list[int]
-) -> Optional[list[_PreCell]]:
+def _get_row_pre_cells(line: str, column_starts: list[int]) -> Optional[list[_PreCell]]:
     pre_cells: list[_PreCell] = []
     for line_cell in _get_pre_row_cells(line):
         column = _get_nearest_column(line_cell.offset, column_starts)
@@ -475,9 +474,7 @@ def _read_list(
 ) -> Optional[_ListReading]:
     pre_items = [
         item.text.split(_LINE_SEPARATOR)
-        for item in takewhile(
-            lambda item: item.kind == _ItemKind.PRE, following_items
-        )
+        for item in takewhile(lambda item: item.kind == _ItemKind.PRE, following_items)
     ]
     has_first_block = any(line.strip() for line in first_block_lines)
     if has_first_block:
@@ -489,9 +486,7 @@ def _read_list(
         return _read_pre_blocks(pre_items)
     if first_kind == _ItemKind.TABLE:
         return _read_tables(
-            list(
-                takewhile(lambda item: item.kind == _ItemKind.TABLE, following_items)
-            )
+            list(takewhile(lambda item: item.kind == _ItemKind.TABLE, following_items))
         )
     if first_kind == _ItemKind.TEXT:
         return _read_runs(
@@ -551,7 +546,8 @@ def get_division_list(
     vote_choice_to_name_count = Counter(name.vote_choice for name in list_reading.names)
     for vote_choice, printed_count in vote_choice_to_printed_count.items():
         if printed_count is None and (
-            vote_choice == DivisionVoteChoice.ABSENT or vote_choice == DivisionVoteChoice.PAIRED
+            vote_choice == DivisionVoteChoice.ABSENT
+            or vote_choice == DivisionVoteChoice.PAIRED
         ):
             continue
         if vote_choice_to_name_count[vote_choice] != (printed_count or 0):

@@ -65,7 +65,11 @@ def test_plan_reads_the_divisions_of_each_report(scratch_session: Session) -> No
     assert plan.report_ids == [first.id, second.id]
     assert plan.sprs_report_ids == [_FIRST_REPORT_ID, _SECOND_REPORT_ID]
     assert [
-        (division.sprs_report_id, division.report_division_number, division.count_source)
+        (
+            division.sprs_report_id,
+            division.report_division_number,
+            division.count_source,
+        )
         for division in plan.divisions
     ] == [
         (_FIRST_REPORT_ID, 1, DivisionCountSource.PRINTED_LINE),
@@ -95,7 +99,9 @@ def test_write_stores_the_plan_and_a_second_write_changes_nothing(
 
     write_division_plan(scratch_session, plan)
     first_ids = [division.id for division in _get_stored_divisions(scratch_session)]
-    write_division_plan(scratch_session, get_division_plan(scratch_session, [report.id]))
+    write_division_plan(
+        scratch_session, get_division_plan(scratch_session, [report.id])
+    )
 
     assert len(first_ids) == _STORED_DIVISION_COUNT
     assert [
@@ -115,7 +121,9 @@ def test_write_keeps_the_id_of_a_matched_division_when_its_number_and_ordinal_mo
         scratch_session, report, [(SpeechKind.PROCEDURAL, None, _LINE_FIRST)]
     )
     assert report.id is not None
-    write_division_plan(scratch_session, get_division_plan(scratch_session, [report.id]))
+    write_division_plan(
+        scratch_session, get_division_plan(scratch_session, [report.id])
+    )
     old_division = _get_stored_divisions(scratch_session)[0]
     old_id = old_division.id
     scratch_session.exec(delete(Speech).where(col(Speech.report_id) == report.id))
@@ -129,7 +137,9 @@ def test_write_keeps_the_id_of_a_matched_division_when_its_number_and_ordinal_mo
         ],
     )
 
-    write_division_plan(scratch_session, get_division_plan(scratch_session, [report.id]))
+    write_division_plan(
+        scratch_session, get_division_plan(scratch_session, [report.id])
+    )
 
     stored = {
         division.printed_counts: division
@@ -155,7 +165,9 @@ def test_write_matches_equal_printed_counts_in_order(
         ],
     )
     assert report.id is not None
-    write_division_plan(scratch_session, get_division_plan(scratch_session, [report.id]))
+    write_division_plan(
+        scratch_session, get_division_plan(scratch_session, [report.id])
+    )
     first_ids = [division.id for division in _get_stored_divisions(scratch_session)]
     scratch_session.exec(delete(Speech).where(col(Speech.report_id) == report.id))
     add_division_speech_rows(
@@ -168,7 +180,9 @@ def test_write_matches_equal_printed_counts_in_order(
         ],
     )
 
-    write_division_plan(scratch_session, get_division_plan(scratch_session, [report.id]))
+    write_division_plan(
+        scratch_session, get_division_plan(scratch_session, [report.id])
+    )
 
     stored = _get_stored_divisions(scratch_session)
     assert [division.id for division in stored] == first_ids
@@ -183,7 +197,9 @@ def test_write_removes_a_division_the_plan_no_longer_holds(
         scratch_session, report, [(SpeechKind.PROCEDURAL, None, _LINE_FIRST)]
     )
     assert report.id is not None
-    write_division_plan(scratch_session, get_division_plan(scratch_session, [report.id]))
+    write_division_plan(
+        scratch_session, get_division_plan(scratch_session, [report.id])
+    )
     stored_id = _get_stored_divisions(scratch_session)[0].id
     scratch_session.exec(delete(Speech).where(col(Speech.report_id) == report.id))
     plan = get_division_plan(scratch_session, [report.id])
@@ -240,7 +256,9 @@ def test_write_can_swap_two_division_numbers_in_one_write(
         ],
     )
     assert report.id is not None
-    write_division_plan(scratch_session, get_division_plan(scratch_session, [report.id]))
+    write_division_plan(
+        scratch_session, get_division_plan(scratch_session, [report.id])
+    )
     scratch_session.exec(delete(Speech).where(col(Speech.report_id) == report.id))
     add_division_speech_rows(
         scratch_session,
@@ -251,7 +269,9 @@ def test_write_can_swap_two_division_numbers_in_one_write(
         ],
     )
 
-    write_division_plan(scratch_session, get_division_plan(scratch_session, [report.id]))
+    write_division_plan(
+        scratch_session, get_division_plan(scratch_session, [report.id])
+    )
     scratch_session.commit()
 
     assert _get_stored_numbers_and_counts(scratch_session) == [
@@ -320,6 +340,8 @@ def test_populate_divisions_inserts_only_and_returns_report_ids_with_unread_open
     assert not [
         statement
         for statement in statements
-        if statement.lstrip().upper().startswith(("UPDATE DIVISION", "DELETE FROM DIVISION"))
+        if statement.lstrip()
+        .upper()
+        .startswith(("UPDATE DIVISION", "DELETE FROM DIVISION"))
     ]
     assert scratch_session.exec(select(func.count()).select_from(Division)).one() == 1

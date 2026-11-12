@@ -45,8 +45,10 @@ class CRUDDivisionPartyCount:
         ]
 
     def get_distinct_division_ids(self) -> list[int]:
-        statement = select(DivisionPartyCount.division_id).distinct().order_by(
-            DivisionPartyCount.division_id
+        statement = (
+            select(DivisionPartyCount.division_id)
+            .distinct()
+            .order_by(DivisionPartyCount.division_id)
         )
         return list(self.session.exec(statement).all())
 

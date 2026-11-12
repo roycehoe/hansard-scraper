@@ -376,7 +376,9 @@ def _get_minutes_side_candidates(
             rule=DivisionCheckRule.MINUTES_DIVISION_AND_SIDE,
             group=_get_group(
                 minutes_id_to_minutes[minutes_division.minutes_id].sitting_date,
-                _get_file_format_label(minutes_id_to_minutes[minutes_division.minutes_id]),
+                _get_file_format_label(
+                    minutes_id_to_minutes[minutes_division.minutes_id]
+                ),
             ),
             source_text=minutes_division.printed_list or "",
             data_claim=_LINE_SEPARATOR.join(
@@ -441,9 +443,9 @@ def _get_pairing_candidates(
         sitting_date_to_hansard_divisions[hansard_division.sitting_date].append(
             hansard_division
         )
-    sitting_date_to_minutes_divisions: defaultdict[
-        date, list[MinutesDivision]
-    ] = defaultdict(list)
+    sitting_date_to_minutes_divisions: defaultdict[date, list[MinutesDivision]] = (
+        defaultdict(list)
+    )
     for minutes_division in sorted(
         minutes_divisions, key=lambda minutes_division: minutes_division.ordinal
     ):
@@ -790,7 +792,9 @@ def _replace_person(
         {
             other_candidate.data_claim
             for other_candidate in candidates
-            if other_candidate.data_claim.endswith(f" | Parliament {claim_match.group(2)}")
+            if other_candidate.data_claim.endswith(
+                f" | Parliament {claim_match.group(2)}"
+            )
             and other_candidate.data_claim != candidate.data_claim
         }
     )
@@ -840,7 +844,8 @@ def _replace_date(
     if not other_dates:
         return None
     nearest_date = min(
-        other_dates, key=lambda other_date: (abs((other_date - claimed_date).days), other_date)
+        other_dates,
+        key=lambda other_date: (abs((other_date - claimed_date).days), other_date),
     )
     return (
         candidate.data_claim[: claim_match.start(1)]
@@ -874,7 +879,9 @@ def _replace_party(
         frame_parties.discard(claimed_party)
         if not frame_parties:
             return None
-        other_party = random.Random(candidate.database_key).choice(sorted(frame_parties))
+        other_party = random.Random(candidate.database_key).choice(
+            sorted(frame_parties)
+        )
     return (
         candidate.data_claim[: claim_match.start(1)]
         + other_party
@@ -955,7 +962,9 @@ def draw_plants(
             sibling_candidates = load_sibling_candidates()
             usable_plants = usable_plants + _get_usable_plants(
                 kind,
-                sorted(sibling_candidates, key=lambda candidate: candidate.database_key),
+                sorted(
+                    sibling_candidates, key=lambda candidate: candidate.database_key
+                ),
                 candidates + sibling_candidates,
             )
         kind_planted_candidates = random.Random(
@@ -1194,4 +1203,6 @@ if __name__ == "__main__":
         help="where to write the files; the directory must not exist yet",
     )
     arguments = parser.parse_args()
-    draw_division_check_sample(arguments.rule, arguments.seed, arguments.output_directory)
+    draw_division_check_sample(
+        arguments.rule, arguments.seed, arguments.output_directory
+    )

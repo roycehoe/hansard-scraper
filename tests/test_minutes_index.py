@@ -65,7 +65,9 @@ def test_live_page_with_a_row_without_a_date_raises() -> None:
     rows_text = _read_live_rows_text()
     date_start = rows_text.index('"date":"')
     date_end = rows_text.index('"', date_start + len('"date":"'))
-    broken_text = rows_text[: date_start + len('"date":"')] + "soon" + rows_text[date_end:]
+    broken_text = (
+        rows_text[: date_start + len('"date":"')] + "soon" + rows_text[date_end:]
+    )
 
     with pytest.raises(HansardMinutesIndexError):
         parse_live_index_page(_build_live_page(broken_text), _MEDIA_URL)
@@ -80,13 +82,14 @@ def test_live_page_with_an_unknown_media_type_raises() -> None:
 
 def test_live_page_with_no_rows_is_empty() -> None:
     assert (
-        parse_live_index_page(_build_live_page(_EMPTY_LIVE_ROWS_TEXT), _MEDIA_URL)
-        == []
+        parse_live_index_page(_build_live_page(_EMPTY_LIVE_ROWS_TEXT), _MEDIA_URL) == []
     )
 
 
 def test_archive_page_rows_carry_date_label_parliament_and_absolute_address() -> None:
-    rows = parse_archive_index_page(_read_fixture("archive-index-2021-08.html"), _INDEX_URL)
+    rows = parse_archive_index_page(
+        _read_fixture("archive-index-2021-08.html"), _INDEX_URL
+    )
 
     assert rows[0] == MinutesIndexRow(
         date(2021, 8, 3),
@@ -133,7 +136,9 @@ def test_archive_row_with_neither_heading_nor_span_raises() -> None:
 
 
 def test_archive_row_with_a_heading_and_no_span_keeps_the_heading_text() -> None:
-    rows = parse_archive_index_page(_read_fixture("archive-index-2021-08.html"), _INDEX_URL)
+    rows = parse_archive_index_page(
+        _read_fixture("archive-index-2021-08.html"), _INDEX_URL
+    )
 
     assert rows[0].printed_label == "Votes and Proceedings No. 36"
 

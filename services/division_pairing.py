@@ -137,7 +137,11 @@ def get_division_pairings(
         if hansard_division.noes is None:
             continue
         group_to_hansard_divisions.setdefault(
-            (hansard_division.sitting_date, hansard_division.ayes, hansard_division.noes),
+            (
+                hansard_division.sitting_date,
+                hansard_division.ayes,
+                hansard_division.noes,
+            ),
             [],
         ).append(hansard_division)
     group_to_minutes_divisions: dict[
@@ -145,7 +149,11 @@ def get_division_pairings(
     ] = {}
     for minutes_division in minutes_divisions:
         group_to_minutes_divisions.setdefault(
-            (minutes_division.sitting_date, minutes_division.ayes, minutes_division.noes),
+            (
+                minutes_division.sitting_date,
+                minutes_division.ayes,
+                minutes_division.noes,
+            ),
             [],
         ).append(minutes_division)
     pairings: list[DivisionPairing] = []
@@ -160,7 +168,9 @@ def get_division_pairings(
         pairings.extend(
             _pair_group(
                 hansard_group,
-                sorted(minutes_group, key=lambda minutes_division: minutes_division.ordinal),
+                sorted(
+                    minutes_group, key=lambda minutes_division: minutes_division.ordinal
+                ),
             )
         )
     return sorted(

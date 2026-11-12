@@ -560,7 +560,9 @@ def test_the_list_status_share_keeps_hansard_and_minutes_lists_apart(
 
     lines = get_summary_lines(get_division_review_list(scratch_session))
 
-    assert "Hansard divisions of the 2020s by list status: STORED 1 of 1 (100.0%)" in lines
+    assert (
+        "Hansard divisions of the 2020s by list status: STORED 1 of 1 (100.0%)" in lines
+    )
     assert (
         "Minutes lists of the 2020s by list status: COUNTS_DISAGREE 1 of 1 (100.0%)"
         in lines

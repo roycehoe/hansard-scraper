@@ -61,7 +61,9 @@ _TIED_RULE = "Two reports hold the same speech number among the Hansard division
 _ABSTENTIONS_DIFFER_RULE = "The printed Abstentions of the minutes and a Hansard division with these Ayes and Noes differ, so none is paired"
 _HANSARD_WITHOUT_PAIR_RULE = "The minutes of the date are stored and no minutes division names this Hansard division"
 _VOTE_ABSENT_RULE = "The linked Member's attendance row for the sitting says absent"
-_TWO_SIDES_RULE = "One Member holds two different Aye, No or Abstain rows in one list of one division"
+_TWO_SIDES_RULE = (
+    "One Member holds two different Aye, No or Abstain rows in one list of one division"
+)
 _DIFFERENT_SIDES_RULE = "One Member holds different choices in the minutes list and the Hansard list of one division"
 _NEEDS_REVIEW_RULE = "The minutes file is NEEDS_REVIEW"
 _PAIRING_STALE_RULE = "The pairing rule, run now on the stored divisions of the date, gives another pairing than the stored one"
@@ -236,7 +238,10 @@ def _build_pairing_items(inputs: _ReviewInputs) -> list[DivisionReviewItem]:
 
 def _build_stale_pairing_items(inputs: _ReviewInputs) -> list[DivisionReviewItem]:
     sitting_date_and_ordinal_to_pairing: dict[tuple[date, int], DivisionPairing] = {
-        (division_pairing.sitting_date, division_pairing.minutes_ordinal): division_pairing
+        (
+            division_pairing.sitting_date,
+            division_pairing.minutes_ordinal,
+        ): division_pairing
         for division_pairing in get_division_pairings(
             inputs.pairable_hansard_divisions,
             [
@@ -326,10 +331,13 @@ def _build_absent_vote_items(
         for sitting_date_row in CRUDSitting(session).get_date_rows()
     }
     speaker_id_and_sitting_date_to_attendance = {
-        (attendance.speaker_id, sitting_id_to_sitting_date[attendance.sitting_id]): attendance
-        for attendance in CRUDAttendance(session).get_by_is_present_and_speaker_id_not_null(
-            False
-        )
+        (
+            attendance.speaker_id,
+            sitting_id_to_sitting_date[attendance.sitting_id],
+        ): attendance
+        for attendance in CRUDAttendance(
+            session
+        ).get_by_is_present_and_speaker_id_not_null(False)
     }
     items: list[DivisionReviewItem] = []
     for vote_row in vote_rows:
@@ -443,7 +451,9 @@ def _build_vote_items(
     )
 
 
-def _build_needs_review_items(stored_minutes: list[Minutes]) -> list[DivisionReviewItem]:
+def _build_needs_review_items(
+    stored_minutes: list[Minutes],
+) -> list[DivisionReviewItem]:
     return [
         DivisionReviewItem(
             kind=DivisionReviewItemKind.MINUTES_FILE_NEEDS_REVIEW,
@@ -587,7 +597,10 @@ def get_summary_lines(review_list: DivisionReviewList) -> list[str]:
         _get_list_status_lines(
             "Hansard divisions",
             {
-                (list_status_count.decade, list_status_count.list_status): list_status_count.division_count
+                (
+                    list_status_count.decade,
+                    list_status_count.list_status,
+                ): list_status_count.division_count
                 for list_status_count in review_list.list_status_counts
             },
         )
@@ -596,7 +609,10 @@ def get_summary_lines(review_list: DivisionReviewList) -> list[str]:
         _get_list_status_lines(
             "Minutes lists",
             {
-                (list_status_count.decade, list_status_count.list_status): list_status_count.minutes_division_count
+                (
+                    list_status_count.decade,
+                    list_status_count.list_status,
+                ): list_status_count.minutes_division_count
                 for list_status_count in review_list.minutes_list_status_counts
             },
         )

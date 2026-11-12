@@ -1616,7 +1616,9 @@ def test_unread_division_openings_are_alerted_once_for_the_run(
 ) -> None:
     seed_stored(scratch_session)
     monkeypatch.setattr(
-        refresh_runs, "populate_divisions", lambda session, report_ids: [_UNREAD_REPORT_ID]
+        refresh_runs,
+        "populate_divisions",
+        lambda session, report_ids: [_UNREAD_REPORT_ID],
     )
 
     status = refresh_runs.populate_refresh_runs(
@@ -2129,7 +2131,10 @@ def test_an_unreadable_division_file_is_needs_review_with_no_division_rows(
     ).one()
     assert stored_minutes.status == MinutesStatus.NEEDS_REVIEW
     assert stored_minutes.status_note == UNREAD_DIVISION_STATUS_NOTE
-    assert scratch_session.exec(select(func.count()).select_from(MinutesDivision)).one() == 0
+    assert (
+        scratch_session.exec(select(func.count()).select_from(MinutesDivision)).one()
+        == 0
+    )
     review_messages = [
         message for message in alerts.messages if _MINUTES_ALERT_FRAGMENT in message
     ]

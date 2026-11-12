@@ -268,7 +268,9 @@ def _plan_minutes_batch(
     for report in CRUDReport(session).get_by_sitting_dates(
         [
             datetime.combine(sitting_date, time.min)
-            for sitting_date in sorted({minutes.sitting_date for minutes in batch_minutes})
+            for sitting_date in sorted(
+                {minutes.sitting_date for minutes in batch_minutes}
+            )
         ]
     ):
         sitting_date_to_parliament_numbers[report.sitting_date.date()].add(
@@ -345,7 +347,10 @@ def _plan_minutes_batch(
         ],
     )
     sitting_date_and_ordinal_to_pairing = {
-        (division_pairing.sitting_date, division_pairing.minutes_ordinal): division_pairing
+        (
+            division_pairing.sitting_date,
+            division_pairing.minutes_ordinal,
+        ): division_pairing
         for division_pairing in division_pairings
     }
     linked_speaker_ids = sorted(
@@ -459,8 +464,11 @@ def _validate_can_commit_minutes_divisions(
         raise HansardWriteCheckError(
             "The stored minutes divisions by pairing differ from the plan"
         )
-    stored_vote_rows = CRUDDivisionVote(session).get_rows_by_division_ids_and_list_source(
-        [stored_row.division_id for stored_row in stored_rows], DivisionVoteListSource.MINUTES
+    stored_vote_rows = CRUDDivisionVote(
+        session
+    ).get_rows_by_division_ids_and_list_source(
+        [stored_row.division_id for stored_row in stored_rows],
+        DivisionVoteListSource.MINUTES,
     )
     stored_vote_counts = Counter(
         (vote_row.vote_choice, vote_row.speaker_id is not None)
@@ -560,7 +568,9 @@ def _delete_stored_minutes_divisions(session: Session, minutes_ids: list[int]) -
     )
     deleted_vote_count = CRUDDivisionVote(
         session
-    ).delete_by_division_ids_and_list_source(division_ids, DivisionVoteListSource.MINUTES)
+    ).delete_by_division_ids_and_list_source(
+        division_ids, DivisionVoteListSource.MINUTES
+    )
     if deleted_vote_count != stored_vote_count:
         raise HansardWriteCheckError(
             f"Deleted {deleted_vote_count} minutes vote rows, read {stored_vote_count}"
@@ -601,7 +611,9 @@ def _move_minutes_statuses(session: Session, plan: MinutesDivisionPlan) -> None:
                 MinutesStatus.NEEDS_REVIEW,
                 minutes_review.status_note,
             )
-    for minutes_id in sorted({planned.minutes_id for planned in plan.minutes_divisions}):
+    for minutes_id in sorted(
+        {planned.minutes_id for planned in plan.minutes_divisions}
+    ):
         stored_minutes = minutes_id_to_stored_minutes[minutes_id]
         if (
             stored_minutes.status == MinutesStatus.NEEDS_REVIEW
@@ -629,12 +641,13 @@ def populate_minutes_divisions(session: Session, minutes_id: int) -> Optional[st
     if plan.minutes_to_review:
         status_note = plan.minutes_to_review[0].status_note
         CRUDMinutes(session).set_status_by_id_and_status(
-            minutes_id, MinutesStatus.TEXT_STORED, MinutesStatus.NEEDS_REVIEW, status_note
+            minutes_id,
+            MinutesStatus.TEXT_STORED,
+            MinutesStatus.NEEDS_REVIEW,
+            status_note,
         )
         logger.info(f"Minutes divisions: minutes {minutes_id} to review, {status_note}")
         return status_note
     added_count = _insert_minutes_divisions(session, plan)
-    logger.info(
-        f"Minutes divisions: added {added_count} rows for minutes {minutes_id}"
-    )
+    logger.info(f"Minutes divisions: added {added_count} rows for minutes {minutes_id}")
     return None

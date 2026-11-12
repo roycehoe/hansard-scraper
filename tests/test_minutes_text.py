@@ -107,7 +107,9 @@ def test_pdf_reader_value_key_and_index_errors_become_minutes_file_errors(
 ) -> None:
     monkeypatch.setattr(minutes_text, "PdfReader", raise_error)
 
-    with pytest.raises(HansardMinutesFileError, match="The PDF cannot be read") as caught:
+    with pytest.raises(
+        HansardMinutesFileError, match="The PDF cannot be read"
+    ) as caught:
         get_minutes_pdf_text(_read_fixture_bytes(_PDF_FIXTURE))
 
     assert caught.value.__cause__ is not None
@@ -141,7 +143,9 @@ def test_word_text_holds_both_divisions_of_the_sample() -> None:
 
 def test_word_file_that_is_cut_short_raises() -> None:
     with pytest.raises(HansardMinutesFileError):
-        get_minutes_word_text(_read_fixture_bytes(_WORD_FIXTURE)[:_TRUNCATED_WORD_BYTES])
+        get_minutes_word_text(
+            _read_fixture_bytes(_WORD_FIXTURE)[:_TRUNCATED_WORD_BYTES]
+        )
 
 
 def test_head_dates_of_the_pdf_and_word_samples() -> None:

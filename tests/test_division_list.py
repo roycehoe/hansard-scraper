@@ -86,16 +86,26 @@ def test_30_august_1985_joins_a_name_continued_on_an_indented_line() -> None:
     _assert_fixture_is_stored("hansard_list_1985_08_30_indented_wraps")
 
 
-def test_10_january_1957_stores_absent_names_under_a_line_with_no_absent_count() -> None:
+def test_10_january_1957_stores_absent_names_under_a_line_with_no_absent_count() -> (
+    None
+):
     _assert_fixture_is_stored("hansard_list_1957_01_10_no_absent_count")
 
 
-def test_a_name_moved_into_the_absent_block_is_counts_disagree_with_no_absent_count() -> None:
+def test_a_name_moved_into_the_absent_block_is_counts_disagree_with_no_absent_count() -> (
+    None
+):
     html, expected = _read_fixture("hansard_list_1957_01_10_no_absent_count")
-    moved_html = html.replace("Lim Cher Kheng ", "Lim Cher Kheng", 1).replace(
-        "Ong Piah Teng\r\n\r\n</pre>",
-        "Ong Piah Teng\r\n\r\n                                               Goh Tong Liang\r\n\r\n</pre>",
-    ).replace("Goh Tong Liang              Abdul", "                            Abdul", 1)
+    moved_html = (
+        html.replace("Lim Cher Kheng ", "Lim Cher Kheng", 1)
+        .replace(
+            "Ong Piah Teng\r\n\r\n</pre>",
+            "Ong Piah Teng\r\n\r\n                                               Goh Tong Liang\r\n\r\n</pre>",
+        )
+        .replace(
+            "Goh Tong Liang              Abdul", "                            Abdul", 1
+        )
+    )
 
     parsed_list = _get_fixture_list(moved_html, expected)
 
@@ -103,7 +113,9 @@ def test_a_name_moved_into_the_absent_block_is_counts_disagree_with_no_absent_co
     assert parsed_list.names == []
 
 
-def test_a_name_under_abstentions_with_no_abstentions_count_is_counts_disagree() -> None:
+def test_a_name_under_abstentions_with_no_abstentions_count_is_counts_disagree() -> (
+    None
+):
     html = _get_pre_html(
         _OPENING,
         "",
@@ -202,7 +214,9 @@ def test_27_august_2002_reads_the_no_heading_as_a_heading_not_a_name() -> None:
     assert parsed_list.names == []
 
 
-def test_6_september_1956_a_name_glued_to_a_heading_or_nil_makes_the_list_unreadable() -> None:
+def test_6_september_1956_a_name_glued_to_a_heading_or_nil_makes_the_list_unreadable() -> (
+    None
+):
     html, expected = _read_fixture("hansard_list_1956_09_06_glued_column")
 
     parsed_list = _get_fixture_list(html, expected)
@@ -212,7 +226,9 @@ def test_6_september_1956_a_name_glued_to_a_heading_or_nil_makes_the_list_unread
     assert parsed_list.names == []
 
 
-def test_a_nil_with_a_full_stop_and_a_misspelt_abstentions_heading_are_not_names() -> None:
+def test_a_nil_with_a_full_stop_and_a_misspelt_abstentions_heading_are_not_names() -> (
+    None
+):
     html = _get_pre_html(
         _OPENING,
         "",
@@ -357,7 +373,16 @@ def test_a_tie_between_cell_counts_has_no_column_starts() -> None:
 
 
 def test_a_pre_block_with_no_column_starts_is_layout_unreadable() -> None:
-    html = _get_pre_html(_OPENING, "", "  Ayes          Noes", "", "  Aa Bb         Cc Dd", "  Ee Ff", "  Gg Hh         Ii Jj", "  Kk Ll")
+    html = _get_pre_html(
+        _OPENING,
+        "",
+        "  Ayes          Noes",
+        "",
+        "  Aa Bb         Cc Dd",
+        "  Ee Ff",
+        "  Gg Hh         Ii Jj",
+        "  Kk Ll",
+    )
 
     parsed_list = _get_list(html)
 

@@ -49,14 +49,19 @@ def test_equal_counts_pair_in_order() -> None:
         [_minutes(1, 70, 10), _minutes(2, 70, 10)],
     )
 
-    assert [pairing.pairing for pairing in pairings] == [MinutesDivisionPairing.PAIRED] * 2
+    assert [pairing.pairing for pairing in pairings] == [
+        MinutesDivisionPairing.PAIRED
+    ] * 2
     assert [pairing.division_id for pairing in pairings] == [10, 11]
     assert [pairing.minutes_ordinal for pairing in pairings] == [1, 2]
 
 
 def test_equal_counts_in_one_report_order_by_speech_ordinal() -> None:
     pairings = get_division_pairings(
-        [_hansard(11, 1, 70, 10, speech_ordinal=9), _hansard(10, 1, 70, 10, speech_ordinal=3)],
+        [
+            _hansard(11, 1, 70, 10, speech_ordinal=9),
+            _hansard(10, 1, 70, 10, speech_ordinal=3),
+        ],
         [_minutes(1, 70, 10), _minutes(2, 70, 10)],
     )
 
@@ -98,9 +103,14 @@ def test_a_tie_on_speech_number_between_reports_is_tied() -> None:
         [_minutes(1, 70, 10), _minutes(2, 70, 10)],
     )
 
-    assert [pairing.pairing for pairing in pairings] == [MinutesDivisionPairing.TIED] * 2
+    assert [pairing.pairing for pairing in pairings] == [
+        MinutesDivisionPairing.TIED
+    ] * 2
     assert [pairing.division_id for pairing in pairings] == [None, None]
-    assert [pairing.hansard_division_ids for pairing in pairings] == [(10, 11), (10, 11)]
+    assert [pairing.hansard_division_ids for pairing in pairings] == [
+        (10, 11),
+        (10, 11),
+    ]
 
 
 def test_a_tie_on_speech_number_inside_one_report_is_not_tied() -> None:
@@ -112,12 +122,17 @@ def test_a_tie_on_speech_number_inside_one_report_is_not_tied() -> None:
         [_minutes(1, 70, 10), _minutes(2, 70, 10)],
     )
 
-    assert [pairing.pairing for pairing in pairings] == [MinutesDivisionPairing.PAIRED] * 2
+    assert [pairing.pairing for pairing in pairings] == [
+        MinutesDivisionPairing.PAIRED
+    ] * 2
 
 
 def test_differing_printed_abstentions_pair_none_of_the_group() -> None:
     pairings = get_division_pairings(
-        [_hansard(10, 1, 70, 10, abstentions=1), _hansard(11, 2, 70, 10, abstentions=2)],
+        [
+            _hansard(10, 1, 70, 10, abstentions=1),
+            _hansard(11, 2, 70, 10, abstentions=2),
+        ],
         [_minutes(1, 70, 10, abstentions=1), _minutes(2, 70, 10, abstentions=3)],
     )
 
@@ -125,7 +140,10 @@ def test_differing_printed_abstentions_pair_none_of_the_group() -> None:
         MinutesDivisionPairing.ABSTENTIONS_DIFFER
     ] * 2
     assert [pairing.division_id for pairing in pairings] == [None, None]
-    assert [pairing.hansard_division_ids for pairing in pairings] == [(10, 11), (10, 11)]
+    assert [pairing.hansard_division_ids for pairing in pairings] == [
+        (10, 11),
+        (10, 11),
+    ]
 
 
 def test_abstentions_missing_on_one_side_still_pair() -> None:

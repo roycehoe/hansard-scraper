@@ -17,9 +17,7 @@ from schemas.minutes_index_page import LiveMinutesIndex, LiveMinutesRow
 
 MINUTES_INDEX_FIRST_DATE = date(2005, 1, 12)
 
-_FLIGHT_PUSH_PATTERN = re.compile(
-    r'self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)'
-)
+_FLIGHT_PUSH_PATTERN = re.compile(r'self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)')
 _INITIAL_ROWS_KEY = '"initialMPs":'
 _MEDIA_TYPE_TO_FILE_FORMAT = {
     "application/pdf": MinutesFileFormat.PDF,
@@ -66,7 +64,9 @@ def _read_live_index(page: str) -> LiveMinutesIndex:
     raise HansardMinutesIndexError("The live index page holds no initialMPs rows")
 
 
-def _build_live_row(live_minutes_row: LiveMinutesRow, media_url: str) -> MinutesIndexRow:
+def _build_live_row(
+    live_minutes_row: LiveMinutesRow, media_url: str
+) -> MinutesIndexRow:
     try:
         sitting_date = datetime.fromisoformat(live_minutes_row.date).date()
     except ValueError as error:
@@ -80,7 +80,9 @@ def _build_live_row(live_minutes_row: LiveMinutesRow, media_url: str) -> Minutes
             f"The live row {live_minutes_row.description!r} has the unknown media type {live_minutes_row.report.type!r}"
         ) from error
     printed_parliament = (
-        None if live_minutes_row.parliaments is None else live_minutes_row.parliaments.title
+        None
+        if live_minutes_row.parliaments is None
+        else live_minutes_row.parliaments.title
     )
     return MinutesIndexRow(
         sitting_date=sitting_date,
@@ -94,7 +96,10 @@ def _build_live_row(live_minutes_row: LiveMinutesRow, media_url: str) -> Minutes
 
 def parse_live_index_page(page: str, media_url: str) -> list[MinutesIndexRow]:
     live_index = _read_live_index(page)
-    return [_build_live_row(live_minutes_row, media_url) for live_minutes_row in live_index.data]
+    return [
+        _build_live_row(live_minutes_row, media_url)
+        for live_minutes_row in live_index.data
+    ]
 
 
 def _read_archive_label(individual_vote_element: Tag, file_url: str) -> str:
@@ -173,4 +178,6 @@ def parse_archive_index_page(page: str, index_url: str) -> list[MinutesIndexRow]
 
 
 def get_live_capture_url(original_url: str, content: str) -> str:
-    return f"{original_url}#sha256={hashlib.sha256(content.encode('utf-8')).hexdigest()}"
+    return (
+        f"{original_url}#sha256={hashlib.sha256(content.encode('utf-8')).hexdigest()}"
+    )

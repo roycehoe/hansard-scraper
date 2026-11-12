@@ -190,9 +190,9 @@ def test_a_name_tier_candidate_claims_the_linked_person(
         scratch_session, DivisionCheckRule.NAME_TIER_EXACT
     )
 
-    assert [(candidate.source_text, candidate.data_claim) for candidate in candidates] == [
-        ("Mr Lee", f"{_SPEAKER_NAME} | Parliament {_PARLIAMENT_NUMBER}")
-    ]
+    assert [
+        (candidate.source_text, candidate.data_claim) for candidate in candidates
+    ] == [("Mr Lee", f"{_SPEAKER_NAME} | Parliament {_PARLIAMENT_NUMBER}")]
 
 
 def test_a_draw_takes_fifty_per_group_and_repeats_with_the_same_seed() -> None:
@@ -324,9 +324,7 @@ def test_a_wrong_date_plant_names_the_nearest_other_sitting_date() -> None:
 
 
 def test_a_wrong_party_plant_names_the_other_span_party_of_the_member() -> None:
-    claimed = _build_candidate(
-        1, data_claim="party WP, uncertain False"
-    ).model_copy(
+    claimed = _build_candidate(1, data_claim="party WP, uncertain False").model_copy(
         update={
             "source_text": "Lee on 2021-10-04; ballot party PAP; spans: PAP from 2011-05-01 (DAY, upper bound False); WP from 2021-01-01 (MONTH, upper bound True)"
         }
@@ -341,9 +339,7 @@ def test_a_wrong_party_plant_names_the_other_span_party_of_the_member() -> None:
 
 
 def test_a_wrong_party_plant_falls_back_to_another_party_of_the_frame() -> None:
-    claimed = _build_candidate(
-        1, data_claim="party PAP, uncertain True"
-    ).model_copy(
+    claimed = _build_candidate(1, data_claim="party PAP, uncertain True").model_copy(
         update={"source_text": "Lee on 2021-10-04; ballot party PAP; spans: none"}
     )
     other = _build_candidate(2, data_claim="party WP, uncertain False")
@@ -479,11 +475,17 @@ def test_a_frame_short_of_outside_rows_takes_them_all_before_copying_sampled_row
     drawn_keys = {candidate.database_key for candidate in drawn_candidates}
     assert len(planted_candidates) == _PLANT_COUNT
     assert (
-        sum(planted.candidate.database_key not in drawn_keys for planted in planted_candidates)
+        sum(
+            planted.candidate.database_key not in drawn_keys
+            for planted in planted_candidates
+        )
         == _SHORT_OUTSIDE_COUNT
     )
     assert (
-        sum(planted.candidate.database_key in drawn_keys for planted in planted_candidates)
+        sum(
+            planted.candidate.database_key in drawn_keys
+            for planted in planted_candidates
+        )
         == _PLANT_COUNT - _SHORT_OUTSIDE_COUNT
     )
 
@@ -511,7 +513,9 @@ def test_no_reader_batch_holds_a_sampled_row_and_its_copy() -> None:
 
 
 def test_a_reader_batch_holds_at_most_a_hundred_packets() -> None:
-    drawn_candidates = [_build_candidate(key) for key in range(_BATCH_TEST_PACKET_COUNT)]
+    drawn_candidates = [
+        _build_candidate(key) for key in range(_BATCH_TEST_PACKET_COUNT)
+    ]
     packets_and_key = draw_division_check_sample_script.build_packets_and_key(
         DivisionCheckRule.PRINTED_LINE, _SEED, drawn_candidates, []
     )
@@ -530,8 +534,7 @@ def test_a_reader_batch_holds_at_most_160000_characters() -> None:
     half_batch_packets = [
         DivisionCheckPacket(
             packet_id=f"packet-{key}",
-            source_text="x"
-            * (_MAX_BATCH_CHARACTERS // 2 - len(_HALF_BATCH_CLAIM)),
+            source_text="x" * (_MAX_BATCH_CHARACTERS // 2 - len(_HALF_BATCH_CLAIM)),
             data_claim=_HALF_BATCH_CLAIM,
         )
         for key in range(2)
@@ -666,7 +669,10 @@ def test_the_summary_says_which_plant_kinds_the_rule_does_not_use() -> None:
         [sibling_planted],
     )
 
-    assert f"plant kind {DivisionCheckPlantKind.SWAPPED_SIDE}: not used for this rule" in lines
+    assert (
+        f"plant kind {DivisionCheckPlantKind.SWAPPED_SIDE}: not used for this rule"
+        in lines
+    )
     assert (
         f"plant kind {DivisionCheckPlantKind.WRONG_COUNT_DIGIT}: 1 planted, 1 from the frames of sibling rules, 0 copies of sampled rows"
         in lines
@@ -876,7 +882,9 @@ def test_a_stored_list_with_absent_names_and_no_absent_count_takes_its_own_group
     assert candidate.group.endswith("side without a printed count") == (
         printed_absent_count is None
     )
-    assert candidate.source_text == f"Printed count line: {_MERGE_LINE}\n{_PRINTED_LIST}"
+    assert (
+        candidate.source_text == f"Printed count line: {_MERGE_LINE}\n{_PRINTED_LIST}"
+    )
 
 
 @pytest.mark.parametrize("rule", list(DivisionCheckRule))
@@ -1164,7 +1172,9 @@ def test_the_script_writes_nothing_to_the_database(
     )
     batch_packet_ids = [
         packet_dict["packet_id"]
-        for batch_file in sorted((tmp_path / "check" / "batches").glob("batch-*/packets.json"))
+        for batch_file in sorted(
+            (tmp_path / "check" / "batches").glob("batch-*/packets.json")
+        )
         for packet_dict in json.loads(batch_file.read_text())
     ]
     assert sorted(batch_packet_ids) == sorted(

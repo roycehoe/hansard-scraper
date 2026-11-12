@@ -34,9 +34,7 @@ _MINUTES_FILE_FORMAT_NAMES = ("PDF", "WORD")
 
 
 def upgrade() -> None:
-    postgresql.ENUM(*_MINUTES_STATUS_NAMES, name="minutesstatus").create(
-        op.get_bind()
-    )
+    postgresql.ENUM(*_MINUTES_STATUS_NAMES, name="minutesstatus").create(op.get_bind())
     postgresql.ENUM(*_MINUTES_INDEX_SOURCE_NAMES, name="minutesindexsource").create(
         op.get_bind()
     )

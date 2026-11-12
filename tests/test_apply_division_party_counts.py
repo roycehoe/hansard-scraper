@@ -291,7 +291,7 @@ def test_populate_division_party_counts_emits_no_delete(
 
 
 def test_populate_division_party_counts_skips_a_division_that_already_has_rows(
-    scratch_session: Session
+    scratch_session: Session,
 ) -> None:
     division_id = _add_division_with_hansard_votes(scratch_session)
     populate_division_party_counts(scratch_session, [division_id])

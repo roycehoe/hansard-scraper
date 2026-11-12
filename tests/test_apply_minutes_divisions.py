@@ -346,9 +346,9 @@ def test_a_division_with_no_hansard_division_creates_a_minutes_only_division(
     _commit(tmp_path / "plan.json", [minutes_id])
 
     minutes_divisions = _get_minutes_divisions(scratch_session)
-    assert {
-        minutes_division.pairing for minutes_division in minutes_divisions
-    } == {MinutesDivisionPairing.NO_MATCHING_DIVISION}
+    assert {minutes_division.pairing for minutes_division in minutes_divisions} == {
+        MinutesDivisionPairing.NO_MATCHING_DIVISION
+    }
     divisions = scratch_session.exec(select(Division)).all()
     assert len(divisions) == _DIVISION_COUNT
     for division in divisions:
@@ -374,9 +374,9 @@ def test_a_division_with_differing_abstentions_creates_its_own_new_division(
     _commit(tmp_path / "plan.json", [minutes_id])
 
     minutes_divisions = _get_minutes_divisions(scratch_session)
-    assert {
-        minutes_division.pairing for minutes_division in minutes_divisions
-    } == {MinutesDivisionPairing.ABSTENTIONS_DIFFER}
+    assert {minutes_division.pairing for minutes_division in minutes_divisions} == {
+        MinutesDivisionPairing.ABSTENTIONS_DIFFER
+    }
     assert not {
         minutes_division.division_id for minutes_division in minutes_divisions
     } & set(hansard_division_ids)
@@ -403,14 +403,16 @@ def test_a_paired_division_attaches_the_minutes_vote_rows_to_the_hansard_divisio
     _commit(tmp_path / "plan.json", [minutes_id])
 
     minutes_divisions = _get_minutes_divisions(scratch_session)
-    assert [
-        minutes_division.pairing for minutes_division in minutes_divisions
-    ] == [MinutesDivisionPairing.PAIRED] * _DIVISION_COUNT
+    assert [minutes_division.pairing for minutes_division in minutes_divisions] == [
+        MinutesDivisionPairing.PAIRED
+    ] * _DIVISION_COUNT
     assert [
         minutes_division.division_id for minutes_division in minutes_divisions
     ] == hansard_division_ids
     assert _get_count(scratch_session, Division) == len(hansard_division_ids)
-    assert _get_count(scratch_session, DivisionVote) == _VOTE_ROW_COUNT * _DIVISION_COUNT
+    assert (
+        _get_count(scratch_session, DivisionVote) == _VOTE_ROW_COUNT * _DIVISION_COUNT
+    )
 
 
 def test_a_counts_disagree_division_stores_no_vote_rows_but_keeps_the_printed_list(
@@ -725,10 +727,7 @@ def test_populate_minutes_divisions_inserts_with_no_delete(
         event.remove(scratch_engine, "before_cursor_execute", record_statement)
 
     assert review_note is None
-    assert any(
-        statement.startswith(_VOTE_INSERT_PREFIX)
-        for statement in statements
-    )
+    assert any(statement.startswith(_VOTE_INSERT_PREFIX) for statement in statements)
     assert not [
         statement
         for statement in statements

@@ -263,7 +263,9 @@ def _store_and_pair_first_division(
         )
     ).one()
     assert division_id is not None
-    minutes = Minutes(sitting_date=_SITTING_DATE.date(), status=MinutesStatus.TEXT_STORED)
+    minutes = Minutes(
+        sitting_date=_SITTING_DATE.date(), status=MinutesStatus.TEXT_STORED
+    )
     session.add(minutes)
     session.flush()
     assert minutes.id is not None
@@ -294,14 +296,14 @@ def _store_and_pair_first_division(
 
 
 def _remove_first_division_line(session: Session) -> None:
-    speech = session.exec(
-        select(Speech).where(Speech.transcript == _LINE_FIRST)
-    ).one()
+    speech = session.exec(select(Speech).where(Speech.transcript == _LINE_FIRST)).one()
     speech.transcript = _NOT_A_DIVISION_LINE
     session.commit()
 
 
-def _get_vote_sources(session: Session, division_id: int) -> list[DivisionVoteListSource]:
+def _get_vote_sources(
+    session: Session, division_id: int
+) -> list[DivisionVoteListSource]:
     session.expire_all()
     return sorted(
         session.exec(
@@ -501,10 +503,15 @@ def test_the_changed_counts_refusal_comes_before_any_write(
         event.remove(scratch_engine, "before_cursor_execute", record_statement)
 
     assert statements
-    assert not {
-        verb
-        for verb, _ in (_get_statement_effects(statement) for statement in statements)
-    } & _WRITE_VERBS
+    assert (
+        not {
+            verb
+            for verb, _ in (
+                _get_statement_effects(statement) for statement in statements
+            )
+        }
+        & _WRITE_VERBS
+    )
 
 
 def test_an_unpaired_division_whose_line_has_gone_is_deleted_without_the_option(
@@ -540,9 +547,7 @@ def test_the_dry_run_logs_the_paired_divisions_at_risk(
     _remove_first_division_line(scratch_session)
     log_recorder.messages.clear()
 
-    apply_divisions(
-        [], tmp_path / "plan.json", is_commit=False, is_detach_paired=False
-    )
+    apply_divisions([], tmp_path / "plan.json", is_commit=False, is_detach_paired=False)
 
     assert (
         f"Paired division {division_id} of report {_FIRST_REPORT_ID} (The House divided: Ayes, 10; Noes, 3): line gone"
@@ -609,7 +614,9 @@ def test_the_plan_stores_hansard_vote_rows_with_list_status_stored(
     scratch_session: Session,
 ) -> None:
     _add_list_speakers(scratch_session, _LINKED_NAMES)
-    report = _seed_list_report(scratch_session, "hansard_list_1963_06_07.html", _LIST_LINE)
+    report = _seed_list_report(
+        scratch_session, "hansard_list_1963_06_07.html", _LIST_LINE
+    )
     assert report.id is not None
 
     plan = get_division_plan(scratch_session, [report.id])
@@ -629,7 +636,9 @@ def test_a_linked_name_carries_its_party_and_name_rule_and_an_unlinked_name_carr
     scratch_session: Session,
 ) -> None:
     _add_list_speakers(scratch_session, _LINKED_NAMES)
-    report = _seed_list_report(scratch_session, "hansard_list_1963_06_07.html", _LIST_LINE)
+    report = _seed_list_report(
+        scratch_session, "hansard_list_1963_06_07.html", _LIST_LINE
+    )
     assert report.id is not None
 
     plan = get_division_plan(scratch_session, [report.id])
@@ -645,9 +654,8 @@ def test_a_linked_name_carries_its_party_and_name_rule_and_an_unlinked_name_carr
     assert unlinked_vote.name_rule is None
     assert unlinked_vote.party is None
     assert unlinked_vote.is_party_uncertain is False
-    assert (
-        sum(vote.speaker_id is not None for vote in plan.divisions[0].votes)
-        == len(_LINKED_NAMES)
+    assert sum(vote.speaker_id is not None for vote in plan.divisions[0].votes) == len(
+        _LINKED_NAMES
     )
 
 
@@ -706,13 +714,18 @@ def test_a_hand_listed_name_that_two_speaker_rows_hold_links_to_nobody(
 
 
 def test_an_unreadable_list_stores_the_division_and_no_vote_rows(
-    scratch_session: Session, log_recorder: _LogRecorder, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    scratch_session: Session,
+    log_recorder: _LogRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(
         apply_divisions_script, "vacuum_analyze_written_tables", _VacuumRecorder()
     )
     _seed_list_report(
-        scratch_session, "hansard_list_image.html", "The House divided: Ayes, 80; Noes, 0."
+        scratch_session,
+        "hansard_list_image.html",
+        "The House divided: Ayes, 80; Noes, 0.",
     )
     plan_path = tmp_path / "plan.json"
     apply_divisions([], plan_path, is_commit=False, is_detach_paired=False)
@@ -753,7 +766,9 @@ def test_populate_divisions_inserts_vote_rows_and_emits_no_delete(
     scratch_session: Session, scratch_engine: Engine
 ) -> None:
     _add_list_speakers(scratch_session, _LINKED_NAMES)
-    report = _seed_list_report(scratch_session, "hansard_list_1963_06_07.html", _LIST_LINE)
+    report = _seed_list_report(
+        scratch_session, "hansard_list_1963_06_07.html", _LIST_LINE
+    )
     assert report.id is not None
     statements: list[str] = []
 

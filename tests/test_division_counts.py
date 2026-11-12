@@ -220,7 +220,9 @@ def test_misprinted_abstentions_label_is_read_with_the_counts_after_it(
 
 def test_count_after_an_unknown_label_makes_the_line_unread() -> None:
     report_divisions = get_report_divisions(
-        _build_rows([("PROCEDURAL", "The House divided: Ayes, 10; Noes, 3; Abstainers, 4.")])
+        _build_rows(
+            [("PROCEDURAL", "The House divided: Ayes, 10; Noes, 3; Abstainers, 4.")]
+        )
     )
 
     assert report_divisions.divisions == []
@@ -273,7 +275,9 @@ def test_another_division_line_between_blocks_the_merge() -> None:
         )
     )
 
-    assert [division.merged_total_ordinal for division in report_divisions.divisions] == [
+    assert [
+        division.merged_total_ordinal for division in report_divisions.divisions
+    ] == [
         None,
         4,
     ]
@@ -325,9 +329,9 @@ def test_a_total_with_differing_counts_still_sets_the_merged_total_ordinal() -> 
         )
     )
 
-    assert [division.merged_total_ordinal for division in report_divisions.divisions] == [
-        2
-    ]
+    assert [
+        division.merged_total_ordinal for division in report_divisions.divisions
+    ] == [2]
     assert [
         (unread_row.speech_ordinal, unread_row.reason)
         for unread_row in report_divisions.unread_rows
