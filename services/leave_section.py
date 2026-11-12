@@ -1016,8 +1016,10 @@ def _take_table_row_name(
 def _get_table_printed_year(
     year_text: Optional[str], sitting_date: date
 ) -> Optional[int]:
-    printed_year = _get_printed_year(year_text)
-    if printed_year is None or len(year_text) == _FULL_YEAR_DIGIT_COUNT:
+    if year_text is None:
+        return None
+    printed_year = int(year_text)
+    if len(year_text) == _FULL_YEAR_DIGIT_COUNT:
         return printed_year
     century_year = (
         sitting_date.year // _YEARS_IN_CENTURY * _YEARS_IN_CENTURY + printed_year
@@ -1151,7 +1153,7 @@ def _parse_table_entries(
         heading = _get_table_heading(table_section.heading_text)
         row_name = _take_table_row_name(table_section, row_match.group("name"))
         offered_years = _get_offered_years(heading, sitting_date, leave_heading_years)
-        table_ranges = [_FIRST_TABLE_RANGE]
+        table_ranges: list[tuple[str, str]] = [_FIRST_TABLE_RANGE]
         if row_match.groupdict().get(_SECOND_TABLE_RANGE[0]) is not None:
             table_ranges.append(_SECOND_TABLE_RANGE)
         return [
