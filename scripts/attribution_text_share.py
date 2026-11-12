@@ -10,6 +10,7 @@ from logs import logger
 from populate.attribution_figures import get_attribution_figures
 from services.attribution import (
     ADR_EXCLUDED_CATEGORY,
+    CREDITED_CATEGORY,
     LINKED_CATEGORY,
     NAMED_UNLINKED_CATEGORY,
     NO_SPEAKER_CATEGORY,
@@ -30,10 +31,18 @@ def _get_share(numerator: int, denominator: int) -> str:
     return f"{numerator} / {denominator} = {_get_percent(numerator, denominator)}"
 
 
+def _get_attributed_count(category_to_count: Counter[str]) -> int:
+    return category_to_count[LINKED_CATEGORY] + category_to_count[CREDITED_CATEGORY]
+
+
 def _log_report_type_figures(report_type: str, figures: ReportTypeFigures) -> None:
     linked_row_count = figures.category_to_row_count[LINKED_CATEGORY]
     adr_denominator = (
         linked_row_count + figures.category_to_row_count[NAMED_UNLINKED_CATEGORY]
+    )
+    attributed_row_count = _get_attributed_count(figures.category_to_row_count)
+    attributed_character_count = _get_attributed_count(
+        figures.category_to_character_count
     )
     reports_with_rows = figures.report_count - figures.zero_row_report_count
     logger.info(f"  {report_type}: {figures.report_count} reports")
@@ -41,10 +50,10 @@ def _log_report_type_figures(report_type: str, figures: ReportTypeFigures) -> No
         f"    1. ADR 0001 rate:  {_get_share(linked_row_count, adr_denominator)}"
     )
     logger.info(
-        f"    2. All-rows rate:  {_get_share(linked_row_count, sum(figures.category_to_row_count.values()))}"
+        f"    2. All-rows rate:  {_get_share(attributed_row_count, sum(figures.category_to_row_count.values()))}"
     )
     logger.info(
-        f"    3. Text share:     {_get_share(figures.category_to_character_count[LINKED_CATEGORY], figures.body_total)} chars"
+        f"    3. Text share:     {_get_share(attributed_character_count, figures.body_total)} chars"
     )
     logger.info(
         f"    Zero-row reports:  {_get_share(figures.zero_row_report_count, figures.report_count)}"
@@ -64,16 +73,17 @@ def _log_rates(
 ) -> None:
     rows_total = sum(category_to_row_count.values())
     linked_row_count = category_to_row_count[LINKED_CATEGORY]
-    linked_character_count = category_to_character_count[LINKED_CATEGORY]
     adr_denominator = linked_row_count + category_to_row_count[NAMED_UNLINKED_CATEGORY]
+    attributed_row_count = _get_attributed_count(category_to_row_count)
+    attributed_character_count = _get_attributed_count(category_to_character_count)
     logger.info(
         f"1. ADR 0001 rate:  {linked_row_count} / {adr_denominator} = {_get_percent(linked_row_count, adr_denominator)}"
     )
     logger.info(
-        f"2. All-rows rate:  {linked_row_count} / {rows_total} = {_get_percent(linked_row_count, rows_total)}"
+        f"2. All-rows rate:  {attributed_row_count} / {rows_total} = {_get_percent(attributed_row_count, rows_total)}"
     )
     logger.info(
-        f"3. Text share:     {linked_character_count} / {body_total} chars = {_get_percent(linked_character_count, body_total)}"
+        f"3. Text share:     {attributed_character_count} / {body_total} chars = {_get_percent(attributed_character_count, body_total)}"
     )
 
 
@@ -98,6 +108,10 @@ def attribution_text_share(output_path: Optional[Path]) -> None:
     logger.info("Where the body text goes (chars, share of body):")
     for label, character_count in (
         ("linked rows", category_to_character_count[LINKED_CATEGORY]),
+        (
+            "credited rows (no label, member credited)",
+            category_to_character_count[CREDITED_CATEGORY],
+        ),
         (
             "named but unlinked rows",
             category_to_character_count[NAMED_UNLINKED_CATEGORY],

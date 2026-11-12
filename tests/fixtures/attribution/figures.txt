@@ -4,6 +4,7 @@ Parliaments 0 to 11: 4 reports with markdown, 3 with speech rows, 10 speech rows
 3. Text share:     157 / 395 chars = 39.75%
 Where the body text goes (chars, share of body):
   linked rows                                                               157  39.75%
+  credited rows (no label, member credited)                                   0   0.00%
   named but unlinked rows                                                    57  14.43%
   ADR-excluded rows (hon. Members, stage directions)                         38   9.62%
   rows with no speaker                                                       74  18.73%

@@ -13,6 +13,7 @@ LINKED_CATEGORY = "linked"
 NAMED_UNLINKED_CATEGORY = "named_unlinked"
 ADR_EXCLUDED_CATEGORY = "adr_excluded"
 NO_SPEAKER_CATEGORY = "no_speaker"
+CREDITED_CATEGORY = "credited"
 
 _ADR_EXCLUDED_SPEAKER_RE = re.compile(r"hon\.? members?", re.IGNORECASE)
 _MARKUP_AND_SPACE_RE = re.compile(r"[\s*_\\#|]+")
@@ -55,8 +56,10 @@ def _is_adr_excluded(speaker: str) -> bool:
 
 
 def get_speech_category(speaker: Optional[str], speaker_id: Optional[int]) -> str:
-    if speaker is None:
+    if speaker is None and speaker_id is None:
         return NO_SPEAKER_CATEGORY
+    if speaker is None:
+        return CREDITED_CATEGORY
     if _is_adr_excluded(speaker):
         return ADR_EXCLUDED_CATEGORY
     if speaker_id is None:
@@ -87,9 +90,13 @@ def _build_group_json(group_figures: GroupFigures) -> dict[str, object]:
         "no_speaker_row_count": group_figures.category_to_row_count[
             NO_SPEAKER_CATEGORY
         ],
+        "credited_row_count": group_figures.category_to_row_count[CREDITED_CATEGORY],
         "row_count": sum(group_figures.category_to_row_count.values()),
         "linked_character_count": group_figures.category_to_character_count[
             LINKED_CATEGORY
+        ],
+        "credited_character_count": group_figures.category_to_character_count[
+            CREDITED_CATEGORY
         ],
         "body_character_count": group_figures.body_total,
         "body_in_zero_row_reports": group_figures.body_in_zero_row_reports,

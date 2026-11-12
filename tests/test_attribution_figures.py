@@ -15,9 +15,13 @@ from database.speech import Speech
 from enums import ReportType, ReportVersion
 from populate.attribution_figures import get_attribution_figures
 from services.attribution import (
+    CREDITED_CATEGORY,
     HEADLINE_GROUP,
     LINKED_CATEGORY,
+    NAMED_UNLINKED_CATEGORY,
+    NO_SPEAKER_CATEGORY,
     build_attribution_figures_json,
+    get_speech_category,
 )
 from tests.attribution_seed import seed_attribution_rows
 
@@ -44,8 +48,10 @@ _STABLE_GROUP_KEYS = frozenset(
         "named_unlinked_row_count",
         "adr_excluded_row_count",
         "no_speaker_row_count",
+        "credited_row_count",
         "row_count",
         "linked_character_count",
+        "credited_character_count",
         "body_character_count",
         "body_in_zero_row_reports",
     }
@@ -174,3 +180,70 @@ def test_figures_do_not_depend_on_the_batch_size(
     )
 
     assert single_report_batch_figures_json == default_batch_figures_json
+
+
+def test_a_row_with_no_label_and_a_speaker_id_is_credited() -> None:
+    assert get_speech_category(None, 7) == CREDITED_CATEGORY
+
+
+def test_a_row_with_no_label_and_no_speaker_id_has_no_speaker() -> None:
+    assert get_speech_category(None, None) == NO_SPEAKER_CATEGORY
+
+
+def test_a_labelled_row_is_linked_or_named_unlinked_by_its_speaker_id() -> None:
+    assert get_speech_category("Mr Tan Ah Kow", 7) == LINKED_CATEGORY
+    assert get_speech_category("Mr Tan Ah Kow", None) == NAMED_UNLINKED_CATEGORY
+
+
+def test_credited_rows_reach_the_figures_json(scratch_session: Session) -> None:
+    seed_attribution_rows(scratch_session)
+    speaker = Speaker(
+        name="Tan Ah Kow",
+        party="PAP",
+        is_legislative_assembly=False,
+        parliament_number=_NEW_PARLIAMENT,
+    )
+    report = Report(
+        volumeNo=_NEW_PARLIAMENT,
+        parlNo=_NEW_PARLIAMENT,
+        sittingNo=None,
+        sittingDate=_NEW_PARLIAMENT_SITTING_DATE,
+        sno=_SPEECH_NUMBER,
+        original_title="Rental Housing",
+        title="Rental Housing",
+        reportId="parliament-15-credited",
+        reportType=ReportType.ORAL_ANSWER,
+        content="<p>Stored text</p>",
+        markdown_content="Credited text.\n",
+        htmlFileName=None,
+        reportVersion=ReportVersion.SPRS3,
+    )
+    scratch_session.add_all([speaker, report])
+    scratch_session.flush()
+    assert report.id is not None
+    scratch_session.add(
+        Speech(
+            ordinal=1,
+            speaker=None,
+            transcript="Credited text.",
+            sitting_date=report.sitting_date,
+            report_type=report.report_type,
+            report_id=report.id,
+            speaker_id=speaker.id,
+        )
+    )
+    scratch_session.commit()
+
+    figures_json = build_attribution_figures_json(
+        get_attribution_figures(scratch_session), _MEASURED_AT
+    )
+
+    groups_json = cast(list[dict[str, object]], figures_json["groups"])
+    new_parliament_json = next(
+        group_json
+        for group_json in groups_json
+        if group_json["group"] == _NEW_PARLIAMENT_GROUP
+    )
+    assert new_parliament_json["credited_row_count"] == 1
+    assert new_parliament_json["linked_row_count"] == 0
+    assert new_parliament_json["credited_character_count"] == len("Creditedtext.")

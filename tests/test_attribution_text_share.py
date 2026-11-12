@@ -7,6 +7,7 @@ import scripts.attribution_text_share as attribution_text_share_script
 from logs import logger
 from services.attribution import (
     ADR_EXCLUDED_CATEGORY,
+    CREDITED_CATEGORY,
     HEADLINE_GROUP,
     LINKED_CATEGORY,
     NAMED_UNLINKED_CATEGORY,
@@ -16,7 +17,7 @@ from services.attribution import (
 
 _BREAKDOWN_HEADING = "Where the body text goes (chars, share of body):"
 _BREAKDOWN_LABEL_WIDTH = 64
-_BREAKDOWN_ROW_COUNT = 6
+_BREAKDOWN_ROW_COUNT = 7
 _EMPTY_BREAKDOWN_ROW_TAIL = " " * 11 + "0" + " " * 5 + "n/a"
 
 
@@ -110,6 +111,7 @@ def test_non_empty_table_logs_exact_headline_lines(
     assert "3. Text share:     3 / 10 chars = 30.00%" in logged_messages
     assert _get_breakdown_rows(logged_messages) == [
         _get_breakdown_row("linked rows", 3, " 30.00%"),
+        _get_breakdown_row("credited rows (no label, member credited)", 0, "  0.00%"),
         _get_breakdown_row("named but unlinked rows", 2, " 20.00%"),
         _get_breakdown_row(
             "ADR-excluded rows (hon. Members, stage directions)", 0, "  0.00%"
@@ -122,6 +124,30 @@ def test_non_empty_table_logs_exact_headline_lines(
             " 10.00%",
         ),
     ]
+
+
+def test_credited_rows_count_in_the_all_rows_rate_and_text_share_but_not_the_adr_rate(
+    monkeypatch: pytest.MonkeyPatch, logged_messages: list[str]
+) -> None:
+    category_to_row_count = Counter(
+        {
+            LINKED_CATEGORY: 3,
+            NAMED_UNLINKED_CATEGORY: 1,
+            CREDITED_CATEGORY: 2,
+            NO_SPEAKER_CATEGORY: 2,
+        }
+    )
+    category_to_character_count = Counter(
+        {LINKED_CATEGORY: 3, CREDITED_CATEGORY: 2, NAMED_UNLINKED_CATEGORY: 1}
+    )
+    _log_figures(
+        monkeypatch,
+        _get_group_figures(category_to_row_count, category_to_character_count, 10),
+    )
+
+    assert "1. ADR 0001 rate:  3 / 4 = 75.00%" in logged_messages
+    assert "2. All-rows rate:  5 / 8 = 62.50%" in logged_messages
+    assert "3. Text share:     5 / 10 chars = 50.00%" in logged_messages
 
 
 @pytest.mark.parametrize(
