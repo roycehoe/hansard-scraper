@@ -51,6 +51,7 @@ from populate.report_links import populate_report_links
 from populate.report_participants import populate_report_participants
 from populate.report_put_to import populate_report_put_to
 from populate.seat_holdings import populate_seat_holdings
+from populate.sitting_spans import populate_sitting_spans
 from populate.speaker_links import link_speakers_by_report_ids_and_sitting_ids
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
@@ -736,6 +737,7 @@ def _write_window_rows(
     populate_attached_files(session, report_ids, sitting_ids)
     populate_leave_periods(session, sitting_ids)
     populate_seat_holdings(session, sitting_ids)
+    populate_sitting_spans(session, sitting_ids)
     window_result.report_ids_with_unread_division_openings = populate_divisions(
         session, report_ids
     )

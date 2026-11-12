@@ -7,6 +7,7 @@ from crud.attendance import CRUDAttendance
 from crud.sitting_span import CRUDSittingSpan
 from database.sitting_span import SittingSpan
 from exceptions import HansardWriteCheckError
+from logs import logger
 from services.sitting_span import build_sitting_span_records
 from utils.sitting_span_update import SittingSpanUpdate
 
@@ -112,3 +113,16 @@ def write_sitting_span_plan(session: Session, plan: SittingSpanPlan) -> None:
     CRUDSittingSpan(session).add_many(plan.sitting_spans_to_add)
     CRUDSittingSpan(session).update_many(plan.sitting_span_updates)
     _validate_can_commit_sitting_spans(session, plan)
+
+
+# NOTE: inserts and widens only, because the refresh role has no DELETE grant and Postgres checks it per statement
+def populate_sitting_spans(session: Session, sitting_ids: list[int]) -> None:
+    speaker_ids = CRUDAttendance(
+        session
+    ).get_distinct_speaker_ids_by_sitting_ids_and_speaker_id_not_null(sitting_ids)
+    plan = get_sitting_span_plan(session, speaker_ids)
+    CRUDSittingSpan(session).add_many(plan.sitting_spans_to_add)
+    CRUDSittingSpan(session).update_many(plan.sitting_span_widenings)
+    logger.info(
+        f"Sitting spans: added {len(plan.sitting_spans_to_add)} rows, widened {len(plan.sitting_span_widenings)}"
+    )

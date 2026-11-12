@@ -6,7 +6,7 @@
 
 ## What a run does
 
-A run only adds rows, apart from three columns of a stored Bill (`title`, `last_sitting_date` and `is_passed`) that move when a new report joins it, the three bounds columns of a stored `seat_holding` row that step 21 widens, and named columns of the `minutes` rows that step 25 lists or reads (see 'Write role SQL'). It never re-parses a stored report and never rewrites any other stored row, except that step 17 extends a stored printed office range, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
+A run only adds rows, apart from three columns of a stored Bill (`title`, `last_sitting_date` and `is_passed`) that move when a new report joins it, the three bounds columns of a stored `seat_holding` or `sitting_span` row that step 21 widens, and named columns of the `minutes` rows that step 25 lists or reads (see 'Write role SQL'). It never re-parses a stored report and never rewrites any other stored row, except that step 17 extends a stored printed office range, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
 
 In order, a run:
 
@@ -33,7 +33,7 @@ Then, for each month in order, the run:
 18. Places the month's new Bill reports in Bills, one report at a time, with the start-a-new-Bill test that `apply_act_links` uses. It inserts a new `bill` row (with its class), `billreport` READING rows and one `billkey` row with an Act count of 0 for a Bill it starts, and it updates only `title`, `last_sitting_date` and `is_passed` of a Bill a report joins, adding no key row for it. It then inserts the `billreportspeaker` and `billstageline` rows of the placed reports. It leaves out, and logs, a report whose title lacks the word Bill, one dated before its open Bill's last sitting, one whose title's latest date two Bills share, and one dated on a keyed Bill's first sitting date whose SPRS id sorts below the key. It never deletes, because the role has no DELETE.
 19. Inserts the attached files of the month's new sittings and the pointers of its new reports, then ties each new pointer to its speech row and, where exactly one stored file has its address, to that file (`attached_file` and `attached_file_pointer`). It inserts rows and sets `attached_file_id`, and never deletes. It reads the speech rows of step 10, so it runs after them.
 20. Reads the permission list of each new sitting and inserts one `leave_period_printing` row for each entry, with a `leave_period` row for each period no stored row holds. The office on a printing comes from the sitting's attendance list. It never deletes and never updates a stored row.
-21. Adds the `seat_holding` rows of the Members in the new sittings' attendance rows, and widens `first_sitting_date`, `last_sitting_date` and `sitting_count` on a stored row. Those three columns are the only ones the run updates on this table, and it never deletes.
+21. Adds the `seat_holding` rows of the Members in the new sittings' attendance rows, and widens `first_sitting_date`, `last_sitting_date` and `sitting_count` on a stored row. Then does the same for `sitting_span`, which holds one row per Member from all of that Member's attendance rows, labelled as the sittings listed and not a term of office. Those three columns are the only ones the run updates on these tables, and it never deletes.
 22. Reads the speech rows of the month's new reports and inserts one `division` row for each division it finds: a printed division line, or a spoken total with no printed line near it. It never updates or deletes: the role has neither UPDATE nor DELETE on `division`, and a new report has no rows. A report with an opening or a total it could not read is named in an alert.
 23. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
 24. Commits the month. A halt or a failure rolls back only the month in progress.
@@ -240,6 +240,9 @@ GRANT USAGE ON SEQUENCE attached_file_id_seq, attached_file_pointer_id_seq TO ha
 GRANT SELECT, INSERT ON leave_period, leave_period_printing, seat_holding TO hansard_refresh;
 GRANT UPDATE (first_sitting_date, last_sitting_date, sitting_count) ON seat_holding TO hansard_refresh;
 GRANT USAGE ON SEQUENCE leave_period_id_seq, leave_period_printing_id_seq, seat_holding_id_seq TO hansard_refresh;
+GRANT SELECT, INSERT ON sitting_span TO hansard_refresh;
+GRANT UPDATE (first_sitting_date, last_sitting_date, sitting_count) ON sitting_span TO hansard_refresh;
+GRANT USAGE ON SEQUENCE sitting_span_id_seq TO hansard_refresh;
 GRANT SELECT, INSERT ON division TO hansard_refresh;
 GRANT USAGE ON SEQUENCE division_id_seq TO hansard_refresh;
 GRANT USAGE ON SEQUENCE minutes_id_seq, minutes_index_capture_id_seq TO hansard_refresh;
