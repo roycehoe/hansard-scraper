@@ -56,6 +56,21 @@ _ENTRY_OFFICE_CASES = [
         id="a_trailing_semicolon_is_trimmed",
     ),
     pytest.param(
+        "Cdre (Res) Teo Chee Hean (Marine Parade GRC), Minister of State, Ministry of Finance and Ministry of Communications.",
+        "Minister of State, Ministry of Finance and Ministry of Communications",
+        id="a_reserve_bracket_in_the_title_is_not_the_seat_bracket",
+    ),
+    pytest.param(
+        "RAdm (NS) Lui Tuck Yew (Tanjong Pagar GRC), Minister of State, Ministry of Education.",
+        "Minister of State, Ministry of Education",
+        id="a_national_service_bracket_in_the_title_is_not_the_seat_bracket",
+    ),
+    pytest.param(
+        "Dr Ho Tat Kin(Boon Teck);",
+        None,
+        id="an_office_of_punctuation_only_is_none",
+    ),
+    pytest.param(
         "Mr Ch'ng Jit Koon (Bukit Merah), Senior Minister of State, Ministry of Community Development.   ",
         "Senior Minister of State, Ministry of Community Development",
         id="sitting_5847_1995_senior_minister_of_state_with_ministry",
