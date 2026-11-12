@@ -859,8 +859,10 @@ def get_left_out_groups(
     group_names: tuple[str, ...],
 ) -> list[str]:
     for group_name in group_names:
-        if group_name not in group_to_items:
-            raise HansardHandCheckError(f"No group is named {group_name}")
+        try:
+            group_to_items[group_name]
+        except KeyError as error:
+            raise HansardHandCheckError(f"No group is named {group_name}") from error
     return sorted(
         group
         for group, items in group_to_items.items()
@@ -974,7 +976,7 @@ def _get_draw_tsv_lines(group_draws: list[GroupDraw]) -> list[str]:
     return draw_tsv_lines
 
 
-def _get_summary_lines(
+def get_summary_lines(
     group_draws: list[GroupDraw],
     database_label: str,
     seed: int,
@@ -1202,7 +1204,7 @@ def build_leave_seat_check_packets(
                 session, seat_check_rows, drawn_item_keys
             ),
         }
-    summary_lines = _get_summary_lines(
+    summary_lines = get_summary_lines(
         group_draws,
         database_label,
         seed,

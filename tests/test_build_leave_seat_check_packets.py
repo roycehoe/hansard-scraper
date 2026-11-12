@@ -45,6 +45,7 @@ from scripts.build_leave_seat_check_packets import (
     get_seat_holding_group,
     get_seat_source_text,
     get_shared_line_row_ids,
+    get_summary_lines,
 )
 
 _SEED = 20_261_109
@@ -542,7 +543,7 @@ def test_a_group_name_that_matches_no_group_is_an_error() -> None:
 
 
 def test_the_summary_writes_the_groups_left_out_by_group_names() -> None:
-    summary_lines = packets_script._get_summary_lines(
+    summary_lines = get_summary_lines(
         [],
         "label",
         _SEED,
