@@ -106,11 +106,19 @@ _SECTION_END_PREFIXES = ("#", "[")
 _EMPHASIS_MARKS = "_*"
 _YEARS_IN_CENTURY = 100
 _FULL_YEAR_DIGIT_COUNT = 4
-_TABLE_DATE_PATTERN = rf"\d{{1,2}}\s+{_MONTH_PATTERN}(?:\s+\d{{4}})?"
+_TABLE_DATE_PATTERN = rf"\d{{1,2}}\s*{_MONTH_PATTERN}(?:\s+\d{{2}}(?:\d{{2}})?)?"
 _TABLE_ROW_RE = re.compile(
-    rf"^\s*(?:\|\s*)*(?:(?P<name>[^|]*?)\s*\|\s*)?(?P<from>{_TABLE_DATE_PATTERN})\s*\|\s*(?P<to>{_TABLE_DATE_PATTERN}|-+|–|—)\s*\|?\s*$",
+    rf"^\s*(?:\|\s*)*(?:(?P<name>[^|]*?)\s*\|\s*)?(?P<from>{_TABLE_DATE_PATTERN})\s*\|\s*(?P<to>{_TABLE_DATE_PATTERN}|-+|–|—)"
+    rf"(?:\s*\|\s*(?P<second_from>{_TABLE_DATE_PATTERN})\s*\|\s*(?P<second_to>{_TABLE_DATE_PATTERN}))?\s*\|?\s*$",
     re.IGNORECASE,
 )
+_ITALIC_TABLE_ROW_RE = re.compile(
+    rf"^\|\s*_(?:(?P<name>[^|]*?)\s+)?(?P<from>{_TABLE_DATE_PATTERN})\s+(?P<to>{_TABLE_DATE_PATTERN})_\s*$",
+    re.IGNORECASE,
+)
+_GLUED_DAY_AND_MONTH_RE = re.compile(r"(?<=\d)(?=[A-Za-z])")
+_FIRST_TABLE_RANGE = ("from", "to")
+_SECOND_TABLE_RANGE = ("second_from", "second_to")
 _TABLE_HEADING_YEAR_RE = re.compile(
     r"\(?(\d{4})(?:/(\d{4}(?!\d)|\d{2}(?=\d{4}|\D|$)))?\)?"
 )
@@ -943,12 +951,30 @@ def _take_table_row_name(
     return _NO_TABLE_ROW_NAME
 
 
-def _get_table_date_parts(cell_text: str) -> _TableDateParts:
-    day_text, month_text, *year_texts = cell_text.split()
+def _get_table_printed_year(
+    year_text: Optional[str], sitting_date: date
+) -> Optional[int]:
+    if year_text is None:
+        return None
+    printed_year = int(year_text)
+    if len(year_text) == _FULL_YEAR_DIGIT_COUNT:
+        return printed_year
+    century_year = (
+        sitting_date.year // _YEARS_IN_CENTURY * _YEARS_IN_CENTURY + printed_year
+    )
+    if century_year > sitting_date.year + 1:
+        return century_year - _YEARS_IN_CENTURY
+    return century_year
+
+
+def _get_table_date_parts(cell_text: str, sitting_date: date) -> _TableDateParts:
+    day_text, month_text, *year_texts = _GLUED_DAY_AND_MONTH_RE.sub(
+        " ", cell_text
+    ).split()
     return _TableDateParts(
         _get_day(day_text),
         _get_month(month_text),
-        _get_printed_year(year_texts[0] if year_texts else None),
+        _get_table_printed_year(year_texts[0] if year_texts else None, sitting_date),
     )
 
 
@@ -983,14 +1009,20 @@ def _get_table_printed_year_dates(
 
 def _get_table_printing(
     row_match: re.Match,
+    from_group: str,
+    to_group: str,
     printed_line: str,
     reading_line: str,
     sitting_date: date,
     heading_years: list[int],
 ) -> _PrintingDates:
-    to_text = row_match.group("to")
-    start = _get_table_date_parts(row_match.group("from"))
-    end = start if _ONE_DAY_MARK_RE.match(to_text) else _get_table_date_parts(to_text)
+    to_text = row_match.group(to_group)
+    start = _get_table_date_parts(row_match.group(from_group), sitting_date)
+    end = (
+        start
+        if _ONE_DAY_MARK_RE.match(to_text)
+        else _get_table_date_parts(to_text, sitting_date)
+    )
     if start.year is not None or end.year is not None:
         leave_dates = _get_table_printed_year_dates(start, end)
         year_source = LeaveYearSource.PRINTED_IN_ENTRY
@@ -1010,8 +1042,8 @@ def _get_table_printing(
         return _UNREAD_PRINTING
     return _PrintingDates(
         LeaveEntryFormat.TABLE_ROW,
-        _get_unchanged_text(printed_line, reading_line, *row_match.span("from")),
-        _get_unchanged_text(printed_line, reading_line, *row_match.span("to")),
+        _get_unchanged_text(printed_line, reading_line, *row_match.span(from_group)),
+        _get_unchanged_text(printed_line, reading_line, *row_match.span(to_group)),
         leave_dates,
         year_source,
     )
@@ -1051,19 +1083,32 @@ def _parse_table_entries(
 ) -> Optional[list[LeaveEntry]]:
     reading_line = apply_leave_date_misprints(printed_line, leave_date_misprints)
     row_match = _TABLE_ROW_RE.match(reading_line)
+    if row_match is None:
+        row_match = _ITALIC_TABLE_ROW_RE.match(reading_line)
     if row_match is not None:
         table_section.is_row_seen = True
         heading = _get_table_heading(table_section.heading_text)
+        row_name = _take_table_row_name(table_section, row_match.group("name"))
+        table_ranges = [_FIRST_TABLE_RANGE]
+        if row_match.groupdict().get(_SECOND_TABLE_RANGE[0]) is not None:
+            table_ranges.append(_SECOND_TABLE_RANGE)
         return [
             _build_table_entry(
-                ordinal,
+                ordinal + range_index,
                 printed_line,
-                _take_table_row_name(table_section, row_match.group("name")),
+                row_name,
                 heading,
                 _get_table_printing(
-                    row_match, printed_line, reading_line, sitting_date, heading.years
+                    row_match,
+                    from_group,
+                    to_group,
+                    printed_line,
+                    reading_line,
+                    sitting_date,
+                    heading.years,
                 ),
             )
+            for range_index, (from_group, to_group) in enumerate(table_ranges)
         ]
     if _TABLE_HEADING_FRAGMENT_RE.match(printed_line):
         _add_table_heading_text(table_section, printed_line)

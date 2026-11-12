@@ -1295,11 +1295,11 @@ def test_a_row_with_one_date_is_unread_and_the_next_row_keeps_the_heading() -> N
     assert leave_entries[0].printed_heading_from == "2006"
 
 
-def test_a_single_cell_row_with_a_digit_is_unread_with_no_name() -> None:
+def test_a_single_cell_row_with_a_digit_and_no_dates_is_unread_with_no_name() -> None:
     leave_entries = _build_entries(
         "| 2002| 2002",
         "Mr A| 5 Oct| 6 Oct",
-        "| _Mr Seng Han Thong 29 Sep 9 Oct_",
+        "| _Mr Seng Han Thong 29 Sep_",
         "| 10 Oct| 11 Oct",
         sitting_date=date(2002, 10, 1),
     )
@@ -1310,8 +1310,102 @@ def test_a_single_cell_row_with_a_digit_is_unread_with_no_name() -> None:
         LeaveEntryFormat.TABLE_ROW,
     ]
     assert _get_names(leave_entries)[1] == (None, None, LeaveNameSource.NONE)
-    assert leave_entries[1].printed_line == "| _Mr Seng Han Thong 29 Sep 9 Oct_"
+    assert leave_entries[1].printed_line == "| _Mr Seng Han Thong 29 Sep_"
     assert leave_entries[2].carried_name == "Mr A"
+
+
+def test_an_italic_one_cell_row_is_read_as_a_table_row() -> None:
+    leave_entries = _build_entries(
+        "| (2002)| (2002)",
+        "| _Mr Seng Han Thong 29 Sep 9 Oct_",
+        "| _15 Oct 19 Oct_",
+        sitting_date=date(2002, 10, 1),
+    )
+
+    assert _get_formats(leave_entries) == [
+        LeaveEntryFormat.TABLE_ROW,
+        LeaveEntryFormat.TABLE_ROW,
+    ]
+    assert _get_names(leave_entries) == [
+        ("Mr Seng Han Thong", None, LeaveNameSource.PRINTED),
+        (None, "Mr Seng Han Thong", LeaveNameSource.CARRIED_FROM_ROW_ABOVE),
+    ]
+    assert _get_date_pairs(leave_entries) == [
+        (date(2002, 9, 29), date(2002, 10, 9)),
+        (date(2002, 10, 15), date(2002, 10, 19)),
+    ]
+    assert leave_entries[0].printed_line == "| _Mr Seng Han Thong 29 Sep 9 Oct_"
+    assert leave_entries[0].year_source == LeaveYearSource.PRINTED_COLUMN_HEADING
+
+
+@pytest.mark.parametrize(
+    ("line", "sitting_date", "expected_dates"),
+    [
+        (
+            "| 15 Dec| 1 Jan 01",
+            date(2000, 11, 22),
+            (date(2000, 12, 15), date(2001, 1, 1)),
+        ),
+        (
+            "Dr Lee Boon Yang| 22 Dec| 2 Jan 99",
+            date(1998, 11, 23),
+            (date(1998, 12, 22), date(1999, 1, 2)),
+        ),
+        (
+            "| 23 December| 1 January 98",
+            date(1997, 11, 19),
+            (date(1997, 12, 23), date(1998, 1, 1)),
+        ),
+    ],
+)
+def test_a_table_cell_with_a_two_digit_year_uses_that_year(
+    line: str, sitting_date: date, expected_dates: tuple[date, date]
+) -> None:
+    leave_entries = _build_entries(line, sitting_date=sitting_date)
+
+    assert _get_date_pairs(leave_entries) == [expected_dates]
+    assert leave_entries[0].year_source == LeaveYearSource.PRINTED_IN_ENTRY
+
+
+def test_a_glued_day_and_month_in_a_table_cell_is_read() -> None:
+    leave_entries = _build_entries(
+        "| 2001| 2001",
+        "Mr David Lim T E| 8 Apr| 9Apr",
+        sitting_date=date(2001, 4, 19),
+    )
+
+    assert _get_date_pairs(leave_entries) == [(date(2001, 4, 8), date(2001, 4, 9))]
+    assert leave_entries[0].printed_to == "9Apr"
+
+
+def test_a_table_row_with_two_ranges_gives_a_row_per_range() -> None:
+    leave_entries = _build_entries(
+        "| 2009| 2009",
+        "Mr A| 09 May| 12 May | 17 May| 18 May",
+        "| 24 May| 26 May",
+        sitting_date=date(2009, 5, 18),
+    )
+
+    assert _get_date_pairs(leave_entries) == [
+        (date(2009, 5, 9), date(2009, 5, 12)),
+        (date(2009, 5, 17), date(2009, 5, 18)),
+        (date(2009, 5, 24), date(2009, 5, 26)),
+    ]
+    assert [leave_entry.ordinal for leave_entry in leave_entries] == [1, 2, 3]
+    assert (
+        _get_names(leave_entries)[:2] == [("Mr A", None, LeaveNameSource.PRINTED)] * 2
+    )
+    assert leave_entries[1].printed_from == "17 May"
+    assert leave_entries[1].printed_line == "Mr A| 09 May| 12 May | 17 May| 18 May"
+
+
+@pytest.mark.parametrize(
+    "line", ["Dr Ow Chin Hock| | 4 13", "Mr Ong Kian Min| 24 Apr |"]
+)
+def test_a_table_row_without_a_month_or_a_to_cell_stays_unread(line: str) -> None:
+    leave_entries = _build_entries(line, sitting_date=date(2003, 4, 24))
+
+    assert _get_formats(leave_entries) == [LeaveEntryFormat.UNREAD]
 
 
 def test_an_italic_one_cell_entry_is_read_as_prose_and_the_rows_around_it_are_unchanged() -> (
@@ -1358,7 +1452,7 @@ def test_unread_rows_with_a_name_cell_give_that_name_to_the_next_blank_row() -> 
     leave_entries = _build_entries(
         "| 2006| 2006",
         "Mr G| |",
-        "Mr H| 26Apr| 28Apr",
+        "Mr H| 26 Apr|",
         "| 5 May| 11 May",
         sitting_date=_TABLE_SITTING_DATE,
     )
