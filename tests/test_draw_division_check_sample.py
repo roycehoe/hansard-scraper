@@ -14,6 +14,7 @@ from database.division_party_count import DivisionPartyCount
 from database.division_vote import DivisionVote
 from database.minutes import Minutes, MinutesIndexCapture
 from database.minutes_division import MinutesDivision
+from database.report import Report
 from database.speaker import Speaker
 from enums import (
     DivisionCheckPlantKind,
@@ -87,6 +88,8 @@ _ARCHIVE_FILE_URL = "https://www.parliament.gov.sg/docs/default-source/default-d
 _SIDE_CLAIM = "AYE: Mr A\nNO: Mr B"
 _SWAPPED_SIDE_CLAIM = "AYE: Mr B\nNO: Mr A"
 _ABSENT_VOTE_ORDINAL = 50
+_PRE_ERA_CONTENT = "The House divided: Ayes, 10; Noes, 3.<pre>Ayes  Noes</pre>"
+_REFUSED_PRINTED_LIST = "Ayes: Mr A Mr B Mr C."
 
 
 def _build_candidate(
@@ -884,6 +887,47 @@ def test_a_stored_list_with_absent_names_and_no_absent_count_takes_its_own_group
     )
     assert (
         candidate.source_text == f"Printed count line: {_MERGE_LINE}\n{_PRINTED_LIST}"
+    )
+
+
+def test_a_refused_list_takes_a_group_of_its_own_beside_the_stored_lists_of_its_era(
+    scratch_session: Session,
+) -> None:
+    _seed_every_frame(scratch_session)
+    report = scratch_session.exec(
+        select(Report).where(Report.report_id == _MERGE_REPORT_ID)
+    ).one()
+    report.content = _PRE_ERA_CONTENT
+    stored_division = scratch_session.exec(
+        select(Division).where(Division.printed_list == _PRINTED_LIST)
+    ).one()
+    refused_division = Division(
+        sitting_date=_SITTING_DATE,
+        parliament_number=_PARLIAMENT_NUMBER,
+        report_division_number=2,
+        speech_ordinal=2,
+        count_source=DivisionCountSource.PRINTED_LINE,
+        printed_counts=_MERGE_LINE,
+        ayes=_AYES,
+        noes=_NOES,
+        list_status=DivisionListStatus.COUNTS_DISAGREE,
+        printed_list=_REFUSED_PRINTED_LIST,
+        sprs_report_id=_MERGE_REPORT_ID,
+    )
+    scratch_session.add_all([report, refused_division])
+    scratch_session.flush()
+
+    candidates = draw_division_check_sample_script.get_division_check_candidates(
+        scratch_session, DivisionCheckRule.HANSARD_LIST_BY_LAYOUT_ERA
+    )
+
+    database_key_to_group = {
+        candidate.database_key: candidate.group for candidate in candidates
+    }
+    assert database_key_to_group[f"division:{stored_division.id}"] == f"{_DECADE}|pre"
+    assert (
+        database_key_to_group[f"division:{refused_division.id}"]
+        == f"{_DECADE}|pre|no vote rows"
     )
 
 

@@ -78,6 +78,7 @@ _ERA_PRE = "pre"
 _ERA_TABLE = "table"
 _ERA_PARAGRAPH = "paragraph"
 _SIDE_WITHOUT_PRINTED_COUNT_GROUP = "side without a printed count"
+_NO_VOTE_ROWS_GROUP = "no vote rows"
 _PRINTED_COUNT_LINE_PREFIX = "Printed count line: "
 _ERA_OPENING_PATTERN = re.compile(
     r"the\s+(?:house|committee)\s+divided|division\s+taken|question\s+put\W*\s*ayes",
@@ -516,6 +517,19 @@ def _has_names_under_side_without_printed_count(
     )
 
 
+def _get_layout_era_group(
+    division: Division, vote_choices: set[DivisionVoteChoice], layout_era: str
+) -> str:
+    if _has_names_under_side_without_printed_count(division, vote_choices):
+        return _get_group(division.sitting_date, _SIDE_WITHOUT_PRINTED_COUNT_GROUP)
+    if division.list_status != DivisionListStatus.STORED:
+        return _get_group(
+            division.sitting_date,
+            f"{layout_era}{_GROUP_SEPARATOR}{_NO_VOTE_ROWS_GROUP}",
+        )
+    return _get_group(division.sitting_date, layout_era)
+
+
 def _get_layout_era_candidates(session: Session) -> list[DivisionCheckCandidate]:
     divisions = CRUDDivision(session).get_by_list_statuses(
         [
@@ -549,13 +563,10 @@ def _get_layout_era_candidates(session: Session) -> list[DivisionCheckCandidate]
     return [
         DivisionCheckCandidate(
             rule=DivisionCheckRule.HANSARD_LIST_BY_LAYOUT_ERA,
-            group=_get_group(
-                division.sitting_date,
-                _SIDE_WITHOUT_PRINTED_COUNT_GROUP
-                if _has_names_under_side_without_printed_count(
-                    division, division_id_to_vote_choices[division.id]
-                )
-                else _get_layout_era(
+            group=_get_layout_era_group(
+                division,
+                division_id_to_vote_choices[division.id],
+                _get_layout_era(
                     report_id_to_content[
                         sprs_report_id_to_type_row[division.sprs_report_id].id
                     ]
