@@ -87,6 +87,7 @@ class _Opening:
 class _PreCell:
     column: int
     text: str
+    offset: int
 
 
 @dataclass(frozen=True)
@@ -249,12 +250,12 @@ def _get_last_word(name: str) -> str:
 
 def _set_section(state: _ListState, column: int, heading_word: str) -> None:
     state.column_to_section[column] = _HEADING_WORD_TO_VOTE_CHOICE[heading_word.lower()]
-    previous_index = state.column_to_name_index.get(column)
-    if previous_index is not None:
-        state.names[previous_index].is_wrap_open = False
+    state.column_to_name_index.pop(column, None)
 
 
-def _add_cell(state: _ListState, column: int, cell: str, is_run: bool) -> None:
+def _add_cell(
+    state: _ListState, column: int, cell: str, is_run: bool, is_indented: bool
+) -> None:
     heading_match = _HEADING_CELL_PATTERN.match(cell)
     heading_with_name_match = _HEADING_WITH_NAME_PATTERN.match(cell)
     if heading_match is not None:
@@ -279,6 +280,10 @@ def _add_cell(state: _ListState, column: int, cell: str, is_run: bool) -> None:
         previous_name = state.names[previous_index]
         if cell.rstrip(".").lower() in _TITLE_CELLS:
             previous_name.printed_name = f"{previous_name.printed_name} {cell}"
+            return
+        if is_indented and not previous_name.printed_name.endswith("."):
+            previous_name.printed_name = f"{previous_name.printed_name} {cell}"
+            previous_name.is_wrap_open = False
             return
         if previous_name.is_wrap_open:
             previous_name.printed_name = f"{previous_name.printed_name} {cell}"
@@ -348,10 +353,24 @@ def _get_row_pre_cells(
         if column is None:
             return None
         if pre_cells and pre_cells[-1].column == column:
-            pre_cells[-1] = _PreCell(column, f"{pre_cells[-1].text} {line_cell.text}")
+            pre_cells[-1] = _PreCell(
+                column, f"{pre_cells[-1].text} {line_cell.text}", pre_cells[-1].offset
+            )
             continue
-        pre_cells.append(_PreCell(column, line_cell.text))
+        pre_cells.append(_PreCell(column, line_cell.text, line_cell.offset))
     return pre_cells
+
+
+def _get_modal_offsets(pre_lines: list[str], column_starts: list[int]) -> list[int]:
+    column_to_offset_counts = [Counter() for _ in column_starts]
+    for pre_line in pre_lines:
+        for pre_cell in _get_row_pre_cells(pre_line, column_starts) or []:
+            if not _is_heading_cell(pre_cell.text):
+                column_to_offset_counts[pre_cell.column][pre_cell.offset] += 1
+    return [
+        offset_counts.most_common(1)[0][0] if offset_counts else column_start
+        for offset_counts, column_start in zip(column_to_offset_counts, column_starts)
+    ]
 
 
 def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
@@ -372,6 +391,7 @@ def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
         if column_starts is None:
             is_geometry_unreadable = True
             continue
+        modal_offsets = _get_modal_offsets(pre_lines, column_starts)
         read_pre_lines: list[str] = []
         for pre_line in pre_lines:
             pre_cells = _get_row_pre_cells(pre_line, column_starts)
@@ -379,7 +399,13 @@ def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
                 is_geometry_unreadable = True
                 break
             for pre_cell in pre_cells:
-                _add_cell(state, pre_cell.column, pre_cell.text, is_run=False)
+                _add_cell(
+                    state,
+                    pre_cell.column,
+                    pre_cell.text,
+                    is_run=False,
+                    is_indented=pre_cell.offset > modal_offsets[pre_cell.column],
+                )
                 if state.is_ended:
                     break
             if state.is_ended:
@@ -403,7 +429,7 @@ def _read_tables(tables: list[_Item]) -> _ListReading:
             for column, lines in enumerate(table_row):
                 read_lines: list[str] = []
                 for line in lines:
-                    _add_cell(state, column, line, is_run=False)
+                    _add_cell(state, column, line, is_run=False, is_indented=False)
                     if state.is_ended:
                         break
                     read_lines.append(line)
@@ -426,7 +452,7 @@ def _read_runs(runs: list[str]) -> _ListReading:
     state = _get_list_state()
     read_runs: list[str] = []
     for run in runs:
-        _add_cell(state, 0, run, is_run=True)
+        _add_cell(state, 0, run, is_run=True, is_indented=False)
         if state.is_ended:
             break
         read_runs.append(run)

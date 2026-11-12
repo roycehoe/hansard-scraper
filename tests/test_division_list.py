@@ -82,6 +82,10 @@ def test_7_june_1963_reads_two_pre_blocks_with_wrapped_names_and_titles() -> Non
     _assert_fixture_is_stored("hansard_list_1963_06_07")
 
 
+def test_30_august_1985_joins_a_name_continued_on_an_indented_line() -> None:
+    _assert_fixture_is_stored("hansard_list_1985_08_30_indented_wraps")
+
+
 def test_13_december_1957_reads_five_sides() -> None:
     _assert_fixture_is_stored("hansard_list_1957_12_13")
 
