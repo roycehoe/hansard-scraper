@@ -32,7 +32,7 @@ Person (one row per individual)
 
 `Report` and `Sitting` share `sitting_date`, `parliament_number`, and `volume_number` as natural join keys. `Speech.speaker_id` links to `Speaker.id` where the match has been resolved.
 
-The sitting API also returns nested list data (PTBA, debate sections, annexures, vernacular files, absence-to-brief records). This data is stored as serialised JSON columns directly on `Sitting` (`ptba_list`, `sections`, `annexures`, `vernaculars`, `a2b`) for record purposes. Only the annexure and vernacular lists are also stored row by row, in `AttachedFile`.
+The sitting API also returns nested list data (PTBA, debate sections, annexures, vernacular files, absence-to-brief records). This data is stored as serialised JSON columns directly on `Sitting` (`ptba_list`, `sections`, `annexures`, `vernaculars`, `a2b`) for record purposes. The raw `hansardsittingdateresponse` table holds `sections`, `annexures`, `vernaculars` and `a2b` too, with the same content. Only the annexure and vernacular lists are also stored row by row, in `AttachedFile`.
 
 ---
 
