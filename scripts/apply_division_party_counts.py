@@ -4,6 +4,7 @@ from pathlib import Path
 
 from sqlmodel import Session
 
+import database.speech  # noqa: F401 registers Speech so the Report relationship resolves
 from crud.division import CRUDDivision
 from crud.division_party_count import CRUDDivisionPartyCount
 from crud.division_vote import CRUDDivisionVote

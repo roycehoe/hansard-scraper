@@ -1,4 +1,6 @@
 import json
+import subprocess
+import sys
 from datetime import date
 from pathlib import Path
 from types import SimpleNamespace
@@ -29,6 +31,8 @@ from schemas.division_party_count_plan import DivisionPartyCountPlan
 from scripts.apply_division_party_counts import apply_division_party_counts
 
 _PROTECTED_DATABASE_URL = "postgresql://u:p@localhost:5432/x"
+_REPOSITORY_ROOT = Path(__file__).parent.parent
+_CONFIGURE_SCRIPT_MAPPERS = "import scripts.apply_division_party_counts; from sqlalchemy.orm import configure_mappers; configure_mappers()"
 _SITTING_DATE = date(2021, 10, 4)
 _PARLIAMENT_NUMBER = 14
 _PRINTED_COUNTS = "Ayes 2, Noes 1"
@@ -301,3 +305,15 @@ def test_populate_division_party_counts_skips_a_division_that_already_has_rows(
     scratch_session.commit()
 
     assert _get_party_count_count(scratch_session) == _HANSARD_ROW_COUNT
+
+
+def test_the_script_sets_up_its_table_mappers_when_run_alone() -> None:
+    completed_process = subprocess.run(
+        [sys.executable, "-c", _CONFIGURE_SCRIPT_MAPPERS],
+        cwd=_REPOSITORY_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed_process.returncode == 0, completed_process.stderr
