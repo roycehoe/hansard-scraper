@@ -411,7 +411,7 @@ def test_the_bill_lookups_carry_no_dated_bills() -> None:
     ]
 
 
-def test_an_entry_titled_as_the_first_reading_links_to_the_bill_merged_with_a_misprinted_third_reading() -> None:
+def test_an_entry_titled_as_the_first_reading_links_to_the_merged_bill() -> None:
     report_rows = [
         ReportSittingDateTitleRow(
             1, datetime(1995, 5, 25), "REGULATION OF IMPORTS AND EXPORTS BILL"
