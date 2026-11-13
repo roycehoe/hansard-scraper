@@ -17,6 +17,8 @@ _FROM_OR_JOIN_PATTERN = re.compile(r"\b(?:from|join)\s+(\w+)")
 _INSERT_PATTERN = re.compile(r"^insert into (\w+)")
 _UPDATE_PATTERN = re.compile(r"^update (\w+) set (.*?)(?: where | returning |$)")
 _SET_COLUMN_PATTERN = re.compile(r"(?:^|,\s*)(\w+)\s*=")
+_VACUUM_PATTERN = re.compile(r"^vacuum \(analyze\) (\w+)")
+_TABLE_TO_SEQUENCE = {"attendance": "sittingattendance_id_seq"}
 
 
 @dataclass(frozen=True)
@@ -79,8 +81,9 @@ def _get_statement_violations(
         table = insert_match[1]
         if f"INSERT {table}" not in role_grants.table_privileges:
             violations.append(f"INSERT on {table}")
-        if f"{table}_id_seq" not in role_grants.sequence_usages:
-            violations.append(f"USAGE on {table}_id_seq")
+        sequence = _TABLE_TO_SEQUENCE.get(table, f"{table}_id_seq")
+        if sequence not in role_grants.sequence_usages:
+            violations.append(f"USAGE on {sequence}")
         if (
             "returning" in statement
             and f"SELECT {table}" not in role_grants.table_privileges
@@ -100,6 +103,12 @@ def _get_statement_violations(
             and f"SELECT {table}" not in role_grants.table_privileges
         ):
             violations.append(f"SELECT on {table} for WHERE")
+    vacuum_match = _VACUUM_PATTERN.match(statement)
+    if (
+        vacuum_match is not None
+        and f"MAINTAIN {vacuum_match[1]}" not in role_grants.table_privileges
+    ):
+        violations.append(f"MAINTAIN on {vacuum_match[1]}")
     for table in _FROM_OR_JOIN_PATTERN.findall(statement):
         if table not in table_names:
             continue
