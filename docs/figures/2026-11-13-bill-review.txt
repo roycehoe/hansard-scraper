@@ -1,0 +1,17 @@
+Review items: 325
+Review items by kind: ACTS_SUPPLEMENT_BILL_WITH_TWO_ACT_NUMBERS 1, ACTS_SUPPLEMENT_ENTRY_UNPLACED 93, BUDGET_REPORT_WITHOUT_SUPPLY_BILL 46, BUDGET_REPORT_WITH_TWO_SUPPLY_BILLS 9, HISTORY_LINK_RULES_DISAGREE 7, HISTORY_LINK_WITHOUT_THIRD_READING_REPORT 22, MISPRINTED_PUBLICATION_DATE 11, PASSED_BILL_WITHOUT_SUPPLEMENT_ENTRY 60, REPEALED_ACT_BILL_WITH_TWO_ACTS 9, SPLIT_BILL_MERGE 18, SUPPLEMENT_ENTRY_UNPLACED 40, SUPPLEMENT_LINK_BY_LOOSE_OR_SIMILAR_TITLE 9
+1955 to 1960, test 1 bill completeness: 344 bills from Hansard, no outside list
+1955 to 1960, test 2 debate completeness: 0 of 0 numbered bills hold their first reading and, when passed, their third
+1955 to 1960, test 3 outcome resolved: 216 of 320 (67.5%) passed bills link to an Act, an Act number or a repealed Act's page or carry a class; 202 of 306 (66.0%) passed bills of no class link to an Act, an Act number or a repealed Act's page; 52 passed bills link to a repealed Act's page, 36 of them resolved by that link alone
+1955 to 1960, test 4 review items: 38
+1955 to 1960, budget debates attached: 421 of 460 (91.5%) budget reports attach to a Supply Bill
+1961 to 2005, test 1 bill completeness: 1,587 of 1,651 (96.1%) Supplement numbers held; 1,673 bills from Hansard
+1961 to 2005, test 2 debate completeness: 1,587 of 1,587 (100.0%) numbered bills hold their first reading and, when passed, their third
+1961 to 2005, test 3 outcome resolved: 1,504 of 1,590 (94.6%) passed bills link to an Act, an Act number or a repealed Act's page or carry a class; 1,389 of 1,475 (94.2%) passed bills of no class link to an Act, an Act number or a repealed Act's page; 332 passed bills link to a repealed Act's page, 101 of them resolved by that link alone
+1961 to 2005, test 4 review items: 184
+1961 to 2005, budget debates attached: 1,638 of 1,659 (98.7%) budget reports attach to a Supply Bill
+2006 on, test 1 bill completeness: 763 of 768 (99.3%) Supplement numbers held; 782 bills from Hansard
+2006 on, test 2 debate completeness: 763 of 763 (100.0%) numbered bills hold their first reading and, when passed, their third
+2006 on, test 3 outcome resolved: 765 of 774 (98.8%) passed bills link to an Act, an Act number or a repealed Act's page or carry a class; 717 of 726 (98.8%) passed bills of no class link to an Act, an Act number or a repealed Act's page; 57 passed bills link to a repealed Act's page, 2 of them resolved by that link alone
+2006 on, test 4 review items: 103
+2006 on, budget debates attached: 877 of 879 (99.8%) budget reports attach to a Supply Bill
