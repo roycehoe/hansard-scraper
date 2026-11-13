@@ -21,7 +21,11 @@ def _get_minutes_response(url: str) -> MinutesResponse:
             )
         )
         return MinutesResponse(
-            url=url, status_code=response.status_code, content=response.content
+            url=url,
+            status_code=response.status_code,
+            content=response.content,
+            waf_action=response.headers.get("x-amzn-waf-action"),
+            cache_status=response.headers.get("x-cache"),
         )
     except requests.exceptions.RequestException as error:
         raise HansardGatewayError(f"Minutes request failed for {url}") from error

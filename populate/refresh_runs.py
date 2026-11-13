@@ -26,6 +26,7 @@ from exceptions import (
     HansardError,
     HansardGatewayError,
     HansardMinutesIndexError,
+    HansardMinutesIndexUnavailableError,
     HansardRefreshFailureError,
     HansardRefreshHaltError,
     HansardRefreshRunError,
@@ -90,6 +91,7 @@ from services.refresh import (
     build_held_report_message,
     build_late_sittings_message,
     build_many_held_reports_message,
+    build_minutes_index_skipped_message,
     build_minutes_not_fetched_message,
     build_minutes_to_review_message,
     build_new_parliament_reason,
@@ -223,7 +225,8 @@ class RunResult:
     held_sitting_dates: set[date] = field(default_factory=set)
     minutes_to_review: list[MinutesToReview] = field(default_factory=list)
     minutes_not_fetched: list[MinutesNotFetched] = field(default_factory=list)
-    minutes_index_failure: Optional[HansardError] = None
+    minutes_index_failure: Optional[HansardMinutesIndexError] = None
+    minutes_index_skip_reason: Optional[str] = None
     label_to_row_count: dict[str, int] = field(default_factory=dict)
     late_sitting_dates: list[str] = field(default_factory=list)
     unplaced_office_titles: list[str] = field(default_factory=list)
@@ -893,6 +896,10 @@ def _send_success_alerts(run_result: RunResult) -> None:
                 minutes_to_review.sitting_date, minutes_to_review.status_note
             )
         )
+    if run_result.minutes_index_skip_reason is not None:
+        _send_alert(
+            build_minutes_index_skipped_message(run_result.minutes_index_skip_reason)
+        )
     if run_result.minutes_not_fetched:
         _send_alert(
             build_minutes_not_fetched_message(
@@ -1020,8 +1027,8 @@ def populate_refresh_runs(
             minutes_step_result = populate_minutes(
                 session, run_result.held_sitting_dates
             )
-        except HansardGatewayError as error:
-            run_result.minutes_index_failure = error
+        except (HansardGatewayError, HansardMinutesIndexUnavailableError) as error:
+            run_result.minutes_index_skip_reason = str(error)
         except HansardMinutesIndexError as error:
             run_result.minutes_index_failure = error
         else:

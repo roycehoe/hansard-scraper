@@ -110,6 +110,10 @@ class HansardMinutesIndexError(HansardError):
     pass
 
 
+class HansardMinutesIndexUnavailableError(HansardMinutesIndexError):
+    pass
+
+
 class HansardMinutesFileError(HansardError):
     pass
 

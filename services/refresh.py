@@ -241,6 +241,10 @@ def build_unread_division_openings_message(report_ids: list[int]) -> str:
     )
 
 
+def build_minutes_index_skipped_message(reason: str) -> str:
+    return f"Minutes index page not read: {reason}. The run did not fail, and the next run reads the page again."
+
+
 def build_minutes_not_fetched_message(sitting_date_to_reason: dict[date, str]) -> str:
     not_fetched_texts = [
         f"{sitting_date:%d %B %Y} ({reason})"

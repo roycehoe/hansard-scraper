@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pytest
 import requests
 
@@ -13,15 +15,19 @@ from settings import settings
 
 _FILE_URL = "https://media.example/api/media/abc/VP-5Aug2026.pdf"
 _INDEX_BODY = b"<html>"
+_ACCEPTED_STATUS = 202
 _NOT_FOUND_STATUS = 404
 _OK_STATUS = 200
 
 
 class _FakeResponse:
-    def __init__(self, status_code: int, content: bytes):
+    def __init__(
+        self, status_code: int, content: bytes, headers: Optional[dict[str, str]] = None
+    ):
         self.status_code = status_code
         self.content = content
         self.text = ""
+        self.headers = {} if headers is None else headers
 
 
 def _get_zero_time() -> float:
@@ -58,6 +64,25 @@ def test_index_response_carries_status_and_bytes(
     assert get_minutes_index_response() == MinutesResponse(
         url=settings.minutes_index_url, status_code=_OK_STATUS, content=_INDEX_BODY
     )
+
+
+def test_index_response_carries_the_bot_filter_headers(
+    monkeypatch: pytest.MonkeyPatch, no_op_pacer: None
+) -> None:
+    def fake_get(**kwargs: object) -> _FakeResponse:
+        return _FakeResponse(
+            _ACCEPTED_STATUS,
+            b"",
+            {"x-amzn-waf-action": "challenge", "x-cache": "Error from cloudfront"},
+        )
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    minutes_response = get_minutes_index_response()
+
+    assert minutes_response.status_code == _ACCEPTED_STATUS
+    assert minutes_response.waf_action == "challenge"
+    assert minutes_response.cache_status == "Error from cloudfront"
 
 
 def test_file_response_carries_a_non_200_status(

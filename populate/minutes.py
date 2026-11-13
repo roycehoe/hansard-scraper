@@ -15,6 +15,7 @@ from exceptions import (
     HansardGatewayError,
     HansardMinutesFileError,
     HansardMinutesIndexError,
+    HansardMinutesIndexUnavailableError,
 )
 from gateway.minutes import get_minutes_file_response, get_minutes_index_response
 from logs import logger
@@ -88,8 +89,9 @@ class _ListingMove:
 
 def _read_index_page(index_response: MinutesResponse) -> str:
     if index_response.status_code != _HTTP_OK:
-        raise HansardMinutesIndexError(
+        raise HansardMinutesIndexUnavailableError(
             f"The minutes index page answered {index_response.status_code}"
+            f" (x-amzn-waf-action: {index_response.waf_action}, x-cache: {index_response.cache_status})"
         )
     try:
         return index_response.content.decode("utf-8")

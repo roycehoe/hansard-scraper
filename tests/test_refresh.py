@@ -111,6 +111,7 @@ _MINUTES_FILE_NAME = "VP-11Jan2018.pdf"
 _MINUTES_FILE_NUMBER = 57
 _MINUTES_ALERT_FRAGMENT = "Minutes of 11 January 2018 need review"
 _MINUTES_NOT_FETCHED_ALERT_FRAGMENT = "Minutes files listed but not fetched"
+_MINUTES_INDEX_SKIPPED_ALERT_FRAGMENT = "Minutes index page not read"
 _MINUTES_STEP_ALLOWED_STATEMENTS = frozenset(
     {
         ("SELECT", "minutes"),
@@ -159,6 +160,7 @@ _SET_CLAUSE_PATTERN = re.compile(r"\bSET\s+(.*?)\s+WHERE\b", re.DOTALL | re.IGNO
 _SET_COLUMN_PATTERN = re.compile(r"(\w+)\s*=\s*%\(")
 _GRANTED_UPDATE_STATEMENT = "UPDATE minutes SET status=%(status)s, sha256=%(sha256)s WHERE minutes.id = %(id_1)s AND minutes.status = %(status_1)s"
 _NOT_FOUND_STATUS = 404
+_ACCEPTED_STATUS = 202
 _BOT_TOKEN = "test-bot-token"
 _CHAT_ID = "test-chat"
 _PING_URL = "https://hc-ping.test/test-check"
@@ -1784,7 +1786,41 @@ def _assert_minutes_index_failure(
     _assert_failure_pinged(alerts)
 
 
-def test_minutes_index_failure_fails_the_run_after_the_figures_and_the_vacuum(
+def _assert_minutes_index_skipped(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    reason_fragment: str,
+) -> None:
+    vacuum_counts_before = _get_vacuum_counts(scratch_engine)
+    row_counts_before = _get_row_counts(scratch_engine)
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    refresh_run = _get_only_refresh_run(scratch_engine)
+    assert refresh_run.status == RefreshRunStatus.SUCCEEDED
+    assert refresh_run.failure_reason is None
+    assert refresh_run.figures is not None
+    assert _get_vacuum_counts(scratch_engine) == [
+        vacuum_count + 1 for vacuum_count in vacuum_counts_before
+    ]
+    assert refresh_run.reports_added > 0
+    _assert_rows_added(scratch_engine, row_counts_before, refresh_run)
+    skipped_messages = [
+        message
+        for message in alerts.messages
+        if _MINUTES_INDEX_SKIPPED_ALERT_FRAGMENT in message
+    ]
+    assert len(skipped_messages) == 1
+    assert reason_fragment in skipped_messages[0]
+    _assert_success_pinged(alerts)
+
+
+def test_minutes_index_network_failure_is_alerted_and_the_run_succeeds(
     scratch_engine: Engine,
     scratch_session: Session,
     fake_parliament: FakeParliament,
@@ -1793,8 +1829,8 @@ def test_minutes_index_failure_fails_the_run_after_the_figures_and_the_vacuum(
     seed_stored(scratch_session)
     fake_parliament.minutes_index_error = HansardGatewayError("index down")
 
-    _assert_minutes_index_failure(
-        scratch_engine, scratch_session, fake_parliament, alerts, HansardGatewayError
+    _assert_minutes_index_skipped(
+        scratch_engine, scratch_session, fake_parliament, alerts, "index down"
     )
 
 
@@ -1869,7 +1905,36 @@ def test_minutes_to_review_of_a_row_listed_before_the_run_are_alerted_after_a_fa
     assert len(review_messages) == 1
 
 
-def test_non_200_index_answer_fails_the_run_the_same_way(
+def test_index_answer_of_202_is_alerted_with_its_headers_and_the_run_succeeds(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seed_stored(scratch_session)
+    monkeypatch.setattr(
+        minutes_step,
+        "get_minutes_index_response",
+        lambda: MinutesResponse(
+            url=settings.minutes_index_url,
+            status_code=_ACCEPTED_STATUS,
+            content=b"",
+            waf_action="challenge",
+            cache_status="Error from cloudfront",
+        ),
+    )
+
+    _assert_minutes_index_skipped(
+        scratch_engine,
+        scratch_session,
+        fake_parliament,
+        alerts,
+        "answered 202 (x-amzn-waf-action: challenge, x-cache: Error from cloudfront)",
+    )
+
+
+def test_index_answer_of_404_is_alerted_and_the_run_succeeds(
     scratch_engine: Engine,
     scratch_session: Session,
     fake_parliament: FakeParliament,
@@ -1877,6 +1942,24 @@ def test_non_200_index_answer_fails_the_run_the_same_way(
 ) -> None:
     seed_stored(scratch_session)
     fake_parliament.minutes_index_status = _NOT_FOUND_STATUS
+
+    _assert_minutes_index_skipped(
+        scratch_engine,
+        scratch_session,
+        fake_parliament,
+        alerts,
+        "answered 404 (x-amzn-waf-action: None, x-cache: None)",
+    )
+
+
+def test_unreadable_index_page_fails_the_run_after_the_figures_and_the_vacuum(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+) -> None:
+    seed_stored(scratch_session)
+    fake_parliament.minutes_index_page = "<html><body></body></html>"
 
     _assert_minutes_index_failure(
         scratch_engine,

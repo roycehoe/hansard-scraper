@@ -16,7 +16,11 @@ from enums import (
     MinutesIndexSource,
     MinutesStatus,
 )
-from exceptions import HansardGatewayError, HansardMinutesIndexError
+from exceptions import (
+    HansardGatewayError,
+    HansardMinutesIndexError,
+    HansardMinutesIndexUnavailableError,
+)
 from schemas.minutes_response import MinutesResponse
 from settings import settings
 from tests.division_seed import add_division_report
@@ -421,7 +425,7 @@ def test_index_page_failures_raise_typed_errors(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fake_parliament.minutes_index_status = _HTTP_NOT_FOUND
-    with pytest.raises(HansardMinutesIndexError, match="answered 404"):
+    with pytest.raises(HansardMinutesIndexUnavailableError, match="answered 404"):
         minutes_step.populate_minutes(scratch_session, set())
     fake_parliament.minutes_index_status = 200
 
