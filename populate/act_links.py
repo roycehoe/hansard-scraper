@@ -368,6 +368,7 @@ def get_bill_grouping_context(
 def build_bill_lookups_from_context(context: BillGroupingContext) -> BillLookups:
     title_key_to_linkable_bills: dict[str, list[LinkableBill]] = defaultdict(list)
     bill_number_to_linkable_bills: dict[str, list[LinkableBill]] = defaultdict(list)
+    report_ids_to_linkable_bill: dict[frozenset[int], LinkableBill] = {}
     for bill_index, bill_group in enumerate(context.bill_grouping.bill_groups):
         linkable_bill = LinkableBill(
             bill_index,
@@ -379,6 +380,18 @@ def build_bill_lookups_from_context(context: BillGroupingContext) -> BillLookups
         title_key_to_linkable_bills[bill_group.title_key].append(linkable_bill)
         if bill_group.bill_number is not None:
             bill_number_to_linkable_bills[bill_group.bill_number].append(linkable_bill)
+        report_ids_to_linkable_bill[frozenset(bill_group.report_ids)] = linkable_bill
+    for split_merge in context.bill_grouping.split_merges:
+        merged_linkable_bill = report_ids_to_linkable_bill.get(
+            frozenset(split_merge.head_report_ids + split_merge.tail_report_ids)
+        )
+        # NOTE: a hand-kept bill that holds more reports replaces the merged bill
+        if merged_linkable_bill is None:
+            continue
+        head_linkable_bills = title_key_to_linkable_bills[split_merge.head_title_key]
+        if merged_linkable_bill in head_linkable_bills:
+            continue
+        head_linkable_bills.append(merged_linkable_bill)
     return build_bill_lookups(
         title_key_to_linkable_bills, bill_number_to_linkable_bills
     )

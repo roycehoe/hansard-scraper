@@ -128,6 +128,7 @@ class SupplyBillWindow:
 class SplitMerge:
     head_report_ids: list[int]
     tail_report_ids: list[int]
+    head_title_key: str
 
 
 @dataclass(frozen=True)
@@ -568,7 +569,11 @@ def _merge_split_bills(
         if index not in merged_tail_indexes
     ]
     split_merges = [
-        SplitMerge(rule_bills[head_index].report_ids, rule_bills[tail_index].report_ids)
+        SplitMerge(
+            rule_bills[head_index].report_ids,
+            rule_bills[tail_index].report_ids,
+            rule_bills[head_index].title_key,
+        )
         for head_index, tail_index in head_index_to_tail_index.items()
     ]
     return _MergedRuleBills(merged_rule_bills, split_merges)

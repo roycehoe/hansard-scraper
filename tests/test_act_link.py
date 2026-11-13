@@ -3,6 +3,7 @@ from datetime import date, datetime
 
 from crud.report import ReportSittingDateTitleRow
 from enums import BillLinkSource
+from populate.act_links import BillGroupingContext, build_bill_lookups_from_context
 from services.act_link import (
     BillLink,
     BillLookups,
@@ -408,3 +409,36 @@ def test_the_bill_lookups_carry_no_dated_bills() -> None:
         "loose_title_key_to_linkable_bills",
         "bill_number_to_linkable_bills",
     ]
+
+
+def test_an_entry_titled_as_the_first_reading_links_to_the_bill_merged_with_a_misprinted_third_reading() -> None:
+    report_rows = [
+        ReportSittingDateTitleRow(
+            1, datetime(1995, 5, 25), "REGULATION OF IMPORTS AND EXPORTS BILL"
+        ),
+        ReportSittingDateTitleRow(
+            2, datetime(1995, 7, 7), "REGULATIONS OF IMPORTS AND EXPORTS BILL"
+        ),
+    ]
+    grouping = group_bills(
+        report_rows, frozenset({1}), frozenset({2}), [], [], report_rows, [], [], []
+    )
+    context = BillGroupingContext(
+        grouping,
+        {report_row.id: report_row.sitting_date.date() for report_row in report_rows},
+        frozenset({1}),
+        frozenset({2}),
+        [],
+        [],
+    )
+
+    bill_link = get_bill_link(
+        "Regulation of Imports and Exports Act 1995",
+        date(1995, 5, 25),
+        None,
+        date(1995, 7, 7),
+        build_bill_lookups_from_context(context),
+    )
+
+    assert [bill_group.report_ids for bill_group in grouping.bill_groups] == [[1, 2]]
+    assert bill_link == BillLink(0, BillLinkSource.FIRST_READING_DATE)
