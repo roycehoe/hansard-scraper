@@ -4,6 +4,7 @@ from pathlib import Path
 
 from sqlmodel import Session
 
+import database.speech  # noqa: F401 registers Speech so the Report relationship resolves
 from crud.egazette_supplement import CRUDEgazetteSupplement
 from database.egazette_supplement import EgazetteSupplement
 from database.init import engine
