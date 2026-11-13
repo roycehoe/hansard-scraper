@@ -139,6 +139,9 @@ def _apply_corpus_plan(session: Session, is_commit: bool) -> None:
     logger.info(
         f"Plan: {len(plan.bill_keys):,} bill keys, {len(plan.bill_report_speakers):,} bill report speakers and {len(plan.bill_stage_lines):,} bill stage lines for {len(plan.bill_keys):,} bills"
     )
+    logger.info(
+        f"Members left out of a report where every SPEECH row is a credited row with no label: {plan.credited_only_report_speaker_count:,}"
+    )
     _log_table_difference(
         "Bill keys",
         _get_table_difference(
@@ -188,6 +191,9 @@ def _apply_report_plan(
     )
     logger.info(
         f"Plan: {len(plan.bill_report_speakers):,} bill report speakers and {len(plan.bill_stage_lines):,} bill stage lines for {len(plan.sprs_report_ids):,} reports"
+    )
+    logger.info(
+        f"Members left out of a report where every SPEECH row is a credited row with no label: {plan.credited_only_report_speaker_count:,}"
     )
     _log_table_difference(
         "Bill report speakers",

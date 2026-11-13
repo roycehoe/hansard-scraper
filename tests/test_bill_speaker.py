@@ -10,6 +10,7 @@ from services.bill_speaker import (
     build_bill_report_speakers,
     build_bill_stage_lines,
     get_bill_key,
+    get_credited_only_report_speaker_count,
 )
 
 
@@ -100,6 +101,49 @@ def test_a_member_gets_one_row_per_report_with_the_count_the_first_ordinal_and_t
 
 def test_no_rows_give_no_member_rows() -> None:
     assert build_bill_report_speakers([], {}) == []
+
+
+def test_a_credited_first_row_counts_but_the_first_labelled_row_gives_the_ordinal_and_the_label() -> (
+    None
+):
+    ordinal_label_rows = [
+        SpeechOrdinalLabelRow(10, 5, 2, None),
+        SpeechOrdinalLabelRow(10, 5, 7, "The Minister for Finance (Dr A)"),
+        SpeechOrdinalLabelRow(10, 5, 9, None),
+    ]
+
+    bill_report_speakers = build_bill_report_speakers(ordinal_label_rows, {10: "r10"})
+
+    assert [
+        (
+            bill_report_speaker.speech_count,
+            bill_report_speaker.first_ordinal,
+            bill_report_speaker.printed_speaker,
+        )
+        for bill_report_speaker in bill_report_speakers
+    ] == [(3, 7, "The Minister for Finance (Dr A)")]
+    assert get_credited_only_report_speaker_count(ordinal_label_rows) == 0
+
+
+def test_a_member_with_only_credited_rows_in_a_report_gets_no_member_row_and_is_counted() -> (
+    None
+):
+    ordinal_label_rows = [
+        SpeechOrdinalLabelRow(10, 5, 2, None),
+        SpeechOrdinalLabelRow(10, 5, 4, None),
+        SpeechOrdinalLabelRow(10, 6, 3, "Mr B"),
+        SpeechOrdinalLabelRow(11, 5, 1, "Ms A"),
+    ]
+
+    bill_report_speakers = build_bill_report_speakers(
+        ordinal_label_rows, {10: "r10", 11: "r11"}
+    )
+
+    assert [
+        (bill_report_speaker.sprs_report_id, bill_report_speaker.speaker_id)
+        for bill_report_speaker in bill_report_speakers
+    ] == [("r10", 6), ("r11", 5)]
+    assert get_credited_only_report_speaker_count(ordinal_label_rows) == 1
 
 
 def test_stage_lines_copy_the_ordinal_the_text_and_the_report() -> None:

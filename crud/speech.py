@@ -39,7 +39,7 @@ class SpeechOrdinalLabelRow:
     report_id: int
     speaker_id: int
     ordinal: int
-    speaker: str
+    speaker: Optional[str]
 
 
 @dataclass(frozen=True)

@@ -1,4 +1,5 @@
 from collections import Counter
+from dataclasses import dataclass
 
 from crud.bill_report import BillReportSittingDateReportTypeRow
 from crud.speech import SpeechOrdinalLabelRow, SpeechOrdinalTranscriptRow
@@ -27,30 +28,60 @@ def get_bill_key(
         raise HansardBillKeyError(f"Bill {bill_id} has no READING report") from error
 
 
+@dataclass(frozen=True)
+class _OrdinalLabel:
+    ordinal: int
+    label: str
+
+
 def build_bill_report_speakers(
     ordinal_label_rows: list[SpeechOrdinalLabelRow],
     report_id_to_sprs_report_id: dict[int, str],
 ) -> list[BillReportSpeaker]:
-    report_speaker_key_to_first_row: dict[tuple[int, int], SpeechOrdinalLabelRow] = {}
+    report_speaker_key_to_first_ordinal_label: dict[tuple[int, int], _OrdinalLabel] = {}
     report_speaker_key_to_speech_count: Counter[tuple[int, int]] = Counter()
     for ordinal_label_row in ordinal_label_rows:
         report_speaker_key = (ordinal_label_row.report_id, ordinal_label_row.speaker_id)
         report_speaker_key_to_speech_count[report_speaker_key] += 1
-        first_row = report_speaker_key_to_first_row.get(report_speaker_key)
-        if first_row is None or ordinal_label_row.ordinal < first_row.ordinal:
-            report_speaker_key_to_first_row[report_speaker_key] = ordinal_label_row
+        if ordinal_label_row.speaker is None:
+            continue
+        first_ordinal_label = report_speaker_key_to_first_ordinal_label.get(
+            report_speaker_key
+        )
+        if (
+            first_ordinal_label is None
+            or ordinal_label_row.ordinal < first_ordinal_label.ordinal
+        ):
+            report_speaker_key_to_first_ordinal_label[report_speaker_key] = (
+                _OrdinalLabel(ordinal_label_row.ordinal, ordinal_label_row.speaker)
+            )
     return [
         BillReportSpeaker(
-            speech_count=report_speaker_key_to_speech_count[report_speaker_key],
-            first_ordinal=first_row.ordinal,
-            printed_speaker=first_row.speaker,
-            sprs_report_id=report_id_to_sprs_report_id[first_row.report_id],
-            speaker_id=first_row.speaker_id,
+            speech_count=report_speaker_key_to_speech_count[(report_id, speaker_id)],
+            first_ordinal=first_ordinal_label.ordinal,
+            printed_speaker=first_ordinal_label.label,
+            sprs_report_id=report_id_to_sprs_report_id[report_id],
+            speaker_id=speaker_id,
         )
-        for report_speaker_key, first_row in sorted(
-            report_speaker_key_to_first_row.items()
+        for (report_id, speaker_id), first_ordinal_label in sorted(
+            report_speaker_key_to_first_ordinal_label.items()
         )
     ]
+
+
+def get_credited_only_report_speaker_count(
+    ordinal_label_rows: list[SpeechOrdinalLabelRow],
+) -> int:
+    report_speaker_keys = {
+        (ordinal_label_row.report_id, ordinal_label_row.speaker_id)
+        for ordinal_label_row in ordinal_label_rows
+    }
+    labelled_report_speaker_keys = {
+        (ordinal_label_row.report_id, ordinal_label_row.speaker_id)
+        for ordinal_label_row in ordinal_label_rows
+        if ordinal_label_row.speaker is not None
+    }
+    return len(report_speaker_keys - labelled_report_speaker_keys)
 
 
 def build_bill_stage_lines(

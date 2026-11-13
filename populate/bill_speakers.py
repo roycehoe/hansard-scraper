@@ -36,6 +36,7 @@ from services.bill_speaker import (
     build_bill_report_speakers,
     build_bill_stage_lines,
     get_bill_key,
+    get_credited_only_report_speaker_count,
 )
 from utils.bill_join_update import BillJoinUpdate
 from utils.title_key import get_title_key
@@ -51,6 +52,7 @@ class BillSpeakerPlan:
     bill_keys: list[BillKey]
     bill_report_speakers: list[BillReportSpeaker]
     bill_stage_lines: list[BillStageLine]
+    credited_only_report_speaker_count: int
 
 
 @dataclass(frozen=True)
@@ -58,6 +60,7 @@ class ReportBillSpeakerPlan:
     sprs_report_ids: list[str]
     bill_report_speakers: list[BillReportSpeaker]
     bill_stage_lines: list[BillStageLine]
+    credited_only_report_speaker_count: int
 
 
 @dataclass(frozen=True)
@@ -70,6 +73,7 @@ class BillSpeakerCounts:
 class _PlannedRows:
     bill_report_speakers: list[BillReportSpeaker]
     bill_stage_lines: list[BillStageLine]
+    credited_only_report_speaker_count: int
 
 
 @dataclass(frozen=True)
@@ -128,26 +132,30 @@ def _build_planned_rows(
 ) -> _PlannedRows:
     bill_report_speakers: list[BillReportSpeaker] = []
     bill_stage_lines: list[BillStageLine] = []
+    credited_only_report_speaker_count = 0
     for start in range(0, len(bill_report_rows), _REPORT_BATCH):
         report_id_to_sprs_report_id = {
             bill_report_row.report_id: bill_report_row.sprs_report_id
             for bill_report_row in bill_report_rows[start : start + _REPORT_BATCH]
         }
         report_ids = list(report_id_to_sprs_report_id)
+        ordinal_label_rows = CRUDSpeech(
+            session
+        ).get_ordinal_label_rows_by_report_ids_and_kind_and_speaker_id_not_null(
+            report_ids, SpeechKind.SPEECH
+        )
         bill_report_speakers.extend(
-            build_bill_report_speakers(
-                CRUDSpeech(
-                    session
-                ).get_ordinal_label_rows_by_report_ids_and_kind_and_speaker_id_not_null(
-                    report_ids, SpeechKind.SPEECH
-                ),
-                report_id_to_sprs_report_id,
-            )
+            build_bill_report_speakers(ordinal_label_rows, report_id_to_sprs_report_id)
+        )
+        credited_only_report_speaker_count += get_credited_only_report_speaker_count(
+            ordinal_label_rows
         )
         bill_stage_lines.extend(
             _build_stage_lines(session, report_ids, report_id_to_sprs_report_id)
         )
-    return _PlannedRows(bill_report_speakers, bill_stage_lines)
+    return _PlannedRows(
+        bill_report_speakers, bill_stage_lines, credited_only_report_speaker_count
+    )
 
 
 def _build_bill_keys(
@@ -181,6 +189,7 @@ def get_bill_speaker_plan(session: Session) -> BillSpeakerPlan:
         _build_bill_keys(session, bill_report_rows),
         planned_rows.bill_report_speakers,
         planned_rows.bill_stage_lines,
+        planned_rows.credited_only_report_speaker_count,
     )
 
 
@@ -190,6 +199,7 @@ def get_report_bill_speaker_plan(
     sprs_report_ids: list[str] = []
     bill_report_speakers: list[BillReportSpeaker] = []
     bill_stage_lines: list[BillStageLine] = []
+    credited_only_report_speaker_count = 0
     sorted_report_ids = sorted(report_ids)
     for start in range(0, len(sorted_report_ids), _REPORT_BATCH):
         batch_report_ids = sorted_report_ids[start : start + _REPORT_BATCH]
@@ -207,8 +217,14 @@ def get_report_bill_speaker_plan(
         )
         bill_report_speakers.extend(planned_rows.bill_report_speakers)
         bill_stage_lines.extend(planned_rows.bill_stage_lines)
+        credited_only_report_speaker_count += (
+            planned_rows.credited_only_report_speaker_count
+        )
     return ReportBillSpeakerPlan(
-        sprs_report_ids, bill_report_speakers, bill_stage_lines
+        sprs_report_ids,
+        bill_report_speakers,
+        bill_stage_lines,
+        credited_only_report_speaker_count,
     )
 
 
