@@ -27,5 +27,5 @@ def get_name_to_resolve(printed_name: str) -> str:
     name = _strip_final_period(printed_name.strip())
     words = name.split()
     if len(words) > 1 and words[-1].rstrip(".").lower() in _TRAILING_TITLES:
-        name = _strip_final_period(name[: -len(words[-1])].strip())
+        name = _strip_final_period(name[: -len(words[-1])].strip().rstrip(","))
     return name

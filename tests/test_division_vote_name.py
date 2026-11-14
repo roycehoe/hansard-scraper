@@ -14,3 +14,9 @@ def test_an_initial_keeps_its_period() -> None:
 def test_a_plain_name_is_unchanged() -> None:
     assert get_name_to_resolve("Chiam See Tong") == "Chiam See Tong"
     assert get_name_to_resolve("  Buang bin Omar Junid.  ") == "Buang bin Omar Junid"
+
+
+def test_a_trailing_title_after_a_comma_takes_the_comma_with_it() -> None:
+    assert get_name_to_resolve("Hoe Puay Choo, Madam.") == "Hoe Puay Choo"
+    assert get_name_to_resolve("Fung Yin Ching, Miss.") == "Fung Yin Ching"
+    assert get_name_to_resolve("Seow Peck Leng, Mrs") == "Seow Peck Leng"
