@@ -718,6 +718,7 @@ def resolve_vote_speaker(
     lookups: SpeakerLookups,
     inverted_name_to_canonical: dict[tuple[str, int], str],
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int],
+    speaker_id_to_person_id: dict[int, Optional[int]],
 ) -> Optional[VoteSpeakerMatch]:
     if parliament_number != COLONIAL_PARLIAMENT_NUMBER:
         candidate_parliament_numbers = (parliament_number,)
@@ -740,7 +741,12 @@ def resolve_vote_speaker(
             vote_speaker_matches.append(
                 VoteSpeakerMatch(speaker_id, strict_match.name_rule)
             )
-    if len({match.speaker_id for match in vote_speaker_matches}) != 1:
+    if not vote_speaker_matches:
+        return None
+    person_ids = {
+        speaker_id_to_person_id.get(match.speaker_id) for match in vote_speaker_matches
+    }
+    if len(vote_speaker_matches) > 1 and (len(person_ids) != 1 or None in person_ids):
         return None
     return vote_speaker_matches[0]
 

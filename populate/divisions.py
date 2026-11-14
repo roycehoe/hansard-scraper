@@ -61,6 +61,7 @@ class _NameLookups:
     speaker_lookups: SpeakerLookups
     inverted_name_to_canonical: dict[tuple[str, int], str]
     name_parliament_number_to_speaker_id: dict[tuple[str, int], int]
+    speaker_id_to_person_id: dict[int, Optional[int]]
     speaker_id_to_party: dict[int, str]
 
 
@@ -116,6 +117,11 @@ def _build_name_lookups(session: Session) -> _NameLookups:
             ]
             == 1
         },
+        speaker_id_to_person_id={
+            speaker.id: speaker.person_id
+            for speaker in speakers
+            if speaker.id is not None
+        },
         speaker_id_to_party={
             speaker.id: speaker.party for speaker in speakers if speaker.id is not None
         },
@@ -134,6 +140,7 @@ def _resolve_names(
                 name_lookups.speaker_lookups,
                 name_lookups.inverted_name_to_canonical,
                 name_lookups.name_parliament_number_to_speaker_id,
+                name_lookups.speaker_id_to_person_id,
             ),
         )
         for name in names

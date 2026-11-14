@@ -7,6 +7,7 @@ from services.attendance import (
     build_speaker_lookups,
 )
 from services.speaker_link import VoteSpeakerMatch, resolve_vote_speaker
+from utils.division_vote_name import get_name_to_resolve
 from utils.speaker_resolution import resolve_canonical_name
 
 _PARLIAMENT_NUMBER = 14
@@ -16,13 +17,19 @@ _HAND_LIST_PRINTED_NAME = "Masagos Zulkifli B M M"
 _HAND_LIST_CANONICAL_NAME = "Masagos Zulkifli Bin Masagos Mohamad"
 
 
-def _build_speaker(speaker_id: int, name: str, parliament_number: int) -> Speaker:
+def _build_speaker(
+    speaker_id: int,
+    name: str,
+    parliament_number: int,
+    person_id: Optional[int] = None,
+) -> Speaker:
     return Speaker(
         id=speaker_id,
         name=name,
         party=_PARTY,
         is_legislative_assembly=False,
         parliament_number=parliament_number,
+        person_id=person_id,
     )
 
 
@@ -36,6 +43,11 @@ def _resolve(
         build_inverted_name_to_canonical(speakers),
         {
             (speaker.name, speaker.parliament_number): speaker.id
+            for speaker in speakers
+            if speaker.id is not None
+        },
+        {
+            speaker.id: speaker.person_id
             for speaker in speakers
             if speaker.id is not None
         },
@@ -142,10 +154,42 @@ def test_colonial_name_matching_one_membership_links() -> None:
     )
 
 
-def test_colonial_name_matching_two_parliaments_does_not_link() -> None:
+def test_colonial_name_of_one_person_in_three_parliaments_links_to_the_first() -> None:
+    speakers = [
+        _build_speaker(30, "Lee Kuan Yew", 1, person_id=29),
+        _build_speaker(91, "Lee Kuan Yew", 2, person_id=29),
+        _build_speaker(158, "Lee Kuan Yew", 3, person_id=29),
+    ]
+
+    assert _resolve(
+        get_name_to_resolve("Lee Kuan Yew."), _COLONIAL_PARLIAMENT_NUMBER, speakers
+    ) == VoteSpeakerMatch(30, DivisionVoteNameRule.EXACT)
+
+
+def test_colonial_name_takes_the_name_rule_of_the_first_parliament_row() -> None:
+    speakers = [
+        _build_speaker(1, "Abdul Hamid Bin Jumat", 1, person_id=7),
+        _build_speaker(2, "Abdul Hamid Jumat", 2, person_id=7),
+    ]
+
+    assert _resolve(
+        "Abdul Hamid Jumat", _COLONIAL_PARLIAMENT_NUMBER, speakers
+    ) == VoteSpeakerMatch(1, DivisionVoteNameRule.BIN_FREE)
+
+
+def test_colonial_name_of_two_persons_in_two_parliaments_does_not_link() -> None:
+    speakers = [
+        _build_speaker(1, "Lim Yew Hock", 1, person_id=7),
+        _build_speaker(2, "Lim Yew Hock", 2, person_id=8),
+    ]
+
+    assert _resolve("Lim Yew Hock", _COLONIAL_PARLIAMENT_NUMBER, speakers) is None
+
+
+def test_colonial_name_matching_a_row_with_no_person_does_not_link() -> None:
     speakers = [
         _build_speaker(1, "Lim Yew Hock", 1),
-        _build_speaker(2, "Lim Yew Hock", 2),
+        _build_speaker(2, "Lim Yew Hock", 2, person_id=7),
     ]
 
     assert _resolve("Lim Yew Hock", _COLONIAL_PARLIAMENT_NUMBER, speakers) is None
