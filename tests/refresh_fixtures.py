@@ -13,6 +13,7 @@ from database.hansard_website_response import HansardWebsiteResponse
 from database.speaker import Speaker
 from enums import ReportVersion
 from exceptions import HansardGatewayError
+from gateway.http import MAX_RETRIES
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
     HansardReportOldResponse,
@@ -197,6 +198,7 @@ class FakeParliament:
         self.new_sitting: dict = copy.deepcopy(new_sitting["sitting"])
         self.search_calls: list[tuple[date, date]] = []
         self.sitting_calls: list[str] = []
+        self.sitting_date_to_max_retries: dict[str, int] = {}
         self.topic_calls: list[str] = []
         self.on_search: Optional[Callable[[], None]] = None
         self.minutes_index_page = build_live_index_page([])
@@ -219,9 +221,10 @@ class FakeParliament:
         ]
 
     def get_hansard_report_response(
-        self, sitting_date: str
+        self, sitting_date: str, max_retries: int = MAX_RETRIES
     ) -> Union[HansardReportOldResponse, HansardReportNewResponse]:
         self.sitting_calls.append(sitting_date)
+        self.sitting_date_to_max_retries[sitting_date] = max_retries
         if _get_date(sitting_date) == self.new_sitting_date:
             return HansardReportNewResponse.model_validate(self.new_sitting)
         if _get_date(sitting_date) == self.stored_sitting_date:

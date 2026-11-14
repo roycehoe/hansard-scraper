@@ -69,6 +69,7 @@ from exceptions import (
     HansardRefreshRunError,
     HansardWriteCheckError,
 )
+from gateway.http import MAX_RETRIES
 from populate.minutes import MinutesStepResult
 from populate.minutes_divisions import UNREAD_DIVISION_STATUS_NOTE
 from populate.report_askers import REPORT_ASKER_REPORT_TYPES
@@ -2638,11 +2639,11 @@ def test_unlinked_share_halt_in_a_later_month_records_only_committed_counts(
     _add_october_hit(fake_parliament, _PREVIOUS_PARLIAMENT_NUMBER)
 
     def get_unpublished_october_sitting(
-        sitting_date: str,
+        sitting_date: str, max_retries: int = MAX_RETRIES
     ) -> Union[HansardReportOldResponse, HansardReportNewResponse]:
         if sitting_date == _OCTOBER_SITTING_DATE_KEY:
             return HansardReportNewResponse()
-        return fake_parliament.get_hansard_report_response(sitting_date)
+        return fake_parliament.get_hansard_report_response(sitting_date, max_retries)
 
     monkeypatch.setattr(
         refresh_runs, "get_hansard_report_response", get_unpublished_october_sitting
@@ -2879,6 +2880,23 @@ def test_run_probes_dates_without_a_hit_only_inside_the_recheck_window(
     ]
 
 
+def test_run_asks_once_for_a_probed_date_without_a_hit(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+) -> None:
+    seed_stored(scratch_session)
+
+    refresh_runs.populate_refresh_runs(scratch_session, _get_october_now(), None)
+
+    new_sitting_date_key = get_sitting_date_key(fake_parliament.new_sitting_date)
+    assert new_sitting_date_key in fake_parliament.sitting_calls
+    assert len(fake_parliament.sitting_calls) > 1
+    assert fake_parliament.sitting_date_to_max_retries == {
+        sitting_date_key: MAX_RETRIES if sitting_date_key == new_sitting_date_key else 0
+        for sitting_date_key in fake_parliament.sitting_calls
+    }
+
+
 def test_stored_hit_date_without_a_sitting_is_probed_after_the_recheck_window(
     scratch_engine: Engine,
     scratch_session: Session,
@@ -2889,12 +2907,12 @@ def test_stored_hit_date_without_a_sitting_is_probed_after_the_recheck_window(
     new_sitting_date_key = get_sitting_date_key(fake_parliament.new_sitting_date)
 
     def get_unpublished_new_sitting(
-        sitting_date: str,
+        sitting_date: str, max_retries: int = MAX_RETRIES
     ) -> Union[HansardReportOldResponse, HansardReportNewResponse]:
         if sitting_date == new_sitting_date_key:
             fake_parliament.sitting_calls.append(sitting_date)
             return HansardReportNewResponse()
-        return fake_parliament.get_hansard_report_response(sitting_date)
+        return fake_parliament.get_hansard_report_response(sitting_date, max_retries)
 
     monkeypatch.setattr(
         refresh_runs, "get_hansard_report_response", get_unpublished_new_sitting

@@ -117,23 +117,25 @@ async def async_post_with_retry(
         await CRAWL_PACER.async_sleep(_get_backoff_seconds(attempt))
 
 
-def send_with_retry(send_request: Callable[[], requests.Response]) -> requests.Response:
-    for attempt in range(MAX_RETRIES + 1):
+def send_with_retry(
+    send_request: Callable[[], requests.Response], max_retries: int = MAX_RETRIES
+) -> requests.Response:
+    for attempt in range(max_retries + 1):
         try:
             with paced_request():
                 response = send_request()
         except requests.exceptions.ConnectionError:
-            if attempt == MAX_RETRIES:
+            if attempt == max_retries:
                 raise
             CRAWL_PACER.sleep(_get_backoff_seconds(attempt))
             continue
         except requests.exceptions.Timeout:
-            if attempt == MAX_RETRIES:
+            if attempt == max_retries:
                 raise
             CRAWL_PACER.sleep(_get_backoff_seconds(attempt))
             continue
         if not _is_transient_failure(response):
             return response
-        if attempt == MAX_RETRIES:
+        if attempt == max_retries:
             response.raise_for_status()
         CRAWL_PACER.sleep(_get_backoff_seconds(attempt))

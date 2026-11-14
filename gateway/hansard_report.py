@@ -5,7 +5,12 @@ import httpx
 import requests
 
 from exceptions import HansardGatewayError
-from gateway.http import CRAWL_HEADERS, async_post_with_retry, send_with_retry
+from gateway.http import (
+    CRAWL_HEADERS,
+    MAX_RETRIES,
+    async_post_with_retry,
+    send_with_retry,
+)
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
     HansardReportOldResponse,
@@ -28,7 +33,7 @@ def _build_hansard_report_response(
 
 
 def get_hansard_report_response(
-    sitting_date: str,
+    sitting_date: str, max_retries: int = MAX_RETRIES
 ) -> Union[HansardReportOldResponse, HansardReportNewResponse]:
     request_body = {"sittingDate": get_zero_padded_sitting_date(sitting_date)}
     try:
@@ -39,7 +44,8 @@ def get_hansard_report_response(
                 json=request_body,
                 headers=CRAWL_HEADERS,
                 timeout=REQUEST_TIMEOUT_SECONDS,
-            )
+            ),
+            max_retries,
         )
         return _build_hansard_report_response(response.json())
     except requests.exceptions.RequestException as error:

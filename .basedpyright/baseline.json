@@ -2876,8 +2876,8 @@
             {
                 "code": "reportReturnType",
                 "range": {
-                    "startColumn": 70,
-                    "endColumn": 87,
+                    "startColumn": 5,
+                    "endColumn": 22,
                     "lineCount": 1
                 }
             }

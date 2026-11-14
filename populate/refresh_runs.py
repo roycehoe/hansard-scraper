@@ -35,6 +35,7 @@ from gateway.hansard_report import get_hansard_report_response
 from gateway.hansard_search import get_all_hansard_search_results
 from gateway.hansard_topic import get_hansard_topic_response_async
 from gateway.healthchecks import send_healthchecks_failure_ping, send_healthchecks_ping
+from gateway.http import MAX_RETRIES
 from gateway.telegram import send_telegram_message
 from logs import logger
 from populate.attached_files import populate_attached_files
@@ -351,10 +352,15 @@ def _fetch_sitting_responses(
     ] = {}
     for sitting_date in sitting_dates:
         sitting_date_key = get_sitting_date_key(sitting_date)
+        is_search_hit_date = sitting_date in sitting_dates_with_search_results
+        # NOTE: SPRS answers a date with no sitting with the same 500 as an outage, so a date without a hit is
+        # asked once: its error is skipped either way, and the next run asks again while it is in the window
         try:
-            hansard_report_response = get_hansard_report_response(sitting_date_key)
+            hansard_report_response = get_hansard_report_response(
+                sitting_date_key, max_retries=MAX_RETRIES if is_search_hit_date else 0
+            )
         except HansardGatewayError as error:
-            if sitting_date in sitting_dates_with_search_results:
+            if is_search_hit_date:
                 raise
             logger.info(f"No sitting response for {sitting_date}: {error}")
             continue
