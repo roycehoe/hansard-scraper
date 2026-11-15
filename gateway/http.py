@@ -11,7 +11,7 @@ import requests
 
 from settings import settings
 
-CRAWL_USER_AGENT = "hansard-scraper (+royceinbox@hotmail.com)"
+CRAWL_USER_AGENT = "hansard-scraper (+contact@openhansard.sg)"
 CRAWL_HEADERS = {"User-Agent": CRAWL_USER_AGENT}
 
 MAX_RETRIES = 4

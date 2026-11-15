@@ -15,7 +15,7 @@ To keep up with new sittings, I've scheduled `refresh.py` to run once a day and 
 
 ## Getting the data
 
-I haven't published the database for download because Parliament's terms of use require written permission to reproduce its content, and I haven't yet settled whether they allow a download. To ask about access, email royceinbox@hotmail.com.
+I haven't published the database for download because Parliament's terms of use require written permission to reproduce its content, and I haven't yet settled whether they allow a download. To ask about access, email contact@openhansard.sg.
 
 You can build your own copy with the steps under [Setup](#setup). A full crawl sends more than 50,000 requests, 2 seconds apart, so it takes more than a day.
 
@@ -176,7 +176,7 @@ These steps come from reading the code, and I haven't run them end to end on an 
 
 Records come from the Parliament of Singapore's Parliament Reports search system (SPRS) and the member lists on parliament.gov.sg. The content belongs to Parliament. This project is not affiliated with or endorsed by Parliament. Parliament's [terms of use](https://www.parliament.gov.sg/terms-of-use) require written permission to reproduce its content, so check them before you republish anything the pipeline fetches.
 
-The fetcher sends one request at a time and waits at least 2 seconds between requests, retries included. It identifies itself as `hansard-scraper (+royceinbox@hotmail.com)` and backs off further on HTTP 429.
+The fetcher sends one request at a time and waits at least 2 seconds between requests, retries included. It identifies itself as `hansard-scraper (+contact@openhansard.sg)` and backs off further on HTTP 429.
 
 ## Citation
 

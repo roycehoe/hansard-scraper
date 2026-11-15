@@ -2,7 +2,7 @@
 
 ## Report a vulnerability
 
-Email royceinbox@hotmail.com with "Security" in the subject. Do not open a public issue for a vulnerability.
+Email contact@openhansard.sg with "Security" in the subject. Do not open a public issue for a vulnerability.
 
 Or use GitHub's private form: [report a vulnerability](https://github.com/roycehoe/hansard-scraper/security/advisories/new).
 
