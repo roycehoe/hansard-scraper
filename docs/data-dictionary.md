@@ -1,14 +1,16 @@
-# Data Dictionary
+# Data dictionary
 
-Covers every parliamentary record published by SPRS, from the colonial Legislative Assembly through the present Parliament, including the proceedings before independence, when Singapore was a British colony and then part of Malaysia.
+This dictionary describes the tables, columns, sources, and limits of the parliamentary records published by SPRS, from the colonial Legislative Assembly through the present Parliament, including the proceedings before independence, when Singapore was a British colony and then part of Malaysia.
 
-Each record is one parliamentary item — a question, a debate topic, a bill reading, a ministerial statement — identified by parliament number, sitting date, and a report ID. Records are parsed into individual speeches attributed to named speakers.
+Each record is one parliamentary item, such as a question, debate topic, bill reading, or ministerial statement, identified by parliament number, sitting date, and report ID. The parser extracts individual speeches and attributes them to named speakers.
 
-For HTML artifact details and parsing edge cases, see [parsing.md](parsing.md).
+For HTML artifacts and parsing edge cases, see [parsing.md](parsing.md).
 
 ---
 
 ## Data model
+
+The model links sittings to attendance, sitting dates to minutes, reports to speech rows and divisions, and people to their per-parliament rows.
 
 ```
 Sitting (one day's session)
@@ -32,27 +34,29 @@ Person (one row per individual)
 
 `Report` and `Sitting` share `sitting_date`, `parliament_number`, and `volume_number` as natural join keys. `Speech.speaker_id` links to `Speaker.id` where the match has been resolved.
 
-The sitting API also returns nested list data (PTBA, debate sections, annexures, vernacular files, absence-to-brief records). This data is stored as serialised JSON columns directly on `Sitting` (`ptba_list`, `sections`, `annexures`, `vernaculars`, `a2b`) for record purposes. The raw `hansardsittingdateresponse` table holds `sections`, `annexures`, `vernaculars` and `a2b` too, with the same content. Only the annexure and vernacular lists are also stored row by row, in `AttachedFile`.
+The sitting API returns five nested lists: permissions to be absent (PTBA), debate sections, annexures, vernacular files, and absence-to-brief records. `Sitting` keeps them as serialised JSON in `ptba_list`, `sections`, `annexures`, `vernaculars`, and `a2b` for record purposes. The raw `hansardsittingdateresponse` table holds `sections`, `annexures`, `vernaculars`, and `a2b` too, with the same content. Only the annexure and vernacular lists are also stored row by row, in `AttachedFile`.
 
 ---
 
 ## Tables
 
+The tables below describe parliamentary items, sittings, people, attached files, leave, seats, and recorded votes.
+
 ### Report
 
-One row per parliamentary item. A report is the smallest unit of parliamentary business — a single oral question, a single bill reading, a single ministerial statement. Multiple reports belong to the same sitting.
+One row per parliamentary item, the smallest unit of parliamentary business: a single oral question, bill reading, or ministerial statement. A sitting holds multiple reports.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `parliament_number` | int | Parliament session number. 0 = colonial era (1955–1963). |
+| `parliament_number` | int | Parliament session number. 0 = colonial era (1955 to 1963). |
 | `volume_number` | int | Hansard volume number. Volumes span multiple sessions. |
-| `sitting_number` | int | Which sitting within the session. From the search hit, or, where the hit has none (older system, 2003 to 2011), from the `Sitting No` line of the report's header table. |
+| `sitting_number` | int | Sitting number within the session. From the search hit, or, where the hit has none (older system, 2003 to 2011), from the `Sitting No` line of the report's header table. |
 | `sitting_date` | datetime | Date of the sitting. |
-| `speech_number` | int | Sequential number of this item within the sitting (the `sno` field from the API). The 1,691 rows added on 13 October 2026 (refetch) store `sno` as the position within their monthly search window, not the global position, so `sno` is not comparable across those rows and the earlier ones. |
+| `speech_number` | int | Item sequence number within the sitting (the `sno` field from the API). The 1,691 rows added on 13 October 2026 (refetch) store `sno` as the position within their monthly search window, not the global position, so `sno` is not comparable across those rows and the earlier ones. |
 | `report_id` | str | The SPRS identifier for this report. Unique in `Report`; the raw `HansardWebsiteResponse` table keeps every search hit, so it can hold the same id twice. |
 | `report_type` | str | Category of parliamentary business. See [Report types](#report-types) below. |
 | `title` | str | Cleaned title. Mojibake corrected; HTML entity artifacts and tags stripped; trimmed; a title repeated around commas keeps one copy. |
-| `original_title` | str | Title exactly as received from the API. |
+| `original_title` | str | Title exactly as the API returned it. |
 | `subtitle` | str | Parenthetical subtitle if present, e.g. `(in Malay)` or `(Continued)`. |
 | `markdown_content` | str | HTML content converted to clean markdown. `NULL` if the API returned no HTML. |
 | `content` | str | Raw HTML from the API, stored exactly as received. For the older system (sittings before 10 September 2012, `report_version` sprs2) it is the API's `htmlContent`; for the newer system (sprs3) it is `resultHTML.content`. Newer-system `atbp` records have no text and keep it `NULL`; see [ADR 0003](adr/0003-newer-system-raw-mapping.md). |
@@ -60,11 +64,11 @@ One row per parliamentary item. A report is the smallest unit of parliamentary b
 
 ### Speech
 
-One row per individual utterance within a report. Speeches are extracted from `markdown_content` by detecting bold speaker names (`**Name:**`).
+One row per utterance within a report. The parser extracts speeches from `markdown_content` by detecting bold speaker names (`**Name:**`).
 
 | Field | Type | Meaning |
 |---|---|---|
-| `ordinal` | int | Position of this speech within the report, starting from 0. |
+| `ordinal` | int | Position within the report, starting from 0. |
 | `speaker` | str | Speaker name as it appears in the transcript, with title prefix stripped. `NULL` if attribution failed. |
 | `transcript` | str | Text of the speech in markdown. |
 | `sitting_date` | datetime | The report's `sitting_date`, set by the writer that builds the row (see [ADR 0010](adr/0010-speech-sitting-date-set-by-each-writer.md)). Never `NULL`. |
@@ -74,7 +78,7 @@ One row per individual utterance within a report. Speeches are extracted from `m
 
 ### Sitting
 
-One row per sitting date. A sitting is a full day of parliamentary proceedings, encompassing multiple reports. Fields are `NULL` for formats that do not carry them (old vs new API format; see [parsing.md](parsing.md)).
+One row per sitting date, covering a full day of proceedings and multiple reports. Fields are `NULL` where the older or newer API format omits them; see [parsing.md](parsing.md).
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -156,12 +160,12 @@ One row per person per sitting, parsed from the PRESENT/ABSENT sections of `Sitt
 
 ### Speaker
 
-Identities scraped from parliament.gov.sg, plus the colonial Legislative Assembly list (`data/colonial_la_members.json`) the heads of state (`data/heads_of_state.json`) and the members the scrape omits (`data/unscraped_members.json`). One row per person per parliament — the same person appears multiple times across parliaments, and `person_id` groups those rows. The name "Speaker" is used because the table includes colonial Legislative Assembly members who were not MPs, and Governors, the Yang di-Pertuan Negara and Presidents, who are not members at all.
+Identities scraped from parliament.gov.sg, plus the colonial Legislative Assembly list (`data/colonial_la_members.json`), the heads of state (`data/heads_of_state.json`) and the members the scrape omits (`data/unscraped_members.json`). One row per person per parliament. `person_id` groups the same person's rows across parliaments. The name "Speaker" is used because the table includes colonial Legislative Assembly members who were not Members of Parliament (MPs), and Governors, the Yang di-Pertuan Negara, and Presidents, who are not members at all.
 
 | Field | Type | Meaning |
 |---|---|---|
 | `name` | str | Name without title prefix. |
-| `party` | str | Political party, one value per Membership. It is the party on the ballot at the last election, general or by-election, that seated the member in it. On the 1955 to 1965 Assembly rows, Speakers and nominated members hold `Non-partisan` and ex-officio officials hold `Colonial Government`; scraped nominated members keep the source value (`Nominated Member of Parliament` on 125 rows, `NA` on 2). The apostrophe is always straight. parliament.gov.sg gives one party per person, so `data/speaker_overrides.json` (`party_overrides`) and `data/colonial_la_members.json` correct it per row. The switch history of a hand-typed row is in the `comments` field of `data/colonial_la_members.json`; the apply script does not write `speaker.comments`. |
+| `party` | str | Political party, one value per Membership (one person in one Parliament). It is the party on the ballot at the last election, general or by-election, that seated the member in it. On the 1955 to 1965 Assembly rows, Speakers and nominated members hold `Non-partisan` and ex-officio officials hold `Colonial Government`; scraped nominated members keep the source value (`Nominated Member of Parliament` on 125 rows, `NA` on 2). The apostrophe is always straight. parliament.gov.sg gives one party per person, so `data/speaker_overrides.json` (`party_overrides`) and `data/colonial_la_members.json` correct it per row. The switch history of a hand-typed row is in the `comments` field of `data/colonial_la_members.json`; the apply script does not write `speaker.comments`. |
 | `parliament_number` | int | Parliament they served in. Parliament 0 is the Legislative Assembly (1955 to 1965): a member who sat only in the Assembly, and the Governors before 1959, have a Parliament 0 row. A member who sat in both the Assembly and Parliament 1 has one row, in Parliament 1. |
 | `is_legislative_assembly` | bool | `True` on a row that holds a Legislative Assembly membership (1955 to 1965). parliament.gov.sg flags a person, not a row, so `data/speaker_overrides.json` corrects it per row. |
 | `comments` | str | Footnote annotations from the source page, e.g. appointment dates or name changes. |
@@ -170,17 +174,17 @@ Identities scraped from parliament.gov.sg, plus the colonial Legislative Assembl
 
 ### Person
 
-One row per individual, grouping the per-parliament `Speaker` rows. Derived and rebuildable: rows join on identical names, then on names equal after title and inversion normalisation, subject to the hand decisions in `data/person_decisions.json` (`merge`, `distinct` and `name` entries with a cited source). A person holds at most one speaker row per parliament.
+One row per individual, grouping the per-parliament `Speaker` rows. Derived and rebuildable: rows join on identical names, then on names equal after title and inversion normalisation, subject to the hand decisions in `data/person_decisions.json` (`merge`, `distinct`, and `name` entries with a cited source). A person holds at most one speaker row per parliament.
 
 | Field | Type | Meaning |
 |---|---|---|
 | `canonical_name` | str | Display name in "Given Surname" order. Stage 9 takes the most common spelling among the person's speaker rows, inverts a comma form ("Rajaratnam, S" becomes "S Rajaratnam"), and drops honorifics and the decorations BPM and BBM. A `merge` or `name` decision gives the name instead. `speaker.name` keeps the source form. A rerun of stage 9 renames existing persons. |
-| `basis` | str | Which rule formed the group: `auto:exact`, `auto:normalised`, `review:merge` or `single`. Stage 9 recomputes it on every run. |
+| `basis` | str | Which rule formed the group: `auto:exact`, `auto:normalised`, `review:merge`, or `single`. Stage 9 recomputes it on every run. |
 | `notes` | str | Free text; unused so far. |
 
 ### PersonNameSpelling
 
-One row per person and spelling in a spelling note. Stage 9 loads it from `data/person_name_spellings.json`, and the table holds what the file holds. See [ADR 0017](adr/0017-elected-members-take-the-elections-departments-spelling.md).
+One row per person and spelling in a spelling note, loaded by stage 9 from `data/person_name_spellings.json`. The table holds what the file holds. See [ADR 0017](adr/0017-elected-members-take-the-elections-departments-spelling.md).
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -217,17 +221,17 @@ One row per download link in a report's raw HTML, numbered in reading order. The
 | `shape` | AttachedFilePointerShape | The form of the address: `DATED` (a dated folder and an `annex-` or `vernacular-` name), `PDFS` (under `PDFs/`) or `SECTION_FILE` (a numbered section file). |
 | `download_value` | str | The address after `download?value=`. `NULL` for the placeholder `vernacular-null`. |
 | `speech_ordinal` | int | The `speech.ordinal` of the row that holds the link's words, in the same report. `NULL` where the words cannot be matched to exactly as many rows as the report's text has occurrences. It is a position, not a foreign key, so a write that renumbers speech rows has to run `scripts/apply_attached_files.py` again. |
-| `paragraph_tie_rule` | ParagraphTieRule | How sure the paragraph tie is: `ONLY_OCCURRENCE`, `EVERY_OCCURRENCE_A_LINK` or `OCCURRENCE_BESIDE_PLAIN_TEXT`. `NULL` when `speech_ordinal` is. |
+| `paragraph_tie_rule` | ParagraphTieRule | How sure the paragraph tie is: `ONLY_OCCURRENCE`, `EVERY_OCCURRENCE_A_LINK`, or `OCCURRENCE_BESIDE_PLAIN_TEXT`. `NULL` when `speech_ordinal` is. |
 | `sprs_report_id` | str | FK → `Report.report_id`. |
 | `attached_file_id` | int | FK → `AttachedFile.id`. Set when exactly one stored file has the pointer's `download_value`, otherwise `NULL`. |
 
 ### LeavePeriod
 
-One row per leave period. The permission list prints a leave again at every sitting it covers, so a period holds many printings. A printing with a name and a start date joins the period with the same name (spacing and case folded), start date and end date. A printing with no name or no start date is a period of its own.
+One row per leave period, grouping the permission list's repeated printings of that leave at each sitting it covers. A printing with a name and a start date joins the period with the same name (spacing and case folded), start date, and end date. A printing with no name or no start date is a period of its own.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `period_key` | str | Unique. The folded name, the start date and the end date, or `entry|sitting id|ordinal` for a printing with no name or no start date. |
+| `period_key` | str | Unique. The folded name, the start date, and the end date, or `entry|sitting id|ordinal` for a printing with no name or no start date. |
 | `name` | str | The name of the first printing of the period: the printed name, or the name carried from the row above. NULL when the printing has none. |
 | `start_date` | date | The first day of the leave. NULL when the entry's dates were not read. |
 | `end_date` | date | The last day of the leave. NULL for an entry that gives no end ("Till further notice" and a start date with no end) and when the dates were not read. |
@@ -240,7 +244,7 @@ One row per date a permission entry prints at a sitting. A line that prints thre
 | Field | Type | Meaning |
 |---|---|---|
 | `ordinal` | int | Order of the printing in its sitting, counted by printing and not by line. Unique with `sitting_id`. |
-| `sitting_date` | date | The date of the sitting that printed the entry. |
+| `sitting_date` | date | Date of the sitting that printed the entry. |
 | `printed_name` | str | The name as printed, with its title, up to the constituency bracket. NULL for a printed blank and for a line whose name cannot be trusted. |
 | `carried_name` | str | The printed name of the nearest named row above, for a row with a blank name. Never set beside `printed_name`. |
 | `printed_from` | str | The words the date reader read for the start, after the misprint list of `data/leave_date_misprints.json`. In the older sections it is NULL where the misprint list changed those words, and for an `UNREAD` entry. For a single day or a day list it holds the matched day item and `printed_to` is NULL, and for a duration or an entry with a start only it holds the start date's words. |
@@ -250,7 +254,7 @@ One row per date a permission entry prints at a sitting. A line that prints thre
 | `printed_heading_to` | str | The heading over the To column, on the same terms. |
 | `office_printed` | str | The office as printed. See `office_source`. It is the office at the sitting that printed the list, which may differ from the office held during the leave. |
 | `entry_format` | LeaveEntryFormat | `STRUCTURED_LIST`, `PROSE_RANGE`, `PROSE_SINGLE_DAY`, `PROSE_DAY_LIST`, `PROSE_DURATION`, `PROSE_MIXED`, `TABLE_ROW`, or `UNREAD` for an entry no rule reads. |
-| `name_source` | LeaveNameSource | `PRINTED`, `CARRIED_FROM_ROW_ABOVE` or `NONE`. |
+| `name_source` | LeaveNameSource | `PRINTED`, `CARRIED_FROM_ROW_ABOVE`, or `NONE`. |
 | `year_source` | LeaveYearSource | `NEAREST_TO_SITTING` for a printed day and month placed in the year nearest the sitting, `PRINTED_IN_ENTRY` for a year the entry prints, `PRINTED_COLUMN_HEADING` for a table row placed in a year of its heading. NULL when no dates were read. |
 | `speaker_link_source` | LeaveSpeakerLinkSource | `ROSTER_NAME` for a name that equals a roster name of the sitting's Parliament once the title is dropped, or `SITTING_ATTENDANCE_ENTRY` for a name the sitting's attendance entries give to one Member. NULL when no link was made. |
 | `office_source` | LeaveOfficeSource | `PRINTED_ON_ENTRY` for an office the entry's own line prints, `ATTENDANCE_LIST` for the office the sitting's attendance entry prints for the linked Member. NULL when none. |
@@ -261,15 +265,15 @@ One row per date a permission entry prints at a sitting. A line that prints thre
 
 ### SeatHolding
 
-One row per Member and division, built from the attendance rows that have a `speaker_id` and a constituency label. The labels `Nominated Member`, `Nominated`, `Non-Constituency Member`, `ex-officio` and `Acting` are seat types and make no row. The dates bound the Member's sittings in the division. They do not show an unbroken term, and `sitting_count` counts the sittings in between.
+One row per Member and division, built from the attendance rows that have a `speaker_id` and a constituency label. The labels `Nominated Member`, `Nominated`, `Non-Constituency Member`, `ex-officio`, and `Acting` are seat types and make no row. The dates bound the Member's sittings in the division. They do not show an unbroken term, and `sitting_count` counts the sittings in between.
 
 | Field | Type | Meaning |
 |---|---|---|
 | `division_key` | str | The label folded: separators to one space, a trailing GRC or SMC dropped, lower case. Unique with `speaker_id`. |
 | `location_name` | str | The label as printed at the Member's first sitting in the division. |
-| `first_sitting_date` | date | The Member's first sitting with this division. |
-| `last_sitting_date` | date | The Member's last sitting with this division. |
-| `sitting_count` | int | The number of distinct sittings with this division. |
+| `first_sitting_date` | date | Member's first sitting with this division. |
+| `last_sitting_date` | date | Member's last sitting with this division. |
+| `sitting_count` | int | Number of distinct sittings with this division. |
 | `speaker_id` | int | FK → `Speaker.id`. |
 
 ### Division
@@ -283,32 +287,32 @@ One row per recorded vote. The counts come from the line the Hansard prints ("Th
 | `report_division_number` | int | The division's number within its report, in speech order. Unique with `sprs_report_id`. NULL for a minutes-only division. |
 | `speech_ordinal` | int | The `speech.ordinal` of the row that prints the counts. NULL for a minutes-only division. |
 | `count_source` | DivisionCountSource | `PRINTED_LINE` for a printed counts line, `SPOKEN_TOTAL` for a total spoken in a speech row, `MINUTES` for a division only the minutes show. |
-| `printed_counts` | str | The counts as the source prints them. |
+| `printed_counts` | str | Counts as the source prints them. |
 | `ayes`, `noes`, `abstentions`, `absent`, `paired` | int | The counts the source gives. NULL where it gives none. |
-| `list_status` | DivisionListStatus | `NOT_PRINTED` when the record prints no list, `STORED` when the names were read and add up to the printed count on every side the line prints a count for (Ayes, Noes and Abstentions with no printed count must hold no names; Absent and Paired names under a side with no printed count are stored without a count to check them), `COUNTS_DISAGREE` when they do not (counts and `printed_list` are kept, no vote rows), `LAYOUT_UNREADABLE` when the list's shape is not one the reader handles. |
-| `printed_list` | str | The list as printed. NULL when the record prints none. |
+| `list_status` | DivisionListStatus | `NOT_PRINTED` when the record prints no list, `STORED` when the names were read and add up to the printed count on every side the line prints a count for (Ayes, Noes, and Abstentions with no printed count must hold no names; Absent and Paired names under a side with no printed count are stored without a count to check them), `COUNTS_DISAGREE` when they do not (counts and `printed_list` are kept, no vote rows), `LAYOUT_UNREADABLE` when the list's shape is not one the reader handles. |
+| `printed_list` | str | List as printed. NULL when the record prints none. |
 | `sprs_report_id` | str | FK → `Report.report_id`. NULL for a minutes-only division. |
 
 ### Minutes
 
-One row per sitting date: the Votes and Proceedings file that records what the House did at the sitting, divisions included. The text is kept as the extractor returned it. The daily step also keeps the bytes of each file it fetches, because a new file may later exist only at its live address; the backfill stores none, and its files stay on the build host and in the Internet Archive. `status` is one of `NOT_YET_LISTED` (a sitting with no file listed yet), `LISTED` (the index lists a file and its text is not stored yet), `TEXT_STORED`, `FILE_NOT_FOUND` and `NEEDS_REVIEW` (the file could not be read, or is a Word file; `status_note` says why). Each row comes from the live index page, an Internet Archive capture of the index (`MinutesIndexCapture`, kept as received) or an archived file listing, and `index_source` says which.
+One row per sitting date: the Votes and Proceedings file that records what the House did at the sitting, divisions included. The text is kept as the extractor returned it. The daily step also keeps the bytes of each file it fetches, because a new file may later exist only at its live address; the backfill stores none, and its files stay on the build host and in the Internet Archive. `status` is one of `NOT_YET_LISTED` (a sitting with no file listed yet), `LISTED` (the index lists a file and its text is not stored yet), `TEXT_STORED`, `FILE_NOT_FOUND`, and `NEEDS_REVIEW` (the file could not be read, or is a Word file; `status_note` says why). Each row comes from the live index page, an Internet Archive capture of the index (`MinutesIndexCapture`, kept as received), or an archived file listing, and `index_source` says which.
 
 | Field | Type | Meaning |
 |---|---|---|
 | `sitting_date` | date | The sitting. Unique. |
 | `printed_label` | str | The index's label for the file, as printed. |
 | `printed_parliament` | str | The Parliament the index prints for it, as printed. |
-| `file_url` | str | The address of the file. |
+| `file_url` | str | File address. |
 | `archive_timestamp` | str | The Internet Archive timestamp of the copy read, where there is one. |
 | `file_format` | MinutesFileFormat | `PDF` or `WORD`. |
 | `sha256` | str | The SHA-256 of the file's bytes. |
-| `size_bytes` | int | The file's size. |
+| `size_bytes` | int | File size. |
 | `file_bytes` | bytes | The file as fetched. Set by the daily step only; `NULL` on a backfill row. |
-| `extracted_text` | str | The text the extractor returned, uncleaned. |
+| `extracted_text` | str | Uncleaned text returned by the extractor. |
 | `status_note` | str | Why a file needs review, or another note on the status. |
 | `fetched_at` | datetime | When the file was fetched. |
 | `status` | MinutesStatus | See above. |
-| `index_source` | MinutesIndexSource | `LIVE_PAGE`, `ARCHIVE_INDEX_CAPTURE` or `ARCHIVE_FILE_LISTING`. |
+| `index_source` | MinutesIndexSource | `LIVE_PAGE`, `ARCHIVE_INDEX_CAPTURE`, or `ARCHIVE_FILE_LISTING`. |
 | `index_capture_id` | int | FK → `MinutesIndexCapture.id`, for a row read from a capture. |
 
 ### MinutesDivision
@@ -318,9 +322,9 @@ One row per division a minutes file prints, from 1 October 2008. Each is paired 
 | Field | Type | Meaning |
 |---|---|---|
 | `ordinal` | int | Order within the file. Unique with `minutes_id`. |
-| `printed_counts` | str | The counts as the file prints them. |
+| `printed_counts` | str | Counts as the file prints them. |
 | `ayes`, `noes`, `abstentions` | int | The counts. `abstentions` is NULL where none are printed. |
-| `printed_list` | str | The list as printed. |
+| `printed_list` | str | List as printed. |
 | `list_status` | DivisionListStatus | As on `Division`. |
 | `pairing` | MinutesDivisionPairing | See above. |
 | `minutes_id` | int | FK → `Minutes.id`. |
@@ -328,23 +332,23 @@ One row per division a minutes file prints, from 1 October 2008. Each is paired 
 
 ### DivisionVote
 
-One row per printed name in a division's list, from the Hansard (`list_source` HANSARD) or the minutes (`MINUTES`). Rows with `vote_choice` ABSENT or PAIRED are stored because the record prints them, and they are not votes. The party breakdown counts only AYE, NO and ABSTAIN. A printed name links to a `Speaker` only by `name_rule` EXACT, INVERTED, BIN_FREE, SAME_WORDS or HAND_LIST, never by subset, prefix or surname; a name that matches no single Member stays with no link. `party` is the Member's party on the sitting date, and `is_party_uncertain` is true when the party history does not settle it. Spoken corrections to a list are not applied.
+One row per printed name in a division's list, from the Hansard (`list_source` HANSARD) or the minutes (`MINUTES`). Rows with `vote_choice` ABSENT or PAIRED are stored because the record prints them, and they are not votes. The party breakdown counts only AYE, NO and ABSTAIN. A printed name links to a `Speaker` only by `name_rule` EXACT, INVERTED, BIN_FREE, SAME_WORDS or HAND_LIST, never by subset, prefix, or surname; a name that matches no single Member stays with no link. `party` is the Member's party on the sitting date, and `is_party_uncertain` is true when the party history does not settle it. Spoken corrections to a list are not applied.
 
 | Field | Type | Meaning |
 |---|---|---|
 | `ordinal` | int | Position in the list. Unique with `division_id` and `list_source`. |
-| `printed_name` | str | The name as printed. |
-| `vote_choice` | DivisionVoteChoice | `AYE`, `NO`, `ABSTAIN`, `ABSENT` or `PAIRED`. |
+| `printed_name` | str | Name as printed. |
+| `vote_choice` | DivisionVoteChoice | `AYE`, `NO`, `ABSTAIN`, `ABSENT`, or `PAIRED`. |
 | `list_source` | DivisionVoteListSource | `MINUTES` or `HANSARD`. |
 | `name_rule` | DivisionVoteNameRule | The rule that linked the name. NULL when there is no link. |
-| `party` | str | The party on the sitting date. NULL when there is no link. |
+| `party` | str | Party on the sitting date. NULL when there is no link. |
 | `is_party_uncertain` | bool | Whether the party on that date is a best reading. |
 | `division_id` | int | FK → `Division.id`. |
 | `speaker_id` | int | FK → `Speaker.id`. NULL when the name links to no one. |
 
 ### DivisionPartyCount
 
-One row per division, side and party: how many Members of the party stood on that side. It is rebuilt from `DivisionVote` rows and counts only AYE, NO and ABSTAIN. A division is counted from its minutes list when that is stored, and from its Hansard list otherwise; `list_source` says which. `party` is NULL for the Members whose party is not known.
+One row per division, side, and party: how many Members of the party stood on that side. It is rebuilt from `DivisionVote` rows and counts only AYE, NO and ABSTAIN. A division is counted from its minutes list when that is stored, and from its Hansard list otherwise; `list_source` says which. `party` is NULL for the Members whose party is not known.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -352,12 +356,14 @@ One row per division, side and party: how many Members of the party stood on tha
 | `uncertain_member_count` | int | How many of them have `is_party_uncertain` set. |
 | `party` | str | The party. NULL when none is known. |
 | `list_source` | DivisionVoteListSource | The list the rows came from. |
-| `vote_choice` | DivisionVoteChoice | `AYE`, `NO` or `ABSTAIN`. A check constraint refuses any other. |
+| `vote_choice` | DivisionVoteChoice | `AYE`, `NO`, or `ABSTAIN`. A check constraint refuses any other. |
 | `division_id` | int | FK → `Division.id`. Unique with `vote_choice` and `party`. |
 
 ---
 
 ## Report types
+
+`Report.report_type` identifies the kind of parliamentary business.
 
 | `report_type` | What it contains |
 |---|---|
@@ -383,31 +389,35 @@ One row per division, side and party: how many Members of the party stood on tha
 | `obituary-speech` | Obituary speeches for deceased members or public figures. |
 | `yang-di-message` | A message from the Yang di-Pertuan Negara (head of state in the colonial/early independence period). |
 | `misc` | Miscellaneous parliamentary records that do not fit other categories. |
-| `atbp` | Assent to Bills Passed — the formal record of presidential assent. No speeches. |
+| `atbp` | Assent to Bills Passed, the formal record of presidential assent. No speeches. |
 
-SPRS types 39 reports `oral-answer` that hold no spoken exchange, only a numbered question and its written reply: 29 of 1 June 1998 and 5 of 16 October and 10 November 2003 whose header reads "Oral Answers to Questions Not Reached", and 5 of 16 October 2003 headed "Written Answers to Questions". On 10 November 2003 the question "Internet Chatrooms" is stored twice, and the types are swapped: the written reply (24876) is `oral-answer` and the spoken exchange (24867) is `written-answer-na`. We keep SPRS's types, so the data loss register has no row for them. A change that reclassifies them adds one.
+SPRS types 39 reports `oral-answer` that hold no spoken exchange, only a numbered question and its written reply: 29 of 1 June 1998 and 5 of 16 October and 10 November 2003 whose header reads "Oral Answers to Questions Not Reached", and 5 of 16 October 2003 headed "Written Answers to Questions". On 10 November 2003 the question "Internet Chatrooms" is stored twice, and the types are swapped: the written reply (24876) is `oral-answer` and the spoken exchange (24867) is `written-answer-na`. The pipeline keeps SPRS's types, so the data loss register has no row for them. A change that reclassifies them adds one.
 
 ---
 
 ## Key identifiers
 
-**Parliament number** — identifies the parliament session. Parliament 0 is the colonial Legislative Assembly (1955–1963). Numbers increment from 1 at independence.
+Four identifiers locate records and connect them across tables.
 
-**Volume number** — Hansard volumes span multiple sessions and are the primary archival unit. They do not reset at each parliament.
+**Parliament number** identifies the parliament session. Parliament 0 is the colonial Legislative Assembly (1955 to 1963). Numbers increment from 1 at independence.
 
-**Sitting date** — the natural key for joining `Report` to `Sitting`. A sitting date maps to exactly one `Sitting` row and many `Report` rows.
+**Volume number**: Hansard volumes span multiple sessions and are the primary archival unit. They do not reset at each parliament.
 
-**Report ID** — the SPRS identifier for an individual item. Stable across pipeline re-runs.
+**Sitting date**: the natural key for joining `Report` to `Sitting`. A sitting date maps to exactly one `Sitting` row and many `Report` rows.
+
+**Report ID**: the SPRS identifier for an individual item. Stable across pipeline re-runs.
 
 ---
 
 ## Known limitations
 
-- Records from 1955–1965 cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament. `Speaker.is_legislative_assembly = True` marks these members.
-- As of 19 October 2026 every record with text has speech rows. On 14 October 2026, 654 did not.
-- 132 of 46,649 records have no text, counted 19 October 2026: 122 with `content` `NULL`, 114 of them `atbp` records whose newer-system bill list is in `sitting.a2b`, and 10 with an empty `content`. 121 of the 132 are newer-system records.
-- Some raw titles hold Windows-1252 mojibake (e.g. `â€™` instead of `’`). `Report.title` and `Report.subtitle` are fixed: since 19 October 2026 none holds it. 11 `Report.original_title` values keep it, the 7 `budget` and 4 `president-address` titles rewritten that day. The raw title is in `hansardwebsiteresponse.title`.
-- Colonial-era records from 1955–1961 (Parliament 0) have no `MPs Speaking` field, so single-speaker attribution fallback cannot apply.
+Eight limits affect coverage, text, speaker links, and vote lists.
+
+- Records from 1955 to 1965 cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament. `Speaker.is_legislative_assembly = True` marks these members.
+- Every record with text has speech rows (counted on 19 October 2026).
+- 132 of 46,649 records have no text, counted on 19 October 2026: 122 with `content` `NULL`, 114 of them `atbp` records whose newer-system bill list is in `sitting.a2b`, and 10 with an empty `content`. 121 of the 132 are newer-system records.
+- Some raw titles hold Windows-1252 mojibake (e.g. `â€™` instead of `’`). `Report.title` and `Report.subtitle` hold none (counted on 19 October 2026). 11 `Report.original_title` values keep it: the 7 `budget` and 4 `president-address` titles that the title fix rewrote. The raw title is in `hansardwebsiteresponse.title`.
+- Colonial-era records from 1955 to 1961 (Parliament 0) have no `MPs Speaking` field, so single-speaker attribution fallback cannot apply.
 - `Speech.speaker_id` is incomplete for colonial-era and early-parliament records.
 - Hansard name lists are read by position from `report.content`, so lists printed as `<pre>` blocks, as tables and as one name per paragraph are read. A list printed as an image, a bare heading with no names and any other shape stay unread (`LAYOUT_UNREADABLE` or `NOT_PRINTED`). A list whose names do not add up to its printed counts (15 May 1985: 55 names against 56 printed) stores its counts and `printed_list` and no names.
 - ~3% of modern-era sitting documents have a missing space before the time (e.g. `"The House met at3.00 pm"`). This is a defect in the raw HTML.
