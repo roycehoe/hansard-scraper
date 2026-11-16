@@ -40,7 +40,7 @@ The sitting API returns five nested lists: permissions to be absent (PTBA), deba
 
 ## Tables
 
-The tables below describe parliamentary items, sittings, people, party affiliations, bills, Acts, supplements and listings, parliamentary questions, offices and ministries, report links, attached files, leave, seats, and recorded votes.
+The tables below describe parliamentary items, sittings, people, party affiliations, bills, Acts, supplements and listings, parliamentary questions, offices and ministries, report links, attached files, leave, seats, and recorded votes. Every table also has an integer primary key `id`, which the field tables leave out.
 
 ### Report
 
@@ -48,7 +48,7 @@ One row per parliamentary item, the smallest unit of parliamentary business: a s
 
 | Field | Type | Meaning |
 |---|---|---|
-| `parliament_number` | int | Parliament session number. 0 = colonial era (1955 to 1963). |
+| `parliament_number` | int | Parliament session number. 0 = the Legislative Assembly (1955 to 1965). |
 | `volume_number` | int | Hansard volume number. Volumes span multiple sessions. |
 | `sitting_number` | int | Sitting number within the session. From the search hit, or, where the hit has none (older system, 2003 to 2011), from the `Sitting No` line of the report's header table. |
 | `sitting_date` | datetime | Date of the sitting. |
@@ -56,11 +56,13 @@ One row per parliamentary item, the smallest unit of parliamentary business: a s
 | `report_id` | str | The SPRS identifier for this report. Unique in `Report`; the raw `HansardWebsiteResponse` table keeps every search hit, so it can hold the same id twice. |
 | `report_type` | str | Category of parliamentary business. See [Report types](#report-types) below. |
 | `title` | str | Cleaned title. Mojibake corrected; HTML entity artifacts and tags stripped; trimmed; a title repeated around commas keeps one copy. |
+| `title_tsv` | tsvector | The title as a Postgres search vector, `to_tsvector('english', title)`, generated and stored by the database. A generalized inverted index (GIN) serves title search. |
 | `original_title` | str | Title exactly as the API returned it. |
 | `subtitle` | str | Parenthetical subtitle if present, e.g. `(in Malay)` or `(Continued)`. |
 | `markdown_content` | str | HTML content converted to clean markdown. `NULL` if the API returned no HTML. |
-| `content` | str | Raw HTML from the API, stored exactly as received. For the older system (sittings before 10 September 2012, `report_version` sprs2) it is the API's `htmlContent`; for the newer system (sprs3) it is `resultHTML.content`. Newer-system `atbp` records have no text and keep it `NULL`; see [ADR 0003](adr/0003-newer-system-raw-mapping.md). |
+| `content` | str | Raw HTML from the API, stored as received except that a NUL byte becomes U+FFFD (`services/hansard_website.py`). For the older system (sittings before 10 September 2012, `report_version` sprs2) it is the API's `htmlContent`; for the newer system (sprs3) it is `resultHTML.content`. Newer-system `atbp` records have no text and keep it `NULL`; see [ADR 0003](adr/0003-newer-system-raw-mapping.md). |
 | `report_version` | str | `sprs2` for the older SPRS system, `sprs3` for the newer one. The parser branches on it. |
+| `html_file_name` | str | The search hit's `htmlFileName`, SPRS's file name for the report's HTML. NULL where the hit has none. For an older-system report it is the id the topic request sends (`services/hansard_website.py`: `get_topic_id`), with `report_id` as the fallback. |
 | `column_start` | int | Start of the printed column range of an older-system report, set by `scripts/apply_column_numbers.py`. |
 | `column_end` | int | End of that printed column range, set by `scripts/apply_column_numbers.py`. |
 
@@ -73,6 +75,7 @@ One row per utterance within a report. The parser extracts speeches from `markdo
 | `ordinal` | int | Position within the report, starting from 0. |
 | `speaker` | str | Speaker name as it appears in the transcript, with title prefix stripped. `NULL` if attribution failed. |
 | `transcript` | str | Text of the speech in markdown. |
+| `transcript_tsv` | tsvector | The transcript as a Postgres search vector, `to_tsvector('english', transcript)`, generated and stored by the database. A GIN index and two indexes of the Postgres `rum` extension serve word search. |
 | `sitting_date` | datetime | The report's `sitting_date`, set by the writer that builds the row (see [ADR 0010](adr/0010-speech-sitting-date-set-by-each-writer.md)). Never `NULL`. This lets a rum index return word matches in date order. |
 | `report_type` | str | The report's `report_type`, set by the writer that builds the row (see [ADR 0014](adr/0014-speech-report-type-set-by-each-writer.md)). Never `NULL`. This lets both rum indexes filter word matches by type. |
 | `report_id` | int | FK → `Report.id`. |
@@ -162,7 +165,7 @@ One row per sitting date, covering a full day of proceedings and multiple report
 | `sitting_no` | int | Sitting number within the session. Read from the header table of the HTML where the older-format response leaves it out. |
 | `sitting_date` | str | Date string as returned by the API. |
 | `online_pdf_file_name` | str | Filename of the online PDF for this sitting. |
-| `html_full_content` | str | Raw HTML of the full sitting proceedings. `NULL` from 10 September 2012: the newer system serves none. |
+| `html_full_content` | str | Raw HTML of the full sitting proceedings, with any NUL byte removed by the gateway. `NULL` from 10 September 2012: the newer system serves none. |
 | `ptba_from` | str | PTBA date range start (old format). |
 | `ptba_to` | str | PTBA date range end (old format). |
 | `part_session_str` | str | Part/session label string (new format only). |
@@ -200,7 +203,7 @@ One row per sitting date, covering a full day of proceedings and multiple report
 | `html_content` | str | HTML content fragment (old format only). |
 | `subtitle` | str | Subtitle (old format only). |
 | `content` | str | Content (old format only). |
-| `mp_names` | str | MP names string (old format only). |
+| `speaker_names` | str | MP names string (old format only), from the API's `mpNames`. |
 | `html_file_name` | str | HTML filename (old format only). |
 | `ver_pdf` | str | Verified PDF flag (old format only). |
 | `foot_notes` | str | Footnotes (old format only). |
@@ -227,6 +230,7 @@ One row per person per sitting, parsed from the PRESENT/ABSENT sections of `Sitt
 
 | Field | Type | Meaning |
 |---|---|---|
+| `sitting_id` | int | FK → `Sitting.id`. Unique with `speaker_id`, so a linked member has at most one row per sitting. Rows with no `speaker_id` are not limited. |
 | `speaker_name` | str | The registry name where the attendance name resolves to a `Speaker` row at build time, otherwise the name as listed after title stripping. A list line that names no member (a heading, a table row, procedural text, a wrapped office title) gets no row, and a member listed twice in a sitting has one row, the present one. |
 | `is_present` | bool | `True` = present, `False` = absent. |
 | `location_name` | str | The constituency in parentheses after the name, in every era, spelled as the Elections Department spells it: `data/constituency_names.json` replaces typos and variant spellings, and seat types printed in place of a constituency ("Nominated Member", "ex-officio") and any other bracket text stay as printed. A "GRC" suffix is dropped, since the Elections Department leaves it out of the division's name. The newer API's `locationName`, which marks where a member sat during a hybrid sitting, stays inside `Sitting.attendance_list`. |
@@ -311,6 +315,7 @@ One row per party a Membership sat for. The `Speaker` row keeps the ballot party
 
 | Field | Type | Meaning |
 |---|---|---|
+| `party` | str | The party the Member sat for from `started_on`. |
 | `started_on` | date | Date the party affiliation began. |
 | `started_on_precision` | DatePrecision | `DatePrecision`, Postgres type `dateprecision`: `DAY` or `MONTH`. A `MONTH` date is stored as the first of the month. |
 | `is_started_on_upper_bound` | bool | True when `started_on` is the earliest day a source shows the new party, rather than the day of the change. |
@@ -738,7 +743,7 @@ SPRS types 39 reports `oral-answer` that hold no spoken exchange, only a numbere
 
 Four identifiers locate records and connect them across tables.
 
-**Parliament number** identifies the parliament session. Parliament 0 is the colonial Legislative Assembly (1955 to 1963). Numbers increment from 1 at independence.
+**Parliament number** identifies the parliament session. Parliament 0 is the colonial Legislative Assembly (1955 to 1965). Numbers increment from 1 at independence.
 
 **Volume number**: Hansard volumes span multiple sessions and are the primary archival unit. They do not reset at each parliament.
 
@@ -750,13 +755,12 @@ Four identifiers locate records and connect them across tables.
 
 ## Known limitations
 
-Eight limits affect coverage, text, speaker links, and vote lists.
+Seven limits affect coverage, text, speaker links, and vote lists.
 
 - Records from 1955 to 1965 cover the colonial Legislative Assembly and the State of Singapore, not the Republic of Singapore Parliament. `Speaker.is_legislative_assembly = True` marks these members.
 - Every record with text has speech rows (counted on 19 October 2026).
 - 132 of 46,649 records have no text, counted on 19 October 2026: 122 with `content` `NULL`, 114 of them `atbp` records whose newer-system bill list is in `sitting.a2b`, and 10 with an empty `content`. 121 of the 132 are newer-system records.
 - Some raw titles hold Windows-1252 mojibake (e.g. `â€™` instead of `’`). `Report.title` and `Report.subtitle` hold none (counted on 19 October 2026). 11 `Report.original_title` values keep it: the 7 `budget` and 4 `president-address` titles that the title fix rewrote. The raw title is in `hansardwebsiteresponse.title`.
-- Colonial-era records from 1955 to 1961 (Parliament 0) have no `MPs Speaking` field, so single-speaker attribution fallback cannot apply.
 - `Speech.speaker_id` is incomplete for colonial-era and early-parliament records.
 - Hansard name lists are read by position from `report.content`, so lists printed as `<pre>` blocks, as tables and as one name per paragraph are read. A list printed as an image, a bare heading with no names and any other shape stay unread (`LAYOUT_UNREADABLE` or `NOT_PRINTED`). A list whose names do not add up to its printed counts (15 May 1985: 55 names against 56 printed) stores its counts and `printed_list` and no names.
 - ~3% of modern-era sitting documents have a missing space before the time (e.g. `"The House met at3.00 pm"`). This is a defect in the raw HTML.
