@@ -1,71 +1,75 @@
 # Daily refresh
 
-`refresh.py` adds the sittings, reports and speech rows SPRS has published since the last stored sitting. It runs once a day as a scheduled job and records each run in the `refresh_run` table. The code is `populate/refresh_runs.py`, with its rules and alert text in `services/refresh.py`.
+`refresh.py` adds the sittings, reports, and speech rows SPRS has published since the last stored sitting. This document describes what the daily job adds, what it leaves alone, and when it stops. It runs once a day as a scheduled job and records each run in the `refresh_run` table. The code is `populate/refresh_runs.py`, with its rules and alert text in `services/refresh.py`.
 
 ---
 
 ## What a run does
 
-A run only adds rows, apart from three columns of a stored Bill (`title`, `last_sitting_date` and `is_passed`) that move when a new report joins it, the three bounds columns of a stored `seat_holding` row that step 21 widens, and named columns of the `minutes` rows that step 25 lists or reads (see 'Write role SQL'). It never re-parses a stored report and never rewrites any other stored row, except that step 17 extends a stored printed office range, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
+A run only adds rows, apart from three columns of a stored Bill (`title`, `last_sitting_date`, and `is_passed`) that move when a new report joins it, the three bounds columns of a stored `seat_holding` row that step 21 widens, and named columns of the `minutes` rows that step 25 lists or reads (see 'Write role SQL'). It never re-parses a stored report and never rewrites any other stored row, except that step 17 extends a stored printed office range, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
 
-In order, a run:
+A run has 30 steps. It starts with these five:
 
 1. Marks any `RUNNING` row older than 12 hours as `FAILED` ("Run ended without finishing"), then inserts its own `RUNNING` row and commits it.
 2. Fails if another `RUNNING` row started less than 12 hours ago.
-3. Reads the stored sitting dates, report ids and the highest stored Parliament number, and the stored text of every report whose sitting falls in the last 14 days. It then commits, so no transaction stays open during the crawl.
+3. Reads the stored sitting dates, report ids, and the highest stored Parliament number, and the stored text of every report whose sitting falls in the last 14 days. It then commits, so no transaction stays open during the crawl.
 4. Fetches the topic text of each stored report in the 14-day window again, and halts if any field of a re-fetched body is lost on its way to a row. It compares each re-fetched text with the stored one. A changed report gets an alert and keeps its stored text.
 5. Splits the probe range into calendar months. The range runs from the day after the last stored sitting to today, or from 14 days ago if that is earlier. Dates are Singapore dates. A rerun works out its start the same way from what is stored by then, so it does not request the months an earlier run committed again, apart from the dates after the last stored sitting.
 
-Then, for each month in order, the run:
+For each calendar month in order, the run takes steps 6 to 24:
 
 6. Searches SPRS over the month. It drops hits already stored and hits listed in `data/excluded_report_ids.json`.
 7. Halts if a new hit carries a Parliament number above the highest stored one.
-8. Fetches the topic text of each new hit, then asks for the sitting of each date in the month that has no stored sitting and either has a search hit, stored or new, or falls in the last 14 days. SPRS answers a date with no sitting with an error the gateway retries, about 34 seconds a date, so asking for every date made a run grow by that much each day of a recess, and the run of 10 November 2026 passed the 30-minute job timeout. A date without a search hit is asked once, with no retries, about 2 seconds a date: its error is skipped either way, and the next run asks again while the date is in the window. A date with a hit keeps the retries, and its error fails the run.
+8. Fetches the topic text of each new hit, then asks for the sitting of each date in the month that has no stored sitting and either has a search hit, stored or new, or falls in the last 14 days. SPRS answers a date with no sitting with an error the gateway retries, about 34 seconds a date, so asking for every date adds that much each day of a recess against the 30-minute job timeout. A date without a search hit is asked once, with no retries, about 2 seconds a date: its error is skipped either way, and the next run asks again while the date is in the window. A date with a hit keeps the retries, and its error fails the run.
 9. Halts if any field of a fetched body is lost on its way to a row, or if a fetched sitting carries a new Parliament number.
-10. Writes the raw report rows, the reports, their speech rows, the raw sitting rows, the sittings and their attendance rows. A hit whose topic has no text is not stored (see "Halts and how to clear each").
+10. Writes the raw report rows, the reports, their speech rows, the raw sitting rows, the sittings, and their attendance rows. A hit whose topic has no text is not stored (see "Halts and how to clear each").
 11. Runs stage 8, the speaker links, on the new speech and attendance rows only.
-12. Finds the askers of the new parliamentary question reports (`oral-answer`, `written-answer` and `written-answer-na`) and inserts one `report_asker` row for each asker. It reads the speaker links that step 11 set, and it never deletes: the role has no DELETE and a new report has no rows.
-13. Labels the participants of those reports and inserts one `report_participant` row for each person and role, and one `report_question_state` row for each state the record prints. It reads the askers that step 12 stored and raises if its asker, absent filer and reader rows differ from them, which rolls back the month. It never deletes, for the same reason.
+12. Finds the askers of the new parliamentary question reports (`oral-answer`, `written-answer`, and `written-answer-na`) and inserts one `report_asker` row for each asker. It reads the speaker links that step 11 set, and it never deletes: the role has no DELETE and a new report has no rows.
+13. Labels the participants of those reports and inserts one `report_participant` row for each person and role, and one `report_question_state` row for each state the record prints. It reads the askers that step 12 stored and raises if its asker, absent filer, and reader rows differ from them, which rolls back the month. It never deletes, for the same reason.
 14. Reads the printed office of each new attendance entry and inserts one `attendance_office` row for each. It never deletes.
 15. Reads the office each new parliamentary question report was put to and inserts one `report_put_to` row for each. It never deletes.
 16. Places each printed office title of the month's new sittings and reports under its ministries and inserts one `office_title_ministry` row for each placement. A title already placed is left alone. A title the rule and the hand-kept list cannot place, or one that names a ministry missing from the `ministry` table, gets no row and goes to the alert. It never writes `ministry` or `ministry_see_also`, and it never deletes.
 17. Adds the month's new sittings to the printed office ranges: it inserts a range for each new run of a title and extends a stored range by `UPDATE`. If a new sitting is dated earlier than the latest sitting that holds an office row, it writes no range for the month and sends the dates to the alert. It never deletes.
-18. Places the month's new Bill reports in Bills, one report at a time, with the start-a-new-Bill test that `apply_act_links` uses. It inserts a new `bill` row (with its class), `billreport` READING rows and one `billkey` row with an Act count of 0 for a Bill it starts, and it updates only `title`, `last_sitting_date` and `is_passed` of a Bill a report joins, adding no key row for it. It then inserts the `billreportspeaker` and `billstageline` rows of the placed reports. It leaves out, and logs, a report whose title lacks the word Bill, one dated before its open Bill's last sitting, one whose title's latest date two Bills share, and one dated on a keyed Bill's first sitting date whose SPRS id sorts below the key. It never deletes, because the role has no DELETE.
+18. Places the month's new Bill reports in Bills, one report at a time, with the start-a-new-Bill test that `apply_act_links` uses. It inserts a new `bill` row (with its class), `billreport` READING rows, and one `billkey` row with an Act count of 0 for a Bill it starts, and it updates only `title`, `last_sitting_date`, and `is_passed` of a Bill a report joins, adding no key row for it. It then inserts the `billreportspeaker` and `billstageline` rows of the placed reports. It leaves out, and logs, a report whose title lacks the word Bill, one dated before its open Bill's last sitting, one whose title's latest date two Bills share, and one dated on a keyed Bill's first sitting date whose SPRS id sorts below the key. It never deletes, because the role has no DELETE.
 19. Inserts the attached files of the month's new sittings and the pointers of its new reports, then ties each new pointer to its speech row and, where exactly one stored file has its address, to that file (`attached_file` and `attached_file_pointer`). It inserts rows and sets `attached_file_id`, and never deletes. It reads the speech rows of step 10, so it runs after them.
 20. Reads the permission list of each new sitting and inserts one `leave_period_printing` row for each entry, with a `leave_period` row for each period no stored row holds. The office on a printing comes from the sitting's attendance list. It never deletes and never updates a stored row.
-21. Adds the `seat_holding` rows of the Members in the new sittings' attendance rows, and widens `first_sitting_date`, `last_sitting_date` and `sitting_count` on a stored row. Those three columns are the only ones the run updates on this table, and it never deletes.
+21. Adds the `seat_holding` rows of the Members in the new sittings' attendance rows, and widens `first_sitting_date`, `last_sitting_date`, and `sitting_count` on a stored row. Those three columns are the only ones the run updates on this table, and it never deletes.
 22. Reads the speech rows of the month's new reports and inserts one `division` row for each division it finds: a printed division line, or a spoken total with no printed line near it. It never updates or deletes: the role has neither UPDATE nor DELETE on `division`, and a new report has no rows. A report with an opening or a total it could not read is named in an alert.
 23. Halts if more than 5% of the month's new named speech rows have no registry link. A named row is one the attribution figures count as linked or named unlinked.
 24. Commits the month. A halt or a failure rolls back only the month in progress.
 
-After the last month, the run:
+After the last month, the run takes steps 25 to 30:
 
-25. Runs the minutes step: reads the live Votes and Proceedings index page (10 rows), adds a `minutes` row for each sitting date that has reports and none yet (`NOT_YET_LISTED`), moves a listed date to `LISTED`, then, for each `LISTED` row whose date has at least one stored report and is not among the dates of this run's held hits, fetches the file, extracts its text and stores the address, size, SHA-256, the file's bytes (`file_bytes`) and text, reads the file's divisions, pairs them with the date's Hansard divisions and stores the vote rows and the party breakdown of each division of the sitting in the file's own commit. A network failure or a non-200 answer leaves the row `LISTED` for the next run and goes to one alert for the run. A file that is unreadable, a scan, not a PDF, or whose head prints another date becomes `NEEDS_REVIEW` with an alert. A network failure or a non-200 answer on the index page skips the step for this run and goes to one alert, and the run can still succeed. Parliament lists minutes weeks after a sitting, so the next run's read loses nothing. An index page that answers 200 but cannot be read (not UTF-8, no rows, or rows of another shape) is held until the figures, the VACUUM and the report link step have run, then raised, because the parser needs a fix.
+25. Runs the minutes step. It reads the live Votes and Proceedings index page (10 rows) and adds a `minutes` row for each sitting date that has reports and none yet (`NOT_YET_LISTED`). It moves a listed date to `LISTED`. For each `LISTED` row whose date has at least one stored report and is not among the dates of this run's held hits, it fetches the file, extracts its text, and stores the address, size, SHA-256, the file's bytes (`file_bytes`), and text. It reads the file's divisions, pairs them with the date's Hansard divisions, and stores the vote rows and the party breakdown of each division of the sitting in the file's own commit.
+
+    A network failure or a non-200 answer leaves the row `LISTED` for the next run and goes to one alert for the run. A file that is unreadable, a scan, not a PDF, or whose head prints another date becomes `NEEDS_REVIEW` with an alert. A network failure or a non-200 answer on the index page skips the step for this run and goes to one alert, and the run can still succeed. Parliament lists minutes weeks after a sitting, so the next run's read loses nothing.
+
+    An index page that answers 200 but cannot be read (not UTF-8, no rows, or rows of another shape) is held until the figures, the VACUUM, and the report link step have run, then raised, because the parser needs a fix.
 26. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
-27. Runs `VACUUM (ANALYZE)` on `speech`, `report` and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
+27. Runs `VACUUM (ANALYZE)` on `speech`, `report`, and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
 28. Reads the whole corpus, inserts the `report_link` rows the plan has and the table lacks, and counts the stored rows that differ from the plan. It never deletes or updates, and a stale count above 0 sends an alert. The month rows are already committed, so a failure here fails the run and keeps them.
 29. Records the counts and marks the row `SUCCEEDED`.
 30. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
 
 The report link step is the last before the run finishes, so a supervised `python -m scripts.apply_report_links --commit` is the only path that removes a `report_link` row. Production order is the migration, then these grants, then the code, because the step fails every refresh without the table and grants.
 
-`refresh.py` exits 0 on success, 2 on a halt and 1 on a failure, after the failure's error propagates.
+`refresh.py` exits 0 on success, 2 on a halt, and 1 on a failure, after the failure's error propagates.
 
 ## Schedule
 
 The run is an App Platform scheduled job, daily at 04:00 Singapore time (`0 4 * * *` in `Asia/Singapore`, which is `0 20 * * *` UTC). Batch E adds the component to `hansard/.do/app.yaml`. The image is built from `Dockerfile` at the repo root, and the command is `sh refresh.sh`, which runs `python refresh.py`.
 
-A push to master deploys the refresh job to production: the `refresh` job of the `hansard` DigitalOcean app has `deploy_on_push: true`. Run `poetry run pytest` before every push.
+A push to `master` deploys the refresh job to production: the `refresh` job of the `hansard` DigitalOcean app has `deploy_on_push: true`. Run `poetry run pytest` before every push.
 
-Enable the schedule only after the Parliament 15 backfill (see "The Parliament 15 backfill"). The backfill ran on 19 October 2026, and a plain run after it succeeded, so the stored data no longer blocks the schedule.
+Enable the schedule only after the Parliament 15 backfill (see "The Parliament 15 backfill"). The backfill has run, and a plain run after it succeeded, so the stored data no longer blocks the schedule.
 
 ## Crawl rate
 
 Every request to SPRS goes through the crawl pacer in `gateway/http.py`. It sends one request at a time, at least 2 seconds apart, retries included, with the user agent `hansard-scraper (+contact@openhansard.sg)`.
 
-The gap is the `CRAWL_GAP_SECONDS` setting, 2 by default, which is the crawl rate the project commits to. The scheduled job keeps the default. The Parliament 15 backfill of 19 October 2026 ran at 2 seconds until September 2025 was stored, then at 1 second on Royce's instruction (`CRAWL_GAP_SECONDS=1`).
+The gap is the `CRAWL_GAP_SECONDS` setting, 2 by default, which is the crawl rate the project commits to. The scheduled job keeps the default.
 
-A daily run sends:
+A daily run sends six kinds of request:
 
 - the search pages for its date range
 - one topic request per new hit
@@ -85,7 +89,7 @@ A daily run sends:
 
 Each alert target does nothing while its variables are unset. The Telegram alert needs both the token and the chat id.
 
-Setup:
+Set up the two alert accounts:
 
 1. Create a bot with @BotFather and keep its token. Send the bot a message, then read the chat id from the bot's `getUpdates` response.
 2. Create a healthchecks.io check with period 1 day and grace 2 hours, so it reports a missed run 26 hours after the last ping. Add its Telegram integration.
@@ -94,7 +98,7 @@ The run sends the plain ping on success and the `/fail` ping on a halt, a failur
 
 ## Halts and how to clear each
 
-A halt keeps the months committed before it and writes nothing of the month in progress. The run's row is `HALTED`, `refresh_run.halt_reason` holds the reason, and the halt alert repeats it.
+Four checks can halt a run. A halt keeps the months committed before it and writes nothing of the month in progress. The run's row is `HALTED`, `refresh_run.halt_reason` holds the reason, and the halt alert repeats it.
 
 - **New Parliament number.** A new hit or a fetched sitting carries a Parliament number above the highest stored one. Load its members with `scripts/load_parliament_speakers.py --parliament N` (a dry run, then `--commit`), then run `python refresh.py --allow-parliament N` once, supervised, as in the backfill below. The flag accepts that one number for that one run.
 - **Field mapping.** A field present in a fetched body is missing from the row built from it, which means SPRS changed a field. Run `scripts/validate_api_field_mapping.py` by hand to see the field, fix the schema or the mapping, then run again.
@@ -142,7 +146,7 @@ Every alert goes to the one Telegram chat, cut to 4,000 characters.
 
 ## `refresh_run` columns
 
-One row per run. Every count column is `integer NOT NULL` and counts only what that run did. A halted or failed run's counts hold what its committed months stored.
+`refresh_run` holds one row per run. Every count column is `integer NOT NULL` and counts only what that run did. A halted or failed run's counts hold what its committed months stored.
 
 | Column | Type | Meaning |
 |---|---|---|
@@ -171,7 +175,7 @@ One row per run. Every count column is `integer NOT NULL` and counts only what t
 | Status | Meaning |
 |---|---|
 | `RUNNING` | The run has started and not ended. The next run marks a row still `RUNNING` after 12 hours as `FAILED` |
-| `SUCCEEDED` | The data is committed, the three tables are vacuumed and the counts are recorded |
+| `SUCCEEDED` | The data is committed, the three tables are vacuumed, and the counts are recorded |
 | `HALTED` | A halt check stopped the run. Months committed before it stay stored |
 | `FAILED` | An error stopped the run |
 
@@ -179,7 +183,7 @@ One row per run. Every count column is `integer NOT NULL` and counts only what t
 
 `CLAUDE.md` asks every write to the speech table to end with a `docs/figures/` file. A scheduled job cannot commit one, so every run stores the same figures as `scripts/attribution_text_share.py` in `refresh_run.figures`. Supervised writes still commit their file.
 
-The register (`docs/data-loss-register.md`) has rows for what the refresh keeps or skips. Their counts grow run by run in `reports_held_without_text`, `reports_without_speech_rows`, `speeches_named_unlinked` and `reports_changed`, and a supervised update of the register reads them from there.
+The register (`docs/data-loss-register.md`) has rows for what the refresh keeps or skips. Their counts grow run by run in `reports_held_without_text`, `reports_without_speech_rows`, `speeches_named_unlinked`, and `reports_changed`, and a supervised update of the register reads them from there.
 
 ## Running it locally
 
@@ -189,11 +193,11 @@ Run it only against the scratch database:
 DATABASE_URL=postgresql://user:password@localhost:5435/hansard_launch python refresh.py
 ```
 
-A local run sends live requests to SPRS at the crawl rate, so start one only when that is the point. Unset `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and `HEALTHCHECKS_PING_URL` first, so it sends no alert and no ping. The tests (`poetry run pytest`) send no request.
+A local run sends live requests to SPRS at the crawl rate, so start one only when that is the point. Unset `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, and `HEALTHCHECKS_PING_URL` first, so it sends no alert and no ping. The tests (`poetry run pytest`) send no request.
 
 ## The Parliament 15 backfill
 
-The backfill runs as a separate, later step, not as part of the scheduled refresh. All of it runs supervised with the owner role, not `hansard_refresh`. The member load inserts into `speaker`, and stage 9 inserts into `person` and sets `speaker.person_id`, and the write role has no grant for any of that.
+The Parliament 15 backfill is separate from the scheduled refresh and runs later, in five supervised steps. All of it runs supervised with the owner role, not `hansard_refresh`. The member load inserts into `speaker`, and stage 9 inserts into `person` and sets `speaker.person_id`, and the write role has no grant for any of that.
 
 1. `python scripts/load_parliament_speakers.py --parliament 15`, a dry run. Review the members it lists, then run it again with `--commit`.
 2. `python -m scripts.load_heads_of_state --commit`, supervised. It adds the President's Parliament 15 row, and stage 9 then gives that row its `person_id`.
@@ -201,18 +205,20 @@ The backfill runs as a separate, later step, not as part of the scheduled refres
 4. `python refresh.py --allow-parliament 15`, supervised.
 5. `python scripts/attribution_text_share.py --output docs/figures/YYYY-MM-DD-backfill-15.txt` on the replica, and a register row, as `CLAUDE.md` requires.
 
-Two things affect the backfill run. The Prime Minister and President terms run to the present. A bare "The Prime Minister" row in Parliament 15 links, and a "The President" row in the Parliament 15 President's Address links once `scripts/load_heads_of_state.py` has run. And the sitting probe covers every date from 9 April 2025, about 560 requests at the crawl rate, plus the topic requests.
+Two things affect the backfill run. The Prime Minister and President terms run to the present. A bare "The Prime Minister" row in Parliament 15 links, and a "The President" row in the Parliament 15 President's Address links once `scripts/load_heads_of_state.py` has run. The sitting probe covers every date from 9 April 2025, about 560 requests at the crawl rate, plus the topic requests.
 
-It ran on the remote database on 19 October 2026. Before it, `scripts/load_heads_of_state.py` inserted one `speaker` row, Tharman Shanmugaratnam for Parliament 15, and stage 9 set its `person_id`. `refresh.py --allow-parliament 15` then took four runs, `refresh_run` ids 1 to 4. Runs 1 and 2 stored nothing. Run 2 lost its database connection, and `191bd3b` added TCP keepalives and pooled-connection pings before run 3. Run 3 committed September 2025 and was then stopped. Its row is `FAILED` with zero counts, because the orchestrator closed it by hand, so its rows are counted in no `refresh_run` row. Run 4 stored October 2025 to October 2026 and `SUCCEEDED`. Across the four runs `hansardwebsiteresponse` went from 47,439 to 52,250 rows, `hansardsittingdateresponse` from 1,719 to 1,758 and `speech` from 1,051,922 to 1,115,831. The 63,909 speech rows dated from 1 September 2025 are all new, and 62,050 of them are linked. Run 5, a plain `python refresh.py`, `SUCCEEDED` with 0 rows added and 300 reports re-checked.
+The backfill ran on production. Before it, `scripts/load_heads_of_state.py` inserted one `speaker` row, Tharman Shanmugaratnam for Parliament 15, and stage 9 set its `person_id`. `refresh.py --allow-parliament 15` then took four runs, `refresh_run` ids 1 to 4. Runs 1 and 2 stored nothing. Across the four runs (counted on 19 October 2026), `hansardwebsiteresponse` went from 47,439 to 52,250 rows, `hansardsittingdateresponse` from 1,719 to 1,758, and `speech` from 1,051,922 to 1,115,831. The 63,909 speech rows dated from 1 September 2025 are all new, and 62,050 of them are linked.
 
-Step 5 ran on the remote, not on the replica. `hansard_replica` holds no Parliament 15 rows and the backfill leaves it alone, and `scripts/attribution_text_share.py` only reads. The file is `docs/figures/2026-10-19-backfill-15.txt`, and the entry in `docs/vision.md` ("Measuring progress") gives its figures.
+Run 3's row is `FAILED` with zero counts, because the orchestrator closed it by hand after it committed September 2025, so its rows are counted in no `refresh_run` row. Run 4 holds October 2025 to October 2026 and is `SUCCEEDED`. Run 5, a plain `python refresh.py`, is `SUCCEEDED` with 0 rows added and 300 reports re-checked.
+
+`hansard_replica` holds no Parliament 15 rows, and the backfill leaves it alone. `scripts/attribution_text_share.py` only reads. Step 5 ran on production, not on the replica. Its figures file is `docs/figures/2026-10-19-backfill-15.txt`, and the entry in `docs/vision.md` ("Measuring progress") gives its figures.
 
 ## Write role SQL
 
-Royce runs this. The build never does.
+The maintainers run this. The build never does.
 
 ```sql
-CREATE ROLE hansard_refresh LOGIN PASSWORD '<set by Royce>';
+CREATE ROLE hansard_refresh LOGIN PASSWORD '<set by the maintainers>';
 GRANT CONNECT ON DATABASE <database> TO hansard_refresh;
 GRANT USAGE ON SCHEMA public TO hansard_refresh;
 GRANT SELECT ON hansardwebsiteresponse, hansardsittingdateresponse, report, speech, sitting, attendance, speaker, refresh_run TO hansard_refresh;
@@ -253,9 +259,9 @@ The office migration and these grants come before any push of the daily job, bec
 
 Production order for attached files: the outstanding migrations, then migration `81ba3804b972`, then the three grants above, then the push to `master`, then the backfill (`python -m scripts.apply_attached_files --commit`). A push before the tables and grants fails every run, because a push deploys the job, and the setting that hides an unreleased endpoint does not cover the job. The backfill comes after the push, or runs again after the first daily run on the new code, because the daily path sees only its own run's rows.
 
-The table and sequence names are those on the scratch copy. `attendance` owns `sittingattendance_id_seq`, a name kept from an older table name. Confirm each name on the remote with `\d <table>` first.
+The table and sequence names are those on the scratch copy. `attendance` owns `sittingattendance_id_seq`. Confirm each name on the remote with `\d <table>` first.
 
-A push to `master` deploys this stage, and every run fails until the tables and these grants exist, so the migrations and the grants come first. Royce runs this after the grants and before the push. Every row must be true. The build never runs it.
+A push to `master` deploys this stage, and every run fails until the tables and these grants exist, so the migrations and the grants come first. The maintainers run this after the grants and before the push. Every row must be true. The build never runs it.
 
 ```sql
 SELECT table_name AS object, 'SELECT' AS privilege, has_table_privilege('hansard_refresh', table_name, 'SELECT') AS is_granted
@@ -271,19 +277,19 @@ SELECT sequence_name, 'USAGE', has_sequence_privilege('hansard_refresh', sequenc
 FROM unnest(ARRAY['bill_id_seq', 'billreport_id_seq', 'billkey_id_seq', 'billreportspeaker_id_seq', 'billstageline_id_seq']) AS sequence_name;
 ```
 
-The role gets no DELETE or TRUNCATE on any table. It gets no `UPDATE` on `hansardwebsiteresponse`, `hansardsittingdateresponse` or `speaker`, `UPDATE` on three columns of `bill` only (`title`, `last_sitting_date` and `is_passed`), `UPDATE` on `minutes` limited to the columns above (every column but `id` and `sitting_date`), and no `CREATE`, so it cannot run migrations. Migrations stay supervised, with the owner role. `SELECT ... FOR UPDATE` on `refresh_run` needs the `UPDATE` grant the role has. `MAINTAIN` lets the role run `VACUUM` and `ANALYZE` on the three tables, and also `REINDEX` and `CLUSTER`, which the refresh never runs. Royce granted it on the remote on 21 October 2026, as `doadmin`, the tables' owner. The figures pass reads every report and speech row, which the `SELECT` grants cover.
+The role gets no DELETE or TRUNCATE on any table. It gets no `UPDATE` on `hansardwebsiteresponse`, `hansardsittingdateresponse`, or `speaker`, `UPDATE` on three columns of `bill` only (`title`, `last_sitting_date`, and `is_passed`), `UPDATE` on `minutes` limited to the columns above (every column but `id` and `sitting_date`), and no `CREATE`, so it cannot run migrations. Migrations stay supervised, with the owner role. `SELECT ... FOR UPDATE` on `refresh_run` needs the `UPDATE` grant the role has. `MAINTAIN` lets the role run `VACUUM` and `ANALYZE` on the three tables, and also `REINDEX` and `CLUSTER`, which the refresh never runs. The grant is in place on production, made as `doadmin`, the tables' owner. The figures pass reads every report and speech row, which the `SELECT` grants cover.
 
 The API's role gets a column grant that leaves out `halt_reason` and `failure_reason`, because a failure reason can carry database host and user names. Batch E's reader never selects those two columns.
 
 ## For batch E
 
-The contract the API reads, with the read grant of "Write role SQL".
+The API reads the `refresh_run` contract below, using the read grant in "Write role SQL". The contract has eight parts.
 
 - **Columns.** As in "`refresh_run` columns": `id` integer primary key; the count columns, each `integer NOT NULL`: `website_responses_added`, `sitting_date_responses_added`, `sittings_added`, `reports_added`, `speeches_added`, `speeches_linked`, `speeches_named_unlinked`, `attendances_added`, `attendances_linked`, `reports_held_without_text`, `reports_without_speech_rows`, `reports_rechecked`, `reports_changed`; `latest_sitting_date_with_text` `date` NULL; `figures` `jsonb` NULL; `halt_reason` `text` NULL; `failure_reason` `text` NULL; `started_at` `timestamptz NOT NULL`; `finished_at` `timestamptz` NULL; `status` `text NOT NULL`, with the check `status IN ('RUNNING', 'SUCCEEDED', 'HALTED', 'FAILED')`; index `ix_refresh_run_started_at`.
 - **Revision.** `b8e2f4a61c03`, down revision `c93f77e499cc`.
 - **`figures` shape.** `{"measured_at": "<ISO 8601 UTC>", "groups": [{"group", "report_count", "reports_with_rows_count", "zero_row_report_count", "linked_row_count", "named_unlinked_row_count", "adr_excluded_row_count", "no_speaker_row_count", "row_count", "linked_character_count", "body_character_count", "body_in_zero_row_reports", "report_types": [{"report_type", "report_count", "zero_row_report_count", "collapse_report_count", "collapse_character_count", "body_total", "category_to_row_count", "category_to_character_count"}]}]}`. The groups are "Parliaments 0 to 11", then every Parliament above 11 present in the data. The group fields are the stable contract. Per group, named linked is `linked_row_count / (linked_row_count + named_unlinked_row_count)`, all linked is `linked_row_count / row_count`, and text share is `linked_character_count / body_character_count`.
 - **Footer rules.** "Includes sittings up to {date}" is `latest_sitting_date_with_text` of the latest `SUCCEEDED` row. "Last checked {date}" is that row's `finished_at` as a Singapore date. Halted and failed runs move neither. Figures come from the latest `SUCCEEDED` row whose `figures` is not null. While no `SUCCEEDED` row exists, the API shows no footer line and keeps its current figures.
-- **Read grant.** The column grant on `refresh_run` in "Write role SQL", which leaves out `halt_reason` and `failure_reason`. Royce runs it.
+- **Read grant.** The column grant on `refresh_run` in "Write role SQL", which leaves out `halt_reason` and `failure_reason`. The maintainers run it.
 - **Image.** Repo `roycehoe/hansard-scraper`, `Dockerfile` at the root, branch `master`, command `sh refresh.sh`.
 - **Schedule.** Daily at 04:00 Singapore time (`0 4 * * *` in `Asia/Singapore`, or `0 20 * * *` UTC).
 - **Env vars.** `DATABASE_URL` (the write role), `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HEALTHCHECKS_PING_URL`. Each alert target does nothing while unset.
