@@ -6,13 +6,13 @@
 
 ## What a run does
 
-A run only adds rows, apart from three columns of a stored Bill (`title`, `last_sitting_date`, and `is_passed`) that move when a new report joins it, the three bounds columns of a stored `seat_holding` row that step 21 widens, and named columns of the `minutes` rows that step 25 lists or reads (see 'Write role SQL'). It never re-parses a stored report and never rewrites any other stored row, except that step 17 extends a stored printed office range, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
+A run only adds rows, apart from three columns of a stored Bill (`title`, `last_sitting_date`, and `is_passed`) that move when a new report joins it, the three bounds columns of a stored `seat_holding` row that step 21 widens, `attached_file_id` of a stored `attached_file_pointer` row that step 19 ties to a file, the `refresh_run` rows (step 1 marks a stale `RUNNING` row `FAILED` and step 29 records the run's own row), and named columns of the `minutes` rows that step 25 lists or reads (see 'Write role SQL'). It never re-parses a stored report and never rewrites any other stored row, except that step 17 extends a stored printed office range, so a fix to the parser reaches stored rows only through a supervised write. New reports go through the parser on `master` as it stood when the image was built.
 
 A run has 30 steps. It starts with these five:
 
 1. Marks any `RUNNING` row older than 12 hours as `FAILED` ("Run ended without finishing"), then inserts its own `RUNNING` row and commits it.
 2. Fails if another `RUNNING` row started less than 12 hours ago.
-3. Reads the stored sitting dates, report ids, and the highest stored Parliament number, and the stored text of every report whose sitting falls in the last 14 days. It then commits, so no transaction stays open during the crawl.
+3. Reads the stored sitting dates, report ids, and the highest stored Parliament number, and the stored text of every report whose sitting falls in the last 14 days. It does not recheck a report whose raw row holds NULL or empty `content`, such as an atbp (Assent to Bills Passed) report. It then commits, so no transaction stays open during the crawl.
 4. Fetches the topic text of each stored report in the 14-day window again, and halts if any field of a re-fetched body is lost on its way to a row. It compares each re-fetched text with the stored one. A changed report gets an alert and keeps its stored text.
 5. Splits the probe range into calendar months. The range runs from the day after the last stored sitting to today, or from 14 days ago if that is earlier. Dates are Singapore dates. A rerun works out its start the same way from what is stored by then, so it does not request the months an earlier run committed again, apart from the dates after the last stored sitting.
 
@@ -20,7 +20,7 @@ For each calendar month in order, the run takes steps 6 to 24:
 
 6. Searches SPRS over the month. It drops hits already stored and hits listed in `data/excluded_report_ids.json`.
 7. Halts if a new hit carries a Parliament number above the highest stored one.
-8. Fetches the topic text of each new hit, then asks for the sitting of each date in the month that has no stored sitting and either has a search hit, stored or new, or falls in the last 14 days. SPRS answers a date with no sitting with an error the gateway retries, about 34 seconds a date, so asking for every date adds that much each day of a recess against the 30-minute job timeout. A date without a search hit is asked once, with no retries, about 2 seconds a date: its error is skipped either way, and the next run asks again while the date is in the window. A date with a hit keeps the retries, and its error fails the run.
+8. Fetches the topic text of each new hit, then asks for the sitting of each date in the month that has no stored sitting and either has a search hit, stored or new, or falls in the last 14 days. SPRS answers a date with no sitting with an error the gateway retries, about 34 seconds a date, so asking for every date adds that much each day of a recess against the 30-minute job timeout. A date without a new search hit (a date in the window with no hit, or one whose hit is already stored) is asked once, with no retries, about 2 seconds a date: its error is skipped either way, and the next run asks again while the date is in the window. A date with a new hit keeps the retries, and its error fails the run.
 9. Halts if any field of a fetched body is lost on its way to a row, or if a fetched sitting carries a new Parliament number.
 10. Writes the raw report rows, the reports, their speech rows, the raw sitting rows, the sittings, and their attendance rows. A hit whose topic has no text is not stored (see "Halts and how to clear each").
 11. Runs stage 8, the speaker links, on the new speech and attendance rows only.
@@ -73,8 +73,8 @@ A daily run sends six kinds of request:
 
 - the search pages for its date range
 - one topic request per new hit
-- one topic request per stored report whose sitting falls in the last 14 days
-- one sitting request per date in the range with no stored sitting that has a search hit or falls in the last 14 days, retried up to four times when SPRS has no sitting for it
+- one topic request per stored report whose sitting falls in the last 14 days and whose raw row holds text
+- one sitting request per date in the range with no stored sitting that has a search hit or falls in the last 14 days, retried up to four times when SPRS has no sitting for it, but only for a date with a new search hit
 - one request for the minutes index page
 - one request per listed minutes file whose sitting has stored reports
 
@@ -135,6 +135,7 @@ Every alert goes to the one Telegram chat, cut to 4,000 characters.
 | Unlinked labels | `Speaker labels with no registry match: {labels}. Add the members to the registry, then link them with scripts/apply_speaker_links.py.` | After a successful run, or a halted or failed run that committed rows, whose new rows hold labels with no registry link, at or under the 5% limit. Up to 20 labels, most rows first, then "and N more". |
 | Late sittings | `Sittings arrived after a later sitting: {dates}. Their office rows are stored and the ranges of their months were left alone. Run python -m scripts.apply_attendance_offices --commit.` | After a successful run, or a halted or failed run that committed rows, that stored a sitting dated earlier than the latest sitting with an office row. Up to 20 dates, in date order, then "and N more". |
 | Unplaced office titles | `Printed office titles with no ministry: {titles}. Add them to data/office_title_ministries.json, then run python -m scripts.apply_ministries --commit.` | After a successful run, or a halted or failed run that committed rows, whose new sittings or reports print a title with no ministry placement. Up to 20 titles in alphabetical order, then "and N more". A title that stays unplaced alerts on each run that prints it again, until it is on the hand-kept list. |
+| Stale report links | `{n} report links differ from the record. Rewrite them with python -m scripts.apply_report_links --commit.` | After a successful run, or a halted or failed run that committed rows, when step 28 counted at least one stored report link that differs from the plan. A run that stops before step 28 counts none. |
 | Unread division openings | `{n} new reports hold a division opening the parser could not read (report ids ...)...` | After a successful run, or a halted or failed run that committed rows, when a new report holds a printed division opening, or a spoken total, that no rule read. |
 | Held report | `Report {report id} of {sitting date} still has no text after 14 days and will not be fetched again.` | After a successful run, or a halted or failed run that committed rows, for a held hit whose sitting date is 13 or 14 days before the run's date. The two-day span keeps one missed run from losing the alert, so a hit can alert twice. |
 | Many held reports | `{n} new reports came back with no text, above the limit of 5. SPRS may have changed its format.` | After a successful run, or a halted or failed run that committed rows, that holds more than 5 new hits without text. It repeats each day while those hits stay held in the 14-day window. |
@@ -162,7 +163,7 @@ Every alert goes to the one Telegram chat, cut to 4,000 characters.
 | `attendances_linked` | integer | New attendance rows linked to a speaker |
 | `reports_held_without_text` | integer | New hits not stored because their topic had no text |
 | `reports_without_speech_rows` | integer | New reports the parser built no speech row for |
-| `reports_rechecked` | integer | Stored reports in the 14-day window fetched again |
+| `reports_rechecked` | integer | Stored reports with text in the 14-day window fetched again |
 | `reports_changed` | integer | Re-fetched reports whose text differs from the stored text |
 | `latest_sitting_date_with_text` | date, NULL | The latest sitting date of any stored report with text, after the run |
 | `figures` | jsonb, NULL | The attribution figures, on every run that reaches the end (see "For batch E") |
@@ -203,7 +204,7 @@ The Parliament 15 backfill is separate from the scheduled refresh and runs later
 2. `python -m scripts.load_heads_of_state --commit`, supervised. It adds the President's Parliament 15 row, and stage 9 then gives that row its `person_id`.
 3. Stage 9 for the new speakers: `populate_persons` in `populate/persons.py`.
 4. `python refresh.py --allow-parliament 15`, supervised.
-5. `python scripts/attribution_text_share.py --output docs/figures/YYYY-MM-DD-backfill-15.txt` on the replica, and a register row, as `CLAUDE.md` requires.
+5. `python scripts/attribution_text_share.py --output docs/figures/YYYY-MM-DD-backfill-15.txt` on production, because the replica holds no Parliament 15 rows. Add a register row, as `CLAUDE.md` requires.
 
 Two things affect the backfill run. The Prime Minister and President terms run to the present. A bare "The Prime Minister" row in Parliament 15 links, and a "The President" row in the Parliament 15 President's Address links once `scripts/load_heads_of_state.py` has run. The sitting probe covers every date from 9 April 2025, about 560 requests at the crawl rate, plus the topic requests.
 
