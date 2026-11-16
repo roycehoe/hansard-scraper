@@ -9,6 +9,10 @@ I wanted researchers and anyone following a member's contributions to be able to
 
 The website built on this database is [roycehoe/hansard](https://github.com/roycehoe/hansard), live at [openhansard.sg](https://openhansard.sg).
 
+## Scope
+
+This project is non-partisan on purpose. It collects the record and sorts it for browsing, such as what a member spoke on and what they criticised in Parliament, and it publishes no analysis of its own. Comparing parties, ranking members, and tracing how a member's views shifted are out of scope, however tempting I find them. I hold political views like anyone, and analysis I chose to run and publish would show them. The website's colour scheme avoids party colours for the same reason. [docs/vision.md](docs/vision.md#scope) draws the line in full.
+
 ## Status
 
 To keep up with new sittings, I've scheduled `refresh.py` to run once a day and add those SPRS has published since the last stored one. It adds rows, updates three columns of a Bill when a new report joins it, widens the bounds of the seat history, and never re-parses a stored report. [docs/refresh.md](docs/refresh.md) describes a run.

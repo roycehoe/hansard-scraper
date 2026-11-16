@@ -4,6 +4,18 @@ A complete, queryable record of Singapore's parliamentary proceedings, from the 
 
 The at-scale part of that goal needs the database published, and Parliament's terms of use require written permission to reproduce the content. The project will not ask for permission; it waits for a takedown request and acts on one. The site's `docs/corrections.md` and `docs/takedown.md` promise to take a report off the site within 2 working days of such a request. The unpublished database leaves the bulk-researcher goal unmet and outside the done tests.
 
+## Scope
+
+The project collects the record and sorts it so a reader can browse it, such as what a member spoke on and what they criticised in Parliament. It publishes no analysis of the record. Three kinds of analysis are out of scope even where the data would support them:
+
+- Comparing parties with each other.
+- Ranking members by a measure, such as how often they speak.
+- Tracing how a member's views shifted over the years.
+
+The test is whether a page sorts what the record prints or draws a conclusion from it. A member's speeches listed by date are in scope, and a summary of how their stand on a subject changed is not. The party breakdown of a division's vote is in scope too. It counts how each member voted, grouped by their party on the day, and draws no conclusion. Researchers who want such analysis can run it on the record themselves, which is what the bulk-researcher goal above is for.
+
+The project is non-partisan on purpose. Its maintainers hold political views, as everyone does, and an analysis they chose to run and publish would carry those views in what it measured and how it framed the result. A reader who saw one side favoured there would have reason to doubt the record beside it. The site's colour scheme avoids party colours for the same reason (hansard `docs/palette.md`).
+
 ---
 
 A write #N is one of the planned, rehearsed writes to the production database, numbered in the order they ran.
