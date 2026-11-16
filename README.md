@@ -9,6 +9,10 @@ The project exists so that researchers and anyone following a member's contribut
 
 The website built on this database is [roycehoe/hansard](https://github.com/roycehoe/hansard), live at [openhansard.sg](https://openhansard.sg).
 
+## Scope
+
+The project collects the record and sorts it for browsing, such as what a member spoke on and what they criticised in Parliament. The project is non-partisan on purpose and publishes no analysis of its own. Analysis that compares parties, ranks members, or traces how a member's views shifted is out of scope. A division's vote broken down by party is in scope because it counts votes without drawing a conclusion. The maintainers hold political views, as everyone does, and analysis they chose to publish would carry them. The site's colour scheme avoids party colours for the same reason. [docs/vision.md](docs/vision.md#scope) draws the line in full.
+
 ## Status
 
 `refresh.py` runs once a day to add sittings SPRS has published since the last stored one. It adds rows, updates three columns of a Bill when a new report joins it, widens the bounds of the seat history, and never re-parses a stored report. [docs/refresh.md](docs/refresh.md) describes a run.
