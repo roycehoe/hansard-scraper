@@ -3,29 +3,25 @@
   <img alt="Singapore Parliamentary Record" src="docs/images/banner-light.svg">
 </picture>
 
-I've built a database of Singapore's parliamentary record, from the Legislative Assembly of 1955 to the present Parliament. The pipeline fetches every report from SPRS, Parliament's search system. A report is one item of business in a sitting, such as a question, a bill or a motion. The pipeline splits each report into speeches and links each speech to the member who gave it.
+This project builds a database of Singapore's parliamentary record, from the Legislative Assembly of 1955 to the present Parliament. The pipeline fetches every report from SPRS, Parliament's search system. A report is one item of business in a sitting, such as a question, a bill, or a motion. The pipeline splits each report into speeches and links each speech to the member who gave it.
 
-I wanted researchers and anyone following a member's contributions to be able to find their speeches across the record. On SPRS, each report is one page of text, and a speaker is a printed name with no link to the member.
+The project exists so that researchers and anyone following a member's contributions can find their speeches across the record. On SPRS, each report is one page of text, and a speaker is a printed name with no link to the member.
 
 The website built on this database is [roycehoe/hansard](https://github.com/roycehoe/hansard), live at [openhansard.sg](https://openhansard.sg).
 
-## Scope
-
-This project is non-partisan on purpose. It collects the record and sorts it for browsing, such as what a member spoke on and what they criticised in Parliament, and it publishes no analysis of its own. Comparing parties, ranking members, and tracing how a member's views shifted are out of scope, however tempting I find them. I hold political views like anyone, and analysis I chose to run and publish would show them. The website's colour scheme avoids party colours for the same reason. [docs/vision.md](docs/vision.md#scope) draws the line in full.
-
 ## Status
 
-To keep up with new sittings, I've scheduled `refresh.py` to run once a day and add those SPRS has published since the last stored one. It adds rows, updates three columns of a Bill when a new report joins it, widens the bounds of the seat history, and never re-parses a stored report. [docs/refresh.md](docs/refresh.md) describes a run.
+`refresh.py` runs once a day to add sittings SPRS has published since the last stored one. It adds rows, updates three columns of a Bill when a new report joins it, widens the bounds of the seat history, and never re-parses a stored report. [docs/refresh.md](docs/refresh.md) describes a run.
 
 ## Getting the data
 
-I haven't published the database for download because Parliament's terms of use require written permission to reproduce its content, and I haven't yet settled whether they allow a download. To ask about access, email contact@openhansard.sg.
+The database is not published for download because Parliament's terms of use require written permission to reproduce its content, and the maintainers have not yet settled whether they allow a download. To ask about access, email contact@openhansard.sg.
 
 You can build your own copy with the steps under [Setup](#setup). A full crawl sends more than 50,000 requests, 2 seconds apart, so it takes more than a day.
 
 ## What the record holds
 
-The record runs from the Legislative Assembly before independence, through the 1st to 15th Parliaments. It holds the reports, speeches, people and sittings, and who was present and absent at every sitting. For the dates and counts, see the [coverage page](https://openhansard.sg/coverage). Its [methods page](https://openhansard.sg/coverage/methods) has the full counts, reports by year and known gaps. The site calls each speech row a paragraph. I keep the site's API as the only source of the dates and totals rather than copy them here, where they could fall out of date.
+The record runs from the Legislative Assembly before independence, through the 1st to 15th Parliaments. It holds the reports, speeches, people, and sittings, and who was present and absent at every sitting. For the dates and counts, see the [coverage page](https://openhansard.sg/coverage). Its [methods page](https://openhansard.sg/coverage/methods) has the full counts, reports by year, and known gaps. The site calls each speech row a paragraph. The site's application programming interface (API) is the only source of the dates and totals. This page doesn't copy them, because a copy here could fall out of date.
 
 ## How accurate the speaker links are
 
@@ -33,7 +29,7 @@ About 98% of the text sits in a speech linked to a member ([figures](docs/figure
 
 ## How it was built
 
-I started this work in 2023. These are the steps that turn a report into speeches credited to members.
+Three steps turn a report into speeches credited to members.
 
 ```mermaid
 flowchart TD
@@ -42,18 +38,18 @@ flowchart TD
   check -->|"Fix mistakes"| extract
 ```
 
-1. Save the original reports. I store every report as received so I can rebuild the speeches without fetching it again.
-2. Split into speeches and identify speakers. The parser splits each report at bold speaker names. I used repeated rounds of testing and fixes to handle reports it failed to split, then matched names to parliament.gov.sg's members and hand-kept facts, such as colonial Assembly members.
-3. Check against the originals. I used another loop to read samples against the source, find what the parser got wrong and fix it.
+1. Save the original reports. The pipeline stores every report as received so it can rebuild the speeches without fetching it again.
+2. Split into speeches and identify speakers. The parser splits each report at bold speaker names. Repeated rounds of testing and fixes handle reports the parser fails to split. Names are then matched to parliament.gov.sg's members and hand-kept facts, such as colonial Assembly members.
+3. Check against the originals. A second loop checks samples against the source to find and fix parser errors.
 
 [How the data was checked](#how-the-data-was-checked) describes both loops.
 
 ## How the data was checked
 
-I used two loops to build and check the speeches: one to get reports to split, the other to check the resulting text against the originals. Both used a stratified sample, meaning reports or speeches drawn from different groups in the record, so the checks covered more than one part of it.
+Two loops build and check the speeches: one to get reports to split, the other to check the resulting text against the originals. Both used a stratified sample, meaning reports or speeches drawn from different groups in the record, so the checks covered more than one part of it.
 
-1. Split into speeches. Each round an AI ran a stratified sample of reports through the parser and fixed one reason some failed to split. I kept a change only if it broke nothing. The loop stopped when 99.9% of reports split into speeches ([loop log](docs/report/refine-loop.md)).
-2. Check against the originals. Each round an AI read a stratified sample of about 400 speeches against the source pages. Each fix ran over every report on a copy of the database, and I shipped it only if nothing got worse. The loop stopped after five rounds, when the error bound fell below 1%, and a sixth round checked the 15th Parliament ([loop log](docs/report/speech-fidelity-loop.md)).
+1. Split into speeches. Each round an artificial intelligence (AI) model ran a stratified sample of reports through the parser and fixed one reason some failed to split. The maintainers kept a change only if it broke nothing. The loop stopped when 99.9% of reports split into speeches ([loop log](docs/report/refine-loop.md)).
+2. Check against the originals. Each round an AI read a stratified sample of about 400 speeches against the source pages. Each fix ran over every report on a copy of the database, and the maintainers shipped it only if nothing got worse. The loop stopped after five rounds, when the error bound fell below 1%, and a sixth round checked the 15th Parliament ([loop log](docs/report/speech-fidelity-loop.md)).
 
 <details>
 <summary>Split into speeches (diagram)</summary>
@@ -104,16 +100,18 @@ From [docs/benchmark.md](docs/benchmark.md), surveyed 18 October 2026.
 | Published accuracy | Figures after every rebuild, and an audit | None | Click rank only | None | None |
 | API or download | Not yet | Undocumented JSON endpoints | None public | None | BigQuery, access required |
 
-The 99.4% and 95.5% come from a check of 191 reports ([comparison](docs/report/sgparliament-comparison-2026-10-18.md)). I used AI models to judge the sample under rules I set for this project. They saw the two sites as "Site A" and "Site B", so they couldn't tell which was which. The [checks](docs/report/sgparliament-comparison-2026-10-18.md#method-1) say how the verdicts were tested. Most of sgparliament.com's errors are presiding officers and heads of state it leaves unlinked, which this project links to the holder of the day.
+The 99.4% and 95.5% come from a check of 191 reports ([comparison](docs/report/sgparliament-comparison-2026-10-18.md)). AI models judged the sample under rules the maintainers set for this project. They saw the two sites as "Site A" and "Site B", so they couldn't tell which was which. The [checks](docs/report/sgparliament-comparison-2026-10-18.md#method-1) say how the verdicts were tested. Most of sgparliament.com's errors are presiding officers and heads of state it leaves unlinked, which this project links to the holder of the day.
 
 The 99.4% and 95.5% credit each Addendum to the President's Address to the minister who signs it. Read as nobody's words, the figures are 98.5% and 96.8%.
 
 ## Known limits
 
+Four limits affect the data:
+
 - Some reports have no text. Most are the President's assent to bills from September 2012, which SPRS sends as a bill list with no report text. For the others SPRS sends no text, most often an empty text field or an error. The methods page gives the count. Every other report has its speeches.
 - About 12,000 speeches have a speaker label but no link to a member. About 9,000 of them are "The Chairman" in reports that do not say who was in the chair ([decision record](docs/adr/0002-role-holder-attribution.md)). Most of the rest are collective labels such as "An hon. Member".
 - Some reports still hold speeches split by an older version of the parser (the methods page gives the count).
-- Older-system speeches (Parliaments 0 to 11) carry the Hansard column they start in, as printed. 29,027 of 607,946 rows in reports with column markers have none, because the column markers do not fix it. Later speeches carry no column number.
+- Speeches from the older system (Parliaments 0 to 11) carry the Hansard column they start in, as printed. 29,027 of 607,946 rows in reports with column markers have none, because the column markers do not fix it. Later speeches carry no column number.
 
 [docs/data-dictionary.md](docs/data-dictionary.md) has the fields and more caveats, and [docs/data-loss-register.md](docs/data-loss-register.md) lists every step that drops or changes source text.
 
@@ -130,12 +128,12 @@ The 99.4% and 95.5% credit each Addendum to the President's Address to the minis
 | `alembic/` | Database migrations |
 | `scripts/` | Diagnostics and supervised one-off writes |
 | `data/` | Hand-kept reference files, such as speaker overrides and the colonial member list |
-| `docs/` | Data dictionary, decision records, audits and figures |
+| `docs/` | Data dictionary, decision records, audits, and figures |
 | `tests/` | Golden fixtures for the parser |
 
 ## Setup
 
-Requires Python 3.11+, [Poetry](https://python-poetry.org) and Docker.
+Requires Python 3.11+, [Poetry](https://python-poetry.org), and Docker.
 
 ```bash
 git clone https://github.com/roycehoe/hansard-scraper.git
@@ -161,7 +159,7 @@ python script.py
 python -m scripts.load_party_affiliations --commit
 ```
 
-These steps come from reading the code, and I haven't run them end to end on an empty database, so treat them as an untested starting point. The stored database also carries one-off fixes made by scripts in `scripts/`, so a rebuild will differ from it in places.
+These steps come from reading the code and have not been run end to end on an empty database, so treat them as an untested starting point. The stored database also carries one-off fixes made by scripts in `scripts/`, so a rebuild will differ from it in places.
 
 `python refresh.py` adds the sittings published since the last stored one. [docs/refresh.md](docs/refresh.md) covers its halts and alerts.
 
@@ -169,11 +167,13 @@ These steps come from reading the code, and I haven't run them end to end on an 
 
 ## Documentation
 
+Six references cover the data and pipeline:
+
 - [Data dictionary](docs/data-dictionary.md): what each table and field means, the report types, and data caveats.
 - [Parsing internals](docs/parsing.md): quirks of the source HTML. Read it before changing the parser.
 - [Vision](docs/vision.md): the project's goals and the current figure for each.
 - [Benchmark](docs/benchmark.md): the comparison with other Singapore Hansard tools, with sources.
-- [Daily refresh](docs/refresh.md): what the refresh fetches, its alerts and its halts.
+- [Daily refresh](docs/refresh.md): what the refresh fetches, its alerts, and its halts.
 - [Decision records](docs/adr/): why the parser and the linker work the way they do.
 
 ## Data source and terms
@@ -184,7 +184,7 @@ The fetcher sends one request at a time and waits at least 2 seconds between req
 
 ## Citation
 
-> Royce Hoe (2026). *Singapore Parliamentary Record*. GitHub. https://github.com/roycehoe/hansard-scraper. Website: https://openhansard.sg
+> Open Hansard (2026). *Singapore Parliamentary Record*. GitHub. https://github.com/roycehoe/hansard-scraper. Website: https://openhansard.sg
 
 Quote speeches from the Official Report on [SPRS](https://sprs.parl.gov.sg/search/), which is the authoritative record.
 
