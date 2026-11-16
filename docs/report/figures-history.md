@@ -76,3 +76,134 @@ Open gaps, counted on production on 6 November 2026:
 - 598 earlier passed bills have no link. A sample of 24 titles read as repealed or replaced laws and supply bills, and the rest are not classified.
 
 The code for the 8 November rulings is on master and not yet run against production: bill numbers from the Bills Supplement listing (11 Archive captures, 2,394 entries) and from 177 eGazette Supplement PDFs of 2024 to 2026, the split-bill merges, the supply and repeal classes, the number check on Legislative History entries, the eGazette Acts links for the bills passed after 14 October 2024, and the review-list script that prints tests 1 to 4 by era, and, from the evening of 8 November, the Acts Supplement listing (65 Archive captures, 1,487 entries) with the Act number it gives a passed bill (1,372 of 2,617 pre-cutoff passed bills reached in the research rebuild, 250 of 250 labelled pairs agreeing) and the review items for the matches the rule refuses. The commands, in order, are in [bill-linking-build-2026-11-08.md](report/bill-linking-build-2026-11-08.md); the counts above move when they run.
+
+## Moved from vision.md
+
+### The three numbers by write
+
+Last recalibrated 2 November 2026, after write #13.
+
+Write #13 stored the figures in the table. Against write #12's figures (`docs/figures/2026-11-02-write12.txt`, and its paragraph under [Each write's figures](#each-writes-figures)), both read on production, the ADR 0001 rate holds at 98.86% (515,911 / 521,874 to 515,789 / 521,752), the all-rows rate falls from 84.59% to 84.57% (515,911 / 609,915 to 515,789 / 609,915) and text share holds at 97.29% (181,084,768 / 186,124,265 to 181,081,186 / 186,124,265). Write #13 committed on production at 19:28:28 SGT on 2 November 2026 and on hansard_replica at 19:33:10, both from a clean worktree at `6d4e76a`, and both plans matched the reviewed ones. The write touched 116 reports, and their 10,692 rows stayed 10,692: 122 updates, all of them speaker changes, with no ordinal moved, no row deleted or inserted and no report markdown rewritten. The linking pass set no new link, and the column pass rewrote nothing. All 122 rows are in Parliaments 0 to 11, so they move from linked to no speaker there: 90 in bills, 13 in motions, 10 in oral answers and 3 each in budgets, ministerial statements and misc reports. The ADR 0001 denominator falls by the same 122, so that rate holds, and text share loses 3,582 linked characters with its denominator unchanged. Parliaments 12 to 15 do not move. Before the write, the shared-link check of rule D1 resolved the old shared link of each of the 10,692 rows against the rows after the write. 10,688 land on the same row, the other 4 have no words to match, and none lands on other opening words or another row. By the words a reader lands on, 10,566 open the same words under the same speaker and 122 open the same words with the speaker removed, which is the fix, so no old link opens another member's words. After the write, `scripts/compare_table_hashes.py` found production and hansard_replica equal in every table but `refresh_run` and `report`, which differ as before. The figures were read on production, as for writes #10 to #12.
+
+### Where the body text went
+
+Where the body text goes, Parliaments 0 to 11, before write #3 (15 October 2026): 97.45% in linked rows, 0.72% in rows with an unlinked speaker string, 0.10% in ADR-excluded rows, 1.21% in rows with no speaker, 0.11% in reports with no rows, and 0.40% dropped inside reports that have rows (headings, labels and other lines the parser skips).
+
+In the write #4 rehearsal: 97.12% in linked rows, 0.58% in rows with an unlinked speaker string, 0.05% in ADR-excluded rows, 1.96% in rows with no speaker, 0.11% in reports with no rows, and 0.19% dropped inside reports that have rows. With DS-04 on the same copy: 97.10% in linked rows, 0.58% in rows with an unlinked speaker string, 0.05% in ADR-excluded rows, 1.96% in rows with no speaker, 0.11% in reports with no rows, and 0.20% dropped inside reports that have rows.
+
+### Rows by kind by write
+
+Whole speech table, stored after write #3 (16 October 2026) and in the write #4 rehearsal.
+
+| Kind | Rows, after write #3 | Rows, write #4 rehearsal |
+|---|---|---|
+| SPEECH, speaker known | 963,407 | 960,592 |
+| SPEECH, speaker NULL | 488 | 488 |
+| PROCEDURAL | 46,868 | 49,841 |
+| CHAMBER_EVENT | 5,800 | 5,838 |
+| EDITORIAL_NOTE | 2,286 | 3,187 |
+| DOCUMENT_TEXT | 2,584 | 2,616 |
+| HEADING | 2,570 | 2,570 |
+| UNCLASSIFIED | 20,579 | 20,944 |
+| kind NULL (reports write #3 did not rebuild) | 4,146 | 2,275 |
+
+### Parliaments 12 to 15 by write
+
+The 14 October load added text from 10 September 2012 on; the backfill of 19 October 2026 added Parliament 15.
+
+| Scope | ADR 0001 rate | All-rows rate | Text share |
+|---|---|---|---|
+| Parliament 12 (whole), before write #3 | 82,817 / 83,749 = 98.89% | 82,817 / 85,640 = 96.70% | 98.95% |
+| Parliament 12 from 10 Sep 2012, before the non-speech repair | 72,013 / 72,778 = 98.95% | | |
+| Parliament 13, before write #3 | 133,188 / 135,645 = 98.19% | 133,188 / 138,337 = 96.28% | 99.06% |
+| Parliament 14, before write #3 | 208,195 / 210,228 = 99.03% | 208,195 / 213,322 = 97.60% | 99.21% |
+| Parliament 12, stored after write #3 | 82,170 / 83,077 = 98.91% | 82,170 / 86,480 = 95.02% | 29,041,974 / 29,443,992 = 98.63% |
+| Parliament 13, stored after write #3 | 132,205 / 134,547 = 98.26% | 132,205 / 139,516 = 94.76% | 41,810,025 / 42,329,130 = 98.77% |
+| Parliament 14, stored after write #3 | 206,946 / 208,878 = 99.08% | 206,946 / 214,976 = 96.26% | 59,399,644 / 60,051,708 = 98.91% |
+| Parliament 12, write #4 rehearsal | 82,102 / 83,004 = 98.91% | 82,102 / 86,458 = 94.96% | 29,027,236 / 29,443,992 = 98.58% |
+| Parliament 13, write #4 rehearsal | 132,194 / 134,536 = 98.26% | 132,194 / 139,509 = 94.76% | 41,808,220 / 42,329,130 = 98.77% |
+| Parliament 14, write #4 rehearsal | unchanged | unchanged | unchanged |
+| Parliament 12, rehearsal plus DS-04 | 81,947 / 82,849 = 98.91% | 81,947 / 86,295 = 94.96% | 28,965,177 / 29,381,430 = 98.58% |
+| Parliaments 13 and 14, rehearsal plus DS-04 | unchanged | unchanged | unchanged |
+| Parliament 12, stored after write #5 | 81,997 / 82,823 = 99.00% | 81,997 / 86,393 = 94.91% | 28,981,638 / 29,382,042 = 98.64% |
+| Parliament 13, stored after write #5 | 132,221 / 134,533 = 98.28% | 132,221 / 139,566 = 94.74% | 41,817,912 / 42,329,696 = 98.79% |
+| Parliament 14, stored after write #5 | 206,970 / 208,883 = 99.08% | 206,970 / 215,052 = 96.24% | 59,407,425 / 60,053,116 = 98.92% |
+| Parliament 12, stored after write #6 | 81,997 / 82,823 = 99.00% | 81,997 / 86,393 = 94.91% | 28,981,672 / 29,382,076 = 98.64% |
+| Parliament 13, stored after write #6 | 132,221 / 134,533 = 98.28% | 132,221 / 139,566 = 94.74% | 41,818,104 / 42,329,888 = 98.79% |
+| Parliament 14, stored after write #6 | 206,969 / 208,882 = 99.08% | 206,969 / 215,052 = 96.24% | 59,407,479 / 60,053,202 = 98.92% |
+| Parliament 12, stored after write #7 | 81,997 / 82,823 = 99.00% | 81,997 / 86,393 = 94.91% | 28,981,672 / 29,382,076 = 98.64% |
+| Parliament 13, stored after write #7 | 132,221 / 134,533 = 98.28% | 132,221 / 139,566 = 94.74% | 41,818,104 / 42,329,888 = 98.79% |
+| Parliament 14, stored after write #7 | 206,969 / 208,882 = 99.08% | 206,969 / 215,052 = 96.24% | 59,407,479 / 60,053,202 = 98.92% |
+| Parliament 12, stored after the sitting-level Deputy Speaker links | 82,085 / 82,823 = 99.11% | 82,085 / 86,393 = 95.01% | 28,986,006 / 29,382,076 = 98.65% |
+| Parliament 13, stored after the sitting-level Deputy Speaker links | 132,761 / 134,533 = 98.68% | 132,761 / 139,566 = 95.12% | 41,836,104 / 42,329,888 = 98.83% |
+| Parliament 14, stored after the sitting-level Deputy Speaker links | 207,007 / 208,882 = 99.10% | 207,007 / 215,052 = 96.26% | 59,410,784 / 60,053,202 = 98.93% |
+| Parliament 12, stored after the round 8 links | 82,217 / 82,823 = 99.27% | 82,217 / 86,393 = 95.17% | 28,996,442 / 29,382,076 = 98.69% |
+| Parliament 13, stored after the round 8 links | 133,061 / 134,533 = 98.91% | 133,061 / 139,566 = 95.34% | 41,854,684 / 42,329,888 = 98.88% |
+| Parliament 14, stored after the round 8 links | 207,435 / 208,882 = 99.31% | 207,435 / 215,052 = 96.46% | 59,434,333 / 60,053,202 = 98.97% |
+| Parliament 12, stored after the coverage refill | 83,002 / 83,608 = 99.28% | 83,002 / 87,226 = 95.16% | 29,291,550 / 29,681,714 = 98.69% |
+| Parliaments 12 to 14, stored after write #9 | unchanged from write #8 | unchanged from write #8 | unchanged from write #8 |
+| Parliaments 12 to 14, stored after the Parliament 15 backfill | unchanged from write #8 | unchanged from write #8 | unchanged from write #8 |
+
+The plan projected 99.1 to 99.3 for Parliament 12 from the cutoff, 98.1 to 99.1 for Parliament 13 and 98.6 for Parliament 14. Parliament 12 from the cutoff is about 110 rows short: "The Chairman" leaves 566 rows unlinked there, and 61 "[Deputy Speaker" parse-noise rows stay in the denominator (77 across Parliaments 12 and 13, where the plan expected 16). Across the new rows the largest unlinked groups are "The Chairman" with 4,018 (no chair named in the report), bare "Mr Deputy Speaker" with 1,119 on days with two holders ([ADR 0002](../adr/0002-role-holder-attribution.md) left them; since 17 October its sitting-level rule links 666 of them in Parliaments 12 to 14), "[Deputy Speaker" with 77, "Mr Chairman" with 44, and 5 "Mdm Speaker" rows that are Hansard misprints for "Mdm Deputy Speaker" and stay unlinked. No hand audit covered these rows then. 
+
+### Whole-table counts by write
+
+Across the whole table on 14 October, before the writes of 15 October: 1,068,887 speech rows, 1,007,992 with a speaker string, 986,424 of them linked (97.9%). After write #2 the table held 1,044,594 speech rows. After write #3 it holds 1,048,728, of which 967,147 have a speaker string and 948,128 are linked. In the write #4 rehearsal it holds 1,048,351, of which 962,541 have a speaker string and 944,298 are linked; DS-04 takes 825 of those rows out, leaving 1,047,526. Write #5 takes it to 1,050,712, and write #6 and write #7 leave it there. The coverage refill of 18 October adds 891 rows, to 1,051,603, write #8 adds 265, to 1,051,868, write #9 adds 54, to 1,051,922, and the Parliament 15 backfill of 19 October adds 63,909, to 1,115,831.
+
+Attendance:  134,916 of 135,027 linked (99.92%), after write #3 deleted 45 junk attendance rows. Stored on 17 October after write #6 and write #7: 135,080 of 135,083 linked (99.998%). The 3 unlinked rows are A.V. Winslow (2) and Andrew Fong (1), who have no Speaker row. On 2 November 2026 a hand alias linked the Andrew Fong row to Fong Sip Chee.
+
+### Earlier checks and repairs
+
+A hand audit read 613 linked rows: 613 name strings mapped to the right person, and 98.4% of rows carried text that person said (Wilson 97.0% to 99.1%). A stratified audit of 13 October 2026 read 438 reports from Parliaments 0 to 11: weighted by stratum, 13.3% had a major defect, one a reader filtering by speaker would call wrong. Both predate the 13 October rebuilds and neither covers reports with no rows. The second audit read 100 fresh rows after the rebuilds: 75 of 80 linked rows right (93.8%, Wilson 86.2% to 97.3%), 0 linked to the wrong person, and 20 of 20 unlinked rows correctly unlinked. All five errors were procedural, list or stage-direction text credited to a speaker. The 14 October non-speech repair targets that error class.
+
+Round 2 of the speech fidelity loop read 5,934 rows against the source and put Tier A errors (wrong speaker, lost or duplicated text, a chamber event or a first reading credited to a speaker) at 1.97% of rows weighted, with an upper bound of 2.58%. That is an error rate over all rows, so it does not replace the linked-row precision. Rounds 5 and 6 supersede it.
+
+On 19 October, 463 of 464 linked rows right across Parliaments 0 to 15 (99.78%, Wilson 98.8% to 100.0%), none linked to the wrong person; Parliament 15 alone 58 of 58 (Wilson 93.8% to 100.0%). The miss is a tabled caption, 702616 ([link-check-2026-10-19.md](link-check-2026-10-19.md)). The 17 October audit found 404 of 406 across Parliaments 0 to 14.
+
+The guarded re-parse of 13 October rebuilt 6,615 stale reports and refused the others: 1,954 by the F18 guard (the new parse drops a body line the stored rows hold, or yields nothing), 87 that step 6b refused, 34 where a re-parse would undo a direct edit, and 3 where it would bring back deleted rows. Write #3 rebuilt most of these and held 162, and write #4 rebuilt 42 of the 162. Write #7 and write #8 each hold 126, and write #8 adds none and releases none. Write #9 releases the 60 that parse strictly better at `45b0a8a` and holds 66, none new. Write #11 releases 38090, so 65 are held. Write #12 was to release 53 of them, and it holds 7 under rule D1 and releases 46, so 19 are held. 
+
+Round 0 fixed `&nbsp;` in 3,315 older-system reports and cut the detectors' pipeline hits from 35,993 to 2,041 (dictionary test) and from 14,569 to 824 (punctuation test). Round 1 fixed the header table in single-speaker rows, html2text escapes, bare ampersands and link URLs, in 11,779 reports. Write #2 fixed F4 (a paragraph cut across rows at a column or page marker, the largest class), F5 and the speaker-label classes WS1 to WS6. Round 2 read 316 reports and found Tier A and Tier B above their gates. Write #3 fixes the round 2 classes (PA1 to PA7, TB1, TB2, TC1) and adds the `kind` column. Round 3 put Tier A at 0.79% by characters (bound 1.88%) and named three classes. Write #4 fixes them: page-reference footnotes and division records read as speech (`b33a028`), procedural lines that miss an anchor (`acd8707`) and older-system first readings credited to their presenter (`2b74a2b`). It also rebuilds 42 held reports: 41 whose stored rows credit headings and captions to a speaker (report 22149 was one of them) and 38719, whose stored rows hold 71 paragraphs cut at column markers. Round 4 (provisional, read on the write #4 rehearsal copy) puts Tier A at 0.05% by characters (bound 0.08%) and Tier B at 0.75% (bound 1.03%): both gates pass. 
+
+Round 4 meets all three gates provisionally. Round 5 and write #8 (18 October) settle them for both groups separately.
+
+Round 0 removed the stray `__` from 33 labels.
+
+### Earlier census measurements
+
+An italic title that closes a member's run and is credited to the previous member: 1,978 before write #3.
+
+Bare time stamp credited to a speaker: 1,262 before write #3.
+
+"#### [... in the Chair]" credited to a speaker: 524 before write #3.
+
+Footnote digits: 1,462 hits before write #5, 185 of them changing a number in 147 reports. A replica recount on 23 October finds the stored rows equal the parse in all 1,012 reports the rule changes, except the held 23268. That was true at `ac4d732`. Since `69476f4`, about 83 of them held a row that differed from the parse by the leading `_` of a language note, until `scripts/apply_language_note_close_marks.py` wrote it on 26 October 2026. The exponent test left 9 more footnotes glued, in 8 rows of 8 reports: after a possessive's `s` (4861, 43554, 1554, 12334, 51165), after `$140m` (49250, which read "$140m1"), after `car-km` (20274), and inside "M31a32rch" (44205).
+
+Held-report counts: 121 after write #4 (22806, 23038, 23268, 23627, 24839, 41804, the hand-edited 22647 and 22650, and the rest of write #3's 162; 24248 gets no write). Write #5 holds 60 more, so 181 are held: 56 refused by patch 06 (a space next to the footnote marker), 3 by patch 04 and 1 by patch 09. Write #6 rebuilds 58 of the 60 and holds 2 new ones (38147, 38222), so 123 are held. Write #7 holds 3 new ones (37959, 20889, 43635) and releases none, so 126 are held. Write #8 holds the same 126. Write #9 releases 60 and holds 66. Write #11 releases 38090 and holds 65. Write #12 releases 46 and holds 19, 7 of them under rule D1.
+
+At the earlier census, `_SPEAKER_HONORIFIC_RE` did not know Miss, Madam, Che, LG, or COL; the label in 24708 was cut at a bracket: 14 rows, 1 report, 4,436 characters.
+
+### Earlier bill-link measurements
+
+The earlier test 3 headline denominator was 2,682 passed bills, with the rate over 2,444 bills of no class beside it (8 November 2026).
+
+In the 8 November 2026 research rebuild, 442 passed bills linked to repealed Act pages (106 of 106 labelled principal bills agreed), and 1,802 of 2,161 unresolved pre-cutoff bills of no class stayed out of reach, most because their Act went before 1985.
+
+The 8 November rulings ran on production on 13 November 2026, in one write with the Act copies, after four input loads: 2,394 Bills Supplement entries, 177 eGazette PDFs, 1,487 Acts Supplement entries, and 286 repealed Acts entries.
+
+### Earlier done-test and app states
+
+Test 7 previously required every stored report to equal a fresh parse. It failed on 66 held reports. Its wording changed on 30 October 2026 to require a re-parse and a reason for every exception, because those holds each required a parser fix or a ruling.
+
+The 6 false and 4 partly true strategy claims were corrected on 17 October 2026 (`97ef7ff`, `2d7189f`).
+
+The site was first built behind basic auth (hansard `ba0efe1`). Before the sitting-date index, oldest-first "government" took 34.7 s and "housing" took 18.7 s.
+
+The 3 refresh runs before the 11 scheduled successes counted on 2 November 2026 were the Parliament 15 backfill of 19 October, started by hand: one `FAILED` and two `SUCCEEDED`. Scheduled successes on 3, 4 and 5 November would have met test 10.
+
+The language-note fix `69476f4` removed a leading `_` from 2,608 rows in 792 reports; `scripts/apply_language_note_close_marks.py` stored them on production on 26 October 2026.
+
+### Held-release plan
+
+Write #12 was to release 53 reports, held 7 under D1, and released 46, leaving 19. Write #9 released 60 reports after a block-by-block review of each one's stored rows against the parse found the parse better in all 60. Writes #8 and #9 re-parsed everything that could be re-parsed safely.
+
+Dropping text before the first speaker was a project choice until ADR 0008 reversed it on 15 October 2026. The 14 October non-speech repair gave no speaker to lines after procedural text, whole-line editorial notes, and "rose" directions; it still left 83 "Certificate of Urgency handed in." rows.
