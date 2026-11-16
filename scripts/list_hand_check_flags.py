@@ -204,7 +204,7 @@ def get_flag_reasons(
     is_explained_by_taught_kinds = (
         bool(packet.word_differences) and not has_untaught_difference
     )
-    # NOTE: an inexact match whose every difference is of a taught kind adds no flag either, or teaching the kinds would clear no row (Royce, 2 Nov 2026).
+    # NOTE: an inexact match whose every difference is of a taught kind adds no flag either, or teaching the kinds would clear no row.
     if (
         packet.match_status != HandCheckMatchStatus.EXACT
         and not is_explained_by_taught_kinds

@@ -1,6 +1,6 @@
 # 0019. A report link row is one printed citation
 
-Status: accepted, 9 November 2026. The shape of the table was settled at the two planning gates of the links build, by an independent reviewer while Royce was away. The number stays NNNN until the features that are built together land and the ADRs are numbered in order. The rule that a link comes only from a fixed rule that finds one target is hansard ADR 0011.
+Status: accepted, 9 November 2026. The shape of the table was settled at the two planning gates of the links build, by an independent reviewer while the maintainers were away. The number stays NNNN until the features that are built together land and the ADRs are numbered in order. The rule that a link comes only from a fixed rule that finds one target is hansard ADR 0011.
 
 Context. A report prints references to other reports. A correction says which statement it corrects, an answer says which report it replies to, and a debate resumed on a later day says which sitting it carries on from. The project turns these references into links between reports. A reader of the table sees a source report, a target report and a type, and cannot tell from those columns why the same two reports can appear in two rows. `plans/` is not committed, so nothing else in the repository says why.
 

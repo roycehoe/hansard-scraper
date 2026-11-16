@@ -58,7 +58,7 @@ python3 refetch_act_harvest.py docs/report/bill-sources-2026-11-08-act-captures.
 
 It sends 523 requests to web.archive.org, 8 s apart, with none to sso.agc.gov.sg and no index queries. That is 70 minutes of pacing, plus the transfer of roughly 180 MB of PDFs (137 MB by the index's compressed sizes), plus retries. Of today's 67 Archive requests, 19 answered 503 or 504, all of them index queries, so PDF fetches may do better. The machine needs `pdftotext` (`brew install poppler` or `apt install poppler-utils`), which this host lacks. A run that stops can be restarted and skips the PDFs it holds. The script checks each body against the index's SHA-1 digest before saving it.
 
-I tested it on one Act, AA1928. With the right digest it wrote a `%PDF-1.4` file of 93,071 bytes, and with a wrong digest it stopped and wrote nothing. `pdftotext` was a stub in that test, so the conversion step has not run. **I have not run the 523 fetches, and they wait for Royce's go.**
+I tested it on one Act, AA1928. With the right digest it wrote a `%PDF-1.4` file of 93,071 bytes, and with a wrong digest it stopped and wrote nothing. `pdftotext` was a stub in that test, so the conversion step has not run. **I have not run the 523 fetches, and they wait for the maintainers' go.**
 
 ```python
 """usage: python3 refetch_act_harvest.py <captures.tsv> <output-directory>. Needs pdftotext. Resumes: a PDF already saved is not fetched again."""
@@ -115,7 +115,7 @@ It does not get them. Its About page says the record is "every sitting that Parl
 - **Terms.** No licence page. `robots.txt` says "The record is public and free to crawl, index and cite" and also `Disallow: /api/`.
 - **Repository.** None found. The author's Substack (`sgparliament.substack.com`) links none.
 
-Royce asked to look at how sgparliament does it. The answer is that it stops at Hansard, so nothing in it helps hold a bill.
+The maintainers asked to look at how sgparliament does it. The answer is that it stops at Hansard, so nothing in it helps hold a bill.
 
 ## 3. How researchers get these documents
 
@@ -187,28 +187,28 @@ Among commercial sets I found no named Adam Matthew, ProQuest, Readex, Brill or 
 
 ### Terms that restrict the project
 
-- **NLB**, Terms of Use, Archive copy of 17 December 2025, clause 2.1: "No part or parts hereof may be reproduced, distributed, adapted, modified, republished, displayed, broadcast, hyperlinked, framed or transmitted in any manner or by any means or stored in an information retrieval system without the prior written permission", and "You also may not, without the permission of NLB DIGITAL LIBRARY, insert a hyperlink to this website on any other website". Royce's ruling holds a bill when the project stores its number and a link to its text, so a link to an NLB page needs NLB's permission.
+- **NLB**, Terms of Use, Archive copy of 17 December 2025, clause 2.1: "No part or parts hereof may be reproduced, distributed, adapted, modified, republished, displayed, broadcast, hyperlinked, framed or transmitted in any manner or by any means or stored in an information retrieval system without the prior written permission", and "You also may not, without the permission of NLB DIGITAL LIBRARY, insert a hyperlink to this website on any other website". The maintainers' ruling holds a bill when the project stores its number and a link to its text, so a link to an NLB page needs NLB's permission.
 - **NUS Digital Gems**, clause 4.1: users must not "access, download, scrape, crawl, harvest or collect DG Content using automated means". Clause 4.3 says users must not "extract DG Content to create datasets, corpora, or structured collections". Clause 5.1 bars "deriving, storing, or creating any content or databases" from it. Reading by hand is allowed. Building a table of Ordinances from it needs written permission from NUS Libraries.
 - **NUS guides**: "Conducting text and data mining without prior approval from NUS Libraries, including the use of artificial intelligence tools, are prohibited."
 - **National Archives** gate: "You may download the contents on this website for private research use only. Any other use including for purposes of publication, exhibition, or online use will require written permission."
 - **SSO** clause 13(d), from the Archive copy quoted in the 4 November report: automated extraction "must only be carried out during the hours of 3 a.m. to 7 a.m. (Singapore Time)" and not "in an abusive or intrusive, or a deceptive, manner". The harvest route reads the Archive and sends nothing to SSO.
 - **eGazette** clause 11 bars automated extraction "in an abusive or intrusive, or a deceptive, manner" and requires the attribution lines in `docs/report/bill-linking-build-2026-11-08.md`. It holds nothing before September 1998.
-- **Parliament** clause 6: "To use any parts of the Contents of this Site, the user must seek permission in writing, stating the Contents for use; intent of use; manner of use; time frame of use and identity of the user." Royce ruled on 2 November to wait for a takedown request instead.
+- **Parliament** clause 6: "To use any parts of the Contents of this Site, the user must seek permission in writing, stating the Contents for use; intent of use; manner of use; time frame of use and identity of the user." The maintainers ruled on 2 November to wait for a takedown request instead.
 
 ## 4. Route per gap, cheapest first
 
 | # | Gap | Route | Cost | Needs |
 |---|---|---|---|---|
-| 1 | The Act harvest | Look on the machine that ran the 5 November write | A minute | Royce |
-| 2 | Test 1's denominator | Count by numbering series, not by year (section 5) | A ruling | Royce |
+| 1 | The Act harvest | Look on the machine that ran the 5 November write | A minute | The maintainers |
+| 2 | Test 1's denominator | Count by numbering series, not by year (section 5) | A ruling | The maintainers |
 | 3 | Do NLB's digitised gazettes hold bills? | Open one 1957 volume and one Bills Supplement issue in a browser | Five minutes | A person with a browser |
-| 4 | The harvest, if it is gone | Refetch the 523 PDFs from the committed capture list (section 1) | 523 Archive requests, about 70 minutes plus retries | Royce's go; a machine with `pdftotext` |
-| 5 | Repealed Acts of 1985 on | Fetch the PDFs of the 12 Acts repealed in 2015 or later from the Archive | About 20 requests, up to about 28 bills | Royce's go; already proposed in the build report |
+| 4 | The harvest, if it is gone | Refetch the 523 PDFs from the committed capture list (section 1) | 523 Archive requests, about 70 minutes plus retries | The maintainers' go; a machine with `pdftotext` |
+| 5 | Repealed Acts of 1985 on | Fetch the PDFs of the 12 Acts repealed in 2015 or later from the Archive | About 20 requests, up to about 28 bills | The maintainers' go; already proposed in the build report |
 | 6 | Test 3's remaining bills | One visit to the Lee Kong Chian Reference Library, Level 11, for the Tables of the written laws, 1819 to 1971, the Supplements and the 1982 edition. Photograph the pages; store the numbers and titles only | Half a day, plus typing | A person, in the library |
 | 7 | The 20 missing bill numbers | Same visit: Bills Supplement 348.5957 SGGBS for 1963 on. K7449 S at NUS for 1961 and 1962 | Part of the same visit, plus an NUS request | A person, in the library |
 | 8 | Bill numbers of 1955 to 1960 | First the digitised gazettes if check 3 passes. Otherwise NLB's Supplement, 32 items, same library | Days of reading, about 12 half-year volumes | A person, in the library |
-| 9 | Links to a text on NLB or Digital Gems | Written permission from NLB and NUS Libraries | A letter each; weeks | Royce |
-| 10 | Whatever only Kew holds | Paid page check on CO 932/77 first | £9.92 and fees, about 29 working days | Royce; slow |
+| 9 | Links to a text on NLB or Digital Gems | Written permission from NLB and NUS Libraries | A letter each; weeks | The maintainers |
+| 10 | Whatever only Kew holds | Paid page check on CO 932/77 first | £9.92 and fees, about 29 working days | The maintainers; slow |
 
 Items 6, 7, 8 and 10 need a person in a library or a paid order. CO 940 and CO 276 as PDFs need an NUS login. LawNet and HeinOnline need a subscription. I did not check whether the Lee Kong Chian Reference Library needs an NLB card at the desk.
 
@@ -231,7 +231,7 @@ So the test as written has a divisor of 2,925 (2,393 held plus 532 "missing"), o
 
 These are arithmetic on the 6 November figures, which I could not recheck. Of 2,682 passed bills, 2,019 are linked (75.3%). The eGazette Acts add up to 65 (77.7%). The supply and repeal classes add at most 173 (84.2%), and fewer if some of those bills are already linked. The target of 95% is 2,548 bills, so about 291 more must resolve.
 
-The Acts that no current Legislative History lists are mostly repealed or spent, so a current Act's history can never reach them. A repealed Act's own history exists only for Acts repealed around 2015 or later (15 to 35 bills, from the build report). The printed tables of the written laws are the route with enough reach, if they list each law from 1819 with its number, year and fate as their titles suggest. I have not seen a page of them. It also needs Royce's ruling that an Act number from a table counts as "linked to an Act", since `act` holds only the 523 current Acts today.
+The Acts that no current Legislative History lists are mostly repealed or spent, so a current Act's history can never reach them. A repealed Act's own history exists only for Acts repealed around 2015 or later (15 to 35 bills, from the build report). The printed tables of the written laws are the route with enough reach, if they list each law from 1819 with its number, year and fate as their titles suggest. I have not seen a page of them. It also needs the maintainers' ruling that an Act number from a table counts as "linked to an Act", since `act` holds only the 523 current Acts today.
 
 ## 6. Corrections to earlier reports
 
@@ -265,7 +265,7 @@ These went against the limits or the terms, and each has stopped:
 - Workers sent 7 requests to Digital Gems, 2 of them for its terms and the rest for list and item pages, by a script. Clause 4.1 bars automated access. No document was downloaded, and I made no further requests there.
 - Workers read 14 NUS guide pages, which carry the text-mining sentence quoted above. I read the guide's call numbers from those stored pages and made no further requests.
 
-## 8. Questions for Royce
+## 8. Questions for the maintainers
 
 1. **Is `plans/bill-debate-linking/harvest/` still on the machine that ran the 5 November write?** Recommendation: check with the command in section 1 before anything else.
 2. **If it is gone, run the refetch?** It is 523 Archive requests over about 70 minutes, none to SSO, on a machine with `pdftotext`. Recommendation: **Do**, only if question 1 comes back empty.

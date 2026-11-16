@@ -8,7 +8,7 @@ Or use GitHub's private form: [report a vulnerability](https://github.com/royceh
 
 Say which file or script is affected, the steps to reproduce it, and what an attacker could do with it.
 
-I'm Royce Hoe. I maintain this repository and read each report myself.
+The maintainers read each report themselves.
 
 ## Scope
 

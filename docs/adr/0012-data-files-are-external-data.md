@@ -1,6 +1,6 @@
 # 0012. Data files are external data
 
-Status: accepted, 23 October 2026. Royce made this call after style sweep 2, which left two scripts reading `data/` files as raw dicts. It took effect in the style follow-up 1 commits d46f6d1 to d37c014 (`plans/style-followups-1.md`), with this record.
+Status: accepted, 23 October 2026. The maintainers made this call after style sweep 2, which left two scripts reading `data/` files as raw dicts. It took effect in the style follow-up 1 commits d46f6d1 to d37c014 (`plans/style-followups-1.md`), with this record.
 
 Context. `data/` holds ten hand-edited JSON files: overrides, exclusions, colonial members, party histories and person decisions. STYLE.md's blocking rule "Parse at the boundary before reading a field" covers anything from outside the process, and these files come from outside it. Six of them were read through schemas in `utils/data_files.py`. `populate/persons.py` built `person_decisions.json` into a dataclass by hand and dropped its `source` key. `scripts/load_heads_of_state.py` and `scripts/load_colonial_la_speakers.py` read their files raw. `scripts/load_party_affiliations.py` and `scripts/clean_attendance.py` validated theirs but each opened its own path, and about ten tests opened the files themselves. Pydantic ignores keys a schema does not declare, so a mistyped key in a hand-edited file vanished without an error.
 

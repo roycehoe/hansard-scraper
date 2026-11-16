@@ -1,6 +1,6 @@
 # 0011. Name resolution in utils
 
-Status: accepted, 22 October 2026. Royce chose this layout during the grill for style sweep 2 (`plans/style-sweep-2-brief.md`, decision 5). It took effect in the style sweep 2 commits 37a1069 to 1e5969c.
+Status: accepted, 22 October 2026. The maintainers chose this layout during the grill for style sweep 2 (`plans/style-sweep-2-brief.md`, decision 5). It took effect in the style sweep 2 commits 37a1069 to 1e5969c.
 
 Context. Stages 7 and 8 both turn a printed name into a `Speaker` name. Stage 7 does it while it builds attendance rows (`services/attendance.py`). Stage 8 does it while it sets `speaker_id` on speech and attendance rows (`populate/speaker_links.py`). STYLE.md says pure logic does not live in `populate/`, and seven scripts were importing the stage 8 resolver from there. Moving the resolver into `services/` would make it import `services/attendance.py` and the role-context service. STYLE.md grades an import between two `services/` peers `blocking`, and says the shared code comes from `utils/`.
 

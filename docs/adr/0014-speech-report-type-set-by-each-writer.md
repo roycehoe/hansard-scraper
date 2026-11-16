@@ -1,6 +1,6 @@
 # 0014. Speech report type set by each writer
 
-Status: accepted, 30 October 2026. Royce approved the column and the two rebuilt rum indexes on 30 October. Migration `82478ba59541` adds them by copying `speech`, and `scripts/apply_speech_report_type.py` runs it with `alembic check` in one transaction, rolled back unless `--commit`. Neither has shipped yet.
+Status: accepted, 30 October 2026. The maintainers approved the column and the two rebuilt rum indexes on 30 October. Migration `82478ba59541` adds them by copying `speech`, and `scripts/apply_speech_report_type.py` runs it with `alembic check` in one transaction, rolled back unless `--commit`. Neither has shipped yet.
 
 Context. Word search filtered by report type read the type through a join to `report`. To find a page of matches in a rare type, Postgres walked the word's matches in rank or date order and checked each one's report, and the planner cannot see that a word and a type go together, so it expected the walk to stop early. After the API deploy of 30 October, "housing" in written answers still took 10.1 s on production and timed out on 1 of 3 runs. A rum index can filter on a column only when the column sits on the indexed row. So `speech` needs its report's `report_type`, a second copy of a value that lives on `report`, beside the sitting date of [ADR 0010](0010-speech-sitting-date-set-by-each-writer.md). No code in this repo changes `report.report_type` after stage 3 builds the row.
 

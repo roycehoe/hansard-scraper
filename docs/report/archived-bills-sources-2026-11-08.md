@@ -119,7 +119,7 @@ No free source online was found.
 |---|---|---|---|
 | SSO Bills Supplement listing | Archive captures of `/Browse/Bills-Supp/Published/All?PageSize=500`, 8 s apart | 5 for 2,336 rows | Done; on disk |
 | SSO bill pages, if text is ever wanted | Archive captures, one per bill | About 2,400, about 5.5 hours at 8 s | Not needed for linking |
-| eGazette, 2024 to 2026 | Walk N up per year and stop after a run of 403s; whole PDFs, 3 s apart; clause 11 lines | About 100 bills (50, 22 and 28) and as many Acts, so about 200 | Needs Royce's go (question 3 of the rules report) |
+| eGazette, 2024 to 2026 | Walk N up per year and stop after a run of 403s; whole PDFs, 3 s apart; clause 11 lines | About 100 bills (50, 22 and 28) and as many Acts, so about 200 | Needs the maintainers' go (question 3 of the rules report) |
 | eGazette, 1999 to 2023 | The same | 998 bills by the Supplement's highest numbers, and nearly as many Acts, so about 1,900 | Not proposed; the SSO listing covers these years |
 
 ## URLs probed

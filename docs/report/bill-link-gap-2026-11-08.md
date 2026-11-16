@@ -215,7 +215,7 @@ linked.
 
 It changes what a link claims. An Act history link says the bill touched an Act whose text we
 hold. An Acts Supplement link says the bill became an Act that was published, whose text we do
-not hold and which may not be in force. Royce ruled that a bill may carry that second claim as
+not hold and which may not be in force. The maintainers ruled that a bill may carry that second claim as
 long as it is stored separately, which is why the build put it on `bill.act_number` with its own
 source value rather than in `acthistoryentry.bill_id`.
 
@@ -241,13 +241,13 @@ to override one. All 12 disagreements then become unreachable, because every one
 on an entry a title rule already linked, and the 3 gains stand. Over 6,898 entries the
 fallback-only rule has 3 gains and no reachable error.
 
-It is not implemented, and after Royce's ruling of the same night it waits for the run over all
+It is not implemented, and after the maintainers' ruling of the same night it waits for the run over all
 9,905 entries. 6,898 is 70% of that, so the remaining 3,007 entries would have to hold a
 disagreement of a new shape, one with no title link, to change the design.
 
 ## 6. The game plan, and what has already shipped
 
-Royce ruled on this plan the same night, and another session built items 1 and 5 from it. The
+The maintainers ruled on this plan the same night, and another session built items 1 and 5 from it. The
 rulings are in `docs/vision.md`; the built code and its own measurement are in
 `docs/report/bill-linking-build-2026-11-08.md`. The table records the state, so nobody reads a
 shipped item as open work.
@@ -255,11 +255,11 @@ shipped item as open work.
 | # | Change | Bills gained | State |
 |---|---|---|---|
 | 1 | Store the Acts Supplement listing and link a passed bill to its Act number | about 225, floor 93 | Shipped on master, not yet run against production. Stored as `bill.act_number` with source ACTS_SUPPLEMENT_LISTING, a claim of its own |
-| 5 | Link a passed bill to the SSO page of its repealed Act | 442 bills link, 359 of them otherwise unresolved | Shipped on master from Royce's own direction, which went further than this plan: the repealed Acts listing, not the PDFs. The PDF path I costed here at 15 to 35 bills was the wrong route |
-| 2 | Fall back to the entry's printed bill number where no title rule finds a bill | 3 entries | Waiting. Royce ruled it waits for the run over all 9,905 entries; 6,898 are measured |
-| 3 | Refresh the Act copies past 14 October 2024 | up to 65 | On hold. Royce ruled the eGazette links already cover those 65 bills |
+| 5 | Link a passed bill to the SSO page of its repealed Act | 442 bills link, 359 of them otherwise unresolved | Shipped on master from the maintainers' own direction, which went further than this plan: the repealed Acts listing, not the PDFs. The PDF path I costed here at 15 to 35 bills was the wrong route |
+| 2 | Fall back to the entry's printed bill number where no title rule finds a bill | 3 entries | Waiting. The maintainers ruled it waits for the run over all 9,905 entries; 6,898 are measured |
+| 3 | Refresh the Act copies past 14 October 2024 | up to 65 | On hold. The maintainers ruled the eGazette links already cover those 65 bills |
 | 4 | Record whether a link means became or changed | 0 | Open, and now partly answered by the three separate claims the build added |
-| 6 | Reach bills whose Act predates 1985 and is gone | 0 by rule | A person in a library with the bound Acts of 1955 to 1984, or a gazette run. For 1955 to 1960 Royce ruled a citation to volume, Supplement number and page counts as held; nothing is built for it |
+| 6 | Reach bills whose Act predates 1985 and is gone | 0 by rule | A person in a library with the bound Acts of 1955 to 1984, or a gazette run. For 1955 to 1960 the maintainers ruled a citation to volume, Supplement number and page counts as held; nothing is built for it |
 
 ## 7. 100% cannot mean what it sounds like
 
@@ -279,7 +279,7 @@ The honest denominator is not 2,682. Of the 2,617 pre-cutoff passed bills, 2,444
 supply nor repeal, and against that denominator the Act history link stands at 82.6% today
 (production). What the two shipped claims add cannot be stated as one rate, because they are
 three different claims about a bill: it changed an Act we hold, it became an Act that was
-published, or the Act it touched is one SSO shows as gone. Royce's test 3 counts all three as
+published, or the Act it touched is one SSO shows as gone. The maintainers' test 3 counts all three as
 the outcome being resolved, and the production dry run of `apply_act_links.py` will print the
 number. On the rebuild, 359 of the 2,161 unresolved pre-cutoff bills of no class gain the
 repealed Act link and about 225 gain an Act number, which is why test 3's 95% target is now
@@ -287,7 +287,7 @@ within reach while the Act history link itself stays near 83%.
 
 ## 8. Questions
 
-Royce ruled on questions 1 to 4 on the night of 8 November, and `docs/vision.md` records the
+The maintainers ruled on questions 1 to 4 on the night of 8 November, and `docs/vision.md` records the
 rulings: a bill may link to an Act number whose text we do not hold, as its own claim with its
 own source; the printed bill number waits for the full 9,905-entry run; test 3 keeps 2,682 as
 the headline denominator and prints the 2,444 rate beside it; the Act copy refresh is on hold

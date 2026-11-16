@@ -1,6 +1,6 @@
 # 0017. Elected members take the Elections Department's spelling
 
-Status: accepted, 6 November 2026. Royce set the rule after the review of all 573 person names. It replaces [ADR 0016](0016-person-name-is-the-correct-name.md).
+Status: accepted, 6 November 2026. The maintainers set the rule after the review of all 573 person names. It replaces [ADR 0016](0016-person-name-is-the-correct-name.md).
 
 Context. `person.canonical_name` is the name the site shows and the name readers search for. It came from Parliament's member list, so a slip there became the person's name. That list prints Koo Yong, Lai Tai Chai and Chew Chin Harn, where Hansard prints Young, Tha and Han in those members' years. ADR 0016 said a person takes the correct name, but it named no test for correct, and it left person 513 on a spelling the department never printed.
 
@@ -18,6 +18,6 @@ Other spellings are kept with their sources. `data/person_name_spellings.json` h
 
 The record keeps what it prints, as [ADR 0013](0013-store-what-the-record-prints.md) requires. `speech.speaker`, `speech.transcript` and `speaker.name` do not change. Attendance is a different case: stage 7 stores `canonical_name or name`, the name it resolves from the `speaker` rows, so an attendance row does not always keep the print. ADR 0016 said it did, and that line was wrong. Keeping the print on attendance is a separate change with its own column and rewrite.
 
-Lim Ching Siong. PJ Thum asked for Lim Chin Siong, and ADR 0016 recorded that spelling. Royce overrode that request: the department printed Lim Ching Siong in 1955, and the rule holds for him as for every other elected member. The spelling note lists Chin with NLB Infopedia and the National Archives, and says the two are transliterations of the same name. The site names no historian.
+Lim Ching Siong. PJ Thum asked for Lim Chin Siong, and ADR 0016 recorded that spelling. The maintainers overrode that request: the department printed Lim Ching Siong in 1955, and the rule holds for him as for every other elected member. The spelling note lists Chin with NLB Infopedia and the National Archives, and says the two are transliterations of the same name. The site names no historian.
 
 Consequences. Each rename changes a page address, and the old address redirects by person id. Stage 8 reads `speaker.name` and never `person`, so a rename moves no link. A report can show a printed label beside a credit link with another spelling: all of Baharudin's Hansard labels print two d. The People section of search, the people list and the person filter find every spelling in the note, while word search stays literal. A new member's name still comes from Parliament's list, and nothing compares it with the table until someone reruns the check.

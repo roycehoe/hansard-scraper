@@ -2,7 +2,7 @@
 
 ## The question as I read it
 
-Royce asked how to link bills "without having to do it with an LLM", using "hard rules we can codify, much like the hansard documents". I read that as three tasks:
+The maintainers asked how to link bills "without having to do it with an LLM", using "hard rules we can codify, much like the hansard documents". I read that as three tasks:
 
 1. Find every place where judgment fills a gap in objective 7 today: an LLM pass, a hand-kept file entry or a manual review.
 2. For each gap, propose a rule a script can apply the same way every time. Each rule must read a printed field (a title, a date, a bill number) from a named source.
@@ -30,7 +30,7 @@ The gaps are the ones `docs/vision.md` lists under objective 7: 598 unlinked pas
 | The "72 of 72" grouping check | Built by Sonnet workers and a skeptic pass on 4 November | 72 bills |
 | Why 598 passed bills have no Act link | 24 titles read by hand | 24 of 598 |
 | Links with a third reading more than 40 days off | Spot-checked by hand | 22 links |
-| Royce's rulings | Two-bill titles, report 35962, misprinted SSO dates kept as printed | 3 rulings |
+| The maintainers' rulings | Two-bill titles, report 35962, misprinted SSO dates kept as printed | 3 rulings |
 | The review queue in objective 7 | Does not exist: no code, no table, no list | none |
 
 Every link production holds today comes from code. Judgment enters through the 14 hand-kept entries and through the checks that vouch for the code.
@@ -253,7 +253,7 @@ That makes 11 of 14 reproduced. The 3 left are all from 1958 to 1960, before the
 - assets.egazette.gov.sg: 6 by me, and 15 by the sources worker against a cap of 8. That worker stopped when it saw the count.
 - sso.agc.gov.sg: none.
 
-## Questions for Royce
+## Questions for the maintainers
 
 No decision blocked the research, so none went to a decider agent. Each question below changes the pipeline or needs a fetch, so each waits for you.
 

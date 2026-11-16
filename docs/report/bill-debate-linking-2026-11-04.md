@@ -1,12 +1,12 @@
 # Bill and legislation linking feasibility, 4 November 2026
 
-This study asks whether the project can link bills and Acts to the Hansard debates on them, and host Singapore's current laws beside the debates. Royce has not adopted the goal, so `docs/vision.md` is unchanged. The 72 per-bill records are in [bill-debate-linking-2026-11-04.json](bill-debate-linking-2026-11-04.json).
+This study asks whether the project can link bills and Acts to the Hansard debates on them, and host Singapore's current laws beside the debates. The maintainers have not adopted the goal, so `docs/vision.md` is unchanged. The 72 per-bill records are in [bill-debate-linking-2026-11-04.json](bill-debate-linking-2026-11-04.json).
 
 In short, bills can be linked to their debates now, from our own reports and with no outside source. A title and date rule reproduced the hand-built links for 72 of 72 sampled bills. Acts can be linked through the Legislative History that SSO prints at the end of each Act, which gives each amending Act's bill number and reading dates back to 1955, but harvesting it at scale means fetching SSO inside its 03:00 to 07:00 window, which nobody has tried. Hosting the text of current law is allowed by SSO's terms on four conditions, and AGC can withdraw that permission without notice. I recommend adopting the first stage, running a small SSO trial before committing to the second, and linking out to SSO rather than hosting text in the third.
 
 ## The question
 
-The database holds 5,244 `bill` reports from 1955 and 595 `bill-intro` reports from 2010. Hansard prints no bill text. Royce asked whether the project can do three things, in this order.
+The database holds 5,244 `bill` reports from 1955 and 595 `bill-intro` reports from 2010. Hansard prints no bill text. The maintainers asked whether the project can do three things, in this order.
 
 1. Link each bill to the Hansard debates on it, from first reading through any select committee and the committee stage to third reading.
 2. Link legislation to those debates. That means each Act as passed, including an amendment Act whose text has since been folded into a principal Act.
@@ -45,7 +45,7 @@ I made these checks before writing.
 
 I applied my corrections to the JSON only, each with a note in the field starting "Judge:". The records under `plans/` are unchanged. Besides checks 3 to 5, I changed 1978, 1982 and 1986 from "history does not list this Act" to unknown, for the reason given under "Can legislation be linked to debates". Before my corrections the sample had 51 of 72 bills and 31 of 72 Acts read in full. After them it has 52 of 72 and 34 of 72.
 
-Royce's rule for this study is no request of any kind to sso.agc.gov.sg, and every SSO page in the per-bill records and in this report's quotes comes from the Internet Archive. Before he set the rule, though, the hosting worker fetched two SSO pages live at 09:30 to 10:30 SGT (the Terms of Use and the Misuse of Drugs Act 1973), and workers in the first three batches sent live requests that SSO answered with an AWS WAF challenge (HTTP 202 and an empty body). The hosting worker's finding on the amendment timeline rests on that live Misuse of Drugs Act page.
+The maintainers' rule for this study is no request of any kind to sso.agc.gov.sg, and every SSO page in the per-bill records and in this report's quotes comes from the Internet Archive. Before they set the rule, though, the hosting worker fetched two SSO pages live at 09:30 to 10:30 SGT (the Terms of Use and the Misuse of Drugs Act 1973), and workers in the first three batches sent live requests that SSO answered with an AWS WAF challenge (HTTP 202 and an empty body). The hosting worker's finding on the amendment timeline rests on that live Misuse of Drugs Act page.
 
 ## All 72 bills
 
@@ -212,7 +212,7 @@ So hosting the text of current law needs the two notices on every page, a link t
 
 ## Blockers
 
-1. SSO access. Royce's rule bars SSO requests in this study, and SSO's own terms allow automated extraction only between 03:00 and 07:00 SGT. Outside that window live SSO answered scripted requests with an AWS WAF challenge, and nobody knows whether the challenge lifts inside it. The second stage for 1961 to 1999, and the bill numbers for those years, depend on getting through.
+1. SSO access. The maintainers' rule bars SSO requests in this study, and SSO's own terms allow automated extraction only between 03:00 and 07:00 SGT. Outside that window live SSO answered scripted requests with an AWS WAF challenge, and nobody knows whether the challenge lifts inside it. The second stage for 1961 to 1999, and the bill numbers for those years, depend on getting through.
 2. Partial archive copies. 13 of 72 bill texts and 7 of 72 Act texts are on SSO but only partly readable, because SSO loads long documents in pieces and the archive kept the first piece. For 2000 on, the eGazette settled 4 of the 4 such texts I tried.
 3. No free text before 1961 for bills (0 of 6) or before 1985 for Acts as passed (0 of 30). Nothing in this study points to a free source, and the known copies are in print at the NUS law library.
 4. Revocable permission. Clause 14 lets AGC end the hosting permission without notice, so anything built on hosted text needs a way to switch it off.
@@ -233,7 +233,7 @@ Stage 1b, bill numbers. For 2000 to 2025 the eGazette Bills Supplement serves ea
 
 Stage 2, Acts to debates.
 
-- Royce's ruling on live SSO inside the window, then a trial of about 20 pages, one request at a time and 8 seconds apart, to see whether the WAF challenge lifts.
+- The maintainers' ruling on live SSO inside the window, then a trial of about 20 pages, one request at a time and 8 seconds apart, to see whether the WAF challenge lifts.
 - If it does, harvest each Act's PDF, current Acts first and then repealed Acts that have pages, and parse the Legislative History entries. Store each entry as SSO prints it (ADR 0013) and join it to the stage 1 bills on bill number, then on first-reading date within one day, then on title. At 8 seconds a page a four-hour window allows about 1,800 pages a night. This study did not count current Acts; SSO lists about 1,533 Acts Supplement entries.
 - For 2000 on, check each join against the eGazette Acts Supplement's "passed by Parliament on" date, which needs no SSO request.
 - Before 1985, link the debate to the principal Act's current page where one exists (13 of 30 sampled), and otherwise to the law's name from the first-reading text, with no text of the Act as passed.
@@ -243,7 +243,7 @@ Stage 3, current law.
 - First, link each debate to the Act's SSO page, and from 2000 to the eGazette PDF. This reproduces no legislation.
 - Before hosting any text, write to AGC's Legislation Division to confirm that clause 13 covers a bulk rehost and to ask whether a bulk route exists. Then build the two notices, the per-Act SSO link, a check of our copy against the SSO PDF on each harvest, and a switch that takes the text down.
 
-## Open questions for Royce
+## Open questions for the maintainers
 
 1. Do you adopt stage 1 as an objective in `docs/vision.md`? I recommend yes for stage 1 alone, and deciding on stage 2 after the SSO trial.
 2. May a scheduled job fetch live SSO between 03:00 and 07:00 SGT? I recommend yes, starting with the 20-page trial at one request every 8 seconds, and stopping if the WAF challenge answers.
@@ -253,14 +253,14 @@ Stage 3, current law.
 6. Parliament's clause 6 asks for written permission to reuse Hansard, which the project already does. Do you want to write to Parliament? I recommend one letter covering Hansard and the bill PDFs, decided apart from this goal because it bears on the existing site.
 7. May the report and its JSON be committed? I recommend yes once you have read them, on master as your rule for your own repos says. The working tree is on `feat/pq-roles`.
 
-## Royce's rulings, 4 November 2026
+## The maintainers' rulings, 4 November 2026
 
-Royce took the recommendation on questions 1 to 5 and 7.
+The maintainers took the recommendation on questions 1 to 5 and 7.
 
 1. Stage 1 is adopted as objective 7 in `docs/vision.md`. Stage 2 is decided after the SSO trial.
 2. A trial of about 20 live SSO pages runs inside the 03:00 to 07:00 SGT window, one request every 8 seconds, and stops if the WAF challenge still answers.
 3. No browser.
 4. Bills before 1961 and Acts as passed before 1985 get debate links with no original text.
 5. Stage 3 links out to SSO and the eGazette and hosts no legislation text.
-6. Not taken up here. Royce ruled on 2 November 2026 not to ask Parliament for permission and to act on a takedown request if one comes (`docs/vision.md`), and that ruling stands.
+6. Not taken up here. The maintainers ruled on 2 November 2026 not to ask Parliament for permission and to act on a takedown request if one comes (`docs/vision.md`), and that ruling stands.
 7. The report is committed to master.
