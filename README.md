@@ -137,7 +137,7 @@ Four limits affect the data:
 
 ## Setup
 
-Requires Python 3.11+, [Poetry](https://python-poetry.org), and Docker.
+Requires Python 3.12+, [Poetry](https://python-poetry.org), and Docker.
 
 ```bash
 git clone https://github.com/roycehoe/hansard-scraper.git

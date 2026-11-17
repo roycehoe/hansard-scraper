@@ -6,7 +6,7 @@ authors = ["roycehoe <contact@openhansard.sg>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.12"
 requests = "^2.32.5"
 sqlmodel = "^0.0.24"
 psycopg2 = "^2.9.10"
