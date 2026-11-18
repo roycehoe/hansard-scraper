@@ -267,6 +267,10 @@ def build_minutes_to_review_message(sitting_date: date, status_note: str) -> str
     return f"Minutes of {sitting_date:%d %B %Y} need review: {status_note}"
 
 
+def build_minutes_run_failure_message(reason: str) -> str:
+    return f"Hansard minutes run failed. {reason}"
+
+
 def build_held_report_message(report_id: str, sitting_date: str) -> str:
     return f"Report {report_id} of {sitting_date} still has no text after {RECHECK_WINDOW_DAYS} days and will not be fetched again."
 

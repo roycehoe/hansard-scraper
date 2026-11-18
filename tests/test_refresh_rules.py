@@ -14,6 +14,7 @@ from services.refresh import (
     build_halt_message,
     build_held_report_message,
     build_minutes_not_fetched_message,
+    build_minutes_run_failure_message,
     build_minutes_to_review_message,
     build_new_parliament_reason,
     build_stale_report_links_message,
@@ -305,6 +306,7 @@ def test_no_message_carries_an_em_dash_or_please() -> None:
     messages = (
         build_halt_message("Reason."),
         build_failure_message("Reason."),
+        build_minutes_run_failure_message("Reason."),
         build_new_parliament_reason([_NEW_PARLIAMENT_NUMBER]),
         build_field_mapping_reason([_FIELD_LOSS]),
         build_unlinked_reason(
@@ -349,3 +351,10 @@ def test_alert_error_text_names_type_and_message_for_a_hansard_error() -> None:
 
 def test_alert_error_text_names_only_the_type_for_any_other_error() -> None:
     assert get_alert_error_text(ValueError("host db.example.test")) == "ValueError"
+
+
+def test_minutes_run_failure_message_names_the_reason() -> None:
+    assert (
+        build_minutes_run_failure_message("RuntimeError")
+        == "Hansard minutes run failed. RuntimeError"
+    )
