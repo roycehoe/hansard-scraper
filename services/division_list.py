@@ -29,6 +29,9 @@ _GLUED_HEADING_OR_NIL_PATTERN = re.compile(
     r"\.\s+(?:Ayes|Noes|No|Abstentions?|Absention|Abstentations?|Absent|Paired|Nil)\.?$",
     re.IGNORECASE,
 )
+_OPENING_AYES_COUNT_PATTERN = re.compile(r"Ayes?\W{0,3}(\d+)", re.IGNORECASE)
+_OPENING_NOES_COUNT_PATTERN = re.compile(r"Noe?s?\W{0,3}(\d+)", re.IGNORECASE)
+_OPENING_COUNT_LOOKAHEAD = 160
 _NIL = "nil"
 _WRAP_WORDS = frozenset({"bin", "binte", "bte", "bt", "b", "s/o", "d/o"})
 _BIN_ABBREVIATION = "b"
@@ -584,6 +587,44 @@ def _get_unreadable_list() -> ParsedDivisionList:
     return ParsedDivisionList(DivisionListStatus.LAYOUT_UNREADABLE, None, [])
 
 
+def _get_opening_tail(items: list[_Item], opening: _Opening) -> str:
+    lines = items[opening.item_index].text.split(_LINE_SEPARATOR)
+    tail = " ".join(lines[opening.line_index : opening.line_index + 2])
+    return tail[:_OPENING_COUNT_LOOKAHEAD]
+
+
+def _is_opening_printing_counts(
+    items: list[_Item], opening: _Opening, ayes: int, noes: int
+) -> bool:
+    tail = _get_opening_tail(items, opening)
+    ayes_match = _OPENING_AYES_COUNT_PATTERN.search(tail)
+    noes_match = _OPENING_NOES_COUNT_PATTERN.search(tail)
+    if ayes_match is None or noes_match is None:
+        return False
+    return int(ayes_match.group(1)) == ayes and int(noes_match.group(1)) == noes
+
+
+def _get_division_opening(
+    items: list[_Item],
+    openings: list[_Opening],
+    division_index: int,
+    division_count: int,
+    ayes: Optional[int],
+    noes: Optional[int],
+) -> Optional[_Opening]:
+    if ayes is not None and noes is not None:
+        counted_openings = [
+            opening
+            for opening in openings
+            if _is_opening_printing_counts(items, opening, ayes, noes)
+        ]
+        if len(counted_openings) == 1:
+            return counted_openings[0]
+    if len(openings) != division_count or division_index >= len(openings):
+        return None
+    return openings[division_index]
+
+
 def get_division_list(
     report_content: Optional[str],
     division_index: int,
@@ -597,10 +638,16 @@ def get_division_list(
     if not report_content:
         return _get_unreadable_list()
     items = _get_items(report_content)
-    openings = _get_openings(items)
-    if len(openings) != division_count or division_index >= len(openings):
+    opening = _get_division_opening(
+        items,
+        _get_openings(items),
+        division_index,
+        division_count,
+        ayes,
+        noes,
+    )
+    if opening is None:
         return _get_unreadable_list()
-    opening = openings[division_index]
     opening_item = items[opening.item_index]
     first_block_lines = (
         opening_item.text.split(_LINE_SEPARATOR)[opening.line_index + 1 :]

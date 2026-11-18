@@ -102,6 +102,39 @@ def test_18_july_1957_gives_a_name_beside_the_ayes_heading_the_ayes_side() -> No
     _assert_fixture_is_stored("hansard_list_1957_07_18_name_beside_the_ayes_heading")
 
 
+def test_18_april_1962_reads_the_list_of_the_opening_that_prints_its_counts() -> None:
+    _assert_fixture_is_stored("hansard_list_1962_04_18_two_counts_on_one_opening")
+
+
+def test_18_december_1963_reads_the_list_when_a_later_line_also_opens_a_division() -> (
+    None
+):
+    _assert_fixture_is_stored("hansard_list_1963_12_18_opening_before_a_count_line")
+
+
+def test_two_openings_that_print_the_same_counts_fall_back_to_the_order_rule() -> None:
+    html = _get_pre_html(
+        _OPENING,
+        "",
+        "  Ayes               Noes",
+        "",
+        "  Aa Bb              Cc Dd",
+        "  Ee Ff              Gg Hh",
+        "",
+    ) + _get_pre_html(
+        _OPENING,
+        "",
+        "  Ayes               Noes",
+        "",
+        "  Ii Jj              Kk Ll",
+        "  Mm Nn              Oo Pp",
+    )
+
+    parsed_list = _get_list(html, 2, 1, division_index=1, division_count=2)
+
+    assert parsed_list.list_status == DivisionListStatus.COUNTS_DISAGREE
+
+
 def test_30_august_1985_joins_a_name_continued_on_an_indented_line() -> None:
     _assert_fixture_is_stored("hansard_list_1985_08_30_indented_wraps")
 
@@ -401,7 +434,7 @@ def test_a_different_number_of_openings_is_layout_unreadable() -> None:
 
     parsed_list = _get_list(
         html,
-        expected["ayes"],
+        expected["ayes"] + 1,
         expected["noes"],
         expected["abstentions"],
         expected["absent"],
