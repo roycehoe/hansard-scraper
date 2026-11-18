@@ -380,3 +380,12 @@ def test_a_division_without_a_list_is_not_printed() -> None:
     assert division.printed_list is None
     assert division.names == []
     assert (division.ayes, division.noes, division.abstentions) == (2, 1, 0)
+
+
+def test_2018_03_01_drops_a_page_header_printed_without_its_spaces() -> None:
+    division = _get_single_division(_read_fixture("minutes_2018_03_01.txt"))
+
+    assert (division.ayes, division.noes, division.abstentions) == (89, 8, 0)
+    assert division.list_status == DivisionListStatus.STORED
+    assert _get_counts_by_side(division) == (89, 8, 0)
+    assert all("MARCH" not in name.printed_name for name in division.names)
