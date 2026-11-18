@@ -3,21 +3,17 @@ from pathlib import Path
 from typing import Optional
 
 import pytest
-from bs4 import BeautifulSoup
 
 from enums import DivisionListStatus, DivisionVoteChoice
 from services.division_list import (
     ParsedDivisionList,
     get_division_list,
-    get_pre_column_starts,
 )
 
 _FIXTURE_DIRECTORY = Path(__file__).parent / "division_fixtures"
 _OPENING = "The House divided: Ayes, 2; Noes, 1."
 _WRAPPED_NAME_LINE = "   Buang bin          Bani, S.T."
 _MOVED_NAME_LINES = "   Buang bin\r\n   Bani, S.T."
-_COLUMN_STARTS_1985_FIRST = [1, 27]
-_COLUMN_STARTS_1985_SECOND = [1, 28]
 _BARE_HEADING_COUNTS = (15, 30, 1, 4, None)
 
 
@@ -80,6 +76,22 @@ def _assert_fixture_is_stored(name: str) -> None:
 
 def test_7_june_1963_reads_two_pre_blocks_with_wrapped_names_and_titles() -> None:
     _assert_fixture_is_stored("hansard_list_1963_06_07")
+
+
+def test_16_may_1955_reads_a_right_column_of_three_rows_against_twenty_seven() -> None:
+    _assert_fixture_is_stored("hansard_list_1955_05_16_sparse_right_column")
+
+
+def test_24_april_1957_reads_rows_of_one_cell_and_rows_of_two_equally_common() -> None:
+    _assert_fixture_is_stored("hansard_list_1957_04_24_row_shapes_tie")
+
+
+def test_30_july_1957_reads_names_after_a_tab_and_a_wrap_under_four_tabs() -> None:
+    _assert_fixture_is_stored("hansard_list_1957_07_30_tab_wrap")
+
+
+def test_12_july_1962_splits_names_printed_one_space_apart() -> None:
+    _assert_fixture_is_stored("hansard_list_1962_07_12_one_space_gutter")
 
 
 def test_30_august_1985_joins_a_name_continued_on_an_indented_line() -> None:
@@ -402,76 +414,6 @@ def test_no_content_is_layout_unreadable() -> None:
         assert parsed_list.names == []
 
 
-def test_a_pre_block_with_no_data_row_has_no_column_starts() -> None:
-    assert get_pre_column_starts(["  Ayes          Noes", ""]) is None
-    assert get_pre_column_starts([]) is None
-
-
-def test_a_tie_between_cell_counts_has_no_column_starts() -> None:
-    assert get_pre_column_starts(["  Aa Bb         Cc Dd", "  Ee Ff"]) is None
-
-
-def test_a_pre_block_with_no_column_starts_is_layout_unreadable() -> None:
-    html = _get_pre_html(
-        _OPENING,
-        "",
-        "  Ayes          Noes",
-        "",
-        "  Aa Bb         Cc Dd",
-        "  Ee Ff",
-        "  Gg Hh         Ii Jj",
-        "  Kk Ll",
-    )
-
-    parsed_list = _get_list(html)
-
-    assert parsed_list.list_status == DivisionListStatus.LAYOUT_UNREADABLE
-    assert parsed_list.printed_list is not None
-    assert parsed_list.names == []
-
-
-def test_the_1985_column_starts_come_from_each_pre_block() -> None:
-    html, _ = _read_fixture("hansard_list_1985_05_15")
-    pre_texts = [
-        pre.get_text().replace("\r\n", "\n")
-        for pre in BeautifulSoup(html, "html.parser").find_all("pre")
-    ]
-
-    column_starts = [get_pre_column_starts(text.split("\n")) for text in pre_texts[:2]]
-
-    assert column_starts == [_COLUMN_STARTS_1985_FIRST, _COLUMN_STARTS_1985_SECOND]
-
-
-def test_the_cell_count_comes_from_data_rows_only() -> None:
-    lines = [
-        "  Ayes          Noes",
-        "",
-        "  Aa Bb",
-        "  Cc Dd",
-        "  Ee Ff         Gg Hh",
-        "  Ii Jj         Kk Ll",
-        "  Mm Nn         Oo Pp",
-    ]
-
-    assert get_pre_column_starts(lines) == [2, 16]
-
-
-def test_a_name_equally_near_two_columns_is_layout_unreadable() -> None:
-    html = _get_pre_html(
-        _OPENING,
-        "",
-        "  Ayes               Noes",
-        "",
-        "  Aa Bb              Cc Dd",
-        "          Ee Ff",
-    )
-
-    parsed_list = _get_list(html)
-
-    assert parsed_list.list_status == DivisionListStatus.LAYOUT_UNREADABLE
-    assert parsed_list.names == []
-
-
 def test_a_wrapped_name_and_a_title_cell_are_joined() -> None:
     html = _get_pre_html(
         _OPENING,
@@ -505,9 +447,10 @@ def test_a_sentence_ends_the_list() -> None:
         "",
         "  Aa Bb              Cc Dd",
         "  Ee Ff              Gg Hh",
-        "",
+    ) + _get_pre_html(
         "The Bill was accordingly passed by the House.",
         "  Ii Jj              Kk Ll",
+        "  Mm Nn              Oo Pp",
     )
 
     parsed_list = _get_list(html, 2, 2)

@@ -1,0 +1,140 @@
+{
+ "why": "Rows of one cell and rows of two cells are equally common (report 40912, 24 April 1957).",
+ "ayes": 9,
+ "noes": 15,
+ "abstentions": 2,
+ "absent": 6,
+ "paired": null,
+ "division_index": 0,
+ "division_count": 1,
+ "expected_names": [
+  [
+   "AYE",
+   "Ede, John."
+  ],
+  [
+   "NO",
+   "Braga, A. J."
+  ],
+  [
+   "AYE",
+   "Goh Tong Liang."
+  ],
+  [
+   "NO",
+   "Butterfield, C. H."
+  ],
+  [
+   "AYE",
+   "Jumabhoy, R."
+  ],
+  [
+   "NO",
+   "Chew Swee Kee."
+  ],
+  [
+   "AYE",
+   "Lazarous, A. R."
+  ],
+  [
+   "NO",
+   "Jumabhoy, J. M."
+  ],
+  [
+   "AYE",
+   "Lim Cher Kheng."
+  ],
+  [
+   "NO",
+   "Lim, R. C. H."
+  ],
+  [
+   "AYE",
+   "Lim Choon Mong."
+  ],
+  [
+   "NO",
+   "Lim Yew Hock."
+  ],
+  [
+   "AYE",
+   "Lim Koon Teck."
+  ],
+  [
+   "NO",
+   "Mak Pak Shee."
+  ],
+  [
+   "AYE",
+   "Marshall, D. S."
+  ],
+  [
+   "NO",
+   "Mohd. Sidik bin Haji Abdul Hamid."
+  ],
+  [
+   "AYE",
+   "Sutherland, G. A. P."
+  ],
+  [
+   "NO",
+   "Nair, M. P. D."
+  ],
+  [
+   "NO",
+   "Ong Piah Teng."
+  ],
+  [
+   "NO",
+   "Oon Khye Kiang."
+  ],
+  [
+   "ABSTAIN",
+   "Lee Choon Eng."
+  ],
+  [
+   "NO",
+   "Stewart, S. T."
+  ],
+  [
+   "ABSTAIN",
+   "Seah Peng Chuan."
+  ],
+  [
+   "NO",
+   "Tan Theng Chiang."
+  ],
+  [
+   "NO",
+   "Thomas, Francis."
+  ],
+  [
+   "NO",
+   "Wong Foo Nam."
+  ],
+  [
+   "ABSENT",
+   "Abdul Hamid bin Haji Jumat."
+  ],
+  [
+   "ABSENT",
+   "Ahmad bin Ibrahim."
+  ],
+  [
+   "ABSENT",
+   "Goh Chew Chua."
+  ],
+  [
+   "ABSENT",
+   "Lee Kuan Yew."
+  ],
+  [
+   "ABSENT",
+   "Lim Chin Siong."
+  ],
+  [
+   "ABSENT",
+   "Tan, William."
+  ]
+ ]
+}

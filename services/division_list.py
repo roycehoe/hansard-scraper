@@ -2,7 +2,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass
 from enum import StrEnum
-from itertools import takewhile
+from itertools import groupby, takewhile
 from typing import Optional
 
 from bs4 import BeautifulSoup
@@ -33,9 +33,11 @@ _NIL = "nil"
 _WRAP_WORDS = frozenset({"bin", "binte", "bte", "bt", "b", "s/o", "d/o"})
 _BIN_ABBREVIATION = "b"
 _INITIALS_SEPARATOR = ","
-_MAX_CELL_LEAD_BEFORE_COLUMN = 3
-_MAX_SPACES_INSIDE_NAME = 4
-_TAB = "\t"
+_TAB_SIZE = 8
+_MIN_GUTTER_WIDTH = 2
+_MIN_NARROW_GUTTER_LINES = 12
+_MIN_COLUMN_LINES = 2
+_MIN_NARROW_COLUMN_LINES = 5
 _TITLE_CELLS = frozenset({"madam", "miss", "mrs", "mr", "dr"})
 _HEADING_WORD_TO_VOTE_CHOICE = {
     "ayes": DivisionVoteChoice.AYE,
@@ -105,6 +107,12 @@ class _PreCell:
 class _PreLineCell:
     offset: int
     text: str
+
+
+@dataclass(frozen=True)
+class _ColumnStart:
+    offset: int
+    gutter_width: int
 
 
 @dataclass
@@ -334,121 +342,136 @@ def _get_pre_row_cells(line: str) -> list[_PreLineCell]:
     ]
 
 
-def get_pre_column_starts(lines: list[str]) -> Optional[list[int]]:
-    data_rows: list[list[_PreLineCell]] = []
-    for line in lines:
-        if not line.strip():
+def _has_heading_cell(line: str) -> bool:
+    return any(_is_heading_cell(cell.text) for cell in _get_pre_row_cells(line))
+
+
+def _get_column_starts(name_lines: list[str]) -> list[_ColumnStart]:
+    width = max((len(line) for line in name_lines), default=0)
+    is_blank_at = [
+        all(position >= len(line) or line[position].isspace() for line in name_lines)
+        for position in range(width)
+    ]
+    if all(is_blank_at):
+        return []
+    position = is_blank_at.index(False)
+    column_starts = [_ColumnStart(position, 0)]
+    for is_blank, run in groupby(is_blank_at[position:]):
+        run_width = len(list(run))
+        position += run_width
+        if not is_blank or position >= width:
             continue
-        if _is_marker_line(line):
-            continue
-        cells = _get_pre_row_cells(line)
-        if any(_is_heading_cell(cell.text) for cell in cells):
-            continue
-        data_rows.append(cells)
-    most_common_counts = Counter(len(cells) for cells in data_rows).most_common(2)
-    if not most_common_counts:
-        return None
-    if (
-        len(most_common_counts) > 1
-        and most_common_counts[0][1] == most_common_counts[1][1]
-    ):
-        return None
-    cell_count = most_common_counts[0][0]
-    first_full_row = next(cells for cells in data_rows if len(cells) == cell_count)
-    return [cell.offset for cell in first_full_row]
+        if run_width >= _MIN_GUTTER_WIDTH or (
+            len(name_lines) >= _MIN_NARROW_GUTTER_LINES
+        ):
+            column_starts.append(_ColumnStart(position, run_width))
+    return column_starts
 
 
-def _get_nearest_column(offset: int, column_starts: list[int]) -> Optional[int]:
-    distances = [abs(offset - start) for start in column_starts]
-    nearest_distance = min(distances)
-    if distances.count(nearest_distance) > 1:
-        return None
-    return distances.index(nearest_distance)
+def _is_thin_column(
+    column_starts: list[_ColumnStart], index: int, name_lines: list[str]
+) -> bool:
+    column_start = column_starts[index]
+    end = column_starts[index + 1].offset if index + 1 < len(column_starts) else None
+    line_count = sum(
+        1 for line in name_lines if line[column_start.offset : end].strip()
+    )
+    if column_start.gutter_width >= _MIN_GUTTER_WIDTH:
+        return line_count < _MIN_COLUMN_LINES
+    return line_count < _MIN_NARROW_COLUMN_LINES
 
 
-def _get_cell_column(
-    line: str,
-    line_cell: _PreLineCell,
-    column_starts: list[int],
-    previous_pre_cell: Optional[_PreCell],
-) -> Optional[int]:
-    column = _get_nearest_column(line_cell.offset, column_starts)
-    if column is None:
-        return None
-    if previous_pre_cell is None:
-        return column
-    if column != previous_pre_cell.column + 1:
-        return column
-    gap = line[previous_pre_cell.end : line_cell.offset]
-    if _TAB in gap:
-        return column
-    if len(gap) > _MAX_SPACES_INSIDE_NAME:
-        return column
-    if line_cell.offset >= column_starts[column] - _MAX_CELL_LEAD_BEFORE_COLUMN:
-        return column
-    return previous_pre_cell.column
+def _get_column_offsets(name_lines: list[str]) -> list[int]:
+    column_starts = _get_column_starts(name_lines)
+    while True:
+        thin_index = next(
+            (
+                index
+                for index in range(1, len(column_starts))
+                if _is_thin_column(column_starts, index, name_lines)
+            ),
+            None,
+        )
+        if thin_index is None:
+            break
+        del column_starts[thin_index]
+    return [column_start.offset for column_start in column_starts] or [0]
 
 
-def _get_row_pre_cells(line: str, column_starts: list[int]) -> Optional[list[_PreCell]]:
+def _get_column_of(offset: int, column_offsets: list[int]) -> int:
+    for column in range(len(column_offsets) - 1, 0, -1):
+        if offset >= column_offsets[column]:
+            return column
+    return 0
+
+
+def _get_heading_line_cells(line: str, column_offsets: list[int]) -> list[_PreCell]:
     pre_cells: list[_PreCell] = []
     for line_cell in _get_pre_row_cells(line):
-        column = _get_cell_column(
-            line, line_cell, column_starts, pre_cells[-1] if pre_cells else None
-        )
-        if column is None:
-            return None
-        line_cell_end = line_cell.offset + len(line_cell.text)
+        column = _get_column_of(line_cell.offset, column_offsets)
+        end = line_cell.offset + len(line_cell.text)
         if pre_cells and pre_cells[-1].column == column:
             pre_cells[-1] = _PreCell(
                 column,
                 f"{pre_cells[-1].text} {line_cell.text}",
                 pre_cells[-1].offset,
-                line_cell_end,
+                end,
             )
             continue
-        pre_cells.append(
-            _PreCell(column, line_cell.text, line_cell.offset, line_cell_end)
-        )
+        pre_cells.append(_PreCell(column, line_cell.text, line_cell.offset, end))
     return pre_cells
 
 
-def _get_modal_offsets(pre_lines: list[str], column_starts: list[int]) -> list[int]:
-    column_to_offset_counts = [Counter() for _ in column_starts]
-    for pre_line in pre_lines:
-        for pre_cell in _get_row_pre_cells(pre_line, column_starts) or []:
+def _get_name_line_cells(line: str, column_offsets: list[int]) -> list[_PreCell]:
+    pre_cells: list[_PreCell] = []
+    bounds = [0, *column_offsets[1:], len(line) + 1]
+    for column in range(len(column_offsets)):
+        segment = line[bounds[column] : bounds[column + 1]]
+        text = " ".join(segment.split())
+        if not text:
+            continue
+        offset = bounds[column] + len(segment) - len(segment.lstrip())
+        pre_cells.append(_PreCell(column, text, offset, offset + len(segment.strip())))
+    return pre_cells
+
+
+def _get_modal_offsets(
+    line_cells: list[list[_PreCell]], column_offsets: list[int]
+) -> list[int]:
+    column_to_offset_counts = [Counter() for _ in column_offsets]
+    for pre_cells in line_cells:
+        for pre_cell in pre_cells:
             if not _is_heading_cell(pre_cell.text):
                 column_to_offset_counts[pre_cell.column][pre_cell.offset] += 1
     return [
-        offset_counts.most_common(1)[0][0] if offset_counts else column_start
-        for offset_counts, column_start in zip(column_to_offset_counts, column_starts)
+        offset_counts.most_common(1)[0][0] if offset_counts else column_offset
+        for offset_counts, column_offset in zip(column_to_offset_counts, column_offsets)
     ]
 
 
 def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
     state = _get_list_state()
     block_texts: list[str] = []
-    all_block_texts: list[str] = []
-    is_geometry_unreadable = False
     for block_lines in pre_blocks:
+        if state.is_ended:
+            break
         pre_lines = [
             line.rstrip()
             for line in block_lines
             if line.strip() and not _is_marker_line(line)
         ]
-        all_block_texts.append(_LINE_SEPARATOR.join(pre_lines))
-        if state.is_ended or is_geometry_unreadable:
-            continue
-        column_starts = get_pre_column_starts(pre_lines)
-        if column_starts is None:
-            is_geometry_unreadable = True
-            continue
-        modal_offsets = _get_modal_offsets(pre_lines, column_starts)
+        expanded_lines = [line.expandtabs(_TAB_SIZE) for line in pre_lines]
+        name_lines = [line for line in expanded_lines if not _has_heading_cell(line)]
+        column_offsets = _get_column_offsets(name_lines)
+        line_cells = [
+            _get_heading_line_cells(line, column_offsets)
+            if _has_heading_cell(line)
+            else _get_name_line_cells(line, column_offsets)
+            for line in expanded_lines
+        ]
+        modal_offsets = _get_modal_offsets(line_cells, column_offsets)
         read_pre_lines: list[str] = []
-        for pre_line in pre_lines:
-            pre_cells = _get_row_pre_cells(pre_line, column_starts)
-            if pre_cells is None:
-                is_geometry_unreadable = True
-                break
+        for pre_line, pre_cells in zip(pre_lines, line_cells):
             for pre_cell in pre_cells:
                 _add_cell(
                     state,
@@ -463,8 +486,6 @@ def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
                 break
             read_pre_lines.append(pre_line)
         block_texts.append(_LINE_SEPARATOR.join(read_pre_lines))
-    if is_geometry_unreadable:
-        return _ListReading(True, _BLOCK_SEPARATOR.join(all_block_texts), [])
     return _ListReading(
         state.is_unreadable,
         _BLOCK_SEPARATOR.join(block_texts),
