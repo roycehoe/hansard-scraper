@@ -120,3 +120,7 @@ class HansardMinutesFileError(HansardError):
 
 class HansardDivisionCheckError(HansardError):
     pass
+
+
+class HansardLeaveSectionCheckError(HansardError):
+    pass

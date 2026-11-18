@@ -80,6 +80,10 @@ class CRUDLeavePeriodPrinting:
             LeavePeriodPrintingCount(*row) for row in self.session.exec(statement).all()
         ]
 
+    def get_distinct_sitting_ids(self) -> list[int]:
+        statement = select(LeavePeriodPrinting.sitting_id).distinct()
+        return list(self.session.exec(statement).all())
+
     def get_check_rows(self) -> list[LeavePeriodPrintingCheckRow]:
         statement = (
             select(

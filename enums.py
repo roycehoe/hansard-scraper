@@ -464,6 +464,11 @@ class LeaveEntryFormat(StrEnum):
     UNREAD = "UNREAD"
 
 
+class LeaveSectionWording(StrEnum):
+    HEADING_WORDS = "HEADING_WORDS"
+    GRANTING_SENTENCE = "GRANTING_SENTENCE"
+
+
 class LeaveNameSource(StrEnum):
     PRINTED = "PRINTED"
     CARRIED_FROM_ROW_ABOVE = "CARRIED_FROM_ROW_ABOVE"

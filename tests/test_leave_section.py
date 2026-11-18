@@ -3,10 +3,16 @@ from typing import Optional
 
 import pytest
 
-from enums import LeaveEntryFormat, LeaveNameSource, LeaveYearSource
+from enums import (
+    LeaveEntryFormat,
+    LeaveNameSource,
+    LeaveSectionWording,
+    LeaveYearSource,
+)
 from services.leave_section import (
     apply_leave_date_misprints,
     build_leave_entries_from_markdown,
+    get_leave_section_wordings,
     get_leave_sections,
 )
 from utils.data_files import (
@@ -2013,3 +2019,75 @@ def test_words_after_the_heading_that_are_not_a_preamble_do_not_open_a_section()
     )
 
     assert get_leave_sections(markdown_content) == []
+
+
+@pytest.mark.parametrize(
+    "heading",
+    [
+        "#### PERMISSION TO MEMBERS TO BE ABSENT",
+        "#### PERMISSION TO MEMBER TO BE ABSENT",
+        "**PERMISSION TO MEMBERS TO BE ABSENT**",
+        "# Permission to Members to be Absent",
+        "#### PERMISSION TO MEMBERS TO BE ABSENT:",
+        "# Permission to Members be Absent",
+    ],
+)
+def test_every_printed_heading_wording_is_found(heading: str) -> None:
+    markdown_content = "\n".join(["Some earlier text.", heading, _ENTRY_LINE])
+
+    assert get_leave_section_wordings(markdown_content) == [
+        LeaveSectionWording.HEADING_WORDS
+    ]
+
+
+def test_a_granting_sentence_is_found_under_a_heading_the_reader_does_not_know() -> (
+    None
+):
+    markdown_content = "\n".join(
+        [
+            "#### LEAVE OF ABSENCE FOR MEMBERS",
+            f"{_ARTICLE_30_PREAMBLE} Dr Chew Chin Han (Tampines) to be absent from the sitting of Parliament today, the 2nd November, 1967.   ",
+        ]
+    )
+
+    assert get_leave_section_wordings(markdown_content) == [
+        LeaveSectionWording.GRANTING_SENTENCE
+    ]
+
+
+def test_a_section_that_prints_both_wordings_gives_both() -> None:
+    markdown_content = "\n".join(
+        [
+            _SINGULAR_HEADING,
+            f"{_ARTICLE_30_PREAMBLE} Dr Chew Chin Han (Tampines) to be absent from the sitting of Parliament today, the 2nd November, 1967.   ",
+        ]
+    )
+
+    assert get_leave_section_wordings(markdown_content) == [
+        LeaveSectionWording.HEADING_WORDS,
+        LeaveSectionWording.GRANTING_SENTENCE,
+    ]
+
+
+@pytest.mark.parametrize(
+    "debate_line",
+    [
+        "become vacant if he is absent from all sittings of Parliament (or any committee of Parliament to which he has been appointed) held in December 1965 and to he held again in January 1966, without having obtained the Speaker's permission to be or to remain absent therefrom.",
+        "he is absent from all such sittings, without having obtained from the Speaker permission to be absent therefrom.   ",
+        "Order. The Minister for Labour has been given permission of absence by the Speaker.",
+        "With your permission, Sir, I beg leave to withdraw the amendment.",
+    ],
+)
+def test_debate_that_mentions_permission_or_absence_is_not_found(
+    debate_line: str,
+) -> None:
+    assert get_leave_section_wordings(debate_line) == []
+
+
+def test_a_heading_glued_to_a_preamble_that_grants_permission_gives_both_wordings() -> (
+    None
+):
+    assert get_leave_section_wordings(_GLUED_HEADING_LINE) == [
+        LeaveSectionWording.HEADING_WORDS,
+        LeaveSectionWording.GRANTING_SENTENCE,
+    ]

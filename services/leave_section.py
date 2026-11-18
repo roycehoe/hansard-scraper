@@ -3,7 +3,12 @@ from dataclasses import dataclass, replace
 from datetime import date, timedelta
 from typing import Optional
 
-from enums import LeaveEntryFormat, LeaveNameSource, LeaveYearSource
+from enums import (
+    LeaveEntryFormat,
+    LeaveNameSource,
+    LeaveSectionWording,
+    LeaveYearSource,
+)
 from schemas.leave_date_misprint import LeaveDateMisprint
 from schemas.leave_heading_year import LeaveHeadingYear
 from schemas.leave_line_reading import LeaveLineReading
@@ -20,6 +25,14 @@ from utils.names import TITLE_PREFIXES, strip_title
 
 _SECTION_HEADING_RE = re.compile(
     r"^#*\s*(?:\*\*)?\s*permission\s+to\s+members?\s+(?:to\s+)?be\s+absent\s*(?:\*\*)?\s*:?\s*(?:\*\*)?\s*(?:Under\s+the\s+provisions?\b.*)?$",
+    re.IGNORECASE,
+)
+_HEADING_WORDS_RE = re.compile(
+    r"permission\s+to\s+(?:the\s+)?members?\s+(?:to\s+)?(?:be|remain)\s+(?:or\s+to\s+remain\s+)?absent",
+    re.IGNORECASE,
+)
+_GRANTING_WORDS_RE = re.compile(
+    r"(?:granted|given)\s+permission[^\n]{0,200}?\b(?:be|remain)\b[^\n]{0,20}?\babsent\b",
     re.IGNORECASE,
 )
 _WEEKDAY_PATTERN = r"(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)"
@@ -198,6 +211,15 @@ def _join_wrapped_lines(lines: list[str]) -> list[str]:
             continue
         joined_lines.append(line)
     return joined_lines
+
+
+def get_leave_section_wordings(markdown_content: str) -> list[LeaveSectionWording]:
+    leave_section_wordings = []
+    if _HEADING_WORDS_RE.search(markdown_content):
+        leave_section_wordings.append(LeaveSectionWording.HEADING_WORDS)
+    if _GRANTING_WORDS_RE.search(markdown_content):
+        leave_section_wordings.append(LeaveSectionWording.GRANTING_SENTENCE)
+    return leave_section_wordings
 
 
 def get_leave_sections(markdown_content: str) -> list[list[str]]:
