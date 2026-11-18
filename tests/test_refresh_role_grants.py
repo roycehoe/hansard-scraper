@@ -1,23 +1,19 @@
 from collections.abc import Iterator
 from dataclasses import replace
 from datetime import date, datetime, timedelta, timezone
-from pathlib import Path
 
 import pytest
 from sqlalchemy import Connection, Engine, event
 from sqlmodel import Session, SQLModel, select
 
-import populate.minutes as minutes_step
 import populate.refresh_runs as refresh_runs
 from database.ministry import Ministry
-from database.minutes import Minutes
 from database.report import Report
 from database.seat_holding import SeatHolding
 from database.sitting import Sitting
 from database.speaker import Speaker
 from database.speech import Speech
 from enums import (
-    MinutesStatus,
     RefreshRunStatus,
     ReportType,
     SpeechKind,
@@ -26,7 +22,6 @@ from populate.attendance_offices import populate_attendance_offices
 from populate.bill_speakers import populate_bill_speakers
 from populate.office_printed_ranges import populate_office_printed_ranges
 from populate.speaker_links import link_speakers_by_report_ids_and_sitting_ids
-from schemas.minutes_response import MinutesResponse
 from services.refresh import SINGAPORE_TIMEZONE
 from settings import settings
 from tests.bill_seed import (
@@ -36,12 +31,7 @@ from tests.bill_seed import (
     seed_stored_bill,
 )
 from tests.division_seed import add_division_report
-from tests.refresh_fixtures import (
-    FakeParliament,
-    build_live_index_page,
-    build_live_index_row,
-    seed_stored,
-)
+from tests.refresh_fixtures import FakeParliament, seed_stored
 from tests.refresh_role_grants import (
     RoleGrants,
     get_grant_violations,
@@ -76,14 +66,6 @@ _VERIFICATION_FUNCTIONS = (
     "has_column_privilege",
     "has_sequence_privilege",
 )
-_MINUTES_FIXTURE_DIRECTORY = Path(__file__).parent / "division_fixtures" / "minutes"
-_MINUTES_DIVISION_TEXT_FIXTURE = (
-    Path(__file__).parent / "division_fixtures" / "minutes_2021_10_04.txt"
-)
-_MINUTES_SITTING_DATE = date(2018, 1, 10)
-_MINUTES_FILE_ID = "minutes-file-id"
-_MINUTES_FILE_NAME = "VP-11Jan2018.pdf"
-_MINUTES_FILE_NUMBER = 57
 _ATTACHED_FILE_ADDRESS = "20240910/annex-Refresh Test.pdf"
 _ATTACHED_FILE_ID = 9001
 _DIVISION_REPORT_ID = "motion-2481#"
@@ -130,12 +112,6 @@ _REFRESH_STATEMENT_STARTS = (
     "INSERT INTO seat_holding ",
     "UPDATE seat_holding SET",
     "INSERT INTO division ",
-    "INSERT INTO division_vote ",
-    "INSERT INTO minutes ",
-    "INSERT INTO minutes_index_capture ",
-    "UPDATE minutes SET",
-    "INSERT INTO minutes_division ",
-    "INSERT INTO division_party_count ",
     "VACUUM (ANALYZE) speech",
     "VACUUM (ANALYZE) report",
     "VACUUM (ANALYZE) attendance",
@@ -252,17 +228,6 @@ def _seed_earlier_seat_holding(session: Session) -> None:
     )
 
 
-def _seed_minutes(session: Session) -> None:
-    add_division_report(
-        session,
-        "MINUTES-REPORT",
-        datetime.combine(_MINUTES_SITTING_DATE, datetime.min.time()),
-    )
-    session.add(
-        Minutes(sitting_date=_MINUTES_SITTING_DATE, status=MinutesStatus.NOT_YET_LISTED)
-    )
-
-
 def _add_cited_report(
     session: Session, report_id: str, sitting_date: datetime, title: str
 ) -> Report:
@@ -328,24 +293,6 @@ def _set_new_sitting_rows(fake_parliament: FakeParliament) -> None:
             "endDtFlag": False,
         }
     ]
-    fake_parliament.minutes_index_page = build_live_index_page(
-        [
-            build_live_index_row(
-                _MINUTES_SITTING_DATE,
-                _MINUTES_FILE_NUMBER,
-                _MINUTES_FILE_ID,
-                _MINUTES_FILE_NAME,
-            )
-        ]
-    )
-    file_url = f"{settings.minutes_media_url}/{_MINUTES_FILE_ID}/{_MINUTES_FILE_NAME}"
-    fake_parliament.file_url_to_response[file_url] = MinutesResponse(
-        url=file_url,
-        status_code=200,
-        content=(
-            _MINUTES_FIXTURE_DIRECTORY / "vp-10jan18-first-pages.pdf"
-        ).read_bytes(),
-    )
 
 
 @pytest.fixture
@@ -366,21 +313,6 @@ def fake_parliament(monkeypatch: pytest.MonkeyPatch) -> FakeParliament:
         "get_hansard_topic_response_async",
         fake_parliament.get_hansard_topic_response_async,
     )
-    monkeypatch.setattr(
-        minutes_step,
-        "get_minutes_index_response",
-        fake_parliament.get_minutes_index_response,
-    )
-    monkeypatch.setattr(
-        minutes_step,
-        "get_minutes_file_response",
-        fake_parliament.get_minutes_file_response,
-    )
-    monkeypatch.setattr(
-        minutes_step,
-        "get_minutes_pdf_text",
-        lambda content: _MINUTES_DIVISION_TEXT_FIXTURE.read_text(encoding="utf-8"),
-    )
     monkeypatch.setattr("populate.report_links.get_report_link_title_corrections", list)
     monkeypatch.setattr(settings, "telegram_bot_token", None)
     monkeypatch.setattr(settings, "telegram_chat_id", None)
@@ -397,7 +329,6 @@ def recorded_refresh_statements(
     seed_stored(scratch_session)
     _seed_stored_offices(scratch_session)
     _seed_earlier_seat_holding(scratch_session)
-    _seed_minutes(scratch_session)
     _seed_citation(scratch_session)
     scratch_session.commit()
     _set_new_sitting_rows(fake_parliament)

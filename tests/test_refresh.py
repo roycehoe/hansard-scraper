@@ -2,7 +2,6 @@ import copy
 import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
-from pathlib import Path
 from typing import Optional, Union
 
 import httpx
@@ -23,15 +22,11 @@ from database.attached_file import AttachedFile
 from database.attached_file_pointer import AttachedFilePointer
 from database.attendance import Attendance
 from database.attendance_office import AttendanceOffice
-from database.division import Division
-from database.division_party_count import DivisionPartyCount
-from database.division_vote import DivisionVote
 from database.hansard_sitting_date_response import HansardSittingDateResponse
 from database.hansard_website_response import HansardWebsiteResponse
 from database.leave_period import LeavePeriod, LeavePeriodPrinting
 from database.ministry import Ministry
 from database.minutes import Minutes
-from database.minutes_division import MinutesDivision
 from database.office_printed_range import OfficePrintedRange
 from database.office_title_ministry import OfficeTitleMinistry
 from database.party_affiliation import PartyAffiliation
@@ -49,29 +44,17 @@ from enums import (
     AttachedFileKind,
     AttachedFilePointerShape,
     AttendanceOfficeSource,
-    DivisionCountSource,
-    DivisionListStatus,
-    DivisionVoteChoice,
-    DivisionVoteListSource,
-    MinutesFileFormat,
-    MinutesIndexSource,
-    MinutesStatus,
     OfficeClass,
     ParticipantRole,
     RefreshRunStatus,
     ReportType,
 )
 from exceptions import (
-    HansardError,
     HansardGatewayError,
-    HansardMinutesIndexError,
     HansardRefreshFailureError,
     HansardRefreshRunError,
-    HansardWriteCheckError,
 )
 from gateway.http import MAX_RETRIES
-from populate.minutes import MinutesStepResult
-from populate.minutes_divisions import UNREAD_DIVISION_STATUS_NOTE
 from populate.report_askers import REPORT_ASKER_REPORT_TYPES
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
@@ -99,69 +82,9 @@ from tests.refresh_fixtures import (
 from utils.data_files import get_ministry_names
 from utils.sitting_dates import get_sitting_date_key, parse_sitting_date
 
-_MINUTES_FIXTURE_DIRECTORY = Path(__file__).parent / "division_fixtures" / "minutes"
-_MINUTES_PDF_FIXTURE = "vp-10jan18-first-pages.pdf"
-_MINUTES_DIVISION_TEXT_FIXTURE = (
-    Path(__file__).parent / "division_fixtures" / "minutes_2021_10_04.txt"
-)
-_UNREADABLE_DIVISION_TEXT = "On Question put, the House divided."
-_MINUTES_DIVISION_ROW_COUNT = 2
-_HANSARD_ONLY_PRINTED_COUNTS = "The House divided: Ayes, 1; Noes, 1."
 _MINUTES_FILE_ID = "minutes-file-id"
 _MINUTES_FILE_NAME = "VP-11Jan2018.pdf"
 _MINUTES_FILE_NUMBER = 57
-_MINUTES_ALERT_FRAGMENT = "Minutes of 11 January 2018 need review"
-_MINUTES_NOT_FETCHED_ALERT_FRAGMENT = "Minutes files listed but not fetched"
-_MINUTES_INDEX_SKIPPED_ALERT_FRAGMENT = "Minutes index page not read"
-_MINUTES_STEP_ALLOWED_STATEMENTS = frozenset(
-    {
-        ("SELECT", "minutes"),
-        ("SELECT", "minutes_index_capture"),
-        ("SELECT", "report"),
-        ("INSERT", "minutes"),
-        ("INSERT", "minutes_index_capture"),
-        ("INSERT", "division"),
-        ("INSERT", "minutes_division"),
-        ("INSERT", "division_vote"),
-        ("SELECT", "division"),
-        ("SELECT", "minutes_division"),
-        ("SELECT", "division_vote"),
-        ("INSERT", "division_party_count"),
-        ("SELECT", "division_party_count"),
-        ("SELECT", "speaker"),
-        ("SELECT", "partyaffiliation"),
-        ("UPDATE", "minutes"),
-    }
-)
-_MINUTES_STEP_UPDATE_COLUMNS = frozenset(
-    {
-        "status",
-        "index_source",
-        "index_capture_id",
-        "printed_label",
-        "printed_parliament",
-        "file_url",
-        "archive_timestamp",
-        "file_format",
-        "sha256",
-        "size_bytes",
-        "file_bytes",
-        "fetched_at",
-        "extracted_text",
-        "status_note",
-    }
-)
-_STATEMENT_VERB_PATTERN = re.compile(
-    r"^\s*(SELECT|INSERT|UPDATE|DELETE|TRUNCATE|GRANT)\b", re.IGNORECASE
-)
-_UPDATE_TABLE_PATTERN = re.compile(r'^\s*UPDATE\s+"?([a-z_]+)"?', re.IGNORECASE)
-_INSERT_TABLE_PATTERN = re.compile(r'^\s*INSERT\s+INTO\s+"?([a-z_]+)"?', re.IGNORECASE)
-_READ_TABLE_PATTERN = re.compile(r'\b(?:FROM|JOIN)\s+"?([a-z_]+)"?', re.IGNORECASE)
-_SET_CLAUSE_PATTERN = re.compile(r"\bSET\s+(.*?)\s+WHERE\b", re.DOTALL | re.IGNORECASE)
-_SET_COLUMN_PATTERN = re.compile(r"(\w+)\s*=\s*%\(")
-_GRANTED_UPDATE_STATEMENT = "UPDATE minutes SET status=%(status)s, sha256=%(sha256)s WHERE minutes.id = %(id_1)s AND minutes.status = %(status_1)s"
-_NOT_FOUND_STATUS = 404
-_ACCEPTED_STATUS = 202
 _BOT_TOKEN = "test-bot-token"
 _CHAT_ID = "test-chat"
 _PING_URL = "https://hc-ping.test/test-check"
@@ -287,16 +210,6 @@ def fake_parliament(monkeypatch: pytest.MonkeyPatch) -> FakeParliament:
         refresh_runs,
         "get_hansard_topic_response_async",
         fake_parliament.get_hansard_topic_response_async,
-    )
-    monkeypatch.setattr(
-        minutes_step,
-        "get_minutes_index_response",
-        fake_parliament.get_minutes_index_response,
-    )
-    monkeypatch.setattr(
-        minutes_step,
-        "get_minutes_file_response",
-        fake_parliament.get_minutes_file_response,
     )
     return fake_parliament
 
@@ -1673,624 +1586,48 @@ def test_a_division_failure_rolls_back_the_month(
     assert "division stage failed" in refresh_run.failure_reason
 
 
-def _get_statement_effects(statement: str) -> list[tuple[str, str]]:
-    verb_match = _STATEMENT_VERB_PATTERN.search(statement)
-    if verb_match is None:
-        return []
-    verb = verb_match.group(1).upper()
-    if verb == "UPDATE":
-        update_match = _UPDATE_TABLE_PATTERN.search(statement)
-        return [("UPDATE", "" if update_match is None else update_match.group(1))]
-    if verb == "INSERT":
-        insert_match = _INSERT_TABLE_PATTERN.search(statement)
-        return [("INSERT", "" if insert_match is None else insert_match.group(1))]
-    if verb == "SELECT":
-        return [("SELECT", table) for table in _READ_TABLE_PATTERN.findall(statement)]
-    return [(verb, "")]
-
-
-def _get_statement_problems(statements: list[str]) -> list[str]:
-    problems = []
-    for statement in statements:
-        if _STATEMENT_VERB_PATTERN.search(statement) is None:
-            problems.append(f"No statement verb: {statement}")
-            continue
-        for effect in _get_statement_effects(statement):
-            if effect not in _MINUTES_STEP_ALLOWED_STATEMENTS:
-                problems.append(f"{effect[0]} {effect[1]} is not granted: {statement}")
-        if _get_statement_effects(statement) != [("UPDATE", "minutes")]:
-            continue
-        set_match = _SET_CLAUSE_PATTERN.search(statement)
-        if set_match is None:
-            problems.append(f"UPDATE minutes has no WHERE: {statement}")
-            continue
-        problems.extend(
-            f"Column {column} is not granted for UPDATE: {statement}"
-            for column in _SET_COLUMN_PATTERN.findall(set_match.group(1))
-            if column not in _MINUTES_STEP_UPDATE_COLUMNS
-        )
-    return problems
-
-
-def _build_minutes_file_response(file_url: str) -> MinutesResponse:
-    return MinutesResponse(
-        url=file_url,
-        status_code=200,
-        content=(_MINUTES_FIXTURE_DIRECTORY / _MINUTES_PDF_FIXTURE).read_bytes(),
-    )
-
-
-def _list_minutes_file(
-    fake_parliament: FakeParliament, sitting_date: date, file_id: str, file_name: str
+def test_a_run_sends_no_minutes_request(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    seed_stored(scratch_session)
+    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 11))
+    scratch_session.commit()
     fake_parliament.minutes_index_page = build_live_index_page(
-        [build_live_index_row(sitting_date, _MINUTES_FILE_NUMBER, file_id, file_name)]
+        [
+            build_live_index_row(
+                date(2018, 1, 11),
+                _MINUTES_FILE_NUMBER,
+                _MINUTES_FILE_ID,
+                _MINUTES_FILE_NAME,
+            )
+        ]
     )
-    file_url = f"{settings.minutes_media_url}/{file_id}/{file_name}"
-    fake_parliament.file_url_to_response[file_url] = _build_minutes_file_response(
-        file_url
+    index_requests: list[str] = []
+    file_requests: list[str] = []
+
+    def record_index_request() -> MinutesResponse:
+        index_requests.append(settings.minutes_index_url)
+        return fake_parliament.get_minutes_index_response()
+
+    def record_file_request(file_url: str) -> MinutesResponse:
+        file_requests.append(file_url)
+        return fake_parliament.get_minutes_file_response(file_url)
+
+    monkeypatch.setattr(
+        minutes_step, "get_minutes_index_response", record_index_request
     )
-
-
-def test_held_hit_dates_reach_the_minutes_step(
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    seed_stored(scratch_session)
-    held_report_id = _get_first_new_report_id(fake_parliament)
-    fake_parliament.report_id_to_topic[held_report_id] = {
-        "resultHTML": {"content": None}
-    }
-    recorded_held_sitting_dates: list[set[date]] = []
-
-    def record_held_sitting_dates(
-        session: Session, held_sitting_dates: set[date]
-    ) -> MinutesStepResult:
-        recorded_held_sitting_dates.append(held_sitting_dates)
-        return MinutesStepResult(0, 0, 0, [], [])
-
-    monkeypatch.setattr(refresh_runs, "populate_minutes", record_held_sitting_dates)
-
-    refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
-
-    assert recorded_held_sitting_dates == [{fake_parliament.new_sitting_date}]
-
-
-def _assert_minutes_index_failure(
-    scratch_engine: Engine,
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    alerts: _AlertRecorder,
-    error_type: type[HansardError],
-) -> None:
-    vacuum_counts_before = _get_vacuum_counts(scratch_engine)
-    row_counts_before = _get_row_counts(scratch_engine)
-
-    with pytest.raises(error_type):
-        refresh_runs.populate_refresh_runs(
-            scratch_session, _get_now(fake_parliament), None
-        )
-
-    refresh_run = _get_only_refresh_run(scratch_engine)
-    assert refresh_run.status == RefreshRunStatus.FAILED
-    assert refresh_run.failure_reason is not None
-    assert refresh_run.failure_reason.startswith(
-        f"After the data commit: {error_type.__name__}"
-    )
-    assert refresh_run.figures is not None
-    assert _get_vacuum_counts(scratch_engine) == [
-        vacuum_count + 1 for vacuum_count in vacuum_counts_before
-    ]
-    assert refresh_run.reports_added > 0
-    _assert_rows_added(scratch_engine, row_counts_before, refresh_run)
-    _assert_failure_pinged(alerts)
-
-
-def _assert_minutes_index_skipped(
-    scratch_engine: Engine,
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    alerts: _AlertRecorder,
-    reason_fragment: str,
-) -> None:
-    vacuum_counts_before = _get_vacuum_counts(scratch_engine)
-    row_counts_before = _get_row_counts(scratch_engine)
+    monkeypatch.setattr(minutes_step, "get_minutes_file_response", record_file_request)
 
     status = refresh_runs.populate_refresh_runs(
         scratch_session, _get_now(fake_parliament), None
     )
 
     assert status == RefreshRunStatus.SUCCEEDED
-    refresh_run = _get_only_refresh_run(scratch_engine)
-    assert refresh_run.status == RefreshRunStatus.SUCCEEDED
-    assert refresh_run.failure_reason is None
-    assert refresh_run.figures is not None
-    assert _get_vacuum_counts(scratch_engine) == [
-        vacuum_count + 1 for vacuum_count in vacuum_counts_before
-    ]
-    assert refresh_run.reports_added > 0
-    _assert_rows_added(scratch_engine, row_counts_before, refresh_run)
-    skipped_messages = [
-        message
-        for message in alerts.messages
-        if _MINUTES_INDEX_SKIPPED_ALERT_FRAGMENT in message
-    ]
-    assert len(skipped_messages) == 1
-    assert reason_fragment in skipped_messages[0]
-    _assert_success_pinged(alerts)
-
-
-def test_minutes_index_network_failure_is_alerted_and_the_run_succeeds(
-    scratch_engine: Engine,
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    alerts: _AlertRecorder,
-) -> None:
-    seed_stored(scratch_session)
-    fake_parliament.minutes_index_error = HansardGatewayError("index down")
-
-    _assert_minutes_index_skipped(
-        scratch_engine, scratch_session, fake_parliament, alerts, "index down"
-    )
-
-
-def test_minutes_to_review_are_alerted_when_a_run_with_no_new_rows_fails_at_the_figures(
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    alerts: _AlertRecorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    seed_stored(scratch_session)
-    refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
-    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 11))
-    scratch_session.commit()
-    _list_minutes_file(
-        fake_parliament, date(2018, 1, 11), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
-    )
-    alerts.messages.clear()
-
-    def fail_at_the_figures(session: Session) -> None:
-        raise HansardRefreshFailureError("figures failed")
-
-    monkeypatch.setattr(refresh_runs, "get_attribution_figures", fail_at_the_figures)
-
-    with pytest.raises(HansardRefreshFailureError):
-        refresh_runs.populate_refresh_runs(
-            scratch_session, _get_now(fake_parliament), None
-        )
-
-    review_messages = [
-        message for message in alerts.messages if _MINUTES_ALERT_FRAGMENT in message
-    ]
-    assert len(review_messages) == 1
-
-
-def test_minutes_to_review_of_a_row_listed_before_the_run_are_alerted_after_a_failure(
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    alerts: _AlertRecorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    seed_stored(scratch_session)
-    refresh_runs.populate_refresh_runs(scratch_session, _get_now(fake_parliament), None)
-    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 11))
-    scratch_session.add(
-        Minutes(
-            sitting_date=date(2018, 1, 11),
-            status=MinutesStatus.LISTED,
-            index_source=MinutesIndexSource.LIVE_PAGE,
-            file_url=f"{settings.minutes_media_url}/{_MINUTES_FILE_ID}/{_MINUTES_FILE_NAME}",
-            file_format=MinutesFileFormat.PDF,
-        )
-    )
-    scratch_session.commit()
-    _list_minutes_file(
-        fake_parliament, date(2018, 1, 11), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
-    )
-    alerts.messages.clear()
-
-    def fail_at_the_figures(session: Session) -> None:
-        raise HansardRefreshFailureError("figures failed")
-
-    monkeypatch.setattr(refresh_runs, "get_attribution_figures", fail_at_the_figures)
-
-    with pytest.raises(HansardRefreshFailureError):
-        refresh_runs.populate_refresh_runs(
-            scratch_session, _get_now(fake_parliament), None
-        )
-
-    review_messages = [
-        message for message in alerts.messages if _MINUTES_ALERT_FRAGMENT in message
-    ]
-    assert len(review_messages) == 1
-
-
-def test_index_answer_of_202_is_alerted_with_its_headers_and_the_run_succeeds(
-    scratch_engine: Engine,
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    alerts: _AlertRecorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    seed_stored(scratch_session)
-    monkeypatch.setattr(
-        minutes_step,
-        "get_minutes_index_response",
-        lambda: MinutesResponse(
-            url=settings.minutes_index_url,
-            status_code=_ACCEPTED_STATUS,
-            content=b"",
-            waf_action="challenge",
-            cache_status="Error from cloudfront",
-        ),
-    )
-
-    _assert_minutes_index_skipped(
-        scratch_engine,
-        scratch_session,
-        fake_parliament,
-        alerts,
-        "answered 202 (x-amzn-waf-action: challenge, x-cache: Error from cloudfront)",
-    )
-
-
-def test_index_answer_of_404_is_alerted_and_the_run_succeeds(
-    scratch_engine: Engine,
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    alerts: _AlertRecorder,
-) -> None:
-    seed_stored(scratch_session)
-    fake_parliament.minutes_index_status = _NOT_FOUND_STATUS
-
-    _assert_minutes_index_skipped(
-        scratch_engine,
-        scratch_session,
-        fake_parliament,
-        alerts,
-        "answered 404 (x-amzn-waf-action: None, x-cache: None)",
-    )
-
-
-def test_unreadable_index_page_fails_the_run_after_the_figures_and_the_vacuum(
-    scratch_engine: Engine,
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    alerts: _AlertRecorder,
-) -> None:
-    seed_stored(scratch_session)
-    fake_parliament.minutes_index_page = "<html><body></body></html>"
-
-    _assert_minutes_index_failure(
-        scratch_engine,
-        scratch_session,
-        fake_parliament,
-        alerts,
-        HansardMinutesIndexError,
-    )
-
-
-def test_minutes_needing_review_are_alerted(
-    scratch_session: Session, fake_parliament: FakeParliament, alerts: _AlertRecorder
-) -> None:
-    seed_stored(scratch_session)
-    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 11))
-    scratch_session.commit()
-    _list_minutes_file(
-        fake_parliament, date(2018, 1, 11), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
-    )
-
-    status = refresh_runs.populate_refresh_runs(
-        scratch_session, _get_now(fake_parliament), None
-    )
-
-    assert status == RefreshRunStatus.SUCCEEDED
-    review_messages = [
-        message for message in alerts.messages if _MINUTES_ALERT_FRAGMENT in message
-    ]
-    assert len(review_messages) == 1
-    assert "10 January 2018" in review_messages[0]
-
-
-def test_minutes_step_emits_only_the_granted_statements(
-    scratch_engine: Engine,
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(
-        minutes_step,
-        "get_minutes_pdf_text",
-        lambda content: _MINUTES_DIVISION_TEXT_FIXTURE.read_text(encoding="utf-8"),
-    )
-    seed_stored(scratch_session)
-    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 10))
-    scratch_session.add(
-        Minutes(sitting_date=date(2018, 1, 10), status=MinutesStatus.NOT_YET_LISTED)
-    )
-    scratch_session.commit()
-    _list_minutes_file(
-        fake_parliament, date(2018, 1, 10), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
-    )
-    recorded_statements: list[str] = []
-
-    def record_statement(
-        connection: object,
-        cursor: object,
-        statement: str,
-        parameters: object,
-        context: object,
-        is_many: bool,
-    ) -> None:
-        recorded_statements.append(statement)
-
-    event.listen(scratch_engine, "before_cursor_execute", record_statement)
-    try:
-        minutes_step.populate_minutes(scratch_session, set())
-    finally:
-        event.remove(scratch_engine, "before_cursor_execute", record_statement)
-
-    assert _get_statement_problems(recorded_statements) == []
-    observed_effects = {
-        effect
-        for statement in recorded_statements
-        for effect in _get_statement_effects(statement)
-    }
-    assert {
-        ("INSERT", "minutes"),
-        ("INSERT", "minutes_index_capture"),
-        ("INSERT", "division"),
-        ("INSERT", "minutes_division"),
-        ("INSERT", "division_vote"),
-        ("INSERT", "division_party_count"),
-        ("UPDATE", "minutes"),
-        ("SELECT", "report"),
-        ("SELECT", "speaker"),
-        ("SELECT", "division_party_count"),
-    } <= observed_effects
-    update_statements = [
-        statement
-        for statement in recorded_statements
-        if _get_statement_effects(statement) == [("UPDATE", "minutes")]
-    ]
-    assert update_statements
-    for update_statement in update_statements:
-        set_match = _SET_CLAUSE_PATTERN.search(update_statement)
-        assert set_match is not None
-        assert _SET_COLUMN_PATTERN.findall(set_match.group(1))
-    assert not {verb for verb, _ in observed_effects} & {"DELETE", "TRUNCATE", "GRANT"}
-
-
-def test_the_daily_minutes_step_writes_divisions_in_the_file_commit(
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(
-        minutes_step,
-        "get_minutes_pdf_text",
-        lambda content: _MINUTES_DIVISION_TEXT_FIXTURE.read_text(encoding="utf-8"),
-    )
-    seed_stored(scratch_session)
-    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 10))
-    scratch_session.add(
-        Minutes(sitting_date=date(2018, 1, 10), status=MinutesStatus.NOT_YET_LISTED)
-    )
-    scratch_session.commit()
-    _list_minutes_file(
-        fake_parliament, date(2018, 1, 10), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
-    )
-
-    minutes_step.populate_minutes(scratch_session, set())
-
-    scratch_session.expire_all()
-    stored_minutes = scratch_session.exec(
-        select(Minutes).where(col(Minutes.sitting_date) == date(2018, 1, 10))
-    ).one()
-    assert stored_minutes.status == MinutesStatus.TEXT_STORED
-    assert (
-        scratch_session.exec(select(func.count()).select_from(MinutesDivision)).one()
-        == _MINUTES_DIVISION_ROW_COUNT
-    )
-
-
-def test_the_daily_minutes_step_writes_the_breakdown_for_every_division_of_the_sitting(
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(
-        minutes_step,
-        "get_minutes_pdf_text",
-        lambda content: _MINUTES_DIVISION_TEXT_FIXTURE.read_text(encoding="utf-8"),
-    )
-    seed_stored(scratch_session)
-    report = add_division_report(
-        scratch_session, "MINUTES-REPORT", datetime(2018, 1, 10)
-    )
-    hansard_only_division = Division(
-        sitting_date=date(2018, 1, 10),
-        parliament_number=report.parliament_number,
-        report_division_number=1,
-        speech_ordinal=1,
-        count_source=DivisionCountSource.PRINTED_LINE,
-        printed_counts=_HANSARD_ONLY_PRINTED_COUNTS,
-        ayes=1,
-        noes=1,
-        list_status=DivisionListStatus.STORED,
-        sprs_report_id=report.report_id,
-    )
-    scratch_session.add(hansard_only_division)
-    scratch_session.add(
-        Minutes(sitting_date=date(2018, 1, 10), status=MinutesStatus.NOT_YET_LISTED)
-    )
-    scratch_session.flush()
-    assert hansard_only_division.id is not None
-    hansard_only_division_id = hansard_only_division.id
-    scratch_session.add(
-        DivisionVote(
-            ordinal=1,
-            printed_name="Mr A",
-            vote_choice=DivisionVoteChoice.AYE,
-            list_source=DivisionVoteListSource.HANSARD,
-            party="PAP",
-            division_id=hansard_only_division_id,
-        )
-    )
-    scratch_session.commit()
-    _list_minutes_file(
-        fake_parliament, date(2018, 1, 10), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
-    )
-
-    minutes_step.populate_minutes(scratch_session, set())
-
-    scratch_session.expire_all()
-    division_ids_with_breakdown = set(
-        scratch_session.exec(select(DivisionPartyCount.division_id)).all()
-    )
-    minutes_division_ids = set(
-        scratch_session.exec(select(MinutesDivision.division_id)).all()
-    )
-    assert hansard_only_division_id in division_ids_with_breakdown
-    assert len(minutes_division_ids) == _MINUTES_DIVISION_ROW_COUNT
-    assert minutes_division_ids <= division_ids_with_breakdown
-
-
-def test_a_failed_division_step_leaves_the_file_listed_with_no_rows(
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    def fail_division_step(session: Session, minutes_id: int) -> None:
-        raise HansardWriteCheckError("The division step failed")
-
-    monkeypatch.setattr(
-        minutes_step,
-        "get_minutes_pdf_text",
-        lambda content: _MINUTES_DIVISION_TEXT_FIXTURE.read_text(encoding="utf-8"),
-    )
-    monkeypatch.setattr(minutes_step, "populate_minutes_divisions", fail_division_step)
-    seed_stored(scratch_session)
-    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 10))
-    scratch_session.add(
-        Minutes(sitting_date=date(2018, 1, 10), status=MinutesStatus.NOT_YET_LISTED)
-    )
-    scratch_session.commit()
-    _list_minutes_file(
-        fake_parliament, date(2018, 1, 10), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
-    )
-
-    with pytest.raises(HansardWriteCheckError):
-        minutes_step.populate_minutes(scratch_session, set())
-
-    scratch_session.rollback()
-    stored_minutes = scratch_session.exec(
-        select(Minutes).where(col(Minutes.sitting_date) == date(2018, 1, 10))
-    ).one()
-    assert stored_minutes.status == MinutesStatus.LISTED
-    assert stored_minutes.extracted_text is None
-    assert (
-        scratch_session.exec(select(func.count()).select_from(MinutesDivision)).one()
-        == 0
-    )
-
-
-def test_an_unreadable_division_file_is_needs_review_with_no_division_rows(
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    alerts: _AlertRecorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(
-        minutes_step, "get_minutes_pdf_text", lambda content: _UNREADABLE_DIVISION_TEXT
-    )
-    seed_stored(scratch_session)
-    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 11))
-    scratch_session.commit()
-    _list_minutes_file(
-        fake_parliament, date(2018, 1, 11), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
-    )
-
-    status = refresh_runs.populate_refresh_runs(
-        scratch_session, _get_now(fake_parliament), None
-    )
-
-    assert status == RefreshRunStatus.SUCCEEDED
-    scratch_session.expire_all()
-    stored_minutes = scratch_session.exec(
-        select(Minutes).where(col(Minutes.sitting_date) == date(2018, 1, 11))
-    ).one()
-    assert stored_minutes.status == MinutesStatus.NEEDS_REVIEW
-    assert stored_minutes.status_note == UNREAD_DIVISION_STATUS_NOTE
-    assert (
-        scratch_session.exec(select(func.count()).select_from(MinutesDivision)).one()
-        == 0
-    )
-    review_messages = [
-        message for message in alerts.messages if _MINUTES_ALERT_FRAGMENT in message
-    ]
-    assert len(review_messages) == 1
-    assert UNREAD_DIVISION_STATUS_NOTE in review_messages[0]
-
-
-def test_a_minutes_file_that_cannot_be_fetched_is_alerted_once_and_the_run_succeeds(
-    scratch_session: Session,
-    fake_parliament: FakeParliament,
-    alerts: _AlertRecorder,
-) -> None:
-    seed_stored(scratch_session)
-    add_division_report(scratch_session, "MINUTES-REPORT", datetime(2018, 1, 11))
-    scratch_session.commit()
-    _list_minutes_file(
-        fake_parliament, date(2018, 1, 11), _MINUTES_FILE_ID, _MINUTES_FILE_NAME
-    )
-    fake_parliament.file_url_to_response.clear()
-
-    status = refresh_runs.populate_refresh_runs(
-        scratch_session, _get_now(fake_parliament), None
-    )
-
-    assert status == RefreshRunStatus.SUCCEEDED
-    scratch_session.expire_all()
-    stored_minutes = scratch_session.exec(
-        select(Minutes).where(col(Minutes.sitting_date) == date(2018, 1, 11))
-    ).one()
-    assert stored_minutes.status == MinutesStatus.LISTED
-    not_fetched_messages = [
-        message
-        for message in alerts.messages
-        if _MINUTES_NOT_FETCHED_ALERT_FRAGMENT in message
-    ]
-    assert len(not_fetched_messages) == 1
-    assert "11 January 2018 (the request failed)" in not_fetched_messages[0]
-
-
-def test_statement_check_flags_an_update_of_a_column_outside_the_grant() -> None:
-    problems = _get_statement_problems(
-        ["UPDATE minutes SET status=%(status)s, id=%(id)s WHERE minutes.id = %(id_1)s"]
-    )
-
-    assert len(problems) == 1
-    assert "Column id is not granted" in problems[0]
-
-
-def test_statement_check_flags_an_update_of_another_table() -> None:
-    problems = _get_statement_problems(
-        ["UPDATE report SET title=%(title)s WHERE report.id = %(id_1)s"]
-    )
-
-    assert any("UPDATE report is not granted" in problem for problem in problems)
-
-
-def test_statement_check_flags_an_update_without_a_where() -> None:
-    problems = _get_statement_problems(["UPDATE minutes SET status=%(status)s"])
-
-    assert any("has no WHERE" in problem for problem in problems)
-
-
-def test_statement_check_passes_a_granted_update() -> None:
-    assert _get_statement_problems([_GRANTED_UPDATE_STATEMENT]) == []
+    assert index_requests == []
+    assert file_requests == []
+    assert scratch_session.exec(select(func.count()).select_from(Minutes)).one() == 0
 
 
 def test_database_error_mid_write_fails_the_run(

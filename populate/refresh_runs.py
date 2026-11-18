@@ -24,8 +24,6 @@ from enums import RefreshRunStatus, ReportType
 from exceptions import (
     HansardAttachedFileError,
     HansardGatewayError,
-    HansardMinutesIndexError,
-    HansardMinutesIndexUnavailableError,
     HansardRefreshFailureError,
     HansardRefreshHaltError,
     HansardRefreshRunError,
@@ -43,7 +41,6 @@ from populate.attribution_figures import get_attribution_figures
 from populate.bill_speakers import populate_bill_speakers
 from populate.divisions import populate_divisions
 from populate.leave_periods import populate_leave_periods
-from populate.minutes import MinutesNotFetched, MinutesToReview, populate_minutes
 from populate.office_printed_ranges import populate_office_printed_ranges
 from populate.office_title_ministries import populate_office_title_ministries
 from populate.report_askers import populate_report_askers
@@ -91,9 +88,6 @@ from services.refresh import (
     build_held_report_message,
     build_late_sittings_message,
     build_many_held_reports_message,
-    build_minutes_index_skipped_message,
-    build_minutes_not_fetched_message,
-    build_minutes_to_review_message,
     build_new_parliament_reason,
     build_stale_report_links_message,
     build_summary_message,
@@ -223,11 +217,6 @@ class RunResult:
     changed_reports: list[ChangedReport] = field(default_factory=list)
     held_reports_to_alert: list[HeldReport] = field(default_factory=list)
     report_ids_with_unread_division_openings: list[int] = field(default_factory=list)
-    held_sitting_dates: set[date] = field(default_factory=set)
-    minutes_to_review: list[MinutesToReview] = field(default_factory=list)
-    minutes_not_fetched: list[MinutesNotFetched] = field(default_factory=list)
-    minutes_index_failure: Optional[HansardMinutesIndexError] = None
-    minutes_index_skip_reason: Optional[str] = None
     label_to_row_count: dict[str, int] = field(default_factory=dict)
     late_sitting_dates: list[str] = field(default_factory=list)
     unplaced_office_titles: list[str] = field(default_factory=list)
@@ -655,7 +644,6 @@ def _write_window_rows(
             continue
         window_result.reports_held_without_text += 1
         held_sitting_date = parse_sitting_date(search_result.sitting_date).date()
-        window_result.held_sitting_dates.add(held_sitting_date)
         if is_held_report_alert_due(held_sitting_date, today):
             window_result.held_reports_to_alert.append(
                 HeldReport(search_result.report_id, search_result.sitting_date)
@@ -861,7 +849,6 @@ def _add_window_result(run_result: RunResult, window_result: RunResult) -> None:
     run_result.held_reports_to_alert.extend(window_result.held_reports_to_alert)
     run_result.late_sitting_dates.extend(window_result.late_sitting_dates)
     run_result.unplaced_office_titles.extend(window_result.unplaced_office_titles)
-    run_result.held_sitting_dates.update(window_result.held_sitting_dates)
     run_result.report_ids_with_unread_division_openings.extend(
         window_result.report_ids_with_unread_division_openings
     )
@@ -890,25 +877,6 @@ def _send_success_alerts(run_result: RunResult) -> None:
         _send_alert(
             build_unread_division_openings_message(
                 run_result.report_ids_with_unread_division_openings
-            )
-        )
-    for minutes_to_review in run_result.minutes_to_review:
-        _send_alert(
-            build_minutes_to_review_message(
-                minutes_to_review.sitting_date, minutes_to_review.status_note
-            )
-        )
-    if run_result.minutes_index_skip_reason is not None:
-        _send_alert(
-            build_minutes_index_skipped_message(run_result.minutes_index_skip_reason)
-        )
-    if run_result.minutes_not_fetched:
-        _send_alert(
-            build_minutes_not_fetched_message(
-                {
-                    minutes_not_fetched.sitting_date: minutes_not_fetched.reason
-                    for minutes_not_fetched in run_result.minutes_not_fetched
-                }
             )
         )
     if is_held_report_count_over_limit(run_result.reports_held_without_text):
@@ -1025,25 +993,6 @@ def populate_refresh_runs(
             raise HansardRefreshFailureError(
                 build_error_bodies_reason(run_result.topics_fetched)
             )
-        try:
-            minutes_step_result = populate_minutes(
-                session, run_result.held_sitting_dates
-            )
-        except (HansardGatewayError, HansardMinutesIndexUnavailableError) as error:
-            run_result.minutes_index_skip_reason = str(error)
-        except HansardMinutesIndexError as error:
-            run_result.minutes_index_failure = error
-        else:
-            run_result.minutes_to_review = minutes_step_result.minutes_to_review
-            run_result.minutes_not_fetched = minutes_step_result.minutes_not_fetched
-            is_data_committed = (
-                is_data_committed
-                or minutes_step_result.rows_added
-                + minutes_step_result.rows_listed
-                + minutes_step_result.files_stored
-                + len(minutes_step_result.minutes_to_review)
-                > 0
-            )
         run_result.figures = build_attribution_figures_json(
             get_attribution_figures(session), datetime.now(timezone.utc)
         )
@@ -1056,8 +1005,6 @@ def populate_refresh_runs(
         _vacuum_analyze_tables(session)
         run_result.report_links_stale = populate_report_links(session)
         session.commit()
-        if run_result.minutes_index_failure is not None:
-            raise run_result.minutes_index_failure
         _finish_refresh_run(
             session, refresh_run_id, run_result, RefreshRunStatus.SUCCEEDED, None, None
         )
