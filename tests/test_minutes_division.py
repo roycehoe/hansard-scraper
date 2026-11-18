@@ -419,3 +419,32 @@ def test_2023_11_22_reads_a_row_of_two_continued_headings_as_headings() -> None:
     assert division.list_status == DivisionListStatus.STORED
     assert _get_counts_by_side(division) == (75, 8, 0)
     assert all("continued" not in name.printed_name.lower() for name in division.names)
+
+
+def test_2015_02_13_joins_bare_initials_and_a_name_cut_at_a_lowercase_piece() -> None:
+    division = _get_single_division(_read_fixture("minutes_2015_02_13.txt"))
+
+    assert (division.ayes, division.noes, division.abstentions) == (85, 0, 0)
+    assert division.list_status == DivisionListStatus.STORED
+    assert _get_counts_by_side(division) == (85, 0, 0)
+    assert "Masagos Zulkifli B M M" in _get_names(division, DivisionVoteChoice.AYE)
+    assert "Ong Kim Huat, Dav id" in _get_names(division, DivisionVoteChoice.AYE)
+
+
+def test_2016_08_15_joins_a_name_after_a_hyphen_and_after_a_wide_gap() -> None:
+    division = _get_single_division(_read_fixture("minutes_2016_08_15.txt"))
+
+    assert (division.ayes, division.noes, division.abstentions) == (72, 9, 0)
+    assert division.list_status == DivisionListStatus.STORED
+    assert _get_counts_by_side(division) == (72, 9, 0)
+    assert "Kuik Shiao-Yin" in _get_names(division, DivisionVoteChoice.AYE)
+    assert "Sun Xueling" in _get_names(division, DivisionVoteChoice.AYE)
+
+
+def test_2024_10_14_joins_a_name_split_by_a_short_gap() -> None:
+    division = _get_single_division(_read_fixture("minutes_2024_10_14.txt"))
+
+    assert (division.ayes, division.noes, division.abstentions) == (82, 0, 0)
+    assert division.list_status == DivisionListStatus.STORED
+    assert _get_counts_by_side(division) == (82, 0, 0)
+    assert "Xie Yao Quan" in _get_names(division, DivisionVoteChoice.AYE)

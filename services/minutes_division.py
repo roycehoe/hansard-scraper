@@ -23,16 +23,21 @@ _DIVISION_MENTION_PATTERN = re.compile(
     r"division bells?|\bdivided\b|\ba division\b", re.IGNORECASE
 )
 _LABEL_PATTERN = re.compile(r"\b(Ayes|Noes|No|Abstentions?|Absention)\b")
+_INITIALS_PATTERN = re.compile(r"^(?:[A-Z]\.?\s?)+$")
 _DIGIT_PATTERN = re.compile(r"\d")
 _DIGIT_OR_QUOTATION_MARK_PATTERN = re.compile(r'\d|["“”]')
 _WHITESPACE_RUN_PATTERN = re.compile(r"\s+")
 _NIL = "nil"
+_HYPHEN = "-"
+_SPACE = " "
 _AYES_PREFIX = "ay"
 _NOES_PREFIX = "no"
 _LABEL_PREFIX_LENGTH = 2
 _SENTENCE_END = "."
 _COUNT_END_CHARACTERS = frozenset({".", ",", ";"})
 _TAB_WIDTH = 8
+_MAX_GAP_INSIDE_NAME = 5
+_MAX_GAP_BETWEEN_ONE_WORD_PARTS = 8
 _MAX_COUNT_WRAP_LINES = 1
 _MAX_NAME_WORDS = 6
 _MIN_SENTENCE_END_WORD_LENGTH = 3
@@ -246,6 +251,42 @@ def _get_continued_headings(line: str) -> list[re.Match]:
     return list(_CONTINUED_HEADING_PATTERN.finditer(expanded_line))
 
 
+def _is_name_continuation(previous_token: _Token, token: _Token) -> bool:
+    gap = token.start - (previous_token.start + len(previous_token.text))
+    if gap <= _MAX_GAP_INSIDE_NAME:
+        return True
+    if previous_token.text.endswith(_HYPHEN):
+        return True
+    if token.text[:1].islower():
+        return True
+    if _INITIALS_PATTERN.match(token.text):
+        return True
+    return (
+        _SPACE not in previous_token.text
+        and _SPACE not in token.text
+        and gap <= _MAX_GAP_BETWEEN_ONE_WORD_PARTS
+    )
+
+
+def _get_name_tokens(line: str) -> list[_Token]:
+    name_tokens: list[_Token] = []
+    previous_token: Optional[_Token] = None
+    for token in _get_tokens(line):
+        if token.text.lower() == _NIL:
+            previous_token = None
+            continue
+        if previous_token is not None and _is_name_continuation(previous_token, token):
+            separator = "" if previous_token.text.endswith(_HYPHEN) else _SPACE
+            name_tokens[-1] = _Token(
+                name_tokens[-1].start,
+                f"{name_tokens[-1].text}{separator}{token.text}",
+            )
+        else:
+            name_tokens.append(token)
+        previous_token = token
+    return name_tokens
+
+
 def _read_names(
     lines: list[str],
     row_indexes: list[int],
@@ -256,9 +297,7 @@ def _read_names(
     for position, line_index in enumerate(row_indexes):
         continued_headings = _get_continued_headings(lines[line_index])
         if len(continued_headings) == 0:
-            for token in _get_tokens(lines[line_index]):
-                if token.text.lower() == _NIL:
-                    continue
+            for token in _get_name_tokens(lines[line_index]):
                 side = _get_nearest_side(token.start, side_to_start)
                 if side is None:
                     return None

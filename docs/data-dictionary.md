@@ -681,7 +681,7 @@ One row per printed name in a division's list, from the Hansard (`list_source` H
 | Field | Type | Meaning |
 |---|---|---|
 | `ordinal` | int | Position in the list. Unique with `division_id` and `list_source`. |
-| `printed_name` | str | Name as printed. |
+| `printed_name` | str | Name as printed. A name the minutes extraction split across a gap is one name here, and `MinutesDivision.printed_list` keeps the pieces. |
 | `vote_choice` | DivisionVoteChoice | `AYE`, `NO`, `ABSTAIN`, `ABSENT`, or `PAIRED`. Postgres type `divisionvotechoice`. |
 | `list_source` | DivisionVoteListSource | `MINUTES` or `HANSARD`. Postgres type `divisionvotelistsource`. |
 | `name_rule` | DivisionVoteNameRule | The rule that linked the name. NULL when there is no link. Postgres type `divisionvotenamerule`. |
