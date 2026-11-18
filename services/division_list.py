@@ -16,17 +16,18 @@ _OPENING_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _HEADING_CELL_PATTERN = re.compile(
-    r"^_?(Ayes|Noes|No|Abstentions?|Absention|Abstentations?|Absent|Paired)_?[.:]?(?:[- ]*\(?(?:contd|cont|continued)\.?\)?)?[.:]?_?$",
+    r"^_?(Ayes|Noes|Nose|No|Abstentions?|Absentions?|Abstentations?|Absent|Paired)_?[.:]?(?:[- ]*\(?(?:contd|cont|continued)\.?\)?)?[.:]?_?$",
     re.IGNORECASE,
 )
 _HEADING_WITH_NAME_PATTERN = re.compile(
-    r"^_?(Ayes|Noes|Abstentions?|Absention|Absent|Paired)_?\s+(\S.*)$", re.IGNORECASE
+    r"^_?(Ayes|Noes|Nose|Abstentions?|Absentions?|Absent|Paired)_?\s+(\S.*)$",
+    re.IGNORECASE,
 )
 _CELL_PATTERN = re.compile(r"\S+(?: \S+)*")
 _MARKER_PATTERN = re.compile(r"^(?:Column|Page)\s*:?\s*\d+$", re.IGNORECASE)
 _NOISE_CELL_PATTERN = re.compile(r"^[-_–—\s]*$")
 _GLUED_HEADING_OR_NIL_PATTERN = re.compile(
-    r"\.\s+(?:Ayes|Noes|No|Abstentions?|Absention|Abstentations?|Absent|Paired|Nil)\.?$",
+    r"\.\s+(?:Ayes|Noes|Nose|No|Abstentions?|Absentions?|Abstentations?|Absent|Paired|Nil)\.?$",
     re.IGNORECASE,
 )
 _OPENING_AYES_COUNT_PATTERN = re.compile(r"Ayes?\W{0,3}(\d+)", re.IGNORECASE)
@@ -45,10 +46,12 @@ _TITLE_CELLS = frozenset({"madam", "miss", "mrs", "mr", "dr"})
 _HEADING_WORD_TO_VOTE_CHOICE = {
     "ayes": DivisionVoteChoice.AYE,
     "noes": DivisionVoteChoice.NO,
+    "nose": DivisionVoteChoice.NO,
     "no": DivisionVoteChoice.NO,
     "abstention": DivisionVoteChoice.ABSTAIN,
     "abstentions": DivisionVoteChoice.ABSTAIN,
     "absention": DivisionVoteChoice.ABSTAIN,
+    "absentions": DivisionVoteChoice.ABSTAIN,
     "abstentation": DivisionVoteChoice.ABSTAIN,
     "abstentations": DivisionVoteChoice.ABSTAIN,
     "absent": DivisionVoteChoice.ABSENT,

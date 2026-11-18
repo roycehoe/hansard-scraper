@@ -135,6 +135,20 @@ def test_two_openings_that_print_the_same_counts_fall_back_to_the_order_rule() -
     assert parsed_list.list_status == DivisionListStatus.COUNTS_DISAGREE
 
 
+def test_21_september_1960_reads_a_nose_heading_as_the_noes_heading() -> None:
+    _assert_fixture_is_stored("hansard_list_1960_09_21_nose_heading")
+
+
+def test_4_july_1962_reads_an_absentions_heading_as_the_abstentions_heading() -> None:
+    _assert_fixture_is_stored("hansard_list_1962_07_04_absentions_heading")
+
+
+def test_30_january_1962_reads_an_absentions_heading_as_the_abstentions_heading() -> (
+    None
+):
+    _assert_fixture_is_stored("hansard_list_1962_01_30_absentions_heading")
+
+
 def test_30_august_1985_joins_a_name_continued_on_an_indented_line() -> None:
     _assert_fixture_is_stored("hansard_list_1985_08_30_indented_wraps")
 
