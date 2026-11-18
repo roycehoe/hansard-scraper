@@ -55,6 +55,9 @@ python scripts/scrape_speakers_by_parliament.py          # a dry run; add --comm
 # Daily refresh: adds new sittings, reports and speech rows (--allow-parliament N accepts one new Parliament, for a supervised backfill)
 python refresh.py
 
+# The minutes step on its own, from the home desktop (a dry run unless --commit; see docs/refresh.md)
+python refresh_minutes.py
+
 # Load one Parliament's members into the Speaker table (a dry run unless --commit)
 python scripts/load_parliament_speakers.py --parliament N
 ```

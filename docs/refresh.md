@@ -45,6 +45,8 @@ After the last month, the run takes steps 25 to 30:
     A network failure or a non-200 answer leaves the row `LISTED` for the next run and goes to one alert for the run. A file that is unreadable, a scan, not a PDF, or whose head prints another date becomes `NEEDS_REVIEW` with an alert. A network failure or a non-200 answer on the index page skips the step for this run and goes to one alert, and the run can still succeed. Parliament lists minutes weeks after a sitting, so the next run's read loses nothing.
 
     An index page that answers 200 but cannot be read (not UTF-8, no rows, or rows of another shape) is held until the figures, the VACUUM, and the report link step have run, then raised, because the parser needs a fix.
+
+    Parliament's bot filter answers requests from DigitalOcean addresses with `202` and `x-amzn-waf-action: challenge`, for the index page and for the files, so the job reads nothing here and sends the "Minutes index not read" alert. `refresh_minutes.py` runs this step on its own from a desktop at home each morning (see "The home minutes run").
 26. Computes the attribution figures, on every run, so a supervised write's links reach them by the next run.
 27. Runs `VACUUM (ANALYZE)` on `speech`, `report`, and `attendance`, including on a run that added no rows. VACUUM marks the pages whose rows every transaction can see, and an index-only scan reads the table for each row on a page that is not marked. It then checks that each table's `vacuum_count` in `pg_stat_user_tables` rose (see "Halts and how to clear each").
 28. Reads the whole corpus, inserts the `report_link` rows the plan has and the table lacks, and counts the stored rows that differ from the plan. It never deletes or updates, and a stale count above 0 sends an alert. The month rows are already committed, so a failure here fails the run and keeps them.
@@ -63,6 +65,37 @@ A push to `master` deploys the refresh job to production: the `refresh` job of t
 
 Enable the schedule only after the Parliament 15 backfill (see "The Parliament 15 backfill"). The backfill has run, and a plain run after it succeeded, so the stored data no longer blocks the schedule.
 
+## The home minutes run
+
+The home minutes run is `refresh_minutes.py`, which runs the minutes step of step 25 on its own from a desktop at home, because Parliament's bot filter refuses the job's requests and accepts the desktop's. It sends the job's two kinds of minutes request, with the same user agent and the same 2-second gap.
+
+It writes what step 25 writes (the `minutes`, `minutes_index_capture`, `minutes_division`, `division`, `division_vote`, and `division_party_count` rows), logs in as `hansard_refresh` with the grants in "Write role SQL", and sends step 25's three minutes alerts with the same text. It writes no `refresh_run` row, because the site's footer reads the latest `SUCCEEDED` row as the scheduled job's last check (see "For batch E").
+
+Step 25 leaves out the files of the dates of its own run's held hits, which the home run cannot see, because a held hit is never stored. The home run leaves out the file of every sitting from 14 days before its Singapore date to that date instead, which holds every date whose held hit the job still fetches again. Parliament lists a file weeks after its sitting, so this rarely delays one.
+
+Without `--commit`, the script reads the index page once, reads the database through a read-only connection, logs the rows it would add or move and the files it would fetch, and writes nothing. With `--commit`, it runs the step and sends the alerts. A failure, such as an index page that answers 200 but cannot be read, sends one more alert, `Hansard minutes run failed. {error}`, and exits 1. An index page that cannot be reached, or that answers other than 200, sends the "Minutes index not read" alert and exits 0.
+
+```bash
+set -a; . ~/.config/hansard/.env; set +a
+DATABASE_URL="$PRODUCTION_READONLY_DATABASE_URL" python refresh_minutes.py          # a dry run
+DATABASE_URL="$PRODUCTION_REFRESH_DATABASE_URL" python refresh_minutes.py --commit  # the run the timer starts
+```
+
+`~/.config/hansard/.env` is the desktop's login file. The run reads `DATABASE_URL`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID`, and sends no alert while either Telegram variable is unset. It sends no healthchecks.io ping, because the job's check would then count the home run as the job.
+
+`systemd/hansard-minutes.timer` starts `systemd/hansard-minutes.service` daily at 05:30 Singapore time, after the job, which starts at 04:00 and has taken up to about 30 minutes. A start missed while the desktop was off runs when it next boots. The service runs `refresh_minutes.py --commit` under `nice` from its own worktree, `hansard-scraper-wt-minutes` beside the main checkout, which it checks out at `origin/master` before each run. It therefore runs the code last pushed or fetched from the desktop, never an edit in progress in the main checkout.
+
+To switch the run on, from the main checkout:
+
+1. Add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` to `~/.config/hansard/.env`, with the job's values.
+2. Push `master`, so `origin/master` holds `refresh_minutes.py`.
+3. `git worktree add --detach ../hansard-scraper-wt-minutes origin/master`
+4. Run the dry run above from the worktree, and read what it would write.
+5. `cp systemd/hansard-minutes.service systemd/hansard-minutes.timer ~/.config/systemd/user/`, then `systemctl --user daemon-reload` and `systemctl --user enable --now hansard-minutes.timer`.
+6. `systemctl --user list-timers hansard-minutes.timer` shows the next start, and `journalctl --user -u hansard-minutes` shows each run's log.
+
+A user timer runs while nobody is logged in only when the user has linger on (`loginctl enable-linger`).
+
 ## Crawl rate
 
 Every request to SPRS goes through the crawl pacer in `gateway/http.py`. It sends one request at a time, at least 2 seconds apart, retries included, with the user agent `hansard-scraper (+contact@openhansard.sg)`.
@@ -77,6 +110,8 @@ A daily run sends six kinds of request:
 - one sitting request per date in the range with no stored sitting that has a search hit or falls in the last 14 days, retried up to four times when SPRS has no sitting for it, but only for a date with a new search hit
 - one request for the minutes index page
 - one request per listed minutes file whose sitting has stored reports
+
+The home minutes run sends the last two kinds as well, through the same pacer.
 
 ## Env vars and accounts
 
@@ -126,7 +161,7 @@ A hit whose topic has no text yet is not stored, because a raw row cannot be fil
 
 ## Alerts
 
-Every alert goes to the one Telegram chat, cut to 4,000 characters.
+Every alert goes to the one Telegram chat, cut to 4,000 characters. The home minutes run sends the three minutes alerts with the same text after its own step, and sends the "Minutes run failed" alert when it fails.
 
 | Alert | Text | Sent |
 |---|---|---|
@@ -144,6 +179,7 @@ Every alert goes to the one Telegram chat, cut to 4,000 characters.
 | Minutes not fetched | `Minutes files listed but not fetched: 11 January 2018 (the file answered 404); 12 January 2018 (the request failed). Each stays LISTED and the next run tries it again.` | After a successful run, or a halted or failed run that committed rows, once for the run, when a listed minutes file with stored reports and no held hit failed on the network or answered other than 200. It never halts the run or changes its status. A file that keeps failing alerts on each run until it is fetched. Up to 20 dates in date order, then "and N more". |
 | Halt | `Hansard refresh halted. {reason}` | On every halt. |
 | Failure | `Hansard refresh failed. {error}` | On every failure, including a run that cannot start. For an error the code raises on purpose, `{error}` is its type and message. For any other error it is the type alone, so a database host or user name never reaches the chat. |
+| Minutes run failed | `Hansard minutes run failed. {error}` | When the home minutes run fails, for an index page that answers 200 but cannot be read or for any other error. `{error}` follows the Failure row's rule. |
 
 ## `refresh_run` columns
 
