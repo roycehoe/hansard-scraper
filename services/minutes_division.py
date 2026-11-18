@@ -24,6 +24,7 @@ _DIVISION_MENTION_PATTERN = re.compile(
 )
 _LABEL_PATTERN = re.compile(r"\b(Ayes|Noes|No|Abstentions?|Absention)\b")
 _DIGIT_PATTERN = re.compile(r"\d")
+_DIGIT_OR_QUOTATION_MARK_PATTERN = re.compile(r'\d|["“”]')
 _WHITESPACE_RUN_PATTERN = re.compile(r"\s+")
 _NIL = "nil"
 _AYES_PREFIX = "ay"
@@ -166,6 +167,8 @@ def _get_counts(
 
 
 def _is_list_end(line: str) -> bool:
+    if _DIGIT_OR_QUOTATION_MARK_PATTERN.search(line):
+        return True
     tokens = _get_tokens(line)
     if any(len(token.text.split()) > _MAX_NAME_WORDS for token in tokens):
         return True

@@ -668,7 +668,7 @@ One row per division a minutes file prints, from 1 October 2008. Each is paired 
 | `ordinal` | int | Order within the file. Unique with `minutes_id`. |
 | `printed_counts` | str | Counts as the file prints them. |
 | `ayes`, `noes`, `abstentions` | int | The counts. `abstentions` is NULL where none are printed. |
-| `printed_list` | str | List as printed. |
+| `printed_list` | str | List as printed, from its heading row to the last line before the text that follows it, without page-header lines. A line that holds a digit or a quotation mark is not part of it. |
 | `list_status` | DivisionListStatus | As on `Division`. |
 | `pairing` | MinutesDivisionPairing | See above. Postgres type `minutesdivisionpairing`. Set by `services/division_pairing.py`. |
 | `minutes_id` | int | FK → `Minutes.id`. |

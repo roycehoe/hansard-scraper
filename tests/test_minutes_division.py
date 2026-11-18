@@ -389,3 +389,24 @@ def test_2018_03_01_drops_a_page_header_printed_without_its_spaces() -> None:
     assert division.list_status == DivisionListStatus.STORED
     assert _get_counts_by_side(division) == (89, 8, 0)
     assert all("MARCH" not in name.printed_name for name in division.names)
+
+
+def test_2022_11_29_ends_the_list_at_a_line_holding_a_digit() -> None:
+    division = _get_single_division(_read_fixture("minutes_2022_11_29.txt"))
+
+    assert (division.ayes, division.noes, division.abstentions) == (85, 2, 2)
+    assert division.list_status == DivisionListStatus.STORED
+    assert _get_counts_by_side(division) == (85, 2, 2)
+    assert "Zhulkarnain Abdul Rahim" in _get_names(division, DivisionVoteChoice.AYE)
+    assert all(name.printed_name != "Bill" for name in division.names)
+
+
+def test_2019_11_05_ends_the_list_at_a_line_holding_a_quotation_mark() -> None:
+    division = _get_single_division(_read_fixture("minutes_2019_11_05.txt"))
+
+    assert (division.ayes, division.noes, division.abstentions) == (52, 9, 2)
+    assert division.list_status == DivisionListStatus.STORED
+    assert _get_counts_by_side(division) == (52, 9, 2)
+    assert "Zainal Sapari" in _get_names(division, DivisionVoteChoice.AYE)
+    assert division.printed_list is not None
+    assert "Resolved" not in division.printed_list
