@@ -1,0 +1,140 @@
+{
+ "why": "A name printed on the line of the Ayes heading, in a column with no heading of its own (report 40773, 18 July 1957).",
+ "ayes": 29,
+ "noes": 0,
+ "abstentions": 0,
+ "absent": null,
+ "paired": null,
+ "division_index": 0,
+ "division_count": 1,
+ "expected_names": [
+  [
+   "AYE",
+   "Mohd. Sidik bin Haji Abdul Hamid."
+  ],
+  [
+   "AYE",
+   "Abdul Hamid bin Haji Jumat."
+  ],
+  [
+   "AYE",
+   "Nair, M. P. D."
+  ],
+  [
+   "AYE",
+   "Ong Piah Teng."
+  ],
+  [
+   "AYE",
+   "Ahmad bin Ibrahim."
+  ],
+  [
+   "AYE",
+   "Seah Peng Chuan."
+  ],
+  [
+   "AYE",
+   "Braga, A. J."
+  ],
+  [
+   "AYE",
+   "Shanks, E. P."
+  ],
+  [
+   "AYE",
+   "Chew Swee Kee."
+  ],
+  [
+   "AYE",
+   "Soh Ghee Soon."
+  ],
+  [
+   "AYE",
+   "Goh Chew Chua."
+  ],
+  [
+   "AYE",
+   "Sutherland, G. A. P."
+  ],
+  [
+   "AYE",
+   "Goh Tong Liang."
+  ],
+  [
+   "AYE",
+   "Tan Theng Chiang."
+  ],
+  [
+   "AYE",
+   "Goode, W. A. C."
+  ],
+  [
+   "AYE",
+   "Tan, William"
+  ],
+  [
+   "AYE",
+   "Hart, T. M."
+  ],
+  [
+   "AYE",
+   "Thomas, Francis."
+  ],
+  [
+   "AYE",
+   "Jumabhoy, J. M."
+  ],
+  [
+   "AYE",
+   "Wong Foo Nam."
+  ],
+  [
+   "AYE",
+   "Jumabhoy, R."
+  ],
+  [
+   "AYE",
+   "Lee Choon Eng."
+  ],
+  [
+   "AYE",
+   "Lee Kuan Yew."
+  ],
+  [
+   "AYE",
+   "Lim Cher Kheng."
+  ],
+  [
+   "AYE",
+   "Lim Choon Mong."
+  ],
+  [
+   "AYE",
+   "Lim, R. C. H."
+  ],
+  [
+   "AYE",
+   "Lim Koon Teck."
+  ],
+  [
+   "AYE",
+   "Lim Yew Hock."
+  ],
+  [
+   "AYE",
+   "Mak Pak Shee."
+  ],
+  [
+   "ABSENT",
+   "Ede, John."
+  ],
+  [
+   "ABSENT",
+   "Lazarous, A. R."
+  ],
+  [
+   "ABSENT",
+   "Lim Ching Siong."
+  ]
+ ]
+}

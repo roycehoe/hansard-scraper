@@ -277,6 +277,20 @@ def _set_section(state: _ListState, column: int, heading_word: str) -> None:
     state.column_to_name_index.pop(column, None)
 
 
+def _get_section(state: _ListState, column: int) -> Optional[DivisionVoteChoice]:
+    section = state.column_to_section.get(column)
+    if section is not None:
+        return section
+    left_columns = [
+        heading_column
+        for heading_column in state.column_to_section
+        if heading_column < column
+    ]
+    if not left_columns:
+        return None
+    return state.column_to_section[max(left_columns)]
+
+
 def _add_cell(
     state: _ListState, column: int, cell: str, is_run: bool, is_indented: bool
 ) -> None:
@@ -298,7 +312,7 @@ def _add_cell(
     if _is_list_end_cell(cell, is_run):
         state.is_ended = True
         return
-    section = state.column_to_section.get(column)
+    section = _get_section(state, column)
     if section is None:
         state.is_unreadable = True
         return

@@ -94,6 +94,14 @@ def test_12_july_1962_splits_names_printed_one_space_apart() -> None:
     _assert_fixture_is_stored("hansard_list_1962_07_12_one_space_gutter")
 
 
+def test_25_july_1984_gives_both_columns_the_one_heading_printed_above_them() -> None:
+    _assert_fixture_is_stored("hansard_list_1984_07_25_one_heading_two_columns")
+
+
+def test_18_july_1957_gives_a_name_beside_the_ayes_heading_the_ayes_side() -> None:
+    _assert_fixture_is_stored("hansard_list_1957_07_18_name_beside_the_ayes_heading")
+
+
 def test_30_august_1985_joins_a_name_continued_on_an_indented_line() -> None:
     _assert_fixture_is_stored("hansard_list_1985_08_30_indented_wraps")
 

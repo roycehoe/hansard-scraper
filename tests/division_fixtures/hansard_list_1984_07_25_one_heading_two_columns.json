@@ -1,0 +1,284 @@
+{
+ "why": "One Ayes heading above two columns of names (report 32525, 25 July 1984).",
+ "ayes": 66,
+ "noes": 1,
+ "abstentions": 1,
+ "absent": null,
+ "paired": null,
+ "division_index": 0,
+ "division_count": 1,
+ "expected_names": [
+  [
+   "AYE",
+   "A. Rahim Ishak"
+  ],
+  [
+   "AYE",
+   "Howe Yoon Chong"
+  ],
+  [
+   "AYE",
+   "Abbas Abu Amin"
+  ],
+  [
+   "AYE",
+   "Hwang Soo Jin"
+  ],
+  [
+   "AYE",
+   "Ahmad Mattar"
+  ],
+  [
+   "AYE",
+   "Jabbar, M.K.A."
+  ],
+  [
+   "AYE",
+   "Ang Kok Peng"
+  ],
+  [
+   "AYE",
+   "Jayakumar, S."
+  ],
+  [
+   "AYE",
+   "Chai Chong Yii"
+  ],
+  [
+   "AYE",
+   "Jek Yeun Thong"
+  ],
+  [
+   "AYE",
+   "Chan Chee Seng"
+  ],
+  [
+   "AYE",
+   "Koh Lip Lin"
+  ],
+  [
+   "AYE",
+   "Chandra Das, S."
+  ],
+  [
+   "AYE",
+   "Lai Tha Chai"
+  ],
+  [
+   "AYE",
+   "Chau Sik Ting"
+  ],
+  [
+   "AYE",
+   "Lau Ping Sum"
+  ],
+  [
+   "AYE",
+   "Bernard Chen"
+  ],
+  [
+   "AYE",
+   "Lau Teik Soon"
+  ],
+  [
+   "AYE",
+   "Cheong Yuen Chee, Eric"
+  ],
+  [
+   "AYE",
+   "Lee Chiaw Meng"
+  ],
+  [
+   "AYE",
+   "Chin Harn Tong"
+  ],
+  [
+   "AYE",
+   "Lee Khoon Choy"
+  ],
+  [
+   "AYE",
+   "Ch'ng Jit Koon"
+  ],
+  [
+   "AYE",
+   "Lee Kuan Yew"
+  ],
+  [
+   "AYE",
+   "Chua Sian Chin"
+  ],
+  [
+   "AYE",
+   "Lee Yiok Seng"
+  ],
+  [
+   "AYE",
+   "Dhanabalan, S."
+  ],
+  [
+   "AYE",
+   "Lee Yock Suan"
+  ],
+  [
+   "AYE",
+   "Fong Sip Chee"
+  ],
+  [
+   "AYE",
+   "Liew Kok Pun"
+  ],
+  [
+   "AYE",
+   "Goh Chee Wee"
+  ],
+  [
+   "AYE",
+   "Lim Boon Heng"
+  ],
+  [
+   "AYE",
+   "Goh Chok Tong"
+  ],
+  [
+   "AYE",
+   "Lim Chee Onn"
+  ],
+  [
+   "AYE",
+   "Goh Keng Swee"
+  ],
+  [
+   "AYE",
+   "Mansor Haji Sukaimi"
+  ],
+  [
+   "AYE",
+   "Ho Kah Loong"
+  ],
+  [
+   "AYE",
+   "Ong Pang Boon"
+  ],
+  [
+   "AYE",
+   "Ho See Beng"
+  ],
+  [
+   "AYE",
+   "Ong Teng Cheong"
+  ],
+  [
+   "AYE",
+   "Othman bin Haron Eusofe"
+  ],
+  [
+   "AYE",
+   "Teo Chong Tee"
+  ],
+  [
+   "AYE",
+   "Ow Chin Hock"
+  ],
+  [
+   "AYE",
+   "Toh Chin Chye"
+  ],
+  [
+   "AYE",
+   "Phua Bah Lee"
+  ],
+  [
+   "AYE",
+   "Wan Hussin Zoohri"
+  ],
+  [
+   "AYE",
+   "Rajaratnam, S."
+  ],
+  [
+   "AYE",
+   "Wan Soon Bee"
+  ],
+  [
+   "AYE",
+   "Rohan bin Kami"
+  ],
+  [
+   "AYE",
+   "Wong Kwei Cheong"
+  ],
+  [
+   "AYE",
+   "Saidi Haji Shariff"
+  ],
+  [
+   "AYE",
+   "Yap Giau Cheng, Eugene"
+  ],
+  [
+   "AYE",
+   "Seah Mui Kok"
+  ],
+  [
+   "AYE",
+   "Yeo Choo Kok"
+  ],
+  [
+   "AYE",
+   "Selvadurai, P."
+  ],
+  [
+   "AYE",
+   "Yeo Ning Hong"
+  ],
+  [
+   "AYE",
+   "Sia Kah Hui"
+  ],
+  [
+   "AYE",
+   "Yeo Toon Chia"
+  ],
+  [
+   "AYE",
+   "Sia Khoon Seong"
+  ],
+  [
+   "AYE",
+   "Sidek bin Saniff"
+  ],
+  [
+   "AYE",
+   "Tan Cheng Bock"
+  ],
+  [
+   "AYE",
+   "Tan, Augustine H.H."
+  ],
+  [
+   "NO",
+   "Jeyaretnam, J.B."
+  ],
+  [
+   "AYE",
+   "Tan Keng Yam, Tony"
+  ],
+  [
+   "AYE",
+   "Tang See Chim"
+  ],
+  [
+   "AYE",
+   "Tay Eng Soon"
+  ],
+  [
+   "AYE",
+   "Teh Cheang Wan"
+  ],
+  [
+   "ABSTAIN",
+   "Yeoh Ghim Seng"
+  ]
+ ]
+}
