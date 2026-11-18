@@ -19,7 +19,7 @@ from utils.leave_entry import (
 from utils.names import TITLE_PREFIXES, strip_title
 
 _SECTION_HEADING_RE = re.compile(
-    r"^#*\s*(?:\*\*)?\s*permission\s+to\s+members?\s+(?:to\s+)?be\s+absent\s*(?:\*\*)?\s*:?\s*(?:\*\*)?\s*$",
+    r"^#*\s*(?:\*\*)?\s*permission\s+to\s+members?\s+(?:to\s+)?be\s+absent\s*(?:\*\*)?\s*:?\s*(?:\*\*)?\s*(?:Under\s+the\s+provisions?\b.*)?$",
     re.IGNORECASE,
 )
 _WEEKDAY_PATTERN = r"(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)"

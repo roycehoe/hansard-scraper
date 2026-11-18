@@ -1942,3 +1942,74 @@ def test_a_preamble_that_grants_permission_to_the_following_members_stays_skippe
             "Encik A. Rahim Ishak (Siglap), Minister of State for Foreign Affairs.",
         ]
     ]
+
+
+_GLUED_HEADING_LINE = "PERMISSION TO MEMBERS TO BE ABSENT Under the provisions of clause 2(d) of Article 46 of the Constitution of the Republic of Singapore, the following Members have been granted permission to be or to remain absent from sittings of Parliament (or any Committee of Parliament to which they have been appointed) for the periods stated:   "
+_GLUED_HEADING_TABLE_LINES = (
+    "Name  |  From  |  To   ",
+    "---|---|---  ",
+    "|  (1997)  |  (1997)   ",
+    "Mr Tang Guan Seng |  9 June  |  19 June   ",
+    "|  7 July  |  10 July   ",
+    "Mr David T E Lim |  10 June  |  13 June   ",
+)
+
+
+def test_a_heading_glued_to_its_preamble_sentence_opens_a_section() -> None:
+    markdown_content = "\n".join(
+        ["* * *", "  ", _GLUED_HEADING_LINE, "  ", *_GLUED_HEADING_TABLE_LINES]
+    )
+
+    assert get_leave_sections(markdown_content) == [
+        [
+            "Name  |  From  |  To",
+            "|  (1997)  |  (1997)",
+            "Mr Tang Guan Seng |  9 June  |  19 June",
+            "|  7 July  |  10 July",
+            "Mr David T E Lim |  10 June  |  13 June",
+        ]
+    ]
+
+
+def test_the_table_below_a_glued_heading_is_read_row_by_row() -> None:
+    markdown_content = "\n".join(
+        ["* * *", "  ", _GLUED_HEADING_LINE, "  ", *_GLUED_HEADING_TABLE_LINES]
+    )
+
+    leave_entries = build_leave_entries_from_markdown(
+        markdown_content,
+        date(1997, 7, 11),
+        get_leave_date_misprints(),
+        get_leave_heading_years(),
+        get_leave_line_readings(),
+    )
+
+    assert [
+        (leave_entry.printed_name, leave_entry.carried_name)
+        for leave_entry in leave_entries
+    ] == [
+        ("Mr Tang Guan Seng", None),
+        (None, "Mr Tang Guan Seng"),
+        ("Mr David T E Lim", None),
+    ]
+    assert _get_date_pairs(leave_entries) == [
+        (date(1997, 6, 9), date(1997, 6, 19)),
+        (date(1997, 7, 7), date(1997, 7, 10)),
+        (date(1997, 6, 10), date(1997, 6, 13)),
+    ]
+    assert {leave_entry.entry_format for leave_entry in leave_entries} == {
+        LeaveEntryFormat.TABLE_ROW
+    }
+
+
+def test_words_after_the_heading_that_are_not_a_preamble_do_not_open_a_section() -> (
+    None
+):
+    markdown_content = "\n".join(
+        [
+            "Permission to Members to be Absent was given on that day.",
+            _ENTRY_LINE,
+        ]
+    )
+
+    assert get_leave_sections(markdown_content) == []
