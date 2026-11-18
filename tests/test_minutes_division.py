@@ -410,3 +410,12 @@ def test_2019_11_05_ends_the_list_at_a_line_holding_a_quotation_mark() -> None:
     assert "Zainal Sapari" in _get_names(division, DivisionVoteChoice.AYE)
     assert division.printed_list is not None
     assert "Resolved" not in division.printed_list
+
+
+def test_2023_11_22_reads_a_row_of_two_continued_headings_as_headings() -> None:
+    division = _get_single_division(_read_fixture("minutes_2023_11_22.txt"))
+
+    assert (division.ayes, division.noes, division.abstentions) == (75, 8, 0)
+    assert division.list_status == DivisionListStatus.STORED
+    assert _get_counts_by_side(division) == (75, 8, 0)
+    assert all("continued" not in name.printed_name.lower() for name in division.names)

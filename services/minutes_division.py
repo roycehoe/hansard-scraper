@@ -15,7 +15,7 @@ _PAGE_HEADER_PATTERN = re.compile(
     r"^\s*N\s?o\.\s*\d+\s+\d{1,2}\s*[A-Za-z]+\s*\d{4}\s*\d+\s*$"
 )
 _CONTINUED_HEADING_PATTERN = re.compile(
-    r"^\s*(Ayes|Noes?|No|Abstentions?)\s*[–-]\s*continued\s*$", re.IGNORECASE
+    r"(Ayes|Noes?|No|Abstentions?)\s*[–-]\s*continued", re.IGNORECASE
 )
 _COLUMN_GAP_PATTERN = re.compile(r"\S+(?: \S+)*")
 _GLUED_CAPITALS_PATTERN = re.compile(r"(?<=[a-z])(?=[A-Z])")
@@ -239,6 +239,13 @@ def _split_glued_capitals(text: str) -> str:
     return " ".join(parts)
 
 
+def _get_continued_headings(line: str) -> list[re.Match]:
+    expanded_line = line.expandtabs(_TAB_WIDTH)
+    if _CONTINUED_HEADING_PATTERN.sub("", expanded_line).strip() != "":
+        return []
+    return list(_CONTINUED_HEADING_PATTERN.finditer(expanded_line))
+
+
 def _read_names(
     lines: list[str],
     row_indexes: list[int],
@@ -247,8 +254,8 @@ def _read_names(
     side_to_start = dict(first_side_to_start)
     names: list[ParsedVoteName] = []
     for position, line_index in enumerate(row_indexes):
-        heading_match = _CONTINUED_HEADING_PATTERN.match(lines[line_index])
-        if heading_match is None:
+        continued_headings = _get_continued_headings(lines[line_index])
+        if len(continued_headings) == 0:
             for token in _get_tokens(lines[line_index]):
                 if token.text.lower() == _NIL:
                     continue
@@ -261,19 +268,19 @@ def _read_names(
                     )
                 )
             continue
-        heading_side = _get_vote_choice(heading_match.group(1))
-        if heading_side not in side_to_start:
-            return None
         if position + 1 == len(row_indexes):
             return None
         next_line = lines[row_indexes[position + 1]]
-        if _CONTINUED_HEADING_PATTERN.match(next_line) is not None:
+        if len(_get_continued_headings(next_line)) > 0:
             return None
-        expanded_heading = lines[line_index].expandtabs(_TAB_WIDTH)
-        heading_start = len(expanded_heading) - len(expanded_heading.lstrip())
-        side_to_start[heading_side] = min(
-            _get_tokens(next_line), key=lambda token: abs(token.start - heading_start)
-        ).start
+        for continued_heading in continued_headings:
+            heading_side = _get_vote_choice(continued_heading.group(1))
+            if heading_side not in side_to_start:
+                return None
+            side_to_start[heading_side] = min(
+                _get_tokens(next_line),
+                key=lambda token: abs(token.start - continued_heading.start()),
+            ).start
     return names
 
 
@@ -293,7 +300,7 @@ def _read_list(lines: list[str], counts: _PrintedCounts) -> _ReadList:
         return _ReadList(
             DivisionListStatus.LAYOUT_UNREADABLE, printed_list, [], next_index
         )
-    if _CONTINUED_HEADING_PATTERN.match(lines[row_indexes[0]]) is not None:
+    if len(_get_continued_headings(lines[row_indexes[0]])) > 0:
         return _ReadList(
             DivisionListStatus.LAYOUT_UNREADABLE, printed_list, [], next_index
         )
