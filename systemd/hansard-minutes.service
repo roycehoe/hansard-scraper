@@ -1,0 +1,12 @@
+# The home minutes run (docs/refresh.md, "The home minutes run"). It runs the
+# code at origin/master from its own worktree, never the shared checkout.
+[Unit]
+Description=Open Hansard minutes run from the home desktop
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/ghq/github.com/roycehoe/hansard-scraper-wt-minutes
+ExecStartPre=/usr/bin/git -C %h/ghq/github.com/roycehoe/hansard-scraper-wt-minutes checkout --quiet --force --detach origin/master
+ExecStart=/bin/bash -c 'set -a; . %h/.config/hansard/.env; set +a; DATABASE_URL="$$PRODUCTION_REFRESH_DATABASE_URL" exec %h/ghq/github.com/roycehoe/hansard-scraper/.venv/bin/python refresh_minutes.py --commit'
+Nice=10
+TimeoutStartSec=30min
