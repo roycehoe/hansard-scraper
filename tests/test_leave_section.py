@@ -1762,3 +1762,183 @@ def test_a_trailing_and_from_is_cut_off_text() -> None:
 
     assert _get_date_pairs(leave_entries) == [(date(1990, 4, 16), date(1990, 4, 18))]
     assert leave_entries[0].entry_format == LeaveEntryFormat.PROSE_RANGE
+
+
+_SINGULAR_HEADING = "#### PERMISSION TO MEMBER TO BE ABSENT"
+_ARTICLE_30_PREAMBLE = "Under the provisions of clause 2 (d) of Article 30 of the Constitution of Singapore, I have granted permission to"
+
+
+def _build_granting_entries(
+    sentence: str, sitting_date: date, *following_lines: str
+) -> list[LeaveEntry]:
+    return build_leave_entries_from_markdown(
+        "\n".join(
+            ["Some earlier text.", _SINGULAR_HEADING, sentence, *following_lines]
+        ),
+        sitting_date,
+        get_leave_date_misprints(),
+        get_leave_heading_years(),
+        get_leave_line_readings(),
+    )
+
+
+def test_a_granting_sentence_under_the_singular_heading_is_one_entry() -> None:
+    sentence = f"{_ARTICLE_30_PREAMBLE} Dr Chew Chin Han (Tampines) to be absent from the sitting of Parliament today, the 2nd November, 1967.   "
+
+    leave_entries = _build_granting_entries(
+        sentence, date(1967, 11, 2), "  ", "|  | (P.COOMARASWAMY)  ", "| Speaker,  "
+    )
+
+    assert len(leave_entries) == 1
+    leave_entry = leave_entries[0]
+    assert leave_entry.printed_name == "Dr Chew Chin Han"
+    assert leave_entry.office_printed is None
+    assert leave_entry.printed_from == "2nd November, 1967"
+    assert leave_entry.printed_to is None
+    assert leave_entry.leave_dates == LeaveDates(date(1967, 11, 2), date(1967, 11, 2))
+    assert leave_entry.entry_format == LeaveEntryFormat.PROSE_SINGLE_DAY
+    assert leave_entry.name_source == LeaveNameSource.PRINTED
+    assert leave_entry.year_source == LeaveYearSource.PRINTED_IN_ENTRY
+    assert leave_entry.printed_line == sentence.strip()
+
+
+@pytest.mark.parametrize(
+    ("sentence", "sitting_date", "printed_name", "office_printed", "leave_date"),
+    [
+        (
+            f"{_ARTICLE_30_PREAMBLE} the Prime Minister ( Mr Lee Kuan Yew) to be absent from the sitting of Parliament today, the 14th December, 1967.   ",
+            date(1967, 12, 14),
+            "Mr Lee Kuan Yew",
+            "Prime Minister",
+            date(1967, 12, 14),
+        ),
+        (
+            f"{_ARTICLE_30_PREAMBLE} Mr Lee Kuan Yew (Tanjong Pagar), Prime Minister, to be absent from the sitting of Parliament today, the 12th January, 1979.   ",
+            date(1979, 1, 12),
+            "Mr Lee Kuan Yew",
+            "Prime Minister",
+            date(1979, 1, 12),
+        ),
+        (
+            f"{_ARTICLE_30_PREAMBLE} Mr Lee Kuan Yew to be absent from the sitting of Parliament today, the 18th March 1970.   ",
+            date(1970, 3, 18),
+            "Mr Lee Kuan Yew",
+            None,
+            date(1970, 3, 18),
+        ),
+        (
+            f"{_ARTICLE_30_PREAMBLE} Mr Hon Sui Sen (Havelock), Minister for Finance, to be or to remain absent from the sitting of Parliament today, 19th March, 1975.  ",
+            date(1975, 3, 19),
+            "Mr Hon Sui Sen",
+            "Minister for Finance",
+            date(1975, 3, 19),
+        ),
+        (
+            "Under the provisions of clause 2 (d) of Article 30 of the Constitution of Singapore I have granted permission Mr Lee Kuan Yew (Tanjong Pagar), Prime Minister, to be absent from the sitting of Parliament today, the 3rd August, 1971.  ",
+            date(1971, 8, 3),
+            "Mr Lee Kuan Yew",
+            "Prime Minister",
+            date(1971, 8, 3),
+        ),
+        (
+            "Under the provision of clause 2 (d) of Article 30 of the Constitution of Singapore, I have granted permission to Mr Lee Kuan Yew (Tanjong Pagar), Prime Minister, to be absent form the sitting fo Parliament today, the 2nd August, 1971.  ",
+            date(1971, 8, 2),
+            "Mr Lee Kuan Yew",
+            "Prime Minister",
+            date(1971, 8, 2),
+        ),
+        (
+            "Under the provisions of clause 2 (d) sitting of Parliament today, the 5th of Article 30 of the Constitution of Singapore August, I have granted permission to Mr Lee Kuan Yew (Tanjong Pagar), Speaker, Prime Minister, to be absent from the sitting of Parliament today, the 5th August,1971.  ",
+            date(1971, 8, 5),
+            "Mr Lee Kuan Yew",
+            "Speaker, Prime Minister",
+            date(1971, 8, 5),
+        ),
+    ],
+)
+def test_a_granting_sentence_gives_the_printed_name_office_and_day(
+    sentence: str,
+    sitting_date: date,
+    printed_name: str,
+    office_printed: Optional[str],
+    leave_date: date,
+) -> None:
+    leave_entries = _build_granting_entries(sentence, sitting_date)
+
+    assert len(leave_entries) == 1
+    assert leave_entries[0].printed_name == printed_name
+    assert leave_entries[0].office_printed == office_printed
+    assert leave_entries[0].leave_dates == LeaveDates(leave_date, leave_date)
+    assert leave_entries[0].entry_format == LeaveEntryFormat.PROSE_SINGLE_DAY
+    assert leave_entries[0].printed_line == sentence.strip()
+
+
+def test_a_granting_sentence_with_two_days_gives_an_entry_for_each() -> None:
+    sentence = "Under the provisions of clause 2 (d) of Article 30 of the Constitution of Singapore, I have granted permission to Inche Sha'ari Bin Tadin (Kampong Chai Chee), Parliamentary Secretary to the Minister for Culture, to be absent from sittings of Parliament on the 23rd and 24th March, 1972.  "
+
+    leave_entries = _build_granting_entries(sentence, date(1972, 3, 22))
+
+    assert [leave_entry.ordinal for leave_entry in leave_entries] == [1, 2]
+    assert {leave_entry.printed_name for leave_entry in leave_entries} == {
+        "Inche Sha'ari Bin Tadin"
+    }
+    assert {leave_entry.office_printed for leave_entry in leave_entries} == {
+        "Parliamentary Secretary to the Minister for Culture"
+    }
+    assert [leave_entry.leave_dates for leave_entry in leave_entries] == [
+        LeaveDates(date(1972, 3, 23), date(1972, 3, 23)),
+        LeaveDates(date(1972, 3, 24), date(1972, 3, 24)),
+    ]
+    assert {leave_entry.entry_format for leave_entry in leave_entries} == {
+        LeaveEntryFormat.PROSE_DAY_LIST
+    }
+
+
+def test_a_speaker_statement_about_a_leave_granted_two_days_before_is_an_entry() -> (
+    None
+):
+    markdown_content = "\n".join(
+        [
+            "#### PERMISSION TO MEMBER TO BE ABSENT",
+            "  ",
+            "**Mr Speaker:** I have to inform the Assembly that I granted permission to Mr Ong Piah Teng to be absent from the Assembly on Monday, 7th November 1955. ",
+            "#### ORAL ANSWERS TO QUESTIONS",
+        ]
+    )
+
+    leave_entries = build_leave_entries_from_markdown(
+        markdown_content,
+        date(1955, 11, 9),
+        get_leave_date_misprints(),
+        get_leave_heading_years(),
+        get_leave_line_readings(),
+    )
+
+    assert len(leave_entries) == 1
+    assert leave_entries[0].printed_name == "Mr Ong Piah Teng"
+    assert leave_entries[0].leave_dates == LeaveDates(
+        date(1955, 11, 7), date(1955, 11, 7)
+    )
+
+
+def test_a_preamble_that_grants_permission_to_the_following_members_stays_skipped() -> (
+    None
+):
+    markdown_content = "\n".join(
+        [
+            "#### PERMISSION TO MEMBERS TO BE ABSENT",
+            "Under the provisions of clause 2 (d) of Article 30 of the Constitution of Singapore, I have granted permission to the following Members to be or to remain absent from Parliament sitting on 20th March, 1974:   ",
+            "  ",
+            "Mr Lee Kuan Yew (Tanjong Pagar), Prime Minister.   ",
+            "Encik A. Rahim Ishak (Siglap), Minister of State for Foreign Affairs.   ",
+            "  ",
+            "|  | YEOH GHIM SENG  ",
+        ]
+    )
+
+    assert get_leave_sections(markdown_content) == [
+        [
+            "Mr Lee Kuan Yew (Tanjong Pagar), Prime Minister.",
+            "Encik A. Rahim Ishak (Siglap), Minister of State for Foreign Affairs.",
+        ]
+    ]

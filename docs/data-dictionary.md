@@ -583,13 +583,13 @@ One row per leave period, grouping the permission list's repeated printings of t
 
 ### LeavePeriodPrinting
 
-One row per date a permission entry prints at a sitting. A line that prints three dates makes three rows. Sittings from 10 September 2012 take their rows from the structured permission list (`Sitting.ptba_list`). Earlier sittings take them from the permission section of `Sitting.markdown_content`, read by `services/leave_section.py`.
+One row per date a permission entry prints at a sitting. A line that prints three dates makes three rows. Sittings from 10 September 2012 take their rows from the structured permission list (`Sitting.ptba_list`). Earlier sittings take them from the permission section of `Sitting.markdown_content`, read by `services/leave_section.py`. A section is a list of entries, a table, or one sentence that grants permission to one Member ("I have granted permission to Dr Chew Chin Han (Tampines) to be absent from the sitting of Parliament today, the 2nd November, 1967").
 
 | Field | Type | Meaning |
 |---|---|---|
 | `ordinal` | int | Order of the printing in its sitting, counted by printing and not by line. Unique with `sitting_id`. |
 | `sitting_date` | date | Date of the sitting that printed the entry. |
-| `printed_name` | str | The name as printed, with its title, up to the constituency bracket. NULL for a printed blank and for a line whose name cannot be trusted. |
+| `printed_name` | str | The name as printed, with its title, up to the constituency bracket. In a granting sentence it is the name after "granted permission to", or the bracket's text where the sentence prints the office with the name in a bracket (`the Prime Minister ( Mr Lee Kuan Yew)`). NULL for a printed blank and for a line whose name cannot be trusted. |
 | `carried_name` | str | The printed name of the nearest named row above, for a row with a blank name. Never set beside `printed_name`. |
 | `printed_from` | str | The words the date reader read for the start, after the misprint list of `data/leave_date_misprints.json`. In the older sections it is NULL where the misprint list changed those words, and for an `UNREAD` entry. For a single day or a day list it holds the matched day item and `printed_to` is NULL, and for a duration or an entry with a start only it holds the start date's words. |
 | `printed_to` | str | The words the date reader read for the end, on the same terms as `printed_from`. A dash in the To column of a table is kept as printed. |

@@ -22,6 +22,15 @@ _SECTION_HEADING_RE = re.compile(
     r"^#*\s*(?:\*\*)?\s*permission\s+to\s+members?\s+(?:to\s+)?be\s+absent\s*(?:\*\*)?\s*:?\s*(?:\*\*)?\s*$",
     re.IGNORECASE,
 )
+_WEEKDAY_PATTERN = r"(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)"
+_GRANTED_SENTENCE_RE = re.compile(
+    rf"granted\s+permission\s+(?!(?:to\s+)?the\s+following\b)(?:to\s+)?(?P<who>.+?),?\s+to\s+(?:be|remain)\b(?:\s+or\s+to\s+remain)?\s+absent\b"
+    rf"[^0-9]*?(?:on\s+)?(?:{_WEEKDAY_PATTERN},?\s*)?(?:the\s+)?(?P<dates>\d.*?)[.\s]*$",
+    re.IGNORECASE,
+)
+_OFFICE_AND_NAME_IN_BRACKET_RE = re.compile(
+    r"^the\s+(?P<office>[^()]+?)\s*\(\s*(?P<name>[^()]+?)\s*\)$", re.IGNORECASE
+)
 _SIGNATURE_LINE_RE = re.compile(r"^\|?\s*_?(?:Deputy )?Speaker")
 _CAPITAL_SIGNATURE_LINE_RE = re.compile(r"^\|\s*\|?\s*\(?[A-Z .]{6,}\)?,?\s*$")
 _GLUED_BOLD_HEADING_RE = re.compile(r"\s*\*\*[A-Z].*$")
@@ -205,7 +214,9 @@ def get_leave_sections(markdown_content: str) -> list[list[str]]:
             continue
         if section_lines is None:
             continue
-        if not line or _PREAMBLE_LINE_RE.match(line):
+        if not line:
+            continue
+        if _PREAMBLE_LINE_RE.match(line) and not _GRANTED_SENTENCE_RE.search(line):
             continue
         if _is_section_end(line, is_entry_seen):
             sections.append(section_lines)
@@ -1308,6 +1319,58 @@ def _parse_italic_prose_entries(
     return italic_entries
 
 
+def _get_granted_sentence_entry_parts(line: str) -> Optional[_ProseEntryParts]:
+    granted_sentence = _GRANTED_SENTENCE_RE.search(line)
+    if granted_sentence is None:
+        return None
+    granted_to = granted_sentence.group("who").strip(_NAME_TRAILING_CHARACTERS)
+    entry_parts = _ProseEntryParts(
+        printed_name=granted_to,
+        office_printed=None,
+        is_office_after_comma=False,
+        printed_line=line,
+        reading_line=line,
+        date_text=granted_sentence.group("dates"),
+        date_text_offset=granted_sentence.start("dates"),
+    )
+    office_and_name = _OFFICE_AND_NAME_IN_BRACKET_RE.match(granted_to)
+    if office_and_name is not None:
+        return replace(
+            entry_parts,
+            printed_name=office_and_name.group("name").strip(),
+            office_printed=office_and_name.group("office").strip(),
+        )
+    bracket = _CONSTITUENCY_BRACKET_RE.search(
+        granted_to, len(granted_to) - len(strip_title(granted_to))
+    )
+    if bracket is None:
+        return entry_parts
+    office_printed = _get_office_printed(granted_to[bracket.end() :])
+    return replace(
+        entry_parts,
+        printed_name=granted_to[: bracket.start()]
+        .rstrip(_NAME_TRAILING_CHARACTERS)
+        .strip(),
+        office_printed=office_printed,
+        is_office_after_comma=office_printed is not None,
+    )
+
+
+def _parse_granted_sentence_entries(
+    line: str, first_ordinal: int, sitting_date: date
+) -> Optional[list[LeaveEntry]]:
+    entry_parts = _get_granted_sentence_entry_parts(line)
+    if entry_parts is None:
+        return None
+    printings = _get_prose_printings(entry_parts, sitting_date)
+    if all(printing.entry_format == LeaveEntryFormat.UNREAD for printing in printings):
+        return None
+    return [
+        _build_prose_entry(first_ordinal + index, line, entry_parts, printing)
+        for index, printing in enumerate(printings)
+    ]
+
+
 def _read_line(
     line: str,
     first_ordinal: int,
@@ -1316,6 +1379,11 @@ def _read_line(
     leave_date_misprints: list[LeaveDateMisprint],
     leave_heading_years: list[LeaveHeadingYear],
 ) -> list[LeaveEntry]:
+    granted_sentence_entries = _parse_granted_sentence_entries(
+        line, first_ordinal, sitting_date
+    )
+    if granted_sentence_entries is not None:
+        return granted_sentence_entries
     italic_entries = _parse_italic_prose_entries(
         line, first_ordinal, sitting_date, leave_date_misprints
     )
