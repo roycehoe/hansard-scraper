@@ -23,7 +23,6 @@ from database.speech import Speech
 from enums import RefreshRunStatus, ReportType
 from exceptions import (
     HansardAttachedFileError,
-    HansardError,
     HansardGatewayError,
     HansardMinutesIndexError,
     HansardMinutesIndexUnavailableError,
@@ -102,6 +101,7 @@ from services.refresh import (
     build_unlinked_reason,
     build_unplaced_office_titles_message,
     build_unread_division_openings_message,
+    get_alert_error_text,
     get_content_hash,
     get_dates_between,
     get_probe_start_date,
@@ -267,11 +267,7 @@ def _send_failure_ping() -> None:
 
 
 def _get_alert_failure_reason(error: Exception, is_data_committed: bool) -> str:
-    error_text = (
-        f"{type(error).__name__}: {error}"
-        if isinstance(error, HansardError)
-        else type(error).__name__
-    )
+    error_text = get_alert_error_text(error)
     if is_data_committed:
         return f"{error_text} after the data commit"
     return error_text

@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 
+from exceptions import HansardGatewayError
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
     HansardReportOldResponse,
@@ -20,6 +21,7 @@ from services.refresh import (
     build_unlinked_labels_message,
     build_unlinked_reason,
     build_unread_division_openings_message,
+    get_alert_error_text,
     get_content_hash,
     get_dates_between,
     get_probe_start_date,
@@ -336,3 +338,14 @@ def test_minutes_to_review_message_names_the_date_and_the_note() -> None:
     assert build_minutes_to_review_message(
         date(2018, 1, 11), "The file is a scan."
     ) == ("Minutes of 11 January 2018 need review: The file is a scan.")
+
+
+def test_alert_error_text_names_type_and_message_for_a_hansard_error() -> None:
+    assert (
+        get_alert_error_text(HansardGatewayError("index down"))
+        == "HansardGatewayError: index down"
+    )
+
+
+def test_alert_error_text_names_only_the_type_for_any_other_error() -> None:
+    assert get_alert_error_text(ValueError("host db.example.test")) == "ValueError"

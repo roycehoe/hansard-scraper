@@ -2,6 +2,7 @@ import hashlib
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional, Union
 
+from exceptions import HansardError
 from schemas.hansard_report_response import (
     HansardReportNewResponse,
     HansardReportOldResponse,
@@ -107,6 +108,12 @@ def build_halt_message(reason: str) -> str:
 
 def build_failure_message(reason: str) -> str:
     return f"Hansard refresh failed. {reason}"
+
+
+def get_alert_error_text(error: Exception) -> str:
+    if isinstance(error, HansardError):
+        return f"{type(error).__name__}: {error}"
+    return type(error).__name__
 
 
 def build_new_parliament_reason(parliament_numbers: list[int]) -> str:
