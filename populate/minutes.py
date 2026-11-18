@@ -76,15 +76,19 @@ class _FileFields:
 
 
 @dataclass(frozen=True)
-class _ListingResult:
-    rows_added: int
-    rows_listed: int
+class ListingMove:
+    minutes_id: int
+    index_row: MinutesIndexRow
 
 
 @dataclass(frozen=True)
-class _ListingMove:
-    minutes_id: int
-    index_row: MinutesIndexRow
+class MinutesPlan:
+    index_page: str
+    listed_sitting_dates: list[date]
+    new_index_rows: list[MinutesIndexRow]
+    listing_moves: list[ListingMove]
+    not_yet_listed_dates: list[date]
+    file_sitting_dates: list[date]
 
 
 def _read_index_page(index_response: MinutesResponse) -> str:
@@ -208,9 +212,16 @@ def _store_minutes_file(session: Session, minutes: Minutes) -> StoredMinutesFile
     return StoredMinutesFile(file_fields.status, file_fields.status_note)
 
 
-def _store_listing(
-    session: Session, index_page: str, report_dates: set[date]
-) -> _ListingResult:
+def get_minutes_plan(session: Session, held_sitting_dates: set[date]) -> MinutesPlan:
+    index_page = _read_index_page(get_minutes_index_response())
+    report_dates = {
+        sitting_date.date()
+        for sitting_date in CRUDReport(
+            session
+        ).get_distinct_sitting_dates_by_sitting_date_from(
+            datetime.combine(MINUTES_INDEX_FIRST_DATE, time.min)
+        )
+    }
     sitting_date_to_index_row = {
         index_row.sitting_date: index_row
         for index_row in parse_live_index_page(index_page, settings.minutes_media_url)
@@ -223,7 +234,7 @@ def _store_listing(
         )
     }
     new_index_rows: list[MinutesIndexRow] = []
-    listing_moves: list[_ListingMove] = []
+    listing_moves: list[ListingMove] = []
     not_yet_listed_dates: list[date] = []
     for sitting_date in planned_sitting_dates:
         stored_minutes = sitting_date_to_stored_minutes.get(sitting_date)
@@ -239,23 +250,43 @@ def _store_listing(
             stored_minutes.status == MinutesStatus.NOT_YET_LISTED
             and stored_minutes.id is not None
         ):
-            listing_moves.append(_ListingMove(stored_minutes.id, index_row))
+            listing_moves.append(ListingMove(stored_minutes.id, index_row))
+    sitting_dates_listed_after_store = (
+        {
+            sitting_date
+            for sitting_date, stored_minutes in sitting_date_to_stored_minutes.items()
+            if stored_minutes.status == MinutesStatus.LISTED
+        }
+        | {index_row.sitting_date for index_row in new_index_rows}
+        | {listing_move.index_row.sitting_date for listing_move in listing_moves}
+    )
+    return MinutesPlan(
+        index_page,
+        sorted(sitting_date_to_index_row),
+        new_index_rows,
+        listing_moves,
+        not_yet_listed_dates,
+        sorted((sitting_dates_listed_after_store & report_dates) - held_sitting_dates),
+    )
+
+
+def _store_listing(session: Session, minutes_plan: MinutesPlan) -> None:
     index_capture_id = (
-        _store_live_capture(session, index_page)
-        if new_index_rows or listing_moves
+        _store_live_capture(session, minutes_plan.index_page)
+        if minutes_plan.new_index_rows or minutes_plan.listing_moves
         else None
     )
     CRUDMinutes(session).add_many(
         [
             _build_listed_minutes(index_row, index_capture_id)
-            for index_row in new_index_rows
+            for index_row in minutes_plan.new_index_rows
         ]
         + [
             Minutes(sitting_date=sitting_date, status=MinutesStatus.NOT_YET_LISTED)
-            for sitting_date in not_yet_listed_dates
+            for sitting_date in minutes_plan.not_yet_listed_dates
         ]
     )
-    for listing_move in listing_moves:
+    for listing_move in minutes_plan.listing_moves:
         CRUDMinutes(session).set_listed_by_id_and_status(
             listing_move.minutes_id,
             MinutesStatus.NOT_YET_LISTED,
@@ -267,32 +298,24 @@ def _store_listing(
             listing_move.index_row.file_format,
         )
     session.commit()
-    return _ListingResult(
-        len(new_index_rows) + len(not_yet_listed_dates),
-        len(new_index_rows) + len(listing_moves),
-    )
 
 
 def populate_minutes(
     session: Session, held_sitting_dates: set[date]
 ) -> MinutesStepResult:
-    index_page = _read_index_page(get_minutes_index_response())
-    report_dates = {
-        sitting_date.date()
-        for sitting_date in CRUDReport(
-            session
-        ).get_distinct_sitting_dates_by_sitting_date_from(
-            datetime.combine(MINUTES_INDEX_FIRST_DATE, time.min)
-        )
-    }
-    listing_result = _store_listing(session, index_page, report_dates)
+    minutes_plan = get_minutes_plan(session, held_sitting_dates)
+    _store_listing(session, minutes_plan)
+    rows_added = len(minutes_plan.new_index_rows) + len(
+        minutes_plan.not_yet_listed_dates
+    )
+    rows_listed = len(minutes_plan.new_index_rows) + len(minutes_plan.listing_moves)
     files_stored = 0
     minutes_to_review: list[MinutesToReview] = []
     minutes_not_fetched: list[MinutesNotFetched] = []
-    for listed_minutes in CRUDMinutes(session).get_by_statuses([MinutesStatus.LISTED]):
+    for listed_minutes in CRUDMinutes(session).get_by_sitting_dates(
+        minutes_plan.file_sitting_dates
+    ):
         sitting_date = listed_minutes.sitting_date
-        if sitting_date not in report_dates or sitting_date in held_sitting_dates:
-            continue
         stored_minutes_file = _store_minutes_file(session, listed_minutes)
         if stored_minutes_file.status == MinutesStatus.LISTED:
             minutes_not_fetched.append(
@@ -305,11 +328,11 @@ def populate_minutes(
                 MinutesToReview(sitting_date, stored_minutes_file.status_note or "")
             )
     logger.info(
-        f"Minutes: {listing_result.rows_added} rows added, {listing_result.rows_listed} listed, {files_stored} files stored, {len(minutes_to_review)} to review"
+        f"Minutes: {rows_added} rows added, {rows_listed} listed, {files_stored} files stored, {len(minutes_to_review)} to review"
     )
     return MinutesStepResult(
-        listing_result.rows_added,
-        listing_result.rows_listed,
+        rows_added,
+        rows_listed,
         files_stored,
         minutes_to_review,
         minutes_not_fetched,
