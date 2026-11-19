@@ -31,6 +31,7 @@ from enums import (
 from exceptions import (
     HansardGatewayError,
     HansardMinutesIndexError,
+    HansardSettingError,
     HansardWriteCheckError,
 )
 from populate.minutes_divisions import UNREAD_DIVISION_STATUS_NOTE
@@ -177,7 +178,7 @@ def fake_parliament(monkeypatch: pytest.MonkeyPatch) -> FakeParliament:
     return fake_parliament
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def alerts(monkeypatch: pytest.MonkeyPatch) -> _AlertRecorder:
     alert_recorder = _AlertRecorder()
     monkeypatch.setattr(
@@ -508,7 +509,7 @@ def test_a_non_hansard_error_alerts_its_type_only_and_propagates(
 
 
 @pytest.mark.parametrize("unset_setting", ["telegram_bot_token", "telegram_chat_id"])
-def test_a_missing_telegram_setting_sends_nothing(
+def test_a_commit_run_refuses_while_a_telegram_setting_is_unset(
     unset_setting: str,
     scratch_session: Session,
     fake_parliament: FakeParliament,
@@ -516,11 +517,34 @@ def test_a_missing_telegram_setting_sends_nothing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(settings, unset_setting, None)
-    fake_parliament.minutes_index_error = HansardGatewayError("index down")
+    _add_report(scratch_session, _FIRST_DATE, "R1")
+    _list_dates(fake_parliament, [_FIRST_DATE])
+    _answer_file(fake_parliament, _FIRST_DATE, _PDF_FIXTURE.read_bytes())
 
-    refresh_minutes.refresh_minutes(_NOW, True)
+    with pytest.raises(HansardSettingError, match=unset_setting.upper()):
+        refresh_minutes.refresh_minutes(_NOW, True)
 
+    assert _get_row_count(scratch_session, Minutes) == 0
+    assert _get_row_count(scratch_session, MinutesIndexCapture) == 0
+    assert fake_parliament.minutes_file_calls == []
     assert alerts.messages == []
+
+
+def test_a_dry_run_needs_no_telegram_setting(
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    logged_messages: list[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "telegram_bot_token", None)
+    monkeypatch.setattr(settings, "telegram_chat_id", None)
+    _add_report(scratch_session, _FIRST_DATE, "R1")
+    _list_dates(fake_parliament, [_FIRST_DATE])
+
+    refresh_minutes.refresh_minutes(_NOW, False)
+
+    assert "Files to fetch: 2018-01-10" in logged_messages
+    assert logged_messages[-1] == "Dry run: nothing written"
 
 
 def test_the_commit_run_statements_pass_the_grants_and_the_statement_check(

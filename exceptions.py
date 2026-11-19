@@ -124,3 +124,7 @@ class HansardDivisionCheckError(HansardError):
 
 class HansardLeaveSectionCheckError(HansardError):
     pass
+
+
+class HansardSettingError(HansardError):
+    pass

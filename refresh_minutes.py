@@ -4,7 +4,11 @@ from datetime import date, datetime, timezone
 from sqlmodel import Session
 
 from database.init import build_read_only_engine, engine
-from exceptions import HansardGatewayError, HansardMinutesIndexUnavailableError
+from exceptions import (
+    HansardGatewayError,
+    HansardMinutesIndexUnavailableError,
+    HansardSettingError,
+)
 from gateway.telegram import send_telegram_message
 from logs import logger
 from populate.minutes import MinutesPlan, get_minutes_plan, populate_minutes
@@ -65,6 +69,13 @@ def _log_minutes_plan(minutes_plan: MinutesPlan) -> None:
     logger.info(f"Files to fetch: {_get_dates_text(minutes_plan.file_sitting_dates)}")
 
 
+def _validate_can_store_minutes() -> None:
+    if settings.telegram_bot_token is None:
+        raise HansardSettingError("A commit run sends alerts and needs TELEGRAM_BOT_TOKEN")
+    if settings.telegram_chat_id is None:
+        raise HansardSettingError("A commit run sends alerts and needs TELEGRAM_CHAT_ID")
+
+
 def refresh_minutes(now: datetime, is_commit: bool) -> None:
     today = get_singapore_today(now)
     recheck_window_dates = set(get_dates_between(get_recheck_start_date(today), today))
@@ -75,6 +86,7 @@ def refresh_minutes(now: datetime, is_commit: bool) -> None:
         logger.info("Dry run: nothing written")
         return
 
+    _validate_can_store_minutes()
     with Session(engine) as session:
         try:
             minutes_step_result = populate_minutes(session, recheck_window_dates)
