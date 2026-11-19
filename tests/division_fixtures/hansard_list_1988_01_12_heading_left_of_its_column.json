@@ -1,0 +1,300 @@
+{
+ "why": "A heading printed two positions left of its column (Abstention beside Yeo Toon Chia) is not part of the name (12 January 1988, division 1).",
+ "ayes": 72,
+ "noes": 0,
+ "abstentions": 0,
+ "absent": null,
+ "paired": null,
+ "division_index": 0,
+ "division_count": 1,
+ "expected_names": [
+  [
+   "AYE",
+   "Abbas Abu Amin"
+  ],
+  [
+   "AYE",
+   "Lee Yiok Seng"
+  ],
+  [
+   "AYE",
+   "Abdullah Tarmugi"
+  ],
+  [
+   "AYE",
+   "Lee Yock Suan"
+  ],
+  [
+   "AYE",
+   "Ahmad Mattar"
+  ],
+  [
+   "AYE",
+   "Leong Horn Kee"
+  ],
+  [
+   "AYE",
+   "Ang Kok Peng"
+  ],
+  [
+   "AYE",
+   "Lim Boon Heng"
+  ],
+  [
+   "AYE",
+   "Barker, E.W."
+  ],
+  [
+   "AYE",
+   "Lim Chee Onn"
+  ],
+  [
+   "AYE",
+   "Beng Kian Lam, Arthur"
+  ],
+  [
+   "AYE",
+   "Ng Kah Ting"
+  ],
+  [
+   "AYE",
+   "Chai Chong Yii"
+  ],
+  [
+   "AYE",
+   "Ong Pang Boon"
+  ],
+  [
+   "AYE",
+   "Chandra Das, S."
+  ],
+  [
+   "AYE",
+   "Ong Teng Cheong"
+  ],
+  [
+   "AYE",
+   "Chen, Bernard"
+  ],
+  [
+   "AYE",
+   "Othman bin Haron Eusofe"
+  ],
+  [
+   "AYE",
+   "Cheong Yuen Chee, Eric"
+  ],
+  [
+   "AYE",
+   "Ow Chin Hock"
+  ],
+  [
+   "AYE",
+   "Chew Heng Ching"
+  ],
+  [
+   "AYE",
+   "Phua Bah Lee"
+  ],
+  [
+   "AYE",
+   "Chin Harn Tong"
+  ],
+  [
+   "AYE",
+   "Rajaratnam, S."
+  ],
+  [
+   "AYE",
+   "Chng Hee Kok"
+  ],
+  [
+   "AYE",
+   "Sia Khoon Seong"
+  ],
+  [
+   "AYE",
+   "Ch'ng Jit Koon"
+  ],
+  [
+   "AYE",
+   "Sidek bin Saniff"
+  ],
+  [
+   "AYE",
+   "Chua Sian Chin"
+  ],
+  [
+   "AYE",
+   "Tan Cheng Bock"
+  ],
+  [
+   "AYE",
+   "Dhanabalan, S."
+  ],
+  [
+   "AYE",
+   "Tan, Dixie"
+  ],
+  [
+   "AYE",
+   "Goh Chee Wee"
+  ],
+  [
+   "AYE",
+   "Tan, Augustine H.H."
+  ],
+  [
+   "AYE",
+   "Goh Chok Tong"
+  ],
+  [
+   "AYE",
+   "Tan Keng Yam, Tony"
+  ],
+  [
+   "AYE",
+   "Goh Choon Kang"
+  ],
+  [
+   "AYE",
+   "Tan Soo Khoon"
+  ],
+  [
+   "AYE",
+   "Heng Chiang Meng"
+  ],
+  [
+   "AYE",
+   "Tan Tee Yong, Philip"
+  ],
+  [
+   "AYE",
+   "Ho Kah Leong"
+  ],
+  [
+   "AYE",
+   "Tang Guan Seng"
+  ],
+  [
+   "AYE",
+   "Ho Tat Kin"
+  ],
+  [
+   "AYE",
+   "Tang See Chim"
+  ],
+  [
+   "AYE",
+   "Hu Tsu Tau, Richard"
+  ],
+  [
+   "AYE",
+   "Tay Eng Soon"
+  ],
+  [
+   "AYE",
+   "Ibrahim Othman"
+  ],
+  [
+   "AYE",
+   "Toh Chin Chye"
+  ],
+  [
+   "AYE",
+   "Jayakumar, S."
+  ],
+  [
+   "AYE",
+   "Vasoo, S."
+  ],
+  [
+   "AYE",
+   "Jek Yeun Thong"
+  ],
+  [
+   "AYE",
+   "Wan Hussin bin Hj Zoohri"
+  ],
+  [
+   "AYE",
+   "Koh Lam Son"
+  ],
+  [
+   "AYE",
+   "Wan Soon Bee"
+  ],
+  [
+   "AYE",
+   "Koh Lip Lin"
+  ],
+  [
+   "AYE",
+   "Wang Kai Yuen"
+  ],
+  [
+   "AYE",
+   "Lai Tha Chai"
+  ],
+  [
+   "AYE",
+   "Wong, Aline K."
+  ],
+  [
+   "AYE",
+   "Lau Ping Sum"
+  ],
+  [
+   "AYE",
+   "Wong Kan Seng"
+  ],
+  [
+   "AYE",
+   "Lee Boon Yang"
+  ],
+  [
+   "AYE",
+   "Wong Kwei Cheong"
+  ],
+  [
+   "AYE",
+   "Lee Hsien Loong"
+  ],
+  [
+   "AYE",
+   "Yap Giau Cheng, Eugene"
+  ],
+  [
+   "AYE",
+   "Lee Kuan Yew"
+  ],
+  [
+   "AYE",
+   "Yatiman Yusof"
+  ],
+  [
+   "AYE",
+   "Yeo Cheow Tong"
+  ],
+  [
+   "AYE",
+   "Yeo Choo Kok"
+  ],
+  [
+   "AYE",
+   "Yeo Ning Hong"
+  ],
+  [
+   "AYE",
+   "Yeo Toon Chia"
+  ],
+  [
+   "AYE",
+   "Yu-Foo Yee Shoon"
+  ],
+  [
+   "AYE",
+   "Zulkifli bin Mohammed"
+  ]
+ ]
+}

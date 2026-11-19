@@ -43,6 +43,7 @@ _MIN_NARROW_GUTTER_LINES = 12
 _MIN_COLUMN_LINES = 2
 _MIN_NARROW_COLUMN_LINES = 5
 _HEADING_COLUMN_LEAD = 4
+_HEADING_CELL_LEAD_BEFORE_COLUMN = 3
 _SPANNING_HEADING_DISTANCE = 6
 _MIN_SPANNING_COLUMNS = 2
 _MIN_HEADINGS_FOR_COLUMNS = 2
@@ -479,7 +480,10 @@ def _get_column_of(offset: int, column_offsets: list[int]) -> int:
 def _get_heading_line_cells(line: str, column_offsets: list[int]) -> list[_PreCell]:
     pre_cells: list[_PreCell] = []
     for line_cell in _get_pre_row_cells(line):
-        column = _get_column_of(line_cell.offset, column_offsets)
+        lead = (
+            _HEADING_CELL_LEAD_BEFORE_COLUMN if _is_heading_cell(line_cell.text) else 0
+        )
+        column = _get_column_of(line_cell.offset + lead, column_offsets)
         end = line_cell.offset + len(line_cell.text)
         if pre_cells and pre_cells[-1].column == column:
             pre_cells[-1] = _PreCell(

@@ -598,3 +598,9 @@ def test_a_sentence_ends_the_list() -> None:
     ]
     assert parsed_list.printed_list is not None
     assert "accordingly" not in parsed_list.printed_list
+
+
+def test_12_january_1988_keeps_a_heading_printed_left_of_its_column_out_of_the_name() -> (
+    None
+):
+    _assert_fixture_is_stored("hansard_list_1988_01_12_heading_left_of_its_column")
