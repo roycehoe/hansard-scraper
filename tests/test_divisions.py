@@ -8,8 +8,15 @@ from sqlmodel import Session, col, delete, func, select
 
 from crud.division import CRUDDivision
 from database.division import Division
+from database.division_party_count import DivisionPartyCount
 from database.speech import Speech
-from enums import DivisionCountSource, DivisionListStatus, SpeechKind
+from enums import (
+    DivisionCountSource,
+    DivisionListStatus,
+    DivisionVoteChoice,
+    DivisionVoteListSource,
+    SpeechKind,
+)
 from exceptions import HansardWriteCheckError
 from populate.divisions import (
     get_division_match,
@@ -28,6 +35,11 @@ _FILLER = "Order, order."
 _FIRST_REPORT_ID = "report-one"
 _SECOND_REPORT_ID = "report-two"
 _STORED_DIVISION_COUNT = 2
+_SITTING_DATE_1984 = datetime(1984, 7, 25)
+_SINGULAR_AYE_LINE = "The House divided: Aye, 1; Noes, 54; Abstention, 1."
+_FIFTY_AYES_LINE = "The House divided: Ayes, 50; No, 1; Abstention, 1."
+_TAKE_A_DIVISION = "All right. Take a division."
+_PARTY_MEMBER_COUNT = 40
 
 
 def _get_stored_divisions(session: Session) -> list[Division]:
@@ -150,6 +162,69 @@ def test_write_keeps_the_id_of_a_matched_division_when_its_number_and_ordinal_mo
     assert kept.id == old_id
     assert (kept.report_division_number, kept.speech_ordinal) == (2, 3)
     assert stored[_LINE_SECOND.removesuffix(".")].id != old_id
+
+
+def test_a_division_read_before_a_stored_one_leaves_its_id_and_party_counts(
+    scratch_session: Session,
+) -> None:
+    report = add_division_report(
+        scratch_session, _FIRST_REPORT_ID, _SITTING_DATE_1984, parliament_number=6
+    )
+    add_division_speech_rows(
+        scratch_session, report, [(SpeechKind.PROCEDURAL, None, _FIFTY_AYES_LINE)]
+    )
+    assert report.id is not None
+    write_division_plan(
+        scratch_session, get_division_plan(scratch_session, [report.id])
+    )
+    old_division = _get_stored_divisions(scratch_session)[0]
+    assert old_division.id is not None
+    party_count = DivisionPartyCount(
+        member_count=_PARTY_MEMBER_COUNT,
+        uncertain_member_count=0,
+        party="People's Action Party",
+        list_source=DivisionVoteListSource.HANSARD,
+        vote_choice=DivisionVoteChoice.AYE,
+        division_id=old_division.id,
+    )
+    scratch_session.add(party_count)
+    scratch_session.flush()
+    old_party_count_id = party_count.id
+    for old_speech in scratch_session.exec(
+        select(Speech).where(col(Speech.report_id) == report.id)
+    ).all():
+        scratch_session.delete(old_speech)
+    scratch_session.flush()
+    add_division_speech_rows(
+        scratch_session,
+        report,
+        [
+            (SpeechKind.SPEECH, "Mr Deputy Speaker", _TAKE_A_DIVISION),
+            (SpeechKind.PROCEDURAL, None, _SINGULAR_AYE_LINE),
+            (SpeechKind.SPEECH, None, _FILLER),
+            (SpeechKind.PROCEDURAL, None, _FIFTY_AYES_LINE),
+        ],
+    )
+
+    write_division_plan(
+        scratch_session, get_division_plan(scratch_session, [report.id])
+    )
+
+    stored = {
+        division.printed_counts: division
+        for division in _get_stored_divisions(scratch_session)
+    }
+    kept = stored[_FIFTY_AYES_LINE.removesuffix(".")]
+    assert kept.id == old_division.id
+    assert (kept.report_division_number, kept.speech_ordinal) == (2, 4)
+    added = stored[_SINGULAR_AYE_LINE.removesuffix(".")]
+    assert added.id != old_division.id
+    assert (added.report_division_number, added.speech_ordinal) == (1, 2)
+    stored_party_counts = list(scratch_session.exec(select(DivisionPartyCount)).all())
+    assert [
+        (stored_party_count.id, stored_party_count.division_id)
+        for stored_party_count in stored_party_counts
+    ] == [(old_party_count_id, old_division.id)]
 
 
 def test_write_matches_equal_printed_counts_in_order(
