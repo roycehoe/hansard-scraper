@@ -83,7 +83,7 @@ Do not apply this fallback when there are 2+ names. Those are ANNEX/appendix doc
 
 ### Count labels
 
-A printed count line and a spoken total name their sides with "Ayes", "Noes", "No", "Abstentions", "Absent" and "Paired", and with the misprints listed in `_LABEL_TO_SIDE`. The record prints a lone Member's vote in the singular, so "Aye" reads as "Ayes". Report 32776 (31 August 1983, row 54) prints "The House divided: Aye, 1; Noes, 56; Abstention, 1."
+A printed count line and a spoken total name their sides with "Ayes", "Noes", "No", "Abstentions", "Absent" and "Paired", and with the misprints listed in `_LABEL_TO_SIDE`. The record prints a lone Member's vote in the singular, so "Aye" reads as "Ayes", in the count line and as a heading of the name list (`services/division_list.py`). Report 32776 (31 August 1983, row 54) prints "The House divided: Aye, 1; Noes, 56; Abstention, 1."
 
 ---
 

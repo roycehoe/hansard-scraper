@@ -16,7 +16,7 @@ _OPENING_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _HEADING_CELL_PATTERN = re.compile(
-    r"^_?(Ayes|Noes|Nose|No|Abstentions?|Absentions?|Abstentations?|Absent|Paired)_?[.:]?(?:[- ]*\(?(?:contd|cont|continued)\.?\)?)?[.:]?_?$",
+    r"^_?(Ayes?|Noes|Nose|No|Abstentions?|Absentions?|Abstentations?|Absent|Paired)_?[.:]?(?:[- ]*\(?(?:contd|cont|continued)\.?\)?)?[.:]?_?$",
     re.IGNORECASE,
 )
 _HEADING_WITH_NAME_PATTERN = re.compile(
@@ -48,6 +48,7 @@ _MIN_SPANNING_COLUMNS = 2
 _MIN_HEADINGS_FOR_COLUMNS = 2
 _TITLE_CELLS = frozenset({"madam", "miss", "mrs", "mr", "dr"})
 _HEADING_WORD_TO_VOTE_CHOICE = {
+    "aye": DivisionVoteChoice.AYE,
     "ayes": DivisionVoteChoice.AYE,
     "noes": DivisionVoteChoice.NO,
     "nose": DivisionVoteChoice.NO,

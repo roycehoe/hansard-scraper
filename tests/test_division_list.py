@@ -234,6 +234,10 @@ def test_24_april_1958_reads_an_initial_b_after_a_comma_as_an_initial_not_bin() 
     _assert_fixture_is_stored("hansard_list_1958_04_24_initial_b")
 
 
+def test_13_march_1984_reads_the_singular_aye_heading() -> None:
+    _assert_fixture_is_stored("hansard_list_1984_03_13_singular_aye")
+
+
 def test_10_january_1957_stores_absent_names_under_a_line_with_no_absent_count() -> (
     None
 ):

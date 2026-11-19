@@ -1,0 +1,192 @@
+{
+ "why": "The record prints a lone Member's vote under the heading \"Aye\" in the singular, so the heading opens the Ayes section and the list is STORED against \"Aye, 1; Noes, 43; Abstention, 1\" (the Committee of Supply report of SPRS id 00069460-ZZ, 13 March 1984).",
+ "ayes": 1,
+ "noes": 43,
+ "abstentions": 1,
+ "absent": null,
+ "paired": null,
+ "division_index": 0,
+ "division_count": 1,
+ "expected_names": [
+  [
+   "AYE",
+   "Jeyaretnam, J.B."
+  ],
+  [
+   "NO",
+   "Lee Khoon Choy"
+  ],
+  [
+   "NO",
+   "Lee Yock Suan"
+  ],
+  [
+   "NO",
+   "Lim Boon Heng"
+  ],
+  [
+   "NO",
+   "Abbas Abu Amin"
+  ],
+  [
+   "NO",
+   "Lim Chee Onn"
+  ],
+  [
+   "NO",
+   "Ahmad Mattar"
+  ],
+  [
+   "NO",
+   "Ng Kah Ting"
+  ],
+  [
+   "NO",
+   "Ang Kok Peng"
+  ],
+  [
+   "NO",
+   "Othman bin Haron Eusofe"
+  ],
+  [
+   "NO",
+   "Chai Chong Yii"
+  ],
+  [
+   "NO",
+   "Rohan bin Kamis"
+  ],
+  [
+   "NO",
+   "Chan Chee Seng"
+  ],
+  [
+   "NO",
+   "Saidi Haji Sheriff"
+  ],
+  [
+   "NO",
+   "Chandra Das, S."
+  ],
+  [
+   "NO",
+   "Sesh Mui Kok"
+  ],
+  [
+   "NO",
+   "Chau Sik Ting"
+  ],
+  [
+   "NO",
+   "Selvadurei, P."
+  ],
+  [
+   "NO",
+   "Chin Harn Tong"
+  ],
+  [
+   "NO",
+   "Tan Soo Khoon"
+  ],
+  [
+   "NO",
+   "Ch'ng Jit Koon"
+  ],
+  [
+   "NO",
+   "Tang See Chim"
+  ],
+  [
+   "NO",
+   "Fong Sip Chee"
+  ],
+  [
+   "NO",
+   "Tay Eng Soon"
+  ],
+  [
+   "NO",
+   "Goh Chee Wee"
+  ],
+  [
+   "NO",
+   "Teh Cheang Wan"
+  ],
+  [
+   "NO",
+   "Goh Chok Tong"
+  ],
+  [
+   "NO",
+   "Teo Chong Tee"
+  ],
+  [
+   "NO",
+   "Ho Kah Leong"
+  ],
+  [
+   "NO",
+   "Wan Hussin Zoohri"
+  ],
+  [
+   "NO",
+   "Ho See Beng"
+  ],
+  [
+   "NO",
+   "Wan Soon Bee"
+  ],
+  [
+   "NO",
+   "Hwang Soo Jin"
+  ],
+  [
+   "NO",
+   "Wong Kwei Choong"
+  ],
+  [
+   "NO",
+   "Jabbar, M.K.A."
+  ],
+  [
+   "NO",
+   "Yap Giau Cheng, Eugene"
+  ],
+  [
+   "NO",
+   "Jayakumar, S."
+  ],
+  [
+   "NO",
+   "Yeo Choo Kok"
+  ],
+  [
+   "NO",
+   "Koh Lip Lin"
+  ],
+  [
+   "NO",
+   "Yeo Toon Chia"
+  ],
+  [
+   "NO",
+   "Lai Tha Chai"
+  ],
+  [
+   "NO",
+   "Lau Ping Sum"
+  ],
+  [
+   "NO",
+   "Lau Teik Soon"
+  ],
+  [
+   "NO",
+   "Lee Chiaw Meng"
+  ],
+  [
+   "ABSTAIN",
+   "Yeoh Ghim Seng"
+  ]
+ ]
+}
