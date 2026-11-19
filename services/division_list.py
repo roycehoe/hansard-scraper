@@ -42,6 +42,8 @@ _MIN_GUTTER_WIDTH = 2
 _MIN_NARROW_GUTTER_LINES = 12
 _MIN_COLUMN_LINES = 2
 _MIN_NARROW_COLUMN_LINES = 5
+_HEADING_COLUMN_LEAD = 4
+_MIN_HEADINGS_FOR_COLUMNS = 2
 _TITLE_CELLS = frozenset({"madam", "miss", "mrs", "mr", "dr"})
 _HEADING_WORD_TO_VOTE_CHOICE = {
     "ayes": DivisionVoteChoice.AYE,
@@ -418,6 +420,45 @@ def _get_column_offsets(name_lines: list[str]) -> list[int]:
     return [column_start.offset for column_start in column_starts] or [0]
 
 
+def _get_heading_column_offsets(lines: list[str]) -> list[int]:
+    for line in lines:
+        heading_offsets = [
+            line_cell.offset
+            for line_cell in _get_pre_row_cells(line)
+            if _is_heading_cell(line_cell.text)
+        ]
+        if len(heading_offsets) >= _MIN_HEADINGS_FOR_COLUMNS:
+            return [max(offset - _HEADING_COLUMN_LEAD, 0) for offset in heading_offsets]
+    return []
+
+
+def _get_nearest_column(offset: int, column_offsets: list[int]) -> Optional[int]:
+    distances = [abs(offset - column_offset) for column_offset in column_offsets]
+    nearest_distance = min(distances)
+    if distances.count(nearest_distance) > 1:
+        return None
+    return distances.index(nearest_distance)
+
+
+def _get_nearest_line_cells(line: str, column_offsets: list[int]) -> list[_PreCell]:
+    pre_cells: list[_PreCell] = []
+    for line_cell in _get_pre_row_cells(line):
+        column = _get_nearest_column(line_cell.offset, column_offsets)
+        if column is None:
+            return []
+        end = line_cell.offset + len(line_cell.text)
+        if pre_cells and pre_cells[-1].column == column:
+            pre_cells[-1] = _PreCell(
+                column,
+                f"{pre_cells[-1].text} {line_cell.text}",
+                pre_cells[-1].offset,
+                end,
+            )
+            continue
+        pre_cells.append(_PreCell(column, line_cell.text, line_cell.offset, end))
+    return pre_cells
+
+
 def _get_column_of(offset: int, column_offsets: list[int]) -> int:
     for column in range(len(column_offsets) - 1, 0, -1):
         if offset >= column_offsets[column]:
@@ -483,12 +524,19 @@ def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
         expanded_lines = [line.expandtabs(_TAB_SIZE) for line in pre_lines]
         name_lines = [line for line in expanded_lines if not _has_heading_cell(line)]
         column_offsets = _get_column_offsets(name_lines)
-        line_cells = [
-            _get_heading_line_cells(line, column_offsets)
-            if _has_heading_cell(line)
-            else _get_name_line_cells(line, column_offsets)
-            for line in expanded_lines
-        ]
+        heading_column_offsets = _get_heading_column_offsets(expanded_lines)
+        if len(heading_column_offsets) > len(column_offsets):
+            column_offsets = heading_column_offsets
+            line_cells = [
+                _get_nearest_line_cells(line, column_offsets) for line in expanded_lines
+            ]
+        else:
+            line_cells = [
+                _get_heading_line_cells(line, column_offsets)
+                if _has_heading_cell(line)
+                else _get_name_line_cells(line, column_offsets)
+                for line in expanded_lines
+            ]
         modal_offsets = _get_modal_offsets(line_cells, column_offsets)
         read_pre_lines: list[str] = []
         for pre_line, pre_cells in zip(pre_lines, line_cells):

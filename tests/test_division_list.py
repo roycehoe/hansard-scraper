@@ -149,6 +149,16 @@ def test_30_january_1962_reads_an_absentions_heading_as_the_abstentions_heading(
     _assert_fixture_is_stored("hansard_list_1962_01_30_absentions_heading")
 
 
+def test_23_november_1955_reads_three_headings_over_columns_too_short_for_gaps() -> (
+    None
+):
+    _assert_fixture_is_stored("hansard_list_1955_11_23_three_headings_sparse_columns")
+
+
+def test_22_december_1965_reads_two_headings_over_two_columns() -> None:
+    _assert_fixture_is_stored("hansard_list_1965_12_22_two_headings_ayes_and_absent")
+
+
 def test_30_august_1985_joins_a_name_continued_on_an_indented_line() -> None:
     _assert_fixture_is_stored("hansard_list_1985_08_30_indented_wraps")
 
@@ -291,16 +301,20 @@ def test_27_august_2002_reads_the_no_heading_as_a_heading_not_a_name() -> None:
     assert parsed_list.names == []
 
 
-def test_6_september_1956_a_name_glued_to_a_heading_or_nil_makes_the_list_unreadable() -> (
+def test_a_name_glued_to_a_nil_that_no_column_separates_makes_the_list_unreadable() -> (
     None
 ):
-    html, expected = _read_fixture("hansard_list_1956_09_06_glued_column")
+    html = _get_pre_html(_OPENING, "", "  Ayes", "", "  Aa Bb. Nil.", "  Cc Dd")
 
-    parsed_list = _get_fixture_list(html, expected)
+    parsed_list = _get_list(html)
 
     assert parsed_list.list_status == DivisionListStatus.LAYOUT_UNREADABLE
     assert parsed_list.printed_list is not None
     assert parsed_list.names == []
+
+
+def test_6_september_1956_reads_a_sparse_right_column_from_its_headings() -> None:
+    _assert_fixture_is_stored("hansard_list_1956_09_06_glued_column")
 
 
 def test_a_nil_with_a_full_stop_and_a_misspelt_abstentions_heading_are_not_names() -> (

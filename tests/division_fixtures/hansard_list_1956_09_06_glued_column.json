@@ -1,10 +1,140 @@
 {
- "why": "A sparse right column (Noes, Abstentions and Absent headings and two Absent names) is not found as a column, so six cells glue a name to Nil, a heading or another name (\"Goh Chew Chua. Abstentions\", \"Hart, T. M. Absent\"). The Ayes count of 30 matched by luck and the list was stored with six wrong rows (division 274, report 41250, 6 September 1956).",
+ "why": "A sparse right column (Noes, Abstentions and Absent headings and two Absent names) holds too few lines to show a gap, so its headings set the columns (division 274, report 41250, 6 September 1956). Cells that glue a name to Nil, a heading or another name would otherwise be six wrong rows.",
  "ayes": 30,
  "noes": 0,
  "abstentions": 0,
  "absent": null,
  "paired": null,
  "division_index": 0,
- "division_count": 1
+ "division_count": 1,
+ "expected_names": [
+  [
+   "AYE",
+   "Abdul Hamid Bin Haji Jumat."
+  ],
+  [
+   "AYE",
+   "Ahmad Bin Ibrahim."
+  ],
+  [
+   "AYE",
+   "Braga, A. J."
+  ],
+  [
+   "AYE",
+   "Butterfield, C. H."
+  ],
+  [
+   "AYE",
+   "Chew Swee Kee."
+  ],
+  [
+   "AYE",
+   "Goh Chew Chua."
+  ],
+  [
+   "AYE",
+   "Goh Tong Liang."
+  ],
+  [
+   "AYE",
+   "Goode, W. A. C."
+  ],
+  [
+   "AYE",
+   "Hart, T. M."
+  ],
+  [
+   "AYE",
+   "Jumabhoy, J. M."
+  ],
+  [
+   "AYE",
+   "Jumabhoy, R."
+  ],
+  [
+   "ABSENT",
+   "Ede, John."
+  ],
+  [
+   "AYE",
+   "Lazarous, A. R."
+  ],
+  [
+   "ABSENT",
+   "Marshall, D. S."
+  ],
+  [
+   "AYE",
+   "Lee Choon Eng."
+  ],
+  [
+   "AYE",
+   "Lee Kuan Yew."
+  ],
+  [
+   "AYE",
+   "Lim Cher Kheng."
+  ],
+  [
+   "AYE",
+   "Lim Ching Siong."
+  ],
+  [
+   "AYE",
+   "Lim Choon Mong."
+  ],
+  [
+   "AYE",
+   "Lim, R. C. H."
+  ],
+  [
+   "AYE",
+   "Lim Koon Teck."
+  ],
+  [
+   "AYE",
+   "Lim Yew Hock."
+  ],
+  [
+   "AYE",
+   "Mak Pak Shee."
+  ],
+  [
+   "AYE",
+   "Mohd. Sidik Bin Haji Abdul Hamid."
+  ],
+  [
+   "AYE",
+   "Nair, M. P. D."
+  ],
+  [
+   "AYE",
+   "Ong Piah Teng."
+  ],
+  [
+   "AYE",
+   "Seah Peng Chuan."
+  ],
+  [
+   "AYE",
+   "Sutherland, G. A. P."
+  ],
+  [
+   "AYE",
+   "Tan Theng Chiang."
+  ],
+  [
+   "AYE",
+   "Tan, William."
+  ],
+  [
+   "AYE",
+   "Thomas, Francis."
+  ],
+  [
+   "AYE",
+   "Wong Foo Nam."
+  ]
+ ]
 }
