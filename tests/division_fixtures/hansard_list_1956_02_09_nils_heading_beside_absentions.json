@@ -1,0 +1,140 @@
+{
+ "why": "The Noes column holds the word Nils and the Abstentions heading is printed Absentions, under one Ayes heading over two columns (report 41406, 9 February 1956).",
+ "ayes": 29,
+ "noes": 0,
+ "abstentions": 3,
+ "absent": null,
+ "paired": null,
+ "division_index": 0,
+ "division_count": 1,
+ "expected_names": [
+  [
+   "AYE",
+   "Abdul Hamid Bin Haji Jumat."
+  ],
+  [
+   "AYE",
+   "Lim, R. C. H."
+  ],
+  [
+   "AYE",
+   "Lim Koon Teck."
+  ],
+  [
+   "AYE",
+   "Ahmad Bin Ibrahim."
+  ],
+  [
+   "AYE",
+   "Lim Yew Hock."
+  ],
+  [
+   "AYE",
+   "Braga, A. J."
+  ],
+  [
+   "AYE",
+   "Mak Pak Shee."
+  ],
+  [
+   "AYE",
+   "Chew Swee Kee."
+  ],
+  [
+   "AYE",
+   "Marshall, D. S."
+  ],
+  [
+   "AYE",
+   "Ede, John."
+  ],
+  [
+   "AYE",
+   "Mohd. Sidik Bin Haji Abdul Hamid."
+  ],
+  [
+   "AYE",
+   "Goh Chew Chua."
+  ],
+  [
+   "AYE",
+   "Goh Tong Liang."
+  ],
+  [
+   "AYE",
+   "Nair, M. P. D."
+  ],
+  [
+   "AYE",
+   "Jumabhoy, J. M."
+  ],
+  [
+   "AYE",
+   "Ong Piah Teng."
+  ],
+  [
+   "AYE",
+   "Jumabhoy, R."
+  ],
+  [
+   "AYE",
+   "Seah Peng Chuan."
+  ],
+  [
+   "AYE",
+   "Lazarous, A. R."
+  ],
+  [
+   "AYE",
+   "Sutherland, G. A. P."
+  ],
+  [
+   "AYE",
+   "Lee Choon Eng."
+  ],
+  [
+   "AYE",
+   "Tan Theng Chiang."
+  ],
+  [
+   "AYE",
+   "Lee Kuan Yew."
+  ],
+  [
+   "AYE",
+   "Tan, William."
+  ],
+  [
+   "AYE",
+   "Lim Cher Kheng."
+  ],
+  [
+   "AYE",
+   "Thomas, Francis."
+  ],
+  [
+   "AYE",
+   "Lim Ching Siong"
+  ],
+  [
+   "AYE",
+   "Wong Foo Nam."
+  ],
+  [
+   "AYE",
+   "Lim Choon Mong."
+  ],
+  [
+   "ABSTAIN",
+   "Butterfield, C. H."
+  ],
+  [
+   "ABSTAIN",
+   "Goode, W. A. C."
+  ],
+  [
+   "ABSTAIN",
+   "Hart, T. M."
+  ]
+ ]
+}

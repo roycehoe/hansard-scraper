@@ -149,6 +149,10 @@ def test_30_january_1962_reads_an_absentions_heading_as_the_abstentions_heading(
     _assert_fixture_is_stored("hansard_list_1962_01_30_absentions_heading")
 
 
+def test_9_february_1956_reads_the_cell_nils_as_a_nil_cell() -> None:
+    _assert_fixture_is_stored("hansard_list_1956_02_09_nils_heading_beside_absentions")
+
+
 def test_23_november_1955_reads_three_headings_over_columns_too_short_for_gaps() -> (
     None
 ):

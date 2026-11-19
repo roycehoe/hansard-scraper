@@ -33,7 +33,7 @@ _GLUED_HEADING_OR_NIL_PATTERN = re.compile(
 _OPENING_AYES_COUNT_PATTERN = re.compile(r"Ayes?\W{0,3}(\d+)", re.IGNORECASE)
 _OPENING_NOES_COUNT_PATTERN = re.compile(r"Noe?s?\W{0,3}(\d+)", re.IGNORECASE)
 _OPENING_COUNT_LOOKAHEAD = 160
-_NIL = "nil"
+_NIL_CELLS = frozenset({"nil", "nils"})
 _WRAP_WORDS = frozenset({"bin", "binte", "bte", "bt", "b", "s/o", "d/o"})
 _BIN_ABBREVIATION = "b"
 _INITIALS_SEPARATOR = ","
@@ -312,7 +312,10 @@ def _add_cell(
         cell = heading_with_name_match.group(2)
         if _HEADING_CELL_PATTERN.match(cell) is not None:
             return
-    if _NOISE_CELL_PATTERN.match(cell) is not None or cell.lower().rstrip(".") == _NIL:
+    if (
+        _NOISE_CELL_PATTERN.match(cell) is not None
+        or cell.lower().rstrip(".") in _NIL_CELLS
+    ):
         return
     if _GLUED_HEADING_OR_NIL_PATTERN.search(cell) is not None:
         state.is_unreadable = True
