@@ -1950,6 +1950,12 @@ def test_a_preamble_that_grants_permission_to_the_following_members_stays_skippe
     ]
 
 
+def test_a_granting_sentence_that_names_two_members_gives_no_entry() -> None:
+    sentence = f"{_ARTICLE_30_PREAMBLE} Mr Lee Kuan Yew (Tanjong Pagar) and Dr Toh Chin Chye (Rochore) to be absent from the sitting of Parliament today, the 18th March, 1977.   "
+
+    assert _build_granting_entries(sentence, date(1977, 3, 18)) == []
+
+
 _GLUED_HEADING_LINE = "PERMISSION TO MEMBERS TO BE ABSENT Under the provisions of clause 2(d) of Article 46 of the Constitution of the Republic of Singapore, the following Members have been granted permission to be or to remain absent from sittings of Parliament (or any Committee of Parliament to which they have been appointed) for the periods stated:   "
 _GLUED_HEADING_TABLE_LINES = (
     "Name  |  From  |  To   ",

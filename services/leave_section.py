@@ -238,7 +238,10 @@ def get_leave_sections(markdown_content: str) -> list[list[str]]:
             continue
         if not line:
             continue
-        if _PREAMBLE_LINE_RE.match(line) and not _GRANTED_SENTENCE_RE.search(line):
+        if (
+            _PREAMBLE_LINE_RE.match(line)
+            and _get_one_member_granted_sentence(line) is None
+        ):
             continue
         if _is_section_end(line, is_entry_seen):
             sections.append(section_lines)
@@ -1341,8 +1344,23 @@ def _parse_italic_prose_entries(
     return italic_entries
 
 
-def _get_granted_sentence_entry_parts(line: str) -> Optional[_ProseEntryParts]:
+def _get_one_member_granted_sentence(line: str) -> Optional[re.Match[str]]:
+    """The match of a granting sentence that names one Member, else None.
+
+    A sentence with two constituency brackets before "to be absent" names two
+    Members. Reading it as one entry would store the second Member as the first
+    one's office, so it is left unread and `check_leave_sections.py` names its sitting.
+    """
     granted_sentence = _GRANTED_SENTENCE_RE.search(line)
+    if granted_sentence is None:
+        return None
+    if len(_CONSTITUENCY_BRACKET_RE.findall(granted_sentence.group("who"))) > 1:
+        return None
+    return granted_sentence
+
+
+def _get_granted_sentence_entry_parts(line: str) -> Optional[_ProseEntryParts]:
+    granted_sentence = _get_one_member_granted_sentence(line)
     if granted_sentence is None:
         return None
     granted_to = granted_sentence.group("who").strip(_NAME_TRAILING_CHARACTERS)

@@ -583,7 +583,7 @@ One row per leave period, grouping the permission list's repeated printings of t
 
 ### LeavePeriodPrinting
 
-One row per date a permission entry prints at a sitting. A line that prints three dates makes three rows. Sittings from 10 September 2012 take their rows from the structured permission list (`Sitting.ptba_list`). Earlier sittings take them from the permission section of `Sitting.markdown_content`, read by `services/leave_section.py`. A section is a list of entries, a table, or one sentence that grants permission to one Member ("I have granted permission to Dr Chew Chin Han (Tampines) to be absent from the sitting of Parliament today, the 2nd November, 1967").
+One row per date a permission entry prints at a sitting. A line that prints three dates makes three rows. Sittings from 10 September 2012 take their rows from the structured permission list (`Sitting.ptba_list`). Earlier sittings take them from the permission section of `Sitting.markdown_content`, read by `services/leave_section.py`. A section is a list of entries, a table, or one sentence that grants permission to one Member ("I have granted permission to Dr Chew Chin Han (Tampines) to be absent from the sitting of Parliament today, the 2nd November, 1967")). A sentence that names two Members is not read, and `scripts/check_leave_sections.py` lists its sitting.
 
 | Field | Type | Meaning |
 |---|---|---|
