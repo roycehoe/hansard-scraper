@@ -512,15 +512,32 @@ def _get_name_line_cells(line: str, column_offsets: list[int]) -> list[_PreCell]
 
 def _get_modal_offsets(
     line_cells: list[list[_PreCell]], column_offsets: list[int]
-) -> list[int]:
-    column_to_offset_counts = [Counter() for _ in column_offsets]
+) -> list[list[int]]:
+    column_to_section_number = [0] * len(column_offsets)
+    cell_section_keys: list[list[tuple[int, int]]] = []
+    section_to_offset_counts: dict[tuple[int, int], Counter[int]] = {}
     for pre_cells in line_cells:
+        section_keys: list[tuple[int, int]] = []
         for pre_cell in pre_cells:
+            if _is_heading_cell(pre_cell.text):
+                column_to_section_number[pre_cell.column] += 1
+            section_key = (pre_cell.column, column_to_section_number[pre_cell.column])
+            section_keys.append(section_key)
             if not _is_heading_cell(pre_cell.text):
-                column_to_offset_counts[pre_cell.column][pre_cell.offset] += 1
+                section_to_offset_counts.setdefault(section_key, Counter())[
+                    pre_cell.offset
+                ] += 1
+        cell_section_keys.append(section_keys)
+    section_to_modal_offset = {
+        section_key: offset_counts.most_common(1)[0][0]
+        for section_key, offset_counts in section_to_offset_counts.items()
+    }
     return [
-        offset_counts.most_common(1)[0][0] if offset_counts else column_offset
-        for offset_counts, column_offset in zip(column_to_offset_counts, column_offsets)
+        [
+            section_to_modal_offset.get(section_key, column_offsets[section_key[0]])
+            for section_key in section_keys
+        ]
+        for section_keys in cell_section_keys
     ]
 
 
@@ -568,17 +585,22 @@ def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
                 else _get_name_line_cells(line, column_offsets)
                 for line in expanded_lines
             ]
+        line_cells = [
+            _get_spanning_heading_cells(pre_cells, column_offsets)
+            for pre_cells in line_cells
+        ]
         modal_offsets = _get_modal_offsets(line_cells, column_offsets)
         read_pre_lines: list[str] = []
-        for pre_line, line_pre_cells in zip(pre_lines, line_cells):
-            pre_cells = _get_spanning_heading_cells(line_pre_cells, column_offsets)
-            for pre_cell in pre_cells:
+        for pre_line, pre_cells, cell_modal_offsets in zip(
+            pre_lines, line_cells, modal_offsets
+        ):
+            for pre_cell, modal_offset in zip(pre_cells, cell_modal_offsets):
                 _add_cell(
                     state,
                     pre_cell.column,
                     pre_cell.text,
                     is_run=False,
-                    is_indented=pre_cell.offset > modal_offsets[pre_cell.column],
+                    is_indented=pre_cell.offset > modal_offset,
                 )
                 if state.is_ended:
                     break

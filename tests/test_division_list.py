@@ -604,3 +604,9 @@ def test_12_january_1988_keeps_a_heading_printed_left_of_its_column_out_of_the_n
     None
 ):
     _assert_fixture_is_stored("hansard_list_1988_01_12_heading_left_of_its_column")
+
+
+def test_4_october_1956_keeps_two_absent_names_one_offset_apart_as_two_names() -> None:
+    _assert_fixture_is_stored(
+        "hansard_list_1956_10_04_absent_names_one_column_offset_apart"
+    )
