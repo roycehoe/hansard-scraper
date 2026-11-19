@@ -128,6 +128,10 @@ def test_12_january_2001_joins_a_one_word_line_to_a_name_that_ends_in_a_comma() 
     _assert_fixture_is_stored("hansard_list_2001_01_12_wrap_after_a_comma")
 
 
+def test_5_september_1962_gives_a_heading_between_two_blocks_to_the_second() -> None:
+    _assert_fixture_is_stored("hansard_list_1962_09_05_heading_between_two_blocks")
+
+
 def test_24_may_1967_gives_a_heading_printed_between_the_columns_to_both() -> None:
     html = _get_pre_html(
         "The House divided: Ayes, 3; Noes, 2; Absent, 6.",

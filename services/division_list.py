@@ -630,13 +630,37 @@ def _read_runs(runs: list[str]) -> _ListReading:
     )
 
 
+def _get_pre_items(following_items: list[_Item]) -> list[list[str]]:
+    pre_items: list[list[str]] = []
+    pending_heading: Optional[str] = None
+    for index, item in enumerate(following_items):
+        if item.kind == _ItemKind.PRE:
+            lines = item.text.split(_LINE_SEPARATOR)
+            if pending_heading is not None:
+                lines = [pending_heading, *lines]
+                pending_heading = None
+            pre_items.append(lines)
+            continue
+        is_before_pre = (
+            index + 1 < len(following_items)
+            and following_items[index + 1].kind == _ItemKind.PRE
+        )
+        if (
+            item.kind == _ItemKind.TEXT
+            and pre_items
+            and is_before_pre
+            and _HEADING_CELL_PATTERN.match(item.text) is not None
+        ):
+            pending_heading = item.text
+            continue
+        break
+    return pre_items
+
+
 def _read_list(
     following_items: list[_Item], first_block_lines: list[str]
 ) -> Optional[_ListReading]:
-    pre_items = [
-        item.text.split(_LINE_SEPARATOR)
-        for item in takewhile(lambda item: item.kind == _ItemKind.PRE, following_items)
-    ]
+    pre_items = _get_pre_items(following_items)
     has_first_block = any(line.strip() for line in first_block_lines)
     if has_first_block:
         return _read_pre_blocks([first_block_lines, *pre_items])
