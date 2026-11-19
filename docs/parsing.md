@@ -77,6 +77,16 @@ Do not apply this fallback when there are 2+ names. Those are ANNEX/appendix doc
 
 ---
 
+## Divisions in speech rows
+
+`services/division.py` reads the divisions of one report from its speech rows. A division counts only where the record prints the House or the Committee dividing, or the Chair giving a number for the Ayes and a number for at least one other side.
+
+### Count labels
+
+A printed count line and a spoken total name their sides with "Ayes", "Noes", "No", "Abstentions", "Absent" and "Paired", and with the misprints listed in `_LABEL_TO_SIDE`. The record prints a lone Member's vote in the singular, so "Aye" reads as "Ayes". Report 32776 (31 August 1983, row 54) prints "The House divided: Aye, 1; Noes, 56; Abstention, 1."
+
+---
+
 ## Sitting HTML (`HansardSittingDateResponse.html_full_content`)
 
 ### Three document eras

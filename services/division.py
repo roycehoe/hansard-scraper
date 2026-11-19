@@ -44,9 +44,10 @@ _SPOKEN_TOTAL_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _COUNT_LABEL_REGEX = (
-    r"\b(?:ayes|noes|no|abstentions?|absentions?|absentation|absent|paired)\b"
+    r"\b(?:ayes?|noes|no|abstentions?|absentions?|absentation|absent|paired)\b"
 )
 _LABEL_TO_SIDE = {
+    "aye": _SIDE_AYES,
     "ayes": _SIDE_AYES,
     "noes": _SIDE_NOES,
     "no": _SIDE_NOES,

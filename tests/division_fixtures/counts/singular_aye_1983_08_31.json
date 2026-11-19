@@ -1,0 +1,62 @@
+{
+ "why": "The record prints one Member's lone vote as \"Aye, 1\" in the singular, so the label \"Aye\" is read as \"Ayes\" (the motion report of SPRS id 00069455-ZZ, 31 August 1983).",
+ "rows": [
+  [
+   52,
+   "PROCEDURAL",
+   null,
+   "Question put, \"That the words proposed to be left out, be left out.\""
+  ],
+  [
+   53,
+   "SPEECH",
+   "Mr Jeyaretnam",
+   "Division, Sir."
+  ],
+  [
+   54,
+   "PROCEDURAL",
+   null,
+   "The House divided: Aye, 1; Noes, 56; Abstention, 1."
+  ],
+  [
+   55,
+   "UNCLASSIFIED",
+   null,
+   "Aye                     Noes (cont.)"
+  ],
+  [
+   56,
+   "UNCLASSIFIED",
+   null,
+   "Jeyaretnam, J.B.           Lee Yiok Seng"
+  ],
+  [
+   57,
+   "UNCLASSIFIED",
+   null,
+   "Lee Yock Suan"
+  ],
+  [
+   58,
+   "UNCLASSIFIED",
+   null,
+   "Liew Kok Pun"
+  ]
+ ],
+ "expected_divisions": [
+  {
+   "report_division_number": 1,
+   "speech_ordinal": 54,
+   "count_source": "PRINTED_LINE",
+   "printed_counts": "The House divided: Aye, 1; Noes, 56; Abstention, 1",
+   "ayes": 1,
+   "noes": 56,
+   "abstentions": 1,
+   "absent": null,
+   "paired": null,
+   "merged_total_ordinal": null
+  }
+ ],
+ "expected_unread": []
+}

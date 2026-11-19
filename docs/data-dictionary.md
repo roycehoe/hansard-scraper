@@ -622,7 +622,7 @@ One row per Member and division, built from the attendance rows that have a `spe
 
 ### Division
 
-One row per recorded vote. The counts come from the line the Hansard prints ("The House divided: Ayes, 10; Noes, 3") or from a spoken total ("There are 11 Ayes and 3 Noes"), or from a minutes file for a division only the minutes show. `printed_counts` keeps the text the counts were read from. A division with `count_source` MINUTES has no report, no speech row and no `report_division_number`. A division whose record prints no name list has `list_status` NOT_PRINTED.
+One row per recorded vote. The counts come from the line the Hansard prints ("The House divided: Ayes, 10; Noes, 3", or "Aye, 1" in the singular for a lone Member) or from a spoken total ("There are 11 Ayes and 3 Noes"), or from a minutes file for a division only the minutes show. `printed_counts` keeps the text the counts were read from. A division with `count_source` MINUTES has no report, no speech row and no `report_division_number`. A division whose record prints no name list has `list_status` NOT_PRINTED.
 
 | Field | Type | Meaning |
 |---|---|---|
