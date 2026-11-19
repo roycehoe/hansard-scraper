@@ -25,8 +25,11 @@ _SPOKEN_TOTAL_PHRASES = (
     "the result of the voting is",
 )
 _PRINTED_LINE_KINDS = frozenset({None, SpeechKind.PROCEDURAL, SpeechKind.SPEECH})
+_STRAY_OPENING_MARK = "`"
 _PRINTED_OPENING_PATTERN = re.compile(
-    "^(?:"
+    "^"
+    + re.escape(_STRAY_OPENING_MARK)
+    + "?(?:"
     + "|".join(
         r"\s+".join(re.escape(word) for word in phrase.split())
         for phrase in _PRINTED_OPENING_PHRASES

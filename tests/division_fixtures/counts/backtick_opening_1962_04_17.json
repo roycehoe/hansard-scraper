@@ -1,0 +1,56 @@
+{
+ "why": "A stray backtick before \"The House divided\" does not stop the opening being read, and the backtick stays in the printed counts (the motion report of SPRS id 00069070-ZZ, 17 April 1962).",
+ "rows": [
+  [
+   3,
+   "PROCEDURAL",
+   null,
+   "Question put."
+  ],
+  [
+   4,
+   "SPEECH",
+   "Dr Lee Siew Choh",
+   "Division."
+  ],
+  [
+   5,
+   "PROCEDURAL",
+   null,
+   "`The House divided: Ayes, 29; Noes, 17; Absent, 5; Abstentions, Nil."
+  ],
+  [
+   6,
+   "PROCEDURAL",
+   null,
+   "Ayes                       Noes"
+  ],
+  [
+   7,
+   "UNCLASSIFIED",
+   null,
+   "Abdul Hamid bin           Chan Sun Wing"
+  ],
+  [
+   8,
+   "UNCLASSIFIED",
+   null,
+   "Haji Jumat               Fung Yin Ching"
+  ]
+ ],
+ "expected_divisions": [
+  {
+   "report_division_number": 1,
+   "speech_ordinal": 5,
+   "count_source": "PRINTED_LINE",
+   "printed_counts": "`The House divided: Ayes, 29; Noes, 17; Absent, 5; Abstentions, Nil",
+   "ayes": 29,
+   "noes": 17,
+   "abstentions": 0,
+   "absent": 5,
+   "paired": null,
+   "merged_total_ordinal": null
+  }
+ ],
+ "expected_unread": []
+}
