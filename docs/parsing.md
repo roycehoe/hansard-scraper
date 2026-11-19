@@ -93,6 +93,10 @@ A printed count line opens with "The House divided", "The Committee divided", "D
 
 An opening that prints no counts ("The House divided:", or "The House divided and the Clerk proceeded to call out the names of hon. Members -") makes no division of its own. When the next count line after it is the Chair's spoken total, with no other opening between, that total is the division and the opening is not listed as unread. Otherwise the opening is listed as `OPENING_WITHOUT_COUNTS`. In report 39235 (24 May 1961) the opening is row 172 and the Chair's total, "The result of the voting is Ayes, 6; No, 1; Abstentions, 40; Absent, 3.", is row 226.
 
+### Counts of voices or hands
+
+A count of voices or hands by the Chair is not a division. The record prints no division opening and no list of names for it. In report 33022 (31 August 1982) Mr Jeyaretnam says "Division, Sir.", the Chairman asks "Do you really want a Division to be taken, or a show of hands?", he answers "A show of hands.", and the Chairman then says "One against. The Ayes have it." (row 63). The row gives no count for a second side, so it stays on the review list as `TOTAL_WITHOUT_SECOND_COUNT` and no division is stored.
+
 ---
 
 ## Sitting HTML (`HansardSittingDateResponse.html_full_content`)

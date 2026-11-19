@@ -1,0 +1,78 @@
+{
+ "why": "The Chair's count of a minority by a show of hands (\"One against. The Ayes have it.\") is not a division; the row stays on the review list as a total with no second count (the Bill report of SPRS id 00069442-ZZ, 31 August 1982).",
+ "rows": [
+  [
+   55,
+   "PROCEDURAL",
+   null,
+   "Question put, \"That clause 2 stand part of the Bill.\""
+  ],
+  [
+   56,
+   "SPEECH",
+   "Mr Jeyaretnam",
+   "Division, Sir."
+  ],
+  [
+   57,
+   "SPEECH",
+   "The Chairman",
+   "Do you really want a Division to be taken, or a show of hands?"
+  ],
+  [
+   58,
+   "SPEECH",
+   "Mr Jeyaretnam",
+   "A show of hands."
+  ],
+  [
+   59,
+   "SPEECH",
+   "The Chairman",
+   "Yes, that is easier. The Question is, \"That clause 2 stand part of the Bill.\" As many as are of the opinion, say \"aye\". Show your hands."
+  ],
+  [
+   60,
+   "SPEECH",
+   "Hon. Members",
+   "(majority hand raised): Aye."
+  ],
+  [
+   61,
+   "SPEECH",
+   "The Chairman",
+   "To the contrary, say \"No\", and show your hands."
+  ],
+  [
+   62,
+   "SPEECH",
+   "Mr Jeyaretnam (hand raised)",
+   "Nay."
+  ],
+  [
+   63,
+   "SPEECH",
+   "The Chairman",
+   "One against. The Ayes have it."
+  ],
+  [
+   64,
+   "PROCEDURAL",
+   null,
+   "Clause 2 accordingly ordered to stand part of the Bill."
+  ],
+  [
+   65,
+   "PROCEDURAL",
+   null,
+   "Bill reported without amendment; read a Third time and passed."
+  ]
+ ],
+ "expected_divisions": [],
+ "expected_unread": [
+  {
+   "speech_ordinal": 63,
+   "reason": "TOTAL_WITHOUT_SECOND_COUNT"
+  }
+ ]
+}
