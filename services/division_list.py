@@ -43,6 +43,8 @@ _MIN_NARROW_GUTTER_LINES = 12
 _MIN_COLUMN_LINES = 2
 _MIN_NARROW_COLUMN_LINES = 5
 _HEADING_COLUMN_LEAD = 4
+_SPANNING_HEADING_DISTANCE = 6
+_MIN_SPANNING_COLUMNS = 2
 _MIN_HEADINGS_FOR_COLUMNS = 2
 _TITLE_CELLS = frozenset({"madam", "miss", "mrs", "mr", "dr"})
 _HEADING_WORD_TO_VOTE_CHOICE = {
@@ -513,6 +515,23 @@ def _get_modal_offsets(
     ]
 
 
+def _get_spanning_heading_cells(
+    pre_cells: list[_PreCell], column_offsets: list[int]
+) -> list[_PreCell]:
+    if len(column_offsets) < _MIN_SPANNING_COLUMNS or len(pre_cells) != 1:
+        return pre_cells
+    heading = pre_cells[0]
+    if not _is_heading_cell(heading.text):
+        return pre_cells
+    distance = min(abs(heading.offset - offset) for offset in column_offsets)
+    if distance <= _SPANNING_HEADING_DISTANCE:
+        return pre_cells
+    return [
+        _PreCell(column, heading.text, heading.offset, heading.end)
+        for column in range(len(column_offsets))
+    ]
+
+
 def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
     state = _get_list_state()
     block_texts: list[str] = []
@@ -542,7 +561,8 @@ def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
             ]
         modal_offsets = _get_modal_offsets(line_cells, column_offsets)
         read_pre_lines: list[str] = []
-        for pre_line, pre_cells in zip(pre_lines, line_cells):
+        for pre_line, line_pre_cells in zip(pre_lines, line_cells):
+            pre_cells = _get_spanning_heading_cells(line_pre_cells, column_offsets)
             for pre_cell in pre_cells:
                 _add_cell(
                     state,

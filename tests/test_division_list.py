@@ -112,6 +112,33 @@ def test_18_december_1963_reads_the_list_when_a_later_line_also_opens_a_division
     _assert_fixture_is_stored("hansard_list_1963_12_18_opening_before_a_count_line")
 
 
+def test_24_may_1967_gives_a_heading_printed_between_the_columns_to_both() -> None:
+    html = _get_pre_html(
+        "The House divided: Ayes, 3; Noes, 2; Absent, 6.",
+        "",
+        "                            Ayes                  Noes",
+        "                       Ang Nam Piau          Ng Kah Ting",
+        "                       Chan Chee Seng        Rodrigues, Bernard",
+        "                       Chow Chiok Hock",
+        "                                    Absent",
+        "                       A. Rahim Ishak        Nair, Mrs Devan",
+        "                       Barker, E. W.         Ng Yeow Chong",
+        "                       Chan Sun Wing         Ong Pang Boon",
+    )
+
+    parsed_list = _get_list(html, 3, 2, absent=6)
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert _get_names(parsed_list)[-6:] == [
+        (DivisionVoteChoice.ABSENT, "A. Rahim Ishak"),
+        (DivisionVoteChoice.ABSENT, "Nair, Mrs Devan"),
+        (DivisionVoteChoice.ABSENT, "Barker, E. W."),
+        (DivisionVoteChoice.ABSENT, "Ng Yeow Chong"),
+        (DivisionVoteChoice.ABSENT, "Chan Sun Wing"),
+        (DivisionVoteChoice.ABSENT, "Ong Pang Boon"),
+    ]
+
+
 def test_two_openings_that_print_the_same_counts_fall_back_to_the_order_rule() -> None:
     html = _get_pre_html(
         _OPENING,
