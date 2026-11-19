@@ -27,7 +27,7 @@ _CELL_PATTERN = re.compile(r"\S+(?: \S+)*")
 _MARKER_PATTERN = re.compile(r"^(?:Column|Page)\s*:?\s*\d+$", re.IGNORECASE)
 _NOISE_CELL_PATTERN = re.compile(r"^[-_–—\s]*$")
 _GLUED_HEADING_OR_NIL_PATTERN = re.compile(
-    r"\.\s+(?:Ayes|Noes|Nose|No|Abstentions?|Absentions?|Abstentations?|Absent|Paired|Nil)\.?$",
+    r"\s(?:Ayes|Noes|Nose|No|Abstentions?|Absentions?|Abstentations?|Absent|Paired|Nil)\.?$",
     re.IGNORECASE,
 )
 _OPENING_AYES_COUNT_PATTERN = re.compile(r"Ayes?\W{0,3}(\d+)", re.IGNORECASE)

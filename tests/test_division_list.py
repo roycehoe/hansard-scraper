@@ -624,3 +624,15 @@ def test_a_name_equally_near_two_heading_columns_makes_the_list_unreadable() -> 
 
     assert parsed_list.list_status == DivisionListStatus.LAYOUT_UNREADABLE
     assert parsed_list.names == []
+
+
+def test_a_name_glued_to_a_heading_word_with_no_full_stop_makes_the_list_unreadable() -> (
+    None
+):
+    html = _get_pre_html(_OPENING, "", "  Ayes", "", "  Aa Bb Abstentions", "  Cc Dd")
+
+    parsed_list = _get_list(html)
+
+    assert parsed_list.list_status == DivisionListStatus.LAYOUT_UNREADABLE
+    assert parsed_list.printed_list is not None
+    assert parsed_list.names == []
