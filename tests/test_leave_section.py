@@ -1950,6 +1950,22 @@ def test_a_preamble_that_grants_permission_to_the_following_members_stays_skippe
     ]
 
 
+def test_a_preamble_that_grants_permission_to_the_members_listed_below_stays_skipped() -> (
+    None
+):
+    markdown_content = "\n".join(
+        [
+            "#### PERMISSION TO MEMBERS TO BE ABSENT",
+            "Under the provisions of clause 2 (d) of Article 30 of the Constitution of Singapore, I have granted permission to the Members listed below to be or to remain absent from Parliament sitting on 20th March, 1974:   ",
+            "Mr Lee Kuan Yew (Tanjong Pagar), Prime Minister.   ",
+        ]
+    )
+
+    assert get_leave_sections(markdown_content) == [
+        ["Mr Lee Kuan Yew (Tanjong Pagar), Prime Minister."]
+    ]
+
+
 def test_a_granting_sentence_that_names_two_members_gives_no_entry() -> None:
     sentence = f"{_ARTICLE_30_PREAMBLE} Mr Lee Kuan Yew (Tanjong Pagar) and Dr Toh Chin Chye (Rochore) to be absent from the sitting of Parliament today, the 18th March, 1977.   "
 

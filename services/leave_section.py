@@ -37,7 +37,7 @@ _GRANTING_WORDS_RE = re.compile(
 )
 _WEEKDAY_PATTERN = r"(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)"
 _GRANTED_SENTENCE_RE = re.compile(
-    rf"granted\s+permission\s+(?!(?:to\s+)?the\s+following\b)(?:to\s+)?(?P<who>.+?),?\s+to\s+(?:be|remain)\b(?:\s+or\s+to\s+remain)?\s+absent\b"
+    rf"granted\s+permission\s+(?!(?:to\s+)?the\s+(?:following|members\s+listed\s+below)\b)(?:to\s+)?(?P<who>.+?),?\s+to\s+(?:be|remain)\b(?:\s+or\s+to\s+remain)?\s+absent\b"
     rf"[^0-9]*?(?:on\s+)?(?:{_WEEKDAY_PATTERN},?\s*)?(?:the\s+)?(?P<dates>\d.*?)[.\s]*$",
     re.IGNORECASE,
 )
