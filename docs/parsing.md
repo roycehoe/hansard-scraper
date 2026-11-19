@@ -89,6 +89,10 @@ A printed count line and a spoken total name their sides with "Ayes", "Noes", "N
 
 A printed count line opens with "The House divided", "The Committee divided", "Division taken" or "On question put, the House divided". One stray backtick before the opening is read past, and `printed_counts` keeps it, because the record prints it. Report 38784 (17 April 1962, row 5) prints "`The House divided: Ayes, 29; Noes, 17; Absent, 5; Abstentions, Nil."
 
+### Openings without counts
+
+An opening that prints no counts ("The House divided:", or "The House divided and the Clerk proceeded to call out the names of hon. Members -") makes no division of its own. When the next count line after it is the Chair's spoken total, with no other opening between, that total is the division and the opening is not listed as unread. Otherwise the opening is listed as `OPENING_WITHOUT_COUNTS`. In report 39235 (24 May 1961) the opening is row 172 and the Chair's total, "The result of the voting is Ayes, 6; No, 1; Abstentions, 40; Absent, 3.", is row 226.
+
 ---
 
 ## Sitting HTML (`HansardSittingDateResponse.html_full_content`)

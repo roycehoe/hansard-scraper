@@ -16,6 +16,9 @@ _LINE_FIRST = "The House divided: Ayes, 10; Noes, 3."
 _TOTAL_FIRST = "There are 10 Ayes and 3 Noes."
 _FILLER_TEXT = "Order, order."
 _LIST_NAME_TEXT = "A member's name"
+_FIRST_OPENING_ORDINAL = 172
+_SECOND_OPENING_ORDINAL = 200
+_SPOKEN_TOTAL_ORDINAL = 226
 
 
 def _build_row(
@@ -181,6 +184,33 @@ def test_opening_that_reads_no_division_span_is_unread(transcript: str) -> None:
     assert report_divisions.divisions == []
     assert [unread_row.reason for unread_row in report_divisions.unread_rows] == [
         UnreadDivisionReason.OPENING_WITHOUT_COUNTS
+    ]
+
+
+def test_an_opening_with_another_opening_before_the_total_is_unread() -> None:
+    fixture = json.loads(
+        (_FIXTURE_DIRECTORY / "opening_held_by_spoken_total_1961_05_24.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    rows = [_build_row(*fixture_row) for fixture_row in fixture["rows"]]
+    second_opening = _build_row(
+        _SECOND_OPENING_ORDINAL,
+        "PROCEDURAL",
+        None,
+        "The House divided and the Clerk proceeded to call out the names of hon. Members -",
+    )
+
+    report_divisions = get_report_divisions(
+        sorted([*rows, second_opening], key=lambda row: row.ordinal)
+    )
+
+    assert [
+        (unread_row.speech_ordinal, unread_row.reason)
+        for unread_row in report_divisions.unread_rows
+    ] == [(_FIRST_OPENING_ORDINAL, UnreadDivisionReason.OPENING_WITHOUT_COUNTS)]
+    assert [division.speech_ordinal for division in report_divisions.divisions] == [
+        _SPOKEN_TOTAL_ORDINAL
     ]
 
 

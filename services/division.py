@@ -357,17 +357,50 @@ def _is_count_disagreement(
     )
 
 
+def _is_opening_held_by_spoken_total(
+    speech_parse_rows: list[SpeechParseRow],
+    opening_position: int,
+    count_lines: list[_CountLine],
+) -> bool:
+    next_count_line = next(
+        (
+            count_line
+            for count_line in count_lines
+            if count_line.position > opening_position
+        ),
+        None,
+    )
+    if next_count_line is None:
+        return False
+    if next_count_line.count_source != DivisionCountSource.SPOKEN_TOTAL:
+        return False
+    return not any(
+        _PRINTED_OPENING_PATTERN.match(speech_parse_row.transcript.lstrip())
+        for speech_parse_row in speech_parse_rows[
+            opening_position + 1 : next_count_line.position
+        ]
+    )
+
+
 def get_report_divisions(speech_parse_rows: list[SpeechParseRow]) -> ReportDivisions:
     count_lines: list[_CountLine] = []
-    unread_rows: list[UnreadDivisionRow] = []
+    position_to_unread_row: dict[int, UnreadDivisionRow] = {}
     for position, speech_parse_row in enumerate(speech_parse_rows):
         count_line = _get_count_line(speech_parse_row, position)
         if count_line is None:
             continue
         if isinstance(count_line, UnreadDivisionRow):
-            unread_rows.append(count_line)
+            position_to_unread_row[position] = count_line
             continue
         count_lines.append(count_line)
+    unread_rows = [
+        unread_row
+        for position, unread_row in position_to_unread_row.items()
+        if unread_row.reason != UnreadDivisionReason.OPENING_WITHOUT_COUNTS
+        or not _is_opening_held_by_spoken_total(
+            speech_parse_rows, position, count_lines
+        )
+    ]
 
     line_positions = frozenset(count_line.position for count_line in count_lines)
     printed_position_to_total_ordinal: dict[int, int] = {}

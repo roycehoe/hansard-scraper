@@ -1,0 +1,86 @@
+{
+ "why": "An opening that prints no counts and is followed by no other opening is held by the Chair's spoken total, so it is not listed as unread and the total is the division (the Bill report of SPRS id 00069019-ZZ, 24 May 1961; rows 178 to 224 are left out).",
+ "rows": [
+  [
+   170,
+   "PROCEDURAL",
+   null,
+   "Question put, \"That the Bill be now read a Third Time.\""
+  ],
+  [
+   171,
+   "SPEECH",
+   "The Prime Minister",
+   "Division, Sir."
+  ],
+  [
+   172,
+   "PROCEDURAL",
+   null,
+   "The House divided:"
+  ],
+  [
+   173,
+   "UNCLASSIFIED",
+   null,
+   "Ayes                 Abstentions"
+  ],
+  [
+   174,
+   "UNCLASSIFIED",
+   null,
+   "Abdul Hamid bin        Ahmad bin Ibrahim."
+  ],
+  [
+   175,
+   "UNCLASSIFIED",
+   null,
+   "Haji Jumat.           Bani S. T."
+  ],
+  [
+   176,
+   "UNCLASSIFIED",
+   null,
+   "Ahmad Jabri bin        Buang bin Omar"
+  ],
+  [
+   177,
+   "UNCLASSIFIED",
+   null,
+   "Mohammad Akib.         Junid."
+  ],
+  [
+   225,
+   "SPEECH",
+   "Tun Lim Yew Hock",
+   "Can the mover of a motion abstain from voting on his own motion?"
+  ],
+  [
+   226,
+   "SPEECH",
+   "Mr Speaker",
+   "The answer is simply that he can. He may even vote against. The result of the voting is Ayes, 6; No, 1; Abstentions, 40; Absent, 3."
+  ],
+  [
+   227,
+   "PROCEDURAL",
+   null,
+   "Bill accordingly read a Third time and passed."
+  ]
+ ],
+ "expected_divisions": [
+  {
+   "report_division_number": 1,
+   "speech_ordinal": 226,
+   "count_source": "SPOKEN_TOTAL",
+   "printed_counts": "The result of the voting is Ayes, 6; No, 1; Abstentions, 40; Absent, 3",
+   "ayes": 6,
+   "noes": 1,
+   "abstentions": 40,
+   "absent": 3,
+   "paired": null,
+   "merged_total_ordinal": null
+  }
+ ],
+ "expected_unread": []
+}
