@@ -81,18 +81,19 @@ DATABASE_URL="$PRODUCTION_READONLY_DATABASE_URL" python refresh_minutes.py      
 DATABASE_URL="$PRODUCTION_REFRESH_DATABASE_URL" python refresh_minutes.py --commit  # the run the timer starts
 ```
 
-`~/.config/hansard/.env` is the desktop's login file. The run reads `DATABASE_URL`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID`, and sends no alert while either Telegram variable is unset. It sends no healthchecks.io ping, because the job's check would then count the home run as the job.
+`~/.config/hansard/.env` is the desktop's login file. The run reads `DATABASE_URL`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID`, and sends no alert while either Telegram variable is unset. The service pings a healthchecks.io check of its own, `HEALTHCHECKS_MINUTES_PING_URL`, with the script's exit code, as `refresh.sh` does for the job, so a crash before the script's own alert code still marks the check down at once. A run that never starts, because the desktop was off or the worktree is missing, shows when the check has had no ping for 26 hours. The home run has its own check because a ping to the job's check would count the home run as the job.
 
 `systemd/hansard-minutes.timer` starts `systemd/hansard-minutes.service` daily at 05:30 Singapore time, after the job, which starts at 04:00 and has taken up to about 30 minutes. A start missed while the desktop was off runs when it next boots. The service runs `refresh_minutes.py --commit` under `nice` from its own worktree, `hansard-scraper-wt-minutes` beside the main checkout, which it checks out at `origin/master` before each run. It therefore runs the code last pushed or fetched from the desktop, never an edit in progress in the main checkout.
 
 To switch the run on, from the main checkout:
 
 1. Add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` to `~/.config/hansard/.env`, with the job's values.
-2. Push `master`, so `origin/master` holds `refresh_minutes.py`.
-3. `git worktree add --detach ../hansard-scraper-wt-minutes origin/master`
-4. Run the dry run above from the worktree, and read what it would write.
-5. `cp systemd/hansard-minutes.service systemd/hansard-minutes.timer ~/.config/systemd/user/`, then `systemctl --user daemon-reload` and `systemctl --user enable --now hansard-minutes.timer`.
-6. `systemctl --user list-timers hansard-minutes.timer` shows the next start, and `journalctl --user -u hansard-minutes` shows each run's log.
+2. Create a second healthchecks.io check as in "Env vars and accounts", and add its ping URL to `~/.config/hansard/.env` as `HEALTHCHECKS_MINUTES_PING_URL`.
+3. Push `master`, so `origin/master` holds `refresh_minutes.py`.
+4. `git worktree add --detach ../hansard-scraper-wt-minutes origin/master`
+5. Run the dry run above from the worktree, and read what it would write.
+6. `cp systemd/hansard-minutes.service systemd/hansard-minutes.timer ~/.config/systemd/user/`, then `systemctl --user daemon-reload` and `systemctl --user enable --now hansard-minutes.timer`.
+7. `systemctl --user list-timers hansard-minutes.timer` shows the next start, and `journalctl --user -u hansard-minutes` shows each run's log.
 
 A user timer runs while nobody is logged in only when the user has linger on (`loginctl enable-linger`).
 
@@ -121,6 +122,7 @@ The home minutes run sends the last two kinds as well, through the same pacer.
 | `TELEGRAM_BOT_TOKEN` | The bot token for alerts |
 | `TELEGRAM_CHAT_ID` | The chat the bot posts to |
 | `HEALTHCHECKS_PING_URL` | The ping URL of the healthchecks.io check |
+| `HEALTHCHECKS_MINUTES_PING_URL` | The ping URL of the home minutes run's own check, read by its systemd service (see "The home minutes run") |
 
 Each alert target does nothing while its variables are unset. The Telegram alert needs both the token and the chat id.
 
