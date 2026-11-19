@@ -646,6 +646,9 @@ def _read_list(
             list(takewhile(lambda item: item.kind == _ItemKind.TABLE, following_items))
         )
     if first_kind == _ItemKind.TEXT:
+        first_line = following_items[0].text.split(_LINE_SEPARATOR)[0].strip()
+        if not _is_heading_cell(first_line):
+            return None
         return _read_runs(
             [
                 item.text

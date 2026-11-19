@@ -139,6 +139,16 @@ def test_24_may_1967_gives_a_heading_printed_between_the_columns_to_both() -> No
     ]
 
 
+def test_3_december_1982_reads_no_list_where_prose_follows_the_count_line() -> None:
+    html, expected = _read_fixture("hansard_list_1982_12_03_prose_after_the_count_line")
+
+    parsed_list = _get_fixture_list(html, expected)
+
+    assert parsed_list.list_status == DivisionListStatus.NOT_PRINTED
+    assert parsed_list.printed_list is None
+    assert parsed_list.names == []
+
+
 def test_two_openings_that_print_the_same_counts_fall_back_to_the_order_rule() -> None:
     html = _get_pre_html(
         _OPENING,
