@@ -451,12 +451,14 @@ def _get_nearest_column(offset: int, column_offsets: list[int]) -> Optional[int]
     return distances.index(nearest_distance)
 
 
-def _get_nearest_line_cells(line: str, column_offsets: list[int]) -> list[_PreCell]:
+def _get_nearest_line_cells(
+    line: str, column_offsets: list[int]
+) -> Optional[list[_PreCell]]:
     pre_cells: list[_PreCell] = []
     for line_cell in _get_pre_row_cells(line):
         column = _get_nearest_column(line_cell.offset, column_offsets)
         if column is None:
-            return []
+            return None
         end = line_cell.offset + len(line_cell.text)
         if pre_cells and pre_cells[-1].column == column:
             pre_cells[-1] = _PreCell(
@@ -575,9 +577,13 @@ def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
         heading_column_offsets = _get_heading_column_offsets(expanded_lines)
         if len(heading_column_offsets) > len(column_offsets):
             column_offsets = heading_column_offsets
-            line_cells = [
-                _get_nearest_line_cells(line, column_offsets) for line in expanded_lines
-            ]
+            line_cells = []
+            for line in expanded_lines:
+                nearest_cells = _get_nearest_line_cells(line, column_offsets)
+                if nearest_cells is None:
+                    state.is_unreadable = True
+                    nearest_cells = []
+                line_cells.append(nearest_cells)
         else:
             line_cells = [
                 _get_heading_line_cells(line, column_offsets)

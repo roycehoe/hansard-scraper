@@ -610,3 +610,17 @@ def test_4_october_1956_keeps_two_absent_names_one_offset_apart_as_two_names() -
     _assert_fixture_is_stored(
         "hansard_list_1956_10_04_absent_names_one_column_offset_apart"
     )
+
+
+def test_a_name_equally_near_two_heading_columns_makes_the_list_unreadable() -> None:
+    html = "<p>The House divided: Ayes, 2; Noes, 2.</p>" + _get_pre_html(
+        "      Ayes              Noes              Absent",
+        "Lim Ah Kow        Tan Bee Lian      Goh Chok Tong",
+        "Lee Kuan Yew      Ng Eng Hen Long Name Here",
+        "                             Ong Pang Boon",
+    )
+
+    parsed_list = _get_list(html, 2, 2)
+
+    assert parsed_list.list_status == DivisionListStatus.LAYOUT_UNREADABLE
+    assert parsed_list.names == []
