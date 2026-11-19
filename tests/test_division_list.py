@@ -112,6 +112,22 @@ def test_18_december_1963_reads_the_list_when_a_later_line_also_opens_a_division
     _assert_fixture_is_stored("hansard_list_1963_12_18_opening_before_a_count_line")
 
 
+def test_17_august_1966_joins_a_one_word_line_to_the_name_above_it() -> None:
+    _assert_fixture_is_stored("hansard_list_1966_08_17_wrap_at_the_same_offset")
+
+
+def test_29_december_1969_joins_a_one_word_line_to_the_name_above_it() -> None:
+    _assert_fixture_is_stored("hansard_list_1969_12_29_wrap_at_the_same_offset")
+
+
+def test_10_january_1986_joins_a_one_word_line_to_the_name_above_it() -> None:
+    _assert_fixture_is_stored("hansard_list_1986_01_10_wrap_at_the_same_offset")
+
+
+def test_12_january_2001_joins_a_one_word_line_to_a_name_that_ends_in_a_comma() -> None:
+    _assert_fixture_is_stored("hansard_list_2001_01_12_wrap_after_a_comma")
+
+
 def test_24_may_1967_gives_a_heading_printed_between_the_columns_to_both() -> None:
     html = _get_pre_html(
         "The House divided: Ayes, 3; Noes, 2; Absent, 6.",

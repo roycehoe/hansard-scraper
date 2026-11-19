@@ -335,6 +335,10 @@ def _add_cell(
         if cell.rstrip(".").lower() in _TITLE_CELLS:
             previous_name.printed_name = f"{previous_name.printed_name} {cell}"
             return
+        if len(cell.split()) == 1 and _INITIALS_SEPARATOR not in cell:
+            previous_name.printed_name = f"{previous_name.printed_name} {cell}"
+            previous_name.is_wrap_open = False
+            return
         if is_indented and not previous_name.printed_name.endswith("."):
             previous_name.printed_name = f"{previous_name.printed_name} {cell}"
             previous_name.is_wrap_open = False
