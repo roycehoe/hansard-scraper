@@ -20,11 +20,13 @@ def _hansard(
     sprs_report_id: str = "a",
     speech_ordinal: int = 1,
     sitting_date: date = _SITTING_DATE,
+    printed_place: Optional[int] = None,
 ) -> PairableHansardDivision:
     return PairableHansardDivision(
         division_id,
         sitting_date,
         sprs_report_id,
+        printed_place,
         speech_number,
         speech_ordinal,
         ayes,
@@ -113,6 +115,69 @@ def test_a_tie_on_speech_number_between_reports_is_tied() -> None:
     ]
 
 
+def test_a_group_orders_by_printed_place_before_speech_number() -> None:
+    pairings = get_division_pairings(
+        [
+            _hansard(10, 1, 70, 10, sprs_report_id="a", printed_place=40),
+            _hansard(11, 2, 70, 10, sprs_report_id="b", printed_place=7),
+        ],
+        [_minutes(1, 70, 10), _minutes(2, 70, 10)],
+    )
+
+    assert [pairing.pairing for pairing in pairings] == [
+        MinutesDivisionPairing.PAIRED
+    ] * 2
+    assert [pairing.division_id for pairing in pairings] == [11, 10]
+
+
+def test_a_report_not_placed_pairs_after_placed_reports() -> None:
+    pairings = get_division_pairings(
+        [
+            _hansard(10, 1, 70, 10, sprs_report_id="a"),
+            _hansard(11, 2, 70, 10, sprs_report_id="b", printed_place=7),
+        ],
+        [_minutes(1, 70, 10), _minutes(2, 70, 10)],
+    )
+
+    assert [pairing.pairing for pairing in pairings] == [
+        MinutesDivisionPairing.PAIRED
+    ] * 2
+    assert [pairing.division_id for pairing in pairings] == [11, 10]
+
+
+def test_a_shared_speech_number_with_different_places_is_not_tied() -> None:
+    pairings = get_division_pairings(
+        [
+            _hansard(10, 1, 70, 10, sprs_report_id="a", printed_place=3),
+            _hansard(11, 1, 70, 10, sprs_report_id="b", printed_place=9),
+        ],
+        [_minutes(1, 70, 10), _minutes(2, 70, 10)],
+    )
+
+    assert [pairing.pairing for pairing in pairings] == [
+        MinutesDivisionPairing.PAIRED
+    ] * 2
+    assert [pairing.division_id for pairing in pairings] == [10, 11]
+
+
+def test_a_tie_on_the_whole_report_sort_key_is_tied() -> None:
+    pairings = get_division_pairings(
+        [
+            _hansard(10, 1, 70, 10, sprs_report_id="a", printed_place=5),
+            _hansard(11, 1, 70, 10, sprs_report_id="b", printed_place=5),
+        ],
+        [_minutes(1, 70, 10), _minutes(2, 70, 10)],
+    )
+
+    assert [pairing.pairing for pairing in pairings] == [
+        MinutesDivisionPairing.TIED
+    ] * 2
+    assert [pairing.hansard_division_ids for pairing in pairings] == [
+        (10, 11),
+        (10, 11),
+    ]
+
+
 def test_a_tie_on_speech_number_inside_one_report_is_not_tied() -> None:
     pairings = get_division_pairings(
         [
@@ -166,7 +231,7 @@ def test_no_hansard_division_is_no_matching_division() -> None:
 
 def test_a_hansard_division_without_noes_is_not_a_candidate() -> None:
     hansard_division = PairableHansardDivision(
-        10, _SITTING_DATE, "a", 1, 1, 70, None, None
+        10, _SITTING_DATE, "a", None, 1, 1, 70, None, None
     )
 
     pairings = get_division_pairings([hansard_division], [_minutes(1, 70, 0)])

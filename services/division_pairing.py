@@ -10,6 +10,7 @@ class PairableHansardDivision:
     division_id: int
     sitting_date: date
     sprs_report_id: str
+    printed_place: Optional[int]
     speech_number: int
     speech_ordinal: int
     ayes: Optional[int]
@@ -36,12 +37,12 @@ class DivisionPairing:
 
 
 def _is_report_sort_key_tied(hansard_group: list[PairableHansardDivision]) -> bool:
-    speech_number_to_sprs_report_ids: dict[int, set[str]] = {}
+    report_sort_key_to_sprs_report_ids: dict[tuple[Optional[int], int], set[str]] = {}
     for hansard_division in hansard_group:
-        speech_number_to_sprs_report_ids.setdefault(
-            hansard_division.speech_number, set()
+        report_sort_key_to_sprs_report_ids.setdefault(
+            (hansard_division.printed_place, hansard_division.speech_number), set()
         ).add(hansard_division.sprs_report_id)
-    for sprs_report_ids in speech_number_to_sprs_report_ids.values():
+    for sprs_report_ids in report_sort_key_to_sprs_report_ids.values():
         if len(sprs_report_ids) > 1:
             return True
     return False
@@ -161,6 +162,10 @@ def get_division_pairings(
         hansard_group = sorted(
             group_to_hansard_divisions.get(group, []),
             key=lambda hansard_division: (
+                hansard_division.printed_place is None,
+                0
+                if hansard_division.printed_place is None
+                else hansard_division.printed_place,
                 hansard_division.speech_number,
                 hansard_division.speech_ordinal,
             ),

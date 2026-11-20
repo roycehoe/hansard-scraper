@@ -197,8 +197,8 @@ def get_pairable_hansard_divisions(
     divisions = CRUDDivision(session).get_by_sitting_dates_and_sprs_report_id_not_null(
         sitting_dates
     )
-    sprs_report_id_to_speech_number = {
-        report.report_id: report.speech_number
+    sprs_report_id_to_report = {
+        report.report_id: report
         for report in CRUDReport(session).get_by_report_ids(
             sorted(
                 {
@@ -214,7 +214,12 @@ def get_pairable_hansard_divisions(
             division_id=division.id,
             sitting_date=division.sitting_date,
             sprs_report_id=division.sprs_report_id,
-            speech_number=sprs_report_id_to_speech_number[division.sprs_report_id],
+            printed_place=sprs_report_id_to_report[
+                division.sprs_report_id
+            ].printed_place,
+            speech_number=sprs_report_id_to_report[
+                division.sprs_report_id
+            ].speech_number,
             speech_ordinal=division.speech_ordinal,
             ayes=division.ayes,
             noes=division.noes,
