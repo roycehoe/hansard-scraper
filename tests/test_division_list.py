@@ -431,6 +431,55 @@ def test_a_wrapped_name_whose_second_line_holds_a_comma_is_joined_on_the_noes_si
     ]
 
 
+def test_a_wrapped_name_after_leading_tabs_is_joined_on_the_noes_side() -> None:
+    html = "<p>The House divided: Ayes, 3; Noes, 3.</p>" + _get_pre_html(
+        "\t      Ayes.                    Noes.",
+        "\t   Ede, John.           Ahmad bin Ibrahim.",
+        "\t   Goh Tong Liang.      Mohd. Sidik",
+        "\t\t\t\t Abdul Hamid.",
+        "\t   Jumabhoy, R.         Braga, A. J.",
+    )
+
+    parsed_list = _get_list(html, 3, 3)
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert [
+        name
+        for choice, name in _get_names(parsed_list)
+        if choice == DivisionVoteChoice.NO
+    ] == [
+        "Ahmad bin Ibrahim.",
+        "Mohd. Sidik Abdul Hamid.",
+        "Braga, A. J.",
+    ]
+
+
+def test_a_wrapped_name_after_leading_tabs_is_joined_on_the_absent_side() -> None:
+    html = "<p>The House divided: Ayes, 3; Noes, 2.</p>" + _get_pre_html(
+        "\t      Ayes.                    Noes.",
+        "\t   Ede, John.           Ahmad bin Ibrahim.",
+        "\t   Goh Tong Liang.      Braga, A. J.",
+        "\t   Jumabhoy, R.",
+        "\t      Absent.",
+        "\t   Lazarous, A. R.",
+        "\t   Mohd. Sidik",
+        "\t    Abdul Hamid.",
+        "\t   Lim Cher Kheng.",
+    )
+
+    parsed_list = _get_list(html, 3, 2)
+
+    assert [
+        name
+        for choice, name in _get_names(parsed_list)
+        if choice == DivisionVoteChoice.ABSENT
+    ] == [
+        "Lazarous, A. R.",
+        "Mohd. Sidik Abdul Hamid.",
+        "Lim Cher Kheng.",
+    ]
+
+
 def test_21_september_1960_reads_a_nose_heading_as_the_noes_heading() -> None:
     _assert_fixture_is_stored("hansard_list_1960_09_21_nose_heading")
 

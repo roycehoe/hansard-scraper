@@ -380,17 +380,19 @@ def _is_marker_line(line: str) -> bool:
 
 def _is_after_tab(line: str, offset: int) -> bool:
     position = 0
+    has_text = False
     is_after_tab = False
     for char in line:
         if char == "\t":
             position = (position // _TAB_SIZE + 1) * _TAB_SIZE
-            is_after_tab = True
+            is_after_tab = has_text
         elif char.isspace():
             position += 1
         else:
             if position == offset:
                 return is_after_tab
             position += 1
+            has_text = True
             is_after_tab = False
         if position > offset:
             break
