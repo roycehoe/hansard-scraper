@@ -51,6 +51,12 @@ class SittingDateSectionsRow:
 
 
 @dataclass(frozen=True)
+class SittingCopyRow:
+    sections: Optional[str]
+    html_full_content: Optional[str]
+
+
+@dataclass(frozen=True)
 class SittingAttendanceTextRow:
     id: int
     sitting_date: str
@@ -142,6 +148,17 @@ class CRUDSitting:
         return [
             SittingDateSectionsRow(*row) for row in self.session.exec(statement).all()
         ]
+
+    def get_copy_row_by_sitting_date(
+        self, sitting_date: str
+    ) -> Optional[SittingCopyRow]:
+        statement = select(Sitting.sections, Sitting.html_full_content).where(
+            Sitting.sitting_date == sitting_date
+        )
+        return next(
+            (SittingCopyRow(*row) for row in self.session.exec(statement).all()),
+            None,
+        )
 
     def get_attendance_text_rows_by_sitting_dates(
         self, sitting_dates: list[str]

@@ -9,8 +9,9 @@ from sqlmodel import Session, col, delete, exists, func, select
 from database.report import Report
 from database.report_participant import ReportParticipant
 from database.report_question_state import ReportQuestionState
-from enums import ParticipantRole, QuestionState, ReportType
+from enums import ParticipantRole, PrintedPlaceRule, QuestionState, ReportType
 from utils.column_numbers import ReportColumnRange
+from utils.printed_place_update import PrintedPlaceUpdate
 from utils.text import TextChange
 
 
@@ -159,6 +160,28 @@ class AttachedFileReportRow:
     content: Optional[str]
 
 
+@dataclass(frozen=True)
+class ReportPrintedPlaceTextRow:
+    id: int
+    report_id: str
+    report_version: str
+    report_type: str
+    speech_number: int
+    original_title: str
+    subtitle: Optional[str]
+    content: Optional[str]
+    printed_place: Optional[int]
+    printed_place_rule: Optional[PrintedPlaceRule]
+
+
+@dataclass(frozen=True)
+class ReportPrintedPlaceRow:
+    id: int
+    sitting_date: datetime
+    printed_place: Optional[int]
+    printed_place_rule: Optional[PrintedPlaceRule]
+
+
 def _get_frame_order_columns() -> list[SQLColumnExpression]:
     return [
         col(Report.parliament_number),
@@ -259,6 +282,12 @@ class CRUDReport:
             .where(col(Report.sitting_date) >= first_sitting_date)
             .distinct()
             .order_by(col(Report.sitting_date))
+        )
+        return list(self.session.exec(statement).all())
+
+    def get_distinct_sitting_dates(self) -> list[datetime]:
+        statement = (
+            select(Report.sitting_date).distinct().order_by(col(Report.sitting_date))
         )
         return list(self.session.exec(statement).all())
 
@@ -564,6 +593,47 @@ class CRUDReport:
         )
         return [ReportContentRow(*row) for row in self.session.exec(statement).all()]
 
+    def get_printed_place_text_rows_by_sitting_date(
+        self, sitting_date: datetime
+    ) -> list[ReportPrintedPlaceTextRow]:
+        statement = (
+            sqlalchemy.select(
+                col(Report.id),
+                col(Report.report_id),
+                col(Report.report_version),
+                col(Report.report_type),
+                col(Report.speech_number),
+                col(Report.original_title),
+                col(Report.subtitle),
+                col(Report.content),
+                col(Report.printed_place),
+                col(Report.printed_place_rule),
+            )
+            .where(col(Report.sitting_date) == sitting_date)
+            .order_by(col(Report.speech_number), col(Report.id))
+        )
+        return [
+            ReportPrintedPlaceTextRow(*row)
+            for row in self.session.execute(statement).all()
+        ]
+
+    def get_printed_place_rows_by_sitting_dates(
+        self, sitting_dates: list[datetime]
+    ) -> list[ReportPrintedPlaceRow]:
+        statement = (
+            select(
+                Report.id,
+                Report.sitting_date,
+                Report.printed_place,
+                Report.printed_place_rule,
+            )
+            .where(col(Report.sitting_date).in_(sitting_dates))
+            .order_by(col(Report.sitting_date), col(Report.id))
+        )
+        return [
+            ReportPrintedPlaceRow(*row) for row in self.session.exec(statement).all()
+        ]
+
     def get_participant_report_rows_by_ids_and_report_types(
         self, report_ids: list[int], report_types: Sequence[str]
     ) -> list[ReportParticipantReportRow]:
@@ -622,6 +692,37 @@ class CRUDReport:
                 "column_ends": [
                     report_column_range.column_end
                     for report_column_range in report_column_ranges
+                ],
+            },
+        )
+
+        return update_result.rowcount
+
+    def set_printed_places_bulk(
+        self, printed_place_updates: list[PrintedPlaceUpdate]
+    ) -> int:
+        if not printed_place_updates:
+            return 0
+
+        update_result = self.session.execute(
+            text(
+                "UPDATE report SET printed_place = v.printed_place, printed_place_rule = v.printed_place_rule "
+                "FROM UNNEST(CAST(:ids AS integer[]), CAST(:printed_places AS integer[]), CAST(:printed_place_rules AS printedplacerule[])) "
+                "AS v(id, printed_place, printed_place_rule) "
+                "WHERE report.id = v.id"
+            ),
+            {
+                "ids": [
+                    printed_place_update.id
+                    for printed_place_update in printed_place_updates
+                ],
+                "printed_places": [
+                    printed_place_update.printed_place
+                    for printed_place_update in printed_place_updates
+                ],
+                "printed_place_rules": [
+                    printed_place_update.printed_place_rule
+                    for printed_place_update in printed_place_updates
                 ],
             },
         )
