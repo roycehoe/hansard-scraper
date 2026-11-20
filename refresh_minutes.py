@@ -71,9 +71,13 @@ def _log_minutes_plan(minutes_plan: MinutesPlan) -> None:
 
 def _validate_can_store_minutes() -> None:
     if settings.telegram_bot_token is None:
-        raise HansardSettingError("A commit run sends alerts and needs TELEGRAM_BOT_TOKEN")
+        raise HansardSettingError(
+            "A commit run sends alerts and needs TELEGRAM_BOT_TOKEN"
+        )
     if settings.telegram_chat_id is None:
-        raise HansardSettingError("A commit run sends alerts and needs TELEGRAM_CHAT_ID")
+        raise HansardSettingError(
+            "A commit run sends alerts and needs TELEGRAM_CHAT_ID"
+        )
 
 
 def refresh_minutes(now: datetime, is_commit: bool) -> None:
