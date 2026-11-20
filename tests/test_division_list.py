@@ -657,3 +657,28 @@ def test_a_name_ending_in_haji_after_a_comma_does_not_take_the_name_below() -> N
         (DivisionVoteChoice.AYE, "Mohd Ariff bin Suradi, Haji"),
         (DivisionVoteChoice.AYE, "Tan Ah Kow"),
     ]
+
+
+def test_12_september_1957_reads_a_name_printed_far_right_of_a_name_as_its_own() -> (
+    None
+):
+    _assert_fixture_is_stored(
+        "hansard_list_1957_09_12_name_printed_far_right_of_its_column"
+    )
+
+
+def test_a_gap_of_seven_positions_inside_a_name_does_not_split_it() -> None:
+    html = "<p>The House divided: Ayes, 2; Noes, 0.</p>" + _get_pre_html(
+        "  Ayes",
+        "",
+        "Lim Ah       Kow",
+        "Tan Bee Lian",
+    )
+
+    parsed_list = _get_list(html, 2, 0)
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert _get_names(parsed_list) == [
+        (DivisionVoteChoice.AYE, "Lim Ah Kow"),
+        (DivisionVoteChoice.AYE, "Tan Bee Lian"),
+    ]

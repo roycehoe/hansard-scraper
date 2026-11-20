@@ -11,6 +11,7 @@ from bs4.element import NavigableString, PreformattedString, Tag
 from enums import DivisionListStatus, DivisionVoteChoice
 from utils.division_vote_name import ParsedVoteName
 
+_MIN_CELL_GAP = 8
 _OPENING_PATTERN = re.compile(
     r"the\s+(?:house|committee)\s+divided|division\s+taken|question\s+put\W*\s*ayes",
     re.IGNORECASE,
@@ -24,6 +25,7 @@ _HEADING_WITH_NAME_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _CELL_PATTERN = re.compile(r"\S+(?: \S+)*")
+_NAME_CELL_PATTERN = re.compile(r"\S+(?: {1,%d}\S+)*" % (_MIN_CELL_GAP - 1))
 _MARKER_PATTERN = re.compile(r"^(?:Column|Page)\s*:?\s*\d+$", re.IGNORECASE)
 _NOISE_CELL_PATTERN = re.compile(r"^[-_–—\s]*$")
 _GLUED_HEADING_OR_NIL_PATTERN = re.compile(
@@ -508,11 +510,16 @@ def _get_name_line_cells(line: str, column_offsets: list[int]) -> list[_PreCell]
     bounds = [0, *column_offsets[1:], len(line) + 1]
     for column in range(len(column_offsets)):
         segment = line[bounds[column] : bounds[column + 1]]
-        text = " ".join(segment.split())
-        if not text:
-            continue
-        offset = bounds[column] + len(segment) - len(segment.lstrip())
-        pre_cells.append(_PreCell(column, text, offset, offset + len(segment.strip())))
+        for match in _NAME_CELL_PATTERN.finditer(segment):
+            offset = bounds[column] + match.start()
+            pre_cells.append(
+                _PreCell(
+                    column,
+                    " ".join(match.group().split()),
+                    offset,
+                    offset + len(match.group()),
+                )
+            )
     return pre_cells
 
 
