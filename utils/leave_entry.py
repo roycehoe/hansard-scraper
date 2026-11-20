@@ -3,7 +3,7 @@ from datetime import date
 from typing import Optional, Sequence
 
 from enums import LeaveEntryFormat, LeaveNameSource, LeaveYearSource
-from utils.names import normalize_name, strip_title
+from utils.names import normalize_name, period_normalize, strip_title
 
 YEAR_ORDER_BREAK_GROUP = "year_order_break"
 
@@ -189,5 +189,6 @@ def is_covering_sitting(
     return start_date <= sitting_date <= end_date
 
 
+# NOTE: the key drops the full stops after initials, because a sitting's attendance list prints "David T. E. Lim" where its leave table prints "David T E Lim".
 def get_leave_name_key(name: str) -> str:
-    return " ".join(strip_title(normalize_name(name)).split()).casefold()
+    return period_normalize(strip_title(normalize_name(name)))

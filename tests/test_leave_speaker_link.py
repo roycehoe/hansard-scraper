@@ -207,3 +207,82 @@ def test_get_sitting_entry_lines_on_a_list_sitting_keeps_the_printed_entry() -> 
     )
 
     assert entry_lines == [EntryLine("Mr S Iswaran (West Coast)", "S. Iswaran")]
+
+
+_JULY_1997_PARLIAMENT_NUMBER = 9
+_JULY_1997_SPEAKERS = [
+    Speaker(
+        name=name,
+        party="PAP",
+        is_legislative_assembly=False,
+        parliament_number=_JULY_1997_PARLIAMENT_NUMBER,
+    )
+    for name in ("Lim T E, David", "Sinnakaruppan, R", "Vasoo, S", "Lim Hwee Hua")
+]
+_JULY_1997_SPEAKER_NAME_TO_ID = {
+    speaker.name: speaker_id
+    for speaker_id, speaker in enumerate(_JULY_1997_SPEAKERS, start=1)
+}
+# NOTE: the lines of sitting 11 July 1997 (6354). The attendance list prints full stops after initials, the leave table does not.
+_JULY_1997_ATTENDANCE = (
+    "PRESENT:\n"
+    "Mr R. Sinnakaruppan (Kreta Ayer-Tanglin).\n"
+    "Dr S. Vasoo (Tanjong Pagar).\n"
+    "Mr David T. E. Lim (Aljunied).\n"
+    "Mrs Lim Hwee Hua (Marine Parade).\n"
+)
+
+
+def _get_july_1997_link(name: str) -> Optional[LeaveEntrySpeakerLink]:
+    lookups = build_speaker_lookups(_JULY_1997_SPEAKERS)
+    entry_name_key_to_speaker_ids: dict[str, list[Optional[int]]] = {}
+    for entry_name in get_sitting_entry_names(
+        SittingAttendanceTextRow(
+            id=6354,
+            sitting_date="11-7-1997",
+            parlement_no=_JULY_1997_PARLIAMENT_NUMBER,
+            volume_no=None,
+            markdown_content=_JULY_1997_ATTENDANCE,
+            attendance_list=None,
+        ),
+        lookups,
+    ):
+        entry_name_key_to_speaker_ids.setdefault(
+            get_leave_name_key(entry_name.printed_name), []
+        ).append(_JULY_1997_SPEAKER_NAME_TO_ID.get(entry_name.speaker_name))
+    return get_leave_entry_speaker_link(
+        name,
+        _JULY_1997_PARLIAMENT_NUMBER,
+        lookups,
+        {
+            (speaker.name, _JULY_1997_PARLIAMENT_NUMBER): speaker_id
+            for speaker_id, speaker in enumerate(_JULY_1997_SPEAKERS, start=1)
+        },
+        entry_name_key_to_speaker_ids,
+    )
+
+
+def test_rule_b_reads_a_leave_name_and_an_attendance_name_alike_without_full_stops() -> (
+    None
+):
+    assert _get_july_1997_link("Mr David T E Lim") == LeaveEntrySpeakerLink(
+        1, LeaveSpeakerLinkSource.SITTING_ATTENDANCE_ENTRY
+    )
+    assert _get_july_1997_link("Mr R Sinnakaruppan") == LeaveEntrySpeakerLink(
+        2, LeaveSpeakerLinkSource.SITTING_ATTENDANCE_ENTRY
+    )
+    assert _get_july_1997_link("Dr S Vasoo") == LeaveEntrySpeakerLink(
+        3, LeaveSpeakerLinkSource.SITTING_ATTENDANCE_ENTRY
+    )
+
+
+def test_a_name_that_differs_from_the_attendance_entry_in_more_than_full_stops_links_nothing() -> (
+    None
+):
+    assert _get_july_1997_link("Mr David T Lim") is None
+    assert _get_july_1997_link("Mr Lim T E David") is None
+
+
+def test_the_leave_name_key_ignores_full_stops_after_initials() -> None:
+    assert get_leave_name_key("David T. E. Lim") == get_leave_name_key("David T E Lim")
+    assert get_leave_name_key("R. Sinnakaruppan") == "r sinnakaruppan"
