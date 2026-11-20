@@ -13,14 +13,15 @@ from crud.hansard_sitting_date_response import CRUDHansardSittingDateResponse
 from crud.hansard_website_response import CRUDHansardWebsiteResponse
 from crud.refresh_run import CRUDRefreshRun
 from crud.report import CRUDReport
-from crud.sitting import CRUDSitting
+from crud.sitting import CRUDSitting, SittingCopyRow
 from crud.speaker import CRUDSpeaker
 from crud.speech import CRUDSpeech
 from database.attendance import Attendance
 from database.refresh_run import RefreshRun
 from database.report import Report
+from database.sitting import Sitting
 from database.speech import Speech
-from enums import RefreshRunStatus, ReportType
+from enums import PrintedPlaceRule, RefreshRunStatus, ReportType
 from exceptions import (
     HansardAttachedFileError,
     HansardGatewayError,
@@ -78,6 +79,7 @@ from services.hansard_website import (
     get_topic_html_content,
     get_topic_id,
 )
+from services.printed_place import PlaceableReport, get_printed_places
 from services.refresh import (
     build_attached_file_list_reason,
     build_changed_report_message,
@@ -618,6 +620,70 @@ def _validate_can_store_fetched_window(
     )
 
 
+def _get_sitting_copy(
+    session: Session,
+    sitting_date_key: str,
+    sitting_date_key_to_window_sitting: dict[str, Sitting],
+) -> Optional[SittingCopyRow]:
+    window_sitting = sitting_date_key_to_window_sitting.get(sitting_date_key)
+    if window_sitting is not None:
+        return SittingCopyRow(window_sitting.sections, window_sitting.html_full_content)
+    return CRUDSitting(session).get_copy_row_by_sitting_date(sitting_date_key)
+
+
+def _set_printed_places(
+    session: Session, reports: list[Report], window_sittings: list[Sitting]
+) -> int:
+    sitting_date_key_to_window_sitting = {
+        window_sitting.sitting_date: window_sitting
+        for window_sitting in window_sittings
+    }
+    sitting_date_key_to_reports: dict[str, list[Report]] = {}
+    for report in reports:
+        sitting_date_key_to_reports.setdefault(
+            get_sitting_date_key(report.sitting_date), []
+        ).append(report)
+    not_placed_count = 0
+    for sitting_date_key, sitting_reports in sitting_date_key_to_reports.items():
+        stored_text_rows = CRUDReport(
+            session
+        ).get_printed_place_text_rows_by_sitting_date(sitting_reports[0].sitting_date)
+        report_id_to_printed_place = get_printed_places(
+            _get_sitting_copy(
+                session, sitting_date_key, sitting_date_key_to_window_sitting
+            ),
+            [
+                PlaceableReport(
+                    stored_text_row.report_id,
+                    stored_text_row.report_type,
+                    stored_text_row.speech_number,
+                    stored_text_row.original_title,
+                    stored_text_row.subtitle,
+                    stored_text_row.content,
+                )
+                for stored_text_row in stored_text_rows
+            ]
+            + [
+                PlaceableReport(
+                    report.report_id,
+                    report.report_type,
+                    report.speech_number,
+                    report.original_title,
+                    report.subtitle,
+                    report.content,
+                )
+                for report in sitting_reports
+            ],
+        )
+        for report in sitting_reports:
+            printed_place = report_id_to_printed_place[report.report_id]
+            report.printed_place = printed_place.printed_place
+            report.printed_place_rule = printed_place.printed_place_rule
+            if printed_place.printed_place_rule == PrintedPlaceRule.NOT_PLACED:
+                not_placed_count += 1
+    return not_placed_count
+
+
 def _write_window_rows(
     session: Session,
     fetched_window: FetchedWindow,
@@ -650,10 +716,27 @@ def _write_window_rows(
             )
     CRUDHansardWebsiteResponse(session).add_many(hansard_website_responses)
 
+    hansard_sitting_date_responses = []
+    sittings = []
+    for (
+        sitting_date_key,
+        hansard_report_response,
+    ) in fetched_window.sitting_date_key_to_response.items():
+        hansard_sitting_date_response = build_hansard_sitting_date_response(
+            hansard_report_response, sitting_date_key
+        )
+        sitting = build_sitting(hansard_sitting_date_response)
+        hansard_sitting_date_responses.append(hansard_sitting_date_response)
+        sittings.append(sitting)
+
     reports = [
         build_report(hansard_website_response)
         for hansard_website_response in hansard_website_responses
     ]
+    reports_not_placed = _set_printed_places(session, reports, sittings)
+    logger.info(
+        f"{reports_not_placed} of {len(reports)} new reports not placed in their sitting's printed order"
+    )
     CRUDReport(session).add_many(reports)
 
     report_id_to_unlabelled_range = {
@@ -674,18 +757,6 @@ def _write_window_rows(
         speeches.extend(report_speeches.speeches)
     CRUDSpeech(session).add_many(speeches)
 
-    hansard_sitting_date_responses = []
-    sittings = []
-    for (
-        sitting_date_key,
-        hansard_report_response,
-    ) in fetched_window.sitting_date_key_to_response.items():
-        hansard_sitting_date_response = build_hansard_sitting_date_response(
-            hansard_report_response, sitting_date_key
-        )
-        sitting = build_sitting(hansard_sitting_date_response)
-        hansard_sitting_date_responses.append(hansard_sitting_date_response)
-        sittings.append(sitting)
     CRUDHansardSittingDateResponse(session).add_many(hansard_sitting_date_responses)
     CRUDSitting(session).add_many(sittings)
 

@@ -1,7 +1,7 @@
 import copy
 import re
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Optional, Union
 
 import httpx
@@ -46,6 +46,7 @@ from enums import (
     AttendanceOfficeSource,
     OfficeClass,
     ParticipantRole,
+    PrintedPlaceRule,
     RefreshRunStatus,
     ReportType,
 )
@@ -598,6 +599,40 @@ def _seed_stored_attached_file(
     session.commit()
     assert attached_file.id is not None
     return attached_file.id
+
+
+def test_clean_run_places_each_new_report(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    fake_parliament: FakeParliament,
+    alerts: _AlertRecorder,
+) -> None:
+    seed_stored(scratch_session)
+
+    status = refresh_runs.populate_refresh_runs(
+        scratch_session, _get_now(fake_parliament), None
+    )
+
+    assert status == RefreshRunStatus.SUCCEEDED
+    with Session(scratch_engine) as session:
+        new_reports = session.exec(
+            select(Report).where(
+                Report.sitting_date
+                == datetime.combine(fake_parliament.new_sitting_date, time())
+            )
+        ).all()
+    assert new_reports != []
+    assert all(
+        report.printed_place_rule == PrintedPlaceRule.SECTION_TEXT
+        for report in new_reports
+    )
+    printed_places = [
+        report.printed_place
+        for report in new_reports
+        if report.printed_place is not None
+    ]
+    assert len(printed_places) == len(new_reports)
+    assert len(printed_places) == len(set(printed_places))
 
 
 def test_new_report_pointer_ties_to_a_stored_file(
