@@ -35,6 +35,7 @@ _OPENING_NOES_COUNT_PATTERN = re.compile(r"Noe?s?\W{0,3}(\d+)", re.IGNORECASE)
 _OPENING_COUNT_LOOKAHEAD = 160
 _NIL_CELLS = frozenset({"nil", "nils"})
 _WRAP_WORDS = frozenset({"bin", "binte", "bte", "bt", "b", "s/o", "d/o"})
+_HAJI = "haji"
 _BIN_ABBREVIATION = "b"
 _INITIALS_SEPARATOR = ","
 _TAB_SIZE = 8
@@ -281,6 +282,9 @@ def _is_wrap_open(name: str) -> bool:
     last_word = _get_last_word(name)
     if last_word == _BIN_ABBREVIATION and _INITIALS_SEPARATOR in name:
         return False
+    if last_word == _HAJI:
+        words = name.split()
+        return len(words) > 1 and words[-2].rstrip(".").lower() in _WRAP_WORDS
     return last_word in _WRAP_WORDS
 
 

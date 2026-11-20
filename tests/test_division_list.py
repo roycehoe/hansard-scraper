@@ -636,3 +636,24 @@ def test_a_name_glued_to_a_heading_word_with_no_full_stop_makes_the_list_unreada
     assert parsed_list.list_status == DivisionListStatus.LAYOUT_UNREADABLE
     assert parsed_list.printed_list is not None
     assert parsed_list.names == []
+
+
+def test_25_july_1955_joins_a_name_wrapped_after_bin_haji() -> None:
+    _assert_fixture_is_stored("hansard_list_1955_07_25_wrapped_name_at_the_same_offset")
+
+
+def test_a_name_ending_in_haji_after_a_comma_does_not_take_the_name_below() -> None:
+    html = "<p>The House divided: Ayes, 2; Noes, 0.</p>" + _get_pre_html(
+        "  Ayes",
+        "",
+        "Mohd Ariff bin Suradi, Haji",
+        "Tan Ah Kow",
+    )
+
+    parsed_list = _get_list(html, 2, 0)
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert _get_names(parsed_list) == [
+        (DivisionVoteChoice.AYE, "Mohd Ariff bin Suradi, Haji"),
+        (DivisionVoteChoice.AYE, "Tan Ah Kow"),
+    ]
