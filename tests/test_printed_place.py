@@ -1,11 +1,14 @@
 import json
 from typing import Optional
 
+from crud.sitting import SittingCopyRow
 from enums import PrintedPlaceRule
 from services.printed_place import (
     PlaceableReport,
     PrintedPlace,
     get_newer_printed_places,
+    get_older_printed_places,
+    get_printed_places,
 )
 
 _FRAIL_ELDERLY_TITLE = "Support for Frail Elderly and their Care-givers"
@@ -148,3 +151,116 @@ def test_a_title_match_skips_a_section_used_by_text() -> None:
         "text": PrintedPlace(2, PrintedPlaceRule.SECTION_TEXT),
         "title": PrintedPlace(None, PrintedPlaceRule.NOT_PLACED),
     }
+
+
+_PARAGRAPH_ONE = "the minister rose to explain why the new housing grant scheme would help young families"
+_PARAGRAPH_TWO = "members asked whether the proposed levy on foreign workers could be lowered during the coming budget season"
+_PARAGRAPH_THREE = "the speaker then called the next item concerning rail reliability and the operators performance targets for the year"
+_PARAGRAPH_FOUR = "a final motion on the adjournment was moved and carried without any division after short remarks from several members"
+_SHORT_PARAGRAPH = "motion carried unanimously"
+_OLDER_DAY = (
+    "<table><tr><td>Header row here</td></tr></table>"
+    f"<p>{_PARAGRAPH_ONE}</p><p>{_PARAGRAPH_TWO}</p><p>{_PARAGRAPH_THREE}</p>"
+    f"<p>{_PARAGRAPH_FOUR}</p><p>{_SHORT_PARAGRAPH}</p>"
+)
+
+
+def _paragraph_word_count(*paragraphs: str) -> int:
+    return sum(len(paragraph.split()) for paragraph in paragraphs)
+
+
+def test_an_older_report_takes_the_word_offset_of_its_first_unique_run() -> None:
+    second_report = _report("second", 1, "Title", f"<p>{_PARAGRAPH_TWO}</p>")
+    fourth_report = _report("fourth", 2, "Title", f"<p>{_PARAGRAPH_FOUR}</p>")
+
+    assert get_older_printed_places(_OLDER_DAY, [second_report, fourth_report]) == {
+        "second": PrintedPlace(
+            _paragraph_word_count(_PARAGRAPH_ONE), PrintedPlaceRule.FULL_TEXT_RUN
+        ),
+        "fourth": PrintedPlace(
+            _paragraph_word_count(_PARAGRAPH_ONE, _PARAGRAPH_TWO, _PARAGRAPH_THREE),
+            PrintedPlaceRule.FULL_TEXT_RUN,
+        ),
+    }
+
+
+def test_a_report_whose_runs_all_repeat_is_not_placed() -> None:
+    report = _report("repeated", 1, "Title", f"<p>{_PARAGRAPH_TWO}</p>")
+
+    assert get_older_printed_places(
+        _OLDER_DAY + f"<p>{_PARAGRAPH_TWO}</p>", [report]
+    ) == {"repeated": PrintedPlace(None, PrintedPlaceRule.NOT_PLACED)}
+
+
+def test_two_reports_whose_spans_overlap_are_both_not_placed() -> None:
+    outer_report = _report(
+        "outer", 1, "Title", f"<p>{_PARAGRAPH_TWO} {_PARAGRAPH_THREE}</p>"
+    )
+    inner_report = _report("inner", 2, "Title", f"<p>{_PARAGRAPH_TWO}</p>")
+
+    assert get_older_printed_places(_OLDER_DAY, [outer_report, inner_report]) == {
+        "outer": PrintedPlace(None, PrintedPlaceRule.NOT_PLACED),
+        "inner": PrintedPlace(None, PrintedPlaceRule.NOT_PLACED),
+    }
+
+
+def test_a_report_with_no_text_is_not_placed() -> None:
+    report = _report("empty", 1, "Title", None)
+
+    assert get_older_printed_places(_OLDER_DAY, [report]) == {
+        "empty": PrintedPlace(None, PrintedPlaceRule.NOT_PLACED)
+    }
+
+
+def test_an_older_assent_with_no_text_takes_place_zero() -> None:
+    report = _report("assent", 1, "Assent to Bills", None, report_type="atbp")
+
+    assert get_older_printed_places(_OLDER_DAY, [report]) == {
+        "assent": PrintedPlace(0, PrintedPlaceRule.ASSENT_FIRST)
+    }
+
+
+def test_a_report_shorter_than_a_run_is_placed_by_its_whole_text() -> None:
+    report = _report("short", 1, "Title", f"<p>{_SHORT_PARAGRAPH}</p>")
+
+    assert get_older_printed_places(_OLDER_DAY, [report]) == {
+        "short": PrintedPlace(
+            _paragraph_word_count(
+                _PARAGRAPH_ONE, _PARAGRAPH_TWO, _PARAGRAPH_THREE, _PARAGRAPH_FOUR
+            ),
+            PrintedPlaceRule.FULL_TEXT_RUN,
+        )
+    }
+
+
+def test_a_sitting_with_no_copy_places_nothing() -> None:
+    reports = [
+        _report("assent", 1, "Assent to Bills", None, report_type="atbp"),
+        _report("answer", 2, "Title", f"<p>{_PARAGRAPH_TWO}</p>"),
+    ]
+    not_placed = PrintedPlace(None, PrintedPlaceRule.NOT_PLACED)
+
+    assert get_printed_places(None, reports) == {
+        "assent": not_placed,
+        "answer": not_placed,
+    }
+    assert get_printed_places(SittingCopyRow(None, None), reports) == {
+        "assent": not_placed,
+        "answer": not_placed,
+    }
+
+
+def test_a_sitting_with_sections_is_placed_from_them() -> None:
+    reports = [_report("bill", 1, _BILL_TITLE, "<p>Bill debate</p>")]
+
+    assert get_printed_places(
+        SittingCopyRow(_THREE_SECTIONS, None), reports
+    ) == get_newer_printed_places(_THREE_SECTIONS, reports)
+
+
+def test_a_sitting_with_a_full_html_copy_is_placed_from_it() -> None:
+    reports = [_report("second", 1, "Title", f"<p>{_PARAGRAPH_TWO}</p>")]
+
+    assert get_printed_places(
+        SittingCopyRow(None, _OLDER_DAY), reports
+    ) == get_older_printed_places(_OLDER_DAY, reports)
