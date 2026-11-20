@@ -38,9 +38,10 @@ _ASSENT_FIRST = PrintedPlace(_ASSENT_PLACE, PrintedPlaceRule.ASSENT_FIRST)
 
 
 def _is_assent_without_text(placeable_report: PlaceableReport) -> bool:
-    return placeable_report.report_type == ReportType.ATBP and not (
-        placeable_report.content or ""
-    ).strip()
+    return (
+        placeable_report.report_type == ReportType.ATBP
+        and not (placeable_report.content or "").strip()
+    )
 
 
 def _get_normalized_heading(heading: Optional[str]) -> str:
@@ -181,9 +182,7 @@ def _get_first_unique_run_place(
     return None
 
 
-def _get_text_span(
-    sitting_words: SittingWords, words: list[str]
-) -> Optional[TextSpan]:
+def _get_text_span(sitting_words: SittingWords, words: list[str]) -> Optional[TextSpan]:
     run_word_count = min(_RUN_WORD_COUNT, len(words))
     last_run_offset = len(words) - run_word_count
     start_place = _get_first_unique_run_place(
@@ -252,17 +251,13 @@ def get_older_printed_places(
 def get_printed_places(
     sitting_copy: Optional[SittingCopyRow], placeable_reports: list[PlaceableReport]
 ) -> dict[str, PrintedPlace]:
-    if sitting_copy is None:
-        return {
-            placeable_report.report_id: _NOT_PLACED
-            for placeable_report in placeable_reports
-        }
-    if sitting_copy.sections is not None:
-        return get_newer_printed_places(sitting_copy.sections, placeable_reports)
-    if sitting_copy.html_full_content is not None:
-        return get_older_printed_places(
-            sitting_copy.html_full_content, placeable_reports
-        )
+    if sitting_copy is not None:
+        if sitting_copy.sections is not None:
+            return get_newer_printed_places(sitting_copy.sections, placeable_reports)
+        if sitting_copy.html_full_content is not None:
+            return get_older_printed_places(
+                sitting_copy.html_full_content, placeable_reports
+            )
     return {
         placeable_report.report_id: _NOT_PLACED
         for placeable_report in placeable_reports
