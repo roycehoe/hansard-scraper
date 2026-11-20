@@ -318,6 +318,53 @@ def test_a_division_between_two_with_the_same_counts_does_not_take_a_later_openi
     assert _get_names(parsed_list)[0] == (DivisionVoteChoice.AYE, "Aa Bb")
 
 
+def test_a_gap_inside_a_name_under_other_lines_does_not_split_it_on_the_absent_side() -> (
+    None
+):
+    html = "<p>The House divided: Ayes, 2; Noes, 1; Absent, 3.</p>" + _get_pre_html(
+        "   Ayes                         Noes",
+        "Lim Yew Hock.                Sutherland, G. A. P.",
+        "Braga, A. J.",
+        "                             Absent",
+        "                             Lee Kuan Yew.",
+        "                             Mohd.        Ariff bin Suradi.",
+        "                             Ong Eng Guan.",
+    )
+
+    parsed_list = _get_list(html, 2, 1, absent=3)
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert _get_names(parsed_list)[-3:] == [
+        (DivisionVoteChoice.ABSENT, "Lee Kuan Yew."),
+        (DivisionVoteChoice.ABSENT, "Mohd. Ariff bin Suradi."),
+        (DivisionVoteChoice.ABSENT, "Ong Eng Guan."),
+    ]
+
+
+def test_a_gap_after_a_name_or_title_in_the_first_column_does_not_split_it() -> None:
+    for first_cell, expected_name in (
+        ("Mohd.        Ariff bin Suradi.", "Mohd. Ariff bin Suradi."),
+        ("Dr.         Lee Siew Choh.", "Dr. Lee Siew Choh."),
+    ):
+        html = "<p>The House divided: Ayes, 3; Noes, 2.</p>" + _get_pre_html(
+            "   Ayes                                         Noes",
+            "Lim Yew Hock.                                 Sutherland, G. A. P.",
+            f"{first_cell}".ljust(46) + "Ong Eng Guan.",
+            "Braga, A. J.",
+        )
+
+        parsed_list = _get_list(html, 3, 2)
+
+        assert parsed_list.list_status == DivisionListStatus.STORED
+        assert _get_names(parsed_list) == [
+            (DivisionVoteChoice.AYE, "Lim Yew Hock."),
+            (DivisionVoteChoice.NO, "Sutherland, G. A. P."),
+            (DivisionVoteChoice.AYE, expected_name),
+            (DivisionVoteChoice.NO, "Ong Eng Guan."),
+            (DivisionVoteChoice.AYE, "Braga, A. J."),
+        ]
+
+
 def test_21_september_1960_reads_a_nose_heading_as_the_noes_heading() -> None:
     _assert_fixture_is_stored("hansard_list_1960_09_21_nose_heading")
 

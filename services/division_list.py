@@ -510,21 +510,32 @@ def _get_heading_line_cells(line: str, column_offsets: list[int]) -> list[_PreCe
     return pre_cells
 
 
-def _get_name_line_cells(line: str, column_offsets: list[int]) -> list[_PreCell]:
+def _get_other_lines_end(index: int, name_lines_ends: dict[int, int]) -> int:
+    return max(
+        (end for other, end in name_lines_ends.items() if other != index), default=0
+    )
+
+
+def _get_name_line_cells(
+    line: str, column_offsets: list[int], other_lines_end: int
+) -> list[_PreCell]:
     pre_cells: list[_PreCell] = []
     bounds = [0, *column_offsets[1:], len(line) + 1]
     for column in range(len(column_offsets)):
         segment = line[bounds[column] : bounds[column + 1]]
+        column_cells: list[_PreCell] = []
         for match in _NAME_CELL_PATTERN.finditer(segment):
             offset = bounds[column] + match.start()
-            pre_cells.append(
-                _PreCell(
-                    column,
-                    " ".join(match.group().split()),
-                    offset,
-                    offset + len(match.group()),
+            text = " ".join(match.group().split())
+            end = offset + len(match.group())
+            if column_cells and offset < other_lines_end:
+                joined = column_cells[-1]
+                column_cells[-1] = _PreCell(
+                    column, f"{joined.text} {text}", joined.offset, end
                 )
-            )
+                continue
+            column_cells.append(_PreCell(column, text, offset, end))
+        pre_cells.extend(column_cells)
     return pre_cells
 
 
@@ -589,6 +600,11 @@ def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
         ]
         expanded_lines = [line.expandtabs(_TAB_SIZE) for line in pre_lines]
         name_lines = [line for line in expanded_lines if not _has_heading_cell(line)]
+        name_lines_ends = {
+            index: len(line)
+            for index, line in enumerate(expanded_lines)
+            if not _has_heading_cell(line)
+        }
         column_offsets = _get_column_offsets(name_lines)
         heading_column_offsets = _get_heading_column_offsets(expanded_lines)
         if len(heading_column_offsets) > len(column_offsets):
@@ -604,8 +620,10 @@ def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
             line_cells = [
                 _get_heading_line_cells(line, column_offsets)
                 if _has_heading_cell(line)
-                else _get_name_line_cells(line, column_offsets)
-                for line in expanded_lines
+                else _get_name_line_cells(
+                    line, column_offsets, _get_other_lines_end(index, name_lines_ends)
+                )
+                for index, line in enumerate(expanded_lines)
             ]
         line_cells = [
             _get_spanning_heading_cells(pre_cells, column_offsets)
