@@ -762,21 +762,26 @@ def _get_division_opening(
     items: list[_Item],
     openings: list[_Opening],
     division_index: int,
-    division_count: int,
+    other_division_counts: list[tuple[Optional[int], Optional[int]]],
     ayes: Optional[int],
     noes: Optional[int],
 ) -> Optional[_Opening]:
-    if ayes is not None and noes is not None:
+    # A count match is taken only when no other division in the report prints
+    # the same Ayes and Noes, because then the match could be that division's
+    # opening and the line cut at 160 characters hides which one is ours.
+    if (
+        ayes is not None
+        and noes is not None
+        and (ayes, noes) not in other_division_counts
+    ):
         counted_indexes = [
             index
             for index, opening in enumerate(openings)
             if _is_opening_printing_counts(items, opening, ayes, noes)
         ]
-        # Each earlier division took an opening before this one's, so a match
-        # with fewer than division_index openings before it is another
-        # division's opening and the order rule applies.
-        if len(counted_indexes) == 1 and counted_indexes[0] >= division_index:
+        if len(counted_indexes) == 1:
             return openings[counted_indexes[0]]
+    division_count = len(other_division_counts) + 1
     if len(openings) != division_count or division_index >= len(openings):
         return None
     return openings[division_index]
@@ -785,7 +790,7 @@ def _get_division_opening(
 def get_division_list(
     report_content: Optional[str],
     division_index: int,
-    division_count: int,
+    other_division_counts: list[tuple[Optional[int], Optional[int]]],
     ayes: Optional[int],
     noes: Optional[int],
     abstentions: Optional[int],
@@ -799,7 +804,7 @@ def get_division_list(
         items,
         _get_openings(items),
         division_index,
-        division_count,
+        other_division_counts,
         ayes,
         noes,
     )

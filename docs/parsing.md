@@ -91,7 +91,7 @@ A printed count line opens with "The House divided", "The Committee divided", "D
 
 ### Pairing a count line with its opening
 
-A division takes the opening whose own line prints the same Ayes and Noes as its count line, when exactly one opening in the report does and at least as many openings stand before it as there are divisions before this one. Otherwise it takes the opening in its order, and a report that holds a different number of openings than divisions reads no list. Only the line that holds the opening and the line after it are read, cut to their first 160 characters, so a count printed further into a long paragraph does not match. The place check stops the second of two divisions that print the same counts from taking the first one's opening when its own count falls beyond those 160 characters (`_get_division_opening` in `services/division_list.py`).
+A division takes the opening whose own line prints the same Ayes and Noes as its count line, when exactly one opening in the report does and no other division in the report prints the same Ayes and Noes. Otherwise it takes the opening in its order, and a report that holds a different number of openings than divisions reads no list. Only the line that holds the opening and the line after it are read, cut to their first 160 characters, so a count printed further into a long paragraph does not match, and a division whose numbers another division also prints cannot tell its opening from that division's by counts (`_get_division_opening` in `services/division_list.py`).
 
 ### Openings without counts
 

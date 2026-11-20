@@ -31,10 +31,17 @@ def _get_list(
     absent: Optional[int] = None,
     paired: Optional[int] = None,
     division_index: int = 0,
-    division_count: int = 1,
+    other_division_counts: Optional[list[tuple[Optional[int], Optional[int]]]] = None,
 ) -> ParsedDivisionList:
     return get_division_list(
-        html, division_index, division_count, ayes, noes, abstentions, absent, paired
+        html,
+        division_index,
+        other_division_counts or [],
+        ayes,
+        noes,
+        abstentions,
+        absent,
+        paired,
     )
 
 
@@ -42,7 +49,7 @@ def _get_fixture_list(html: str, expected: dict) -> ParsedDivisionList:
     return get_division_list(
         html,
         expected["division_index"],
-        expected["division_count"],
+        [(None, None)] * (expected["division_count"] - 1),
         expected["ayes"],
         expected["noes"],
         expected["abstentions"],
@@ -187,7 +194,9 @@ def test_two_openings_that_print_the_same_counts_fall_back_to_the_order_rule() -
         "  Mm Nn              Oo Pp",
     )
 
-    parsed_list = _get_list(html, 2, 1, division_index=1, division_count=2)
+    parsed_list = _get_list(
+        html, 2, 1, division_index=1, other_division_counts=[(2, 1)]
+    )
 
     assert parsed_list.list_status == DivisionListStatus.COUNTS_DISAGREE
 
@@ -217,7 +226,9 @@ def test_a_division_does_not_take_an_opening_that_an_earlier_division_needs() ->
         + second_list
     )
 
-    parsed_list = _get_list(html, 2, 1, division_index=1, division_count=2)
+    parsed_list = _get_list(
+        html, 2, 1, division_index=1, other_division_counts=[(2, 1)]
+    )
 
     assert parsed_list.list_status == DivisionListStatus.STORED
     assert _get_names(parsed_list) == [
@@ -225,6 +236,86 @@ def test_a_division_does_not_take_an_opening_that_an_earlier_division_needs() ->
         (DivisionVoteChoice.NO, "Kk Ll"),
         (DivisionVoteChoice.AYE, "Mm Nn"),
     ]
+
+
+_LONG_SENTENCE = (
+    "Question put, That the Amendment proposed by the honourable Member for "
+    "Anson to the Motion standing in the name of the Minister for Finance "
+    "be agreed to, and that the words be left out."
+)
+
+
+def _get_two_column_list(*names: str) -> str:
+    ayes_first, noes_first, ayes_second = names
+    return _get_pre_html(
+        "  Ayes               Noes",
+        "",
+        f"  {ayes_first}              {noes_first}",
+        f"  {ayes_second}",
+    )
+
+
+def test_a_division_with_the_same_counts_as_a_later_one_keeps_its_own_opening() -> None:
+    html = (
+        f"<p>{_LONG_SENTENCE} {_OPENING}</p>"
+        + _get_two_column_list("Aa Bb", "Cc Dd", "Ee Ff")
+        + f"<p>{_OPENING}</p>"
+        + _get_two_column_list("Ii Jj", "Kk Ll", "Mm Nn")
+    )
+
+    parsed_list = _get_list(
+        html, 2, 1, division_index=0, other_division_counts=[(2, 1)]
+    )
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert _get_names(parsed_list) == [
+        (DivisionVoteChoice.AYE, "Aa Bb"),
+        (DivisionVoteChoice.NO, "Cc Dd"),
+        (DivisionVoteChoice.AYE, "Ee Ff"),
+    ]
+
+
+def test_three_openings_for_two_divisions_with_the_same_counts_read_no_list() -> None:
+    html = (
+        "<p>The House divided.</p>"
+        + f"<p>{_OPENING}</p>"
+        + _get_two_column_list("Aa Bb", "Cc Dd", "Ee Ff")
+        + f"<p>{_LONG_SENTENCE} {_OPENING}</p>"
+        + _get_two_column_list("Ii Jj", "Kk Ll", "Mm Nn")
+    )
+
+    for division_index in (0, 1):
+        parsed_list = _get_list(
+            html, 2, 1, division_index=division_index, other_division_counts=[(2, 1)]
+        )
+
+        assert parsed_list.list_status == DivisionListStatus.LAYOUT_UNREADABLE
+        assert parsed_list.names == []
+
+
+def test_a_division_between_two_with_the_same_counts_does_not_take_a_later_opening() -> (
+    None
+):
+    html = (
+        f"<p>{_LONG_SENTENCE} {_OPENING}</p>"
+        + _get_two_column_list("Aa Bb", "Cc Dd", "Ee Ff")
+        + "<p>The House divided: Ayes, 2; Noes, 2.</p>"
+        + _get_pre_html(
+            "  Ayes               Noes",
+            "",
+            "  Ss Tt              Uu Vv",
+            "  Ww Xx              Yy Zz",
+        )
+        + f"<p>{_OPENING}</p>"
+        + _get_two_column_list("Ii Jj", "Kk Ll", "Mm Nn")
+    )
+
+    parsed_list = _get_list(
+        html, 2, 1, division_index=0, other_division_counts=[(2, 2), (2, 1)]
+    )
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert _get_names(parsed_list)[0] == (DivisionVoteChoice.AYE, "Aa Bb")
 
 
 def test_21_september_1960_reads_a_nose_heading_as_the_noes_heading() -> None:
@@ -500,7 +591,7 @@ def test_a_name_moved_across_a_column_gives_no_names() -> None:
     parsed_list = get_division_list(
         moved_html,
         0,
-        1,
+        [],
         expected["ayes"],
         expected["noes"],
         expected["abstentions"],
@@ -567,7 +658,7 @@ def test_a_different_number_of_openings_is_layout_unreadable() -> None:
         expected["abstentions"],
         expected["absent"],
         expected["paired"],
-        division_count=2,
+        other_division_counts=[(expected["ayes"], expected["noes"])],
     )
 
     assert parsed_list.list_status == DivisionListStatus.LAYOUT_UNREADABLE

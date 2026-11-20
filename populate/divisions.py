@@ -153,13 +153,17 @@ def _read_report_divisions(
     content: Optional[str],
     name_lookups: _NameLookups,
 ) -> list[_ReadDivision]:
-    printed_line_numbers = [
-        parsed_division.report_division_number
+    printed_line_divisions = [
+        parsed_division
         for parsed_division in sorted(
             report_divisions.divisions,
             key=lambda parsed_division: parsed_division.speech_ordinal,
         )
         if parsed_division.count_source == DivisionCountSource.PRINTED_LINE
+    ]
+    printed_line_numbers = [
+        parsed_division.report_division_number
+        for parsed_division in printed_line_divisions
     ]
     read_divisions: list[_ReadDivision] = []
     for parsed_division in report_divisions.divisions:
@@ -173,10 +177,17 @@ def _read_report_divisions(
                 )
             )
             continue
+        division_index = printed_line_numbers.index(
+            parsed_division.report_division_number
+        )
         division_list = get_division_list(
             content,
-            printed_line_numbers.index(parsed_division.report_division_number),
-            len(printed_line_numbers),
+            division_index,
+            [
+                (other_division.ayes, other_division.noes)
+                for other_index, other_division in enumerate(printed_line_divisions)
+                if other_index != division_index
+            ],
             parsed_division.ayes,
             parsed_division.noes,
             parsed_division.abstentions,
