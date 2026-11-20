@@ -163,9 +163,7 @@ def get_division_pairings(
             group_to_hansard_divisions.get(group, []),
             key=lambda hansard_division: (
                 hansard_division.printed_place is None,
-                0
-                if hansard_division.printed_place is None
-                else hansard_division.printed_place,
+                hansard_division.printed_place or 0,
                 hansard_division.speech_number,
                 hansard_division.speech_ordinal,
             ),
