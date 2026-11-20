@@ -35,7 +35,7 @@ class DivisionPairing:
     hansard_division_ids: tuple[int, ...]
 
 
-def _is_speech_number_tied(hansard_group: list[PairableHansardDivision]) -> bool:
+def _is_report_sort_key_tied(hansard_group: list[PairableHansardDivision]) -> bool:
     speech_number_to_sprs_report_ids: dict[int, set[str]] = {}
     for hansard_division in hansard_group:
         speech_number_to_sprs_report_ids.setdefault(
@@ -79,7 +79,7 @@ def _pair_group(
             )
             for minutes_division in minutes_group
         ]
-    if _is_speech_number_tied(hansard_group):
+    if _is_report_sort_key_tied(hansard_group):
         return [
             DivisionPairing(
                 minutes_division.sitting_date,
