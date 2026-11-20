@@ -115,9 +115,7 @@ def test_an_assent_report_with_no_text_takes_place_zero() -> None:
 
 def test_an_assent_report_with_empty_or_whitespace_text_takes_place_zero() -> None:
     empty_report = _report("empty", 1, "Assent to Bills", "", report_type="atbp")
-    blank_report = _report(
-        "blank", 2, "Assent to Bills", " \n\t ", report_type="atbp"
-    )
+    blank_report = _report("blank", 2, "Assent to Bills", " \n\t ", report_type="atbp")
 
     assert get_newer_printed_places(_THREE_SECTIONS, [empty_report, blank_report]) == {
         "empty": PrintedPlace(0, PrintedPlaceRule.ASSENT_FIRST),
@@ -192,14 +190,36 @@ def test_a_report_whose_runs_all_repeat_is_not_placed() -> None:
     ) == {"repeated": PrintedPlace(None, PrintedPlaceRule.NOT_PLACED)}
 
 
-def test_two_reports_whose_spans_overlap_are_both_not_placed() -> None:
+def test_a_report_printed_in_two_pieces_takes_its_first_piece() -> None:
+    split_report = _report(
+        "split", 1, "Title", f"<p>{_PARAGRAPH_TWO}</p><p>{_PARAGRAPH_FOUR}</p>"
+    )
+    between_report = _report("between", 2, "Title", f"<p>{_PARAGRAPH_THREE}</p>")
+
+    assert get_older_printed_places(_OLDER_DAY, [split_report, between_report]) == {
+        "split": PrintedPlace(
+            _paragraph_word_count(_PARAGRAPH_ONE), PrintedPlaceRule.FULL_TEXT_RUN
+        ),
+        "between": PrintedPlace(
+            _paragraph_word_count(_PARAGRAPH_ONE, _PARAGRAPH_TWO),
+            PrintedPlaceRule.FULL_TEXT_RUN,
+        ),
+    }
+
+
+def test_a_run_another_report_also_holds_does_not_place_a_report() -> None:
     outer_report = _report(
         "outer", 1, "Title", f"<p>{_PARAGRAPH_TWO} {_PARAGRAPH_THREE}</p>"
     )
     inner_report = _report("inner", 2, "Title", f"<p>{_PARAGRAPH_TWO}</p>")
 
+    # The outer report's first run that the inner report does not hold starts
+    # 11 words before paragraph three, so it ends on paragraph three's first word.
     assert get_older_printed_places(_OLDER_DAY, [outer_report, inner_report]) == {
-        "outer": PrintedPlace(None, PrintedPlaceRule.NOT_PLACED),
+        "outer": PrintedPlace(
+            _paragraph_word_count(_PARAGRAPH_ONE, _PARAGRAPH_TWO) - 11,
+            PrintedPlaceRule.FULL_TEXT_RUN,
+        ),
         "inner": PrintedPlace(None, PrintedPlaceRule.NOT_PLACED),
     }
 

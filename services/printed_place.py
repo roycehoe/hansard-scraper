@@ -3,7 +3,7 @@ import json
 import re
 from bisect import bisect_left
 from dataclasses import dataclass
-from typing import Iterable, Optional
+from typing import Optional
 
 from crud.sitting import SittingCopyRow
 from enums import PrintedPlaceRule, ReportType
@@ -131,18 +131,16 @@ class SittingWords:
     word_starts: list[int]
 
 
-@dataclass(frozen=True)
-class TextSpan:
-    start: int
-    end: int
-
-
 def _get_words(html_text: str) -> list[str]:
     text_without_tables = re.sub(
         _TABLE_PATTERN, " ", html_text, flags=re.IGNORECASE | re.DOTALL
     )
     plain_text = html.unescape(re.sub(_HTML_TAG_PATTERN, " ", text_without_tables))
     return re.sub(_NON_ALPHANUMERIC_PATTERN, " ", plain_text.lower()).split()
+
+
+def _get_joined_words(words: list[str]) -> str:
+    return " " + " ".join(words) + " "
 
 
 def _build_sitting_words(html_full_content: str) -> SittingWords:
@@ -152,13 +150,10 @@ def _build_sitting_words(html_full_content: str) -> SittingWords:
     for word in words:
         word_starts.append(word_start)
         word_start += len(word) + 1
-    return SittingWords(" " + " ".join(words) + " ", word_starts)
+    return SittingWords(_get_joined_words(words), word_starts)
 
 
-def _get_unique_run_place(
-    sitting_words: SittingWords, run_words: list[str]
-) -> Optional[int]:
-    run_text = " " + " ".join(run_words) + " "
+def _get_unique_run_place(sitting_words: SittingWords, run_text: str) -> Optional[int]:
     first_hit = sitting_words.joined_text.find(run_text)
     if first_hit == _NOT_FOUND:
         return None
@@ -167,83 +162,58 @@ def _get_unique_run_place(
     return bisect_left(sitting_words.word_starts, first_hit + 1)
 
 
-def _get_first_unique_run_place(
-    sitting_words: SittingWords,
-    words: list[str],
-    run_offsets: Iterable[int],
-    run_word_count: int,
+def _get_exclusive_run_place(
+    sitting_words: SittingWords, words: list[str], other_report_texts: list[str]
 ) -> Optional[int]:
-    for run_offset in run_offsets:
-        run_place = _get_unique_run_place(
-            sitting_words, words[run_offset : run_offset + run_word_count]
-        )
-        if run_place is not None:
-            return run_place
-    return None
-
-
-def _get_text_span(sitting_words: SittingWords, words: list[str]) -> Optional[TextSpan]:
     run_word_count = min(_RUN_WORD_COUNT, len(words))
-    last_run_offset = len(words) - run_word_count
-    start_place = _get_first_unique_run_place(
-        sitting_words, words, range(0, last_run_offset + 1), run_word_count
-    )
-    if start_place is None:
-        return None
-    end_run_place = _get_first_unique_run_place(
-        sitting_words, words, range(last_run_offset, -1, -1), run_word_count
-    )
-    if end_run_place is None:
-        return None
-    if end_run_place < start_place:
-        return None
-    return TextSpan(start_place, end_run_place + run_word_count)
-
-
-def _get_overlapping_report_ids(
-    report_id_to_text_span: dict[str, TextSpan],
-) -> set[str]:
-    report_ids = list(report_id_to_text_span)
-    overlapping_report_ids: set[str] = set()
-    for i, report_id in enumerate(report_ids):
-        text_span = report_id_to_text_span[report_id]
-        for other_report_id in report_ids[i + 1 :]:
-            other_text_span = report_id_to_text_span[other_report_id]
-            if (
-                text_span.start < other_text_span.end
-                and other_text_span.start < text_span.end
-            ):
-                overlapping_report_ids.add(report_id)
-                overlapping_report_ids.add(other_report_id)
-    return overlapping_report_ids
+    for run_offset in range(len(words) - run_word_count + 1):
+        run_text = _get_joined_words(words[run_offset : run_offset + run_word_count])
+        run_place = _get_unique_run_place(sitting_words, run_text)
+        if run_place is None:
+            continue
+        if any(
+            run_text in other_report_text for other_report_text in other_report_texts
+        ):
+            continue
+        return run_place
+    return None
 
 
 def get_older_printed_places(
     html_full_content: str, placeable_reports: list[PlaceableReport]
 ) -> dict[str, PrintedPlace]:
     sitting_words = _build_sitting_words(html_full_content)
+    report_id_to_words = {
+        placeable_report.report_id: _get_words(placeable_report.content or "")
+        for placeable_report in placeable_reports
+    }
+    report_id_to_report_text = {
+        report_id: _get_joined_words(words)
+        for report_id, words in report_id_to_words.items()
+    }
     report_id_to_printed_place: dict[str, PrintedPlace] = {}
-    report_id_to_text_span: dict[str, TextSpan] = {}
     for placeable_report in placeable_reports:
         if _is_assent_without_text(placeable_report):
             report_id_to_printed_place[placeable_report.report_id] = _ASSENT_FIRST
             continue
-        words = _get_words(placeable_report.content or "")
+        words = report_id_to_words[placeable_report.report_id]
         if not words:
             report_id_to_printed_place[placeable_report.report_id] = _NOT_PLACED
             continue
-        text_span = _get_text_span(sitting_words, words)
-        if text_span is None:
+        run_place = _get_exclusive_run_place(
+            sitting_words,
+            words,
+            [
+                report_text
+                for report_id, report_text in report_id_to_report_text.items()
+                if report_id != placeable_report.report_id
+            ],
+        )
+        if run_place is None:
             report_id_to_printed_place[placeable_report.report_id] = _NOT_PLACED
             continue
-        report_id_to_text_span[placeable_report.report_id] = text_span
-    overlapping_report_ids = _get_overlapping_report_ids(report_id_to_text_span)
-    for report_id, text_span in report_id_to_text_span.items():
-        if report_id in overlapping_report_ids:
-            report_id_to_printed_place[report_id] = _NOT_PLACED
-            continue
-        report_id_to_printed_place[report_id] = PrintedPlace(
-            text_span.start, PrintedPlaceRule.FULL_TEXT_RUN
+        report_id_to_printed_place[placeable_report.report_id] = PrintedPlace(
+            run_place, PrintedPlaceRule.FULL_TEXT_RUN
         )
     return report_id_to_printed_place
 
