@@ -10,6 +10,8 @@ from sqlalchemy import Column, Computed, Index, text
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlmodel import Field, Relationship, SQLModel
 
+from enums import PrintedPlaceRule
+
 EmptyStrNoneInt = Annotated[
     Optional[int],
     BeforeValidator(
@@ -73,6 +75,8 @@ class Report(SQLModel, table=True):
     markdown_content: Optional[str] = None
     column_start: Optional[int] = None
     column_end: Optional[int] = None
+    printed_place: Optional[int] = None
+    printed_place_rule: Optional[PrintedPlaceRule] = None
 
     report_version: str = Field(alias="reportVersion")
 
