@@ -103,6 +103,7 @@ class HansardReportSection(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     title: Optional[str] = None
+    sub_title: Optional[str] = None
     content: Optional[str] = None
 
 
