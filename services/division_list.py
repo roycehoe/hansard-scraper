@@ -26,7 +26,6 @@ _HEADING_WITH_NAME_PATTERN = re.compile(
 )
 _CELL_PATTERN = re.compile(r"\S+(?: \S+)*")
 _NAME_CELL_PATTERN = re.compile(r"\S+(?: {1,%d}\S+)*" % (_MIN_CELL_GAP - 1))
-_SURNAME_FIRST_PATTERN = re.compile(r",\s*\S")
 _MARKER_PATTERN = re.compile(r"^(?:Column|Page)\s*:?\s*\d+$", re.IGNORECASE)
 _NOISE_CELL_PATTERN = re.compile(r"^[-_–—\s]*$")
 _GLUED_HEADING_OR_NIL_PATTERN = re.compile(
@@ -352,11 +351,7 @@ def _add_cell(
             previous_name.printed_name = f"{previous_name.printed_name} {cell}"
             previous_name.is_wrap_open = False
             return
-        if (
-            is_indented
-            and not previous_name.printed_name.endswith(".")
-            and _SURNAME_FIRST_PATTERN.search(cell) is None
-        ):
+        if is_indented and not previous_name.printed_name.endswith("."):
             previous_name.printed_name = f"{previous_name.printed_name} {cell}"
             previous_name.is_wrap_open = False
             return
@@ -381,6 +376,25 @@ def _get_parsed_names(state: _ListState) -> list[ParsedVoteName]:
 
 def _is_marker_line(line: str) -> bool:
     return _MARKER_PATTERN.match(line.strip()) is not None
+
+
+def _is_after_tab(line: str, offset: int) -> bool:
+    position = 0
+    is_after_tab = False
+    for char in line:
+        if char == "\t":
+            position = (position // _TAB_SIZE + 1) * _TAB_SIZE
+            is_after_tab = True
+        elif char.isspace():
+            position += 1
+        else:
+            if position == offset:
+                return is_after_tab
+            position += 1
+            is_after_tab = False
+        if position > offset:
+            break
+    return False
 
 
 def _get_pre_row_cells(line: str) -> list[_PreLineCell]:
@@ -644,7 +658,8 @@ def _read_pre_blocks(pre_blocks: list[list[str]]) -> _ListReading:
                     pre_cell.column,
                     pre_cell.text,
                     is_run=False,
-                    is_indented=pre_cell.offset > modal_offset,
+                    is_indented=pre_cell.offset > modal_offset
+                    and not _is_after_tab(pre_line, pre_cell.offset),
                 )
                 if state.is_ended:
                     break

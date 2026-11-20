@@ -386,6 +386,51 @@ def test_a_name_ending_in_haji_with_a_full_stop_does_not_stay_open() -> None:
     ]
 
 
+def test_a_wrapped_name_whose_second_line_holds_a_comma_is_joined_on_the_absent_side() -> (
+    None
+):
+    html = "<p>The House divided: Ayes, 2; Noes, 1.</p>" + _get_pre_html(
+        "   Ayes                         Noes",
+        "Lim Yew Hock                 Sutherland, G. A. P.",
+        "Braga, A. J.",
+        "                             Absent",
+        "                             Lee Kuan Yew",
+        "                             Chan Choy",
+        "                               Siong, Madam",
+        "                             Ong Eng Guan",
+    )
+
+    parsed_list = _get_list(html, 2, 1)
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert _get_names(parsed_list)[-3:] == [
+        (DivisionVoteChoice.ABSENT, "Lee Kuan Yew"),
+        (DivisionVoteChoice.ABSENT, "Chan Choy Siong, Madam"),
+        (DivisionVoteChoice.ABSENT, "Ong Eng Guan"),
+    ]
+
+
+def test_a_wrapped_name_whose_second_line_holds_a_comma_is_joined_on_the_noes_side() -> (
+    None
+):
+    html = "<p>The House divided: Ayes, 2; Noes, 2.</p>" + _get_pre_html(
+        "   Ayes                         Noes",
+        "Lim Yew Hock                 Chan Choy",
+        "Braga, A. J.                   Siong, Madam",
+        "                             Ong Eng Guan",
+    )
+
+    parsed_list = _get_list(html, 2, 2)
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert [name for _, name in _get_names(parsed_list)] == [
+        "Lim Yew Hock",
+        "Chan Choy Siong, Madam",
+        "Braga, A. J.",
+        "Ong Eng Guan",
+    ]
+
+
 def test_21_september_1960_reads_a_nose_heading_as_the_noes_heading() -> None:
     _assert_fixture_is_stored("hansard_list_1960_09_21_nose_heading")
 
