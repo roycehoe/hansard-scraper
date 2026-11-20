@@ -682,3 +682,31 @@ def test_a_gap_of_seven_positions_inside_a_name_does_not_split_it() -> None:
         (DivisionVoteChoice.AYE, "Lim Ah Kow"),
         (DivisionVoteChoice.AYE, "Tan Bee Lian"),
     ]
+
+
+def test_24_may_1967_reads_a_surname_first_name_printed_one_place_off_its_column() -> (
+    None
+):
+    _assert_fixture_is_stored(
+        "hansard_list_1967_05_24_name_after_a_tab_one_place_off_its_column"
+    )
+
+
+def test_a_cell_with_no_comma_one_place_right_of_the_name_above_still_joins_it() -> (
+    None
+):
+    html = "<p>The House divided: Ayes, 2; Noes, 0.</p>" + _get_pre_html(
+        "  Ayes",
+        "",
+        "Mohd. Ariff",
+        " bin Suradi.",
+        "Tan Ah Kow",
+    )
+
+    parsed_list = _get_list(html, 2, 0)
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert _get_names(parsed_list) == [
+        (DivisionVoteChoice.AYE, "Mohd. Ariff bin Suradi."),
+        (DivisionVoteChoice.AYE, "Tan Ah Kow"),
+    ]

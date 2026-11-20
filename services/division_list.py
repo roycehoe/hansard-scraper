@@ -26,6 +26,7 @@ _HEADING_WITH_NAME_PATTERN = re.compile(
 )
 _CELL_PATTERN = re.compile(r"\S+(?: \S+)*")
 _NAME_CELL_PATTERN = re.compile(r"\S+(?: {1,%d}\S+)*" % (_MIN_CELL_GAP - 1))
+_SURNAME_FIRST_PATTERN = re.compile(r",\s*\S")
 _MARKER_PATTERN = re.compile(r"^(?:Column|Page)\s*:?\s*\d+$", re.IGNORECASE)
 _NOISE_CELL_PATTERN = re.compile(r"^[-_–—\s]*$")
 _GLUED_HEADING_OR_NIL_PATTERN = re.compile(
@@ -347,7 +348,11 @@ def _add_cell(
             previous_name.printed_name = f"{previous_name.printed_name} {cell}"
             previous_name.is_wrap_open = False
             return
-        if is_indented and not previous_name.printed_name.endswith("."):
+        if (
+            is_indented
+            and not previous_name.printed_name.endswith(".")
+            and _SURNAME_FIRST_PATTERN.search(cell) is None
+        ):
             previous_name.printed_name = f"{previous_name.printed_name} {cell}"
             previous_name.is_wrap_open = False
             return
