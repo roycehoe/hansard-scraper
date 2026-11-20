@@ -3516,6 +3516,16 @@
                 }
             }
         ],
+        "./scripts/apply_printed_places.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 48,
+                    "endColumn": 68,
+                    "lineCount": 1
+                }
+            }
+        ],
         "./scripts/apply_repealed_acts.py": [
             {
                 "code": "reportArgumentType",
@@ -4868,6 +4878,16 @@
                 "range": {
                     "startColumn": 24,
                     "endColumn": 35,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./tests/test_apply_printed_places.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 59,
+                    "endColumn": 68,
                     "lineCount": 1
                 }
             }
