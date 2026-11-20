@@ -192,6 +192,41 @@ def test_two_openings_that_print_the_same_counts_fall_back_to_the_order_rule() -
     assert parsed_list.list_status == DivisionListStatus.COUNTS_DISAGREE
 
 
+def test_a_division_does_not_take_an_opening_that_an_earlier_division_needs() -> None:
+    long_sentence = (
+        "Question put, That the Amendment proposed by the honourable Member for "
+        "Anson to the Motion standing in the name of the Minister for Finance "
+        "be agreed to, and that the words be left out."
+    )
+    first_list = _get_pre_html(
+        "  Ayes               Noes",
+        "",
+        "  Aa Bb              Cc Dd",
+        "  Ee Ff",
+    )
+    second_list = _get_pre_html(
+        "  Ayes               Noes",
+        "",
+        "  Ii Jj              Kk Ll",
+        "  Mm Nn",
+    )
+    html = (
+        f"<p>{_OPENING}</p>"
+        + first_list
+        + f"<p>{long_sentence} {_OPENING}</p>"
+        + second_list
+    )
+
+    parsed_list = _get_list(html, 2, 1, division_index=1, division_count=2)
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert _get_names(parsed_list) == [
+        (DivisionVoteChoice.AYE, "Ii Jj"),
+        (DivisionVoteChoice.NO, "Kk Ll"),
+        (DivisionVoteChoice.AYE, "Mm Nn"),
+    ]
+
+
 def test_21_september_1960_reads_a_nose_heading_as_the_noes_heading() -> None:
     _assert_fixture_is_stored("hansard_list_1960_09_21_nose_heading")
 

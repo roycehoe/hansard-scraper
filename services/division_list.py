@@ -767,13 +767,16 @@ def _get_division_opening(
     noes: Optional[int],
 ) -> Optional[_Opening]:
     if ayes is not None and noes is not None:
-        counted_openings = [
-            opening
-            for opening in openings
+        counted_indexes = [
+            index
+            for index, opening in enumerate(openings)
             if _is_opening_printing_counts(items, opening, ayes, noes)
         ]
-        if len(counted_openings) == 1:
-            return counted_openings[0]
+        # Each earlier division took an opening before this one's, so a match
+        # with fewer than division_index openings before it is another
+        # division's opening and the order rule applies.
+        if len(counted_indexes) == 1 and counted_indexes[0] >= division_index:
+            return openings[counted_indexes[0]]
     if len(openings) != division_count or division_index >= len(openings):
         return None
     return openings[division_index]
