@@ -365,6 +365,27 @@ def test_a_gap_after_a_name_or_title_in_the_first_column_does_not_split_it() -> 
         ]
 
 
+def test_a_name_ending_in_haji_with_a_full_stop_does_not_stay_open() -> None:
+    html = "<p>The House divided: Ayes, 2; Noes, 1.</p>" + _get_pre_html(
+        "   Ayes                         Noes",
+        "Lim Yew Hock.                Sutherland, G. A. P.",
+        "Braga, A. J.",
+        "                             Absent",
+        "                             Ismail bin Haji.",
+        "                             Lee Kuan Yew.",
+        "                             Ong Eng Guan.",
+    )
+
+    parsed_list = _get_list(html, 2, 1)
+
+    assert parsed_list.list_status == DivisionListStatus.STORED
+    assert _get_names(parsed_list)[-3:] == [
+        (DivisionVoteChoice.ABSENT, "Ismail bin Haji."),
+        (DivisionVoteChoice.ABSENT, "Lee Kuan Yew."),
+        (DivisionVoteChoice.ABSENT, "Ong Eng Guan."),
+    ]
+
+
 def test_21_september_1960_reads_a_nose_heading_as_the_noes_heading() -> None:
     _assert_fixture_is_stored("hansard_list_1960_09_21_nose_heading")
 

@@ -287,7 +287,11 @@ def _is_wrap_open(name: str) -> bool:
         return False
     if last_word == _HAJI:
         words = name.split()
-        return len(words) > 1 and words[-2].rstrip(".").lower() in _WRAP_WORDS
+        return (
+            len(words) > 1
+            and not name.endswith(".")
+            and words[-2].rstrip(".").lower() in _WRAP_WORDS
+        )
     return last_word in _WRAP_WORDS
 
 
