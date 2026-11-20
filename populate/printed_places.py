@@ -172,9 +172,7 @@ def _validate_can_commit_printed_places(
 
 
 def write_printed_place_plan(session: Session, plan: PrintedPlacePlan) -> None:
-    sitting_date_to_printed_place_updates: dict[
-        datetime, list[PrintedPlaceUpdate]
-    ] = {}
+    sitting_date_to_printed_place_updates: dict[datetime, list[PrintedPlaceUpdate]] = {}
     for planned_printed_place in plan.printed_places:
         sitting_date_to_printed_place_updates.setdefault(
             planned_printed_place.sitting_date, []
