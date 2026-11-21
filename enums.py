@@ -286,6 +286,7 @@ class AttachedFileKind(StrEnum):
 class PictureKind(StrEnum):
     TABLE = "TABLE"
     DIVISION_LIST = "DIVISION_LIST"
+    TEXT = "TEXT"
     OTHER = "OTHER"
 
 

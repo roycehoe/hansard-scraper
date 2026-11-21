@@ -304,3 +304,53 @@ def test_commit_refuses_the_protected_port_before_any_row_is_written(
         apply_report_pictures(plan_path, is_commit=True)
 
     assert _get_stored_pictures(scratch_session) == []
+
+
+def test_a_text_picture_is_stored_with_a_typed_copy_and_refused_without_one(
+    scratch_session: Session, log_recorder: _LogRecorder, tmp_path: Path
+) -> None:
+    report_id = _add_report(scratch_session, _build_content())
+    plan = _build_plan(report_id, _TABLE_COPY)
+    text_copy = TypedCopy(
+        heading="",
+        tables=[
+            TypedTable(
+                caption="",
+                header_rows=[],
+                body_rows=[["Note 1: Provisional."], ["Note 2: Revised."]],
+                notes=[],
+            )
+        ],
+        uncertain=[],
+        note="",
+    )
+    text_picture = plan.pictures[0].model_copy(
+        update={"kind": PictureKind.TEXT, "typed_copy": text_copy}
+    )
+    unchanged_picture = plan.pictures[1]
+
+    without_copy_path = _write_plan(
+        tmp_path / "without_copy.json",
+        ReportPicturePlan(
+            pictures=[
+                text_picture.model_copy(update={"typed_copy": None}),
+                unchanged_picture,
+            ]
+        ),
+    )
+    with pytest.raises(HansardReportPictureError, match="has no typed copy"):
+        apply_report_pictures(without_copy_path, is_commit=True)
+    assert _get_stored_pictures(scratch_session) == []
+
+    with_copy_path = _write_plan(
+        tmp_path / "with_copy.json",
+        ReportPicturePlan(pictures=[text_picture, unchanged_picture]),
+    )
+    apply_report_pictures(with_copy_path, is_commit=True)
+
+    stored_pictures = _get_stored_pictures(scratch_session)
+    assert [picture.kind for picture in stored_pictures] == [
+        PictureKind.TEXT,
+        PictureKind.OTHER,
+    ]
+    assert stored_pictures[0].typed_copy == text_copy.model_dump()
