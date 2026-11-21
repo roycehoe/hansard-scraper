@@ -36,3 +36,7 @@ def test_speeches_match_golden_fixture(fixture_path: Path) -> None:
     assert [
         [speech.speaker, speech.transcript, speech.kind] for speech in speeches
     ] == fixture["expected_rows"]
+    if "expected_language_notes" in fixture:
+        assert [speech.language_note for speech in speeches] == fixture[
+            "expected_language_notes"
+        ]

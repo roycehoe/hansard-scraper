@@ -1,0 +1,38 @@
+{
+  "why": "A language note printed after a bold label, as in \"Miss Chan Choy Siong (Delta)(In Mandarin):\", leaves the transcript and is kept in language_note as the words inside the brackets. The next paragraph of the same turn prints no note and keeps none.",
+  "source_report_id": 39621,
+  "report_version": "sprs2",
+  "report_type": "bill",
+  "title": "WOMEN'S CHARTER BILL",
+  "subtitle": null,
+  "original_title": "WOMEN'S CHARTER BILL",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><head></head><body><table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">06-04-1960</font></td></tr>\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">WOMEN'S CHARTER BILL</font></td></tr>\n</table>\n<br><br><font size=\"1\"><b>Column: 1</b></font><br><br>\n\n<div align=\"center\"><b>WOMEN'S CHARTER BILL</b></div>\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;Question proposed.\n\n<br><br><!-- Miss Chan Choy Siong -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Miss Chan Choy Siong (Delta)</b>(<i>In Mandarin</i>): Mr\n\nSpeaker,  Sir,  regarding  the  Women's  Charter\n\nwhich  was introduced by the Minister for Labour\n\nand  Law  at the last Assembly sitting, I  support\n\nthe  motion  of the Minister.\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;This  Charter,  as\n\ndrafted  has incorporated some of the provisions\n\nof   a   number  of  Ordinances.\n\n<br><br><!-- Miss Fung Yin Ching -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Miss Fung Yin Ching (Stamford)</b>(<i>In Mandarin</i>):\n\nMr  Speaker, as one of the women of Singapore,  I\n\ngladly  agree  with  the  stand  adopted  by   the\n\nGovernment.\n\n\n</body></html>",
+  "expected_rows": [
+    [
+      null,
+      "Question proposed.",
+      "PROCEDURAL"
+    ],
+    [
+      "Miss Chan Choy Siong (Delta)",
+      "Mr Speaker, Sir, regarding the Women's Charter which was introduced by the Minister for Labour and Law at the last Assembly sitting, I support the motion of the Minister.",
+      "SPEECH"
+    ],
+    [
+      "Miss Chan Choy Siong (Delta)",
+      "This Charter, as drafted has incorporated some of the provisions of a number of Ordinances.",
+      "SPEECH"
+    ],
+    [
+      "Miss Fung Yin Ching (Stamford)",
+      "Mr Speaker, as one of the women of Singapore, I gladly agree with the stand adopted by the Government.",
+      "SPEECH"
+    ]
+  ],
+  "expected_language_notes": [
+    null,
+    "In Mandarin",
+    null,
+    "In Mandarin"
+  ]
+}

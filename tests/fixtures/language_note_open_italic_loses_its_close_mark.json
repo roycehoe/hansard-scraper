@@ -38,5 +38,13 @@
       "_Salam_ sejahtera, Tuan Speaker.",
       "SPEECH"
     ]
+  ],
+  "expected_language_notes": [
+    null,
+    "In Mandarin",
+    null,
+    "In English",
+    null,
+    "In Malay"
   ]
 }

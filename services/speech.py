@@ -1,5 +1,5 @@
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Optional
 
@@ -32,6 +32,7 @@ class ParsedSpeech:
     speaker: Optional[str]
     transcript: str
     kind: SpeechKind
+    language_note: Optional[str] = None
 
 
 class ParsedSpeechType(Enum):
@@ -1234,6 +1235,15 @@ def _get_plain_label_match(line: str, report_version: str) -> Optional[re.Match]
     return _PLAIN_LANGUAGE_NOTE_LABEL_RE.match(line)
 
 
+def _get_language_note(note_match: Optional[re.Match]) -> Optional[str]:
+    if note_match is None:
+        return None
+    note = note_match.group(0)
+    return note[
+        note.index(OPENING_PARENTHESIS) + 1 : note.rindex(CLOSING_PARENTHESIS)
+    ].strip(_EMPHASIS_MARK_CHARACTERS)
+
+
 def _strip_leading_language_note(transcript: str) -> str:
     match = _LANGUAGE_NOTE_RE.match(transcript)
     if match is None:
@@ -1243,6 +1253,26 @@ def _strip_leading_language_note(transcript: str) -> str:
     if match.group(0).count("_") % 2 != 0:
         return _LEADING_ITALIC_CLOSE_RE.sub("", transcript_after_note)
     return transcript_after_note
+
+
+def _drop_empty_speeches(speeches: list[ParsedSpeech]) -> list[ParsedSpeech]:
+    kept_speeches: list[ParsedSpeech] = []
+    dropped_speech: Optional[ParsedSpeech] = None
+    for speech in speeches:
+        if speech.transcript.strip() == "":
+            if speech.language_note is not None:
+                dropped_speech = speech
+            continue
+        # NOTE: a note printed on a line with no text of its own introduces the speaker's next paragraph, so it moves to that row.
+        if (
+            dropped_speech is not None
+            and speech.language_note is None
+            and speech.speaker == dropped_speech.speaker
+        ):
+            speech.language_note = dropped_speech.language_note
+        dropped_speech = None
+        kept_speeches.append(speech)
+    return kept_speeches
 
 
 def _parse_speeches(
@@ -1315,8 +1345,13 @@ def _parse_speeches(
                 is_in_preamble = False
                 if label_match.group(2):
                     speeches.append(
-                        _build_current_speaker_speech(
-                            current_speaker, label_match.group(2)
+                        replace(
+                            _build_current_speaker_speech(
+                                current_speaker, label_match.group(2)
+                            ),
+                            language_note=_get_language_note(
+                                _LANGUAGE_NOTE_RE.search(label_match.group(1))
+                            ),
                         )
                     )
                 continue
@@ -1364,6 +1399,9 @@ def _parse_speeches(
                 .replace(LABEL_COLON, "")
                 .strip()
             )
+            label_language_note = _get_language_note(
+                _LANGUAGE_NOTE_RE.search(parsed_line[: bold_match.start()])
+            ) or _get_language_note(_LANGUAGE_NOTE_RE.search(raw_speaker))
             speaker_without_note = _LANGUAGE_NOTE_RE.sub("", raw_speaker).strip()
             is_language_note_line = speaker_without_note == "" and transcript == ""
             # NOTE: a bold line holding only a language note keeps its text so it stays a section annotation.
@@ -1574,7 +1612,10 @@ def _parse_speeches(
                 is_in_preamble = False
             if current_speaker is not None:
                 speeches.append(
-                    _build_current_speaker_speech(current_speaker, transcript)
+                    replace(
+                        _build_current_speaker_speech(current_speaker, transcript),
+                        language_note=label_language_note,
+                    )
                 )
             continue
 
@@ -1590,8 +1631,12 @@ def _parse_speeches(
     if not is_in_preamble:
         speeches = preamble_speeches + speeches
     for speech in speeches:
+        if speech.language_note is None:
+            speech.language_note = _get_language_note(
+                _LANGUAGE_NOTE_RE.match(speech.transcript)
+            )
         speech.transcript = _strip_leading_language_note(speech.transcript)
-    return [speech for speech in speeches if speech.transcript.strip() != ""]
+    return _drop_empty_speeches(speeches)
 
 
 def _split_speech_at_chamber_events(speech: ParsedSpeech) -> list[ParsedSpeech]:
@@ -1650,6 +1695,7 @@ def _split_speech_at_chamber_events(speech: ParsedSpeech) -> list[ParsedSpeech]:
             speaker=speech.speaker,
             transcript=" ".join(paragraph_parts),
             kind=speech.kind,
+            language_note=speech.language_note,
         ),
         *event_rows,
     ]
@@ -1833,6 +1879,7 @@ def get_speeches(
             speaker=speech.speaker,
             transcript=speech.transcript.replace(BOLD_MARKER, "").strip(),
             kind=speech.kind,
+            language_note=speech.language_note,
         )
         for speech in speeches
     ]
@@ -1878,7 +1925,12 @@ def apply_unlabelled_speech_range(
     start = _get_unlabelled_range_start(speeches, speech_range)
     end = _get_unlabelled_range_end(speeches, speech_range, start)
     return [
-        ParsedSpeech(speaker=None, transcript=speech.transcript, kind=SpeechKind.SPEECH)
+        ParsedSpeech(
+            speaker=None,
+            transcript=speech.transcript,
+            kind=SpeechKind.SPEECH,
+            language_note=speech.language_note,
+        )
         if start <= index <= end and _is_unlabellable(speech, speech_range.speaker)
         else speech
         for index, speech in enumerate(speeches)
@@ -1892,6 +1944,7 @@ def build_speeches(report: Report, parsed_speeches: list[ParsedSpeech]) -> list[
             speaker=parsed_speech.speaker,
             transcript=parsed_speech.transcript,
             kind=parsed_speech.kind,
+            language_note=parsed_speech.language_note,
             sitting_date=report.sitting_date,
             report_type=report.report_type,
             report_id=report.id,

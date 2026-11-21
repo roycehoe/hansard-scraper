@@ -1,0 +1,32 @@
+{
+  "why": "A language note printed inside a bold label, as in \"Mr Leong Horn Kee (Thomson) (In Mandarin) :\", leaves the speaker and is kept in language_note. The next paragraph of the same turn keeps none.",
+  "source_report_id": 29700,
+  "report_version": "sprs2",
+  "report_type": "budget",
+  "title": "BUDGET, MINISTRY OF NATIONAL DEVELOPMENT",
+  "subtitle": null,
+  "original_title": "BUDGET, MINISTRY OF NATIONAL DEVELOPMENT",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><head></head><body><table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">12-03-1992</font></td></tr>\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">BUDGET, MINISTRY OF NATIONAL DEVELOPMENT</font></td></tr>\n</table>\n<br><br><font size=\"1\"><b>Column: 1</b></font><br><br>\n\n<div align=\"center\"><b>BUDGET, MINISTRY OF NATIONAL DEVELOPMENT</b></div>\n<br><br><!-- Mr Low Thia Khiang -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Low Thia Khiang:</b> They can take the 2-room flats and Singaporeans can be\n\ngiven the comfort of the 3-room flats.\n\n<br><br><!-- Mr Leong Horn Kee -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Mr Leong Horn Kee (Thomson) (In Mandarin) :</b> Sir, I would like\n\nto make two suggestions to the Minister for National Development.\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;The first concerns fire insurance for the HDB flats.\n\n\n</body></html>",
+  "expected_rows": [
+    [
+      "Mr Low Thia Khiang",
+      "They can take the 2-room flats and Singaporeans can be given the comfort of the 3-room flats.",
+      "SPEECH"
+    ],
+    [
+      "Mr Leong Horn Kee (Thomson)",
+      "Sir, I would like to make two suggestions to the Minister for National Development.",
+      "SPEECH"
+    ],
+    [
+      "Mr Leong Horn Kee (Thomson)",
+      "The first concerns fire insurance for the HDB flats.",
+      "SPEECH"
+    ]
+  ],
+  "expected_language_notes": [
+    null,
+    "In Mandarin",
+    null
+  ]
+}

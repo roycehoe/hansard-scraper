@@ -1,0 +1,44 @@
+{
+  "why": "A language note printed on a line with no text of its own (\"(In English):\" in 22130 and 23229) introduces the speaker's next paragraph, so the note moves to that row. When the next row is another speaker's or has no speaker, as the italic subheading \"Helping SMEs\" in 23229, the note is kept nowhere.",
+  "source_report_id": 22130,
+  "report_version": "sprs2",
+  "report_type": "budget",
+  "title": "DEBATE ON ANNUAL BUDGET STATEMENT",
+  "subtitle": null,
+  "original_title": "DEBATE ON ANNUAL BUDGET STATEMENT",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><head></head><body><table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">03-02-2009</font></td></tr>\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">DEBATE ON ANNUAL BUDGET STATEMENT</font></td></tr>\n</table>\n<br><br><font size=\"1\"><b>Column: 1</b></font><br><br>\n\n<div align=\"center\"><b>DEBATE ON ANNUAL BUDGET STATEMENT</b></div>\n<p><b>Mrs Josephine Teo:</b> Only then can Singapore be the most pro-worker nation in the world.</p><p>&nbsp;&nbsp;&nbsp;&nbsp; (<I>In English</I>):</p><p>&nbsp;</p><p>&nbsp;&nbsp;&nbsp;&nbsp; Not only will workers do their part to tilt the balance in their own favour, we call on business leaders to do their part.</p><p><b>Ms Lee Bee Wah:</b> As an added measure, I would like to suggest to the Government to set up a not-for-profit institute of education.</p><p>&nbsp;&nbsp;&nbsp; (<I>In English</I>):</p><p>&nbsp;</p><p><I>Helping SMEs</I></p><p>&nbsp;</p><p><I>&nbsp;&nbsp;&nbsp;&nbsp;</I> Sir, next, I will move on to the internationalisation of local businesses.</p>\n</body></html>",
+  "expected_rows": [
+    [
+      "Mrs Josephine Teo",
+      "Only then can Singapore be the most pro-worker nation in the world.",
+      "SPEECH"
+    ],
+    [
+      "Mrs Josephine Teo",
+      "Not only will workers do their part to tilt the balance in their own favour, we call on business leaders to do their part.",
+      "SPEECH"
+    ],
+    [
+      "Ms Lee Bee Wah",
+      "As an added measure, I would like to suggest to the Government to set up a not-for-profit institute of education.",
+      "SPEECH"
+    ],
+    [
+      null,
+      "_Helping SMEs_",
+      "HEADING"
+    ],
+    [
+      "Ms Lee Bee Wah",
+      "Sir, next, I will move on to the internationalisation of local businesses.",
+      "SPEECH"
+    ]
+  ],
+  "expected_language_notes": [
+    null,
+    "In English",
+    null,
+    null,
+    null
+  ]
+}

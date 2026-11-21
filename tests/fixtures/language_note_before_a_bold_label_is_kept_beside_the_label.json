@@ -1,0 +1,26 @@
+{
+  "why": "A language note printed before a bold label, as in the made-up line \"(In Malay) Inche Yaacob:\", is not part of the transcript and is kept in language_note. No stored report prints a note there; the line shows the rule.",
+  "source_report_id": null,
+  "report_version": "sprs2",
+  "report_type": "motion",
+  "title": "INDUSTRIAL UNREST",
+  "subtitle": null,
+  "original_title": "INDUSTRIAL UNREST",
+  "html": "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><head></head><body><table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Sitting Date:</font></td><td width=\"85%\"><font size=\"2\">19-03-1962</font></td></tr>\n<tr valign=\"top\"><td width=\"15%\"><font size=\"2\">Title:</font></td><td width=\"85%\"><font size=\"2\">INDUSTRIAL UNREST</font></td></tr>\n</table>\n<br><br><font size=\"1\"><b>Column: 1</b></font><br><br>\n\n<div align=\"center\"><b>INDUSTRIAL UNREST</b></div>\n<br><br><!-- Dr Lee Siew Choh -->&nbsp;&nbsp;&nbsp;&nbsp;<b>Dr Lee Siew Choh (Rochore):</b> Mr Speaker, Sir, I support the amendment.\n\n<br><br>&nbsp;&nbsp;&nbsp;&nbsp;(In Malay) <b>Inche Yaacob:</b> Mr Speaker, Sir, I oppose the amendment.\n\n\n</body></html>",
+  "expected_rows": [
+    [
+      "Dr Lee Siew Choh (Rochore)",
+      "Mr Speaker, Sir, I support the amendment.",
+      "SPEECH"
+    ],
+    [
+      "Inche Yaacob",
+      "Mr Speaker, Sir, I oppose the amendment.",
+      "SPEECH"
+    ]
+  ],
+  "expected_language_notes": [
+    null,
+    "In Malay"
+  ]
+}
