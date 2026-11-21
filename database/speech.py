@@ -66,6 +66,7 @@ class Speech(SQLModel, table=True):
     column_start: Optional[int] = None
     column_note: Optional[ColumnNote] = None
     column_suggested: Optional[int] = None
+    language_note: Optional[str] = None
 
     report_id: int = Field(foreign_key="report.id", index=True)
     report: Report = Relationship(back_populates="speeches")
