@@ -158,11 +158,11 @@ One row per printed citation of another report, stored on the report that prints
 
 ### ReportPicture
 
-One row per inline picture in `report.content`: an `<img>` tag whose `src` is a base64 `data:` URI. The parser drops these tags before it builds the markdown, so a table printed as a picture reaches no speech row. Each row keeps the picture's bytes and, for a table or a division list, a typed copy. The typed copy is our reading of the picture, never the record's text (ADR 0013). Two independent transcriptions and a judge that checked every cell against the picture made it. `scripts/apply_report_pictures.py` loads the rows from a plan file and reads the bytes from `report.content` itself.
+One row per inline picture in `report.content`: an `<img>` tag whose `src` is a base64 `data:` URI. The parser drops these tags before it builds the markdown, so a table printed as a picture reaches no speech row. Each row keeps the picture's bytes and, for a table, a division list or a block of text, a typed copy. The typed copy is our reading of the picture, never the record's text (ADR 0013). Two independent transcriptions and a judge that checked every cell against the picture made it. `scripts/apply_report_pictures.py` loads the rows from a plan file and reads the bytes from `report.content` itself.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `kind` | PictureKind | `PictureKind`, Postgres type `picturekind`: `TABLE`, `DIVISION_LIST` (the names of a division's Ayes, Noes and Abstentions), or `OTHER` (a chart, photo, map, diagram or block of prose). |
+| `kind` | PictureKind | `PictureKind`, Postgres type `picturekind`: `TABLE`, `DIVISION_LIST` (the names of a division's Ayes, Noes and Abstentions), `TEXT` (a block of notes or quoted prose printed as a picture), or `OTHER` (a chart, photo, map or diagram). |
 | `picture_index` | int | The picture's place among the report's inline pictures, counted from 0 in the order of `report.content`. Unique with `report_id`. |
 | `content_offset` | int | Character offset of the `<img` tag in `report.content`. |
 | `follows_ordinal` | int | The `speech.ordinal` of the row the picture follows, found by matching the report text before and after the picture to the stored rows. 0 when the picture comes before the first row. `NULL` when neither side matched. |
@@ -170,7 +170,7 @@ One row per inline picture in `report.content`: an `<img>` tag whose `src` is a 
 | `size_bytes` | int | Length of the decoded picture. |
 | `sha256` | str | SHA-256 of the decoded picture, indexed. A picture printed in two reports has two rows with the same value. |
 | `picture_bytes` | bytes | The decoded picture. |
-| `typed_copy` | JSONB | Our reading of the picture: `heading`, `tables` (each with `caption`, `header_rows`, `body_rows` and `notes`, every cell a string), `uncertain` (cells the judge could not read with confidence) and `note`. Text is copied as printed. A merged cell repeats in every position it covers, a superscript is written after `^`, and a division list is one single-column table per printed group of names, its label as the caption. `NULL` for `OTHER`. |
+| `typed_copy` | JSONB | Our reading of the picture: `heading`, `tables` (each with `caption`, `header_rows`, `body_rows` and `notes`, every cell a string), `uncertain` (cells the judge could not read with confidence) and `note`. Text is copied as printed. A merged cell repeats in every position it covers, a superscript is written after `^`, and a division list is one single-column table per printed group of names, its label as the caption. A `TEXT` copy is one table with an empty caption and no header rows, its body one single-column row per printed paragraph or note, in printed order. `NULL` for `OTHER`. |
 | `report_id` | int | FK → `Report.id`, indexed. |
 
 ### Sitting
