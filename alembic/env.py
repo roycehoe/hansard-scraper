@@ -39,6 +39,7 @@ import database.report  # noqa: F401
 import database.report_asker  # noqa: F401
 import database.report_link  # noqa: F401
 import database.report_participant  # noqa: F401
+import database.report_picture  # noqa: F401
 import database.report_put_to  # noqa: F401
 import database.report_question_state  # noqa: F401
 import database.seat_holding  # noqa: F401

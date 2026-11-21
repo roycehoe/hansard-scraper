@@ -283,6 +283,12 @@ class AttachedFileKind(StrEnum):
     VERNACULAR = "VERNACULAR"
 
 
+class PictureKind(StrEnum):
+    TABLE = "TABLE"
+    DIVISION_LIST = "DIVISION_LIST"
+    OTHER = "OTHER"
+
+
 class AttachedFilePointerShape(StrEnum):
     DATED = "DATED"
     PDFS = "PDFS"
