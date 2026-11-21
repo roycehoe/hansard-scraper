@@ -2288,7 +2288,7 @@
                 "range": {
                     "startColumn": 12,
                     "endColumn": 13,
-                    "lineCount": 9
+                    "lineCount": 10
                 }
             },
             {
@@ -2488,6 +2488,14 @@
                 "range": {
                     "startColumn": 16,
                     "endColumn": 36,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportAttributeAccessIssue",
+                "range": {
+                    "startColumn": 29,
+                    "endColumn": 37,
                     "lineCount": 1
                 }
             },
@@ -3462,6 +3470,56 @@
                 "range": {
                     "startColumn": 21,
                     "endColumn": 65,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./scripts/apply_language_notes.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 40,
+                    "endColumn": 49,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 42,
+                    "endColumn": 51,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 40,
+                    "endColumn": 49,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 24,
+                    "endColumn": 33,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 8,
+                    "endColumn": 51,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 48,
+                    "endColumn": 68,
                     "lineCount": 1
                 }
             }
@@ -4800,6 +4858,30 @@
                     "endColumn": 35,
                     "lineCount": 1
                 }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 26,
+                    "endColumn": 35,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 22,
+                    "endColumn": 36,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 22,
+                    "endColumn": 36,
+                    "lineCount": 1
+                }
             }
         ],
         "./tests/test_apply_language_note_close_marks.py": [
@@ -4808,6 +4890,24 @@
                 "range": {
                     "startColumn": 59,
                     "endColumn": 68,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 59,
+                    "endColumn": 68,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./tests/test_apply_language_notes.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 22,
+                    "endColumn": 31,
                     "lineCount": 1
                 }
             },
