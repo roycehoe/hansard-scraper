@@ -2820,6 +2820,16 @@
                 }
             }
         ],
+        "./database/report_picture.py": [
+            {
+                "code": "reportAssignmentType",
+                "range": {
+                    "startColumn": 20,
+                    "endColumn": 36,
+                    "lineCount": 1
+                }
+            }
+        ],
         "./database/report_put_to.py": [
             {
                 "code": "reportAssignmentType",
@@ -3620,6 +3630,16 @@
                 "range": {
                     "startColumn": 12,
                     "endColumn": 80,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./scripts/apply_report_pictures.py": [
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 48,
+                    "endColumn": 75,
                     "lineCount": 1
                 }
             }
