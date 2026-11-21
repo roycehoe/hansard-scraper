@@ -106,6 +106,10 @@ class HansardAttachedFileError(HansardError):
     pass
 
 
+class HansardReportPictureError(HansardError):
+    pass
+
+
 class HansardMinutesIndexError(HansardError):
     pass
 
