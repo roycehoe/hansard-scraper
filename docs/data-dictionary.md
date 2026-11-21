@@ -30,7 +30,7 @@ Person (one row per individual)
   └── Speaker    (one row per person per parliament)
 ```
 
-`Sitting` also has `AttachedFile` rows, one per file it lists. `Report` has `AttachedFilePointer` rows, one per download link in its raw HTML, and a pointer can name its `AttachedFile`.
+`Sitting` also has `AttachedFile` rows, one per file it lists. `Report` has `AttachedFilePointer` rows, one per download link in its raw HTML, and a pointer can name its `AttachedFile`. `Report` also has `ReportPicture` rows, one per inline picture in its raw HTML.
 
 `Report` and `Sitting` share `sitting_date`, `parliament_number`, and `volume_number` as natural join keys. `Speech.speaker_id` links to `Speaker.id` where the match has been resolved.
 
@@ -155,6 +155,23 @@ One row per printed citation of another report, stored on the report that prints
 | `printed_citation` | str | Citation as the record prints it. |
 | `source_report_id` | str | FK → `Report.report_id`, the report printing the citation. |
 | `target_report_id` | str | FK → `Report.report_id`, the cited report. |
+
+### ReportPicture
+
+One row per inline picture in `report.content`: an `<img>` tag whose `src` is a base64 `data:` URI. The parser drops these tags before it builds the markdown, so a table printed as a picture reaches no speech row. Each row keeps the picture's bytes and, for a table or a division list, a typed copy. The typed copy is our reading of the picture, never the record's text (ADR 0013). Two independent transcriptions and a judge that checked every cell against the picture made it. `scripts/apply_report_pictures.py` loads the rows from a plan file and reads the bytes from `report.content` itself.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `kind` | PictureKind | `PictureKind`, Postgres type `picturekind`: `TABLE`, `DIVISION_LIST` (the names of a division's Ayes, Noes and Abstentions), or `OTHER` (a chart, photo, map, diagram or block of prose). |
+| `picture_index` | int | The picture's place among the report's inline pictures, counted from 0 in the order of `report.content`. Unique with `report_id`. |
+| `content_offset` | int | Character offset of the `<img` tag in `report.content`. |
+| `follows_ordinal` | int | The `speech.ordinal` of the row the picture follows, found by matching the report text before and after the picture to the stored rows. 0 when the picture comes before the first row. `NULL` when neither side matched. |
+| `media_type` | str | The data URI's media type in lower case, `image/png` or `image/jpeg`. |
+| `size_bytes` | int | Length of the decoded picture. |
+| `sha256` | str | SHA-256 of the decoded picture, indexed. A picture printed in two reports has two rows with the same value. |
+| `picture_bytes` | bytes | The decoded picture. |
+| `typed_copy` | JSONB | Our reading of the picture: `heading`, `tables` (each with `caption`, `header_rows`, `body_rows` and `notes`, every cell a string), `uncertain` (cells the judge could not read with confidence) and `note`. Text is copied as printed. A merged cell repeats in every position it covers, a superscript is written after `^`, and a division list is one single-column table per printed group of names, its label as the caption. `NULL` for `OTHER`. |
+| `report_id` | int | FK → `Report.id`, indexed. |
 
 ### Sitting
 
