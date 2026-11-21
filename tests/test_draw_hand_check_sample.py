@@ -76,6 +76,7 @@ def _build_parse_row(speech_id: int, report_id: int, ordinal: int) -> SpeechPars
         transcript=f"Text {speech_id}",
         kind=SpeechKind.SPEECH,
         speaker_id=None,
+        language_note=None,
     )
 
 

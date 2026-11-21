@@ -80,6 +80,7 @@ def _get_stored_digest(
                 speech_row.transcript,
                 speech_row.kind,
                 speech_row.speaker_id,
+                speech_row.language_note,
             ]
             for speech_row in speech_rows
         ],
@@ -120,10 +121,14 @@ def _get_report_plan(
             is_speaker_changed = speech_row.speaker != parsed_speech.speaker
             is_transcript_changed = speech_row.transcript != parsed_speech.transcript
             is_ordinal_changed = speech_row.ordinal != ordinal
+            is_language_note_changed = (
+                speech_row.language_note != parsed_speech.language_note
+            )
             if (
                 not is_speaker_changed
                 and not is_transcript_changed
                 and not is_ordinal_changed
+                and not is_language_note_changed
             ):
                 continue
             updates.append(
@@ -135,9 +140,11 @@ def _get_report_plan(
                     kind=parsed_speech.kind
                     if is_speaker_changed or is_transcript_changed
                     else speech_row.kind,
+                    language_note=parsed_speech.language_note,
                     is_speaker_changed=is_speaker_changed,
                     is_transcript_changed=is_transcript_changed,
                     is_ordinal_changed=is_ordinal_changed,
+                    is_language_note_changed=is_language_note_changed,
                 )
             )
         deletes.extend(
@@ -150,6 +157,7 @@ def _get_report_plan(
                 speaker=parsed_speeches[index].speaker,
                 transcript=parsed_speeches[index].transcript,
                 kind=parsed_speeches[index].kind,
+                language_note=parsed_speeches[index].language_note,
             )
             for index in range(parsed_start + paired_count, parsed_end)
         )
@@ -246,7 +254,8 @@ def _log_plan(plan: FreshParsePlan) -> None:
     logger.info(
         f"Plan: {len(plan.report_plans):,} reports, {sum(report_plan.stored_row_count for report_plan in plan.report_plans):,} stored rows become"
         f" {sum(report_plan.parsed_row_count for report_plan in plan.report_plans):,}. {len(updates):,} updates"
-        f" ({sum(update.is_speaker_changed for update in updates):,} change speaker, {sum(update.is_ordinal_changed for update in updates):,} change ordinal),"
+        f" ({sum(update.is_speaker_changed for update in updates):,} change speaker, {sum(update.is_ordinal_changed for update in updates):,} change ordinal,"
+        f" {sum(update.is_language_note_changed for update in updates):,} change language note),"
         f" {delete_count:,} deletes, {sum(len(report_plan.inserts) for report_plan in plan.report_plans):,} inserts,"
         f" {sum(report_plan.markdown_content is not None for report_plan in plan.report_plans):,} report markdowns."
         f" Stored (report, ordinal) pairs that move: {sum(update.is_ordinal_changed for update in updates) + delete_count:,}"
@@ -272,6 +281,7 @@ def _get_speech_updates(
             speaker_id=None
             if update.is_speaker_changed
             else id_to_speaker_id[update.id],
+            language_note=update.language_note,
         )
         for update in report_plan.updates
     ]
@@ -312,6 +322,7 @@ def _write_report_plans(session: Session, plan: FreshParsePlan) -> None:
             speaker=insert.speaker,
             transcript=insert.transcript,
             kind=insert.kind,
+            language_note=insert.language_note,
             sitting_date=report_id_to_report[report_plan.report_id].sitting_date,
             report_type=report_id_to_report[report_plan.report_id].report_type,
             report_id=report_plan.report_id,

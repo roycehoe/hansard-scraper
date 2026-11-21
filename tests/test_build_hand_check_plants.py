@@ -49,6 +49,7 @@ def _build_row(
         transcript="text",
         kind=None,
         speaker_id=speaker_id,
+        language_note=None,
     )
 
 

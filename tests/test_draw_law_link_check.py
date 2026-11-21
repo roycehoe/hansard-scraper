@@ -265,7 +265,14 @@ def _build_large_texts() -> LawLinkCheckTexts:
         },
         report_id_and_ordinal_to_speech_row={
             (1, ordinal): SpeechParseRow(
-                ordinal, 1, ordinal, "Ms A", f"Line {ordinal}", SpeechKind.SPEECH, 1
+                ordinal,
+                1,
+                ordinal,
+                "Ms A",
+                f"Line {ordinal}",
+                SpeechKind.SPEECH,
+                1,
+                None,
             )
             for ordinal in range(1, _RULE_ROW_COUNT + 1)
         },

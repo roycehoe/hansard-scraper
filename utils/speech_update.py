@@ -12,3 +12,4 @@ class SpeechUpdate:
     transcript: str
     kind: Optional[SpeechKind]
     speaker_id: Optional[int]
+    language_note: Optional[str]

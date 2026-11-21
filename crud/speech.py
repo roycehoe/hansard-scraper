@@ -162,6 +162,7 @@ class SpeechParseRow:
     transcript: str
     kind: Optional[SpeechKind]
     speaker_id: Optional[int]
+    language_note: Optional[str]
 
 
 @dataclass(frozen=True, slots=True)
@@ -431,6 +432,7 @@ class CRUDSpeech:
                 Speech.transcript,
                 Speech.kind,
                 Speech.speaker_id,
+                Speech.language_note,
             )
             .where(col(Speech.report_id).in_(report_ids))
             .order_by(Speech.report_id, Speech.ordinal, Speech.id)
@@ -677,9 +679,11 @@ class CRUDSpeech:
 
         update_result = self.session.execute(
             text(
-                "UPDATE speech SET ordinal = v.ordinal, speaker = v.speaker, transcript = v.transcript, kind = v.kind, speaker_id = v.speaker_id "
+                "UPDATE speech SET ordinal = v.ordinal, speaker = v.speaker, transcript = v.transcript, kind = v.kind, speaker_id = v.speaker_id, "
+                "language_note = v.language_note "
                 "FROM UNNEST(CAST(:ids AS integer[]), CAST(:ordinals AS integer[]), CAST(:speakers AS text[]), CAST(:transcripts AS text[]), "
-                "CAST(:kinds AS speechkind[]), CAST(:speaker_ids AS integer[])) AS v(id, ordinal, speaker, transcript, kind, speaker_id) "
+                "CAST(:kinds AS speechkind[]), CAST(:speaker_ids AS integer[]), CAST(:language_notes AS text[])) "
+                "AS v(id, ordinal, speaker, transcript, kind, speaker_id, language_note) "
                 "WHERE speech.id = v.id"
             ),
             {
@@ -695,6 +699,9 @@ class CRUDSpeech:
                 ],
                 "speaker_ids": [
                     speech_update.speaker_id for speech_update in speech_updates
+                ],
+                "language_notes": [
+                    speech_update.language_note for speech_update in speech_updates
                 ],
             },
         )

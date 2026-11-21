@@ -317,3 +317,61 @@ def test_commit_keeps_the_stored_kind_of_a_paired_row_whose_speaker_and_text_are
     second_plan = json.loads(second_plan_path.read_text())
     assert second_plan["report_plans"] == []
     assert second_plan["kind_only_report_ids"] == [report.id]
+
+
+def test_commit_writes_the_language_note_of_a_row_whose_speaker_and_text_are_unchanged(
+    scratch_engine: Engine,
+    scratch_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(apply_fresh_parse_script, "engine", scratch_engine)
+    fixture = json.loads(
+        (
+            _FIXTURE_PATH.parent
+            / "language_note_after_a_bold_label_is_kept_beside_the_label.json"
+        ).read_text()
+    )
+    report = _add_report(scratch_session, fixture)
+    for ordinal, (speaker, transcript, kind) in enumerate(
+        fixture["expected_rows"], start=1
+    ):
+        scratch_session.add(
+            Speech(
+                ordinal=ordinal,
+                speaker=speaker,
+                transcript=transcript,
+                kind=SpeechKind(kind),
+                sitting_date=_SITTING_DATE,
+                report_type=report.report_type,
+                report_id=report.id,
+            )
+        )
+    scratch_session.commit()
+    stored_rows = _get_stored_rows(scratch_session, report)
+    plan_path = tmp_path / "plan.json"
+    held_path = _write_held(tmp_path, [])
+    apply_fresh_parse_script.apply_fresh_parse(plan_path, held_path, is_commit=False)
+
+    updates = json.loads(plan_path.read_text())["report_plans"][0]["updates"]
+    assert [
+        (update["language_note"], update["is_language_note_changed"])
+        for update in updates
+    ] == [("In Mandarin", True), ("In Mandarin", True)]
+
+    apply_fresh_parse_script.apply_fresh_parse(plan_path, held_path, is_commit=True)
+
+    assert _get_stored_rows(scratch_session, report) == stored_rows
+    assert (
+        scratch_session.exec(
+            select(Speech.language_note)
+            .where(Speech.report_id == report.id)
+            .order_by(Speech.ordinal)
+        ).all()
+        == fixture["expected_language_notes"]
+    )
+    second_plan_path = tmp_path / "second_plan.json"
+    apply_fresh_parse_script.apply_fresh_parse(
+        second_plan_path, held_path, is_commit=False
+    )
+    assert json.loads(second_plan_path.read_text())["report_plans"] == []

@@ -32,6 +32,7 @@ def _build_row(
         transcript=transcript,
         kind=None if kind is None else SpeechKind(kind),
         speaker_id=None,
+        language_note=None,
     )
 
 

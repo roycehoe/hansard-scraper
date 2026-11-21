@@ -24,9 +24,11 @@ class SpeechRowUpdate(BaseModel):
     speaker: Optional[str]
     transcript: str
     kind: Optional[SpeechKind]
+    language_note: Optional[str]
     is_speaker_changed: bool
     is_transcript_changed: bool
     is_ordinal_changed: bool
+    is_language_note_changed: bool
 
 
 class SpeechRowInsert(BaseModel):
@@ -36,6 +38,7 @@ class SpeechRowInsert(BaseModel):
     speaker: Optional[str]
     transcript: str
     kind: SpeechKind
+    language_note: Optional[str]
 
 
 class ReportFreshParsePlan(BaseModel):
