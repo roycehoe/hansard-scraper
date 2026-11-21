@@ -86,6 +86,7 @@ One row per utterance within a report. The parser extracts speeches from `markdo
 | `column_start` | int | Printed column the row starts in, kept as printed even when it is a likely misprint. |
 | `column_note` | ColumnNote | `ColumnNote`, Postgres type `columnnote`. With `column_suggested`, carries the reading of the printed column: a likely misprint and the column the marker sequence suggests, a speaker named in the column before, or a marker printed with the letter l for the digit 1. |
 | `column_suggested` | int | The column the marker sequence suggests for a likely misprint; see `column_note`. |
+| `language_note` | str | The language note the record prints at the start of the row, such as "(In Mandarin):" after the speaker's name: the words inside the brackets as printed ("In Mandarin", "in Malay", the misspelt "In Mandarain"), without emphasis marks. The parser takes it out of `speaker` and `transcript` and keeps it here. A note printed on a line of its own is kept on the speaker's next row. `NULL` where the row has no note. See the language note row of `docs/data-loss-register.md`. |
 
 ### ReportAsker
 

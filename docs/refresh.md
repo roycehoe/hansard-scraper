@@ -46,7 +46,7 @@ After the last month, the run takes steps 25 to 29:
 28. Records the counts and marks the row `SUCCEEDED`.
 29. Sends the alerts, then the healthchecks.io ping: the plain URL on success, `/fail` on a halt or a failure.
 
-The report link step is the last before the run finishes, so a supervised `python -m scripts.apply_report_links --commit` is the only path that removes a `report_link` row. Production order is the migration, then these grants, then the code, because the step fails every refresh without the table and grants. The `report.printed_place` columns follow the same order: the migration reaches production before the push, because step 10 inserts both columns. The grants do not change, since the run sets the columns on insert.
+The report link step is the last before the run finishes, so a supervised `python -m scripts.apply_report_links --commit` is the only path that removes a `report_link` row. Production order is the migration, then these grants, then the code, because the step fails every refresh without the table and grants. The `report.printed_place` columns follow the same order: the migration reaches production before the push, because step 10 inserts both columns. The grants do not change, since the run sets the columns on insert. The `speech.language_note` column of migration `67140e6704d3` follows the same order, because step 10 inserts it with each speech row. Its grants do not change either, because `hansard_refresh` and the API's read-only role hold table-level grants on `speech`, and those cover a new column.
 
 `refresh.py` exits 0 on success, 2 on a halt, and 1 on a failure, after the failure's error propagates.
 
