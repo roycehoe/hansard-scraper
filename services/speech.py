@@ -1937,6 +1937,27 @@ def apply_unlabelled_speech_range(
     ]
 
 
+def get_parsed_speeches(
+    report: Report, markdown: str, unlabelled_range: Optional[UnlabelledSpeechRange]
+) -> Optional[list[ParsedSpeech]]:
+    start_of_speech_line = get_start_of_speech_line(
+        markdown,
+        report.title,
+        report.subtitle,
+        report.original_title,
+        report.report_type,
+        report.report_version,
+    )
+    if start_of_speech_line is None:
+        return None
+    speeches = get_speeches(
+        markdown, start_of_speech_line, report.report_type, report.report_version
+    )
+    if unlabelled_range is None:
+        return speeches
+    return apply_unlabelled_speech_range(speeches, unlabelled_range)
+
+
 def build_speeches(report: Report, parsed_speeches: list[ParsedSpeech]) -> list[Speech]:
     return [
         Speech(

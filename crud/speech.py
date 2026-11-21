@@ -9,6 +9,7 @@ from database.report import Report
 from database.speech import Speech
 from enums import ColumnNote, ReportType, SpeechKind
 from utils.column_numbers import SpeechColumnNote
+from utils.speech_language_note import SpeechLanguageNoteChange
 from utils.speech_update import SpeechUpdate
 from utils.text import TextChange
 
@@ -635,6 +636,47 @@ class CRUDSpeech:
                 "ids": [text_change.id for text_change in text_changes],
                 "befores": [text_change.before for text_change in text_changes],
                 "afters": [text_change.after for text_change in text_changes],
+            },
+        )
+
+        return update_result.rowcount
+
+    def set_language_notes_bulk_by_ordinal_and_speaker_and_transcript(
+        self, language_note_changes: list[SpeechLanguageNoteChange]
+    ) -> int:
+        if not language_note_changes:
+            return 0
+
+        # NOTE: a row whose ordinal, label or transcript is no longer the paired one is left alone and not counted.
+        update_result = self.session.execute(
+            text(
+                "UPDATE speech SET language_note = v.language_note "
+                "FROM UNNEST(CAST(:ids AS integer[]), CAST(:ordinals AS integer[]), CAST(:speakers AS text[]), "
+                "CAST(:transcripts AS text[]), CAST(:language_notes AS text[])) AS v(id, ordinal, speaker, transcript, language_note) "
+                "WHERE speech.id = v.id AND speech.ordinal = v.ordinal AND speech.speaker IS NOT DISTINCT FROM v.speaker "
+                "AND speech.transcript = v.transcript"
+            ),
+            {
+                "ids": [
+                    language_note_change.id
+                    for language_note_change in language_note_changes
+                ],
+                "ordinals": [
+                    language_note_change.ordinal
+                    for language_note_change in language_note_changes
+                ],
+                "speakers": [
+                    language_note_change.speaker
+                    for language_note_change in language_note_changes
+                ],
+                "transcripts": [
+                    language_note_change.transcript
+                    for language_note_change in language_note_changes
+                ],
+                "language_notes": [
+                    language_note_change.language_note
+                    for language_note_change in language_note_changes
+                ],
             },
         )
 

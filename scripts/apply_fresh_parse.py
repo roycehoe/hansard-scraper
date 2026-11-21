@@ -29,13 +29,7 @@ from schemas.fresh_parse_plan import (
     SpeechRowInsert,
     SpeechRowUpdate,
 )
-from schemas.unlabelled_speech import UnlabelledSpeechRange
-from services.speech import (
-    ParsedSpeech,
-    apply_unlabelled_speech_range,
-    get_speeches,
-    get_start_of_speech_line,
-)
+from services.speech import ParsedSpeech, get_parsed_speeches
 from settings import settings
 from utils.data_files import get_unlabelled_speech_ranges
 from utils.markdown_parser import get_cleaned_report_markdown
@@ -44,27 +38,6 @@ from utils.text import TextChange
 from utils.write_target import validate_can_write
 
 _REPORT_BATCH = 200
-
-
-def _get_parsed_speeches(
-    report: Report, markdown: str, unlabelled_range: Optional[UnlabelledSpeechRange]
-) -> Optional[list[ParsedSpeech]]:
-    start_of_speech_line = get_start_of_speech_line(
-        markdown,
-        report.title,
-        report.subtitle,
-        report.original_title,
-        report.report_type,
-        report.report_version,
-    )
-    if start_of_speech_line is None:
-        return None
-    speeches = get_speeches(
-        markdown, start_of_speech_line, report.report_type, report.report_version
-    )
-    if unlabelled_range is None:
-        return speeches
-    return apply_unlabelled_speech_range(speeches, unlabelled_range)
 
 
 def _get_stored_digest(
@@ -213,7 +186,7 @@ def _get_plan(
             markdown = get_cleaned_report_markdown(
                 report.content, report.report_version
             )
-            parsed_speeches = _get_parsed_speeches(
+            parsed_speeches = get_parsed_speeches(
                 report, markdown, report_id_to_unlabelled_range.get(report.id)
             )
             if parsed_speeches is None:
